@@ -52,7 +52,9 @@ Cosmos a été conçu sur un principe fondamental : votre structure doit émerge
 
 Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/cosmos/releases).
 
-> **Premier lancement.** L'app n'est pas encore signée. Sur macOS, faites un clic droit sur l'app puis « Ouvrir ». Sur Windows, si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
+> **Premier lancement.** Sur macOS, l'app est signée et vérifiée par Apple : elle s'ouvre normalement. Sur Windows, elle n'est pas encore signée : si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
+
+**Mises à jour :** Cosmos vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de Cosmos »).
 
 Cosmos est en cours de développement (version 0.1.5).
 
@@ -72,7 +74,7 @@ Cosmos est en cours de développement (version 0.1.5).
 - **Images :** déposez une image sur une carte ou sur le canevas, ou utilisez le bouton image de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
 - **PDF :** déposez, collez ou importez un PDF (bouton « PDF » du canevas) : une carte **Document** naît, avec l'aperçu de sa première page, son nombre de pages, son auteur et son année quand le fichier les donne. « Lire le document » l'ouvre dans l'app, page après page. Le PDF est copié dans `medias/`.
 - **Votre profil d'auteur :** sur la page des projets, saisissez une fois votre prénom, votre nom, votre nom de plume et vos coordonnées. Chaque nouveau scénario les reprend sur sa page de titre (auteur et contact), et le manuscrit exporté les porte sur sa page de garde. Ils restent sur l'appareil et se modifient à tout moment.
-- **Photos libres :** le bouton « Photos » du canevas (ou de la galerie d'une fiche) cherche des photos sur **Openverse** (images sous licence libre, sans clé), **Pixabay** ou **Unsplash** (clé gratuite, collée une fois, gardée sur l'appareil). La photo choisie devient une carte Image, avec l'auteur, le lien, la source et la licence dans sa fiche. Le bouton image d'une carte (et le portrait d'un personnage dans la Bible) ouvre la même fenêtre : une photo libre, ou une image de l'appareil.
+- **Photos libres :** le bouton « Photos » du canevas (ou « Ajouter des photos » dans la galerie d'une fiche) cherche des photos sur **Openverse** (images sous licence libre, sans clé), **Pixabay** ou **Unsplash** (clé gratuite, collée une fois, gardée sur l'appareil). La photo choisie devient une carte Image, avec l'auteur, le lien, la source et la licence dans sa fiche. Le bouton image d'une carte (et le portrait d'un personnage dans la Bible) ouvre la même fenêtre : une photo libre, ou une image de l'appareil.
 - **Lien vers la fiche :** chaque carte typée a un bouton qui ouvre sa fiche dans la Bible.
 - **Sélection multiple :** Maj + glisser entoure des cartes, Ctrl/Cmd + clic en ajoute une, Ctrl/Cmd + A sélectionne tout, Échap désélectionne ; au doigt, le bouton « Sélection ». Les cartes choisies se déplacent ensemble, et une barre propose de les encadrer ou de les mettre à la corbeille.
 - **Largeur des cartes :** tirez la poignée du coin bas droit d'une carte sélectionnée, ou Alt+→ et Alt+←.
@@ -165,6 +167,8 @@ Elle questionne, elle n'écrit pas : aucune action ne modifie votre projet sans 
 - **Décrire un lieu d'après une photo :** si vous le demandez, l'IA relève en notes ce que montre la photo (lumière, matières, ambiance), sans rien inventer. Il faut un modèle qui lit les images.
 - **Vérifier la cohérence :** relève les contradictions possibles entre vos cartes (un âge, une date, un lieu), sous forme de questions que vous pouvez garder pour plus tard.
 
+Quand l'IA parle d'une carte, elle la nomme par son titre et son type, par exemple « Inès Morvan (personnage) ».
+
 Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md](docs/prompts-ia.md).
 
 ### Les exports
@@ -183,6 +187,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Mode clair, sombre** ou comme le système.
 - **Souris, doigt et clavier :** chaque action a les trois chemins.
 - **Hors ligne :** polices embarquées, aucun compte, aucun serveur.
+- **Mises à jour d'un clic** (ordinateur) : une vérification par jour au plus, désactivable ; rien n'est installé sans votre accord.
 
 ![Le même canevas en mode sombre, interface en anglais](docs/images/canvas-dark-en.png)
 
@@ -270,7 +275,7 @@ npm test        # tests (Vitest)
 git tag v0.1.0 && git push --tags
 ```
 
-GitHub fabrique les installeurs des trois systèmes et les dépose dans un brouillon de Release, qu'il reste à publier. Les secrets nécessaires pour signer les apps (compte développeur Apple, certificat Windows) sont listés dans `release.yml`.
+GitHub fabrique les installeurs des trois systèmes et les dépose dans un brouillon de Release, qu'il reste à publier. Les secrets nécessaires pour signer les apps (compte développeur Apple, clé de signature des mises à jour, certificat Windows) sont listés dans `release.yml`. Une Release publiée normalement (pas en préversion) est celle que l'app trouve et installe.
 
 ### Travailler sur plusieurs ordinateurs
 

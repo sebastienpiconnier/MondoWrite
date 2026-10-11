@@ -276,7 +276,9 @@ export const fr = {
     short: "Photos",
     title: "Photos libres",
     titleCard: "Image de la carte",
+    titleGallery: "Ajouter des photos",
     fromDevice: "Choisir une image sur l’appareil…",
+    fromDeviceMany: "Choisir des images sur l’appareil…",
     sourceLabel: "Source des photos",
     search: "Chercher",
     queryLabel: "Ce que tu cherches",
@@ -1085,6 +1087,28 @@ export const fr = {
     credits: "Inspiré entre autres par NEO, le logiciel d’écriture de Hugh Howey. Construit avec Tauri, React, React Flow et TipTap. Polices IBM Plex, Space Grotesk et Courier Prime (licence SIL Open Font).",
     license: "Licence GNU GPL 3.0 ou ultérieure.",
     source: "Code source :",
+  },
+
+  // Mises à jour de l’app de bureau : vérification auprès de GitHub, installation d’un clic.
+  updates: {
+    aria: "Mise à jour de Cosmos",
+    section: "Mises à jour",
+    available: "Cosmos {version} est disponible (tu as la {current}).",
+    install: "Mettre à jour",
+    download: "Télécharger",
+    notes: "Nouveautés",
+    later: "Plus tard",
+    downloading: "Téléchargement de la mise à jour…",
+    downloadingPercent: "Téléchargement de la mise à jour… {percent}",
+    restarting: "Installation : Cosmos redémarre…",
+    installError: "L’installation a échoué. Tu peux télécharger la nouvelle version depuis sa page.",
+    downloadHint: "La page de la version s’ouvre dans ton navigateur : télécharge le fichier de ton système et installe-le comme la première fois.",
+    check: "Rechercher les mises à jour",
+    checking: "Recherche…",
+    current: "Tu as la dernière version ({version}).",
+    error: "Impossible de joindre GitHub. Vérifie ta connexion et réessaie.",
+    auto: "Chercher les mises à jour au lancement",
+    autoHint: "Une fois par jour au plus. Rien n’est installé sans ton accord, et ton projet est enregistré avant.",
   },
 
   // Mode focus du manuscrit.

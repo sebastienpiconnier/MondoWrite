@@ -8,6 +8,7 @@ Source : `src/ai/tasks.ts`. Ce fichier en est la copie : le tenir à jour à cha
 
 - **L'IA questionne et propose, elle n'écrit jamais à la place de l'auteur.** Rien ne modifie le projet sans un clic de l'auteur.
 - **Réponses jamais crues sur parole** : tout passe par une fonction `parse…` qui ne garde que des identifiants de cartes connus et des types valides. Une réponse n'est jamais insérée comme HTML.
+- **Une carte se nomme par son titre et son type** dans tout texte destiné à l'auteur (raison de Ranger, question sur mesure, alerte de cohérence), jamais par son identifiant : la consigne le demande, et la relecture (`nameCards`) remplace quand même tout identifiant connu par « Titre (type) », le type dans la langue de l'interface (Décor dans un scénario).
 - Une carte est envoyée sous la forme `{ id, type, title, text, sheet? }` : le texte est abrégé à 500 caractères, `sheet` est la fiche d'identité d'un personnage quand elle est remplie. Au plus 80 cartes par requête.
 - **Modèles locaux** (Ollama, LM Studio) : le raisonnement que certains modèles écrivent avant leur réponse (`<think>…</think>`) est retiré avant lecture. Avec Ollama, Cosmos passe par l'API native `/api/chat` avec une fenêtre de contexte de 16 384 jetons (au lieu de la valeur par défaut, trop courte pour un projet) et, pour Ranger et Cohérence, `format: "json"`.
 
@@ -18,7 +19,7 @@ Bouton IA › Ranger les idées. Propose un type pour les cartes Idée.
 **Consigne** (`{kind}` vaut `novel` ou `screenplay`, `{langue}` la langue de l'interface) :
 
 ```
-You help a writer organise the notes of a {kind}. Each note is an untyped idea card. Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), intrigue (a plot line or subplot running through several scenes), theme (a theme), question (an open question the writer asks themself). Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in {langue}>"}]}. Use the card ids exactly as given. If no note should change, answer {"items": []}.
+You help a writer organise the notes of a {kind}. Each note is an untyped idea card. Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), intrigue (a plot line or subplot running through several scenes), theme (a theme), question (an open question the writer asks themself). Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into {langue} (for example: Inès Morvan (personnage)). Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in {langue}>"}]}. Use the card ids exactly as given. If no note should change, answer {"items": []}.
 ```
 
 **Données** : la liste des cartes Idée qui ont un titre ou un texte.
@@ -36,7 +37,7 @@ Bible › fiche d'un personnage › Questionner › onglet Sur mesure.
 **Consigne** :
 
 ```
-You are an interviewer helping a writer discover a character. Ask ONE open question, specific to what the notes say, that the notes do not answer yet. Do not answer it, do not suggest answers, do not invent facts about the character. No preamble, no quotation marks: reply with the question only, in {langue}, in one sentence.
+You are an interviewer helping a writer discover a character. Ask ONE open question, specific to what the notes say, that the notes do not answer yet. Do not answer it, do not suggest answers, do not invent facts about the character. In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into {langue} (for example: Inès Morvan (personnage)). No preamble, no quotation marks: reply with the question only, in {langue}, in one sentence.
 ```
 
 **Données** : le personnage (texte jusqu'à 2 500 caractères, fiche comprise), les cartes qui lui sont reliées avec l'étiquette du fil, et les douze dernières questions déjà posées (pour ne pas les répéter).
@@ -97,7 +98,7 @@ Bouton IA › Vérifier la cohérence.
 **Consigne** :
 
 ```
-You are a continuity reader for a writer's story bible. Find statements in the notes that contradict each other (ages, dates, places, relationships, who knows what, physical details). Report only real contradictions between what is written, never missing information, style, or opinions. Do not propose fixes and do not rewrite anything: phrase each one as a short question to the writer, in {langue}. Answer with a JSON object only: {"items": [{"cards": ["<id>", "<id>"], "question": "<question>"}]}. Use the card ids exactly as given. If nothing contradicts, answer {"items": []}.
+You are a continuity reader for a writer's story bible. Find statements in the notes that contradict each other (ages, dates, places, relationships, who knows what, physical details). Report only real contradictions between what is written, never missing information, style, or opinions. Do not propose fixes and do not rewrite anything: phrase each one as a short question to the writer, in {langue}. In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into {langue} (for example: Inès Morvan (personnage)). Answer with a JSON object only: {"items": [{"cards": ["<id>", "<id>"], "question": "<question>"}]}. Use the card ids exactly as given. If nothing contradicts, answer {"items": []}.
 ```
 
 **Données** : toutes les cartes qui ont un titre ou un texte (fiches comprises), et les fils entre elles.

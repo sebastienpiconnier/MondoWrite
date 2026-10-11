@@ -3,7 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig, OLLAMA_CONTEXT, stripThinking } from "../ai/providers";
-import { coherencePrompt, extractJson, interviewPrompt, parseCoherence, parseQuestion, parseTidy, tidyCandidates, tidyPrompt } from "../ai/tasks";
+import { coherencePrompt, extractJson, interviewPrompt, nameCards, parseCoherence, parseQuestion, parseTidy, tidyCandidates, tidyPrompt } from "../ai/tasks";
 import { aiConfig } from "../settings";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -198,6 +198,28 @@ describe("cohérence", () => {
     const reply = '```json\n[{"cards":["p1","s1","zz","p1"],"question":"Inès a-t-elle 34 ou 41 ans ?"},{"cards":["zz"],"question":"?"},{"cards":["p1"],"question":""}]\n```';
     expect(parseCoherence(reply, cards)).toEqual([{ cards: ["p1", "s1"], question: "Inès a-t-elle 34 ou 41 ans ?" }]);
     expect(parseCoherence("[]", cards)).toEqual([]);
+  });
+});
+
+describe("cartes nommées, jamais par leur identifiant", () => {
+  const cards = [card("k3x9a7bq2m", "personnage", "Inès Morvan", ""), card("p4t8w2zq1c", "lieu", "Le phare", ""), card("i1aaaaaaaa", "idee", "", "<p>un vieux port</p>")];
+  const names = { type: (t: string) => ({ personnage: "personnage", lieu: "lieu", idee: "idée" })[t] ?? t, untitled: "Sans titre" };
+
+  it("chaque identifiant connu devient « Titre (type) », avec ce qui l'entoure", () => {
+    expect(nameCards("Pourquoi k3x9a7bq2m quitte-t-elle p4t8w2zq1c ?", cards, names)).toBe("Pourquoi Inès Morvan (personnage) quitte-t-elle Le phare (lieu) ?");
+    expect(nameCards('La carte "k3x9a7bq2m" et [p4t8w2zq1c], `i1aaaaaaaa`', cards, names)).toBe("La carte Inès Morvan (personnage) et Le phare (lieu), Sans titre (idée)");
+    expect(nameCards("Inès Morvan (k3x9a7bq2m) a-t-elle 34 ans (id: k3x9a7bq2m) ?", cards, names)).toBe("Inès Morvan (personnage) a-t-elle 34 ans Inès Morvan (personnage) ?");
+    expect(nameCards("Rien à changer, ID inconnu zz12345678.", cards, names)).toBe("Rien à changer, ID inconnu zz12345678.");
+    expect(nameCards("(voir k3x9a7bq2m)", cards, names)).toBe("(voir Inès Morvan (personnage))");
+  });
+
+  it("la relecture des réponses s'en charge, et les consignes l'interdisent", () => {
+    const reply = JSON.stringify({ items: [{ cards: ["k3x9a7bq2m"], question: "k3x9a7bq2m a-t-elle 34 ou 41 ans ?" }] });
+    expect(parseCoherence(reply, cards, names)[0].question).toBe("Inès Morvan (personnage) a-t-elle 34 ou 41 ans ?");
+    expect(parseQuestion("Que cache k3x9a7bq2m à p4t8w2zq1c ?", cards, names)).toBe("Que cache Inès Morvan (personnage) à Le phare (lieu) ?");
+    expect(parseTidy(JSON.stringify([{ id: "i1aaaaaaaa", type: "lieu", reason: "Comme p4t8w2zq1c." }]), cards, names)[0].reason).toBe("Comme Le phare (lieu).");
+    expect(coherencePrompt(cards, [], "fr").system).toMatch(/never mention a card id/);
+    expect(tidyPrompt(cards, "en", "roman").system).toMatch(/never mention a card id/);
   });
 });
 

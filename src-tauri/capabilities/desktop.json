@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "desktop",
+  "description": "Permissions de l'app de bureau seulement : chercher, télécharger et installer une nouvelle version de Cosmos, puis redémarrer",
+  "platforms": ["macOS", "windows", "linux"],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "updater:default",
+    "process:allow-restart"
+  ]
+}

@@ -12,6 +12,7 @@ import { Home } from "./components/Home";
 import { Tour } from "./components/Tour";
 import { Dialogs } from "./components/Dialogs";
 import { TrashNotice } from "./components/TrashList";
+import { UpdateNotice, useLaunchUpdateCheck } from "./components/Updates";
 import { useT } from "./i18n";
 import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
@@ -29,6 +30,8 @@ export function App() {
   const closeProject = useCosmos((s) => s.closeProject);
   const start = useCosmos((s) => s.start);
   const save = useCosmos((s) => s.save);
+  // App de bureau : une nouvelle version est cherchée peu après le lancement (une fois par jour au plus).
+  useLaunchUpdateCheck();
 
   // Au lancement : la liste des projets, puis l'accueil.
   useEffect(() => {
@@ -100,6 +103,7 @@ export function App() {
     return (
       <>
         <Home />
+        <UpdateNotice />
         <Dialogs />
       </>
     );
@@ -132,6 +136,8 @@ export function App() {
       </div>
       <Tour />
       <TrashNotice />
+      {/* Le mode focus n'est pas dérangé : le bandeau attend qu'on en sorte. */}
+      {!focusMode && <UpdateNotice />}
       <Dialogs />
     </ReactFlowProvider>
   );

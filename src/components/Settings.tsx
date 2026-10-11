@@ -1,6 +1,7 @@
 // Bouton « Réglages » : langue de l'interface et apparence (système, claire, sombre).
 // Listes déroulantes natives : accessibles au clavier, au lecteur d'écran et au doigt.
 
+import { UpdateSettings } from "./Updates";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, type ThemePref } from "../settings";
@@ -56,7 +57,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -226,6 +227,8 @@ export function Settings({ project = true }: { project?: boolean }) {
           <p className="settings-hint" id={ids.photosHint}>
             {t.photos.settingsHint}
           </p>
+          {/* Mises à jour : app de bureau seulement (rien dans le navigateur ni sur mobile). */}
+          <UpdateSettings checkboxId={ids.updates} />
           </section>
 
           <section className="settings-col">

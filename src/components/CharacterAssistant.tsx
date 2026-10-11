@@ -13,6 +13,7 @@ import { fmt, useT } from "../i18n";
 import type { CardData } from "../types";
 import { QUESTION_FIELD, THEMES, THEME_KEYS, allQuestionTexts, bankQuestions, customKey, nextOpen, questionText, type Theme } from "../assistant";
 import { AiError, complete, isReady } from "../ai/providers";
+import { useVocab } from "../vocab";
 import { interviewPrompt, parseQuestion, parseSynthesis, synthesisPrompt } from "../ai/tasks";
 
 type Tab = "themes" | "custom" | "pending";
@@ -23,6 +24,7 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
   const all = useT();
   const t = all.assistant;
   const ct = all.character;
+  const { types } = useVocab();
   const nodes = useCosmos((s) => s.nodes);
   const edges = useCosmos((s) => s.edges);
   const answerQuestion = useCosmos((s) => s.answerQuestion);
@@ -101,7 +103,8 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
     try {
       const { data, self } = selfNow();
       const prompt = interviewPrompt(self, data, linksNow(), lang, asked.current);
-      const next = parseQuestion(await complete(config, prompt.system, prompt.user, 400));
+      // Une carte citée dans la question : « Titre (type) », jamais son identifiant.
+      const next = parseQuestion(await complete(config, prompt.system, prompt.user, 400), data, { type: (type) => types[type].label.toLocaleLowerCase(lang), untitled: all.bible.untitled });
       if (!next) throw new AiError("empty");
       asked.current.push(next);
       setCustom(next);

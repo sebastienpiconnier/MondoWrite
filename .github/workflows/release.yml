@@ -89,6 +89,31 @@ jobs:
             echo "Signature Apple activée, sans notarisation (clé d'API absente)."
           fi
 
+      # Mises à jour dans l'app, seulement si les secrets du dépôt sont posés : TAURI_SIGNING_PRIVATE_KEY
+      # (contenu du fichier de clé privée), TAURI_SIGNING_PRIVATE_KEY_PASSWORD (son mot de passe) et
+      # TAURI_UPDATER_PUBKEY (contenu du fichier .pub). Les installeurs sont alors signés pour la mise à jour,
+      # l'app reçoit la clé publique et la Release porte latest.json. Sans eux, l'app propose seulement la
+      # page de téléchargement de chaque nouvelle version.
+      - name: Signature des mises à jour
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ] || [ -z "$TAURI_UPDATER_PUBKEY" ]; then
+            echo "Pas de clé de mise à jour : l'app proposera la page de téléchargement."
+            exit 0
+          fi
+          pubkey=$(printf '%s' "$TAURI_UPDATER_PUBKEY" | tr -d '\r\n ')
+          key=$(printf '%s' "$TAURI_SIGNING_PRIVATE_KEY" | tr -d '\r\n ')
+          {
+            echo "TAURI_SIGNING_PRIVATE_KEY=$key"
+            echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=$TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+            echo "TAURI_CONFIG={\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"$pubkey\"}}}"
+          } >> "$GITHUB_ENV"
+          echo "Mises à jour signées : latest.json sera joint à la Release."
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,7 +129,7 @@ jobs:
             - Windows : lance le .exe (ou le .msi). L'app n'est pas encore signée : si SmartScreen s'affiche, « Informations complémentaires » puis « Exécuter quand même ».
             - Linux : AppImage, .deb ou .rpm.
 
-            Pas de mise à jour automatique : chaque version se télécharge ici. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
+            Mises à jour : Cosmos te prévient d'une nouvelle version (Réglages, « Mises à jour ») et l'installe d'un clic. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
 
             ---
 
@@ -115,7 +140,11 @@ jobs:
             - Windows: run the .exe (or the .msi). The app isn't signed yet: if SmartScreen appears, click “More info”, then “Run anyway”.
             - Linux: AppImage, .deb or .rpm.
 
-            No automatic updates: each version is downloaded here. Your projects remain folders of Markdown files, readable outside the app.
+            Updates: Cosmos tells you when a new version is out (Settings, “Updates”) and installs it in one click. Your projects remain folders of Markdown files, readable outside the app.
+          # Brouillon à relire puis publier à la main. Pas de préversion : seule une version publiée normale
+          # est « la dernière », celle que l'app trouve (latest.json, API de GitHub).
           releaseDraft: true
-          prerelease: true
+          prerelease: false
+          # Windows : la mise à jour passe par l'installeur .exe (NSIS), comme le premier téléchargement.
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}

@@ -10,6 +10,7 @@ import { version } from "../../package.json";
 import { TrashList } from "./TrashList";
 import { DocumentViewer } from "./DocumentViewer";
 import { PhotoSearch } from "./PhotoSearch";
+import { UpdateSettings } from "./Updates";
 
 const REPO = "https://github.com/sebastienpiconnier/cosmos";
 
@@ -65,6 +66,10 @@ export function Dialogs() {
             Cosmos <span className="about-version">{version}</span>
           </h2>
           <p className="about-tagline">{t.app.tagline}</p>
+          {/* Nouvelle version : recherche à la demande (app de bureau). */}
+          <div className="about-updates">
+            <UpdateSettings withAuto={false} />
+          </div>
           <p>{t.about.intro}</p>
           <ul>
             {t.about.pillars.map((p) => (

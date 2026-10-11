@@ -88,6 +88,7 @@ Apparence : **Comme le système** (par défaut), **Claire** ou **Sombre**, dans 
 | PDF | `pdf-lib` et `@pdf-lib/fontkit`, chargés seulement à l'export |
 | Langues | `src/i18n/` maison (fr, en), typé |
 | Thème | Variables CSS clair/sombre, `data-theme` sur `<html>` |
+| Mises à jour | `tauri-plugin-updater` et `tauri-plugin-process` (ordinateur seulement), Releases GitHub |
 
 ## Commandes
 
@@ -103,7 +104,7 @@ npm run tauri ios init && npm run tauri ios dev          # iOS (sur Mac, avec Xc
 npm run tauri android init && npm run tauri android dev  # Android (Android Studio + NDK)
 ```
 
-Versions publiées : `git tag v0.x.y && git push --tags` déclenche `.github/workflows/release.yml`, qui fabrique les installeurs Mac (Apple Silicon et Intel), Windows et Linux dans un brouillon de Release GitHub. Les apps Mac sont signées et notarisées quand les secrets `APPLE_*` du dépôt sont posés (liste en tête de l'étape « Signature Apple » de `release.yml`), sinon elles sortent non signées. `ci.yml` vérifie le build à chaque push.
+Versions publiées : `git tag v0.x.y && git push --tags` (ou « Run workflow ») déclenche `.github/workflows/release.yml`, qui fabrique les installeurs Mac (Apple Silicon et Intel), Windows et Linux dans un brouillon de Release GitHub. Les apps Mac sont signées et notarisées quand les secrets `APPLE_*` du dépôt sont posés (liste en tête de l'étape « Signature Apple » de `release.yml`), sinon elles sortent non signées. Les mises à jour dans l'app demandent les secrets `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` et `TAURI_UPDATER_PUBKEY` (étape « Signature des mises à jour »). Le brouillon sort en version normale, pas en préversion : une fois publié, c'est lui que l'app trouve. `ci.yml` vérifie le build à chaque push.
 
 ## Architecture
 
@@ -142,7 +143,8 @@ src/
   documents.ts          Cartes Document : titre crédible, année d'une date PDF, fiche (fonctions pures)
   pdfDocument.ts        pdf.js (legacy, chargé à la demande) : aperçu de la 1re page, métadonnées, rendu des pages de la liseuse
   imageSources.ts       Photos libres (Openverse sans clé, Pixabay, Unsplash) : requêtes (plugin HTTP de Tauri), réponses filtrées par source, crédit et licence, suivi Unsplash
-  settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, profil d'auteur (appliqués avant le premier rendu)
+  settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, profil d'auteur, mises à jour (appliqués avant le premier rendu)
+  updates.ts            Nouvelles versions (app de bureau) : comparaison des versions, dernière Release GitHub, plugin de mise à jour, état partagé (useUpdates)
   profile.ts            Profil de l'auteur (prénom, nom, nom de plume, coordonnées) : nom signé, lignes de contact, reprise de l'ancien nom d'auteur (fonctions pures)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
@@ -171,6 +173,7 @@ src/
     FormatBar.tsx       Barre de mise en forme au-dessus d'un texte sélectionné (gras, italique, listes, case, à reprendre)
     focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
+    Updates.tsx         Bandeau « Cosmos x.y.z est disponible », vérification au lancement (useLaunchUpdateCheck), réglage et bouton « Rechercher les mises à jour » (Réglages, À propos)
     Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/), « À propos de Cosmos », corbeille, liseuse, photos libres
     DocumentViewer.tsx  Liseuse d'une carte Document : pages du PDF dessinées à mesure qu'elles arrivent à l'écran
     PhotoSearch.tsx     Recherche de photos libres : choix de la source, clé de l'appareil si besoin, grille de vignettes, photo choisie en carte Image ou dans une galerie
@@ -479,3 +482,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Cartes Document (PDF)** : `storeDocument` (store) copie le PDF dans `medias/`, lit ses métadonnées et dessine sa première page avec pdf.js ; un PDF illisible est gardé sans aperçu. pdf.js (`pdfjs-dist`, build legacy pour les WebKit plus anciens) n'est atteint que par `import()` dynamique ; il reçoit une copie des octets (il les transfère à son worker). La liseuse est dans l'app (pas d'ouverture par le système : aucune permission de fichier en plus, et cela marche sur mobile) ; elle lit les octets par `storage.readMedia`, jamais par une adresse `blob:`.
 - **Photos libres** (Pexels retiré en octobre 2026 : plus de nouvelles clés) : Openverse sans clé (source par défaut), Pixabay et Unsplash avec la clé de l'auteur dans `settings.photos.keys` (appareil, jamais le projet, comme les clés d'IA) ; la dernière source choisie est aussi un réglage de l'appareil. Requêtes par le plugin HTTP de Tauri (pas de CORS), 20 s au plus. Chaque source a son lecteur (`parseOpenverse`, `parsePixabay`, `parseUnsplash`) qui ne garde que des vignettes https aux hôtes de `img-src` dans la CSP (`api.openverse.org`, `pixabay.com`, `cdn.pixabay.com`, `images.unsplash.com`, `plus.unsplash.com`) : un nouvel hôte s'ajoute aux deux. La photo choisie est téléchargée (`fetchImage`, adresses de `downloads` dans l'ordre : l'image d'Openverse vient de n'importe quel hôte, la vignette d'Openverse prend le relais) puis copiée dans `medias/`, avec auteur, page et `credit` (source, licence) dans la fiche de la carte Image. Unsplash exige l'appel de `download_location` au choix (`trackChoice`) et un lien avec `utm_source=cosmos`. Cibles (`photoTarget`) : nouvelle carte Image (canevas), galerie d'une fiche, ou image d'une carte (bouton image de la carte, portrait de la Bible) ; pour ces deux dernières, la fenêtre propose aussi « Choisir une image sur l'appareil… » (`pickCardImage`, `addGalleryImages`).
 - **Bouton « Fiche » des cartes** : toutes les cartes typées sauf les Idées ouvrent leur fiche dans la Bible (`openInBible`). Le corps d'une carte Lien, Image ou Document vide reparaît quand on écrit le titre ou le texte, pas quand on touche un de ses boutons (il bougeait sous le doigt et le clic se perdait).
+- **Mises à jour (app de bureau)** : `updates.ts` essaie d'abord `tauri-plugin-updater` (`latest.json` de la dernière Release, signature vérifiée), sinon lit la dernière Release publiée par l'API GitHub et propose sa page. Le plugin n'est branché dans `lib.rs` que si `plugins.updater.pubkey` est rempli : la clé publique n'est pas dans `tauri.conf.json` (vide), la CI la fusionne par `TAURI_CONFIG` avec `createUpdaterArtifacts` quand les secrets existent. Une app construite sans clé (dev, fork) ne plante donc pas : elle vérifie seulement. Permissions dans `capabilities/desktop.json` (`platforms` de bureau), jamais dans `default.json` (mobile n'a pas ces plugins). Vérification au lancement 5 s après l'ouverture, une fois par jour au plus (`settings.updates`), jamais sur mobile ni dans le navigateur. Le projet ouvert est enregistré AVANT l'installation (sous Windows, l'installeur ferme l'app). Une Release brouillon ou en préversion n'est jamais proposée. Perdre la clé privée = les apps installées ne peuvent plus être mises à jour d'un clic.
+- **L'IA nomme les cartes par leur titre** : dans tout texte destiné à l'auteur (raison de Ranger, question sur mesure, alerte de cohérence), une carte s'écrit « Titre (type) », jamais par son identifiant. La consigne le demande (`nameRule`) et la relecture le garantit (`nameCards`, avec les libellés de `useVocab`, donc « décor » dans un scénario). Les identifiants restent dans le JSON (`cards`, `id`), qui sert au programme.
+- **Galerie d'une fiche** : un seul bouton, « Ajouter des photos », qui ouvre la fenêtre Photos (cible `gallery`) ; elle propose aussi « Choisir des images sur l'appareil… ». Le dépôt de fichiers sur la galerie marche toujours.
+- **Menu Exporter** : une colonne à la largeur de ses libellés (`width: max-content`, au moins 260 px), jamais la grille des Réglages, qui le rendait trop étroit avec une barre de défilement horizontale.

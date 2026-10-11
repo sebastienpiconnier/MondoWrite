@@ -93,7 +93,7 @@ export function PhotoSearch() {
           else void useCosmos.getState().addGalleryImages(target.id);
         }}
       >
-        {t.fromDevice}
+        {target.kind === "gallery" ? t.fromDeviceMany : t.fromDevice}
       </button>
     ) : null;
 
@@ -112,7 +112,7 @@ export function PhotoSearch() {
   return (
     <div className="photos">
       <div className="photos-head">
-        <h2 id="app-dialog-title">{target?.kind === "card" ? t.titleCard : t.title}</h2>
+        <h2 id="app-dialog-title">{target?.kind === "card" ? t.titleCard : target?.kind === "gallery" ? t.titleGallery : t.title}</h2>
         {fromDevice}
       </div>
       {sources}

@@ -216,8 +216,12 @@ button { font: inherit; color: inherit; }
 .settings-panel label, .settings-label { font-size: 13px; font-weight: 600; margin-top: 6px; }
 .settings-value { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
 
-.export-panel { width: 220px; }
-.export-panel .ghost-button { text-align: left; }
+/* Menu Exporter : une colonne à la largeur de ses libellés (jamais de défilement horizontal), qui défile en hauteur au besoin. */
+.export-panel {
+  display: flex; flex-direction: column; gap: 0; width: max-content; min-width: 260px; max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 96px); overflow: hidden auto;
+}
+.export-panel .ghost-button { text-align: left; padding-block: 8px; line-height: 1.3; }
 .export-error { position: absolute; right: 0; top: calc(100% + 8px); white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--danger); }
 .settings-panel label.settings-check { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
 .settings-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }

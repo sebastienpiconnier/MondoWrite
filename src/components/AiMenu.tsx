@@ -11,7 +11,7 @@ import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { typeColor } from "../types";
 import { AiError, complete, isReady } from "../ai/providers";
-import { coherencePrompt, parseCoherence, parseTidy, tidyCandidates, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
+import { coherencePrompt, parseCoherence, type CardNames, parseTidy, tidyCandidates, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
 
 type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | null;
 
@@ -55,6 +55,8 @@ export function AiMenu() {
 
   if (!isReady(config)) return null;
 
+  // Une carte citée dans un texte de l'IA : « Titre (type) », jamais son identifiant.
+  const names: CardNames = { type: (type) => types[type].label.toLocaleLowerCase(lang), untitled: all.bible.untitled };
   const titleOf = (id: string) => nodes.find((n) => n.id === id)?.data.title.trim() || all.bible.untitled;
 
   const run = async (task: "tidy" | "coherence") => {
@@ -68,12 +70,12 @@ export function AiMenu() {
     try {
       if (task === "tidy") {
         const prompt = tidyPrompt(cards, lang, kind);
-        const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards);
+        const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards, names);
         setResult({ kind: "tidy", items });
         setMessage(items.length === 0 ? t.tidyEmpty : "");
       } else {
         const prompt = coherencePrompt(cards, edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })), lang);
-        const items = parseCoherence(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards);
+        const items = parseCoherence(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards, names);
         setResult({ kind: "coherence", items });
         setMessage(items.length === 0 ? t.coherenceNone : "");
       }

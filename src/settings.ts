@@ -89,6 +89,21 @@ interface SettingsState {
   photos: PhotoSettings;
   setPhotoKey: (source: "pixabay" | "unsplash", key: string) => void;
   setPhotoSource: (source: PhotoSourceId) => void;
+  /** Mises à jour de l'app : vérification au lancement (une fois par jour au plus), dernière vérification. */
+  updates: UpdateSettings;
+  setUpdates: (updates: Partial<UpdateSettings>) => void;
+}
+
+export interface UpdateSettings {
+  /** Chercher une nouvelle version au lancement de l'app. */
+  auto: boolean;
+  /** Dernière vérification (millisecondes), pour ne pas interroger GitHub à chaque lancement. */
+  lastCheck: number;
+}
+
+function readUpdates(raw: unknown): UpdateSettings {
+  const u = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return { auto: u.auto !== false, lastCheck: typeof u.lastCheck === "number" && Number.isFinite(u.lastCheck) ? u.lastCheck : 0 };
 }
 
 export interface PhotoSettings {
@@ -105,7 +120,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -148,17 +163,19 @@ export const useSettings = create<SettingsState>((set) => ({
   photos: readPhotos(saved.photos),
   setPhotoKey: (source, key) => set((s) => ({ photos: { ...s.photos, keys: { ...s.photos.keys, [source]: cleanKey(key) } } })),
   setPhotoSource: (source) => set((s) => ({ photos: { ...s.photos, source } })),
+  updates: readUpdates(saved.updates),
+  setUpdates: (updates) => set((s) => ({ updates: { ...s.updates, ...updates } })),
 }));
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, profile, ai, bibleSections, writing, photos }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, sequencerMode, profile, ai, bibleSections, writing, photos, updates }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, profile, ai, bibleSections, writing, photos }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, profile, ai, bibleSections, writing, photos, updates }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

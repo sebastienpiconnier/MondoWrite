@@ -272,7 +272,9 @@ export const en: Messages = {
     short: "Photos",
     title: "Free photos",
     titleCard: "Card image",
+    titleGallery: "Add photos",
     fromDevice: "Choose an image on this device…",
+    fromDeviceMany: "Choose images on this device…",
     sourceLabel: "Photo source",
     search: "Search",
     queryLabel: "What you’re looking for",
@@ -308,6 +310,28 @@ export const en: Messages = {
     settingsSection: "Free photos",
     settingsKey: "{source} key",
     settingsHint: "Openverse works without a key. Pixabay and Unsplash need a free key, kept on this device only.",
+  },
+
+  // Desktop app updates: checked against GitHub, installed in one click.
+  updates: {
+    aria: "Cosmos update",
+    section: "Updates",
+    available: "Cosmos {version} is available (you have {current}).",
+    install: "Update",
+    download: "Download",
+    notes: "What’s new",
+    later: "Later",
+    downloading: "Downloading the update…",
+    downloadingPercent: "Downloading the update… {percent}",
+    restarting: "Installing: Cosmos is restarting…",
+    installError: "The installation failed. You can download the new version from its page.",
+    downloadHint: "The release page opens in your browser: download the file for your system and install it like the first time.",
+    check: "Check for updates",
+    checking: "Checking…",
+    current: "You have the latest version ({version}).",
+    error: "Couldn’t reach GitHub. Check your connection and try again.",
+    auto: "Check for updates at launch",
+    autoHint: "At most once a day. Nothing is installed without your OK, and your project is saved first.",
   },
 
   exports: {

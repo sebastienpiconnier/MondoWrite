@@ -109,14 +109,11 @@ export function Gallery({ card }: { card: CardData }) {
         {photos.map((photo, i) => (
           <Thumb key={photo} name={photo} alt={fmt(g.photoAlt, { n: i + 1, name })} onOpen={() => setOpen(photo)} />
         ))}
-        <button type="button" className="gallery-add" title={photos.length === 0 ? g.hint : undefined} onClick={() => void addGalleryImages(card.id)}>
+        {/* Un seul bouton : la fenêtre Photos propose les photos libres (Openverse, Pixabay, Unsplash) et un
+            fichier de l'appareil. La première photo ajoutée devient l'image principale. */}
+        <button type="button" className="gallery-add" title={photos.length === 0 ? g.hint : undefined} onClick={() => useCosmos.getState().openPhotos({ kind: "gallery", id: card.id })}>
           <span aria-hidden="true">+</span>
           {g.add}
-        </button>
-        {/* Une photo libre (Openverse, Pixabay, Unsplash) rejoint la galerie (la première devient l'image principale). */}
-        <button type="button" className="gallery-add" onClick={() => useCosmos.getState().openPhotos({ kind: "gallery", id: card.id })}>
-          <span aria-hidden="true">⌕</span>
-          {all.photos.short}
         </button>
       </div>
       {canDescribe && photos.length > 0 && !notes && <p className="gallery-hint">{PROVIDERS[config!.provider].local ? g.describeHintLocal : g.describeHintCloud}</p>}

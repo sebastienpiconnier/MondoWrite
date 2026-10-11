@@ -52,9 +52,11 @@ Cosmos was designed on one core principle: your structure should emerge naturall
 
 Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/cosmos/releases).
 
-> **First launch.** The app is not signed yet. On macOS, right-click the app, then “Open”. On Windows, if SmartScreen appears, click “More info”, then “Run anyway”.
+> **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, it isn't signed yet: if SmartScreen appears, click “More info”, then “Run anyway”.
 
-Cosmos is under active development (version 0.1).
+**Updates:** Cosmos tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About Cosmos”).
+
+Cosmos is under active development (version 0.1.5).
 
 ## Features
 
@@ -72,7 +74,7 @@ Cosmos is under active development (version 0.1).
 - **Images:** drop an image on a card or on the canvas, or use the card’s image button. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
 - **PDF:** drop, paste or import a PDF (the canvas “PDF” button): a **Document** card appears, with a preview of its first page, its page count, author and year when the file gives them. “Read the document” opens it in the app, page by page. The PDF is copied into `medias/`.
 - **Your author profile:** on the projects page, enter your first name, last name, pen name and contact details once. Every new screenplay puts them on its title page (author and contact), and the exported manuscript carries them on its cover page. They stay on the device and can be edited anytime.
-- **Free photos:** the canvas “Photos” button (or a sheet’s gallery) searches **Openverse** (openly licensed images, no key), **Pixabay** or **Unsplash** (free key, pasted once, kept on the device). The photo you pick becomes an Image card, with the author, link, source and licence in its sheet. A card’s image button (and a character’s portrait in the Bible) opens the same window: a free photo, or an image from the device.
+- **Free photos:** the canvas “Photos” button (or “Add photos” in a sheet’s gallery) searches **Openverse** (openly licensed images, no key), **Pixabay** or **Unsplash** (free key, pasted once, kept on the device). The photo you pick becomes an Image card, with the author, link, source and licence in its sheet. A card’s image button (and a character’s portrait in the Bible) opens the same window: a free photo, or an image from the device.
 - **Link to the sheet:** every typed card has a button that opens its sheet in the Bible.
 - **Multiple selection:** `Shift` + drag draws around cards, `Ctrl`/`Cmd` + click adds one, `Ctrl`/`Cmd`+`A` selects everything, `Esc` deselects; with a finger, the “Select” button. Selected cards move together, and a bar offers to frame them or move them to the trash.
 - **Card width:** drag the bottom-right handle of a selected card, or `Alt`+`→` and `Alt`+`←`.
@@ -164,6 +166,8 @@ It asks, it doesn’t write: no action changes your project without your say.
 - **Describe a place from a photo:** if you ask, the AI notes what the photo shows (light, materials, atmosphere), inventing nothing. It needs a model that can read images.
 - **Check consistency:** points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
 
+When the AI talks about a card, it names it by its title and type, for example “Inès Morvan (character)”.
+
 The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs/prompts-ia.md) (in French, with the prompts themselves in English).
 
 ### Exports
@@ -182,6 +186,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 - **Light, dark or system appearance.**
 - **Mouse, touch and keyboard:** every action has all three paths.
 - **Offline:** bundled fonts, no account, no server.
+- **One-click updates** (desktop): checked at most once a day, can be turned off; nothing is installed without your OK.
 
 ![The same canvas in dark mode](docs/images/canvas-dark-en.png)
 
@@ -271,7 +276,7 @@ npm test        # tests (Vitest)
 git tag v0.1.0 && git push --tags
 ```
 
-GitHub builds the installers for all three systems and puts them in a draft Release, which you then publish. The secrets needed to sign the apps (Apple developer account, Windows certificate) are listed in `release.yml`.
+GitHub builds the installers for all three systems and puts them in a draft Release, which you then publish. The secrets needed to sign the apps (Apple developer account, update signing key, Windows certificate) are listed in `release.yml`. A Release published normally (not as a pre-release) is the one the app finds and installs.
 
 ### Working on several computers
 

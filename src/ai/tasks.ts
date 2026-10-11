@@ -48,6 +48,45 @@ export function extractJson(text: string): unknown {
   return null;
 }
 
+/** Consigne commune : dans le texte écrit pour l'auteur, une carte se nomme par son titre et son type, jamais par son identifiant. */
+const nameRule = (lang: string) =>
+  `In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into ${language(lang)} (for example: Inès Morvan (${lang === "fr" ? "personnage" : "character"})). `;
+
+/** Libellés pour nommer une carte dans un texte : type affiché dans la langue de l'interface, titre d'une carte sans titre. */
+export interface CardNames {
+  type: (type: CardType) => string;
+  untitled: string;
+}
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Un texte de l'IA où une carte serait citée par son identifiant (malgré la consigne) : chaque identifiant
+ * connu devient « Titre (Type) ». Les formes usuelles autour de l'identifiant partent avec lui : guillemets,
+ * crochets, parenthèses appariées, « carte », « id : », et le titre déjà écrit juste avant (« Inès (k3x…) »).
+ */
+export function nameCards(text: string, cards: Pick<CardData, "id" | "type" | "title">[], names: CardNames): string {
+  const byId = new Map(cards.filter((c) => c.id).map((c) => [c.id, c]));
+  if (byId.size === 0 || !text) return text;
+  const ids = [...byId.keys()].sort((a, b) => b.length - a.length).map(escapeRe).join("|");
+  const id = `(${ids})`;
+  const tag = `(?:(?:id|ID|Id|identifiant|identifier)\\s*:?\\s*)?`;
+  const wrapped = [`\\(\\s*${tag}${id}\\s*\\)`, `\\[\\s*${tag}${id}\\s*\\]`, `"${id}"`, `“${id}”`, `«\\s*${id}\\s*»`, `'${id}'`, `’${id}’`, `\`${id}\``, `\\b${id}\\b`].join("|");
+  const re = new RegExp(`(?:\\b(?:id|ID|Id|identifiant|identifier)\\s*:?\\s*)?(?:${wrapped})`, "g");
+  const label = (c: Pick<CardData, "type" | "title">) => `${c.title.trim() || names.untitled} (${names.type(c.type)})`;
+  return text.replace(re, (match, ...groups: unknown[]) => {
+    const found = groups.slice(0, 9).find((g): g is string => typeof g === "string" && byId.has(g));
+    const offset = groups[9] as number;
+    const card = found ? byId.get(found) : undefined;
+    if (!card) return match;
+    // Titre déjà écrit juste avant : on ne le répète pas.
+    const title = card.title.trim();
+    const before = text.slice(0, offset).trimEnd();
+    if (title && before.toLowerCase().endsWith(title.toLowerCase())) return `(${names.type(card.type)})`;
+    return label(card);
+  });
+}
+
 const asList = (value: unknown): Record<string, unknown>[] => {
   const list = Array.isArray(value) ? value : value && typeof value === "object" ? Object.values(value).find(Array.isArray) : null;
   return Array.isArray(list) ? list.filter((item): item is Record<string, unknown> => !!item && typeof item === "object") : [];
@@ -71,6 +110,7 @@ export function tidyPrompt(cards: CardData[], lang: string, kind: "roman" | "sce
       `You help a writer organise the notes of a ${kind === "scenario" ? "screenplay" : "novel"}. Each note is an untyped idea card. ` +
       `Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), intrigue (a plot line or subplot running through several scenes), theme (a theme), question (an open question the writer asks themself). ` +
       `Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. ` +
+      nameRule(lang) +
       `Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in ${language(lang)}>"}]}. ` +
       `Use the card ids exactly as given. If no note should change, answer {"items": []}.`,
     user: JSON.stringify(tidyCandidates(cards).map(({ id, title, html }) => ({ id, title: title.trim(), text: clip(plainText(html)) }))),
@@ -80,7 +120,7 @@ export function tidyPrompt(cards: CardData[], lang: string, kind: "roman" | "sce
 /** Types que « Ranger » peut proposer : ceux que la consigne nomme (jamais Image, Lien ou Document, qui portent un fichier ou une adresse). */
 const TIDY_TYPES: ReadonlySet<CardType> = new Set(["personnage", "lieu", "scene", "intrigue", "theme", "question"]);
 
-export function parseTidy(reply: string, cards: CardData[]): TidySuggestion[] {
+export function parseTidy(reply: string, cards: CardData[], names?: CardNames): TidySuggestion[] {
   const known = new Map(tidyCandidates(cards).map((c) => [c.id, c]));
   const seen = new Set<string>();
   return asList(extractJson(reply)).flatMap((item) => {
@@ -88,7 +128,8 @@ export function parseTidy(reply: string, cards: CardData[]): TidySuggestion[] {
     const type = str(item.type) as CardType;
     if (!known.has(id) || seen.has(id) || !TIDY_TYPES.has(type)) return [];
     seen.add(id);
-    return [{ id, type, reason: clip(str(item.reason), 200) }];
+    const reason = clip(str(item.reason), 200);
+    return [{ id, type, reason: names ? nameCards(reason, cards, names) : reason }];
   });
 }
 
@@ -104,13 +145,16 @@ export function interviewPrompt(character: CardData, cards: CardData[], links: P
   return {
     system:
       `You are an interviewer helping a writer discover a character. Ask ONE open question, specific to what the notes say, that the notes do not answer yet. ` +
-      `Do not answer it, do not suggest answers, do not invent facts about the character. No preamble, no quotation marks: reply with the question only, in ${language(lang)}, in one sentence.`,
+      `Do not answer it, do not suggest answers, do not invent facts about the character. ` +
+      nameRule(lang) +
+      `No preamble, no quotation marks: reply with the question only, in ${language(lang)}, in one sentence.`,
     user: JSON.stringify({ character: { ...brief(character), text: clip(plainText(character.html), 2500) }, related: related.slice(0, 20), alreadyAsked: avoid.slice(-12) }),
   };
 }
 
 /** La question, débarrassée de ce que les modèles ajoutent autour (guillemets, « Question : », lignes en trop). */
-export function parseQuestion(reply: string): string {
+export function parseQuestion(reply: string, cards: CardData[] = [], names?: CardNames): string {
+  if (names && cards.length > 0) reply = nameCards(reply, cards, names);
   const line = reply.split("\n").map((l) => l.trim()).filter(Boolean).find((l) => l.includes("?")) ?? reply.trim().split("\n")[0] ?? "";
   return clip(line.replace(/^[-*\d.\s]*(question\s*:)?\s*/i, "").replace(/^["«“]\s*|\s*["»”]$/g, "").trim(), 300);
 }
@@ -206,17 +250,19 @@ export function coherencePrompt(cards: CardData[], links: Pick<Link, "source" | 
     system:
       `You are a continuity reader for a writer's story bible. Find statements in the notes that contradict each other (ages, dates, places, relationships, who knows what, physical details). ` +
       `Report only real contradictions between what is written, never missing information, style, or opinions. Do not propose fixes and do not rewrite anything: phrase each one as a short question to the writer, in ${language(lang)}. ` +
+      nameRule(lang) +
       `Answer with a JSON object only: {"items": [{"cards": ["<id>", "<id>"], "question": "<question>"}]}. Use the card ids exactly as given. If nothing contradicts, answer {"items": []}.`,
     user: JSON.stringify({ cards: kept.map(brief), links: links.filter((l) => ids.has(l.source) && ids.has(l.target)).map(({ source, target, label }) => ({ source, target, label })) }),
   };
 }
 
-export function parseCoherence(reply: string, cards: CardData[]): CoherenceAlert[] {
+export function parseCoherence(reply: string, cards: CardData[], names?: CardNames): CoherenceAlert[] {
   const known = new Set(cards.map((c) => c.id));
   return asList(extractJson(reply))
     .flatMap((item) => {
       const ids = [...new Set((Array.isArray(item.cards) ? item.cards : []).map(str).filter((id) => known.has(id)))];
-      const question = clip(str(item.question), 400);
+      const raw = clip(str(item.question), 400);
+      const question = names ? nameCards(raw, cards, names) : raw;
       return ids.length > 0 && question ? [{ cards: ids, question }] : [];
     })
     .slice(0, 12);
