@@ -102,17 +102,25 @@ jobs:
           TAURI_UPDATER_PUBKEY: ${{ secrets.TAURI_UPDATER_PUBKEY }}
         run: |
           if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ] || [ -z "$TAURI_UPDATER_PUBKEY" ]; then
-            echo "Pas de clé de mise à jour : l'app proposera la page de téléchargement."
+            echo "::notice::Pas de clé de mise à jour : l'app proposera la page de téléchargement."
             exit 0
           fi
-          pubkey=$(printf '%s' "$TAURI_UPDATER_PUBKEY" | tr -d '\r\n ')
           key=$(printf '%s' "$TAURI_SIGNING_PRIVATE_KEY" | tr -d '\r\n ')
           {
             echo "TAURI_SIGNING_PRIVATE_KEY=$key"
             echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=$TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
-            echo "TAURI_CONFIG={\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"$pubkey\"}}}"
           } >> "$GITHUB_ENV"
-          echo "Mises à jour signées : latest.json sera joint à la Release."
+          # La clé publique et les fichiers de mise à jour sont écrits dans tauri.conf.json (sur cette machine
+          # seulement, rien n'est poussé) : tauri-action relit ce fichier pour trouver les .sig et écrire latest.json.
+          node -e '
+            const fs = require("fs");
+            const file = "src-tauri/tauri.conf.json";
+            const conf = JSON.parse(fs.readFileSync(file, "utf8"));
+            conf.bundle.createUpdaterArtifacts = true;
+            conf.plugins.updater.pubkey = process.env.TAURI_UPDATER_PUBKEY.replace(/\s+/g, "");
+            fs.writeFileSync(file, JSON.stringify(conf, null, 2));
+          '
+          echo "::notice::Mises à jour signées : latest.json sera joint à la Release."
 
       - uses: tauri-apps/tauri-action@v0
         env:
