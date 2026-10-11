@@ -81,11 +81,11 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -236,6 +236,7 @@ export function toProject(
       ...(s.paperChosen ? { paper: s.paper } : {}),
       ...(s.sceneNumbers ? { sceneNumbers: true } : {}),
       ...(s.underlineHeadings ? { underlineHeadings: true } : {}),
+      ...(s.markdownCopies ? {} : { markdownCopies: false }),
       layout: s.nodes.map((n) => ({
         id: n.id,
         x: Math.round(n.position.x),
@@ -281,6 +282,7 @@ export interface ProjectSlice {
   paperChosen: boolean;
   sceneNumbers: boolean;
   underlineHeadings: boolean;
+  markdownCopies: boolean;
   nodes: CardNode[];
   frames: FrameNode[];
   edges: Edge[];

@@ -9,6 +9,7 @@ import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap, type Pr
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
+import { visibleSections } from "./bibleSections";
 import { importFountain } from "./screenplay/import";
 import { CARD_SIZE, firstFreeCell, freeSpot } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension } from "./media";
@@ -177,6 +178,9 @@ interface CosmosState {
   /** Scénario : souligner les en-têtes de scène dans l'éditeur et les exports. */
   underlineHeadings: boolean;
   setUnderlineHeadings: (on: boolean) => void;
+  /** Copies Markdown du projet dans markdown/ (réglage du projet, oui par défaut). */
+  markdownCopies: boolean;
+  setMarkdownCopies: (on: boolean) => void;
   /** Mode focus de l'éditeur de scénario : seule la feuille reste à l'écran. */
   focusMode: boolean;
   setFocusMode: (on: boolean) => void;
@@ -980,6 +984,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ underlineHeadings });
       touch();
     },
+    markdownCopies: true,
+    setMarkdownCopies: (markdownCopies) => {
+      set({ markdownCopies });
+      touch();
+    },
     focusMode: false,
     setFocusMode: (focusMode) => set({ focusMode }),
     nodes: [],
@@ -1515,6 +1524,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
           status: get().status === "enregistrement" ? "enregistre" : get().status,
         });
         storage.remember({ title: get().title, kind: get().kind });
+        // Copies Markdown (markdown/) : après l'enregistrement, sans jamais le retarder ni le faire échouer.
+        if (storage.copies) {
+          const snapshot = get();
+          const { lang, author, bibleSections } = useSettings.getState();
+          void import("./markdownCopies").then((m) =>
+            m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, visibleSections(bibleSections)), snapshot.markdownCopies),
+          );
+        }
       } catch (err) {
         console.error(err);
         set({ status: "erreur" });

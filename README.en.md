@@ -209,6 +209,7 @@ Each project is a folder:
 - `scenario.fountain`: the screenplay text
 - `medias/`: images
 - `corbeille/`: deleted cards, ready to restore
+- `markdown/`: the manuscript, bible and canvas as three Markdown files, with their images and links between entries, to read outside Cosmos (Obsidian, Typora, GitHub…). They are rewritten at every save: edit the text in the app, not in these copies. `markdown/versions/` keeps one version a day for 30 days, then one a month. You can turn this off in the project Settings.
 
 File and folder names are the same in every language.
 

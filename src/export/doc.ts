@@ -13,10 +13,13 @@ export interface Run {
   text: string;
   bold?: boolean;
   italic?: boolean;
+  /** Carte citée (mention, carte reliée) : un lien vers sa fiche dans les copies Markdown du projet. */
+  ref?: string;
 }
 
 export type Block =
-  | { kind: "heading"; runs: Run[] }
+  /** `anchor` : la carte dont c'est la fiche (titre visé par les liens des copies Markdown). */
+  | { kind: "heading"; runs: Run[]; anchor?: string }
   | { kind: "paragraph"; runs: Run[]; quote?: boolean; list?: "bullet" | "number"; index?: number }
   /** Image d'une carte (nom d'un fichier de medias/) ; ses octets sont dans `ExportDoc.images`. */
   | { kind: "image"; name: string };
@@ -56,11 +59,11 @@ const BLOCK_TAGS = new Set(["P", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "BLOC
 /** Texte mis en forme d'un élément : gras, italique, retours à la ligne. Les mentions perdent leur « @ ». */
 function runsOf(el: Element, style: { bold?: boolean; italic?: boolean } = {}): Run[] {
   const runs: Run[] = [];
-  const push = (text: string, s: typeof style) => {
+  const push = (text: string, s: typeof style & { ref?: string }) => {
     if (!text) return;
     const last = runs[runs.length - 1];
-    if (last && !!last.bold === !!s.bold && !!last.italic === !!s.italic) last.text += text;
-    else runs.push({ text, ...(s.bold ? { bold: true } : {}), ...(s.italic ? { italic: true } : {}) });
+    if (last && !!last.bold === !!s.bold && !!last.italic === !!s.italic && last.ref === s.ref) last.text += text;
+    else runs.push({ text, ...(s.bold ? { bold: true } : {}), ...(s.italic ? { italic: true } : {}), ...(s.ref ? { ref: s.ref } : {}) });
   };
   for (const node of Array.from(el.childNodes)) {
     if (node.nodeType === 3) {
@@ -69,7 +72,7 @@ function runsOf(el: Element, style: { bold?: boolean; italic?: boolean } = {}): 
       const child = node as Element;
       if (child.tagName === "BR") push("\n", style);
       else if (BLOCK_TAGS.has(child.tagName)) continue; // un bloc imbriqué est lu à part
-      else if (child.hasAttribute("data-mention")) push((child.textContent ?? "").replace(/^@/, ""), style);
+      else if (child.hasAttribute("data-mention")) push((child.textContent ?? "").replace(/^@/, ""), { ...style, ref: child.getAttribute("data-mention") || undefined });
       else {
         const next = {
           bold: style.bold || child.tagName === "STRONG" || child.tagName === "B",
@@ -195,6 +198,18 @@ export interface BibleStrings {
   cover?: { title: string; fields: Record<string, string> };
 }
 
+/** « Inès (y travaille), Le phare » : les cartes reliées par un fil, chacune avec sa référence (lien dans les copies Markdown). */
+export function relatedRuns(id: string, links: Pick<Link, "source" | "target" | "label">[], titleOf: (id: string) => string): Run[] {
+  const runs: Run[] = [];
+  for (const l of links.filter((x) => x.source === id || x.target === id)) {
+    const other = l.source === id ? l.target : l.source;
+    if (runs.length > 0) runs.push({ text: ", " });
+    runs.push({ text: titleOf(other), ref: other });
+    if (l.label) runs.push({ text: ` (${l.label})` });
+  }
+  return runs;
+}
+
 /** Couverture du projet en tête de la bible : tagline, pastilles, puis les textes, chacun sous son libellé. */
 function coverChapter(pitch: Pitch, cover: NonNullable<BibleStrings["cover"]>): Chapter | null {
   const blocks: Block[] = [];
@@ -229,7 +244,7 @@ export function bibleDoc(
     const entries = cards.filter((c) => c.type === type).sort((a, b) => a.title.localeCompare(b.title, info.lang));
     const blocks: Block[] = [];
     for (const card of entries) {
-      blocks.push({ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }] });
+      blocks.push({ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }], anchor: card.id });
       for (const name of new Set([card.image, ...(card.images ?? [])])) if (name && isMediaName(name)) blocks.push({ kind: "image", name });
       // Fiche d'identité d'un personnage : un paragraphe par champ rempli, libellé en gras.
       if (strings.fields && card.fiche) {
@@ -239,10 +254,8 @@ export function bibleDoc(
         }
       }
       blocks.push(...htmlToBlocks(card.html).map((b): Block => (b.kind === "heading" ? { kind: "paragraph", runs: b.runs.map((r) => ({ ...r, bold: true })) } : b)));
-      const related = links
-        .filter((l) => l.source === card.id || l.target === card.id)
-        .map((l) => `${titleOf(l.source === card.id ? l.target : l.source)}${l.label ? ` (${l.label})` : ""}`);
-      if (related.length > 0) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.linkedTo} : `, italic: true }, { text: related.join(", ") }] });
+      const related = relatedRuns(card.id, links, titleOf);
+      if (related.length > 0) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.linkedTo} : `, italic: true }, ...related] });
     }
     return { title: strings.sections[type], blocks };
   }).filter((c) => c.blocks.length > 0);

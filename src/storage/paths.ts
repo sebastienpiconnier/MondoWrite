@@ -16,3 +16,9 @@ export const TEXT_DIRS = [CARDS_DIR, MANUSCRIPT_DIR, TRASH_DIR];
 export const MEDIA_DIR = "medias";
 /** Texte du scénario (Fountain). Absent des projets roman. */
 export const SCREENPLAY_FILE = "scenario.fountain";
+/**
+ * Copies Markdown lisibles hors de l'app (manuscrit, bible, canevas), réécrites à chaque enregistrement et
+ * jamais relues. Une version par jour dans versions/AAAA-MM-JJ/. Hors de TEXT_DIRS, exprès.
+ */
+export const COPIES_DIR = "markdown";
+export const VERSIONS_DIR = "versions";

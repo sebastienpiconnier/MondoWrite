@@ -61,7 +61,7 @@ describe("HTML d'une carte ou d'une scène → blocs", () => {
   });
 
   it("une mention devient le nom de la carte ; rien d'écrit : aucun bloc", () => {
-    expect(htmlToBlocks(`<p>Elle remplace ${mentionHtml("p2", "Yann Le Goff")}.</p>`)).toEqual([{ kind: "paragraph", runs: [{ text: "Elle remplace Yann Le Goff." }] }]);
+    expect(htmlToBlocks(`<p>Elle remplace ${mentionHtml("p2", "Yann Le Goff")}.</p>`)).toEqual([{ kind: "paragraph", runs: [{ text: "Elle remplace " }, { text: "Yann Le Goff", ref: "p2" }, { text: "." }] }]);
     expect(htmlToBlocks("")).toEqual([]);
     expect(htmlToBlocks("<p></p>")).toEqual([]);
     expect(htmlToBlocks("Texte nu")).toEqual([{ kind: "paragraph", runs: [{ text: "Texte nu" }] }]);
@@ -92,13 +92,13 @@ describe("documents", () => {
     });
     expect(doc.chapters.map((c) => c.title)).toEqual(["Personnages", "Lieux", "Scènes"]);
     expect(doc.chapters[0].blocks).toEqual([
-      { kind: "heading", runs: [{ text: "Inès Morvan" }] },
+      { kind: "heading", runs: [{ text: "Inès Morvan" }], anchor: "p2" },
       { kind: "paragraph", runs: [{ text: "Passé", bold: true }] },
       { kind: "paragraph", runs: [{ text: "Gardienne." }] },
-      { kind: "paragraph", runs: [{ text: "Relié à : ", italic: true }, { text: "Phare (y travaille), Yann Le Goff" }] },
-      { kind: "heading", runs: [{ text: "Yann Le Goff" }] },
+      { kind: "paragraph", runs: [{ text: "Relié à : ", italic: true }, { text: "Phare", ref: "l1" }, { text: " (y travaille)" }, { text: ", " }, { text: "Yann Le Goff", ref: "p1" }] },
+      { kind: "heading", runs: [{ text: "Yann Le Goff" }], anchor: "p1" },
       { kind: "paragraph", runs: [{ text: "Ancien gardien." }] },
-      { kind: "paragraph", runs: [{ text: "Relié à : ", italic: true }, { text: "Inès Morvan" }] },
+      { kind: "paragraph", runs: [{ text: "Relié à : ", italic: true }, { text: "Inès Morvan", ref: "p2" }] },
     ]);
     expect(doc.chapters[2].blocks.filter((b) => b.kind === "heading").map((b) => b.runs[0].text)).toEqual(["Sans titre", "Arrivée", "Vide"]);
   });

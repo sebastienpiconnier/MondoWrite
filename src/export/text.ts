@@ -19,10 +19,59 @@ const mdRun = (run: Run) => {
   const mark = run.bold && run.italic ? "***" : run.bold ? "**" : run.italic ? "*" : "";
   return `${before}${mark}${mdEscape(core).replace(/\n/g, "  \n")}${mark}${after}`;
 };
-const mdRuns = (runs: Run[]) => runs.map(mdRun).join("");
+const mdRuns = (runs: Run[], link?: (id: string) => string | null) =>
+  runs
+    .map((run) => {
+      const url = run.ref && link ? link(run.ref) : null;
+      if (!url) return mdRun(run);
+      // Le lien enveloppe le texte sans ses espaces de bord.
+      const [, before, core, after] = /^(\s*)([\s\S]*?)(\s*)$/.exec(run.text)!;
+      return core ? `${before}[${mdRun({ ...run, text: core })}](${url})${after}` : run.text;
+    })
+    .join("");
 
-export function toMarkdown(doc: ExportDoc): string {
+export interface MarkdownOptions {
+  /** Chemin des images depuis le fichier écrit (« medias/ » pour un export à la racine du projet). */
+  media?: string;
+  /** Adresse du lien vers une carte citée (mention, carte reliée), ou null pour du texte simple. */
+  link?: (id: string) => string | null;
+  /** Ligne d'avertissement sous le titre (copies générées par l'app). */
+  note?: string;
+}
+
+/** Titres d'un document, dans l'ordre du fichier Markdown (titre, chapitres, puis titres de blocs). */
+function headingTexts(doc: ExportDoc): { text: string; anchor?: string }[] {
+  return [
+    { text: doc.title },
+    ...doc.chapters.flatMap((c) => [{ text: c.title }, ...c.blocks.flatMap((b) => (b.kind === "heading" ? [{ text: b.runs.map((r) => r.text).join(""), anchor: b.anchor }] : []))]),
+  ];
+}
+
+/** Ancre d'un titre à la façon de GitHub (aussi Typora, VS Code…) : minuscules, sans ponctuation, tirets. */
+export const headingSlug = (text: string) =>
+  text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\s_-]/gu, "")
+    .replace(/\s/g, "-");
+
+/** Ancre de chaque fiche (titre marqué `anchor`) dans le fichier Markdown, doublons numérotés comme GitHub. */
+export function markdownAnchors(doc: ExportDoc): Map<string, string> {
+  const seen = new Map<string, number>();
+  const anchors = new Map<string, string>();
+  for (const h of headingTexts(doc)) {
+    const base = headingSlug(h.text);
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    if (h.anchor && !anchors.has(h.anchor)) anchors.set(h.anchor, n === 0 ? base : `${base}-${n}`);
+  }
+  return anchors;
+}
+
+export function toMarkdown(doc: ExportDoc, options: MarkdownOptions = {}): string {
+  const media = options.media ?? "medias/";
   const out: string[] = [`# ${mdEscape(doc.title)}`];
+  if (options.note) out.push(`> ${mdEscape(options.note)}`);
   if (doc.author) out.push(mdEscape(doc.author));
   if (doc.contact?.length) out.push(doc.contact.map(mdEscape).join("  \n"));
   for (const chapter of doc.chapters) {
@@ -37,14 +86,14 @@ export function toMarkdown(doc: ExportDoc): string {
         flush();
         out.push(`### ${mdRuns(block.runs)}`);
       } else if (block.kind === "image") {
-        // Adresse relative au dossier du projet : l'image reste dans medias/.
+        // Adresse relative au fichier écrit : l'image reste dans medias/.
         flush();
-        out.push(`![](medias/${encodeURI(block.name)})`);
+        out.push(`![](${media}${encodeURI(block.name)})`);
       } else if (block.list) {
-        list.push(`${block.quote ? "> " : ""}${block.list === "number" ? `${block.index ?? 1}.` : "-"} ${mdRuns(block.runs)}`);
+        list.push(`${block.quote ? "> " : ""}${block.list === "number" ? `${block.index ?? 1}.` : "-"} ${mdRuns(block.runs, options.link)}`);
       } else {
         flush();
-        out.push(`${block.quote ? "> " : ""}${mdRuns(block.runs)}`);
+        out.push(`${block.quote ? "> " : ""}${mdRuns(block.runs, options.link)}`);
       }
     }
     flush();

@@ -1089,6 +1089,13 @@ export const fr = {
     source: "Code source :",
   },
 
+  // Copies Markdown du projet (dossier markdown/) : réglage du projet et avertissement en tête de chaque copie.
+  copies: {
+    note: "Copie générée par Cosmos à chaque enregistrement : une modification faite ici serait perdue. Écris dans l’app.",
+    setting: "Copies Markdown dans le dossier du projet",
+    hint: "Le manuscrit, la bible et le canevas en Markdown (dossier markdown/), lisibles hors de Cosmos. Une version par jour, gardée 30 jours, puis une par mois.",
+  },
+
   // Mises à jour de l’app de bureau : vérification auprès de GitHub, installation d’un clic.
   updates: {
     aria: "Mise à jour de Cosmos",

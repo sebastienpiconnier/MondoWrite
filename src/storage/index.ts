@@ -72,6 +72,22 @@ export interface Storage {
    * `label` décrit le format dans le dialogue. Renvoie false si l'auteur annule.
    */
   saveAs(file: SavedFile, label: string): Promise<boolean>;
+  /** Copies Markdown du dossier projet (markdown/) : absent dans le navigateur, où il n'y a pas de dossier à lire. */
+  copies?: CopyStore;
+}
+
+/** Fichiers de markdown/ du projet sélectionné. Chemins relatifs à markdown/ (« bible.md », « versions/2026-10-11/bible.md »). */
+export interface CopyStore {
+  /** Projet sélectionné (pour savoir quand les copies connues ne valent plus). */
+  key(): string | null;
+  /** Contenu actuel des fichiers donnés (ceux qui manquent sont absents du résultat). */
+  read(names: string[]): Promise<FileMap>;
+  /** Écrit des fichiers (dossiers créés au besoin) et en supprime d'autres. */
+  write(files: FileMap, removed: string[]): Promise<void>;
+  /** Jours des versions gardées (noms des dossiers de versions/). */
+  versions(): Promise<string[]>;
+  /** Supprime des versions entières. */
+  removeVersions(days: string[]): Promise<void>;
 }
 
 /** Fichier produit par un export. */

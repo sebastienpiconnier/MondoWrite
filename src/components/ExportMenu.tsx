@@ -10,14 +10,11 @@ import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
-import { CARD_TYPES } from "../types";
-import { chapterNumbers, chapterOf } from "../plan";
-import { bookOrder, isPageKind } from "../book";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
 import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
-import { bibleDoc, manuscriptDoc } from "../export/doc";
+import { bibleOf, canvasOf, manuscriptOf } from "../export/projectDocs";
 import { visibleSections } from "../bibleSections";
-import { canvasBounds, canvasDoc } from "../export/canvas";
+import { canvasBounds } from "../export/canvas";
 import { boxes, frameBox } from "../projectState";
 import { fileName } from "../screenplay/export";
 
@@ -39,7 +36,7 @@ async function canvasViewport(): Promise<HTMLElement | null> {
 }
 
 export function ExportMenu() {
-  const { t: all, types, kind } = useVocab();
+  const { t: all, kind } = useVocab();
   const t = all.screenplay.export;
   const x = useT().exports;
   const [open, setOpen] = useState(false);
@@ -95,6 +92,8 @@ export function ExportMenu() {
     const { lang, author } = useSettings.getState();
     return { title: title.trim() || all.home.untitled, author: author.trim(), lang };
   };
+  // Mêmes documents que les copies Markdown du dossier projet (export/projectDocs.ts).
+  const ctx = () => ({ t: all, lang: useSettings.getState().lang, author: useSettings.getState().author });
 
   const screenplayFile = (format: ExportFormat) => async () => {
     const { screenplay, savedScreenplay, lastFiles, title, paper, sceneNumbers, underlineHeadings } = useCosmos.getState();
@@ -112,73 +111,29 @@ export function ExportMenu() {
   };
 
   const manuscriptFile = (format: DocFormat) => async () => {
-    const { nodes, plan, manuscript, paper } = useCosmos.getState();
-    const cards = nodes.map((n) => n.data);
-    const order = bookOrder(nodes, plan);
-    const numbers = chapterNumbers(plan, order);
     // Le manuscrit porte les coordonnées du profil sur sa page de garde (pas la bible ni l'EPUB).
-    const contact = contactLines(useSettings.getState().profile);
-    const doc = manuscriptDoc({ ...info(), ...(format === "epub" ? {} : { contact }) }, order, cards, manuscript, all.manuscript.untitled, (id) => {
-      // Page du livre (dédicace, prologue…) : un chapitre à elle seule, sous son nom.
-      const page = cards.find((c) => c.id === id)?.page;
-      if (isPageKind(page)) return { id: `page:${id}`, title: all.book.kinds[page] };
-      const chapter = chapterOf(plan, id);
-      if (!chapter) return null;
-      const n = numbers.get(chapter.id) ?? 0;
-      return { id: chapter.id, title: chapter.title.trim() ? fmt(all.chapters.numberedTitle, { n, title: chapter.title.trim() }) : fmt(all.chapters.numbered, { n }) };
-    });
+    const contact = format === "epub" ? [] : contactLines(useSettings.getState().profile);
+    const doc = manuscriptOf(useCosmos.getState(), ctx(), contact);
     if (doc.chapters.length === 0) return null;
-    return exportDocument(doc, format, { name: doc.title, paper, contents: x.contents });
+    return exportDocument(doc, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });
   };
 
   const bibleFile = (format: DocFormat) => async () => {
-    const { nodes, edges, paper, pitch } = useCosmos.getState();
-    const sections = Object.fromEntries(CARD_TYPES.map((type) => [type, types[type].section])) as Record<(typeof CARD_TYPES)[number], string>;
-    const base = info();
-    const doc = bibleDoc(
-      { ...base, title: fmt(x.bibleName, { title: base.title }) },
-      nodes.map((n) => n.data),
-      edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
-      {
-        sections,
-        untitled: all.bible.untitled,
-        linkedTo: all.bible.linkedTo,
-        fields: { ...all.character.fields, ...all.fiche.fields },
-        arcTypes: all.character.arcTypes,
-        cover: { title: all.pitch.toc, fields: all.pitch.fields },
-      },
-      pitch,
-      // Les rubriques de la Bible, dans son ordre : ce qu'on masque dans la Bible ne s'exporte pas.
-      visibleSections(useSettings.getState().bibleSections),
-    );
+    // Les rubriques de la Bible, dans son ordre : ce qu'on masque dans la Bible ne s'exporte pas.
+    const doc = bibleOf(useCosmos.getState(), ctx(), visibleSections(useSettings.getState().bibleSections));
     // Le Markdown cite les images de medias/ ; le PDF et le Word les intègrent.
     const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (name) => storage.mediaUrl(name));
-    return exportDocument(full, format, { name: doc.title, paper, contents: x.contents });
+    return exportDocument(full, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });
   };
 
   const canvasFile = (format: CanvasFormat) => async (): Promise<ExportedFile | null> => {
-    const { nodes, frames, edges, title } = useCosmos.getState();
+    const { nodes, title } = useCosmos.getState();
     if (nodes.length === 0) return null;
     const base = info();
     const name = fmt(x.canvasName, { title: base.title });
     const file = (extension: string, mime: string, data: Uint8Array): ExportedFile => ({ name: `${fileName(name, "cosmos")}.${extension}`, extension, mime, data });
     if (format === "docx" || format === "md") {
-      const cardBoxes = boxes(nodes);
-      const doc = canvasDoc(
-        { ...base, title: name },
-        nodes.map((n, i) => ({ card: n.data, box: cardBoxes[i] })),
-        frames.map((f) => ({ id: f.id, title: f.data.title, box: frameBox(f) })),
-        edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })),
-        {
-          types: Object.fromEntries(CARD_TYPES.map((type) => [type, types[type].label])) as Record<(typeof CARD_TYPES)[number], string>,
-          untitled: all.bible.untitled,
-          loose: x.canvasLoose,
-          untitledFrame: x.untitledFrame,
-          linkedTo: all.bible.linkedTo,
-          fields: { ...all.character.fields, ...all.fiche.fields },
-          arcTypes: all.character.arcTypes,
-        },
-      );
+      const doc = canvasOf(useCosmos.getState(), ctx());
       const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (n) => storage.mediaUrl(n));
       return exportDocument(full, format, { name, paper: useCosmos.getState().paper, contents: x.contents });
     }

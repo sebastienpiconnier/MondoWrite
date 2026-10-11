@@ -146,6 +146,7 @@ src/
   settings.ts           Réglages de l'appareil : langue, apparence, présentation du séquencier, profil d'auteur, mises à jour (appliqués avant le premier rendu)
   updates.ts            Nouvelles versions (app de bureau) : comparaison des versions, dernière Release GitHub, plugin de mise à jour, état partagé (useUpdates)
   profile.ts            Profil de l'auteur (prénom, nom, nom de plume, coordonnées) : nom signé, lignes de contact, reprise de l'ancien nom d'auteur (fonctions pures)
+  markdownCopies.ts     Copies Markdown du projet (markdown/ : manuscrit, bible, canevas), liens vers les fiches, versions du jour et nettoyage
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
   i18n/
     fr.ts               Textes de référence (type Messages)
@@ -234,6 +235,7 @@ src/
     images.ts           Images d'un document à exporter : lues dans medias/, réduites, en JPEG (chargé à la demande)
     canvas.ts           Export du canevas : texte par cadre dans l'ordre de lecture (Word, Markdown), taille de l'image (fonctions pures)
     canvasImage.ts      Image du canevas (html-to-image) et PDF A4 ou A1 qui la porte (chargé à la demande)
+    projectDocs.ts      Documents du projet ouvert (manuscritOf, bibleOf, canvasOf), communs au menu Exporter et aux copies Markdown
     index.ts            exportDocument() : formats, noms de fichier, imports dynamiques
   storage/
     paths.ts            Format du dossier projet
@@ -259,6 +261,7 @@ MonRoman/
   medias/<nom>.jpg     images des cartes (copiées dans le projet), et PDF des cartes Document (medias/<nom>.pdf)
   corbeille/<id>.md    cartes supprimées, même format plus une ligne `corbeille:` (jour, place, fils, scène du scénario)
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
+  markdown/            copies lisibles hors de l'app (manuscrit.md pour un roman, bible.md, canevas.md), jamais relues ; versions/AAAA-MM-JJ/ une par jour
 ```
 
 ```markdown
@@ -486,3 +489,4 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **L'IA nomme les cartes par leur titre** : dans tout texte destiné à l'auteur (raison de Ranger, question sur mesure, alerte de cohérence), une carte s'écrit « Titre (type) », jamais par son identifiant. La consigne le demande (`nameRule`) et la relecture le garantit (`nameCards`, avec les libellés de `useVocab`, donc « décor » dans un scénario). Les identifiants restent dans le JSON (`cards`, `id`), qui sert au programme.
 - **Galerie d'une fiche** : un seul bouton, « Ajouter des photos », qui ouvre la fenêtre Photos (cible `gallery`) ; elle propose aussi « Choisir des images sur l'appareil… ». Le dépôt de fichiers sur la galerie marche toujours.
 - **Menu Exporter** : une colonne à la largeur de ses libellés (`width: max-content`, au moins 260 px), jamais la grille des Réglages, qui le rendait trop étroit avec une barre de défilement horizontale.
+- **Copies Markdown (`markdown/`)** : écrites APRÈS un enregistrement réussi (`syncCopies`, file d'attente, erreurs avalées : une copie manquée ne fait jamais échouer l'enregistrement), seulement par le stockage Tauri (`storage.copies`, absent du navigateur où `readAll` relirait tout). Elles ne sont ni dans la `FileMap` ni dans `TEXT_DIRS` : jamais relues, la source reste `cartes/`, `manuscrit/`, `cosmos.json`. Rien n'est réécrit si le texte n'a pas changé (copies connues relues une fois par projet), donc pas de version pour un simple déplacement de carte. Pas de date dans le texte, sinon chaque enregistrement le changerait. Version du jour : `versions/AAAA-MM-JJ/` complète, réécrite à chaque changement du jour (elle garde le dernier état) ; `versionsToRemove` garde 30 jours, puis la dernière version de chaque mois. C'est le seul endroit où l'app supprime des fichiers d'elle-même. Liens : mentions et cartes reliées (`Run.ref`) vers l'ancre de la fiche (`markdownAnchors`, ancres à la GitHub) dans `bible.md`, sinon `canevas.md` ; images `../medias/` (`../../../medias/` dans une version). Réglage du projet `markdownCopies` (absent = oui, écrit `false` seulement quand l'auteur l'arrête). Le menu Exporter et les copies passent par les mêmes documents (`export/projectDocs.ts`).

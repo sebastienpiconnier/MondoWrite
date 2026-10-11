@@ -98,6 +98,8 @@ export interface ProjectMeta {
   sceneNumbers?: boolean;
   /** Scénario : en-têtes de scène soulignés (éditeur, PDF, FDX). Absent : non. */
   underlineHeadings?: boolean;
+  /** Copies Markdown (manuscrit, bible, canevas) dans markdown/. Absent : oui ; false : arrêtées. */
+  markdownCopies?: boolean;
   layout: CardLayout[];
   links: Link[];
   /** Cadres de regroupement. Absent : aucun. Les cartes n'y sont pas rattachées : c'est leur position qui compte. */

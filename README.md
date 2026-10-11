@@ -210,6 +210,7 @@ Chaque projet est un dossier :
 - `scenario.fountain` : le texte du scénario
 - `medias/` : les images
 - `corbeille/` : les cartes supprimées, restaurables
+- `markdown/` : le manuscrit, la bible et le canevas en trois fichiers Markdown, avec leurs images et des liens entre les fiches, à lire hors de Cosmos (Obsidian, Typora, GitHub…). Ils sont réécrits à chaque enregistrement : modifiez le texte dans l'app, pas dans ces copies. `markdown/versions/` en garde une version par jour pendant 30 jours, puis une par mois. Le réglage se coupe dans les Réglages du projet.
 
 ```markdown
 ---

@@ -7,7 +7,7 @@
 import type { CardData, CardType, Link } from "../types";
 import { isMediaName } from "../media";
 import { ficheText, sheetFields } from "../character";
-import { htmlToBlocks, type Block, type Chapter, type ExportDoc } from "./doc";
+import { htmlToBlocks, relatedRuns, type Block, type Chapter, type ExportDoc } from "./doc";
 
 export interface Box {
   x: number;
@@ -78,7 +78,7 @@ export function canvasDoc(
     [...frames.filter((o) => o.id !== f.id && holds(o.box, f.box)).sort((a, b) => area(b.box) - area(a.box)), f].map(frameName).join(" › ");
 
   const blocksOf = (card: CardData): Block[] => {
-    const blocks: Block[] = [{ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }] }];
+    const blocks: Block[] = [{ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }], anchor: card.id }];
     blocks.push({ kind: "paragraph", runs: [{ text: strings.types[card.type], italic: true }] });
     if (card.image && isMediaName(card.image)) blocks.push({ kind: "image", name: card.image });
     for (const key of sheetFields(card.type)) {
@@ -86,10 +86,8 @@ export function canvasDoc(
       if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: ficheText(key, value, strings.arcTypes) }] });
     }
     blocks.push(...htmlToBlocks(card.html).map((b): Block => (b.kind === "heading" ? { kind: "paragraph", runs: b.runs.map((r) => ({ ...r, bold: true })) } : b)));
-    const related = links
-      .filter((l) => l.source === card.id || l.target === card.id)
-      .map((l) => `${titleOf(l.source === card.id ? l.target : l.source)}${l.label ? ` (${l.label})` : ""}`);
-    if (related.length > 0) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.linkedTo} : `, italic: true }, { text: related.join(", ") }] });
+    const related = relatedRuns(card.id, links, titleOf);
+    if (related.length > 0) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.linkedTo} : `, italic: true }, ...related] });
     return blocks;
   };
 

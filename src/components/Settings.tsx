@@ -2,6 +2,7 @@
 // Listes déroulantes natives : accessibles au clavier, au lecteur d'écran et au doigt.
 
 import { UpdateSettings } from "./Updates";
+import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, type ThemePref } from "../settings";
@@ -53,11 +54,12 @@ export function Settings({ project = true }: { project?: boolean }) {
   const setPaper = useCosmos((s) => s.setPaper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
+  const markdownCopies = useCosmos((s) => s.markdownCopies);
   const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -176,6 +178,18 @@ export function Settings({ project = true }: { project?: boolean }) {
                 <input type="checkbox" checked={underlineHeadings} onChange={(e) => useCosmos.getState().setUnderlineHeadings(e.target.checked)} />
                 {t.kinds.underlineHeadings}
               </label>
+            </>
+          )}
+          {/* Copies Markdown du projet (markdown/) : seulement là où il y a un vrai dossier (pas le navigateur). */}
+          {storage.copies && (
+            <>
+              <label className="settings-check" htmlFor={ids.copies}>
+                <input id={ids.copies} type="checkbox" checked={markdownCopies} aria-describedby={ids.copiesHint} onChange={(e) => useCosmos.getState().setMarkdownCopies(e.target.checked)} />
+                {t.copies.setting}
+              </label>
+              <p className="settings-hint" id={ids.copiesHint}>
+                {t.copies.hint}
+              </p>
             </>
           )}
           <button type="button" className="ghost-button settings-trash" onClick={() => { setOpen(false); useCosmos.getState().setDialog("trash"); }}>

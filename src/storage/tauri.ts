@@ -8,7 +8,7 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readFile, readTextFile, remove, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
-import { MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, type FileMap } from "./paths";
+import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
@@ -40,7 +40,51 @@ function adoptLegacyFolder() {
   }
 }
 
+/** Chemin d'un fichier de markdown/ (relatif, avec des « / ») dans le dossier du projet. */
+async function copyPath(name: string): Promise<string | null> {
+  const dir = await projectFolder();
+  return dir ? join(dir, COPIES_DIR, ...name.split("/")) : null;
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
 export const tauriStorage: Storage = {
+  copies: {
+    key: () => current,
+    async read(names) {
+      const out: FileMap = {};
+      for (const name of names) {
+        const path = await copyPath(name);
+        if (path && (await exists(path))) out[name] = await readTextFile(path);
+      }
+      return out;
+    },
+    async write(files, removed) {
+      for (const [name, content] of Object.entries(files)) {
+        const path = await copyPath(name);
+        if (!path) throw new Error("Aucun dossier projet choisi");
+        const parent = await copyPath(name.split("/").slice(0, -1).join("/"));
+        if (parent) await mkdir(parent, { recursive: true });
+        await writeTextFile(path, content);
+      }
+      for (const name of removed) {
+        const path = await copyPath(name);
+        if (path && (await exists(path))) await remove(path);
+      }
+    },
+    async versions() {
+      const dir = await copyPath(VERSIONS_DIR);
+      if (!dir || !(await exists(dir))) return [];
+      return (await readDir(dir)).filter((e) => e.isDirectory && DAY.test(e.name)).map((e) => e.name);
+    },
+    async removeVersions(days) {
+      for (const day of days.filter((d) => DAY.test(d))) {
+        const path = await copyPath(`${VERSIONS_DIR}/${day}`);
+        if (path && (await exists(path))) await remove(path, { recursive: true });
+      }
+    },
+  },
+
   kind: "tauri",
   canPickFolder: !mobile,
   location: () => (mobile || !current ? null : baseName(current)),
