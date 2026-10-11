@@ -56,7 +56,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** Cosmos tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About Cosmos”).
 
-Cosmos is under active development (version 0.1.5).
+Cosmos is under active development (version 0.1.6).
 
 ## Features
 
