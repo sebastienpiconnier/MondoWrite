@@ -6,6 +6,8 @@
 
 ![The Cosmos canvas: four cards (idea, character, place, scene) connected by labeled threads](docs/images/canvas-en.png)
 
+<a href="https://github.com/sebastienpiconnier/cosmos/blob/main/docs/videos/cosmos-presentation-en.mp4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the Cosmos presentation video (1 min)"></a>
+
 [Download](#download) · [Features](#features) · [AI](#ai-if-you-want-it) · [Platforms](#platforms) · [Development](#development)
 
 ---

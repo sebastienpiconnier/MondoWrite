@@ -6,6 +6,8 @@
 
 <img width="1389" height="868" alt="preview (3)" src="https://github.com/user-attachments/assets/05dfbce7-cc79-433a-bb5a-b9e2ab889e2b" />
 
+<a href="https://github.com/sebastienpiconnier/cosmos/blob/main/docs/videos/cosmos-presentation-fr.mp4"><img src="docs/images/video-poster-fr.jpg" width="640" alt="Voir la vidéo de présentation de Cosmos (1 min)"></a>
+
 [Télécharger](#télécharger) · [Fonctionnalités](#fonctionnalités) · [L'IA](#lia-si-vous-le-souhaitez) · [Plateformes](#plateformes) · [Développer](#pour-développer)
 
 ---
