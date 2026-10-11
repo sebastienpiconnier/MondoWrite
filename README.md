@@ -10,20 +10,41 @@
 
 ---
 
-## L'idée
+## 🏛️ Chers auteurs architectes
 
-Une histoire commence rarement par le chapitre un. Elle commence par des fragments : une image, un personnage, un lieu, une question sans réponse. Cosmos donne à ces fragments un endroit où se poser, puis les aide à devenir un monde cohérent, un plan et enfin un texte.
+Vous ne commencez pas un roman en naviguant à vue. Vous ne faites pas sauter vos personnages du haut d'une falaise en espérant qu'un filet apparaisse au chapitre suivant.
 
-En grec, *kosmos* désigne l'ordre du monde, né du chaos. C'est exactement le chemin que l'app te fait parcourir.
+Pour vous, écrire est un acte de construction. Avant d'aligner la première phrase du chapitre un, vous avez besoin de voir l'ossature, d'éprouver la charpente, de cartographier la géographie du monde et d'établir les motivations profondes de chaque protagoniste.
 
-Cosmos s'adresse aux auteurs « architectes », ceux qui préparent avant d'écrire. Elle repose sur quelques partis pris :
+Mais jusqu'ici, vous deviez jongler : un tableau virtuel d'un côté, un traitement de texte de l'autre, des dossiers de notes éparpillés, des fiches personnages dupliquées trois fois… Le chaos avant l'ordre.
 
-- **Un seul contenu, plusieurs vues.** Canevas, Bible, Plan et Manuscrit sont quatre lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre.
-- **La structure émerge, on ne la configure pas.** Aucun formulaire, aucun champ obligatoire. Une carte naît « Idée » et devient Personnage, Lieu ou Scène quand tu le décides.
-- **Trois gestes suffisent :** taper, tirer un fil, déposer.
-- **Tes textes t'appartiennent.** Un projet est un dossier de fichiers Markdown, lisibles dans n'importe quel éditeur, avec ou sans Cosmos. Aucun compte, aucun serveur.
-- **L'IA questionne, elle n'écrit pas à ta place.** Elle est optionnelle, et c'est toi qui choisis laquelle brancher, y compris un modèle qui tourne sur ta machine.
-- **Libre et gratuit.** Cosmos est un logiciel libre, distribué sous licence GPL-3.0 : tu peux l'utiliser, l'étudier, le modifier et le partager.
+En grec, *kosmos* désigne justement l'ordre du monde, né du chaos.
+
+## 📐 Un outil pensé pour votre méthode de travail
+
+Cosmos a été conçu sur un principe fondamental : votre structure doit émerger naturellement, sans bureaucratie.
+
+```text
+   [ IDÉES & FRAGMENTS ] ──► ( Canevas interactif )
+                                     │
+           ┌─────────────────────────┼─────────────────────────┐
+           ▼                         ▼                         ▼
+   [ BIBLE DU RÉCIT ]       [ PLAN & GABARITS ]      [ MANUSCRIT CLEAN ]
+   Fiches synchronisées     3 actes, Save the Cat    Fichiers Markdown
+   sans aucune retape       ou Voyage du héros       locaux et pérennes
+```
+
+- **4 vues, 1 seul contenu.** Modifiez un trait de caractère sur le Canevas, la Bible se met à jour immédiatement. Renommez une scène dans le Plan, le Manuscrit suit. Vous ne recopiez plus jamais la même information.
+- **Des gabarits de structure éprouvés.** Placez vos scènes selon le Voyage du héros, Save the Cat! ou la structure en trois actes. Visualisez la chronologie par intrigue pour repérer d'un coup d'œil où un sous-fil narratif s'estompe.
+- **La fiche personnage comme moteur dramatique.** Définissez en trois cases lisibles le moteur de vos personnages (Veut, A besoin de, Blessure). Laissez l'assistant vous poser les bonnes questions pour combler vos zones d'ombre.
+- **Souveraineté et pérennité.** Pas de cloud propriétaire, pas d'abonnement, pas de format verrouillé. Vos projets sont de simples dossiers de fichiers Markdown enregistrés sur votre machine. Vous gardez 100 % du contrôle sur votre œuvre.
+- **Libre et gratuit.** Cosmos est un logiciel libre, distribué sous licence GPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
+
+**L'IA ne rédigera pas votre livre.** Si vous choisissez de l'activer (y compris un modèle 100 % local sur votre ordinateur), elle se contente d'analyser vos incohérences, de remettre vos notes en ordre et de vous poser des questions pointues. Vous restez l'unique architecte.
+
+## 🧱 Prêts à bâtir votre prochain univers ?
+
+[Téléchargez Cosmos](https://github.com/sebastienpiconnier/cosmos/releases/latest) gratuitement pour macOS, Windows ou Linux, et transformez vos fragments d'idées en un monde parfaitement ordonné.
 
 ## Télécharger
 

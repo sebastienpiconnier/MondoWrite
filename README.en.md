@@ -10,20 +10,41 @@
 
 ---
 
-## The idea
+## 🏛️ Dear architect writers
 
-A story rarely starts with chapter one. It starts with fragments: an image, a character, a place, a question with no answer yet. Cosmos gives those fragments somewhere to land, then helps them grow into a coherent world, an outline and finally a text.
+You don’t start a novel by sailing blind. You don’t push your characters off a cliff hoping a net will appear in the next chapter.
 
-In Greek, *kosmos* means the order of the world, born out of chaos. That is exactly the path the app takes you along.
+For you, writing is an act of construction. Before you set down the first sentence of chapter one, you need to see the skeleton, test the framework, map the geography of the world and pin down the deep motivations of every character.
 
-Cosmos is made for “architect” writers, the ones who plan before they write. It rests on a few choices:
+But until now, you had to juggle: a virtual board on one side, a word processor on the other, scattered folders of notes, character sheets copied three times over… Chaos before order.
 
-- **One content, several views.** Canvas, Bible, Outline and Manuscript are four readings of the same project. Nothing is ever copied from one view to another.
-- **Structure emerges, you don’t configure it.** No forms, no required fields. A card is born an “Idea” and becomes a Character, a Place or a Scene when you decide so.
-- **Three gestures are enough:** type, drag a thread, drop.
-- **Your texts are yours.** A project is a folder of Markdown files, readable in any editor, with or without Cosmos. No account, no server.
-- **AI asks questions, it doesn’t write for you.** It is optional, and you choose which one to plug in, including a model running on your own machine.
+In Greek, *kosmos* means precisely that: the order of the world, born out of chaos.
+
+## 📐 A tool built around the way you work
+
+Cosmos was designed on one core principle: your structure should emerge naturally, without bureaucracy.
+
+```text
+   [ IDEAS & FRAGMENTS ] ──► ( Interactive canvas )
+                                     │
+           ┌─────────────────────────┼─────────────────────────┐
+           ▼                         ▼                         ▼
+   [ STORY BIBLE ]          [ OUTLINE & TEMPLATES ]  [ CLEAN MANUSCRIPT ]
+   Synced character and     3 acts, Save the Cat     Local, future-proof
+   place sheets, no retype  or Hero’s Journey        Markdown files
+```
+
+- **4 views, 1 single content.** Change a character trait on the Canvas and the Bible updates instantly. Rename a scene in the Outline and the Manuscript follows. You never copy the same information twice.
+- **Proven structure templates.** Place your scenes along the Hero’s Journey, Save the Cat! or the three-act structure. See the timeline by plotline and spot at a glance where a subplot fades out.
+- **The character sheet as a dramatic engine.** Define your characters’ engine in three readable boxes (Wants, Needs, Wound). Let the assistant ask you the right questions to fill in the blanks.
+- **Ownership and longevity.** No proprietary cloud, no subscription, no locked format. Your projects are plain folders of Markdown files saved on your own machine. You keep 100% control over your work.
 - **Free and open source.** Cosmos is free software, released under the GPL-3.0: you can use it, study it, change it and share it.
+
+**AI will not write your book.** If you choose to turn it on (including a 100% local model on your computer), it only points out inconsistencies, puts your notes back in order and asks you sharp questions. You remain the sole architect.
+
+## 🧱 Ready to build your next universe?
+
+[Download Cosmos](https://github.com/sebastienpiconnier/cosmos/releases/latest) for free on macOS, Windows or Linux, and turn your fragments of ideas into a perfectly ordered world.
 
 ## Download
 
