@@ -153,6 +153,28 @@ jobs:
           # est « la dernière », celle que l'app trouve (latest.json, API de GitHub).
           releaseDraft: true
           prerelease: false
-          # Windows : la mise à jour passe par l'installeur .exe (NSIS), comme le premier téléchargement.
-          updaterJsonPreferNsis: true
+          # latest.json est écrit une seule fois, par la tâche « latest-json » ci-dessous : les quatre
+          # fabrications l'écrivaient en même temps et la dernière effaçait les autres plateformes.
+          includeUpdaterJson: false
           args: ${{ matrix.args }}
+
+  # Mises à jour dans l'app : latest.json pour toutes les plateformes, d'après les .sig de la Release.
+  latest-json:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Version
+        id: version
+        run: echo "tag=${{ github.ref_type == 'tag' && github.ref_name || '' }}" >> "$GITHUB_OUTPUT"
+      - name: latest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # Lancé à la main : v + la version de l'app, comme tauri-action.
+          if [ -z "$RELEASE_TAG" ]; then RELEASE_TAG="v$(node -p 'require("./package.json").version')"; fi
+          RELEASE_TAG="$RELEASE_TAG" node scripts/updater-json.mjs
