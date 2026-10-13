@@ -1,4 +1,4 @@
-// Logo de Cosmos : une constellation (étoiles éparses, quelques-unes reliées, une qui brille), comme
+// Logo de MondoWrite : une constellation (étoiles éparses, quelques-unes reliées, une qui brille), comme
 // l'icône de l'app. Une seule source pour la barre du haut et la page des projets.
 
 export function BrandMark({ size = 28 }: { size?: number }) {

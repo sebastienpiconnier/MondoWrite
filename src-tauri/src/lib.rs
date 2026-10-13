@@ -44,5 +44,5 @@ pub fn run() {
       Ok(())
     })
     .run(tauri::generate_context!())
-    .expect("erreur au lancement de Cosmos");
+    .expect("erreur au lancement de MondoWrite");
 }

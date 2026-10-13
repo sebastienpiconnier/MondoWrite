@@ -4,9 +4,9 @@ D'après deux modèles de bible apportés par l'auteur (bible de série et bible
 
 Principe directeur : **la Bible de travail se remplit toute seule à partir du canevas ; la bible de présentation (pour un éditeur, un producteur) est un export.** On ne demande jamais à l'auteur de remplir une rubrique « pour remplir ».
 
-## Ce que les modèles demandent, et où Cosmos l'a déjà
+## Ce que les modèles demandent, et où MondoWrite l'a déjà
 
-| Rubrique des modèles | Dans Cosmos aujourd'hui | Manque |
+| Rubrique des modèles | Dans MondoWrite aujourd'hui | Manque |
 |---|---|---|
 | Titre, genre, cible, format, volume, POV, temps | titre du projet, objectif de mots | une « couverture » du projet |
 | Logline, tagline, résumé éditorial, note d'intention | rien | idem |

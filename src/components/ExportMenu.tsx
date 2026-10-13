@@ -131,7 +131,7 @@ export function ExportMenu() {
     if (nodes.length === 0) return null;
     const base = info();
     const name = fmt(x.canvasName, { title: base.title });
-    const file = (extension: string, mime: string, data: Uint8Array): ExportedFile => ({ name: `${fileName(name, "cosmos")}.${extension}`, extension, mime, data });
+    const file = (extension: string, mime: string, data: Uint8Array): ExportedFile => ({ name: `${fileName(name, "mondowrite")}.${extension}`, extension, mime, data });
     if (format === "docx" || format === "md") {
       const doc = canvasOf(useCosmos.getState(), ctx());
       const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (n) => storage.mediaUrl(n));

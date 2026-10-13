@@ -1,4 +1,4 @@
-// Ce que Cosmos demande à l'IA, et comment il relit ses réponses. Fonctions pures.
+// Ce que MondoWrite demande à l'IA, et comment il relit ses réponses. Fonctions pures.
 // Règle du produit : l'IA questionne et propose, elle n'écrit jamais à la place de l'auteur.
 // Quatre tâches : « Ranger » (proposer un type pour les idées en vrac), l'interview (une question sur
 // mesure pour un personnage), la synthèse d'un personnage (remettre en ordre ce que l'auteur a déjà

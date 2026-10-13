@@ -1,6 +1,6 @@
 # Les consignes données à l'IA
 
-Cosmos n'envoie rien à une IA tant que l'auteur n'a pas branché un service (Réglages) et lancé une action. Chaque action envoie **deux messages** : une consigne fixe (message « system », en anglais, langue que tous les modèles suivent le mieux) et les données du projet (message « user », en JSON). La réponse est toujours demandée dans la langue de l'interface.
+MondoWrite n'envoie rien à une IA tant que l'auteur n'a pas branché un service (Réglages) et lancé une action. Chaque action envoie **deux messages** : une consigne fixe (message « system », en anglais, langue que tous les modèles suivent le mieux) et les données du projet (message « user », en JSON). La réponse est toujours demandée dans la langue de l'interface.
 
 Source : `src/ai/tasks.ts`. Ce fichier en est la copie : le tenir à jour à chaque changement de consigne.
 
@@ -10,7 +10,7 @@ Source : `src/ai/tasks.ts`. Ce fichier en est la copie : le tenir à jour à cha
 - **Réponses jamais crues sur parole** : tout passe par une fonction `parse…` qui ne garde que des identifiants de cartes connus et des types valides. Une réponse n'est jamais insérée comme HTML.
 - **Une carte se nomme par son titre et son type** dans tout texte destiné à l'auteur (raison de Ranger, question sur mesure, alerte de cohérence), jamais par son identifiant : la consigne le demande, et la relecture (`nameCards`) remplace quand même tout identifiant connu par « Titre (type) », le type dans la langue de l'interface (Décor dans un scénario).
 - Une carte est envoyée sous la forme `{ id, type, title, text, sheet? }` : le texte est abrégé à 500 caractères, `sheet` est la fiche d'identité d'un personnage quand elle est remplie. Au plus 80 cartes par requête.
-- **Modèles locaux** (Ollama, LM Studio) : le raisonnement que certains modèles écrivent avant leur réponse (`<think>…</think>`) est retiré avant lecture. Avec Ollama, Cosmos passe par l'API native `/api/chat` avec une fenêtre de contexte de 16 384 jetons (au lieu de la valeur par défaut, trop courte pour un projet) et, pour Ranger et Cohérence, `format: "json"`.
+- **Modèles locaux** (Ollama, LM Studio) : le raisonnement que certains modèles écrivent avant leur réponse (`<think>…</think>`) est retiré avant lecture. Avec Ollama, MondoWrite passe par l'API native `/api/chat` avec une fenêtre de contexte de 16 384 jetons (au lieu de la valeur par défaut, trop courte pour un projet) et, pour Ranger et Cohérence, `format: "json"`.
 
 ## 1. Ranger les idées
 
@@ -28,7 +28,7 @@ You help a writer organise the notes of a {kind}. Each note is an untyped idea c
 [{"id":"i1","title":"","text":"Un phare qui s’allume seul."}]
 ```
 
-**Ce que Cosmos garde** : les propositions dont l'identifiant est une idée connue et le type un des cinq autres. L'auteur applique ou ignore chacune. Ensuite, « Organiser le canevas » range toutes les cartes en cadres (sans IA).
+**Ce que MondoWrite garde** : les propositions dont l'identifiant est une idée connue et le type un des cinq autres. L'auteur applique ou ignore chacune. Ensuite, « Organiser le canevas » range toutes les cartes en cadres (sans IA).
 
 ## 2. Question sur mesure (assistant personnage)
 
@@ -48,7 +48,7 @@ You are an interviewer helping a writer discover a character. Ask ONE open quest
  "alreadyAsked":[]}
 ```
 
-**Ce que Cosmos garde** : la première ligne qui contient un « ? », sans numéro, guillemets ni « Question : ».
+**Ce que MondoWrite garde** : la première ligne qui contient un « ? », sans numéro, guillemets ni « Question : ».
 
 ## 3. Synthèse d'un personnage
 
@@ -71,7 +71,7 @@ You help a writer see their character clearly. Write a synthesis of the characte
 
 Avant, les réponses étaient fondues dans les notes : un petit modèle local les laissait de côté.
 
-**Ce que Cosmos garde** : au plus huit paragraphes, sans titre ni Markdown. « Ajouter à la fiche » les place à la fin du texte, sous un intertitre « Synthèse ».
+**Ce que MondoWrite garde** : au plus huit paragraphes, sans titre ni Markdown. « Ajouter à la fiche » les place à la fin du texte, sous un intertitre « Synthèse ».
 
 ## 4. Décrire un lieu d'après une photo
 
@@ -89,7 +89,7 @@ You help a writer build a place for their story from a reference photo they chos
 {"place":"Phare de Kerlaouen","notes":"Îlot accessible à marée basse."}
 ```
 
-**Ce que Cosmos garde** : au plus dix lignes, sans puces ni Markdown, montrées comme une proposition. « Ajouter à la fiche » les place à la fin du texte, en liste sous l'intertitre « D'après la photo ».
+**Ce que MondoWrite garde** : au plus dix lignes, sans puces ni Markdown, montrées comme une proposition. « Ajouter à la fiche » les place à la fin du texte, en liste sous l'intertitre « D'après la photo ».
 
 ## 5. Vérifier la cohérence
 
@@ -108,4 +108,4 @@ You are a continuity reader for a writer's story bible. Find statements in the n
  "links":[{"source":"p1","target":"l1","label":"y travaille"}]}
 ```
 
-**Ce que Cosmos garde** : au plus douze questions, chacune avec au moins une carte connue. L'auteur peut en faire une carte Question reliée aux cartes concernées.
+**Ce que MondoWrite garde** : au plus douze questions, chacune avec au moins une carte connue. L'auteur peut en faire une carte Question reliée aux cartes concernées.

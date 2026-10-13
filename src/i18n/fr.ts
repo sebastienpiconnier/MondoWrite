@@ -34,7 +34,7 @@ export const fr = {
     openFolder: "Ouvrir un dossier…",
     unlist: "Retirer « {title} » de la liste",
     unlistHint: "Retire le projet de cette liste. Ses fichiers ne sont pas supprimés.",
-    notAProject: "Ce dossier ne contient pas de projet Cosmos. Pour en démarrer un, utilise « Nouveau projet ».",
+    notAProject: "Ce dossier ne contient pas de projet MondoWrite. Pour en démarrer un, utilise « Nouveau projet ».",
     openFailed: "Ce projet n’a pas pu être ouvert.",
     newTitle: "Nouveau projet",
     newHint: "Même canevas, même bible : seul l’atelier d’écriture change. Tu pourras basculer plus tard.",
@@ -213,7 +213,7 @@ export const fr = {
     provider: "Service",
     none: "Aucune",
     providers: { anthropic: "Claude (Anthropic)", openai: "OpenAI", openrouter: "OpenRouter", ollama: "Ollama (sur cet ordinateur)", lmstudio: "LM Studio (sur cet ordinateur)" },
-    hintNone: "Cosmos fonctionne sans IA. Si tu en branches une, elle pose des questions et propose : elle n’écrit pas à ta place.",
+    hintNone: "MondoWrite fonctionne sans IA. Si tu en branches une, elle pose des questions et propose : elle n’écrit pas à ta place.",
     hintCloud: "Tes cartes ne partent vers ce service que lorsque tu lances une action IA.",
     hintLocal: "Le modèle tourne sur ta machine : tes textes n’en sortent pas.",
     key: "Clé d’API",
@@ -294,7 +294,7 @@ export const fr = {
     credit: "Photos fournies par {source}",
     about: {
       openverse: "Openverse (fondation WordPress) réunit des images sous licence libre (Creative Commons, domaine public) venues de Flickr, Wikimedia et de musées. Sans clé. La licence et l’auteur sont notés dans la fiche de la carte.",
-      pixabay: "Pixabay offre des photos libres de droits, utilisables sans citer l’auteur (Cosmos le note quand même dans la fiche).",
+      pixabay: "Pixabay offre des photos libres de droits, utilisables sans citer l’auteur (MondoWrite le note quand même dans la fiche).",
       unsplash: "Unsplash offre des photos libres d’utilisation. Avec une clé de démonstration, 50 recherches par heure.",
     },
     keyTitle: "Une clé {source}, une fois pour toutes",
@@ -1074,7 +1074,7 @@ export const fr = {
     },
   },
   about: {
-    open: "À propos de Cosmos",
+    open: "À propos de MondoWrite",
     intro: "Un canevas pour les romanciers et les scénaristes qui construisent leur histoire avant de l’écrire. En grec, kosmos désigne l’ordre du monde, né du chaos : c’est le chemin que l’app te fait parcourir, des idées en vrac à la bible, au plan puis au texte.",
     pillars: [
       "Libre et open source : tu peux l’utiliser, l’étudier, la modifier et la partager.",
@@ -1091,23 +1091,23 @@ export const fr = {
 
   // Copies Markdown du projet (dossier markdown/) : réglage du projet et avertissement en tête de chaque copie.
   copies: {
-    note: "Copie générée par Cosmos à chaque enregistrement : une modification faite ici serait perdue. Écris dans l’app.",
+    note: "Copie générée par MondoWrite à chaque enregistrement : une modification faite ici serait perdue. Écris dans l’app.",
     setting: "Copies Markdown dans le dossier du projet",
-    hint: "Le manuscrit, la bible et le canevas en Markdown (dossier markdown/), lisibles hors de Cosmos. Une version par jour, gardée 30 jours, puis une par mois.",
+    hint: "Le manuscrit, la bible et le canevas en Markdown (dossier markdown/), lisibles hors de MondoWrite. Une version par jour, gardée 30 jours, puis une par mois.",
   },
 
   // Mises à jour de l’app de bureau : vérification auprès de GitHub, installation d’un clic.
   updates: {
-    aria: "Mise à jour de Cosmos",
+    aria: "Mise à jour de MondoWrite",
     section: "Mises à jour",
-    available: "Cosmos {version} est disponible (tu as la {current}).",
+    available: "MondoWrite {version} est disponible (tu as la {current}).",
     install: "Mettre à jour",
     download: "Télécharger",
     notes: "Nouveautés",
     later: "Plus tard",
     downloading: "Téléchargement de la mise à jour…",
     downloadingPercent: "Téléchargement de la mise à jour… {percent}",
-    restarting: "Installation : Cosmos redémarre…",
+    restarting: "Installation : MondoWrite redémarre…",
     installError: "L’installation a échoué. Tu peux télécharger la nouvelle version depuis sa page.",
     downloadHint: "La page de la version s’ouvre dans ton navigateur : télécharge le fichier de ton système et installe-le comme la première fois.",
     check: "Rechercher les mises à jour",
@@ -1294,7 +1294,7 @@ export const fr = {
       bible: { title: "La Bible se construit seule", body: "Chaque carte typée y a sa fiche, sans rien recopier. Commence par la couverture du projet (tagline, logline, genre), puis creuse tes personnages : ce qu’ils veulent, ce qui leur manque, leur blessure. L’assistant pose des questions, il ne répond jamais à ta place." },
       plan: { title: "Donne une forme au récit", body: "Choisis un gabarit (trois actes, Save the Cat, voyage du héros) et range tes scènes dans ses cases. La chronologie montre qui et quoi apparaît dans chaque scène." },
       write: { title: "Écris, scène par scène", body: "Le manuscrit suit l’ordre du plan, mis en pages comme un livre. Entrée deux fois coupe la scène, trois fois ouvre un chapitre : un bouton « Annuler » apparaît à chaque coupure." },
-      files: { title: "Tes textes t’appartiennent", body: "Tout est enregistré tout seul, en fichiers Markdown lisibles hors de Cosmos. Ctrl ou Cmd + / montre tous les raccourcis, et cette visite reste dans les Réglages." },
+      files: { title: "Tes textes t’appartiennent", body: "Tout est enregistré tout seul, en fichiers Markdown lisibles hors de MondoWrite. Ctrl ou Cmd + / montre tous les raccourcis, et cette visite reste dans les Réglages." },
     },
     scenario: {
       plan: { title: "Donne une forme au récit", body: "Le séquencier liste tes scènes dans l’ordre du scénario. Pose un gabarit (trois actes, Save the Cat, huit séquences) et déplace les scènes d’une case à l’autre." },

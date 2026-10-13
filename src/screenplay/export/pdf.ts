@@ -66,6 +66,6 @@ export async function buildPdf(
   if (title) pdf.setTitle(title.replace(/\s+/g, " "));
   if (author) pdf.setAuthor(author.replace(/\s+/g, " "));
   pdf.setLanguage(locale);
-  pdf.setCreator("Cosmos");
+  pdf.setCreator("MondoWrite");
   return pdf.save();
 }

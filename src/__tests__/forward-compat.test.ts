@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// Un projet écrit par une version plus récente de Cosmos : ce que celle-ci ne connaît pas est gardé et réécrit.
+// Un projet écrit par une version plus récente de MondoWrite : ce que celle-ci ne connaît pas est gardé et réécrit.
 
 import { describe, expect, it } from "vitest";
 import { cardToFile, fileToCard } from "../storage/markdown";

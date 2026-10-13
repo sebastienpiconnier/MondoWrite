@@ -99,7 +99,7 @@ export async function canvasPdf(canvas: HTMLCanvasElement, quality: ImageQuality
   const { PDFDocument } = await import("pdf-lib");
   const pdf = await PDFDocument.create();
   pdf.setTitle(title);
-  pdf.setCreator("Cosmos");
+  pdf.setCreator("MondoWrite");
   // JPEG : bien plus léger qu'un PNG pour un grand tableau, et sans perte visible au format standard.
   const image = await pdf.embedJpg(await toBytes(canvas, "image/jpeg", quality === "large" ? 0.92 : 0.85));
   const { long, short, margin } = PAGES[quality];

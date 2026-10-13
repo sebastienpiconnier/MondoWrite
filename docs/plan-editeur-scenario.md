@@ -31,7 +31,7 @@ Notes de la phase 2 :
 
 - `scenario.fountain` est lu et écrit par les deux stockages. Il est créé au premier passage en scénario, ou à l'ouverture d'un projet scénario qui n'en a pas ; revenir en roman ne le supprime pas.
 - `src/screenplay/link.ts` : lecture des liens, renommage dans les deux sens, listes « scènes sans carte » et « cartes sans scène » (à brancher sur le panneau « Scènes à écrire » en phase 3).
-- Un fichier Fountain que l'auteur n'a pas modifié dans Cosmos n'est jamais réécrit (pas de normalisation silencieuse d'un fichier venu d'ailleurs).
+- Un fichier Fountain que l'auteur n'a pas modifié dans MondoWrite n'est jamais réécrit (pas de normalisation silencieuse d'un fichier venu d'ailleurs).
 - Choix faits : une carte Scène sans titre ne reçoit pas d'en-tête à la création du fichier ; vider le titre d'une carte ne touche pas à son en-tête ; une carte qui change de type perd son lien ; si deux en-têtes citent la même carte, le premier compte.
 - Tests du store dans `src/__tests__/store-scenario.test.ts` (environnement `happy-dom`). Pas encore testé à la main dans l'app Tauri.
 
@@ -39,7 +39,7 @@ Notes de la phase 3 :
 
 - `src/screenplay/editor/` (`nodes.ts`, `convert.ts`, `keymap.ts`, `autodetect.ts`, `index.ts`), `src/screenplay/scenes.ts` (scènes, personnages, décors) et `src/components/ScreenplayView.tsx`.
 - Vérifié : tests sur un vrai éditeur TipTap (`editor.test.ts`, dont une scène complète écrite au clavier seul), puis dans Edge piloté par script (français, anglais, clair, sombre, largeur téléphone, rechargement).
-- Reste à faire à la main : ouvrir un `scenario.fountain` produit par Cosmos dans un autre logiciel Fountain, et essayer l'éditeur dans l'app Tauri et sur un vrai téléphone (clavier virtuel).
+- Reste à faire à la main : ouvrir un `scenario.fountain` produit par MondoWrite dans un autre logiciel Fountain, et essayer l'éditeur dans l'app Tauri et sur un vrai téléphone (clavier virtuel).
 - Reporté à la phase 5 : le numéro de page estimé dans la liste des scènes (il dépend de `layout.ts`).
 - Ajouts par rapport au plan : **Échap** sort de l'éditeur vers la barre d'éléments (Tab ne le permet plus) ; **Maj+Entrée** va à la ligne dans une action ou un dialogue ; sur petit écran la liste des scènes devient une liste déroulante.
 - Majuscules : en-têtes, personnages et transitions passent en majuscules pendant qu'on les écrit. Un texte déjà présent dans le fichier n'est pas réécrit, il est seulement affiché en majuscules.
@@ -95,7 +95,7 @@ Page de titre et vraies pages (7 octobre 2026) : la vue Scénario commence par u
 
 Vérifications à faire à la main (aucune n'a pu l'être ici) :
 
-- ouvrir un `scenario.fountain` produit par Cosmos dans un autre logiciel Fountain ;
+- ouvrir un `scenario.fountain` produit par MondoWrite dans un autre logiciel Fountain ;
 - ouvrir le FDX dans Final Draft ou Fade In ;
 - dans l'app Tauri : relancer l'exe sur un projet hors du dossier personnel, « Enregistrer sous » des exports, import d'un fichier ;
 - sur un vrai téléphone : la barre d'éléments au-dessus du clavier virtuel.

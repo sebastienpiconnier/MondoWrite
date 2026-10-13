@@ -1,12 +1,14 @@
-# Cosmos
+# MondoWrite
+
+*Formerly Cosmos: only the name changes, your projects and settings stay the same.*
 
 [Français](README.md) · **English**
 
 **From chaos to an ordered world: a canvas for novelists and screenwriters who build their story before writing it.**
 
-![The Cosmos canvas: four cards (idea, character, place, scene) connected by labeled threads](docs/images/canvas-en.png)
+![The MondoWrite canvas: four cards (idea, character, place, scene) connected by labeled threads](docs/images/canvas-en.png)
 
-<a href="https://youtu.be/QTNqWJBSaO4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the Cosmos presentation video (1 min)"></a>
+<a href="https://youtu.be/QTNqWJBSaO4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the MondoWrite presentation video (1 min)"></a>
 
 [Download](#download) · [Features](#features) · [AI](#ai-if-you-want-it) · [Platforms](#platforms) · [Development](#development)
 
@@ -24,7 +26,7 @@ In Greek, *kosmos* means precisely that: the order of the world, born out of cha
 
 ## 📐 A tool built around the way you work
 
-Cosmos was designed on one core principle: your structure should emerge naturally, without bureaucracy.
+MondoWrite was designed on one core principle: your structure should emerge naturally, without bureaucracy.
 
 ```text
    [ IDEAS & FRAGMENTS ] ──► ( Interactive canvas )
@@ -40,13 +42,13 @@ Cosmos was designed on one core principle: your structure should emerge naturall
 - **Proven structure templates.** Place your scenes along the Hero’s Journey, Save the Cat! or the three-act structure. See the timeline by plotline and spot at a glance where a subplot fades out.
 - **The character sheet as a dramatic engine.** Define your characters’ engine in three readable boxes (Wants, Needs, Wound). Let the assistant ask you the right questions to fill in the blanks.
 - **Ownership and longevity.** No proprietary cloud, no subscription, no locked format. Your projects are plain folders of Markdown files saved on your own machine. You keep 100% control over your work.
-- **Free and open source.** Cosmos is free software, released under the GPL-3.0: you can use it, study it, change it and share it.
+- **Free and open source.** MondoWrite is free software, released under the GPL-3.0: you can use it, study it, change it and share it.
 
 **AI will not write your book.** If you choose to turn it on (including a 100% local model on your computer), it only points out inconsistencies, puts your notes back in order and asks you sharp questions. You remain the sole architect.
 
 ## 🧱 Ready to build your next universe?
 
-[Download Cosmos](https://github.com/sebastienpiconnier/cosmos/releases/latest) for free on macOS, Windows or Linux, and turn your fragments of ideas into a perfectly ordered world.
+[Download MondoWrite](https://github.com/sebastienpiconnier/cosmos/releases/latest) for free on macOS, Windows or Linux, and turn your fragments of ideas into a perfectly ordered world.
 
 ## Download
 
@@ -54,9 +56,9 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 > **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, it isn't signed yet: if SmartScreen appears, click “More info”, then “Run anyway”.
 
-**Updates:** Cosmos tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About Cosmos”).
+**Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-Cosmos is under active development (version 0.1.7).
+MondoWrite is under active development (version 0.1.7).
 
 ## Features
 
@@ -64,7 +66,7 @@ Cosmos is under active development (version 0.1.7).
 
 - **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Ten card types:** Idea, Character, Place, Scene, Plot, Theme, Question, Image, Link, Document. Change the type by typing `/` at the start of a line or by tapping the type label.
-- **Pasting, as in Milanote:** paste or drop a link or an image onto the canvas: a single **Link** or **Image** card is born where you are (a pasted text becomes an Idea). Paste an address into a card that is still empty: that card becomes the Link card, without making a second one. “Organize the canvas” sorts them into Images and Links frames, and the Bible has a section for each. For a link, Cosmos reads the page: title, author, publication date and the site’s image come in on their own. Pasting the same link twice makes only one card. A link keeps the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
+- **Pasting, as in Milanote:** paste or drop a link or an image onto the canvas: a single **Link** or **Image** card is born where you are (a pasted text becomes an Idea). Paste an address into a card that is still empty: that card becomes the Link card, without making a second one. “Organize the canvas” sorts them into Images and Links frames, and the Bible has a section for each. For a link, MondoWrite reads the page: title, author, publication date and the site’s image come in on their own. Pasting the same link twice makes only one card. A link keeps the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
 - **Folded cards:** a card with a long text folds up, “More details” opens it.
 - **Formatting and Markdown:** select a word, a bar offers bold, italic, strikethrough, heading, lists, checkbox, quote. Markdown works as you type (`**bold**`, `*italic*`, `# heading`, `- list`, `[ ] task`) and when you paste, in cards, the Bible and the manuscript, and files stay in Markdown.
 - **To do:** unticked boxes, passages “to revisit”, questions kept for later and open questions, gathered in one panel, each linked to its card or scene.
@@ -153,7 +155,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 ### AI, if you want it
 
-Cosmos works entirely without AI. You can plug one in from Settings:
+MondoWrite works entirely without AI. You can plug one in from Settings:
 
 - **Locally**, with Ollama or LM Studio: your texts never leave your machine. No server setting needed.
 - **With your own key**, for Claude, OpenAI or OpenRouter: the passages being analysed are then sent to that provider, under its terms. Your key stays on your device, never in the project.
@@ -209,7 +211,7 @@ Each project is a folder:
 - `scenario.fountain`: the screenplay text
 - `medias/`: images
 - `corbeille/`: deleted cards, ready to restore
-- `markdown/`: the manuscript, bible and canvas as three Markdown files, with their images and links between entries, to read outside Cosmos (Obsidian, Typora, GitHub…). They are rewritten at every save: edit the text in the app, not in these copies. `markdown/versions/` keeps one version a day for 30 days, then one a month. You can turn this off in the project Settings.
+- `markdown/`: the manuscript, bible and canvas as three Markdown files, with their images and links between entries, to read outside MondoWrite (Obsidian, Typora, GitHub…). They are rewritten at every save: edit the text in the app, not in these copies. `markdown/versions/` keeps one version a day for 30 days, then one a month. You can turn this off in the project Settings.
 
 File and folder names are the same in every language.
 
@@ -289,8 +291,8 @@ Architecture, conventions and detailed roadmap: see [CLAUDE.md](CLAUDE.md) (in F
 
 ## License
 
-Cosmos is free software, released under the [GNU GPL v3.0 or later](LICENSE). You can use, study, change and redistribute it; any modified version you distribute must stay under the same license.
+MondoWrite is free software, released under the [GNU GPL v3.0 or later](LICENSE). You can use, study, change and redistribute it; any modified version you distribute must stay under the same license.
 
 The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets/fonts/OFL.txt)).
 
-The example project uses Charles Perrault’s “Le Petit Chaperon rouge” (*Histoires ou contes du temps passé*, 1697) and three engravings by Gustave Doré, wood-engraved by Pannemaker (Hetzel edition, 1862), all in the public domain. The English translation of the tale was made for Cosmos.
+The example project uses Charles Perrault’s “Le Petit Chaperon rouge” (*Histoires ou contes du temps passé*, 1697) and three engravings by Gustave Doré, wood-engraved by Pannemaker (Hetzel edition, 1862), all in the public domain. The English translation of the tale was made for MondoWrite.

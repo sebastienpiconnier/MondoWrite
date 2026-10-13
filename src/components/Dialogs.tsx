@@ -1,4 +1,4 @@
-// Fenêtres par-dessus l'app : la liste des raccourcis clavier (Cmd/Ctrl + /) et « À propos de Cosmos ».
+// Fenêtres par-dessus l'app : la liste des raccourcis clavier (Cmd/Ctrl + /) et « À propos de MondoWrite ».
 // Ouvertes depuis les Réglages ou au clavier ; <dialog> natif : Échap ferme, le focus est retenu dedans.
 
 import { useEffect, useRef } from "react";
@@ -63,7 +63,7 @@ export function Dialogs() {
       {dialog === "about" && (
         <div className="about">
           <h2 id="app-dialog-title">
-            Cosmos <span className="about-version">{version}</span>
+            MondoWrite <span className="about-version">{version}</span>
           </h2>
           <p className="about-tagline">{t.app.tagline}</p>
           {/* Nouvelle version : recherche à la demande (app de bureau). */}

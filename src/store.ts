@@ -1,4 +1,4 @@
-// État global de Cosmos (Zustand).
+// État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
 import { restoreCard, trashCard, type TrashedCard } from "./trash";

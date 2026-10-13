@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions de Cosmos (ordinateur et mobile) : sélecteur de dossier, lecture/écriture des fichiers du projet, enregistrement des exports, appels aux services d'IA choisis par l'auteur, ouverture des sources dans le navigateur",
+  "description": "Permissions de MondoWrite (ordinateur et mobile) : sélecteur de dossier, lecture/écriture des fichiers du projet, enregistrement des exports, appels aux services d'IA choisis par l'auteur, ouverture des sources dans le navigateur",
   "windows": [
     "main"
   ],

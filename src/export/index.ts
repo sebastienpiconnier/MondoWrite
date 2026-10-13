@@ -33,5 +33,5 @@ export async function exportDocument(doc: ExportDoc, format: DocFormat, options:
     else if (format === "docx") data = text.toDocx(doc);
     else data = text.toEpub(doc, { id: `urn:uuid:${crypto.randomUUID()}`, modified: `${new Date().toISOString().slice(0, 19)}Z`, contents: options.contents });
   }
-  return { name: `${fileName(options.name, "cosmos")}.${format}`, extension: format, mime: MIME[format], data };
+  return { name: `${fileName(options.name, "mondowrite")}.${format}`, extension: format, mime: MIME[format], data };
 }

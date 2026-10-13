@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Cosmos",
+  "productName": "MondoWrite",
   "version": "0.1.7",
   "identifier": "app.cosmos.ecriture",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Cosmos",
+        "title": "MondoWrite",
         "width": 1400,
         "height": 900,
         "minWidth": 900,

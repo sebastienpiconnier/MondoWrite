@@ -1,4 +1,4 @@
-// Nouvelles versions de Cosmos (app de bureau seulement : sur mobile, ce sont les boutiques qui mettent à jour).
+// Nouvelles versions de MondoWrite (app de bureau seulement : sur mobile, ce sont les boutiques qui mettent à jour).
 // Deux chemins :
 // - installation dans l'app (tauri-plugin-updater) quand la version a été publiée avec sa signature de mise à
 //   jour (`latest.json` dans la Release GitHub, clé publique dans l'app) : téléchargement, vérification de la
@@ -6,7 +6,7 @@
 // - sinon, simple vérification : la dernière Release publiée sur GitHub (API publique, sans clé), et un bouton
 //   qui ouvre sa page de téléchargement.
 // Au lancement, une vérification par jour au plus (réglage de l'appareil, désactivable) ; à la demande dans
-// « À propos de Cosmos ». Rien n'est jamais installé sans un clic de l'auteur, et le projet ouvert est
+// « À propos de MondoWrite ». Rien n'est jamais installé sans un clic de l'auteur, et le projet ouvert est
 // enregistré avant le redémarrage.
 
 import { create } from "zustand";

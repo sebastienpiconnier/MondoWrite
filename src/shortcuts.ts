@@ -1,4 +1,4 @@
-// Raccourcis clavier de Cosmos, rassemblés pour la fenêtre d'aide (Cmd/Ctrl + /). Ce fichier décrit, il
+// Raccourcis clavier de MondoWrite, rassemblés pour la fenêtre d'aide (Cmd/Ctrl + /). Ce fichier décrit, il
 // n'écoute rien : chaque raccourci est géré là où il agit. Le garder à jour quand on en ajoute un.
 // « Mod » vaut Cmd sur Mac et Ctrl ailleurs.
 

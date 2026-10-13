@@ -1,4 +1,4 @@
-// Modèle de données de Cosmos.
+// Modèle de données de MondoWrite.
 // Une carte naît "idee" (note libre) et peut être typée plus tard via le menu "/".
 
 import type { Screenplay } from "./screenplay/model";
@@ -49,7 +49,7 @@ export interface CardData {
   /** Personnage : réponses aux questions de l'assistant qui ne remplissent pas un champ de la fiche, par clé de question. */
   reponses?: Record<string, string>;
   /**
-   * Ce qu'une version plus récente de Cosmos a écrit et que celle-ci ne connaît pas : lignes du
+   * Ce qu'une version plus récente de MondoWrite a écrit et que celle-ci ne connaît pas : lignes du
    * frontmatter, champs de la fiche, type de carte. Gardé tel quel et réécrit, jamais affiché.
    */
   keep?: { front?: Record<string, string>; fiche?: Record<string, string>; type?: string };

@@ -1,7 +1,7 @@
 [package]
 name = "cosmos"
 version = "0.1.7"
-description = "Cosmos : du chaos au monde ordonné, une toile pour les écrivains"
+description = "MondoWrite : du chaos au monde ordonné, une toile pour les écrivains"
 authors = ["Sébastien Piconnier"]
 license = "GPL-3.0-or-later"
 repository = "https://github.com/sebastienpiconnier/cosmos"

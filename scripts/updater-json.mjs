@@ -5,10 +5,10 @@
 
 /** Plateformes de latest.json et fichier de mise à jour de chacune (comme tauri-action, NSIS pour Windows). */
 const PLATFORMS = [
-  ["darwin-aarch64", (n) => n === "Cosmos_aarch64.app.tar.gz"],
-  ["darwin-aarch64-app", (n) => n === "Cosmos_aarch64.app.tar.gz"],
-  ["darwin-x86_64", (n) => n === "Cosmos_x64.app.tar.gz"],
-  ["darwin-x86_64-app", (n) => n === "Cosmos_x64.app.tar.gz"],
+  ["darwin-aarch64", (n) => n.endsWith("_aarch64.app.tar.gz")],
+  ["darwin-aarch64-app", (n) => n.endsWith("_aarch64.app.tar.gz")],
+  ["darwin-x86_64", (n) => n.endsWith("_x64.app.tar.gz")],
+  ["darwin-x86_64-app", (n) => n.endsWith("_x64.app.tar.gz")],
   ["linux-x86_64", (n) => n.endsWith(".AppImage")],
   ["linux-x86_64-appimage", (n) => n.endsWith(".AppImage")],
   ["linux-x86_64-deb", (n) => n.endsWith(".deb")],

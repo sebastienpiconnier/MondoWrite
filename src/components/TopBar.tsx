@@ -26,7 +26,7 @@ export function TopBar() {
         <BrandMark />
         {/* Le nom et le slogan du projet (celui du README) : « du chaos au monde ordonné ». */}
         <span className="brand-text">
-          <span className="brand-name">Cosmos</span>
+          <span className="brand-name">MondoWrite</span>
           <span className="brand-tagline">{t.app.tagline}</span>
         </span>
         {/* Le titre se change ici, directement. */}

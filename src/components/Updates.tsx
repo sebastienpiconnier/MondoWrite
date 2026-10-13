@@ -1,4 +1,4 @@
-// Mises à jour de Cosmos (app de bureau) : le bandeau qui annonce une nouvelle version, et le bouton
+// Mises à jour de MondoWrite (app de bureau) : le bandeau qui annonce une nouvelle version, et le bouton
 // « Rechercher les mises à jour » (Réglages, À propos). Vrais boutons : souris, doigt et clavier.
 // Rien n'est installé sans un clic ; le projet ouvert est enregistré avant l'installation.
 

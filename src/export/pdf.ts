@@ -54,6 +54,6 @@ export async function buildProsePdf(doc: ExportDoc, paper: "a4" | "letter"): Pro
   pdf.setTitle(doc.title);
   if (doc.author) pdf.setAuthor(doc.author);
   pdf.setLanguage(doc.lang);
-  pdf.setCreator("Cosmos");
+  pdf.setCreator("MondoWrite");
   return pdf.save();
 }

@@ -70,7 +70,7 @@ function headers(config: AiConfig): Record<string, string> {
   }
   const out: Record<string, string> = { "content-type": "application/json" };
   if (key && !PROVIDERS[config.provider].local) out.authorization = `Bearer ${key}`;
-  if (config.provider === "openrouter") out["x-title"] = "Cosmos";
+  if (config.provider === "openrouter") out["x-title"] = "MondoWrite";
   return out;
 }
 

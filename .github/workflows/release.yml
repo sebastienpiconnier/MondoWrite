@@ -128,27 +128,31 @@ jobs:
         with:
           # Lancé par une étiquette : celle-ci. Lancé à la main : v + la version de l'app (jamais « main »).
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: "Cosmos ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
+          releaseName: "MondoWrite ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
           releaseBody: |
-            Cosmos pour macOS (Apple Silicon et Intel), Windows et Linux. *English below.*
+            MondoWrite pour macOS (Apple Silicon et Intel), Windows et Linux. *English below.*
+
+            Anciennement Cosmos : seul le nom change, tes projets et tes réglages restent les mêmes.
 
             **Installer**
-            - macOS : ouvre le .dmg (aarch64 pour un Mac Apple Silicon, x64 pour un Mac Intel) et glisse Cosmos dans Applications. L'app est signée et vérifiée par Apple.
+            - macOS : ouvre le .dmg (aarch64 pour un Mac Apple Silicon, x64 pour un Mac Intel) et glisse MondoWrite dans Applications. L'app est signée et vérifiée par Apple.
             - Windows : lance le .exe (ou le .msi). L'app n'est pas encore signée : si SmartScreen s'affiche, « Informations complémentaires » puis « Exécuter quand même ».
             - Linux : AppImage, .deb ou .rpm.
 
-            Mises à jour : Cosmos te prévient d'une nouvelle version (Réglages, « Mises à jour ») et l'installe d'un clic. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
+            Mises à jour : MondoWrite te prévient d'une nouvelle version (Réglages, « Mises à jour ») et l'installe d'un clic. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
 
             ---
 
-            Cosmos for macOS (Apple Silicon and Intel), Windows and Linux.
+            MondoWrite for macOS (Apple Silicon and Intel), Windows and Linux.
+
+            Formerly Cosmos: only the name changes, your projects and settings stay the same.
 
             **Install**
-            - macOS: open the .dmg (aarch64 for an Apple Silicon Mac, x64 for an Intel Mac) and drag Cosmos to Applications. The app is signed and verified by Apple.
+            - macOS: open the .dmg (aarch64 for an Apple Silicon Mac, x64 for an Intel Mac) and drag MondoWrite to Applications. The app is signed and verified by Apple.
             - Windows: run the .exe (or the .msi). The app isn't signed yet: if SmartScreen appears, click “More info”, then “Run anyway”.
             - Linux: AppImage, .deb or .rpm.
 
-            Updates: Cosmos tells you when a new version is out (Settings, “Updates”) and installs it in one click. Your projects remain folders of Markdown files, readable outside the app.
+            Updates: MondoWrite tells you when a new version is out (Settings, “Updates”) and installs it in one click. Your projects remain folders of Markdown files, readable outside the app.
           # Brouillon à relire puis publier à la main. Pas de préversion : seule une version publiée normale
           # est « la dernière », celle que l'app trouve (latest.json, API de GitHub).
           releaseDraft: true

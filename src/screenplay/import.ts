@@ -66,7 +66,7 @@ export function importFountain(source: string, options: ImportOptions): Project 
       }
       links.push({ id: options.newId(), source: card.id, target: place.id, label: options.linkLabel });
     }
-    // Un lien venu d'un autre projet Cosmos ne vaut pas ici : la scène reçoit sa nouvelle carte.
+    // Un lien venu d'un autre projet MondoWrite ne vaut pas ici : la scène reçoit sa nouvelle carte.
     return { ...el, cardId: card.id };
   });
 

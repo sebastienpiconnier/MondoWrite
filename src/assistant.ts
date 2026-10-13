@@ -21,7 +21,7 @@ export type AssistantQuestion = (typeof ASSISTANT_QUESTIONS)[AssistantLevel][num
 
 /**
  * Questions par thème. Les textes viennent de `t.assistant.questions` (questions d'origine, par clé) et de
- * `t.assistant.themeQuestions` (clé `<thème>.<rang>`). Questions écrites pour Cosmos, ouvertes, une à la fois.
+ * `t.assistant.themeQuestions` (clé `<thème>.<rang>`). Questions écrites pour MondoWrite, ouvertes, une à la fois.
  * Ne pas reformuler une question livrée, ni retirer une question du milieu d'une liste de `themeQuestions`
  * (les rangs suivants changeraient de clé) : pour en écarter une, la retirer de THEME_KEYS.
  */

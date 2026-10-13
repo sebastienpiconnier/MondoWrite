@@ -1,6 +1,20 @@
-# Cosmos
+# MondoWrite
 
 Application d'écriture pour romanciers et scénaristes « architectes » : un canevas libre où l'on pose ses idées en vrac, qui s'organise progressivement en bible (personnages, lieux, scènes…) puis en plan et en manuscrit. Fil rouge : **du chaos au monde ordonné**.
+
+## Nom de l'app : MondoWrite (anciennement Cosmos)
+
+L'app s'appelait Cosmos jusqu'à la 0.1.7 et a déjà des utilisateurs. Seul le nom **affiché** a changé (octobre 2026) : `productName` et titre de fenêtre (tauri.conf.json), textes de l'interface (i18n), barre du haut, accueil, « À propos », titre HTML, auteur des PDF, en-tête `x-title` d'OpenRouter, nom d'export par défaut, README, notes de Release.
+
+Ce qui garde « cosmos » **exprès**, à ne jamais renommer :
+- `identifier` = `app.cosmos.ecriture` (tauri.conf.json) : c'est l'identité de l'app pour le système. Le changer en ferait une autre app : réglages, clés d'IA et données du WebView (rangés sous cet identifiant) seraient perdus, et la mise à jour ne trouverait plus l'installation.
+- Le format de fichier : `cosmos.json`, liens `cosmos:<id>`, notes Fountain `[[cosmos:…]]`. C'est un contrat (voir « Format »).
+- Les clés de stockage local (`cosmos:reglages`, `cosmos:projets`, `cosmos:dernier-dossier`, `cosmos:projet:…`) : les renommer viderait réglages et projets récents.
+- L'adresse des mises à jour (`plugins.updater.endpoints`) et `REPO` (updates.ts) : les versions installées interrogent cette adresse ; si le dépôt GitHub est renommé, GitHub redirige l'ancienne.
+- `utm_source=cosmos` (Unsplash) : lié à l'app déclarée chez Unsplash.
+- Noms internes du code (`useCosmos`, `CosmosState`, paquet `cosmos`, crate `cosmos_lib`) : invisibles pour l'auteur.
+
+Fichiers de mise à jour Mac : leur nom suit `productName` (`MondoWrite_aarch64.app.tar.gz`) ; `scripts/updater-json.mjs` les reconnaît par leur fin de nom, quel que soit le préfixe.
 
 ## Principes produit (à respecter dans toute évolution)
 
@@ -174,8 +188,8 @@ src/
     FormatBar.tsx       Barre de mise en forme au-dessus d'un texte sélectionné (gras, italique, listes, case, à reprendre)
     focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
-    Updates.tsx         Bandeau « Cosmos x.y.z est disponible », vérification au lancement (useLaunchUpdateCheck), réglage et bouton « Rechercher les mises à jour » (Réglages, À propos)
-    Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/), « À propos de Cosmos », corbeille, liseuse, photos libres
+    Updates.tsx         Bandeau « MondoWrite x.y.z est disponible », vérification au lancement (useLaunchUpdateCheck), réglage et bouton « Rechercher les mises à jour » (Réglages, À propos)
+    Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/), « À propos de MondoWrite », corbeille, liseuse, photos libres
     DocumentViewer.tsx  Liseuse d'une carte Document : pages du PDF dessinées à mesure qu'elles arrivent à l'écran
     PhotoSearch.tsx     Recherche de photos libres : choix de la source, clé de l'appareil si besoin, grille de vignettes, photo choisie en carte Image ou dans une galerie
     Tour.tsx            Visite guidée : un panneau par étape, qui ouvre la vue dont il parle
@@ -378,7 +392,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Pas de tiret cadratin (—)** dans les textes d'interface ni la documentation : virgules, deux-points ou parenthèses.
 - Code et noms techniques en anglais, commentaires en français.
 - Accessibilité : vrais `<button>`, `aria-label` sur les boutons icône, cibles tactiles ≥ 44 px pour les actions principales, contraste AA. Viser la conformité RGAA.
-- Couleurs et polices : uniquement via les variables de `src/styles.css` (repris de la maquette Cosmos), valables en clair et en sombre.
+- Couleurs et polices : uniquement via les variables de `src/styles.css` (repris de la maquette MondoWrite), valables en clair et en sombre.
 - Pas de dépendance lourde sans raison : vérifier d'abord si React Flow ou TipTap le font déjà.
 
 ## Feuille de route
@@ -446,7 +460,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Galerie** : `image` reste l'image principale (carte du canevas, portrait) ; `images` les autres photos. Ajouter des photos à une fiche sans image : la première devient l'image principale. Retirer une photo ne supprime jamais le fichier de `medias/`.
 - **IA et photos** : l'image est lue par une balise `<img>` (adresse `blob:` permise par `img-src`) puis réduite sur un canvas, jamais par `fetch` (la CSP refuse `blob:` dans `connect-src`). Format par service : bloc `image` (Claude), `image_url` en data URL (OpenAI, OpenRouter, LM Studio), `images` en base64 (Ollama natif). Une erreur 400/404 signifie le plus souvent que le modèle ne lit pas les images : message dédié (`gallery.visionModel`). La description n'est demandée que sur un clic, rendue en notes, et n'entre dans la fiche que sur un autre clic.
 - **Cartes repliées** : au-delà de 220 px de texte, la carte se replie avec « Plus de détails » (état d'affichage, non enregistré) ; elle reste dépliée pendant l'écriture. Le bouton est aligné à gauche pour ne pas passer sous le point d'accroche du bas.
-- **Barre du haut** : « Cosmos » et son slogan (« Du chaos au monde ordonné », celui du README) à gauche ; plus de pôles Chaos/Ordre autour des vues.
+- **Barre du haut** : « MondoWrite » et son slogan (« Du chaos au monde ordonné », celui du README) à gauche ; plus de pôles Chaos/Ordre autour des vues.
 - **Éditeurs de texte** : cartes, Bible et manuscrit partagent `richTextExtensions()` (editorKit.ts). Ne pas configurer StarterKit à part dans un nouvel éditeur : on perdrait les cases, le Markdown collé et « à reprendre ». Titres de niveau 1 à 3 (le `# ` du Markdown marche).
 - **Markdown sur disque** : une case à cocher s'écrit `- [ ]` / `- [x]` (règle turndown `taskItem`) ; à la relecture, `sanitizeHtml` transforme le `<input type="checkbox">` de marked en `<li data-type="taskItem" data-checked>` dans `<ul data-type="taskList">`. Seuls ces attributs, avec ces valeurs, passent le nettoyage. « À reprendre » reste en `<mark>` dans le fichier.
 - **Collage de Markdown** : seulement un texte brut (`text/plain` sans `text/html`) qui ressemble à du Markdown (`looksLikeMarkdown`) ; le HTML collé garde le chemin de TipTap.
@@ -459,7 +473,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Couverture du projet** : `pitch` dans `cosmos.json`, écrit seulement quand un champ est rempli. Clés fixes (`tagline`, `logline`, `resume`, `comps`, `intention`, `genre`, `cible`, `format`, `pov`, `temps`, `ton`), jamais traduites ; les valeurs sont le texte de l'auteur (une pastille choisie garde le libellé de la langue du moment). Le volume n'est pas saisi (objectif de mots, ou pages du scénario) et les thèmes sont les cartes Thème : rien n'est recopié. Hors historique d'annulation, comme le titre du projet (les champs ont leur propre annulation). La Bible s'ouvre sur la couverture.
 - **Moteur d'un personnage** (avec l'arc : type dessiné et « Évolution » en mots, une seule notion) : ce sont des champs de la fiche (`objectif`, `besoin`, `blessure` ; `motivation`, `force`, `faille` pour un rôle qui dit « antagoniste », `isAntagonist`). `bandFields` les retire de la liste de `CardSheet` pour ne pas les montrer deux fois. `arcType` vaut `positif`, `negatif` ou `plat` (clé écrite dans le fichier, `readFiche` rejette toute autre valeur) ; export et IA l'écrivent en toutes lettres (`ficheText`).
 - **Relations, sans données propres** : la carte des relations lit les fils entre deux cartes Personnage (et leurs étiquettes). Le moodboard a été retiré à la demande de l'auteur. Rien n'est enregistré à part ; « Fiches » ou « Relations » est un état d'affichage. Les noms sont écrits sous les portraits : un fil qui part vers le bas commence après le nom, sinon son étiquette le recouvre.
-- **Questions par thème** : clés `<thème>.<rang>` (`passe.4`), textes dans `t.assistant.themeQuestions`, même nombre de questions dans chaque langue (un test le vérifie). Écrites pour Cosmos d'après les familles des questionnaires de personnage (ne pas recopier un questionnaire publié). Comme pour les niveaux, une question livrée ne se reformule pas, et on n'en retire pas du milieu d'une liste (les rangs suivants changeraient de clé, donc de champ reporté).
+- **Questions par thème** : clés `<thème>.<rang>` (`passe.4`), textes dans `t.assistant.themeQuestions`, même nombre de questions dans chaque langue (un test le vérifie). Écrites pour MondoWrite d'après les familles des questionnaires de personnage (ne pas recopier un questionnaire publié). Comme pour les niveaux, une question livrée ne se reformule pas, et on n'en retire pas du milieu d'une liste (les rangs suivants changeraient de clé, donc de champ reporté).
 - **Une seule banque de questions** : l'ancien découpage par niveaux (Essentiel, Approfondi, Intime) est devenu le premier thème, « L'essentiel » ; les questions de thème qui doublaient une question de niveau sont masquées (`THEME_KEYS`), pas retirées. La réponse de l'auteur va telle quelle dans le champ, jamais réécrite.
 - **Versions futures** : une carte garde dans `keep` (jamais affiché) ses lignes de frontmatter inconnues, ses champs de fiche inconnus et un type inconnu (elle s'affiche alors en Idée et réécrit son type tant que l'auteur n'en choisit pas un autre) ; `cardToFile` les réécrit. `cosmos.json` garde ses clés inconnues dans `metaKeep` (`unknownMeta`, liste `KNOWN_META` à tenir à jour quand on ajoute une clé). Un nouveau champ du frontmatter s'ajoute aussi à `KNOWN_FRONT` (markdown.ts), sinon il serait écrit deux fois.
 - **Fiche d'un personnage dans la Bible** : l'essentiel d'abord (portrait, moteur et arc, texte de l'auteur) ; la fiche d'identité est repliée, la galerie vide n'est qu'un bouton, l'assistant s'ouvre sur un clic. Ne pas rajouter de bloc toujours ouvert sans raison forte.
@@ -477,7 +491,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Gabarits expliqués** : `t.plan.templateAbout` sous le choix du gabarit (Plan et séquencier) ; dans le séquencier, chaque case de gabarit montre son aide (`t.plan.beats[clé].hint`, `isBeat`).
 - **Icône et logo** : une constellation (étoiles éparses, quelques-unes reliées, une qui brille). Source `src-tauri/icons/icon.svg` (aussi `public/favicon.svg`), PNG 1024 rendu depuis ce SVG puis `npx tauri icon` ; le logo de la barre du haut est la même figure en `currentColor`.
 - **Scènes de la vue Scénario** : la liste de gauche se réordonne (glisser, flèches de la scène en cours, Alt+↑/↓) avec `moveBlock`, comme le séquencier. `moveScene` (ScreenplayView) recharge l'éditeur lui-même (`synced`, `setContent`) avant d'y poser le curseur : passer par l'effet de rechargement remettrait le curseur au début.
-- **Projet d'exemple** : « Le Petit Chaperon rouge » de Perrault (texte de 1697, orthographe modernisée, dialogues entre « » sans tiret) avec trois gravures de Doré. `tryExample` écrit d'abord les gravures dans `medias/` (`demoMedia`, import dynamique : elles restent hors du paquet de démarrage), puis ouvre le projet. La traduction anglaise est propre à Cosmos : ne pas y recopier une traduction publiée. Changer l'exemple : `demo.ts` et `t.demo` dans les deux langues, et le test « essayer avec un exemple ».
+- **Projet d'exemple** : « Le Petit Chaperon rouge » de Perrault (texte de 1697, orthographe modernisée, dialogues entre « » sans tiret) avec trois gravures de Doré. `tryExample` écrit d'abord les gravures dans `medias/` (`demoMedia`, import dynamique : elles restent hors du paquet de démarrage), puis ouvre le projet. La traduction anglaise est propre à MondoWrite : ne pas y recopier une traduction publiée. Changer l'exemple : `demo.ts` et `t.demo` dans les deux langues, et le test « essayer avec un exemple ».
 - **Noms cités dans le texte** (`detectCards`) : un trait d'union lie deux mots, « la Mère » n'est pas citée dans « la Mère-grand ».
 - **Sélection multiple** : celle de React Flow (Maj + glisser, `multiSelectionKeyCode` Meta ou Control, `SelectionMode.Partial`), plus Ctrl/Cmd + A (`selectAll`), Échap (`clearSelection`) et, au doigt, le mode « Sélection » de `Toile` (glisser entoure au lieu de déplacer la vue, l'appui long ne crée plus de carte). La sélection n'entre ni dans l'historique ni dans le statut « modifié ». `deleteCards` met plusieurs cartes à la corbeille en une étape. Avec plusieurs cartes choisies, la barre de sélection remplace l'aide du bas et les poignées de largeur disparaissent (`.toile.has-multi`).
 - **Organiser en paysage** : les cases du gabarit (ou les chapitres, sans gabarit) se suivent de gauche à droite, nouvelle rangée avant 9 scènes (`SCENES_PER_ROW`) ; les scènes d'un groupe sont sur une ligne ; un cadre de type tient sur une rangée jusqu'à 4 cartes, puis `typeColumns` le rend plus large que haut. Les cartes Scène hors récit (pages du livre) ont leur cadre « Pages du livre » : sans lui elles restaient en place et chevauchaient un cadre.

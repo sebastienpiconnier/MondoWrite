@@ -53,7 +53,7 @@ export function Home() {
         <div className="brand">
           <BrandMark />
           <span className="brand-text">
-            <span className="brand-name">Cosmos</span>
+            <span className="brand-name">MondoWrite</span>
             <span className="brand-tagline">{t.app.tagline}</span>
           </span>
         </div>

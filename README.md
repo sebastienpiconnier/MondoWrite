@@ -1,4 +1,6 @@
-# Cosmos
+# MondoWrite
+
+*Anciennement Cosmos : seul le nom change, vos projets et réglages restent les mêmes.*
 
 **Français** · [English](README.en.md)
 
@@ -6,7 +8,7 @@
 
 <img width="1389" height="868" alt="preview (3)" src="https://github.com/user-attachments/assets/05dfbce7-cc79-433a-bb5a-b9e2ab889e2b" />
 
-<a href="https://youtu.be/5rjuSszJ8mA"><img src="docs/images/video-poster-fr.jpg" width="640" alt="Voir la vidéo de présentation de Cosmos (1 min)"></a>
+<a href="https://youtu.be/5rjuSszJ8mA"><img src="docs/images/video-poster-fr.jpg" width="640" alt="Voir la vidéo de présentation de MondoWrite (1 min)"></a>
 
 [Télécharger](#télécharger) · [Fonctionnalités](#fonctionnalités) · [L'IA](#lia-si-vous-le-souhaitez) · [Plateformes](#plateformes) · [Développer](#pour-développer)
 
@@ -24,7 +26,7 @@ En grec, *kosmos* désigne justement l'ordre du monde, né du chaos.
 
 ## 📐 Un outil pensé pour votre méthode de travail
 
-Cosmos a été conçu sur un principe fondamental : votre structure doit émerger naturellement, sans bureaucratie.
+MondoWrite a été conçu sur un principe fondamental : votre structure doit émerger naturellement, sans bureaucratie.
 
 ```text
    [ IDÉES & FRAGMENTS ] ──► ( Canevas interactif )
@@ -40,13 +42,13 @@ Cosmos a été conçu sur un principe fondamental : votre structure doit émerge
 - **Des gabarits de structure éprouvés.** Placez vos scènes selon le Voyage du héros, Save the Cat! ou la structure en trois actes. Visualisez la chronologie par intrigue pour repérer d'un coup d'œil où un sous-fil narratif s'estompe.
 - **La fiche personnage comme moteur dramatique.** Définissez en trois cases lisibles le moteur de vos personnages (Veut, A besoin de, Blessure). Laissez l'assistant vous poser les bonnes questions pour combler vos zones d'ombre.
 - **Souveraineté et pérennité.** Pas de cloud propriétaire, pas d'abonnement, pas de format verrouillé. Vos projets sont de simples dossiers de fichiers Markdown enregistrés sur votre machine. Vous gardez 100 % du contrôle sur votre œuvre.
-- **Libre et gratuit.** Cosmos est un logiciel libre, distribué sous licence GPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
+- **Libre et gratuit.** MondoWrite est un logiciel libre, distribué sous licence GPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
 
 **L'IA ne rédigera pas votre livre.** Si vous choisissez de l'activer (y compris un modèle 100 % local sur votre ordinateur), elle se contente d'analyser vos incohérences, de remettre vos notes en ordre et de vous poser des questions pointues. Vous restez l'unique architecte.
 
 ## 🧱 Prêts à bâtir votre prochain univers ?
 
-[Téléchargez Cosmos](https://github.com/sebastienpiconnier/cosmos/releases/latest) gratuitement pour macOS, Windows ou Linux, et transformez vos fragments d'idées en un monde parfaitement ordonné.
+[Téléchargez MondoWrite](https://github.com/sebastienpiconnier/cosmos/releases/latest) gratuitement pour macOS, Windows ou Linux, et transformez vos fragments d'idées en un monde parfaitement ordonné.
 
 ## Télécharger
 
@@ -54,9 +56,9 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 > **Premier lancement.** Sur macOS, l'app est signée et vérifiée par Apple : elle s'ouvre normalement. Sur Windows, elle n'est pas encore signée : si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
 
-**Mises à jour :** Cosmos vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de Cosmos »).
+**Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-Cosmos est en cours de développement (version 0.1.7).
+MondoWrite est en cours de développement (version 0.1.7).
 
 ## Fonctionnalités
 
@@ -64,7 +66,7 @@ Cosmos est en cours de développement (version 0.1.7).
 
 - **Cartes libres :** double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche N, et vous écrivez directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Dix types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question, Image, Lien, Document. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
-- **Coller, comme dans Milanote :** collez ou déposez un lien ou une image sur le canevas : une seule carte **Lien** ou **Image** naît là où vous êtes (un texte collé devient une Idée). Collez une adresse dans une carte encore vide : c'est elle qui devient la carte Lien, sans en créer une deuxième. « Organiser le canevas » les range dans les cadres Images et Liens, et la Bible a une rubrique pour chacun. Pour un lien, Cosmos lit la page : titre, auteur, date de publication et image du site arrivent d'eux-mêmes. Le même lien collé deux fois ne crée qu'une carte. Un lien garde le jour où vous l'avez consulté ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
+- **Coller, comme dans Milanote :** collez ou déposez un lien ou une image sur le canevas : une seule carte **Lien** ou **Image** naît là où vous êtes (un texte collé devient une Idée). Collez une adresse dans une carte encore vide : c'est elle qui devient la carte Lien, sans en créer une deuxième. « Organiser le canevas » les range dans les cadres Images et Liens, et la Bible a une rubrique pour chacun. Pour un lien, MondoWrite lit la page : titre, auteur, date de publication et image du site arrivent d'eux-mêmes. Le même lien collé deux fois ne crée qu'une carte. Un lien garde le jour où vous l'avez consulté ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
 - **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
 - **Mise en forme et Markdown :** sélectionnez un mot, une barre propose gras, italique, barré, titre, listes, case à cocher, citation. Le Markdown marche à la frappe (`**gras**`, `*italique*`, `# titre`, `- liste`, `[ ] tâche`) et au collage, dans les cartes, la Bible et le manuscrit, et les fichiers restent en Markdown.
 - **À faire :** les cases non cochées, les passages « à reprendre », les questions gardées pour plus tard et les questions ouvertes, rassemblés dans un seul panneau, chacun relié à sa carte ou à sa scène.
@@ -154,7 +156,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma, re
 
 ### L'IA, si vous le souhaitez
 
-Cosmos fonctionne entièrement sans IA. Vous pouvez en brancher une dans les Réglages :
+MondoWrite fonctionne entièrement sans IA. Vous pouvez en brancher une dans les Réglages :
 
 - **En local**, avec Ollama ou LM Studio : vos textes ne quittent jamais votre machine. Aucun réglage du serveur n'est nécessaire.
 - **Avec votre propre clé**, chez Claude, OpenAI ou OpenRouter : les passages analysés sont alors envoyés à ce fournisseur, selon ses conditions. Votre clé reste sur votre appareil, jamais dans le projet.
@@ -210,7 +212,7 @@ Chaque projet est un dossier :
 - `scenario.fountain` : le texte du scénario
 - `medias/` : les images
 - `corbeille/` : les cartes supprimées, restaurables
-- `markdown/` : le manuscrit, la bible et le canevas en trois fichiers Markdown, avec leurs images et des liens entre les fiches, à lire hors de Cosmos (Obsidian, Typora, GitHub…). Ils sont réécrits à chaque enregistrement : modifiez le texte dans l'app, pas dans ces copies. `markdown/versions/` en garde une version par jour pendant 30 jours, puis une par mois. Le réglage se coupe dans les Réglages du projet.
+- `markdown/` : le manuscrit, la bible et le canevas en trois fichiers Markdown, avec leurs images et des liens entre les fiches, à lire hors de MondoWrite (Obsidian, Typora, GitHub…). Ils sont réécrits à chaque enregistrement : modifiez le texte dans l'app, pas dans ces copies. `markdown/versions/` en garde une version par jour pendant 30 jours, puis une par mois. Le réglage se coupe dans les Réglages du projet.
 
 ```markdown
 ---
@@ -288,8 +290,8 @@ Architecture, conventions et feuille de route détaillée : voir [CLAUDE.md](CLA
 
 ## Licence
 
-Cosmos est un logiciel libre, distribué sous licence [GNU GPL v3.0 ou ultérieure](LICENSE). Vous pouvez l'utiliser, l'étudier, le modifier et le redistribuer ; toute version modifiée que vous distribuez doit rester sous la même licence.
+MondoWrite est un logiciel libre, distribué sous licence [GNU GPL v3.0 ou ultérieure](LICENSE). Vous pouvez l'utiliser, l'étudier, le modifier et le redistribuer ; toute version modifiée que vous distribuez doit rester sous la même licence.
 
 Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/assets/fonts/OFL.txt)).
 
-Le projet d'exemple reprend « Le Petit Chaperon rouge » de Charles Perrault (*Histoires ou contes du temps passé*, 1697) et trois gravures de Gustave Doré, gravées sur bois par Pannemaker (édition Hetzel, 1862), tous du domaine public. La traduction anglaise du conte a été faite pour Cosmos.
+Le projet d'exemple reprend « Le Petit Chaperon rouge » de Charles Perrault (*Histoires ou contes du temps passé*, 1697) et trois gravures de Gustave Doré, gravées sur bois par Pannemaker (édition Hetzel, 1862), tous du domaine public. La traduction anglaise du conte a été faite pour MondoWrite.

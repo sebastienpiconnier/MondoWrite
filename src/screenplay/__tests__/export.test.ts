@@ -144,7 +144,7 @@ describe("PDF", () => {
     expect(pdf.getPageCount()).toBe(2);
     expect(pdf.getPage(0).getSize()).toEqual({ width: 612, height: 792 });
     expect(pdf.getTitle()).toBe("Le Phare des Absents");
-    expect(pdf.getCreator()).toBe("Cosmos");
+    expect(pdf.getCreator()).toBe("MondoWrite");
   });
 
   it("A4, sans page de titre ; scénario vide : une feuille blanche", async () => {

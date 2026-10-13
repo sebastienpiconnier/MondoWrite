@@ -1,5 +1,5 @@
 // Copies Markdown du projet, dans markdown/ : le manuscrit (roman), la bible et le canevas, lisibles hors de
-// Cosmos (Obsidian, Typora, un éditeur de texte, GitHub). Réécrites après chaque enregistrement quand leur
+// MondoWrite (Obsidian, Typora, un éditeur de texte, GitHub). Réécrites après chaque enregistrement quand leur
 // texte change, jamais relues : la source reste cartes/, manuscrit/ et cosmos.json.
 // Les mentions et les cartes reliées deviennent des liens vers la fiche (bible.md, sinon canevas.md), les
 // images pointent vers medias/. Une version par jour dans versions/AAAA-MM-JJ/ : les 30 derniers jours, plus

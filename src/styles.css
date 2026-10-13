@@ -1,4 +1,4 @@
-/* Cosmos : jetons de design repris de la maquette.
+/* MondoWrite : jetons de design repris de la maquette.
    Règle : aucune couleur en dur dans les composants, uniquement ces variables.
    Le thème est posé sur <html data-theme="light|dark"> par settings.ts. */
 :root {

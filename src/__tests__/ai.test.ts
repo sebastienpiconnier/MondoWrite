@@ -40,7 +40,7 @@ describe("services", () => {
     expect(JSON.parse(openai.body!)).toEqual({ model: "modele", stream: false, messages: [{ role: "system", content: "Consigne" }, { role: "user", content: "Texte" }] });
     const router = chatRequest(config("openrouter"), "c", "t");
     expect(router.url).toBe("https://openrouter.ai/api/v1/chat/completions");
-    expect(router.headers).toMatchObject({ authorization: "Bearer sk-test", "x-title": "Cosmos" });
+    expect(router.headers).toMatchObject({ authorization: "Bearer sk-test", "x-title": "MondoWrite" });
   });
 
   it("Ollama et LM Studio : serveur local, sans clé, adresse modifiable", () => {
