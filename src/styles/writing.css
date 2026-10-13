@@ -306,7 +306,9 @@
 kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 5px; background: var(--ground); color: var(--ink); font: 600 12px/1.5 var(--font-ui); text-align: center; }
 .about { font: 16px/1.6 var(--font-text); }
 .about-version { font: 500 14px var(--font-ui); color: var(--ink-2); }
-.about-tagline { margin: -6px 0 12px; color: var(--accent-ink); font: 500 15px var(--font-ui); }
+.about-brand { display: flex; align-items: center; gap: 16px; }
+.about-brand h2 { margin: 0; font-size: 30px; }
+.about-tagline { margin: 6px 0 12px; color: var(--ink-2); font: 400 12px var(--font-brand); letter-spacing: 0.18em; text-transform: uppercase; }
 .about ul { padding-left: 20px; }
 .about-link { font-family: var(--font-ui); font-size: 14px; user-select: all; overflow-wrap: anywhere; }
 

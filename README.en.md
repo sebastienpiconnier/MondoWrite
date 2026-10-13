@@ -1,5 +1,7 @@
 # MondoWrite
 
+<img src="docs/images/logo-en.png" width="600" alt="MondoWrite, from chaos to an ordered world">
+
 *Formerly Cosmos: only the name changes, your projects and settings stay the same.*
 
 [Français](README.md) · **English**
@@ -81,7 +83,7 @@ MondoWrite is under active development (version 0.1.9).
 - **Multiple selection:** `Shift` + drag draws around cards, `Ctrl`/`Cmd` + click adds one, `Ctrl`/`Cmd`+`A` selects everything, `Esc` deselects; with a finger, the “Select” button. Selected cards move together, and a bar offers to frame them or move them to the trash.
 - **Card width:** drag the bottom-right handle of a selected card, or `Alt`+`→` and `Alt`+`←`.
 - **New card:** the button creates an Idea (`N` key); its arrow offers every card type (Character, Place, Scene, Plot, Theme, Question, Link, Image, PDF document). A Link waits for its address in its title; an Image offers a free photo or an image from this device.
-- **Frames:** a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards and inner frames along. The padlock in its header **locks** it: “Organise” leaves it alone (the frame and its cards) and it can't be moved by accident.
+- **Frames:** a named rectangle (“Act 1?”, “The lighthouse”) to group cards. Button or `C` key; with cards selected, the frame wraps them. Moving it takes its cards and inner frames along. The padlock in its header **locks** it: the frame and its cards stay put, by hand or with “Organise” (the cards can still be edited).
 - **Organise the canvas:** one button puts every card in a frame (characters, places, themes, questions, loose ideas, images, links, documents, book pages) and the scenes by template beat and chapter, linked in story order, below the locked frames it leaves in place. Landscape first: beats follow each other left to right, in rows of at most 8 scenes. `Ctrl`/`Cmd`+`Z` puts everything back.
 - **Trash:** a deleted card (from the canvas, the outline, the step outline or the manuscript) goes to the trash with its threads, and in a screenplay with its scene’s text. A message offers to undo; the trash (in Settings) puts each card back where it was or deletes it for good. It lives in the project’s `corbeille/` folder.
 - **Undo and redo:** `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.

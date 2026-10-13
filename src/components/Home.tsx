@@ -8,7 +8,7 @@ import { useCosmos } from "../store";
 import { storage, type ProjectEntry } from "../storage";
 import { PROJECT_KINDS, type ProjectKind } from "../types";
 import { Settings } from "./Settings";
-import { BrandMark } from "./BrandMark";
+import { BrandMark, Wordmark } from "./BrandMark";
 import { ProfilePanel } from "./ProfilePanel";
 
 export function Home() {
@@ -51,9 +51,9 @@ export function Home() {
     <div className="home">
       <header className="topbar">
         <div className="brand">
-          <BrandMark />
+          <BrandMark size={34} />
           <span className="brand-text">
-            <span className="brand-name">MondoWrite</span>
+            <Wordmark className="brand-name" />
             <span className="brand-tagline">{t.app.tagline}</span>
           </span>
         </div>

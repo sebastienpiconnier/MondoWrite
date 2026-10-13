@@ -325,6 +325,17 @@ const LOCKED_GAP = 120;
 const insideBox = (x: number, y: number, b: { x: number; y: number; width: number; height: number }) =>
   x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
 
+/**
+ * Cartes tenues par un cadre verrouillé (leur centre est dedans) : elles ne bougent plus, ni à la main
+ * ni par « Organiser ». On peut toujours les modifier, les relier ou les supprimer.
+ */
+export function heldCardIds(nodes: CardNode[], frames: FrameNode[]): Set<string> {
+  const locked = frames.filter((f) => f.data.locked).map(frameBox);
+  if (locked.length === 0) return new Set();
+  const sizes = boxes(nodes);
+  return new Set(nodes.filter((_, i) => locked.some((f) => insideBox(sizes[i].x + sizes[i].width / 2, sizes[i].y + sizes[i].height / 2, f))).map((n) => n.id));
+}
+
 const isBlankCard = (card: CardData) =>
   !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim() && ["idee", "lien", "image"].includes(card.type);
 
@@ -1000,11 +1011,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Les cadres verrouillés restent tels quels, avec les cartes dont le centre est dedans. Tout le reste
       // se range, Liens, Images et Documents compris, sous ces cadres pour ne jamais les chevaucher.
       const locked = get().frames.filter((f) => f.data.locked).map(frameBox);
-      const held = (n: CardNode) => {
-        const [b] = boxes([n]);
-        return locked.some((f) => insideBox(b.x + b.width / 2, b.y + b.height / 2, f));
-      };
-      const arranged = nodes.filter((n) => !held(n));
+      const held = heldCardIds(nodes, get().frames);
+      const arranged = nodes.filter((n) => !held.has(n.id));
       if (arranged.length === 0) return;
       const t = getT();
       const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
@@ -1284,7 +1292,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ frames: get().frames.filter((f) => f.id !== id) });
       touch();
     },
-    onNodesChange: (changes) => {
+    onNodesChange: (incoming) => {
+      // Une carte tenue par un cadre verrouillé ne bouge pas (glisser, sélection multiple, flèches du clavier).
+      const held = heldCardIds(get().nodes, get().frames);
+      const changes = held.size > 0 ? incoming.filter((c) => !(c.type === "position" && held.has(c.id))) : incoming;
+      if (changes.length === 0) return;
       const frameIds = new Set(get().frames.map((f) => f.id));
       const isFrame = (c: NodeChange<CardNode | FrameNode>) => "id" in c && frameIds.has(c.id);
       const frameChanges = changes.filter(isFrame) as NodeChange<FrameNode>[];

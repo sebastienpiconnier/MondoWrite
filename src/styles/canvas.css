@@ -80,6 +80,8 @@
 .card.is-selected { border-color: var(--accent); }
 .card-handle { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 2px; cursor: grab; }
 .card-handle:active { cursor: grabbing; }
+/* Carte tenue par un cadre verrouillé : elle ne se déplace pas. */
+.react-flow__node-card:not(.draggable) :is(.card-handle, .card-image) { cursor: default; }
 .card-type {
   display: inline-flex; align-items: center; gap: 6px; min-height: 28px; margin-left: -6px; padding: 0 6px;
   border: 0; border-radius: 6px; background: transparent; cursor: pointer;

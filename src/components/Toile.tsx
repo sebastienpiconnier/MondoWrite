@@ -14,7 +14,7 @@ import {
   useReactFlow,
   type Edge,
 } from "@xyflow/react";
-import { useCosmos } from "../store";
+import { heldCardIds, useCosmos } from "../store";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
@@ -81,7 +81,11 @@ export function Toile() {
   const frames = useCosmos((s) => s.frames);
   const addFrame = useCosmos((s) => s.addFrame);
   // Les cadres d'abord : ils se dessinent derrière les cartes.
-  const allNodes = useMemo(() => [...frames, ...nodes], [frames, nodes]);
+  // Une carte tenue par un cadre verrouillé ne se déplace pas : React Flow ne la laisse pas glisser.
+  const allNodes = useMemo(() => {
+    const held = heldCardIds(nodes, frames);
+    return [...frames, ...(held.size === 0 ? nodes : nodes.map((n) => (held.has(n.id) ? { ...n, draggable: false } : n)))];
+  }, [frames, nodes]);
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
   const { screenToFlowPosition, fitView } = useReactFlow();

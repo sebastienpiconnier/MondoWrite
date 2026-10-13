@@ -1,5 +1,7 @@
 # MondoWrite
 
+<img src="docs/images/logo-fr.png" width="600" alt="MondoWrite, du chaos au monde ordonné">
+
 *Anciennement Cosmos : seul le nom change, vos projets et réglages restent les mêmes.*
 
 **Français** · [English](README.en.md)
@@ -81,7 +83,7 @@ MondoWrite est en cours de développement (version 0.1.9).
 - **Sélection multiple :** Maj + glisser entoure des cartes, Ctrl/Cmd + clic en ajoute une, Ctrl/Cmd + A sélectionne tout, Échap désélectionne ; au doigt, le bouton « Sélection ». Les cartes choisies se déplacent ensemble, et une barre propose de les encadrer ou de les mettre à la corbeille.
 - **Largeur des cartes :** tirez la poignée du coin bas droit d'une carte sélectionnée, ou Alt+→ et Alt+←.
 - **Nouvelle carte :** le bouton crée une Idée (touche N) ; sa flèche propose tous les types de carte (Personnage, Lieu, Scène, Intrigue, Thème, Question, Lien, Image, Document PDF). Un Lien attend son adresse dans son titre ; une Image propose une photo libre ou une image de l'appareil.
-- **Cadres :** un rectangle nommé (« Acte 1 ? », « Le phare ») pour regrouper des cartes. Bouton ou touche C ; avec des cartes sélectionnées, le cadre les entoure. Le déplacer emmène ses cartes et les cadres qu'il contient. Le cadenas de son en-tête le **verrouille** : « Organiser » n'y touche plus (ni au cadre, ni à ses cartes) et il ne bouge plus par mégarde.
+- **Cadres :** un rectangle nommé (« Acte 1 ? », « Le phare ») pour regrouper des cartes. Bouton ou touche C ; avec des cartes sélectionnées, le cadre les entoure. Le déplacer emmène ses cartes et les cadres qu'il contient. Le cadenas de son en-tête le **verrouille** : le cadre et ses cartes ne bougent plus, ni à la main ni par « Organiser » (les cartes restent modifiables).
 - **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac, images, liens, documents, pages du livre) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit, sous les cadres verrouillés qu'il laisse en place. En paysage : les cases se suivent de gauche à droite, rangées de 8 scènes au plus. Ctrl/Cmd+Z remet tout comme avant.
 - **Corbeille :** une carte supprimée (sur le canevas, dans le plan, le séquencier ou le manuscrit) part à la corbeille avec ses fils, et dans un scénario avec le texte de sa scène. Un message propose d'annuler ; la corbeille (dans les Réglages) remet chaque carte à sa place ou la supprime pour de bon. Elle vit dans le dossier `corbeille/` du projet.
 - **Annuler et rétablir :** Ctrl/Cmd+Z et Ctrl/Cmd+Maj+Z, ou les deux boutons du canevas. Cartes, fils, déplacements et textes.

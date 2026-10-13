@@ -1,5 +1,5 @@
 import { useCosmos, type View } from "../store";
-import { BrandMark } from "./BrandMark";
+import { BrandMark, Wordmark } from "./BrandMark";
 import { useVocab } from "../vocab";
 import { Settings } from "./Settings";
 import { ExportMenu } from "./ExportMenu";
@@ -23,10 +23,10 @@ export function TopBar() {
   return (
     <header className="topbar">
       <div className="brand">
-        <BrandMark />
+        <BrandMark size={34} />
         {/* Le nom et le slogan du projet (celui du README) : « du chaos au monde ordonné ». */}
         <span className="brand-text">
-          <span className="brand-name">MondoWrite</span>
+          <Wordmark className="brand-name" />
           <span className="brand-tagline">{t.app.tagline}</span>
         </span>
         {/* Le titre se change ici, directement. */}

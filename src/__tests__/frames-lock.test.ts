@@ -2,7 +2,7 @@
 // Cadres verrouillés : « Organiser » n'y touche pas, ni à leurs cartes ; le verrou s'enregistre et s'annule.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useCosmos } from "../store";
+import { heldCardIds, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { META_FILE, storage } from "../storage";
 import { frameBox } from "../projectState";
@@ -86,5 +86,39 @@ describe("verrouiller un cadre", () => {
     await state().save();
     const again = JSON.parse((await storage.readAll())![META_FILE]);
     expect(again.frames.find((f: { id: string }) => f.id === free)).not.toHaveProperty("locked");
+  });
+});
+
+describe("les cartes d'un cadre verrouillé", () => {
+  it("ne se déplacent plus (glisser, flèches) ; les autres, si, dans le même geste", () => {
+    const { inside, frame, a } = lockedSetup();
+    const before = { ...at(inside) };
+    expect(heldCardIds(state().nodes, state().frames)).toEqual(new Set([inside]));
+    state().onNodesChange([
+      { type: "position", id: inside, position: { x: before.x + 300, y: before.y + 300 }, dragging: false },
+      { type: "position", id: a, position: { x: 50, y: 2000 }, dragging: false },
+    ]);
+    expect(at(inside)).toEqual(before);
+    expect(at(a)).toEqual({ x: 50, y: 2000 });
+    // Déverrouillé : la carte bouge de nouveau.
+    state().toggleFrameLock(frame);
+    expect(heldCardIds(state().nodes, state().frames).size).toBe(0);
+    state().onNodesChange([{ type: "position", id: inside, position: { x: 10, y: 20 }, dragging: false }]);
+    expect(at(inside)).toEqual({ x: 10, y: 20 });
+  });
+
+  it("restent modifiables et supprimables", () => {
+    const { inside } = lockedSetup();
+    state().updateCard(inside, { title: "Inès" });
+    expect(state().nodes.find((n) => n.id === inside)!.data.title).toBe("Inès");
+    state().deleteCard(inside);
+    expect(state().nodes.some((n) => n.id === inside)).toBe(false);
+  });
+
+  it("une carte déposée dans un cadre verrouillé y reste tenue", () => {
+    const { frame, a } = lockedSetup();
+    const box = frameBox(frameOf(frame));
+    state().onNodesChange([{ type: "position", id: a, position: { x: box.x + 40, y: box.y + 80 }, dragging: false }]);
+    expect(heldCardIds(state().nodes, state().frames).has(a)).toBe(true);
   });
 });

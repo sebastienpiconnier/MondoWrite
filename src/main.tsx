@@ -6,6 +6,9 @@ import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
 import "@fontsource/ibm-plex-serif/400.css";
+import "@fontsource/playfair-display/700.css"; // logotype « Mondo »
+import "@fontsource/playfair-display/400-italic.css"; // logotype « Write »
+import "@fontsource/playfair-display/400.css"; // slogan sous le logotype
 import "@fontsource/courier-prime/400.css"; // en-têtes de scène (scénario)
 import "@fontsource/courier-prime/700.css";
 import "@xyflow/react/dist/style.css";

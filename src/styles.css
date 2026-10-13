@@ -3,6 +3,9 @@
    Le thème est posé sur <html data-theme="light|dark"> par settings.ts. */
 :root {
   --ink: #1b1e2e;
+  /* Identité : traits et étoile du logo (l'icône de l'app garde ses couleurs : #141B2D, #F4F0E8, #F2C14E) */
+  --brand-line: #9a9dab;
+  --brand-star: #e0a82e;
   --ink-2: #4a4f63;
   --muted: #5a5f73;
   --placeholder: #6e7388;
@@ -48,6 +51,7 @@
   --cover-line: rgb(255 255 255 / 0.28);
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-brand: "Playfair Display", Georgia, serif;
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-text: "IBM Plex Serif", Georgia, serif;
   --font-script: "Courier Prime", "Courier New", monospace; /* format scénario */
@@ -55,6 +59,8 @@
 
 :root[data-theme="dark"] {
   --ink: #e7e9f1;
+  --brand-line: #8e9099;
+  --brand-star: #f2c14e;
   --ink-2: #b9bdcc;
   --muted: #9ca1b4;
   --placeholder: #8f94a8;
@@ -170,8 +176,11 @@ button { font: inherit; color: inherit; }
 }
 .topbar > .brand { justify-self: start; }
 .topbar > .actions { justify-self: end; }
-.brand { display: flex; align-items: center; gap: 10px; color: var(--accent); }
-.brand-name { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ink); }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
+/* Logotype : « Mondo » droit et gras, « Write » en italique fin (Playfair Display), comme sur la planche. */
+.wordmark { font-family: var(--font-brand); font-weight: 700; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
+.wordmark i { font-weight: 400; font-style: italic; letter-spacing: 0; }
+.brand-name { font-size: 22px; line-height: 1.05; }
 .brand { min-width: 0; }
 /* Titre du projet : un champ qui ressemble à du texte, modifiable sur place. */
 .brand-project {
@@ -185,7 +194,7 @@ button { font: inherit; color: inherit; }
 
 .views { display: flex; align-items: center; gap: 4px; margin: 0; background: var(--ground); border-radius: 999px; padding: 4px; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-.brand-tagline { font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.brand-tagline { margin-top: 3px; font-family: var(--font-brand); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
 .views button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-size: 14px; cursor: pointer; min-height: 36px; }
 .views button:hover { background: var(--hover); }
 .views button.is-current { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }

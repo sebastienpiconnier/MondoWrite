@@ -1,35 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3f43c4"/>
-      <stop offset="1" stop-color="#16184a"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#ffe3a3" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#ffe3a3" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
-  <!-- Le chaos : des poussières d'étoiles éparses -->
-  <g fill="#c9cbf7" opacity="0.55">
-    <circle cx="210" cy="250" r="9"/>
-    <circle cx="300" cy="170" r="6"/>
-    <circle cx="180" cy="420" r="7"/>
-    <circle cx="820" cy="820" r="7"/>
-    <circle cx="300" cy="830" r="6"/>
-    <circle cx="560" cy="200" r="6"/>
-  </g>
-  <!-- L'ordre : une constellation reliée -->
-  <g stroke="#e6e7ff" stroke-width="14" stroke-linecap="round" opacity="0.85" fill="none">
-    <path d="M250 690 L400 470 L560 560 L700 330"/>
-    <path d="M560 560 L720 720"/>
-  </g>
-  <g fill="#ffffff">
-    <circle cx="250" cy="690" r="30"/>
-    <circle cx="400" cy="470" r="38"/>
-    <circle cx="560" cy="560" r="34"/>
-    <circle cx="720" cy="720" r="28"/>
-  </g>
-  <circle cx="700" cy="330" r="150" fill="url(#glow)"/>
-  <path d="M700 205 C712 290 740 318 825 330 C740 342 712 370 700 455 C688 370 660 342 575 330 C660 318 688 290 700 205 Z" fill="#ffd27a"/>
+  <rect width="1024" height="1024" rx="230" fill="#141B2D"/>
+  <circle cx="723.88" cy="297.01" r="108.12" fill="#F2C14E" fill-opacity="0.22"/>
+  <polyline points="226.8,724.5 298.25,298.25 510.76,582.83 723.88,297.01 795.34,724.5" fill="none" stroke="#8E9099" stroke-width="8.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="298.25" cy="298.25" r="27.34" fill="#F4F0E8"/>
+  <circle cx="510.76" cy="582.83" r="22.37" fill="#F4F0E8"/>
+  <circle cx="226.8" cy="724.5" r="24.23" fill="#F4F0E8"/>
+  <circle cx="795.34" cy="724.5" r="24.23" fill="#F4F0E8"/>
+  <path d="M723.88 206.29 Q735.06 285.83 814.6 297.01 Q735.06 308.19 723.88 387.73 Q712.7 308.19 633.16 297.01 Q712.7 285.83 723.88 206.29Z" fill="#F2C14E"/>
 </svg>

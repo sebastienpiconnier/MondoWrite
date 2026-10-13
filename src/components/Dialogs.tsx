@@ -1,6 +1,7 @@
 // Fenêtres par-dessus l'app : la liste des raccourcis clavier (Cmd/Ctrl + /) et « À propos de MondoWrite ».
 // Ouvertes depuis les Réglages ou au clavier ; <dialog> natif : Échap ferme, le focus est retenu dedans.
 
+import { BrandMark, Wordmark } from "./BrandMark";
 import { useEffect, useRef } from "react";
 import { useCosmos } from "../store";
 import { useT } from "../i18n";
@@ -62,9 +63,12 @@ export function Dialogs() {
       {dialog === "photos" && <PhotoSearch />}
       {dialog === "about" && (
         <div className="about">
-          <h2 id="app-dialog-title">
-            MondoWrite <span className="about-version">{version}</span>
-          </h2>
+          <div className="about-brand">
+            <BrandMark size={72} />
+            <h2 id="app-dialog-title">
+              <Wordmark /> <span className="about-version">{version}</span>
+            </h2>
+          </div>
           <p className="about-tagline">{t.app.tagline}</p>
           {/* Nouvelle version : recherche à la demande (app de bureau). */}
           <div className="about-updates">
