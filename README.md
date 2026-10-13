@@ -48,11 +48,11 @@ MondoWrite a été conçu sur un principe fondamental : votre structure doit ém
 
 ## 🧱 Prêts à bâtir votre prochain univers ?
 
-[Téléchargez MondoWrite](https://github.com/sebastienpiconnier/cosmos/releases/latest) gratuitement pour macOS, Windows ou Linux, et transformez vos fragments d'idées en un monde parfaitement ordonné.
+[Téléchargez MondoWrite](https://github.com/sebastienpiconnier/MondoWrite/releases/latest) gratuitement pour macOS, Windows ou Linux, et transformez vos fragments d'idées en un monde parfaitement ordonné.
 
 ## Télécharger
 
-Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/cosmos/releases).
+Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases).
 
 > **Premier lancement.** Sur macOS, l'app est signée et vérifiée par Apple : elle s'ouvre normalement. Sur Windows, elle n'est pas encore signée : si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
 

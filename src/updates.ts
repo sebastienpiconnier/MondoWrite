@@ -13,7 +13,7 @@ import { create } from "zustand";
 import { isMobileOS, isTauri, openExternal } from "./platform";
 import { version as CURRENT } from "../package.json";
 
-export const REPO = "sebastienpiconnier/cosmos";
+export const REPO = "sebastienpiconnier/MondoWrite";
 export const RELEASES_API = `https://api.github.com/repos/${REPO}/releases/latest`;
 export const RELEASES_PAGE = `https://github.com/${REPO}/releases/latest`;
 /** Au lancement, pas plus d'une vérification par jour. */

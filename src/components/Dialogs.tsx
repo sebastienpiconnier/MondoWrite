@@ -12,7 +12,7 @@ import { DocumentViewer } from "./DocumentViewer";
 import { PhotoSearch } from "./PhotoSearch";
 import { UpdateSettings } from "./Updates";
 
-const REPO = "https://github.com/sebastienpiconnier/cosmos";
+const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
 export function Dialogs() {
   const dialog = useCosmos((s) => s.dialog);

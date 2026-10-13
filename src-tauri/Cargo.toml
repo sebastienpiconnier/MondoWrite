@@ -4,7 +4,7 @@ version = "0.1.7"
 description = "MondoWrite : du chaos au monde ordonné, une toile pour les écrivains"
 authors = ["Sébastien Piconnier"]
 license = "GPL-3.0-or-later"
-repository = "https://github.com/sebastienpiconnier/cosmos"
+repository = "https://github.com/sebastienpiconnier/MondoWrite"
 edition = "2024"
 rust-version = "1.90"
 

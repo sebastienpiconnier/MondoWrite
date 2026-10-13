@@ -30,7 +30,7 @@ describe("versions", () => {
 });
 
 describe("Release GitHub", () => {
-  const release = { tag_name: "v0.1.6", html_url: "https://github.com/sebastienpiconnier/cosmos/releases/tag/v0.1.6", body: "## Nouveautés\r\n- Mises à jour", draft: false, prerelease: false };
+  const release = { tag_name: "v0.1.6", html_url: "https://github.com/sebastienpiconnier/MondoWrite/releases/tag/v0.1.6", body: "## Nouveautés\r\n- Mises à jour", draft: false, prerelease: false };
 
   it("version, page et notes ; brouillon, préversion et adresse étrangère écartés", () => {
     expect(parseRelease(release)).toEqual({ version: "0.1.6", url: release.html_url, notes: "## Nouveautés\n- Mises à jour" });

@@ -10,9 +10,10 @@ Ce qui garde « cosmos » **exprès**, à ne jamais renommer :
 - `identifier` = `app.cosmos.ecriture` (tauri.conf.json) : c'est l'identité de l'app pour le système. Le changer en ferait une autre app : réglages, clés d'IA et données du WebView (rangés sous cet identifiant) seraient perdus, et la mise à jour ne trouverait plus l'installation.
 - Le format de fichier : `cosmos.json`, liens `cosmos:<id>`, notes Fountain `[[cosmos:…]]`. C'est un contrat (voir « Format »).
 - Les clés de stockage local (`cosmos:reglages`, `cosmos:projets`, `cosmos:dernier-dossier`, `cosmos:projet:…`) : les renommer viderait réglages et projets récents.
-- L'adresse des mises à jour (`plugins.updater.endpoints`) et `REPO` (updates.ts) : les versions installées interrogent cette adresse ; si le dépôt GitHub est renommé, GitHub redirige l'ancienne.
 - `utm_source=cosmos` (Unsplash) : lié à l'app déclarée chez Unsplash.
 - Noms internes du code (`useCosmos`, `CosmosState`, paquet `cosmos`, crate `cosmos_lib`) : invisibles pour l'auteur.
+
+Dépôt GitHub renommé `sebastienpiconnier/MondoWrite` (octobre 2026) : `REPO` (updates.ts) et `plugins.updater.endpoints` pointent sur le nouveau nom. Les versions 0.1.7 et avant interrogent encore `sebastienpiconnier/cosmos`, que GitHub redirige : ne jamais recréer un dépôt nommé `cosmos` sur ce compte, la redirection cesserait et ces installations ne verraient plus les mises à jour.
 
 Fichiers de mise à jour Mac : leur nom suit `productName` (`MondoWrite_aarch64.app.tar.gz`) ; `scripts/updater-json.mjs` les reconnaît par leur fin de nom, quel que soit le préfixe.
 
