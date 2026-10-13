@@ -18,12 +18,49 @@ import { useCosmos } from "../store";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
+import { NewCardMenu, type NewCardKind } from "./NewCardMenu";
 import type { CardData } from "../types";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { isTouch } from "../platform";
 import { documentExtension, imageExtension } from "../media";
-import { clipFromText } from "../clip";
+import { TEXT_FILE_RE, clipFromText } from "../clip";
+
+/** Fichiers qui deviennent une carte quand on les dépose ou les colle sur le canevas. */
+const isIncomingFile = (f: File) =>
+  !!documentExtension(f.name) || f.type === "application/pdf" || !!imageExtension(f.name) || f.type.startsWith("image/") || TEXT_FILE_RE.test(f.name) || f.type === "text/plain" || f.type === "text/markdown";
+
+const blankCard = (card: CardData | undefined) =>
+  !!card && !card.fichier && !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim();
+
+/**
+ * Fichiers déposés ou collés : une carte chacun, dans l'ordre, la première là où l'on est (les suivantes à la
+ * première place libre à côté, jamais l'une sur l'autre). `target` : la carte sous le pointeur, qu'un fichier
+ * seul peut remplir (PDF ou image dans une carte vide, image sur n'importe quelle carte).
+ */
+async function addIncomingFiles(files: File[], at: { x: number; y: number } | undefined, target?: string) {
+  const store = useCosmos.getState();
+  const wanted = files.filter(isIncomingFile);
+  const card = target && wanted.length === 1 ? store.nodes.find((n) => n.id === target)?.data : undefined;
+  let created: string | null = null;
+  for (const [i, file] of wanted.entries()) {
+    const here = at && i > 0 ? { x: at.x + 30 * i, y: at.y + 30 * i } : at;
+    const bytes = async () => new Uint8Array(await file.arrayBuffer());
+    if (documentExtension(file.name) || file.type === "application/pdf") {
+      const doc = { name: documentExtension(file.name) ? file.name : "document.pdf", data: await bytes() };
+      if (card && (blankCard(card) || (card.type === "document" && !card.fichier))) await store.setCardDocument(card.id, doc);
+      else created = (await store.addDocument(doc, here)) ?? created;
+    } else if (imageExtension(file.name) || file.type.startsWith("image/")) {
+      const image = { name: imageExtension(file.name) ? file.name : `image.${file.type.split("/")[1] || "png"}`, data: await bytes() };
+      if (card) await store.setCardImage(card.id, image);
+      else created = (await store.addResearchImage(image, here)) ?? created;
+    } else {
+      created = store.addTextFile(file.name, await file.text(), here) ?? created;
+    }
+  }
+  // Plusieurs cartes : la dernière est montrée (la place libre la plus proche peut être hors de l'écran).
+  if (created && wanted.length > 1) useCosmos.setState({ focusId: created });
+}
 
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_TOLERANCE = 10; // px de mouvement avant d'abandonner
@@ -93,39 +130,28 @@ export function Toile() {
     addCard({ x: pos.x - 20, y: pos.y - 20 }); // la carte prend le focus elle-même
   };
 
-  // Image déposée : sur une carte, elle devient son image ; sur le canevas, une carte Image à cet endroit.
-  // Lien ou texte déposé depuis un navigateur : une carte Lien ou Extrait, là où on l'a lâché (une seule).
+  // Dépôt sur le canevas : chaque fichier devient une carte adaptée (PDF : Document, image : Image, .md ou
+  // .txt : la carte qu'il annonce), là où on l'a lâché. Un seul fichier lâché sur une carte vide la remplit
+  // (une image sur n'importe quelle carte devient son image). Un lien ou un texte venu d'un navigateur :
+  // une carte Lien, Image, Scène ou Idée selon ce qu'il contient (une seule).
   const onDrop = async (e: React.DragEvent) => {
     const at = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-    // Un PDF : une carte Document là où on l'a lâché (ou la carte vide sur laquelle on l'a lâché).
-    const pdf = [...e.dataTransfer.files].find((f) => documentExtension(f.name));
-    if (pdf) {
+    const files = [...e.dataTransfer.files];
+    if (files.some(isIncomingFile)) {
       e.preventDefault();
-      const target = (e.target as HTMLElement).closest(".react-flow__node-card")?.getAttribute("data-id");
-      const doc = { name: pdf.name, data: new Uint8Array(await pdf.arrayBuffer()) };
-      const store = useCosmos.getState();
-      const card = target ? store.nodes.find((n) => n.id === target)?.data : undefined;
-      const blank = card && !card.fichier && !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim();
-      if (card && (blank || (card.type === "document" && !card.fichier))) await store.setCardDocument(card.id, doc);
-      else await store.addDocument(doc, at);
+      const target = (e.target as HTMLElement).closest(".react-flow__node-card")?.getAttribute("data-id") ?? undefined;
+      await addIncomingFiles(files, at, target);
       return;
     }
-    const file = [...e.dataTransfer.files].find((f) => imageExtension(f.name));
-    if (!file) {
-      const link = e.dataTransfer.getData("text/uri-list").split("\n").find((l) => l && !l.startsWith("#"));
-      const text = link?.trim() || e.dataTransfer.getData("text/plain");
-      if (text && clipFromText(text)) {
-        e.preventDefault();
-        useCosmos.getState().addResearchClip(text, at);
-      }
-      return;
+    // Une image glissée depuis une page web (sans fichier) : son adresse, pour en faire une carte Image.
+    const html = e.dataTransfer.getData("text/html");
+    const picture = html.replace(/<[^>]*>/g, "").trim() ? null : html.match(/<img[^>]+src=["'](https?:[^"']+)["']/i)?.[1];
+    const link = e.dataTransfer.getData("text/uri-list").split("\n").find((l) => l && !l.startsWith("#"));
+    const text = picture?.replace(/&amp;/g, "&") || link?.trim() || e.dataTransfer.getData("text/plain");
+    if (text && clipFromText(text)) {
+      e.preventDefault();
+      useCosmos.getState().addResearchClip(text, at, !!picture && text === picture.replace(/&amp;/g, "&"));
     }
-    e.preventDefault();
-    const cardId = (e.target as HTMLElement).closest(".react-flow__node-card")?.getAttribute("data-id");
-    const image = { name: file.name, data: new Uint8Array(await file.arrayBuffer()) };
-    const { setCardImage, addResearchImage } = useCosmos.getState();
-    if (cardId) await setCardImage(cardId, image);
-    else await addResearchImage(image, at);
   };
 
   const isPane = (target: EventTarget | null) =>
@@ -150,6 +176,22 @@ export function Toile() {
   };
 
   // Raccourcis clavier : N (carte) et C (cadre), hors d'un champ ou d'une carte en cours d'écriture.
+  // Menu « Nouvelle carte » : au centre de la vue, comme le bouton.
+  const centerAt = () => {
+    const rect = wrapper.current?.getBoundingClientRect();
+    return rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 120 }) : undefined;
+  };
+  const createKind = (kind: NewCardKind) => {
+    const store = useCosmos.getState();
+    if (kind === "idee") createInCenter();
+    else if (kind === "lien") {
+      const at = centerAt();
+      if (at) store.addCard(at, "lien");
+    } else if (kind === "document") void store.pickDocument(undefined, centerAt());
+    else if (kind === "photo") store.openPhotos({ kind: "canvas", at: centerAt() });
+    else void store.pickImageCard(centerAt());
+  };
+
   const createInCenterRef = useRef(createInCenter);
   createInCenterRef.current = createInCenter;
   const createFrameRef = useRef(createFrame);
@@ -209,18 +251,11 @@ export function Toile() {
       const data = e.clipboardData;
       if (!data) return;
       const store = useCosmos.getState();
-      const image = [...data.files].find((f) => imageExtension(f.name) || f.type.startsWith("image/"));
       const at = pasteAtRef.current();
-      const pdf = [...data.files].find((f) => documentExtension(f.name) || f.type === "application/pdf");
-      if (pdf) {
+      const files = [...data.files];
+      if (files.some(isIncomingFile)) {
         e.preventDefault();
-        await store.addDocument({ name: documentExtension(pdf.name) ? pdf.name : "document.pdf", data: new Uint8Array(await pdf.arrayBuffer()) }, at);
-        return;
-      }
-      if (image) {
-        e.preventDefault();
-        const name = imageExtension(image.name) ? image.name : `image.${image.type.split("/")[1] || "png"}`;
-        await store.addResearchImage({ name, data: new Uint8Array(await image.arrayBuffer()) }, at);
+        await addIncomingFiles(files, at);
         return;
       }
       const text = data.getData("text/plain");
@@ -422,12 +457,7 @@ export function Toile() {
         </div>
       )}
 
-      <button type="button" className="add-card" title={t.toile.addCardHint} aria-keyshortcuts="N" onClick={createInCenter}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        {t.toile.addCard}
-      </button>
+      <NewCardMenu onCreate={createKind} />
 
       <div className="history-buttons">
         <button type="button" className="icon-button has-label" aria-label={t.toile.addFrame} title={t.toile.addFrameHint} aria-keyshortcuts="C" onClick={createFrame}>
@@ -444,42 +474,6 @@ export function Toile() {
             <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
           </svg>
           <span className="tool-label" aria-hidden="true">{t.organize.short}</span>
-        </button>
-        <button
-          type="button"
-          className="icon-button has-label"
-          aria-label={t.documents.import}
-          title={t.documents.importHint}
-          onClick={() => {
-            const rect = wrapper.current?.getBoundingClientRect();
-            const at = rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 120 }) : undefined;
-            void useCosmos.getState().pickDocument(undefined, at);
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z" />
-            <path d="M14 3.5V8h4.5M12 11.5v6M9.5 15l2.5 2.5 2.5-2.5" />
-          </svg>
-          <span className="tool-label" aria-hidden="true">{t.documents.importShort}</span>
-        </button>
-        <button
-          type="button"
-          className="icon-button has-label"
-          aria-label={t.photos.button}
-          title={t.photos.button}
-          onClick={() => {
-            const rect = wrapper.current?.getBoundingClientRect();
-            const at = rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 120 }) : undefined;
-            useCosmos.getState().openPhotos({ kind: "canvas", at });
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3.5" y="5" width="13" height="11" rx="2" />
-            <path d="M5.5 14l3-3 2.5 2.5 1.5-1.5 2.5 2.5" />
-            <circle cx="17" cy="16.5" r="3" />
-            <path d="M19.2 18.7L21 20.5" />
-          </svg>
-          <span className="tool-label" aria-hidden="true">{t.photos.short}</span>
         </button>
         <button
           type="button"

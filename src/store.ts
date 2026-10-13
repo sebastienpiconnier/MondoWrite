@@ -26,15 +26,15 @@ import { setPitchField, type Pitch, type PitchField } from "./pitch";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
 import type { Photo } from "./imageSources";
-import { sourceUrl } from "./character";
-import { clipFromText } from "./clip";
+import { readFiche, sourceUrl } from "./character";
+import { cardFromTextFile, clipFromText } from "./clip";
 import { markHighlights } from "./markdownText";
 import { markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
-import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
+import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
 
@@ -95,6 +95,10 @@ interface CosmosState {
   setCardDocument: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
   /** L'auteur choisit un PDF : pour la carte `id`, sinon une nouvelle carte posée en `at`. */
   pickDocument: (id?: string, at?: { x: number; y: number }) => Promise<void>;
+  /** Menu « Nouvelle carte » : l'auteur choisit une image de l'appareil, elle devient une carte Image. */
+  pickImageCard: (at?: { x: number; y: number }) => Promise<void>;
+  /** Carte Lien encore sans adresse : une adresse tapée dans son titre devient son lien. Rend vrai si c'est fait. */
+  linkFromTitle: (id: string) => boolean;
   /** Où va la photo choisie dans la recherche de photos : une nouvelle carte Image, la galerie d'une fiche, ou l'image d'une carte. */
   photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string } | null;
   openPhotos: (target: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string }) => void;
@@ -106,7 +110,12 @@ interface CosmosState {
   /** Une image collée ou déposée devient une source illustrée de la zone Recherche. */
   addResearchImage: (file: { name: string; data: Uint8Array }, at?: { x: number; y: number }) => Promise<string | null>;
   /** Un lien ou un texte collé ou déposé devient une source de la zone Recherche (consultée aujourd'hui). */
-  addResearchClip: (text: string, at?: { x: number; y: number }) => string | null;
+  /** `image` : l'adresse est celle d'une image (glissée depuis une page), même sans extension. */
+  addResearchClip: (text: string, at?: { x: number; y: number }, image?: boolean) => string | null;
+  /** Carte Lien dont l'adresse mène à une image : téléchargée, elle en fait une carte Image (sinon la page est lue). */
+  linkToImage: (id: string) => Promise<boolean>;
+  /** Fichier texte déposé ou collé (.md, .txt) : une carte du type qu'il annonce (en-tête, en-tête de scène), sinon une Idée. */
+  addTextFile: (fileName: string, text: string, at?: { x: number; y: number }) => string | null;
   /**
    * Coller dans une carte encore vide : une adresse web en fait la carte Lien (titre et image du site
    * arrivent ensuite), une image en fait la carte Image. Rend faux si la carte n'est pas vide ou si ce
@@ -248,6 +257,8 @@ interface CosmosState {
   /** Nouveau cadre : autour des cartes sélectionnées s'il y en a, sinon centré sur le point donné. */
   addFrame: (center: { x: number; y: number }) => string;
   updateFrame: (id: string, patch: { title: string }) => void;
+  /** Verrouille ou déverrouille un cadre (« Organiser » n'y touche plus), une étape d'historique. */
+  toggleFrameLock: (id: string) => void;
   /** Supprime le cadre ; les cartes qu'il contenait restent. */
   deleteFrame: (id: string) => void;
   onNodesChange: (changes: NodeChange<CardNode | FrameNode>[]) => void;
@@ -309,6 +320,11 @@ export interface Snapshot {
 const IMAGE_ROOM = 220;
 
 /** Carte encore vide (ni titre, ni texte, ni image), Idée ou Lien/Image tout juste créé : elle peut devenir ce qu'on y colle. */
+/** Espace laissé entre les cadres verrouillés et le reste du canevas rangé sous eux. */
+const LOCKED_GAP = 120;
+const insideBox = (x: number, y: number, b: { x: number; y: number; width: number; height: number }) =>
+  x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
+
 const isBlankCard = (card: CardData) =>
   !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim() && ["idee", "lien", "image"].includes(card.type);
 
@@ -526,8 +542,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const taken = boxes(get().nodes);
       const spot = at ? freeSpot({ x: at.x - 20, y: at.y - 20 }, taken, size) : firstFreeCell(taken, size);
       const card: CardData = { id: newId(), type, title, html, ...(fiche && Object.keys(fiche).length > 0 ? { fiche } : {}), ...(image ? { image } : {}), ...(fichier ? { fichier } : {}) };
+      // Scénario : une Scène qui arrive avec son en-tête entre aussitôt dans le texte, comme une carte titrée.
+      const { screenplay, kind } = get();
       set({
         nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), { ...toNode(card, spot.x, spot.y), selected: true }],
+        ...(type === "scene" && title.trim() && kind === "scenario" && screenplay ? { screenplay: appendScene(screenplay, { id: card.id, title }) } : {}),
       });
       touch();
       return card.id;
@@ -566,6 +585,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
         ...(card.image || !stored.image ? {} : { image: stored.image }),
         fiche: { ...stored.fiche, ...(card.fiche ?? {}) },
       });
+      return true;
+    },
+    pickImageCard: async (at) => {
+      const file = await storage.pickImage(getT().card.imageFiles).catch((err) => {
+        console.error(err);
+        return null;
+      });
+      if (!file) return;
+      const id = await get().addResearchImage(file, at);
+      if (id) set({ focusId: id });
+    },
+    linkFromTitle: (id) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card || card.type !== "lien" || card.fiche?.url) return false;
+      const clip = clipFromText(card.title);
+      if (!clip?.url) return false;
+      get().updateCard(id, { title: clip.title, fiche: { ...(card.fiche ?? {}), url: clip.url, consulte: today(useSettings.getState().lang) } });
+      void get().completeSource(id);
       return true;
     },
     pickDocument: async (id, at) => {
@@ -628,7 +665,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!get().nodes.find((n) => n.id === id)?.data.fichier) return;
       set({ documentCard: id, dialog: "document" });
     },
-    addResearchClip: (text, at) => {
+    addResearchClip: (text, at, image) => {
       const clip = clipFromText(text);
       if (!clip) return null;
       // Un seul geste qui arrive deux fois (collage et dépôt, ou deux écouteurs) : une seule carte.
@@ -641,16 +678,51 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ focusId: same.id });
         return same.id;
       }
-      // Un lien : une carte Lien. Un texte : une Idée qui le cite.
+      // Un lien : une carte Lien. Un en-tête de scène : une Scène. Un texte : une Idée qui le cite.
       const id = get().addResearchCard(
         clip.url
           ? { type: "lien", title: clip.title, html: "", fiche: { url: clip.url, consulte: today(useSettings.getState().lang) } }
-          : { type: "idee", title: clip.title, html: markdownToHtml(markHighlights(clip.markdown)) },
+          : { type: clip.type ?? "idee", title: clip.title, html: markdownToHtml(markHighlights(clip.markdown)) },
         at,
       );
+      // L'adresse d'une image : la carte devient une Image si elle se télécharge, sinon elle reste un Lien.
+      if (clip.url && (clip.image || image)) void get().linkToImage(id);
       // Un lien : le titre, l'auteur et l'image du site arrivent d'eux-mêmes, si la page se laisse lire.
-      if (clip.url) void get().completeSource(id);
+      else if (clip.url) void get().completeSource(id);
       return id;
+    },
+    linkToImage: async (id) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      const url = card?.fiche?.url;
+      if (!card || card.type !== "lien" || !url) return false;
+      const file = await fetchImage(url).catch(() => null);
+      let name: string | null = null;
+      if (file) {
+        name = `${newId()}.${imageExtension(file.name)}`;
+        try {
+          await storage.writeMedia(name, file.data);
+        } catch (err) {
+          console.error(err);
+          name = null;
+        }
+      }
+      if (!name) {
+        void get().completeSource(id);
+        return false;
+      }
+      // Hors historique, comme completeSource : le geste de l'auteur était le collage, déjà annulable d'un coup.
+      const now = get().nodes.find((n) => n.id === id)?.data;
+      if (!now || now.type !== "lien" || now.image) return false;
+      const image = name;
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, type: "image" as const, image } } : n)) });
+      touch();
+      return true;
+    },
+    addTextFile: (fileName, text, at) => {
+      const parsed = cardFromTextFile(fileName, text);
+      if (!parsed) return null;
+      const fiche = readFiche(parsed.fiche, parsed.type);
+      return get().addResearchCard({ type: parsed.type, title: parsed.title, html: markdownToHtml(markHighlights(parsed.markdown)), ...(fiche ? { fiche } : {}) }, at);
     },
     turnIntoLink: (id, text) => {
       const card = get().nodes.find((n) => n.id === id)?.data;
@@ -925,8 +997,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     organizeCanvas: () => {
       const { nodes, edges, plan, kind } = get();
-      // Toutes les cartes se rangent, Liens, Images et Extraits compris (dans un cadre « Recherche »).
-      const arranged = nodes;
+      // Les cadres verrouillés restent tels quels, avec les cartes dont le centre est dedans. Tout le reste
+      // se range, Liens, Images et Documents compris, sous ces cadres pour ne jamais les chevaucher.
+      const locked = get().frames.filter((f) => f.data.locked).map(frameBox);
+      const held = (n: CardNode) => {
+        const [b] = boxes([n]);
+        return locked.some((f) => insideBox(b.x + b.width / 2, b.y + b.height / 2, f));
+      };
+      const arranged = nodes.filter((n) => !held(n));
       if (arranged.length === 0) return;
       const t = getT();
       const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
@@ -943,7 +1021,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
           story: types.scene.section,
           pages: t.organize.pages,
         },
-        origin: { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) },
+        origin:
+          locked.length > 0
+            ? { x: Math.min(...locked.map((f) => f.x), ...sizes.map((b) => b.x)), y: Math.max(...locked.map((f) => f.y + f.height)) + LOCKED_GAP }
+            : { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) },
         newId,
       });
       // Une seule étape d'historique : Ctrl/Cmd+Z remet le canevas tel qu'il était.
@@ -960,8 +1041,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
           const at = positions.get(n.id);
           return at ? { ...n, position: at, selected: false } : n;
         }),
-        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement.
-        frames: result.frames.map(toFrameNode),
+        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement, sauf les cadres verrouillés.
+        frames: [...get().frames.filter((f) => f.data.locked).map((f) => ({ ...f, selected: false })), ...result.frames.map(toFrameNode)],
         edges: nextEdges,
         view: "toile",
         fitRequest: Date.now(),
@@ -1186,7 +1267,19 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ frames: get().frames.map((f) => (f.id === id ? { ...f, data: { ...f.data, ...patch } } : f)) });
       touch();
     },
+    toggleFrameLock: (id) => {
+      const frame = get().frames.find((f) => f.id === id);
+      if (!frame) return;
+      record();
+      const locked = !frame.data.locked;
+      const { locked: _old, ...rest } = frame.data;
+      set({
+        frames: get().frames.map((f) => (f.id === id ? { ...f, ...lockProps(locked), data: locked ? { ...rest, locked: true } : rest } : f)),
+      });
+      touch();
+    },
     deleteFrame: (id) => {
+      if (get().frames.find((f) => f.id === id)?.data.locked) return;
       record();
       set({ frames: get().frames.filter((f) => f.id !== id) });
       touch();

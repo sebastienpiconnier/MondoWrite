@@ -60,6 +60,13 @@
 .frame .card-delete { opacity: 0; }
 .frame:hover .card-delete, .frame.is-selected .card-delete, .frame .card-delete:focus-visible { opacity: 1; }
 .frame .react-flow__resize-control { pointer-events: all; }
+/* Verrou : discret tant que le cadre est libre (visible au survol, à la sélection, au clavier), toujours visible une fois verrouillé. */
+.frame-lock { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; opacity: 0; }
+.frame:hover .frame-lock, .frame.is-selected .frame-lock, .frame-lock:focus-visible, .frame-lock[aria-pressed="true"] { opacity: 1; }
+.frame-lock:hover { background: var(--hover); color: var(--ink); }
+.frame-lock[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent-soft); }
+.frame.is-locked { border-style: solid; }
+.frame.is-locked .frame-handle { cursor: default; }
 .frame-resize-line { border-color: transparent !important; }
 .frame-resize-handle { width: 12px !important; height: 12px !important; border-radius: 4px !important; background: var(--surface) !important; border: 2px solid var(--accent) !important; }
 .react-flow__minimap-node.minimap-frame { fill: none; stroke: var(--line-2); stroke-width: 6; }
@@ -196,13 +203,26 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .search-result-text { font-size: 13px; line-height: 1.4; color: var(--ink-2); }
 
 /* Bouton « Nouvelle carte » */
+/* « Nouvelle carte » : le bouton crée une Idée, la flèche ouvre les autres façons de créer une carte. */
 .add-card {
   position: absolute; left: 20px; bottom: 20px; z-index: 5;
-  display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px 0 14px;
-  border: 0; border-radius: 999px; background: var(--strong-bg); color: var(--strong-fg); font-size: 15px; font-weight: 600;
-  box-shadow: var(--shadow-pop); cursor: pointer;
+  display: inline-flex; align-items: stretch; border-radius: 999px; background: var(--strong-bg); box-shadow: var(--shadow-pop);
 }
-.add-card:hover { background: var(--strong-hover); }
+.add-card > button { border: 0; background: transparent; color: var(--strong-fg); cursor: pointer; min-height: 48px; }
+.add-card-main { display: inline-flex; align-items: center; gap: 8px; padding: 0 14px 0 14px; border-radius: 999px 0 0 999px; font-size: 15px; font-weight: 600; }
+.add-card-more { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding: 0 12px 0 10px; border-left: 1px solid color-mix(in srgb, var(--strong-fg) 30%, transparent) !important; border-radius: 0 999px 999px 0; }
+.add-card > button:hover, .add-card > button[aria-expanded="true"] { background: var(--strong-hover); }
+.add-card-menu {
+  position: absolute; left: 0; bottom: calc(100% + 8px); min-width: 280px; max-width: calc(100vw - 40px); padding: 6px;
+  display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop);
+}
+.add-card-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.add-card-item:hover, .add-card-item:focus-visible { background: var(--ground); outline: none; }
+.add-card-item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+.add-card-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.add-card-text { display: flex; flex-direction: column; gap: 1px; }
+.add-card-label { font-size: 15px; font-weight: 600; }
+.add-card-hint { font-size: 13px; color: var(--muted); }
 
 /* ---------- Écrans tactiles : rien ne dépend du survol ---------- */
 @media (pointer: coarse) {
@@ -211,6 +231,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
   .card-delete { opacity: 1; width: 36px; height: 36px; }
   .card-type { min-height: 36px; }
   .frame .card-delete { opacity: 1; }
+  .frame-lock { opacity: 1; width: 40px; height: 40px; }
   .card-image-remove { opacity: 1; width: 36px; height: 36px; }
   .card-resize.react-flow__resize-control.handle { width: 24px; height: 24px; }
   .frame-resize-handle { width: 22px !important; height: 22px !important; }

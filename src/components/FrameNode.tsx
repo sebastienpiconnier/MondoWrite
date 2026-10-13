@@ -11,10 +11,12 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const t = useT().toile;
   const updateFrame = useCosmos((s) => s.updateFrame);
   const deleteFrame = useCosmos((s) => s.deleteFrame);
+  const toggleFrameLock = useCosmos((s) => s.toggleFrameLock);
+  const locked = data.locked === true;
 
   return (
-    <div className={`frame${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}`}>
-      <NodeResizer minWidth={220} minHeight={140} isVisible={selected} lineClassName="frame-resize-line" handleClassName="frame-resize-handle" />
+    <div className={`frame${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}${locked ? " is-locked" : ""}`}>
+      <NodeResizer minWidth={220} minHeight={140} isVisible={selected && !locked} lineClassName="frame-resize-line" handleClassName="frame-resize-handle" />
       <div className="frame-handle">
         <input
           type="text"
@@ -29,9 +31,25 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
             if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
           }}
         />
-        <button type="button" className="card-delete nodrag" aria-label={t.deleteFrame} title={t.deleteFrame} onClick={() => deleteFrame(id)}>
-          ×
+        {/* Verrou : « Organiser » laisse ce cadre et ses cartes à leur place ; il ne bouge plus par mégarde. */}
+        <button
+          type="button"
+          className="frame-lock nodrag"
+          aria-label={t.lockFrame}
+          aria-pressed={locked}
+          title={locked ? t.unlockFrameHint : t.lockFrameHint}
+          onClick={() => toggleFrameLock(id)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="5" y="11" width="14" height="9.5" rx="2" />
+            <path d={locked ? "M8 11V8a4 4 0 0 1 8 0v3" : "M8 11V8a4 4 0 0 1 7.6-1.7"} />
+          </svg>
         </button>
+        {!locked && (
+          <button type="button" className="card-delete nodrag" aria-label={t.deleteFrame} title={t.deleteFrame} onClick={() => deleteFrame(id)}>
+            ×
+          </button>
+        )}
       </div>
     </div>
   );

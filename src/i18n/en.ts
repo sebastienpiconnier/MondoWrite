@@ -130,6 +130,7 @@ export const en: Messages = {
     moreDetails: "More details",
     bodyPlaceholder: "Write… ( / to transform the card, @ to mention another )",
     titleAria: "Card title",
+    linkAddress: "Paste or type the address (https://…)",
     bodyAria: "Card content",
     delete: "Delete card",
     addImage: "Add an image",
@@ -149,11 +150,22 @@ export const en: Messages = {
   toile: {
     addCard: "New card",
     addCardHint: "Shortcut: N key",
+    addCardMore: "More cards: link, PDF, photo, image",
+    newCard: {
+      idee: { label: "Idea", hint: "An empty card (N key)" },
+      lien: { label: "Link", hint: "Paste or type an address" },
+      document: { label: "PDF document…", hint: "A PDF from this device, with a preview of its first page" },
+      photo: { label: "Free photo…", hint: "Search Openverse, Pixabay or Unsplash" },
+      image: { label: "Image from this device…", hint: "An image from your computer or phone" },
+    },
     addFrame: "New frame",
     frameShort: "Frame",
     addFrameHint: "New frame, around the selected cards (C key)",
     frameTitle: "Frame name",
     frameTitleAria: "Frame name",
+    lockFrame: "Lock frame",
+    lockFrameHint: "Lock: “Organize” leaves this frame and its cards where they are",
+    unlockFrameHint: "Locked frame: “Organize” leaves it alone. Click to unlock",
     deleteFrame: "Delete the frame (its cards stay)",
     undo: "Undo",
     redo: "Redo",
@@ -251,7 +263,6 @@ export const en: Messages = {
   documents: {
     pickLabel: "PDF document",
     import: "Import a PDF",
-    importShort: "PDF",
     importHint: "Import a PDF: a Document card with a preview of its first page (you can also drop or paste it on the canvas)",
     choose: "Choose a PDF",
     read: "Read the document",
@@ -269,7 +280,6 @@ export const en: Messages = {
   // Free photo search: Openverse (no key), Pixabay and Unsplash (the writer’s key, kept on the device).
   photos: {
     button: "Search for a free photo",
-    short: "Photos",
     title: "Free photos",
     titleCard: "Card image",
     titleGallery: "Add photos",
@@ -1266,7 +1276,7 @@ export const en: Messages = {
     done: "Your turn to write",
     steps: {
       cards: { title: "Drop your ideas anywhere", body: "Double-click, right-click or long-press the canvas: a card is born. Type / at the start of a line to turn it into a character, a place, a scene… Draw a thread from one card to another and name it (“sister of”, “takes place in”)." },
-      sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: a single card is born where you are: a Link with the site’s title and picture, an Image, or an Idea for a text. Pasting an address into an empty card turns it into the Link card. When it all overflows, “Organize” sorts the cards into frames by type, by outline beat and by chapter." },
+      sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: a single card is born where you are: a Link with the site’s title and picture, an Image, or an Idea for a text. Pasting an address into an empty card turns it into the Link card. The arrow on “New card” also offers a link, a PDF, a free photo or an image. When it all overflows, “Organize” sorts the cards into frames by type, by outline beat and by chapter; a frame’s padlock keeps it out of the sorting." },
       bible: { title: "The Bible builds itself", body: "Every typed card gets its sheet, nothing is copied. Start with the project cover (tagline, logline, genre), then dig into your characters: what they want, what they lack, their wound. The assistant asks questions, it never answers for you." },
       plan: { title: "Give the story a shape", body: "Pick a template (three acts, Save the Cat, hero’s journey) and place your scenes in its beats. The timeline shows who and what appears in each scene." },
       write: { title: "Write, scene by scene", body: "The manuscript follows the outline, laid out like a book. Enter twice breaks the scene, three times starts a chapter: an “Undo” button shows up at every break." },

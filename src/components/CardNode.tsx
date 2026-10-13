@@ -443,7 +443,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         rows={1}
         className={`card-title nodrag${slugline ? " is-slugline" : ""}`}
         value={data.title}
-        placeholder={types[data.type].titlePlaceholder}
+        placeholder={data.type === "lien" && !data.fiche?.url ? t.card.linkAddress : types[data.type].titlePlaceholder}
         aria-label={t.card.titleAria}
         onChange={(e) => updateCard(id, { title: e.target.value.replace(/\n/g, " ") })}
         onPaste={(e) => {
@@ -452,8 +452,13 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
+            // Carte Lien sans adresse : l'adresse tapée dans le titre devient son lien.
+            if (useCosmos.getState().linkFromTitle(id)) return;
             editor?.commands.focus("start");
           }
+        }}
+        onBlur={() => {
+          useCosmos.getState().linkFromTitle(id);
         }}
       />
 

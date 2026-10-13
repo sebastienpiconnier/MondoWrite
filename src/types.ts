@@ -76,6 +76,9 @@ export interface Frame {
   height: number;
   /** « research » : la zone Recherche, où atterrissent les sources collées. Absent : un cadre ordinaire. */
   kind?: "research";
+  /** Verrouillé : « Organiser » n'y touche pas (ni au cadre, ni aux cartes qu'il contient), et il ne se déplace,
+   *  ne se redimensionne ni ne se supprime par mégarde. Écrit seulement quand il est vrai. */
+  locked?: boolean;
 }
 
 /** Fil entre deux cartes, avec une étiquette libre ("soupçonne", "se passe à"…). */
