@@ -1,23 +1,19 @@
 // Bouton « Nouvelle carte » du canevas, en deux parties : le bouton crée une Idée (comme la touche N),
-// la flèche ouvre le menu des autres façons de créer une carte : Lien, Document PDF, Photo libre,
-// Image de l'appareil. Menu au clavier (flèches, Début, Fin, Échap), à la souris et au doigt.
+// la flèche ouvre le menu de tous les types de carte (libellés du vocabulaire du projet : Décor dans un
+// scénario). Image ouvre la fenêtre Photos (photo libre ou image de l'appareil), Document le choix d'un PDF.
+// Menu au clavier (flèches, Début, Fin, Échap), à la souris et au doigt.
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useT } from "../i18n";
-import { typeColor, type CardType } from "../types";
+import { useVocab } from "../vocab";
+import { CARD_TYPES, typeColor, type CardType } from "../types";
 
-export type NewCardKind = "idee" | "lien" | "document" | "photo" | "image";
+/** Types qui ouvrent une fenêtre avant de créer la carte : leur libellé finit par « … ». */
+const ASKS: CardType[] = ["image", "document"];
 
-const ITEMS: { kind: NewCardKind; type: CardType }[] = [
-  { kind: "idee", type: "idee" },
-  { kind: "lien", type: "lien" },
-  { kind: "document", type: "document" },
-  { kind: "photo", type: "image" },
-  { kind: "image", type: "image" },
-];
-
-export function NewCardMenu({ onCreate }: { onCreate: (kind: NewCardKind) => void }) {
+export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }) {
   const t = useT().toile;
+  const { types } = useVocab();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -39,9 +35,9 @@ export function NewCardMenu({ onCreate }: { onCreate: (kind: NewCardKind) => voi
     if (refocus) toggleRef.current?.focus();
   };
 
-  const choose = (kind: NewCardKind) => {
+  const choose = (type: CardType) => {
     close(false);
-    onCreate(kind);
+    onCreate(type);
   };
 
   const onMenuKey = (e: ReactKeyboardEvent) => {
@@ -91,9 +87,9 @@ export function NewCardMenu({ onCreate }: { onCreate: (kind: NewCardKind) => voi
       </button>
       {open && (
         <div id={menuId} className="add-card-menu" role="menu" aria-label={t.addCardMore} onKeyDown={onMenuKey}>
-          {ITEMS.map((item, i) => (
+          {CARD_TYPES.map((type, i) => (
             <button
-              key={item.kind}
+              key={type}
               ref={(el) => {
                 itemsRef.current[i] = el;
               }}
@@ -101,12 +97,15 @@ export function NewCardMenu({ onCreate }: { onCreate: (kind: NewCardKind) => voi
               role="menuitem"
               tabIndex={-1}
               className="add-card-item"
-              onClick={() => choose(item.kind)}
+              onClick={() => choose(type)}
             >
-              <span className="add-card-dot" style={{ background: typeColor(item.type) }} aria-hidden="true" />
+              <span className="add-card-dot" style={{ background: typeColor(type) }} aria-hidden="true" />
               <span className="add-card-text">
-                <span className="add-card-label">{t.newCard[item.kind].label}</span>
-                <span className="add-card-hint">{t.newCard[item.kind].hint}</span>
+                <span className="add-card-label">
+                  {types[type].label}
+                  {ASKS.includes(type) ? "…" : ""}
+                </span>
+                {type in t.newCard && <span className="add-card-hint">{t.newCard[type as keyof typeof t.newCard]}</span>}
               </span>
             </button>
           ))}

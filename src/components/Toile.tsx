@@ -18,8 +18,8 @@ import { useCosmos } from "../store";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
-import { NewCardMenu, type NewCardKind } from "./NewCardMenu";
-import type { CardData } from "../types";
+import { NewCardMenu } from "./NewCardMenu";
+import type { CardData, CardType } from "../types";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { isTouch } from "../platform";
@@ -181,15 +181,16 @@ export function Toile() {
     const rect = wrapper.current?.getBoundingClientRect();
     return rect ? screenToFlowPosition({ x: rect.left + rect.width / 2 - 120, y: rect.top + rect.height / 2 - 120 }) : undefined;
   };
-  const createKind = (kind: NewCardKind) => {
+  const createKind = (type: CardType) => {
     const store = useCosmos.getState();
-    if (kind === "idee") createInCenter();
-    else if (kind === "lien") {
+    if (type === "idee") createInCenter();
+    // Image : la fenêtre Photos, qui propose aussi une image de l'appareil. Document : le choix d'un PDF.
+    else if (type === "image") store.openPhotos({ kind: "canvas", at: centerAt() });
+    else if (type === "document") void store.pickDocument(undefined, centerAt());
+    else {
       const at = centerAt();
-      if (at) store.addCard(at, "lien");
-    } else if (kind === "document") void store.pickDocument(undefined, centerAt());
-    else if (kind === "photo") store.openPhotos({ kind: "canvas", at: centerAt() });
-    else void store.pickImageCard(centerAt());
+      if (at) store.addCard(at, type); // la carte prend le focus de son titre
+    }
   };
 
   const createInCenterRef = useRef(createInCenter);
@@ -457,6 +458,8 @@ export function Toile() {
         </div>
       )}
 
+      {/* Une seule rangée en bas à gauche : « Nouvelle carte » puis les outils. Son menu s'ouvre au-dessus. */}
+      <div className="canvas-dock">
       <NewCardMenu onCreate={createKind} />
 
       <div className="history-buttons">
@@ -501,6 +504,7 @@ export function Toile() {
             <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
           </svg>
         </button>
+      </div>
       </div>
 
       {/* Plusieurs cartes choisies : ce qu'on peut en faire d'un coup, aussi au doigt (pas de clavier). */}

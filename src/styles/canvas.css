@@ -27,7 +27,7 @@
 .react-flow__minimap-node.type-document { fill: var(--type-document); }
 .react-flow__minimap-node.type-question { fill: var(--type-question); }
 .toile-hint {
-  position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
+  position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
   background: var(--surface); border-radius: 999px; padding: 9px 18px; font-size: 13px; color: var(--ink-2);
   box-shadow: var(--shadow-card); pointer-events: none; white-space: nowrap;
 }
@@ -156,7 +156,14 @@
 .slash-hint { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 
 /* Annuler et rétablir, à côté du bouton « Nouvelle carte » */
-.history-buttons { position: absolute; left: 20px; bottom: 80px; z-index: 5; display: flex; gap: 6px; }
+/* Rangée du bas : « Nouvelle carte » puis les outils, sur une ligne ; quand la place manque, les outils
+   passent au-dessus (wrap-reverse). Le menu de « Nouvelle carte » passe devant tout. */
+.canvas-dock {
+  position: absolute; left: max(20px, env(safe-area-inset-left)); bottom: max(20px, env(safe-area-inset-bottom)); z-index: 5;
+  display: flex; flex-wrap: wrap-reverse; align-items: center; gap: 10px; max-width: calc(100% - 40px); pointer-events: none;
+}
+.canvas-dock > * { pointer-events: auto; }
+.history-buttons { display: flex; gap: 6px; }
 .history-buttons .icon-button { width: 44px; height: 44px; box-shadow: var(--shadow-card); }
 .history-buttons .icon-button:disabled { opacity: 0.45; cursor: default; }
 
@@ -205,7 +212,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Bouton « Nouvelle carte » */
 /* « Nouvelle carte » : le bouton crée une Idée, la flèche ouvre les autres façons de créer une carte. */
 .add-card {
-  position: absolute; left: 20px; bottom: 20px; z-index: 5;
+  position: relative; z-index: 2;
   display: inline-flex; align-items: stretch; border-radius: 999px; background: var(--strong-bg); box-shadow: var(--shadow-pop);
 }
 .add-card > button { border: 0; background: transparent; color: var(--strong-fg); cursor: pointer; min-height: 48px; }
@@ -213,7 +220,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .add-card-more { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding: 0 12px 0 10px; border-left: 1px solid color-mix(in srgb, var(--strong-fg) 30%, transparent) !important; border-radius: 0 999px 999px 0; }
 .add-card > button:hover, .add-card > button[aria-expanded="true"] { background: var(--strong-hover); }
 .add-card-menu {
-  position: absolute; left: 0; bottom: calc(100% + 8px); min-width: 280px; max-width: calc(100vw - 40px); padding: 6px;
+  position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 20; min-width: 280px; max-width: calc(100vw - 40px); max-height: calc(100vh - 220px); overflow-y: auto; padding: 6px;
   display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop);
 }
 .add-card-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
@@ -270,10 +277,10 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Le corps reparaît quand on écrit le titre ou le texte, pas quand on touche un bouton (il bougerait sous le doigt). */
 .card:is(.is-image-card, .is-lien-card, .is-document-card):not(:has(.card-title:focus, .card-body:focus-within)) .card-body:has(.ProseMirror > p.is-editor-empty:only-child) { display: none; }
 
-/* Sélection multiple : bouton « Sélection » enfoncé, barre des actions sur la sélection (au-dessus de l'aide). */
+/* Sélection multiple : bouton « Sélection » enfoncé, barre des actions sur la sélection (en haut, à la place de l'aide). */
 .history-buttons .icon-button.is-on { background: var(--accent-soft); color: var(--accent-ink); }
 .selection-bar {
-  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6;
+  position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 6;
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
   max-width: calc(100% - 32px); padding: 6px 8px 6px 16px; border-radius: 999px;
   background: var(--surface); box-shadow: var(--shadow-pop); font-size: 14px; color: var(--ink);

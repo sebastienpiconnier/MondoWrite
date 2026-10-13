@@ -79,10 +79,10 @@ export function PhotoSearch() {
     else setError(t.errorDownload);
   };
 
-  // Image d'une carte ou galerie d'une fiche : un fichier de l'appareil reste possible, sans quitter la fenêtre.
+  // Nouvelle carte Image, image d'une carte ou galerie d'une fiche : un fichier de l'appareil reste possible.
   const target = useCosmos((st) => st.photoTarget);
   const fromDevice =
-    target && target.kind !== "canvas" ? (
+    target ? (
       <button
         type="button"
         className="ghost-button photos-device"
@@ -90,6 +90,7 @@ export function PhotoSearch() {
         onClick={() => {
           useCosmos.getState().setDialog(null);
           if (target.kind === "card") void useCosmos.getState().pickCardImage(target.id);
+          else if (target.kind === "canvas") void useCosmos.getState().pickImageCard(target.at);
           else void useCosmos.getState().addGalleryImages(target.id);
         }}
       >
