@@ -14,6 +14,11 @@ export const en: Messages = {
     retry: "Try again",
     projectTitle: "Project title",
     leaveUnsaved: "Back to projects without saving",
+    saveFull: "The disk is full: your latest changes are not saved yet. Free up some space, then try again.",
+    saveDenied: "MondoWrite isn’t allowed to write to the project folder. If it’s on another drive or in OneDrive, point to it again to grant access.",
+    saveMissing: "The project folder can’t be found: moved, renamed, deleted, or the drive is unplugged. Plug the drive back in and try again, or show where it is now.",
+    relocate: "Locate the project folder…",
+    exportCopy: "Export a copy…",
   },
 
   conflict: {

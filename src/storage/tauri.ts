@@ -12,6 +12,7 @@ import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
+import { MISSING_FOLDER } from "../saveErrors";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
@@ -200,6 +201,10 @@ export const tauriStorage: Storage = {
   async write(files, removed) {
     const dir = await projectFolder();
     if (!dir) throw new Error("Aucun dossier projet choisi");
+    // Dossier déplacé, renommé ou disque débranché : on ne le recrée pas à moitié (mkdir le ferait), on le signale.
+    // Sur mobile, le dossier privé d'un nouveau projet est créé ici.
+    if (mobile) await mkdir(dir, { recursive: true });
+    else if (!(await exists(dir))) throw new Error(MISSING_FOLDER);
     for (const name of TEXT_DIRS) {
       // Le dossier du manuscrit n'est créé que s'il y a un texte à y écrire.
       if (name === TEXT_DIRS[0] || Object.keys(files).some((path) => path.startsWith(`${name}/`))) await mkdir(await join(dir, name), { recursive: true });

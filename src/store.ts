@@ -7,6 +7,7 @@ import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge
 import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
 import { SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
+import { classifySaveError, type SaveErrorKind } from "./saveErrors";
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
@@ -310,6 +311,12 @@ interface CosmosState {
    * est écrite à côté (« … (MondoWrite).md »), jusqu'au choix de l'auteur. Jamais enregistré dans le projet.
    */
   conflicts: FileConflict[];
+  /** Pourquoi le dernier enregistrement a échoué (null s'il a réussi), pour un message et des actions adaptés. */
+  saveError: SaveErrorKind | null;
+  /** Dossier introuvable ou refusé : l'auteur indique où est le projet maintenant (ordinateur), puis on enregistre. */
+  relocateProject: () => Promise<void>;
+  /** Dernier recours : tout le projet (textes et réglages) dans un .zip, là où l'auteur le choisit. */
+  exportProjectCopy: () => Promise<boolean>;
   /** L'auteur choisit : sa version (elle remplace celle du disque) ou celle du disque (reprise dans l'app). */
   resolveConflict: (path: string, keep: "mine" | "disk") => Promise<void>;
   /**
@@ -467,6 +474,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       ...state,
       lastFiles: files,
       conflicts: [],
+      saveError: null,
       screen: "project",
       view: "toile",
       focusId: null,
@@ -1199,6 +1207,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         ...state,
         lastFiles: {},
         conflicts: [],
+        saveError: null,
         screen: "project",
         view: "toile",
         focusId: null,
@@ -1245,6 +1254,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         savedScreenplay: null,
         lastFiles: {},
         conflicts: [],
+        saveError: null,
         screen: "project",
         view: "manuscrit",
         focusId: null,
@@ -1623,6 +1633,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         ...state,
         lastFiles: files ?? {},
         conflicts: [],
+        saveError: null,
         loaded: true,
         screen: "project",
         view: "toile",
@@ -1693,6 +1704,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
           lastFiles: known,
           savedScreenplay: screenplay,
           conflicts,
+          saveError: null,
           status: get().status === "enregistrement" ? "enregistre" : get().status,
         });
         storage.remember({ title: get().title, kind: get().kind });
@@ -1706,11 +1718,34 @@ export const useCosmos = create<CosmosState>((set, get) => {
         }
       } catch (err) {
         console.error(err);
-        set({ status: "erreur" });
+        set({ status: "erreur", saveError: classifySaveError(err) });
       }
       if (syncAgain) {
         syncAgain = false;
         void get().syncFromDisk();
+      }
+    },
+
+    saveError: null,
+    relocateProject: async () => {
+      const known = get().lastFiles;
+      if (!(await storage.pickFolder())) return;
+      // Le dossier déplacé, retrouvé : on enregistre par-dessus comme avant (les fichiers changés ailleurs restent
+      // protégés). Un dossier vide reçoit tout le projet.
+      const existing = await storage.readAll().catch(() => null);
+      set({ lastFiles: existing ? known : {}, status: "modifie" });
+      await get().save();
+    },
+    exportProjectCopy: async () => {
+      try {
+        const { zip } = await import("./export/zip");
+        const { fileName } = await import("./screenplay/export");
+        const entries = Object.entries(currentFiles()).map(([path, data]) => ({ path, data }));
+        const data = zip(entries);
+        return await storage.saveAs({ name: `${fileName(get().title, "mondowrite")}.zip`, extension: "zip", mime: "application/zip", data }, "ZIP");
+      } catch (err) {
+        console.error(err);
+        return false;
       }
     },
 

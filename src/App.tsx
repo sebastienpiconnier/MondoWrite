@@ -28,6 +28,7 @@ export function App() {
   const screen = useCosmos((s) => s.screen);
   const focusMode = useCosmos((s) => s.focusMode);
   const status = useCosmos((s) => s.status);
+  const saveError = useCosmos((s) => s.saveError);
   const closeProject = useCosmos((s) => s.closeProject);
   const start = useCosmos((s) => s.start);
   const save = useCosmos((s) => s.save);
@@ -122,6 +123,17 @@ export function App() {
   }, [save]);
 
   if (!loaded) return <div className="loading">{t.app.loading}</div>;
+  // Échec d'enregistrement : la cause, quand le système la donne, et ce qu'on peut y faire.
+  const saveMessage =
+    saveError === "full"
+      ? t.app.saveFull
+      : saveError === "missing"
+        ? t.app.saveMissing
+        : saveError === "permission"
+          ? t.app.saveDenied
+          : storage.canPickFolder
+            ? t.app.saveFailedFolder
+            : t.app.saveFailed;
   if (screen === "home")
     return (
       <>
@@ -138,10 +150,18 @@ export function App() {
         {!(focusMode && view === "manuscrit") && <TopBar />}
         {status === "erreur" && (
           <div className="app-alert" role="alert">
-            <span>{storage.canPickFolder ? t.app.saveFailedFolder : t.app.saveFailed}</span>
+            <span>{saveMessage}</span>
             <span className="app-alert-actions">
               <button type="button" className="ghost-button" onClick={save}>
                 {t.app.retry}
+              </button>
+              {storage.canPickFolder && (saveError === "missing" || saveError === "permission") && (
+                <button type="button" className="ghost-button" onClick={() => void useCosmos.getState().relocateProject()}>
+                  {t.app.relocate}
+                </button>
+              )}
+              <button type="button" className="ghost-button" onClick={() => void useCosmos.getState().exportProjectCopy()}>
+                {t.app.exportCopy}
               </button>
               <button type="button" className="ghost-button" onClick={() => closeProject(true)}>
                 {t.app.leaveUnsaved}

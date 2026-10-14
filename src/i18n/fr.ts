@@ -15,6 +15,11 @@ export const fr = {
     retry: "Réessayer",
     projectTitle: "Titre du projet",
     leaveUnsaved: "Revenir aux projets sans enregistrer",
+    saveFull: "Le disque est plein : tes dernières modifications ne sont pas encore enregistrées. Libère de la place, puis réessaie.",
+    saveDenied: "MondoWrite n’a pas le droit d’écrire dans le dossier du projet. S’il est sur un autre disque ou dans OneDrive, indique-le à nouveau pour redonner l’accès.",
+    saveMissing: "Le dossier du projet est introuvable : déplacé, renommé, supprimé, ou disque débranché. Rebranche le disque et réessaie, ou indique où il se trouve maintenant.",
+    relocate: "Indiquer le dossier du projet…",
+    exportCopy: "Exporter une copie…",
   },
 
   conflict: {
