@@ -87,11 +87,14 @@ MondoWrite est en cours de développement (version 0.1.11).
 - **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac, images, liens, documents, pages du livre) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit, sous les cadres verrouillés qu'il laisse en place. En paysage : les cases se suivent de gauche à droite, rangées de 8 scènes au plus. Ctrl/Cmd+Z remet tout comme avant.
 - **Corbeille :** une carte supprimée (sur le canevas, dans le plan, le séquencier ou le manuscrit) part à la corbeille avec ses fils, et dans un scénario avec le texte de sa scène. Un message propose d'annuler ; la corbeille (dans les Réglages) remet chaque carte à sa place ou la supprime pour de bon. Elle vit dans le dossier `corbeille/` du projet.
 - **Annuler et rétablir :** Ctrl/Cmd+Z et Ctrl/Cmd+Maj+Z, ou les deux boutons du canevas. Cartes, fils, déplacements et textes.
-- **Recherche :** la loupe de la barre du haut, ou Ctrl/Cmd+F, retrouve une carte par son titre ou son texte et la met en avant sur le canevas.
+- **Recherche :** la loupe de la barre du haut, ou Ctrl/Cmd+F, retrouve une carte par son titre ou son texte et la met en avant sur le canevas. Elle cherche aussi dans le texte des scènes (manuscrit ou scénario) et ouvre la scène trouvée.
+- **Rechercher et remplacer :** Ctrl/Cmd+Maj+H, ou le bouton « Remplacer » du Manuscrit et du Scénario. Dans tout le texte ou dans la scène en cours, avec ou sans les cartes, en mot entier ou en respectant la casse ; le nombre d'occurrences s'affiche pendant la frappe, et « Annuler » remet tout. Le remplaçant garde la forme du mot remplacé (capitale initiale, ou tout en capitales pour un personnage de scénario).
+- **Renommer partout :** dans le menu ⋯ d'une carte, « Renommer partout… » change son nom et toutes ses occurrences dans le texte. Les mentions `@` suivent d'elles-mêmes.
 - **Couleur du type :** chaque carte porte un liseré de la couleur de son type, lisible d'un coup d'œil, en clair comme en sombre.
 - **Menu d'une carte :** le bouton ⋯ (ou un clic droit sur la carte) ajoute ou change son image, la **met en avant** (le reste du canevas s'estompe ; un clic sur le fond ou Échap rend tout) ou **filtre sur elle** (seules ses voisines, par fil ou par mention, restent visibles).
 - **Filtres :** le bouton « Filtrer » de la rangée du bas masque des types de carte (n'afficher que les personnages et les lieux, par exemple). Un bandeau rappelle le filtre actif, « Tout afficher » le retire. Rien n'est enregistré, rien n'est supprimé.
 - **Agrandir une carte :** le bouton d'agrandissement, ou Ctrl/Cmd+Entrée sur la carte choisie, l'ouvre en grand avec la place d'écrire, son image et sa fiche. C'est la même carte : ce que vous y écrivez est aussitôt sur le canevas.
+- **Une carte Scène porte son texte :** sur le canevas, elle montre son synopsis et le début de sa scène (manuscrit d'un roman, ou scène du scénario). Agrandie, elle devient une page où l'on écrit la scène : en prose pour un roman, au format standard pour un scénario (Tab, Entrée, majuscules, barre des éléments). C'est le même texte que dans le Manuscrit ou le Scénario. Les notes qu'une carte Scène portait avant passent dans son synopsis.
 - **Mini-carte et zoom** pour s'y retrouver quand le canevas grandit.
 
 ### La Bible
@@ -124,10 +127,11 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 
 - **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Chaque coupure s'annonce en bas de page avec un bouton « Annuler » ; Retour arrière dans la scène vide l'annule aussi. Le numéro et le titre du chapitre s'écrivent en tête de page, comme dans un livre.
 - **Les pages du livre :** une scène peut devenir page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements ou « à propos de l'auteur ». Elles se placent d'elles-mêmes avant ou après le récit, et chacune dit ce qu'on y écrit (« À qui dédies-tu ce livre ? »).
-- **Une scène à la fois, en pages :** vous écrivez le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre ; un chapitre se déplace en le glissant dans la colonne de gauche, ou avec ses flèches. Au-dessus de la page, une barre discrète : le titre de la scène, le type de page, le mode focus et la corbeille.
+- **Une scène à la fois, en pages :** vous écrivez le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre ; un chapitre se déplace en le glissant dans la colonne de gauche, ou avec ses flèches. Une scène aussi : glissez-la (au-dessus ou au-dessous d'une autre), ou utilisez ses flèches, ou Alt+↑ / Alt+↓ ; elle prend le chapitre de sa nouvelle voisine.
+- **Le synopsis en filigrane :** une scène encore vide affiche son synopsis en gris, comme une note de plan, jusqu'à ce que vous écriviez. Au-dessus de la page, une barre discrète : le titre de la scène, le type de page, le mode focus et la corbeille.
 - **Mode focus :** la page seule à l'écran, en machine à écrire si vous le souhaitez (la ligne en cours reste à hauteur d'yeux), avec la phrase, la ligne ou le paragraphe en pleine encre et le reste estompé. Ctrl/Cmd+Maj+X marque un passage « à reprendre ».
 - **Statistiques et objectifs :** mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
-- **Dans cette scène :** les personnages et les lieux cités dans le texte s'affichent à côté, avec les notes de la carte.
+- **Dans cette scène :** les personnages et les lieux cités dans le texte s'affichent à côté, avec le synopsis de la scène, modifiable sur place.
 - **Vos fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte : elle va à la corbeille et en revient avec lui.
 
 ### Romans et scénarios
@@ -193,6 +197,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Plusieurs projets :** un écran d'accueil pour choisir celui sur lequel travailler, ou en créer un.
 - **Sauvegarde automatique** dans des fichiers Markdown, ou Cmd+S / Ctrl+S.
 - **Français et anglais**, avec la typographie propre à chaque langue.
+- **Typographie à la frappe** (manuscrit, cartes, Bible) : guillemets « » avec leurs espaces insécables, espace fine avant ; ! ?, apostrophe ’, points de suspension …, tiret à partir de deux traits d'union. Selon la langue, à l'anglaise (“ ”) ou désactivée, dans les Réglages.
 - **Mode clair, sombre** ou comme le système.
 - **Souris, doigt et clavier :** chaque action a les trois chemins.
 - **Hors ligne :** polices embarquées, aucun compte, aucun serveur.

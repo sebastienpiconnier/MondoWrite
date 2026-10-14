@@ -15,6 +15,9 @@ Les deux outils se complètent : NEO est centré sur la page (on écrit le livre
 | Entrée, Entrée, Entrée | Deux fois Entrée sur une ligne vide coupe la scène (nouvelle carte Scène, même chapitre) ; une troisième, au début de la nouvelle scène, ouvre un chapitre ; Retour arrière annule |
 | Les pages d'un livre publié | Type de page d'une scène : page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements, à propos de l'auteur ; placées avant ou après le récit, hors chapitres |
 | Bible du fork (`bible.js`, branche `pr-story-bible`) | Genre, surnoms et relations dans la fiche ; champs remplis seuls visibles, « Plus de détails » pour les autres ; surnoms reconnus dans le texte ; « Cité N fois, dès la scène X » sous le nom |
+| Typographie automatique (`smartKeys`) | Extension `Typography` : guillemets, apostrophe, …, tiret, espaces insécables du français ; réglage de l'appareil |
+| Note de plan en paragraphe fantôme | Le synopsis d'une scène vide s'affiche en filigrane (Manuscrit, carte agrandie) |
+| « Renommer aussi dans le texte » | « Renommer partout… » dans le menu d'une carte, et Rechercher et remplacer (Cmd/Ctrl+Maj+H) |
 
 ## À reprendre ensuite, par ordre d'intérêt
 

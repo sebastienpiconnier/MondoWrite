@@ -87,11 +87,14 @@ MondoWrite is under active development (version 0.1.11).
 - **Organise the canvas:** one button puts every card in a frame (characters, places, themes, questions, loose ideas, images, links, documents, book pages) and the scenes by template beat and chapter, linked in story order, below the locked frames it leaves in place. Landscape first: beats follow each other left to right, in rows of at most 8 scenes. `Ctrl`/`Cmd`+`Z` puts everything back.
 - **Trash:** a deleted card (from the canvas, the outline, the step outline or the manuscript) goes to the trash with its threads, and in a screenplay with its scene’s text. A message offers to undo; the trash (in Settings) puts each card back where it was or deletes it for good. It lives in the project’s `corbeille/` folder.
 - **Undo and redo:** `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.
-- **Search:** the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and spotlights it on the canvas.
+- **Search:** the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and spotlights it on the canvas. It also searches the text of your scenes (manuscript or screenplay) and opens the scene it finds.
+- **Find and replace:** `Ctrl`/`Cmd`+`Shift`+`H`, or the “Replace” button in the Manuscript and the Screenplay. In all the text or in the current scene, with or without the cards, whole word or matching case; the number of matches shows as you type, and “Undo” puts everything back. The replacement keeps the shape of the word it replaces (initial capital, or all caps for a screenplay character).
+- **Rename everywhere:** in a card’s ⋯ menu, “Rename everywhere…” changes its name and every occurrence in the text. `@` mentions follow on their own.
 - **Type colour:** each card has a stripe in its type’s colour, readable at a glance, in light and dark mode.
 - **Card menu:** the ⋯ button (or a right-click on the card) adds or changes its image, **spotlights** it (the rest of the canvas fades; a click on the background or Esc brings everything back) or **filters on it** (only its neighbours, by thread or mention, stay visible).
 - **Filters:** the “Filter” button in the bottom row hides card types (show only characters and places, for instance). A banner reminds you a filter is on, “Show all” removes it. Nothing is saved, nothing is deleted.
 - **Expand a card:** the expand button, or `Ctrl`/`Cmd`+`Enter` on the selected card, opens it large with room to write, its image and its sheet. It is the same card: what you write there is on the canvas at once.
+- **A Scene card carries its text:** on the canvas, it shows its synopsis and the start of its scene (a novel’s manuscript, or the screenplay scene). Expanded, it becomes a page where you write the scene: in prose for a novel, in standard format for a screenplay (Tab, Enter, capitals, element bar). It is the same text as in the Manuscript or the Screenplay. Notes a Scene card used to carry move into its synopsis.
 - **Minimap and zoom** to find your way as the canvas grows.
 
 ### The Bible
@@ -123,10 +126,11 @@ Then every entry, generated from your cards, on a single page and grouped by sec
 
 - **Chapters as you write, as in NEO:** Enter twice on an empty line breaks the scene, the rest goes into a new scene; Enter a third time starts a new chapter. Each break is announced at the bottom of the page with an “Undo” button; Backspace in the empty scene undoes it too. The chapter number and title sit at the top of the page, as in a book.
 - **The pages of a book:** a scene can become a title page, copyright, dedication, epigraph, prologue, epilogue, acknowledgments or “about the author”. They place themselves before or after the story, and each one says what goes there (“Who is this book for?”).
-- **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages sized to your screen (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter; move a chapter by dragging it in the left column, or with its arrows. Above the page, a quiet bar: the scene title, the page type, focus mode and the trash.
+- **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages sized to your screen (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter; move a chapter by dragging it in the left column, or with its arrows. A scene too: drag it (above or below another), use its arrows, or Alt+↑ / Alt+↓; it joins the chapter of its new neighbour. Above the page, a quiet bar: the scene title, the page type, focus mode and the trash.
 - **Focus mode:** the page alone on screen, typewriter-style if you like (the current line stays at eye level), with the sentence, line or paragraph in full ink and the rest faded. Ctrl/Cmd+Shift+X marks a passage “to revisit”.
 - **Statistics and goals:** words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
-- **In this scene:** characters and places mentioned in the text show up beside it, along with the card’s notes.
+- **The synopsis as a watermark:** an empty scene shows its synopsis in grey, like an outline note, until you write.
+- **In this scene:** characters and places mentioned in the text show up beside it, along with the scene’s synopsis, editable in place.
 - **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text: it goes to the trash and comes back with it.
 
 ### Novels and screenplays
@@ -192,6 +196,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 - **Several projects:** a home screen to choose the one to work on, or to create one.
 - **Autosave** to Markdown files, or `Cmd+S` / `Ctrl+S`.
 - **English and French**, each with its own typography.
+- **Typography as you type** (manuscript, cards, Bible): curly quotes “ ”, apostrophe ’, ellipsis …, a dash from two hyphens; in French, « » with non-breaking spaces and a thin space before ; ! ?. Follows the language, or set it in Settings (or turn it off).
 - **Light, dark or system appearance.**
 - **Mouse, touch and keyboard:** every action has all three paths.
 - **Offline:** bundled fonts, no account, no server.
