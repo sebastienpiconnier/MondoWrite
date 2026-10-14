@@ -1,12 +1,13 @@
 // Liseré du type sur les cartes : chaque type a sa couleur dans les deux thèmes, assez contrastée sur le
 // fond d'une carte (3:1, seuil d'un élément graphique), et le liseré la lit sur la carte.
 
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CARD_TYPES } from "../types";
 
-const tokens = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-const canvas = readFileSync(new URL("../styles/canvas.css", import.meta.url), "utf8");
+// Lecture directe des feuilles de style (Vitest ne charge pas le CSS importé ; pas de types Node dans le projet).
+const fs = (await import(/* @vite-ignore */ "node:" + "fs")) as { readFileSync: (path: URL, encoding: string) => string };
+const tokens = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+const canvas = fs.readFileSync(new URL("../styles/canvas.css", import.meta.url), "utf8");
 const block = (selector: string) => tokens.slice(tokens.indexOf(`${selector} {`), tokens.indexOf("}", tokens.indexOf(`${selector} {`)));
 const color = (css: string, name: string) => new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`).exec(css)?.[1];
 
