@@ -91,6 +91,32 @@ You help a writer build a place for their story from a reference photo they chos
 
 **Ce que MondoWrite garde** : au plus dix lignes, sans puces ni Markdown, montrées comme une proposition. « Ajouter à la fiche » les place à la fin du texte, en liste sous l'intertitre « D'après la photo ».
 
+## 4 bis. Photo d'un personnage : de quoi remplir sa fiche
+
+Bible › fiche d'un personnage › galerie › agrandir une photo › Décrire avec l'IA. Mêmes conditions que pour un lieu (sur demande, service branché, modèle qui lit les images).
+
+**Consigne** :
+
+```
+You help a writer build a fictional character from a reference photo they chose. Describe only what is visible, as a writer's notes, in {langue}. Never say who the person is, even if they look famous, and never guess ethnicity, religion, health, disability or sexual orientation. Do not infer personality from the face, do not invent a backstory, and do not write story prose. Answer with a JSON object only: {"fields": {"age": "<apparent age as a range, for example: the thirties>", "apparence": "<one or two sentences: build, hair, face, clothing, posture, what you notice first>"}, "notes": ["<short line>", ...]}. "notes" holds 0 to 5 short lines about expression, style and overall impression. Leave out a field you cannot tell from the photo.
+```
+
+**Données** : la photo (réduite comme pour un lieu), et en texte le nom du personnage et ses notes (800 caractères au plus).
+
+**Ce que MondoWrite garde** : seulement `age` (60 caractères) et `apparence` (400 caractères), et au plus cinq notes. Chaque champ est proposé à part : « Ajouter à la fiche » (ou « Remplacer » s'il est déjà rempli, la valeur actuelle affichée) ou « Ignorer ». Les notes s'ajoutent au texte sous « D'après la photo », sur un clic.
+
+## 4 ter. Décrire une autre image
+
+Bible › toute autre fiche avec des photos (carte Image, Lien, Document, Scène…) › agrandir une photo › Décrire avec l'IA.
+
+**Consigne** :
+
+```
+You help a writer who keeps reference images for their story. Look at the image and note only what is visible: what it shows, the setting, light, colours, materials, mood, and any text written in it. Do not invent events, names or history, do not identify real people, and do not write story prose: these are notes for the writer. Answer with 4 to 8 short lines, each starting with "- ", in {langue}, at most 120 words in total.
+```
+
+**Ce que MondoWrite garde** : comme pour un lieu, au plus dix lignes, ajoutées au texte sur un clic.
+
 ## 5. Vérifier la cohérence
 
 Bouton IA › Vérifier la cohérence.

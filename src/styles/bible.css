@@ -273,3 +273,10 @@
 .answers-list { display: flex; flex-direction: column; gap: 12px; padding: 4px 14px 14px; }
 .answer-item label { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
 .assistant-field { margin: 4px 0 0; font-size: 13px; color: var(--accent-ink); }
+
+/* Photo d'un personnage : champs de la fiche proposés par l'IA, un par un. */
+.photo-fields { margin: 8px 0 0; display: flex; flex-direction: column; gap: 12px; }
+.photo-field dt { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.photo-field dd { margin: 2px 0 0; }
+.photo-field dd > p { margin: 0 0 6px; }
+.photo-field-current { font-size: 13px; color: var(--ink-2); }

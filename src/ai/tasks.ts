@@ -234,6 +234,68 @@ export function parseNotes(reply: string): string[] {
     .slice(0, 10);
 }
 
+// ---------- Décrire une image (carte Image, Lien, Document, Scène…) ----------
+
+/** Même règle que pour un lieu : ce que montre l'image, en notes, rien d'inventé. Pour toute autre carte. */
+export function describeImagePrompt(card: CardData, lang: string): Prompt {
+  return {
+    system:
+      `You help a writer who keeps reference images for their story. Look at the image and note only what is visible: ` +
+      `what it shows, the setting, light, colours, materials, mood, and any text written in it. ` +
+      `Do not invent events, names or history, do not identify real people, and do not write story prose: these are notes for the writer. ` +
+      `Answer with 4 to 8 short lines, each starting with "- ", in ${language(lang)}, at most 120 words in total.`,
+    user: JSON.stringify({ card: card.title.trim(), notes: clip(plainText(card.html), 800) }),
+  };
+}
+
+// ---------- Photo d'un personnage : de quoi remplir sa fiche ----------
+
+/** Champs de la fiche d'un personnage qu'une photo peut nourrir. */
+export const PHOTO_FIELDS = ["age", "apparence"] as const;
+export type PhotoField = (typeof PHOTO_FIELDS)[number];
+
+export interface CharacterPhoto {
+  /** Propositions pour la fiche (âge apparent, apparence), à accepter une à une. */
+  fields: Partial<Record<PhotoField, string>>;
+  /** Autres remarques (expression, style, allure), à ajouter au texte si l'auteur le veut. */
+  notes: string[];
+}
+
+/**
+ * L'auteur a choisi une photo comme référence pour un personnage : l'IA propose l'âge apparent et
+ * l'apparence pour sa fiche, et quelques notes. Seulement ce qui se voit : jamais qui est la personne
+ * (une photo peut montrer quelqu'un de réel), jamais d'origine, de religion, de santé ou d'orientation
+ * devinées, jamais de caractère déduit d'un visage. Proposé, jamais écrit sans un clic de l'auteur.
+ */
+export function describeCharacterPrompt(character: CardData, lang: string): Prompt {
+  return {
+    system:
+      `You help a writer build a fictional character from a reference photo they chose. Describe only what is visible, as a writer's notes, in ${language(lang)}. ` +
+      `Never say who the person is, even if they look famous, and never guess ethnicity, religion, health, disability or sexual orientation. ` +
+      `Do not infer personality from the face, do not invent a backstory, and do not write story prose. ` +
+      `Answer with a JSON object only: {"fields": {"age": "<apparent age as a range, for example: the thirties>", "apparence": "<one or two sentences: build, hair, face, clothing, posture, what you notice first>"}, "notes": ["<short line>", ...]}. ` +
+      `"notes" holds 0 to 5 short lines about expression, style and overall impression. Leave out a field you cannot tell from the photo.`,
+    user: JSON.stringify({ character: character.title.trim(), notes: clip(plainText(character.html), 800) }),
+  };
+}
+
+/** Réponse de l'IA pour une photo de personnage : seuls les champs prévus, textes bornés, rien d'autre. */
+export function parseCharacterPhoto(reply: string): CharacterPhoto {
+  const raw = extractJson(reply);
+  const obj = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const given = obj.fields && typeof obj.fields === "object" && !Array.isArray(obj.fields) ? (obj.fields as Record<string, unknown>) : {};
+  const fields: Partial<Record<PhotoField, string>> = {};
+  for (const key of PHOTO_FIELDS) {
+    const value = clip(str(given[key]).replace(/[*_`#]/g, ""), key === "age" ? 60 : 400);
+    if (value) fields[key] = value;
+  }
+  const notes = (Array.isArray(obj.notes) ? obj.notes : [])
+    .map((n) => clip(str(n).replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").replace(/[*_`#]/g, ""), 300))
+    .filter((n) => n.length > 1)
+    .slice(0, 5);
+  return { fields, notes };
+}
+
 // ---------- Cohérence ----------
 
 export interface CoherenceAlert {

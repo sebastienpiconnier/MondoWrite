@@ -1,8 +1,9 @@
 // Galerie d'une fiche de la Bible (idée reprise de la Bible du fork de NEO) : l'image principale et les
 // photos supplémentaires d'un personnage ou d'un lieu. On ajoute par le bouton ou en déposant des images ;
 // une photo s'agrandit d'un clic, devient l'image principale (le portrait) ou quitte la galerie.
-// Pour un lieu, si une IA est branchée et que l'auteur le demande, l'IA relève en notes ce que montre la
-// photo ; ces notes sont proposées, l'auteur les ajoute à la fiche ou les ignore.
+// Si une IA est branchée et que l'auteur le demande, l'IA décrit une photo : pour un lieu ou toute autre
+// carte, des notes sur ce qu'elle montre ; pour un personnage, l'âge apparent et l'apparence pour sa fiche
+// (à accepter un par un) et quelques notes. Rien n'entre dans la fiche sans un clic de l'auteur.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
@@ -13,7 +14,7 @@ import { useMediaUrl } from "./useMediaUrl";
 import { imageExtension } from "../media";
 import { storage } from "../storage";
 import { AiError, PROVIDERS, complete, isReady } from "../ai/providers";
-import { describePlacePrompt, parseNotes } from "../ai/tasks";
+import { describeCharacterPrompt, describeImagePrompt, describePlacePrompt, parseCharacterPhoto, parseNotes, type PhotoField } from "../ai/tasks";
 import { imageForAi } from "../ai/image";
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -44,6 +45,9 @@ export function Gallery({ card }: { card: CardData }) {
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState<string[] | null>(null);
+  // Personnage : champs de la fiche proposés d'après la photo, en attente d'un oui ou d'un non.
+  const [fields, setFields] = useState<Partial<Record<PhotoField, string>> | null>(null);
+  const setFiche = useCosmos((s) => s.setFiche);
   const [error, setError] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openUrl = useMediaUrl(open ?? undefined);
@@ -55,20 +59,30 @@ export function Gallery({ card }: { card: CardData }) {
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  const canDescribe = card.type === "lieu" && isReady(config);
+  const character = card.type === "personnage";
+  const canDescribe = isReady(config);
   const describe = async (photo: string) => {
     if (!isReady(config) || busy) return;
     setBusy(true);
     setError("");
     setNotes(null);
+    setFields(null);
     try {
       const url = await storage.mediaUrl(photo);
       if (!url) throw new AiError("other");
       const image = await imageForAi(url);
-      const prompt = describePlacePrompt(card, lang);
-      const lines = parseNotes(await complete(config, prompt.system, prompt.user, { maxTokens: 600, images: [image] }));
-      if (lines.length === 0) throw new AiError("empty");
-      setNotes(lines);
+      if (character) {
+        const prompt = describeCharacterPrompt(card, lang);
+        const found = parseCharacterPhoto(await complete(config, prompt.system, prompt.user, { maxTokens: 700, images: [image], json: true }));
+        if (Object.keys(found.fields).length === 0 && found.notes.length === 0) throw new AiError("empty");
+        setFields(Object.keys(found.fields).length > 0 ? found.fields : null);
+        setNotes(found.notes.length > 0 ? found.notes : null);
+      } else {
+        const prompt = card.type === "lieu" ? describePlacePrompt(card, lang) : describeImagePrompt(card, lang);
+        const lines = parseNotes(await complete(config, prompt.system, prompt.user, { maxTokens: 600, images: [image] }));
+        if (lines.length === 0) throw new AiError("empty");
+        setNotes(lines);
+      }
       setOpen(null);
     } catch (err) {
       console.error(err);
@@ -78,6 +92,14 @@ export function Gallery({ card }: { card: CardData }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  // Un champ proposé : il remplit la fiche (ou remplace ce qui y était), sur le clic de l'auteur seulement.
+  const settle = (key: PhotoField, keep: boolean) => {
+    if (keep && fields?.[key]) setFiche(card.id, key, fields[key]!);
+    const rest = { ...fields };
+    delete rest[key];
+    setFields(Object.keys(rest).length > 0 ? rest : null);
   };
 
   const keepNotes = () => {
@@ -116,7 +138,39 @@ export function Gallery({ card }: { card: CardData }) {
           {g.add}
         </button>
       </div>
-      {canDescribe && photos.length > 0 && !notes && <p className="gallery-hint">{PROVIDERS[config!.provider].local ? g.describeHintLocal : g.describeHintCloud}</p>}
+      {canDescribe && photos.length > 0 && !notes && !fields && (
+        <p className="gallery-hint">
+          {character ? g.describeHintCharacter : g.describeHint} {PROVIDERS[config!.provider].local ? g.describeLocal : g.describeCloud}
+        </p>
+      )}
+
+      {fields && (
+        <div className="assistant-panel synthesis" role="group" aria-label={g.fieldsHeading}>
+          <p className="assistant-hint">{g.fieldsProposal}</p>
+          <dl className="photo-fields">
+            {(Object.keys(fields) as PhotoField[]).map((key) => {
+              const current = card.fiche?.[key]?.trim();
+              return (
+                <div key={key} className="photo-field">
+                  <dt>{all.character.fields[key]}</dt>
+                  <dd>
+                    <p>{fields[key]}</p>
+                    {current && <p className="photo-field-current">{fmt(g.fieldCurrent, { value: current })}</p>}
+                    <div className="assistant-actions">
+                      <button type="button" className="is-primary" onClick={() => settle(key, true)}>
+                        {current ? g.fieldReplace : g.fieldAdd}
+                      </button>
+                      <button type="button" onClick={() => settle(key, false)}>
+                        {all.ai.ignore}
+                      </button>
+                    </div>
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        </div>
+      )}
 
       {notes && (
         <div className="assistant-panel synthesis" role="group" aria-label={g.notesHeading}>
