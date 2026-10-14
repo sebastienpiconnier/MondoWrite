@@ -60,14 +60,15 @@ describe("import d'un fichier Fountain", () => {
     expect(byType(importFountain(source, options()), "personnage")).toEqual(["Hugo", "Inès", "Mcavoy"]);
   });
 
-  it("fichier torture : en-tête libre sans décor, synopsis repris dans la carte", () => {
+  it("fichier torture : en-tête libre sans décor, synopsis gardé dans le scénario (c'est celui de la carte)", () => {
     const project = importFountain(torture, options());
     expect(project.meta.title).toBe("TORTURE ou l’art d’éprouver un parseur");
     expect(byType(project, "scene")).toHaveLength(4);
     // « INTÉRIEUR. CUISINE… » n'a pas de préfixe standard : pas de carte Décor pour lui.
     expect(byType(project, "lieu")).toEqual(["Voiture", "Quai", "Péniche"]);
     const withSynopsis = importFountain("INT. PHARE - NUIT\n\n= Elle trouve le journal & doute.\n\nAction.\n", options());
-    expect(withSynopsis.cards.find((c) => c.type === "scene")!.html).toBe("<p>Elle trouve le journal &amp; doute.</p>");
+    expect(withSynopsis.cards.find((c) => c.type === "scene")!.html).toBe("");
+    expect(withSynopsis.screenplay!.elements[1]).toEqual({ type: "synopsis", text: "Elle trouve le journal & doute." });
   });
 
   it("titre : la page de titre, sinon le nom du fichier", () => {
