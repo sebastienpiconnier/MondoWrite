@@ -16,6 +16,19 @@ export const en: Messages = {
     leaveUnsaved: "Back to projects without saving",
   },
 
+  conflict: {
+    changed: "Also changed outside MondoWrite: {what}. The version on disk is kept, yours is saved next to it ({file}).",
+    deleted: "Deleted here but changed outside MondoWrite: {what}. The version on disk is kept.",
+    card: "“{title}”",
+    manuscript: "the text of “{title}”",
+    project: "the canvas layout (cosmos.json)",
+    screenplay: "the screenplay",
+    other: "a project file",
+    keepMine: "Keep mine",
+    keepDisk: "Keep the disk version",
+    more: "+{n} waiting",
+  },
+
   search: {
     button: "Search for a card",
     hint: "Search (Ctrl or Cmd + F)",

@@ -121,6 +121,10 @@ button { font: inherit; color: inherit; }
 }
 .app-alert > span:first-child { flex: 1 1 320px; }
 .app-alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-alert-actions .ghost-button { min-height: 44px; }
+/* Conflit avec un autre logiciel : rien n'est perdu, le bandeau attend un choix (accent, pas danger). */
+.app-alert.is-conflict { border-bottom-color: var(--accent); }
+.conflict-more { color: var(--ink-2); white-space: nowrap; }
 
 /* ---------- Accueil : choisir ou créer un projet ---------- */
 .home { display: flex; flex-direction: column; height: 100%; }

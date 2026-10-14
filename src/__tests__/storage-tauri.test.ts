@@ -13,6 +13,7 @@ const fsPlugin = vi.hoisted(() => ({
   remove: vi.fn(async () => {}),
   writeFile: vi.fn(async () => {}),
   writeTextFile: vi.fn(async () => {}),
+  watch: vi.fn(async () => () => {}),
 }));
 
 vi.mock("@tauri-apps/plugin-dialog", () => dialog);
@@ -84,5 +85,37 @@ describe("écrire un projet", () => {
       { id: "D:\\Utilisateurs\\moi\\OneDrive\\Projet Cosmos", name: "Projet Cosmos", openedAt: 0 },
     ]);
     expect(localStorage.getItem("cosmos:dernier-dossier")).toBeNull();
+  });
+});
+
+describe("modifications faites hors de l'app", () => {
+  it("une copie de conflit n'est pas relue avec les cartes ; readFiles ne lit que ce qui existe", async () => {
+    dialog.open.mockResolvedValue("D:\\Écriture\\Phare");
+    await tauriStorage.pickFolder();
+    fsPlugin.readDir.mockImplementation((async (dir: string) =>
+      dir.endsWith("cartes") ? [{ name: "a.md", isFile: true }, { name: "a (MondoWrite).md", isFile: true }] : []) as never);
+    fsPlugin.readTextFile.mockImplementation((async (path: string) => (path.endsWith("cosmos.json") ? "{}" : `contenu de ${path}`)) as never);
+    const files = await tauriStorage.readAll();
+    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json", "scenario.fountain"].sort());
+    fsPlugin.exists.mockImplementation((async (path: string) => !path.endsWith("absent.md")) as never);
+    expect(await tauriStorage.readFiles!(["cartes/a.md", "cartes/absent.md"])).toEqual({ "cartes/a.md": "contenu de D:\\Écriture\\Phare\\cartes\\a.md" });
+    fsPlugin.readDir.mockReset();
+    fsPlugin.readTextFile.mockReset();
+    fsPlugin.exists.mockReset();
+    fsPlugin.exists.mockImplementation(async () => true);
+  });
+
+  it("le dossier est surveillé, sans réagir aux copies markdown/ ni aux images", async () => {
+    dialog.open.mockResolvedValue("D:\\Écriture\\Phare");
+    await tauriStorage.pickFolder();
+    const onChange = vi.fn();
+    await tauriStorage.watch!(onChange);
+    expect(fsPlugin.watch).toHaveBeenCalledWith("D:\\Écriture\\Phare", expect.any(Function), expect.objectContaining({ recursive: true }));
+    const handler = (fsPlugin.watch.mock.calls[0] as unknown as [string, (e: { paths: string[] }) => void])[1];
+    handler({ paths: ["D:\\Écriture\\Phare\\markdown\\bible.md"] });
+    handler({ paths: ["D:\\Écriture\\Phare\\medias\\a.jpg"] });
+    expect(onChange).not.toHaveBeenCalled();
+    handler({ paths: ["D:\\Écriture\\Phare\\cartes\\a.md"] });
+    expect(onChange).toHaveBeenCalledTimes(1);
   });
 });

@@ -33,3 +33,5 @@ tauri-plugin-http = { version = "2", features = ["unsafe-headers"] }
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+# Surveillance du dossier du projet (modifications faites dans un autre logiciel), ordinateur seulement.
+tauri-plugin-fs = { version = "2", features = ["watch"] }

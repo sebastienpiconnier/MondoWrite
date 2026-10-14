@@ -5,7 +5,8 @@ import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
 import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
-import { SCREENPLAY_FILE, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
+import { SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
+import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
@@ -304,6 +305,18 @@ interface CosmosState {
   load: () => Promise<void>;
   openFolder: () => Promise<void>;
   save: () => Promise<void>;
+  /**
+   * Fichiers changés hors de l'app des deux côtés : la version du disque reste en place, celle de l'app
+   * est écrite à côté (« … (MondoWrite).md »), jusqu'au choix de l'auteur. Jamais enregistré dans le projet.
+   */
+  conflicts: FileConflict[];
+  /** L'auteur choisit : sa version (elle remplace celle du disque) ou celle du disque (reprise dans l'app). */
+  resolveConflict: (path: string, keep: "mine" | "disk") => Promise<void>;
+  /**
+   * Relit le dossier du projet (surveillance du dossier, retour dans la fenêtre) : ce qui a changé ailleurs
+   * sans modification ici est repris ; ce qui a changé des deux côtés devient un conflit.
+   */
+  syncFromDisk: () => Promise<void>;
 }
 
 /** Ce qu'une annulation restaure. Les réglages du projet (titre, type, format) n'en font pas partie. */
@@ -453,6 +466,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     set({
       ...state,
       lastFiles: files,
+      conflicts: [],
       screen: "project",
       view: "toile",
       focusId: null,
@@ -465,6 +479,36 @@ export const useCosmos = create<CosmosState>((set, get) => {
   };
   // Dernier collage : le même collé deux fois de suite (deux événements pour un seul geste) ne fait qu'une carte.
   let lastPaste = { text: "", at: 0 };
+  /** Fichiers du projet tel qu'il est à l'écran, comme ils seraient écrits (scénario inchangé : ses octets lus). */
+  const currentFiles = (): FileMap => {
+    const { screenplay, savedScreenplay, lastFiles: prev } = get();
+    const files = serialize(toProject(get()));
+    // Scénario inchangé depuis le disque : on garde le fichier tel quel, à l'octet près
+    // (il peut venir d'un autre logiciel, que la sérialisation normaliserait).
+    if (screenplay && screenplay === savedScreenplay && SCREENPLAY_FILE in prev) files[SCREENPLAY_FILE] = prev[SCREENPLAY_FILE];
+    return files;
+  };
+  /**
+   * Reprend dans le projet ouvert des fichiers changés hors de l'app (null : supprimé), sans toucher au reste :
+   * le projet est relu à partir de ce qui est à l'écran, ces fichiers remplacés. L'historique d'annulation
+   * repart de zéro (il ramènerait l'ancienne version).
+   */
+  const adoptDisk = (patch: Record<string, string | null>) => {
+    if (Object.keys(patch).length === 0) return;
+    const project = deserialize(patchFiles(currentFiles(), patch));
+    if (!project) return;
+    const { state } = openProject(project);
+    const { screenplay, savedScreenplay, lastFiles } = get();
+    set({
+      ...state,
+      // Scénario non repris : on garde l'objet à l'écran, et ce qu'il reste à enregistrer.
+      ...(SCREENPLAY_FILE in patch ? {} : { screenplay, savedScreenplay }),
+      lastFiles: patchFiles(lastFiles, patch),
+    });
+  };
+  /** Une relecture demandée pendant un enregistrement attend sa fin. */
+  let syncing = false;
+  let syncAgain = false;
   const refreshProjects = async () => set({ projects: await storage.list().catch(() => []) });
 
   return {
@@ -1154,6 +1198,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({
         ...state,
         lastFiles: {},
+        conflicts: [],
         screen: "project",
         view: "toile",
         focusId: null,
@@ -1199,6 +1244,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         ...state,
         savedScreenplay: null,
         lastFiles: {},
+        conflicts: [],
         screen: "project",
         view: "manuscrit",
         focusId: null,
@@ -1576,6 +1622,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({
         ...state,
         lastFiles: files ?? {},
+        conflicts: [],
         loaded: true,
         screen: "project",
         view: "toile",
@@ -1608,24 +1655,44 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const existing = await storage.readAll().catch(() => null);
         if (existing && openFiles(existing)) return;
       }
-      const { screenplay, savedScreenplay } = get();
-      const files = serialize(toProject(get()));
+      const { screenplay } = get();
+      const files = currentFiles();
       const prev = get().lastFiles;
-      // Scénario inchangé depuis le disque : on garde le fichier tel quel, à l'octet près
-      // (il peut venir d'un autre logiciel, que la sérialisation normaliserait).
-      if (screenplay && screenplay === savedScreenplay && SCREENPLAY_FILE in prev) {
-        files[SCREENPLAY_FILE] = prev[SCREENPLAY_FILE];
-      }
+      // Fichiers en conflit : la version du disque n'est pas touchée tant que l'auteur n'a pas choisi.
+      const held = new Set(get().conflicts.map((c) => c.path));
       const changed: FileMap = {};
-      for (const [path, content] of Object.entries(files)) if (prev[path] !== content) changed[path] = content;
-      const removed = Object.keys(prev).filter((path) => !(path in files));
+      for (const [path, content] of Object.entries(files)) if (prev[path] !== content && !held.has(path)) changed[path] = content;
+      let removed = Object.keys(prev).filter((path) => !(path in files) && !held.has(path));
       set({ status: "enregistrement" });
       try {
+        // Garde-fou : juste avant d'écrire, on relit ce qu'on va remplacer ou supprimer. Un fichier changé
+        // hors de l'app depuis notre dernière lecture n'est jamais écrasé.
+        let conflicts = get().conflicts;
+        if (storage.readFiles) {
+          const targets = [...Object.keys(changed), ...removed];
+          const disk = targets.length > 0 ? await storage.readFiles(targets) : {};
+          const diff = diffDisk(targets, prev, files, disk);
+          const skip = new Set([...Object.keys(diff.settled), ...diff.conflicts]);
+          for (const path of skip) delete changed[path];
+          removed = removed.filter((path) => !skip.has(path));
+          const added: FileConflict[] = diff.conflicts.map((path) => ({ path, copy: path in files ? conflictCopyPath(path) : null, mine: files[path] ?? null }));
+          // La version de l'app, à côté de celle du disque ; tenue à jour si l'auteur continue d'écrire.
+          conflicts = [...conflicts, ...added].map((c) => {
+            const mine = files[c.path] ?? null;
+            if (!c.copy || mine === null || (mine === c.mine && !added.includes(c))) return c;
+            changed[c.copy] = mine;
+            return { ...c, mine };
+          });
+        }
         await storage.write(changed, removed);
+        // Ce que le disque contient maintenant. Un fichier en conflit garde sa dernière version connue.
+        let known = files;
+        for (const c of conflicts) known = patchFiles(known, { [c.path]: prev[c.path] ?? null });
         // Si l'auteur a modifié quelque chose pendant l'écriture, on reste "modifié".
         set({
-          lastFiles: files,
+          lastFiles: known,
           savedScreenplay: screenplay,
+          conflicts,
           status: get().status === "enregistrement" ? "enregistre" : get().status,
         });
         storage.remember({ title: get().title, kind: get().kind });
@@ -1640,6 +1707,62 @@ export const useCosmos = create<CosmosState>((set, get) => {
       } catch (err) {
         console.error(err);
         set({ status: "erreur" });
+      }
+      if (syncAgain) {
+        syncAgain = false;
+        void get().syncFromDisk();
+      }
+    },
+
+    conflicts: [],
+    resolveConflict: async (path, keep) => {
+      const conflict = get().conflicts.find((c) => c.path === path);
+      if (!conflict) return;
+      try {
+        if (keep === "mine") {
+          const mine = currentFiles()[path] ?? null;
+          await storage.write(mine === null ? {} : { [path]: mine }, [...(mine === null ? [path] : []), ...(conflict.copy ? [conflict.copy] : [])]);
+          set({ lastFiles: patchFiles(get().lastFiles, { [path]: mine }) });
+        } else {
+          const disk = storage.readFiles ? await storage.readFiles([path]) : {};
+          adoptDisk({ [path]: disk[path] ?? null });
+          if (conflict.copy) await storage.write({}, [conflict.copy]);
+        }
+        set({ conflicts: get().conflicts.filter((c) => c.path !== path) });
+      } catch (err) {
+        console.error(err);
+        set({ status: "erreur" });
+      }
+    },
+
+    syncFromDisk: async () => {
+      if (get().screen !== "project") return;
+      if (syncing || get().status === "enregistrement") {
+        syncAgain = true;
+        return;
+      }
+      syncing = true;
+      try {
+        const disk = await storage.readAll();
+        // Dossier disparu (disque débranché) : rien à reprendre ; l'enregistrement suivant le signalera.
+        if (!disk) return;
+        const known = get().lastFiles;
+        const held = new Set(get().conflicts.map((c) => c.path));
+        // Les copies de conflit ne font pas partie du projet : elles attendent le choix de l'auteur.
+        const paths = [...new Set([...Object.keys(known), ...Object.keys(disk)])].filter((p) => !held.has(p) && !isConflictCopy(p));
+        const diff = diffDisk(paths, known, currentFiles(), disk);
+        if (Object.keys(diff.settled).length > 0) set({ lastFiles: patchFiles(get().lastFiles, diff.settled) });
+        adoptDisk(diff.adopt);
+        // Changé des deux côtés : l'enregistrement met la version de l'app à côté et prévient l'auteur.
+        if (diff.conflicts.length > 0) {
+          set({ status: "modifie" });
+          syncing = false;
+          await get().save();
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        syncing = false;
       }
     },
   };

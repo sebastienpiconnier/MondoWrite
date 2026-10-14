@@ -5,10 +5,10 @@
 // Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { exists, mkdir, readDir, readFile, readTextFile, remove, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists, mkdir, readDir, readFile, readTextFile, remove, watch, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
-import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, type FileMap } from "./paths";
+import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, isConflictCopy, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
@@ -187,7 +187,7 @@ export const tauriStorage: Storage = {
       const folder = await join(dir, name);
       if (!(await exists(folder))) continue;
       for (const entry of await readDir(folder)) {
-        if (entry.isFile && entry.name.endsWith(".md")) {
+        if (entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)) {
           files[`${name}/${entry.name}`] = await readTextFile(await join(folder, entry.name));
         }
       }
@@ -211,6 +211,34 @@ export const tauriStorage: Storage = {
       const full = await join(dir, ...path.split("/"));
       if (await exists(full)) await remove(full);
     }
+  },
+
+  async readFiles(paths) {
+    const dir = await projectFolder();
+    if (!dir) return {};
+    const out: FileMap = {};
+    for (const path of paths) {
+      const full = await join(dir, ...path.split("/"));
+      if (await exists(full)) out[path] = await readTextFile(full);
+    }
+    return out;
+  },
+
+  async watch(onChange) {
+    const dir = await projectFolder();
+    // Sur mobile, le dossier est privé : aucun autre logiciel n'y écrit.
+    if (!dir || mobile) return () => {};
+    // Délai anti-rebond : un enregistrement (ou une synchronisation OneDrive) écrit plusieurs fichiers d'affilée.
+    return watch(
+      dir,
+      (event) => {
+        // markdown/ (copies réécrites à chaque enregistrement) et medias/ ne sont jamais relus.
+        const paths = event.paths ?? [];
+        const relevant = paths.length === 0 || paths.some((p) => !/[\\/](markdown|medias)([\\/]|$)/.test(p.slice(dir.length)));
+        if (relevant) onChange();
+      },
+      { recursive: true, delayMs: 600 },
+    );
   },
 
   async saveAs(file, label) {

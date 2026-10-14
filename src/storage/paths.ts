@@ -21,4 +21,12 @@ export const SCREENPLAY_FILE = "scenario.fountain";
  * jamais relues. Une version par jour dans versions/AAAA-MM-JJ/. Hors de TEXT_DIRS, exprès.
  */
 export const COPIES_DIR = "markdown";
+
+/**
+ * Conflit avec une modification faite hors de l'app : la version de MondoWrite est écrite à côté du
+ * fichier, sous ce nom (« cartes/k3x9 (MondoWrite).md »), et jamais relue comme une carte.
+ */
+export const CONFLICT_MARK = " (MondoWrite)";
+export const conflictCopyPath = (path: string) => path.replace(/(\.[^./]+)?$/, (ext) => `${CONFLICT_MARK}${ext}`);
+export const isConflictCopy = (path: string) => /\(MondoWrite\)(\.[^./]+)?$/.test(path);
 export const VERSIONS_DIR = "versions";

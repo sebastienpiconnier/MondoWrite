@@ -72,6 +72,11 @@ export const browserStorage: Storage = {
     });
   },
 
+  async readFiles(paths) {
+    const all = load();
+    return Object.fromEntries(paths.filter((p) => p in all).map((p) => [p, all[p]]));
+  },
+
   async writeMedia(name, data) {
     let binary = "";
     for (let i = 0; i < data.length; i += 0x8000) binary += String.fromCharCode(...data.subarray(i, i + 0x8000));

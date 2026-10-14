@@ -16,6 +16,7 @@ import { UpdateNotice, useLaunchUpdateCheck } from "./components/Updates";
 import { useT } from "./i18n";
 import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
+import { ConflictNotice } from "./components/ConflictNotice";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 
@@ -41,6 +42,28 @@ export function App() {
   // De retour à l'accueil : les images lues appartenaient au projet qu'on quitte.
   useEffect(() => {
     if (screen === "home") forgetMediaUrls();
+  }, [screen]);
+
+  // Projet ouvert : on surveille son dossier (app de bureau). Un fichier changé dans un autre logiciel est
+  // repris aussitôt, ou devient un conflit s'il a aussi été modifié ici. Même relecture au retour dans la fenêtre.
+  useEffect(() => {
+    if (screen !== "project") return;
+    const sync = () => void useCosmos.getState().syncFromDisk();
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    storage
+      .watch?.(sync)
+      .then((unwatch) => {
+        if (cancelled) unwatch();
+        else stop = unwatch;
+      })
+      .catch((err) => console.error(err));
+    window.addEventListener("focus", sync);
+    return () => {
+      cancelled = true;
+      stop?.();
+      window.removeEventListener("focus", sync);
+    };
   }, [screen]);
 
   // Sauvegarde automatique : chaque modification relance le délai,
@@ -126,6 +149,7 @@ export function App() {
             </span>
           </div>
         )}
+        <ConflictNotice />
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "bible" && <Bible />}

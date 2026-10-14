@@ -14,7 +14,7 @@ import { cardToFile, fileToCard, htmlToMarkdown, markdownToHtml } from "./markdo
 import { isCardId } from "../mentions";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
-import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, manuscriptPath, trashPath, type FileMap } from "./paths";
+import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, isConflictCopy, manuscriptPath, trashPath, type FileMap } from "./paths";
 import { parse as parseScreenplay } from "../screenplay/parse";
 import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
@@ -67,6 +67,16 @@ export interface Storage {
   pickImages(label: string): Promise<{ name: string; data: Uint8Array }[]>;
   /** Écrit les fichiers donnés et supprime ceux listés dans `removed`. */
   write(files: FileMap, removed: string[]): Promise<void>;
+  /**
+   * Contenu actuel sur le disque des fichiers texte donnés (ceux qui manquent sont absents du résultat) :
+   * relu juste avant d'écrire, pour ne jamais écraser une modification faite hors de l'app.
+   */
+  readFiles?(paths: string[]): Promise<FileMap>;
+  /**
+   * Surveille le dossier du projet (app de bureau) : `onChange` est appelé, après un délai anti-rebond,
+   * quand un fichier y change, que ce soit l'app ou un autre logiciel. Rend la fonction qui arrête.
+   */
+  watch?(onChange: () => void): Promise<() => void>;
   /**
    * Export : l'auteur choisit où enregistrer (ordinateur, mobile) ou le fichier est téléchargé (navigateur).
    * `label` décrit le format dans le dialogue. Renvoie false si l'auteur annule.
@@ -122,12 +132,13 @@ export function deserialize(files: FileMap): Project | null {
   if (!raw) return null;
   const meta = JSON.parse(raw) as ProjectMeta;
   const cards = Object.entries(files)
-    .filter(([path]) => path.startsWith(`${CARDS_DIR}/`) && path.endsWith(".md"))
+    // Une copie de conflit (« … (MondoWrite).md ») n'est jamais une carte : elle porte le même identifiant.
+    .filter(([path]) => path.startsWith(`${CARDS_DIR}/`) && path.endsWith(".md") && !isConflictCopy(path))
     .map(([, text]) => fileToCard(text))
     .filter((c): c is NonNullable<typeof c> => c !== null);
   const live = new Set(cards.map((c) => c.id));
   const trash = Object.entries(files)
-    .filter(([path]) => path.startsWith(`${TRASH_DIR}/`) && path.endsWith(".md"))
+    .filter(([path]) => path.startsWith(`${TRASH_DIR}/`) && path.endsWith(".md") && !isConflictCopy(path))
     .map(([, text]) => fileToCard(text))
     .filter((c): c is NonNullable<typeof c> => c !== null && !!c.trashed && !live.has(c.id));
   const screenplay = SCREENPLAY_FILE in files ? parseScreenplay(files[SCREENPLAY_FILE]) : null;

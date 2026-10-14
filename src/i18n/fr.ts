@@ -17,6 +17,19 @@ export const fr = {
     leaveUnsaved: "Revenir aux projets sans enregistrer",
   },
 
+  conflict: {
+    changed: "Modifié aussi hors de MondoWrite : {what}. La version du disque est gardée, la tienne est enregistrée à côté ({file}).",
+    deleted: "Supprimé ici mais modifié hors de MondoWrite : {what}. La version du disque est gardée.",
+    card: "« {title} »",
+    manuscript: "le texte de « {title} »",
+    project: "la disposition du canevas (cosmos.json)",
+    screenplay: "le scénario",
+    other: "un fichier du projet",
+    keepMine: "Garder ma version",
+    keepDisk: "Garder celle du disque",
+    more: "+{n} en attente",
+  },
+
   search: {
     button: "Rechercher une carte",
     hint: "Rechercher (Ctrl ou Cmd + F)",
