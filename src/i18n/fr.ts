@@ -588,6 +588,14 @@ export const fr = {
     renameMenu: "Renommer partout…",
   },
 
+  // Lecture continue du manuscrit : tout le livre qui défile.
+  continuous: {
+    aria: "Tout le livre, en lecture continue",
+    on: "Lecture continue",
+    off: "Une scène par page",
+    hint: "Faire défiler tout le livre ; un clic sur un passage le rend modifiable",
+  },
+
   // Texte d'une scène de roman vu depuis sa carte (canevas, Bible, carte agrandie).
   draft: {
     write: "Écrire la scène « {title} »",

@@ -452,3 +452,27 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .replace-options select { min-height: 32px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
 .replace-count { margin: 0; min-height: 1.4em; font-size: 14px; color: var(--ink-2); }
 .replace-actions { justify-content: flex-end; }
+
+/* Lecture continue : une longue feuille, le livre d'un seul tenant. Mêmes réglages de texte que la page. */
+.ms-continuous {
+  align-self: center; width: min(40em, 100%); margin-top: 8px; padding: 3em 4em 6em;
+  background: var(--page); color: var(--page-ink); box-shadow: var(--shadow-card);
+  font: 17px/1.6 var(--font-text); font-size: clamp(14px, calc((100cqw - 8px) / 40), 20px);
+}
+.ms-continuous-scene { scroll-margin-top: 16px; }
+.ms-continuous-chapter { padding: 3em 0 1.6em; text-align: center; }
+.ms-continuous-chapter span { display: block; font: 600 0.75em var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); }
+.ms-continuous-chapter h2 { margin: 0.3em 0 0; font: 600 1.4em/1.3 var(--font-display); }
+.ms-continuous-scene:first-child .ms-continuous-chapter { padding-top: 0; }
+.ms-continuous-page { margin: 2.5em 0 1em; text-align: center; font: 600 0.8em var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+.ms-continuous-break { margin: 1em 0; text-align: center; color: var(--ink-2); }
+.ms-continuous-text, .ms-continuous-editor { border-radius: 6px; outline-offset: 4px; cursor: text; }
+.ms-continuous-text:hover { background: var(--hover); }
+.ms-continuous-text:focus-visible, .ms-continuous-editor:focus-visible { outline: 2px solid var(--accent); }
+.ms-continuous-editor { outline: none; box-shadow: 0 0 0 1px var(--line-2); }
+.ms-continuous-text p, .ms-continuous-editor p { margin: 0; text-indent: 1.5em; text-align: justify; hyphens: auto; }
+.ms-continuous-text > p:first-child, .ms-continuous-editor > p:first-child { text-indent: 0; }
+.ms-continuous-text.is-empty { color: var(--placeholder); font-style: italic; }
+.ms-continuous-scene.is-page .ms-continuous-text p { text-align: center; text-indent: 0; }
+.ms-continuous-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; font-style: italic; pointer-events: none; }
+@media (max-width: 640px) { .ms-continuous { padding: 2em 1.2em 4em; } }

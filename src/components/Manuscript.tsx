@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { ContinuousBook } from "./ContinuousBook";
 import { SynopsisField } from "./SynopsisField";
 import { DropCap } from "./dropCap";
 import { TrashIcon } from "./TrashIcon";
@@ -650,6 +651,15 @@ export function Manuscript() {
             <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
               {t.focus.enter}
             </button>
+            <button
+              type="button"
+              className="ghost-button ms-start-chapter"
+              aria-pressed={writing.continuous}
+              title={t.continuous.hint}
+              onClick={() => setWriting({ ...writing, continuous: !writing.continuous })}
+            >
+              {writing.continuous ? t.continuous.off : t.continuous.on}
+            </button>
             <button type="button" className="ghost-button ms-start-chapter" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onClick={() => useCosmos.getState().openReplace({ sceneId: current })}>
               {t.replace.button}
             </button>
@@ -671,6 +681,9 @@ export function Manuscript() {
               {words(sceneWords)}
             </span>
           </div>
+          {writing.continuous ? (
+            <ContinuousBook order={order} cards={cards} current={current} onCurrent={setChosen} />
+          ) : (
           <div
             className={`ms-page${focusMode && (writing.highlight === "sentence" || writing.highlight === "paragraph") ? " is-dimmed" : ""}${opensChapter ? " opens-chapter" : ""}${pageKind && QUIET_PAGES.has(pageKind) ? " is-quiet" : ""}${!pageKind && !opensChapter && at > 0 ? " follows-scene" : ""}`}
             data-page={pageKind ?? undefined}
@@ -703,6 +716,7 @@ export function Manuscript() {
               focusStart={isFresh}
             />
           </div>
+          )}
           {notice && (
             <div className="ms-notice" role="status">
               <span>{notice.text}</span>
@@ -718,7 +732,7 @@ export function Manuscript() {
               </button>
             </div>
           )}
-          {!pageKind && <p className="ms-hint">{b.enterHint}</p>}
+          {!pageKind && !writing.continuous && <p className="ms-hint">{b.enterHint}</p>}
           <div className="sr-only" aria-live="polite">
             {said}
           </div>

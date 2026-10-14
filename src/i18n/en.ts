@@ -611,6 +611,14 @@ export const en: Messages = {
     renameMenu: "Rename everywhere…",
   },
 
+  // Continuous reading of the manuscript: the whole book scrolling.
+  continuous: {
+    aria: "The whole book, continuous reading",
+    on: "Continuous reading",
+    off: "One scene per page",
+    hint: "Scroll through the whole book; click a passage to edit it",
+  },
+
   // A novel scene's text seen from its card (canvas, Bible, expanded card).
   draft: {
     write: "Write the scene “{title}”",
