@@ -439,3 +439,16 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .sp-page.is-scene { width: 100%; margin: 0; border: 1px solid var(--line); border-radius: 10px; box-shadow: none; font-size: min(16px, calc(100cqw / 44)); }
 .sp-page.is-scene .sp-editor, .sp-page.is-scene .sp-editor:focus-visible { min-height: 18em; padding: 1.5em 2em 2em 3em; }
 .script-scene .sp-bar { margin: 0; align-self: flex-start; max-width: 100%; border: 1px solid var(--line); }
+
+/* Rechercher et remplacer */
+.app-dialog.is-replace { width: min(520px, calc(100vw - 32px)); }
+.replace-panel { display: flex; flex-direction: column; gap: 12px; }
+.replace-panel h2 { margin: 0; }
+.replace-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.replace-field input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 15px var(--font-ui); }
+.replace-field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.replace-options { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--ink); }
+.replace-options label { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
+.replace-options select { min-height: 32px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.replace-count { margin: 0; min-height: 1.4em; font-size: 14px; color: var(--ink-2); }
+.replace-actions { justify-content: flex-end; }

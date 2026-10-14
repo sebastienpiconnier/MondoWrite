@@ -101,6 +101,12 @@ export function App() {
       // Cmd/Ctrl + 1 à 4 : Canevas, Plan, Bible, Manuscrit.
       const views = ["toile", "plan", "bible", "manuscrit"] as const;
       const digit = /^Digit([1-4])$/.exec(e.code)?.[1] ?? (/^[1-4]$/.test(key) ? key : null);
+      // Rechercher et remplacer : les vues Manuscrit et Scénario l'ouvrent elles-mêmes, avec la scène en cours.
+      if (e.shiftKey && !e.altKey && key === "h" && useCosmos.getState().view !== "manuscrit") {
+        e.preventDefault();
+        useCosmos.getState().openReplace();
+        return;
+      }
       if (digit && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         useCosmos.getState().setView(views[Number(digit) - 1]);

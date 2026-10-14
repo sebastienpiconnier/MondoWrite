@@ -51,6 +51,7 @@ export const fr = {
   },
 
   search: {
+    inText: "dans le texte",
     button: "Rechercher une carte",
     hint: "Rechercher (Ctrl ou Cmd + F)",
     placeholder: "Un nom, un mot…",
@@ -145,6 +146,9 @@ export const fr = {
     author: "Nom d’auteur",
     authorHint: "Il vient de ton profil d’auteur, à modifier sur la page des projets (bouton « Projets »).",
     authorNone: "Pas encore de nom : remplis ton profil sur la page des projets.",
+    typography: "Typographie à la frappe",
+    typographyModes: { auto: "Selon la langue", fr: "Française (« », espaces insécables)", en: "Anglaise (“ ”)", off: "Aucune" },
+    typographyHint: "Guillemets, apostrophe ’, points de suspension …, tiret à partir de deux traits d’union. Dans le manuscrit, les cartes et la Bible.",
   },
 
   types: {
@@ -556,6 +560,34 @@ export const fr = {
   },
 
   // Manuscrit d'un roman : un texte par scène, dans l'ordre du Plan.
+  // Rechercher et remplacer dans les textes, renommer partout (menu d'une carte).
+  replace: {
+    title: "Rechercher et remplacer",
+    button: "Remplacer",
+    buttonHint: "Rechercher et remplacer dans le texte (Ctrl ou Cmd + Maj + H)",
+    renameTitle: "Renommer « {title} » partout",
+    find: "Rechercher",
+    replaceWith: "Remplacer par",
+    newName: "Nouveau nom",
+    matchCase: "Respecter la casse",
+    wholeWord: "Mot entier",
+    scope: "Où :",
+    scopeScene: "Cette scène",
+    scopeProject: "Tout le texte",
+    cards: "Les cartes aussi",
+    hint: "Le texte du manuscrit ou du scénario. Les mentions @ suivent déjà leur carte.",
+    foundOne: "{n} occurrence",
+    foundMany: "{n} occurrences",
+    replaceAll: "Tout remplacer",
+    renameAll: "Renommer partout",
+    doneOne: "{n} remplacement fait.",
+    doneMany: "{n} remplacements faits.",
+    renamedDone: "La carte s’appelle maintenant « {title} ». Remplacements dans le texte : {n}.",
+    undo: "Annuler",
+    undone: "Remplacement annulé.",
+    renameMenu: "Renommer partout…",
+  },
+
   // Texte d'une scène de roman vu depuis sa carte (canevas, Bible, carte agrandie).
   draft: {
     write: "Écrire la scène « {title} »",
@@ -1095,7 +1127,8 @@ export const fr = {
     items: {
       help: "Cette liste",
       views: "Canevas, Plan, Bible, Manuscrit",
-      search: "Rechercher une carte",
+      search: "Rechercher une carte ou un passage",
+      replace: "Rechercher et remplacer dans le texte",
       todos: "À faire",
       save: "Enregistrer",
       undo: "Annuler",

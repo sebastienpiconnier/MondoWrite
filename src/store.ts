@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, setSceneBody } from "./screenplay/sceneText";
 import { foldNovelNodes, foldNovelNotes, foldScreenplayNotes } from "./sceneNotes";
 import { restoreCard, trashCard, type TrashedCard } from "./trash";
@@ -149,8 +150,17 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | null) => void;
+  /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
+  replaceInit: ReplaceInit | null;
+  openReplace: (init?: Partial<ReplaceInit>) => void;
+  /** Occurrences que trouverait ce remplacement (sans rien changer). */
+  countReplace: (req: ReplaceRequest) => number;
+  /** Remplace dans les textes et rend le nombre de remplacements ; « Annuler » (undoReplace) remet tout. */
+  replaceText: (req: ReplaceRequest) => number;
+  undoReplace: () => void;
+  replaceUndo: ReplaceSnapshot | null;
   /**
    * États d'affichage du canevas, jamais enregistrés ni annulables : carte mise en avant (le reste estompé),
    * filtre, carte agrandie, menu d'une carte.
@@ -738,6 +748,48 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     photoTarget: null,
     openPhotos: (target) => set({ photoTarget: target, dialog: "photos" }),
+    replaceInit: null,
+    replaceUndo: null,
+    openReplace: (init = {}) => set({ replaceInit: { find: "", sceneId: null, renameId: null, ...init }, dialog: "replace", replaceUndo: null }),
+    countReplace: (req) => applyReplace(get(), req).count,
+    replaceText: (req) => {
+      const before = get();
+      const done = applyReplace(before, req);
+      const renamed = req.renameId ? before.nodes.find((n) => n.id === req.renameId) : undefined;
+      if (done.count === 0 && !renamed) return 0;
+      // Ce qui change est gardé pour « Annuler » : le manuscrit n'est pas dans l'historique du canevas.
+      set({
+        replaceUndo: {
+          manuscript: Object.fromEntries(Object.keys(done.manuscript).filter((id) => done.manuscript[id] !== before.manuscript[id]).map((id) => [id, before.manuscript[id] ?? ""])),
+          screenplay: done.screenplay !== before.screenplay ? before.screenplay : undefined,
+          html: Object.fromEntries(done.nodes.filter((n, i) => n !== before.nodes[i]).map((n) => [n.id, before.nodes.find((o) => o.id === n.id)!.data.html])),
+          title: renamed ? { id: renamed.id, title: renamed.data.title } : undefined,
+        },
+      });
+      record();
+      set({ manuscript: done.manuscript, nodes: done.nodes });
+      if (done.screenplay !== before.screenplay && done.screenplay) set({ screenplay: done.screenplay, nodes: titlesFromHeadings(get().nodes, done.screenplay) });
+      // Renommer partout : la carte prend le nouveau nom (ses mentions suivent, comme pour tout renommage).
+      if (renamed) get().updateCard(renamed.id, { title: req.replacement });
+      touch();
+      return done.count;
+    },
+    undoReplace: () => {
+      const snap = get().replaceUndo;
+      if (!snap) return;
+      const manuscript = { ...get().manuscript };
+      for (const [id, html] of Object.entries(snap.manuscript)) {
+        if (html) manuscript[id] = html;
+        else delete manuscript[id];
+      }
+      record();
+      let nodes = get().nodes.map((n) => (n.id in snap.html ? withHtml(n, snap.html[n.id]) : n));
+      if (snap.title) nodes = nodes.map((n) => (n.id === snap.title!.id ? { ...n, data: { ...n.data, title: snap.title!.title } } : n));
+      if (snap.title) nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, snap.title!.id, snap.title!.title)));
+      set({ manuscript, nodes, replaceUndo: null });
+      if (snap.screenplay !== undefined && snap.screenplay) set({ screenplay: snap.screenplay, nodes: titlesFromHeadings(get().nodes, snap.screenplay) });
+      touch();
+    },
     addPhoto: async (photo) => {
       const target = get().photoTarget;
       if (!target) return false;

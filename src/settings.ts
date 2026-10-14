@@ -1,6 +1,7 @@
 // Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
+import { isTypographySetting, type TypographySetting } from "./typography";
 import { isFocusHighlight, type FocusHighlight } from "./focusText";
 import { readSections, type BibleSections } from "./bibleSections";
 import { create } from "zustand";
@@ -53,11 +54,17 @@ export interface WritingSettings {
   typewriter: boolean;
   /** Ce qui reste en pleine encre ; le reste s'estompe. */
   highlight: FocusHighlight;
+  /** Typographie automatique à la frappe : selon la langue de l'interface, française, anglaise, ou aucune. */
+  typography: TypographySetting;
 }
 
 function readWriting(raw: unknown): WritingSettings {
   const w = (raw ?? {}) as Partial<Record<keyof WritingSettings, unknown>>;
-  return { typewriter: w.typewriter === true, highlight: isFocusHighlight(w.highlight) ? w.highlight : "off" };
+  return {
+    typewriter: w.typewriter === true,
+    highlight: isFocusHighlight(w.highlight) ? w.highlight : "off",
+    typography: isTypographySetting(w.typography) ? w.typography : "auto",
+  };
 }
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);
 

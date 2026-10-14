@@ -50,6 +50,7 @@ export const en: Messages = {
   },
 
   search: {
+    inText: "in the text",
     button: "Search for a card",
     hint: "Search (Ctrl or Cmd + F)",
     placeholder: "A name, a word…",
@@ -144,6 +145,9 @@ export const en: Messages = {
     author: "Author name",
     authorHint: "It comes from your author profile, which you edit on the projects page (“Projects” button).",
     authorNone: "No name yet: fill in your profile on the projects page.",
+    typography: "Typography as you type",
+    typographyModes: { auto: "Follow the language", fr: "French (« », non-breaking spaces)", en: "English (“ ”)", off: "None" },
+    typographyHint: "Quotes, apostrophe ’, ellipsis …, dash from two hyphens. In the manuscript, cards and the Bible.",
   },
 
   types: {
@@ -577,6 +581,34 @@ export const en: Messages = {
       regret: "What would they do differently?",
       last: "What would they want people to say about them after they die?",
     },
+  },
+
+  // Find and replace in the texts, rename everywhere (card menu).
+  replace: {
+    title: "Find and replace",
+    button: "Replace",
+    buttonHint: "Find and replace in the text (Ctrl or Cmd + Shift + H)",
+    renameTitle: "Rename “{title}” everywhere",
+    find: "Find",
+    replaceWith: "Replace with",
+    newName: "New name",
+    matchCase: "Match case",
+    wholeWord: "Whole word",
+    scope: "Where:",
+    scopeScene: "This scene",
+    scopeProject: "All the text",
+    cards: "Cards too",
+    hint: "The manuscript or screenplay text. @ mentions already follow their card.",
+    foundOne: "{n} match",
+    foundMany: "{n} matches",
+    replaceAll: "Replace all",
+    renameAll: "Rename everywhere",
+    doneOne: "{n} replacement made.",
+    doneMany: "{n} replacements made.",
+    renamedDone: "The card is now called “{title}”. Replacements in the text: {n}.",
+    undo: "Undo",
+    undone: "Replacement undone.",
+    renameMenu: "Rename everywhere…",
   },
 
   // A novel scene's text seen from its card (canvas, Bible, expanded card).
@@ -1110,7 +1142,8 @@ export const en: Messages = {
     items: {
       help: "This list",
       views: "Canvas, Outline, Bible, Manuscript",
-      search: "Find a card",
+      search: "Find a card or a passage",
+      replace: "Find and replace in the text",
       todos: "To do",
       save: "Save",
       undo: "Undo",

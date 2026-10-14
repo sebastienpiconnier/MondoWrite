@@ -242,6 +242,8 @@ export function Manuscript() {
   const [chosen, setChosen] = useState<string | null>(null);
   const current = chosen && order.includes(chosen) ? chosen : (order[0] ?? null);
   const card = cards.find((c) => c.id === current);
+  const currentRef = useRef<string | null>(null);
+  currentRef.current = current;
   const [draft, setDraft] = useState("");
   const mainRef = useRef<HTMLDivElement>(null);
   // Scène tout juste née d'une coupure (deux fois Entrée) : une Entrée de plus en fait un chapitre.
@@ -263,6 +265,18 @@ export function Manuscript() {
     setChosen(target);
     mainRef.current?.scrollTo(0, 0);
   }, [target]);
+
+  // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        useCosmos.getState().openReplace({ sceneId: currentRef.current });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Mode focus : Cmd/Ctrl+Maj+F le bascule, Échap le quitte ; quitter la vue le termine.
   useEffect(() => {
@@ -635,6 +649,9 @@ export function Manuscript() {
             )}
             <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
               {t.focus.enter}
+            </button>
+            <button type="button" className="ghost-button ms-start-chapter" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onClick={() => useCosmos.getState().openReplace({ sceneId: current })}>
+              {t.replace.button}
             </button>
             {/* La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle. */}
             <button

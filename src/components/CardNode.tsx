@@ -430,7 +430,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
             <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" />
           </svg>
         </button>
-        <CardActions id={id} hasImage={!!data.image} />
+        <CardActions id={id} hasImage={!!data.image} title={data.title} />
         <button
           type="button"
           className="card-delete nodrag"

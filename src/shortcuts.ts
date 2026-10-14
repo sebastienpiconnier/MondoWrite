@@ -7,6 +7,7 @@ export const SHORTCUT_GROUPS = {
     ["help", ["Mod", "/"]],
     ["views", ["Mod", "1…4"]],
     ["search", ["Mod", "F"]],
+    ["replace", ["Mod", "Shift", "H"]],
     ["todos", ["Mod", "Shift", "L"]],
     ["save", ["Mod", "S"]],
     ["undo", ["Mod", "Z"]],
@@ -43,6 +44,7 @@ export const SHORTCUT_GROUPS = {
     ["chapterBreak", ["Entrée", "Entrée", "Entrée"]],
     ["focus", ["Mod", "Shift", "F"]],
     ["exitFocus", ["Échap"]],
+    ["moveScene", ["Alt", "↑ ↓"]],
   ],
   screenplay: [
     ["elementType", ["Tab"]],

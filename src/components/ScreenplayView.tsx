@@ -331,6 +331,23 @@ export function ScreenplayView() {
     [screenplay, sceneCards],
   );
   const scene = sceneAt(scenes, current.index);
+  // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée ; la frappe en attente part d'abord.
+  const openReplace = () => {
+    emit();
+    useCosmos.getState().openReplace({ sceneId: scene?.cardId ?? null });
+  };
+  const openReplaceRef = useRef(openReplace);
+  openReplaceRef.current = openReplace;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        openReplaceRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   if (!editor || !screenplay) return null;
 
@@ -370,6 +387,17 @@ export function ScreenplayView() {
     const dom = editor.view.nodeDOM(pos);
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
   };
+
+  // Arrivée depuis la recherche ou « À faire » : la scène de cette carte.
+  const target = useCosmos((s) => s.manuscriptTarget);
+  const goToRef = useRef(goTo);
+  goToRef.current = goTo;
+  useEffect(() => {
+    if (!target) return;
+    useCosmos.getState().clearManuscriptTarget();
+    const index = (useCosmos.getState().screenplay?.elements ?? []).findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
+    if (index >= 0) requestAnimationFrame(() => goToRef.current(index));
+  }, [target]);
 
   /** Page de titre : le champ part dans le store, et l'éditeur n'est pas rechargé pour autant. */
   const setTitleField = (field: TitleField, value: string) => {
@@ -640,6 +668,9 @@ export function ScreenplayView() {
             onClick={() => setFocusMode(!focusMode)}
           >
             {focusMode ? sp.focusExit : sp.focus}
+          </button>
+          <button type="button" className="sp-option" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onPointerDown={(e) => e.preventDefault()} onClick={openReplace}>
+            {t.replace.button}
           </button>
         </div>
         <div className="sr-only" aria-live="polite">

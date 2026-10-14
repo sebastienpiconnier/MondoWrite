@@ -14,6 +14,8 @@ import { TaskItem, TaskList } from "@tiptap/extension-list";
 import Highlight from "@tiptap/extension-highlight";
 import { markdownToHtml } from "../storage/markdown";
 import { looksLikeMarkdown, markHighlights } from "../markdownText";
+import { useSettings } from "../settings";
+import { smartType, typographyMode } from "../typography";
 
 /** Texte brut collé en Markdown : converti en texte mis en forme. Le HTML collé garde son chemin habituel. */
 export const MarkdownPaste = Extension.create({
@@ -40,6 +42,36 @@ export const MarkdownPaste = Extension.create({
   },
 });
 
+/**
+ * Typographie automatique (typography.ts) : guillemets, apostrophe, points de suspension, tiret et, en
+ * français, espaces insécables. Le mode est relu à chaque frappe (réglage de l'appareil, langue). Rien
+ * dans le code (`code`), et rien pendant une saisie composée, que ProseMirror ne passe pas ici.
+ */
+export const Typography = Extension.create({
+  name: "cosmosTypography",
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey("cosmosTypography"),
+        props: {
+          handleTextInput: (view, from, to, text) => {
+            const { writing, lang } = useSettings.getState();
+            const mode = typographyMode(writing.typography, lang);
+            if (mode === "off" || from !== to) return false;
+            const $from = view.state.doc.resolve(from);
+            if ($from.parent.type.spec.code || $from.marks().some((m) => m.type.name === "code")) return false;
+            const before = $from.parent.textBetween(0, $from.parentOffset, undefined, "\ufffc");
+            const edit = smartType(before, text, mode);
+            if (!edit) return false;
+            view.dispatch(view.state.tr.insertText(edit.insert, from - edit.remove, to));
+            return true;
+          },
+        },
+      }),
+    ];
+  },
+});
+
 /** « À reprendre » : Cmd/Ctrl+Maj+X en plus du raccourci d'origine. */
 const Revisit = Highlight.extend({
   addKeyboardShortcuts() {
@@ -57,5 +89,6 @@ export function richTextExtensions({ link = true }: { link?: boolean } = {}) {
     TaskItem.configure({ nested: true }),
     Revisit,
     MarkdownPaste,
+    Typography,
   ];
 }

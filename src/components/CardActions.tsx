@@ -6,8 +6,9 @@ import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "rea
 import { useT } from "../i18n";
 import { useCosmos } from "../store";
 
-export function CardActions({ id, hasImage }: { id: string; hasImage: boolean }) {
-  const t = useT().card;
+export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage: boolean; title?: string }) {
+  const all = useT();
+  const t = all.card;
   const open = useCosmos((s) => s.cardMenu === id);
   const setCardMenu = useCosmos((s) => s.setCardMenu);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -32,6 +33,8 @@ export function CardActions({ id, hasImage }: { id: string; hasImage: boolean })
     [hasImage ? t.changeImage : t.addImage, () => useCosmos.getState().openPhotos({ kind: "card", id })],
     [t.spotlight, () => useCosmos.getState().setSpotlight(id)],
     [t.filterHere, () => useCosmos.getState().setFilterCard(id)],
+    // Un nom propre change : la carte et toutes ses occurrences dans le texte.
+    ...(title.trim() ? [[all.replace.renameMenu, () => useCosmos.getState().openReplace({ find: title.trim(), renameId: id })] as [string, () => void]] : []),
   ];
 
   const onKey = (e: ReactKeyboardEvent) => {

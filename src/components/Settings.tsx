@@ -1,6 +1,7 @@
 // Bouton « Réglages » : langue de l'interface et apparence (système, claire, sombre).
 // Listes déroulantes natives : accessibles au clavier, au lecteur d'écran et au doigt.
 
+import { isTypographySetting } from "../typography";
 import { UpdateSettings } from "./Updates";
 import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
@@ -21,7 +22,7 @@ const OTHER_MODEL = "\u0000other";
 export function Settings({ project = true }: { project?: boolean }) {
   const trashCount = useCosmos((s) => s.trash.length);
   const t = useT();
-  const { lang, themePref, setLang, setThemePref, author, ai, setAi, photos } = useSettings();
+  const { lang, themePref, setLang, setThemePref, author, ai, setAi, photos, writing, setWriting } = useSettings();
   const [models, setModels] = useState<string[]>([]);
   // Modèle saisi à la main (absent de la liste du service).
   const [typing, setTyping] = useState(false);
@@ -59,7 +60,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -218,6 +219,21 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          {/* Typographie à la frappe (manuscrit, cartes, Bible) : selon la langue, ou choisie, ou aucune. */}
+          <label htmlFor={ids.typography}>{t.settings.typography}</label>
+          <select
+            id={ids.typography}
+            aria-describedby={ids.typographyHint}
+            value={writing.typography}
+            onChange={(e) => isTypographySetting(e.target.value) && setWriting({ ...writing, typography: e.target.value })}
+          >
+            {(["auto", "fr", "en", "off"] as const).map((v) => (
+              <option key={v} value={v}>
+                {t.settings.typographyModes[v]}
+              </option>
+            ))}
+          </select>
+          <p className="settings-hint" id={ids.typographyHint}>{t.settings.typographyHint}</p>
           {/* Le nom d'auteur vient du profil, qui se remplit sur la page des projets. */}
           <div className="settings-label" id={ids.author}>{t.settings.author}</div>
           <p className="settings-value" aria-labelledby={ids.author}>{author || t.settings.authorNone}</p>

@@ -6,7 +6,8 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { typeColor } from "../types";
 import { useVocab } from "../vocab";
-import { searchCards } from "../search";
+import { plainText, searchCards } from "../search";
+import { sceneBody, sceneText } from "../screenplay/sceneText";
 
 export function Search() {
   const { t, types } = useVocab();
@@ -22,9 +23,26 @@ export function Search() {
   const inputRef = useRef<HTMLInputElement>(null);
   const ids = { panel: useId(), list: useId() };
 
+  const manuscript = useCosmos((st) => st.manuscript);
+  const screenplay = useCosmos((st) => st.screenplay);
+  const kind = useCosmos((st) => st.kind);
+  // Le texte des scènes (manuscrit d'un roman, scènes du scénario) : on y cherche aussi.
+  const texts = useMemo(() => {
+    if (!open) return {};
+    const out: Record<string, string> = {};
+    if (kind === "scenario") {
+      const elements = screenplay?.elements ?? [];
+      elements.forEach((el, i) => {
+        if (el.type === "sceneHeading" && el.cardId) out[el.cardId] = sceneText(sceneBody(elements, i), lang);
+      });
+    } else {
+      for (const [id, html] of Object.entries(manuscript)) out[id] = plainText(html);
+    }
+    return out;
+  }, [open, kind, screenplay, manuscript, lang]);
   const results = useMemo(
-    () => (open ? searchCards(nodes.map((n) => n.data), query, lang) : []),
-    [open, nodes, query, lang],
+    () => (open ? searchCards(nodes.map((n) => n.data), query, lang, 20, texts) : []),
+    [open, nodes, query, lang, texts],
   );
 
   // Cmd/Ctrl+F ouvre la recherche, d'où que l'on soit dans le projet.
@@ -57,6 +75,11 @@ export function Search() {
   // La carte trouvée est centrée et mise en avant : le reste du canevas s'estompe (Échap ou un clic sur le fond le rend).
   const choose = (id: string) => {
     close(false);
+    // Trouvé dans le texte d'une scène : on ouvre ce texte (vue Manuscrit ou Scénario) sur cette scène.
+    if (results.find((r) => r.id === id)?.inText) {
+      useCosmos.getState().openInManuscript(id);
+      return;
+    }
     revealCard(id);
     useCosmos.getState().setSpotlight(id);
   };
@@ -121,6 +144,7 @@ export function Search() {
                     <span className="card-dot" style={{ background: typeColor(r.type) }} />
                     <span className="search-result-type">{types[r.type].label}</span>
                     <span className="search-result-title">{r.title || t.bible.untitled}</span>
+                    {r.inText && <span className="search-result-type">{s.inText}</span>}
                   </span>
                   {r.excerpt && <span className="search-result-text">{r.excerpt}</span>}
                 </button>
