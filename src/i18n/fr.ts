@@ -1135,7 +1135,7 @@ export const fr = {
       redo: "Rétablir",
       newCard: "Nouvelle carte",
       newFrame: "Nouveau cadre",
-      changeType: "Changer le type (en début de ligne)",
+      changeType: "Changer le type (en début de ligne, ou dans un titre vide)",
       mention: "Citer une autre carte (ou [[)",
       expand: "Agrandir la carte choisie",
       width: "Élargir ou rétrécir la carte",

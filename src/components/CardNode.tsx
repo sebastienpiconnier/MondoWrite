@@ -455,6 +455,28 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           if (pasteIntoCard(e)) e.preventDefault();
         }}
         onKeyDown={(e) => {
+          // Menu des types ouvert depuis le titre : flèches, Entrée, Échap.
+          const menu = stateRef.current;
+          if (menu.slash?.via === "label" && menu.options.length > 0) {
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              e.preventDefault();
+              setActive((menu.active + (e.key === "ArrowDown" ? 1 : -1) + menu.options.length) % menu.options.length);
+              return;
+            }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              pick(menu.options[menu.active]);
+              return;
+            }
+          }
+          // « / » dans un titre encore vide : le menu des types, au clavier (le corps d'une carte Scène n'est
+          // plus un éditeur, c'est le chemin clavier qui reste pour toutes les cartes).
+          if (e.key === "/" && !data.title) {
+            e.preventDefault();
+            setActive(Math.max(0, CARD_TYPES.indexOf(data.type)));
+            openMenu({ via: "label", query: "" });
+            return;
+          }
           if (e.key === "Enter") {
             e.preventDefault();
             // Carte Lien sans adresse : l'adresse tapée dans le titre devient son lien.

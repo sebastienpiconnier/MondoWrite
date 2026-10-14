@@ -1150,7 +1150,7 @@ export const en: Messages = {
       redo: "Redo",
       newCard: "New card",
       newFrame: "New frame",
-      changeType: "Change the type (at line start)",
+      changeType: "Change the type (at line start, or in an empty title)",
       mention: "Mention another card (or [[)",
       expand: "Expand the selected card",
       width: "Widen or narrow the card",
