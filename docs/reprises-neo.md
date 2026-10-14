@@ -18,6 +18,7 @@ Les deux outils se complètent : NEO est centré sur la page (on écrit le livre
 | Typographie automatique (`smartKeys`) | Extension `Typography` : guillemets, apostrophe, …, tiret, espaces insécables du français ; réglage de l'appareil |
 | Note de plan en paragraphe fantôme | Le synopsis d'une scène vide s'affiche en filigrane (Manuscrit, carte agrandie) |
 | « Renommer aussi dans le texte » | « Renommer partout… » dans le menu d'une carte, et Rechercher et remplacer (Cmd/Ctrl+Maj+H) |
+| Import .docx, .md, .txt avec détection des chapitres | Accueil, « Importer un manuscrit ou un scénario… » : mêmes règles (styles Word, sauts de page, « Chapitre N », numéros en série, séparateurs, titre et auteur en tête) ; aussi le .fdx |
 
 ## À reprendre ensuite, par ordre d'intérêt
 
@@ -37,3 +38,33 @@ Les deux outils se complètent : NEO est centré sur la page (on écrit le livre
 - **Couvertures générées par OpenAI** : contraire au pilier « souveraineté des données » si elles sont proposées par défaut. Une couverture abstraite générée localement (NEO sait aussi le faire, sans IA) serait acceptable pour l'écran d'accueil.
 - **Bibliothèque en étagères** : l'écran d'accueil de MondoWrite remplit déjà ce rôle ; inutile de le compliquer.
 - Tout ce qui tient à Electron (menus natifs, `preload.js`) : MondoWrite est en Tauri.
+
+## L'export « Paperback for KDP » de NEO (relu en octobre 2026)
+
+NEO fabrique un PDF d'intérieur prêt pour Amazon KDP, plus un gabarit de couverture. La mise en pages passe par Paged.js dans une fenêtre Electron cachée (`printToPDF`), ce que Tauri ne permet pas : chez nous, il faudrait composer les pages en TypeScript (comme `prose.ts` et `typeset.ts`) et les dessiner avec pdf-lib, avec une police à chasse variable et ses métriques (fontkit).
+
+Ce que fait NEO (`app.js`, PRINT BOOK ; `main.js`, makePaperback) :
+
+- **Formats** : 5 × 8, 5,25 × 8, 5,5 × 8,5 et 6 × 9 pouces, avec un corps de texte par format (10,5 à 11,5 pt), interligne 1,42.
+- **Marges miroir** : marge extérieure par format (0,6 à 0,75 pouce), marge intérieure (petit fond) selon le nombre de pages, d'après les paliers de KDP (0,375 à 0,875 pouce, plus un quart de pouce de sécurité). La mise en page est refaite tant que le nombre de pages change de palier.
+- **Pages paires et impaires** : chaque chapitre commence sur une belle page (à droite), le livre finit sur une page paire (une page blanche ajoutée au besoin).
+- **Titres courants** : l'auteur en haut des pages de gauche, le titre en haut des pages de droite, en petites capitales espacées ; numéros de page aux coins extérieurs ; rien sur les pages de début, les ouvertures de chapitre et les pages blanches. La page 1 est la première page du récit.
+- **Pages de début** : page de titre (titre, sous-titre, auteur), mentions légales au verso (texte standard, mention de fiction, ISBN), dédicace et épigraphe sur une belle page, table des matières avec numéros de page (calculés après une première mise en pages), parties.
+- **Texte** : justifié, alinéa de 1,5 em, premier paragraphe d'un chapitre et paragraphe après un séparateur sans alinéa, lettrine sur deux lignes (sauf quand le chapitre s'ouvre sur un dialogue), séparateur « * * * », veuves et orphelines (2 lignes), paragraphes de poésie, notes de bas de page.
+- **Césure** : faite par NEO lui-même (algorithme de Liang, motifs TeX par langue, paquet `hyphen`), avec des tirets conditionnels : jamais dans un mot à majuscule (un nom, sauf en allemand), au moins trois lettres de chaque côté, jamais dans le dernier mot d'un paragraphe.
+- **Pages de fin** : « Merci de votre lecture » (demande d'avis, texte modifiable), site, lettre d'information, courriel, réseaux ; remerciements, à propos de l'auteur ; « Du même auteur ».
+- **Gabarit de couverture** : PDF de la couverture complète (quatrième, dos, première) à la taille exacte pour ce nombre de pages, dos calculé selon le papier (blanc, crème, bouffant), fond perdu de 0,125 pouce, zones de sécurité, emplacement du code-barres, annotations ; taille de page réécrite au millième de pouce (KDP la vérifie).
+- **Contrôles** : moins de 24 pages ou plus que le maximum du papier signalés.
+- **Ailleurs** : format manuscrit à la Shunn (Times ou Courier, en-tête « Nom / TITRE / page », nombre de mots arrondi sur la page de titre, « # » entre les scènes, FIN), signets du PDF par chapitre, instantané PDF horodaté avec empreinte SHA-256, EPUB conforme aux règles de KDP.
+
+Ce que MondoWrite pourrait reprendre, par ordre d'intérêt :
+
+1. **Un export « Livre broché (KDP) »** : formats, marges miroir et petit fond par paliers, chapitres sur une belle page, page 1 au début du récit, nombre de pages pair, titres courants et folios aux coins extérieurs, pages de début et de fin tirées de nos pages du livre (titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements, à propos de l'auteur). C'est le cœur ; tout se calcule dans un module pur et testé (`book.ts` de l'export), comme `prose.ts`.
+2. **Texte composé** : justification, césure française et anglaise (paquet `hyphen` et ses motifs, chargés à l'export), veuves et orphelines, lettrine, sans alinéa après un titre ou un séparateur. Il faut embarquer une police à empattements libre avec son italique (EB Garamond, Libre Baskerville ou Source Serif, licence OFL).
+3. **Mentions légales par défaut** : copyright, « Tous droits réservés », mention de fiction, ISBN, quand la page n'a pas été écrite.
+4. **Table des matières avec numéros de page** : facile chez nous, la composition connaît la page de chaque chapitre (pas besoin de deux passes).
+5. **Gabarit de couverture** : un second PDF à la taille exacte, dos calculé d'après le nombre de pages et le papier, fond perdu, zones de sécurité, code-barres.
+6. **Pages de fin** : « Merci de votre lecture » avec liens (le profil d'auteur a déjà les coordonnées) et « Du même auteur ».
+7. **Signets du PDF** par chapitre (pdf-lib sait écrire un plan de document) et **format manuscrit à la Shunn** pour notre PDF actuel (en-tête « Nom / TITRE / page », nombre de mots arrondi, « # » entre les scènes).
+8. Plus tard : notes de bas de page (il faudrait d'abord des notes dans l'éditeur), instantané horodaté avec empreinte.
+
