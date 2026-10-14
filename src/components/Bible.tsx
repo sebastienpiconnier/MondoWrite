@@ -4,6 +4,7 @@
 // Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
+import { DraftPreview } from "./SceneDraft";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { typeColor, type CardData, type CardType } from "../types";
@@ -258,8 +259,9 @@ export function Bible() {
                   )}
                 </div>
               )}
-              {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. */}
-              <BibleBody card={card} />
+              {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. Pour une scène
+                  de roman, c'est son manuscrit : un aperçu, qu'on écrit dans la carte agrandie. */}
+              {type === "scene" && kind !== "scenario" ? <DraftPreview card={card} className="is-bible" /> : <BibleBody card={card} />}
               {type === "personnage" && (
                 <>
                   <CardSheet card={card} startOpen={false} />

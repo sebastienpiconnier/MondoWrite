@@ -556,6 +556,14 @@ export const fr = {
   },
 
   // Manuscrit d'un roman : un texte par scène, dans l'ordre du Plan.
+  // Texte d'une scène de roman vu depuis sa carte (canevas, Bible, carte agrandie).
+  draft: {
+    write: "Écrire la scène « {title} »",
+    empty: "Écrire la scène…",
+    heading: "Manuscrit",
+    openManuscript: "Ouvrir dans le Manuscrit",
+  },
+
   manuscript: {
     scenesAria: "Scènes du manuscrit, dans l’ordre du plan",
     scenesTitle: "Scènes",
@@ -575,8 +583,7 @@ export const fr = {
     inScene: "Dans cette scène",
     nothingDetected: "Les personnages et les lieux cités dans le texte apparaîtront ici.",
     show: "Voir la carte « {title} » sur le canevas",
-    notes: "Notes de la carte",
-    noNotes: "Cette scène n’a pas de notes sur sa carte.",
+    synopsis: "Synopsis",
     orphans: "Textes sans carte",
     orphansHint: "La carte de ces scènes a été supprimée. Leur texte est toujours dans le projet.",
     restore: "Recréer la carte",

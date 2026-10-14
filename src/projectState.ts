@@ -1,6 +1,7 @@
 // Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
+import { foldNovelNodes } from "./sceneNotes";
 import { renamedZone } from "./research";
 import { authorName, contactLines } from "./profile";
 import type { TrashedCard } from "./trash";
@@ -214,7 +215,9 @@ export function openProject(p: Project) {
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
   const screenplay =
     p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
-  const nodes = screenplay ? titlesFromHeadings(base.nodes, screenplay) : base.nodes;
+  const headed = screenplay ? titlesFromHeadings(base.nodes, screenplay) : base.nodes;
+  // Roman : le corps d'une carte Scène est son manuscrit ; ses anciennes notes passent dans son synopsis.
+  const nodes = base.kind === "scenario" ? headed : foldNovelNodes(headed);
   // Un scénario fixe son format de page une fois pour toutes (selon la langue du moment), pour que
   // la pagination ne change pas d'un appareil à l'autre.
   const paperChosen = base.paperChosen || base.kind === "scenario";

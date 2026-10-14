@@ -579,6 +579,14 @@ export const en: Messages = {
     },
   },
 
+  // A novel scene's text seen from its card (canvas, Bible, expanded card).
+  draft: {
+    write: "Write the scene “{title}”",
+    empty: "Write the scene…",
+    heading: "Manuscript",
+    openManuscript: "Open in Manuscript",
+  },
+
   manuscript: {
     scenesAria: "Manuscript scenes, in outline order",
     scenesTitle: "Scenes",
@@ -598,8 +606,7 @@ export const en: Messages = {
     inScene: "In this scene",
     nothingDetected: "Characters and places mentioned in the text will show up here.",
     show: "Show the card “{title}” on the canvas",
-    notes: "Card notes",
-    noNotes: "This scene has no notes on its card.",
+    synopsis: "Synopsis",
     orphans: "Texts without a card",
     orphansHint: "The card of these scenes was deleted. Their text is still in the project.",
     restore: "Recreate the card",

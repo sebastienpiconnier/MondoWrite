@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { SynopsisField } from "./SynopsisField";
 import { DropCap } from "./dropCap";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -678,7 +679,7 @@ export function Manuscript() {
               key={current}
               id={current}
               title={title}
-              placeholder={pageKind ? b.placeholders[pageKind] : opensChapter ? b.chapterOpening : m.placeholder}
+              placeholder={pageKind ? b.placeholders[pageKind] : card.fiche?.synopsis?.trim() || (opensChapter ? b.chapterOpening : m.placeholder)}
               firstPage={firstPageOf(before)}
               onPages={(n) => setMeasured((prev) => (prev === n ? prev : n))}
               handlers={handlers}
@@ -727,9 +728,13 @@ export function Manuscript() {
           )}
         </section>
         <section className="sp-box">
-          <h2 className="sp-box-title">{m.notes}</h2>
-          {/* HTML déjà nettoyé : il vient de l'éditeur de la carte, ou du disque via sanitizeHtml. */}
-          {card.html && plainText(card.html) ? <div className="ms-notes" dangerouslySetInnerHTML={{ __html: card.html }} /> : <p className="sp-empty">{m.noNotes}</p>}
+          <h2 className="sp-box-title">{m.synopsis}</h2>
+          {/* Le synopsis de la scène (ses anciennes notes y sont passées) : il s'affiche aussi en filigrane dans une scène vide. */}
+          <SynopsisField
+            value={card.fiche?.synopsis ?? ""}
+            scene={title}
+            onSave={(text) => updateCard(current, { fiche: { ...(card.fiche ?? {}), synopsis: text } })}
+          />
           <button type="button" className="chip" onClick={() => revealCard(current)}>
             {fmt(m.show, { title })}
           </button>

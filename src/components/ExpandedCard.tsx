@@ -9,10 +9,12 @@ import { typeColor, type CardData } from "../types";
 import { BibleBody } from "./BibleBody";
 import { CardSheet } from "./CardSheet";
 import { useMediaUrl } from "./useMediaUrl";
+import { DraftEditor } from "./SceneDraft";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
-  const { types } = useVocab();
+  const { types, kind } = useVocab();
+  const novelScene = kind !== "scenario" && card.type === "scene";
   const updateCard = useCosmos((s) => s.updateCard);
   const imageUrl = useMediaUrl(card.image);
 
@@ -37,10 +39,29 @@ export function ExpandedCard({ card }: { card: CardData }) {
         }}
       />
       {imageUrl && <img className="expanded-image" src={imageUrl} alt="" />}
-      <div className="expanded-body">
-        <BibleBody card={card} />
-      </div>
-      <CardSheet card={card} />
+      {novelScene ? (
+        <>
+          {/* Scène d'un roman : son synopsis (sa note de plan), puis son texte, qu'on écrit ici. */}
+          <CardSheet card={card} />
+          <section className="expanded-draft" aria-label={t.draft.heading}>
+            <h3 className="expanded-draft-title">{t.draft.heading}</h3>
+            <DraftEditor card={card} autofocus />
+          </section>
+          <button type="button" className="link-button expanded-open" onClick={() => {
+              useCosmos.getState().setDialog(null);
+              useCosmos.getState().openInManuscript(card.id);
+            }}>
+            {t.draft.openManuscript}
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="expanded-body">
+            <BibleBody card={card} />
+          </div>
+          <CardSheet card={card} />
+        </>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { foldNovelNodes, foldNovelNotes } from "./sceneNotes";
 import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
@@ -580,6 +581,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
       if (kind === "scenario" && !screenplay) set({ kind, screenplay: firstScreenplay(title, nodes) });
       else set({ kind });
+      // Retour au roman : les notes des cartes Scène passent dans leur synopsis.
+      if (kind !== "scenario") set({ nodes: foldNovelNodes(get().nodes) });
       // Et un format de page : A4 si l'interface est en français, US Letter sinon.
       if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
       touch();
@@ -1569,6 +1572,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const { title } = patch;
       if (typeof title === "string") nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, id, title)));
       let { screenplay } = get();
+      // Roman : une carte qui devient Scène (ou une Scène qui reçoit des notes) range ses notes dans son
+      // synopsis ; son corps est désormais son manuscrit.
+      if (get().kind !== "scenario") nodes = nodes.map((n) => {
+        if (n.id !== id) return n;
+        const data = foldNovelNotes(n.data);
+        return data === n.data ? n : { ...n, data };
+      });
       const card = nodes.find((n) => n.id === id)?.data;
       if (screenplay && card) {
         const linked = headingTitles(screenplay).has(id);

@@ -20,6 +20,7 @@ import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { CardActions } from "./CardActions";
+import { DraftPreview } from "./SceneDraft";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { useMediaUrl } from "./useMediaUrl";
 import { CARD_MAX_WIDTH, CARD_MIN_WIDTH } from "../media";
@@ -50,6 +51,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const { t, types, kind } = useVocab();
   // Scénario : le titre d'une scène est un en-tête de scène (INT./EXT. DÉCOR - MOMENT).
   const slugline = kind === "scenario" && data.type === "scene";
+  // Roman : le corps d'une carte Scène est son manuscrit (aperçu ici, on l'écrit dans la carte agrandie).
+  const novelScene = kind !== "scenario" && data.type === "scene";
   const lang = useSettings((s) => s.lang);
 
   const [slash, setSlash] = useState<MenuState | null>(null);
@@ -300,7 +303,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     observer.observe(el);
     check();
     return () => observer.disconnect();
-  }, [editor]);
+  }, [editor, novelScene]);
   useEffect(() => {
     if (!editor) return;
     const on = () => setWriting(true);
@@ -454,7 +457,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
             e.preventDefault();
             // Carte Lien sans adresse : l'adresse tapée dans le titre devient son lien.
             if (useCosmos.getState().linkFromTitle(id)) return;
-            editor?.commands.focus("start");
+            if (novelScene) useCosmos.getState().expandCard(id);
+            else editor?.commands.focus("start");
           }
         }}
         onBlur={() => {
@@ -464,11 +468,18 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
 
       {/* Texte long : replié au-delà de CARD_BODY_MAX, « Plus de détails » le déplie. Pendant l'écriture,
           il reste déplié. Un état d'affichage, rien n'est enregistré. */}
-      <div ref={bodyRef} className={`card-body nodrag nowheel nopan${clamped ? " is-clamped" : ""}`}>
-        <EditorContent editor={editor} />
-        {editor && <FormatBar editor={editor} />}
-      </div>
-      {tall && !writing && (
+      {novelScene ? (
+        <div className="card-body nodrag nowheel nopan">
+          {data.fiche?.synopsis?.trim() && <p className="draft-synopsis">{data.fiche.synopsis}</p>}
+          <DraftPreview card={data} />
+        </div>
+      ) : (
+        <div ref={bodyRef} className={`card-body nodrag nowheel nopan${clamped ? " is-clamped" : ""}`}>
+          <EditorContent editor={editor} />
+          {editor && <FormatBar editor={editor} />}
+        </div>
+      )}
+      {!novelScene && tall && !writing && (
         <button type="button" className="card-more nodrag" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
           {expanded ? t.character.fewerDetails : t.card.moreDetails}
         </button>
