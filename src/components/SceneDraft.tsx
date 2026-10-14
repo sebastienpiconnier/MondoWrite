@@ -2,7 +2,7 @@
 // canevas reste léger même avec un long manuscrit), et un éditeur dans la carte agrandie. C'est le même
 // texte que dans la vue Manuscrit (manuscrit/<id>.md) : rien n'est recopié.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
 import { richTextExtensions } from "./editorKit";
@@ -14,6 +14,8 @@ import { useSettings } from "../settings";
 import { countWords } from "../manuscript";
 import { plainText } from "../search";
 import type { CardData } from "../types";
+import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
+import { sceneSynopsis } from "../screenplay/scenes";
 
 /** Longueur de l'aperçu (caractères) : quelques lignes, le reste est dans la carte agrandie. */
 const EXCERPT = 280;
@@ -30,13 +32,27 @@ export function draftExcerpt(html: string | undefined, max = EXCERPT): string {
 /** Texte indicatif d'une scène vide : son synopsis s'il en a un (la note de plan en filigrane). */
 export const draftPlaceholder = (card: CardData | undefined): string => card?.fiche?.synopsis?.trim() || getT().manuscript.placeholder;
 
+/** Texte d'une scène vu depuis sa carte : manuscrit d'un roman, ou corps de la scène dans le scénario. */
+export function useSceneText(card: CardData): { text: string; synopsis: string } {
+  const lang = useSettings((s) => s.lang);
+  const scenario = useCosmos((s) => s.kind === "scenario");
+  const html = useCosmos((s) => s.manuscript[card.id]);
+  const elements = useCosmos((s) => s.screenplay?.elements);
+  return useMemo(() => {
+    if (!scenario) return { text: plainText(html ?? ""), synopsis: card.fiche?.synopsis?.trim() ?? "" };
+    if (!elements) return { text: "", synopsis: "" };
+    const at = headingOf(elements, card.id);
+    return at < 0 ? { text: "", synopsis: "" } : { text: sceneText(sceneBody(elements, at), lang), synopsis: sceneSynopsis(elements, at) };
+  }, [scenario, html, elements, card.id, card.fiche?.synopsis, lang]);
+}
+
 /** Aperçu : le début du texte et son nombre de mots ; un clic ouvre la carte en grand pour écrire. */
 export function DraftPreview({ card, className = "" }: { card: CardData; className?: string }) {
   const t = useT();
   const lang = useSettings((s) => s.lang);
-  const html = useCosmos((s) => s.manuscript[card.id]);
-  const words = countWords(html);
-  const excerpt = draftExcerpt(html);
+  const { text } = useSceneText(card);
+  const words = countWords(text);
+  const excerpt = draftExcerpt(text);
   const title = card.title.trim() || t.manuscript.untitled;
   return (
     <button
@@ -97,5 +113,16 @@ export function DraftEditor({ card, autofocus = false }: { card: CardData; autof
       <EditorContent editor={editor} />
       {editor && <FormatBar editor={editor} revisit />}
     </div>
+  );
+}
+
+/** Corps d'une carte Scène sur le canevas : son synopsis, puis le début de son texte. */
+export function SceneCardBody({ card }: { card: CardData }) {
+  const { synopsis } = useSceneText(card);
+  return (
+    <>
+      {synopsis && <p className="draft-synopsis">{synopsis}</p>}
+      <DraftPreview card={card} />
+    </>
   );
 }

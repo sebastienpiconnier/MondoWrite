@@ -1,7 +1,7 @@
 // Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
-import { foldNovelNodes } from "./sceneNotes";
+import { foldNovelNodes, foldScreenplayNotes } from "./sceneNotes";
 import { renamedZone } from "./research";
 import { authorName, contactLines } from "./profile";
 import type { TrashedCard } from "./trash";
@@ -111,7 +111,7 @@ export function sceneCards(nodes: CardNode[]): SceneCard[] {
   return nodes
     .filter((n) => n.data.type === "scene")
     .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x)
-    .map((n) => ({ id: n.id, title: n.data.title }));
+    .map((n) => ({ id: n.id, title: n.data.title, synopsis: n.data.fiche?.synopsis }));
 }
 
 /**
@@ -213,11 +213,14 @@ export function openProject(p: Project) {
   });
   const base = { ...read, ...adopted, frames };
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
-  const screenplay =
+  const screenplayRead =
     p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
-  const headed = screenplay ? titlesFromHeadings(base.nodes, screenplay) : base.nodes;
-  // Roman : le corps d'une carte Scène est son manuscrit ; ses anciennes notes passent dans son synopsis.
-  const nodes = base.kind === "scenario" ? headed : foldNovelNodes(headed);
+  const headed = screenplayRead ? titlesFromHeadings(base.nodes, screenplayRead) : base.nodes;
+  // Le corps d'une carte Scène est son texte (manuscrit, ou scène du scénario) : ses anciennes notes
+  // passent dans son synopsis (fiche d'un roman, ligne « = … » du Fountain d'un scénario).
+  const folded = base.kind === "scenario" ? foldScreenplayNotes(headed, screenplayRead) : { nodes: foldNovelNodes(headed), screenplay: screenplayRead };
+  const nodes = folded.nodes;
+  const screenplay = folded.screenplay;
   // Un scénario fixe son format de page une fois pour toutes (selon la langue du moment), pour que
   // la pagination ne change pas d'un appareil à l'autre.
   const paperChosen = base.paperChosen || base.kind === "scenario";

@@ -8,6 +8,8 @@ import type { Screenplay, ScreenplayElement } from "./model";
 export interface SceneCard {
   id: string;
   title: string;
+  /** Synopsis d'une scène de roman (fiche) : il devient la ligne « = … » sous l'en-tête. */
+  synopsis?: string;
 }
 
 const isLinkedTo = (el: ScreenplayElement, cardId: string) => el.type === "sceneHeading" && el.cardId === cardId;
@@ -91,6 +93,9 @@ export function initialScreenplay(title: string, cards: SceneCard[]): Screenplay
     titlePage: title.trim() ? { Title: title.trim() } : {},
     elements: cards
       .filter((card) => card.title.trim() !== "")
-      .map((card) => ({ type: "sceneHeading", text: card.title.trim(), cardId: card.id })),
+      .flatMap((card): ScreenplayElement[] => [
+        { type: "sceneHeading", text: card.title.trim(), cardId: card.id },
+        ...(card.synopsis?.trim() ? [{ type: "synopsis" as const, text: card.synopsis.replace(/\s+/g, " ").trim() }] : []),
+      ]),
   };
 }

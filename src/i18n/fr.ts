@@ -562,6 +562,8 @@ export const fr = {
     empty: "Écrire la scène…",
     heading: "Manuscrit",
     openManuscript: "Ouvrir dans le Manuscrit",
+    noHeading: "Donne d’abord un en-tête à la scène (son titre), puis écris-la ici.",
+    openScreenplay: "Ouvrir dans le Scénario",
   },
 
   manuscript: {

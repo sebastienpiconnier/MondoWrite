@@ -2,6 +2,7 @@
 // Roman : le corps d'une carte Scène est son manuscrit. Les notes qu'elle portait passent dans son synopsis
 // (à l'ouverture, en devenant Scène, en revenant au roman) ; on écrit la scène dans la carte agrandie.
 
+import { serialize } from "../screenplay/serialize";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -71,6 +72,15 @@ describe("dans le projet", () => {
     expect(card(id).html).toBe("<p>Orage.</p>");
     state().setKind("roman");
     expect(card(id)).toMatchObject({ html: "", fiche: { synopsis: "Orage." } });
+  });
+});
+
+describe("passage en scénario", () => {
+  it("le synopsis d'une scène de roman devient la ligne « = … » sous son en-tête", () => {
+    const id = state().addCard({ x: 0, y: 0 }, "scene");
+    state().updateCard(id, { title: "INT. PHARE - NUIT", fiche: { synopsis: "Inès arrive." } });
+    state().setKind("scenario");
+    expect(serialize(state().screenplay!)).toContain("= Inès arrive.");
   });
 });
 

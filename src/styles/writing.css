@@ -429,3 +429,13 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .draft-editor p.is-editor-empty:first-child { display: flow-root; }
 .draft-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; width: 100%; margin-right: -100%; font-style: italic; pointer-events: none; }
 .ms-editor p.is-editor-empty:first-child::before { font-style: italic; }
+
+/* Scène d'un scénario dans la carte agrandie : la barre des éléments, puis la feuille, sans les grandes
+   marges de la page (la place est comptée) ; retraits du format standard gardés. */
+.script-scene { display: flex; flex-direction: column; gap: 10px; }
+.script-scene .synopsis-show, .script-scene .synopsis-edit { width: 100%; }
+.script-scene .sp-bar { position: static; flex-wrap: wrap; }
+.script-scene-sheet { container: sp / inline-size; }
+.sp-page.is-scene { width: 100%; margin: 0; border: 1px solid var(--line); border-radius: 10px; box-shadow: none; font-size: min(16px, calc(100cqw / 44)); }
+.sp-page.is-scene .sp-editor, .sp-page.is-scene .sp-editor:focus-visible { min-height: 18em; padding: 1.5em 2em 2em 3em; }
+.script-scene .sp-bar { margin: 0; align-self: flex-start; max-width: 100%; border: 1px solid var(--line); }

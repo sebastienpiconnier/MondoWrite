@@ -35,7 +35,7 @@ export function sceneAt(scenes: Scene[], elementIndex: number): Scene | null {
 }
 
 /** Fin des lignes de synopsis (« = … ») qui suivent directement l'en-tête d'index donné. */
-function synopsisEnd(elements: ScreenplayElement[], headingIndex: number): number {
+export function synopsisEnd(elements: ScreenplayElement[], headingIndex: number): number {
   let end = headingIndex + 1;
   while (end < elements.length && elements[end].type === "synopsis") end++;
   return end;

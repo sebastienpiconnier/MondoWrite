@@ -5,6 +5,9 @@
 import { plainText } from "./search";
 import type { CardData } from "./types";
 import type { CardNode } from "./projectState";
+import type { Screenplay } from "./screenplay/model";
+import { sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes";
+import { headingOf } from "./screenplay/sceneText";
 
 /** Notes d'une carte, en une ligne de texte (mentions, listes et cases deviennent du texte simple). */
 export const notesLine = (html: string | undefined): string => plainText(html ?? "");
@@ -38,4 +41,26 @@ export function foldNovelNodes(nodes: CardNode[]): CardNode[] {
     return { ...n, data };
   });
   return changed ? next : nodes;
+}
+
+/**
+ * Scénario : les notes d'une carte Scène déjà reliée à son en-tête passent dans le synopsis Fountain de la
+ * scène (« = … » sous l'en-tête), corps de la carte vidé. Une carte sans en-tête (pas encore de titre) garde
+ * ses notes jusque-là. Mêmes objets si rien ne change.
+ */
+export function foldScreenplayNotes(nodes: CardNode[], screenplay: Screenplay | null): { nodes: CardNode[]; screenplay: Screenplay | null } {
+  if (!screenplay) return { nodes, screenplay };
+  let elements = screenplay.elements;
+  let changed = false;
+  const next = nodes.map((n) => {
+    if (n.data.type !== "scene" || !n.data.html) return n;
+    const at = headingOf(elements, n.id);
+    if (at < 0) return n;
+    const notes = notesLine(n.data.html);
+    if (notes) elements = setSceneSynopsis(elements, at, mergeSynopsis(sceneSynopsis(elements, at), notes));
+    changed = true;
+    return { ...n, data: { ...n.data, html: "" } };
+  });
+  if (!changed) return { nodes, screenplay };
+  return { nodes: next, screenplay: elements === screenplay.elements ? screenplay : { ...screenplay, elements } };
 }

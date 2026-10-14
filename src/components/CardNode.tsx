@@ -20,7 +20,7 @@ import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { CardActions } from "./CardActions";
-import { DraftPreview } from "./SceneDraft";
+import { SceneCardBody } from "./SceneDraft";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { useMediaUrl } from "./useMediaUrl";
 import { CARD_MAX_WIDTH, CARD_MIN_WIDTH } from "../media";
@@ -51,8 +51,10 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const { t, types, kind } = useVocab();
   // Scénario : le titre d'une scène est un en-tête de scène (INT./EXT. DÉCOR - MOMENT).
   const slugline = kind === "scenario" && data.type === "scene";
-  // Roman : le corps d'une carte Scène est son manuscrit (aperçu ici, on l'écrit dans la carte agrandie).
-  const novelScene = kind !== "scenario" && data.type === "scene";
+  // Le corps d'une carte Scène est son texte (manuscrit d'un roman, scène du scénario) : un aperçu ici, on
+  // l'écrit dans la carte agrandie. Une scène de scénario sans en-tête garde encore ses notes.
+  const sceneBody = useCosmos((s) => data.type === "scene" && (s.kind !== "scenario" || !!s.screenplay?.elements.some((el) => el.type === "sceneHeading" && el.cardId === id)));
+  const novelScene = sceneBody;
   const lang = useSettings((s) => s.lang);
 
   const [slash, setSlash] = useState<MenuState | null>(null);
@@ -470,8 +472,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           il reste déplié. Un état d'affichage, rien n'est enregistré. */}
       {novelScene ? (
         <div className="card-body nodrag nowheel nopan">
-          {data.fiche?.synopsis?.trim() && <p className="draft-synopsis">{data.fiche.synopsis}</p>}
-          <DraftPreview card={data} />
+          <SceneCardBody card={data} />
         </div>
       ) : (
         <div ref={bodyRef} className={`card-body nodrag nowheel nopan${clamped ? " is-clamped" : ""}`}>

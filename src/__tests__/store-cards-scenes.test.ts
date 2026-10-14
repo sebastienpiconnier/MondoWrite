@@ -66,12 +66,12 @@ describe("carte Scène créée sur le canevas (scénario)", () => {
     expect(fountain()).toBe("Title: Kerlaouen\n");
   });
 
-  it("le corps de la carte ne change rien au scénario", () => {
+  it("des notes données à une scène reliée vont dans son synopsis, jamais dans son texte", () => {
     const id = state().addCard({ x: 0, y: 0 }, "scene");
     state().updateCard(id, { title: "INT. PHARE - NUIT" });
-    const before = state().screenplay;
     state().updateCard(id, { html: "<p>Elle trouve le journal.</p>" });
-    expect(state().screenplay).toBe(before);
+    expect(serialize(state().screenplay!)).toContain("= Elle trouve le journal.");
+    expect(state().nodes.find((n) => n.id === id)!.data.html).toBe("");
   });
 });
 

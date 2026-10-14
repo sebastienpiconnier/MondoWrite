@@ -1,7 +1,8 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
-import { foldNovelNodes, foldNovelNotes } from "./sceneNotes";
+import { headingOf, setSceneBody } from "./screenplay/sceneText";
+import { foldNovelNodes, foldNovelNotes, foldScreenplayNotes } from "./sceneNotes";
 import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
@@ -10,7 +11,8 @@ import { SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, deserialize, seriali
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
-import type { Screenplay } from "./screenplay/model";
+import type { Screenplay, ScreenplayElement } from "./screenplay/model";
+import { setSceneSynopsis } from "./screenplay/scenes";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { visibleSections } from "./bibleSections";
@@ -55,6 +57,10 @@ interface CosmosState {
   placeInPlan: (id: string, beat: string | null, index?: number) => void;
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
   stepInPlan: (id: string, way: "up" | "down") => boolean;
+  /** Scénario : le corps d'une scène (après son en-tête et son synopsis), écrit depuis sa carte agrandie. */
+  setSceneText: (cardId: string, body: ScreenplayElement[]) => Screenplay | null;
+  /** Scénario : le synopsis Fountain de la scène reliée à cette carte. */
+  setCardSceneSynopsis: (cardId: string, text: string) => void;
   /** Volet du manuscrit : une scène avant ou après une autre (case et chapitre de la voisine). */
   moveBookScene: (id: string, target: string, side: "before" | "after") => boolean;
   /** Volet du manuscrit : un cran plus haut ou plus bas (au bord d'un chapitre, change de chapitre). */
@@ -581,8 +587,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Premier passage en scénario : un en-tête par carte Scène. Le retour en roman ne supprime rien.
       if (kind === "scenario" && !screenplay) set({ kind, screenplay: firstScreenplay(title, nodes) });
       else set({ kind });
-      // Retour au roman : les notes des cartes Scène passent dans leur synopsis.
+      // Les notes des cartes Scène passent dans leur synopsis (fiche d'un roman, Fountain d'un scénario).
       if (kind !== "scenario") set({ nodes: foldNovelNodes(get().nodes) });
+      else set(foldScreenplayNotes(get().nodes, get().screenplay));
       // Et un format de page : A4 si l'interface est en français, US Letter sinon.
       if (kind === "scenario" && !paperChosen) set({ paper: defaultPaper(useSettings.getState().lang), paperChosen: true });
       touch();
@@ -1209,6 +1216,23 @@ export const useCosmos = create<CosmosState>((set, get) => {
     edges: [],
     screenplay: null,
     savedScreenplay: null,
+    setSceneText: (cardId, body) => {
+      const { screenplay } = get();
+      if (!screenplay) return null;
+      const at = headingOf(screenplay.elements, cardId);
+      const elements = setSceneBody(screenplay.elements, at, body);
+      if (elements === screenplay.elements) return screenplay;
+      // Comme l'éditeur de la vue Scénario : son propre historique, celui du canevas repart de zéro.
+      const next = { ...screenplay, elements };
+      get().setScreenplay(next);
+      return next;
+    },
+    setCardSceneSynopsis: (cardId, text) => {
+      const { screenplay } = get();
+      if (!screenplay) return;
+      const elements = setSceneSynopsis(screenplay.elements, headingOf(screenplay.elements, cardId), text);
+      if (elements !== screenplay.elements) get().setScreenplay({ ...screenplay, elements }, true);
+    },
     setScreenplay: (screenplay, undoable = false) => {
       if (undoable) record();
       else forgetHistory();
@@ -1588,6 +1612,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
         else if (!linked && get().kind === "scenario") screenplay = appendScene(screenplay, { id, title: card.title });
         // Sinon son en-tête suit son titre.
         else if (typeof patch.title === "string") screenplay = renameHeading(screenplay, id, patch.title);
+        // Scénario : une Scène reliée à son en-tête range ses notes dans le synopsis de la scène.
+        if (get().kind === "scenario" && card.type === "scene") {
+          const folded = foldScreenplayNotes(nodes.filter((n) => n.id === id), screenplay);
+          if (folded.screenplay !== screenplay || folded.nodes[0] !== nodes.find((n) => n.id === id)) {
+            screenplay = folded.screenplay!;
+            nodes = nodes.map((n) => (n.id === id ? folded.nodes[0] : n));
+          }
+        }
       }
       set({ nodes, screenplay });
       touch();

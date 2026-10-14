@@ -585,6 +585,8 @@ export const en: Messages = {
     empty: "Write the scene…",
     heading: "Manuscript",
     openManuscript: "Open in Manuscript",
+    noHeading: "Give the scene a heading first (its title), then write it here.",
+    openScreenplay: "Open in Screenplay",
   },
 
   manuscript: {

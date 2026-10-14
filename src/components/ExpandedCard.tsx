@@ -10,11 +10,13 @@ import { BibleBody } from "./BibleBody";
 import { CardSheet } from "./CardSheet";
 import { useMediaUrl } from "./useMediaUrl";
 import { DraftEditor } from "./SceneDraft";
+import { ScriptSceneEditor } from "./ScriptSceneEditor";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
   const { types, kind } = useVocab();
   const novelScene = kind !== "scenario" && card.type === "scene";
+  const scriptScene = kind === "scenario" && card.type === "scene";
   const updateCard = useCosmos((s) => s.updateCard);
   const imageUrl = useMediaUrl(card.image);
 
@@ -28,7 +30,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
         {t.card.expandedTitle}
       </h2>
       <textarea
-        className="expanded-title"
+        className={`expanded-title${scriptScene ? " is-slugline" : ""}`}
         rows={1}
         value={card.title}
         placeholder={types[card.type].titlePlaceholder}
@@ -39,7 +41,24 @@ export function ExpandedCard({ card }: { card: CardData }) {
         }}
       />
       {imageUrl && <img className="expanded-image" src={imageUrl} alt="" />}
-      {novelScene ? (
+      {scriptScene ? (
+        <>
+          {/* Scène d'un scénario : le titre est son en-tête ; synopsis et texte au format standard. */}
+          <section className="expanded-draft" aria-label={t.draft.heading}>
+            <ScriptSceneEditor card={card} />
+          </section>
+          <button
+            type="button"
+            className="link-button expanded-open"
+            onClick={() => {
+              useCosmos.getState().setDialog(null);
+              useCosmos.getState().setView("manuscrit");
+            }}
+          >
+            {t.draft.openScreenplay}
+          </button>
+        </>
+      ) : novelScene ? (
         <>
           {/* Scène d'un roman : son synopsis (sa note de plan), puis son texte, qu'on écrit ici. */}
           <CardSheet card={card} />
