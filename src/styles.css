@@ -44,6 +44,10 @@
   --revisit: #ffe58a; /* « à reprendre » */
   --page-ink-dim: #9a9eae; /* texte hors focus (mode focus) */
   --type-question: #6b7085;
+  /* Statut d'une scène (pastilles) : brouillon, à revoir, terminée */
+  --status-draft: #6e7388;
+  --status-revise: #b54708;
+  --status-done: #1f7a3a;
   --cover-bg: #23265a; /* jaquette de la couverture du projet (Bible) */
   --cover-ink: #ffffff;
   --cover-muted: #c9cbf3;
@@ -98,6 +102,9 @@
   --revisit: #6b5a12;
   --page-ink-dim: #6c7083;
   --type-question: #8e93a8;
+  --status-draft: #9ca1b4;
+  --status-revise: #f5a35c;
+  --status-done: #6fcf8e;
   --cover-bg: #2c2f5c;
   --cover-ink: #f1f2fb;
   --cover-muted: #c4c6ee;

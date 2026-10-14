@@ -5,6 +5,7 @@
 // Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
+import { SceneStatusPicker } from "./SceneStatusPicker";
 import { TrashIcon } from "./TrashIcon";
 import { SynopsisField } from "./SynopsisField";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -187,6 +188,7 @@ export function Plan() {
           {/* Ce qui se passe dans la scène, en une phrase (champ `synopsis` de sa fiche). Faute de synopsis, ses notes. */}
           <SynopsisField value={card.fiche?.synopsis ?? ""} scene={title} onSave={(value) => useCosmos.getState().setFiche(id, "synopsis", value)} />
           {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
+          <SceneStatusPicker card={card} />
         </div>
         {beat !== null && (
           <label className="plan-to">

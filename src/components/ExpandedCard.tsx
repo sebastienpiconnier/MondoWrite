@@ -11,6 +11,7 @@ import { CardSheet } from "./CardSheet";
 import { useMediaUrl } from "./useMediaUrl";
 import { DraftEditor } from "./SceneDraft";
 import { ScriptSceneEditor } from "./ScriptSceneEditor";
+import { SceneStatusPicker } from "./SceneStatusPicker";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -26,6 +27,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
         <span className="card-dot" aria-hidden="true" />
         {types[card.type].label}
       </p>
+      {card.type === "scene" && !card.page && <SceneStatusPicker card={card} className="expanded-status" />}
       <h2 id="app-dialog-title" className="sr-only">
         {t.card.expandedTitle}
       </h2>

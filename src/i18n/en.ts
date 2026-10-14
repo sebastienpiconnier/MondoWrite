@@ -611,6 +611,15 @@ export const en: Messages = {
     renameMenu: "Rename everywhere…",
   },
 
+  // A scene's status (keys written in the file: brouillon, revoir, fini).
+  sceneStatus: {
+    label: "Status",
+    none: "No status",
+    values: { brouillon: "Draft", revoir: "To revise", fini: "Done" },
+    chooseFor: "Status of the scene “{title}”",
+    done: "Scenes done",
+  },
+
   // Continuous reading of the manuscript: the whole book scrolling.
   continuous: {
     aria: "The whole book, continuous reading",
@@ -1295,6 +1304,7 @@ export const en: Messages = {
       consulte: "Accessed on",
       pages: "Pages",
       synopsis: "Synopsis",
+      statut: "Status",
     },
     placeholders: {
       epoque: "Today, 1912, the year 3000…",

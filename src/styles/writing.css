@@ -476,3 +476,15 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ms-continuous-scene.is-page .ms-continuous-text p { text-align: center; text-indent: 0; }
 .ms-continuous-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; font-style: italic; pointer-events: none; }
 @media (max-width: 640px) { .ms-continuous { padding: 2em 1.2em 4em; } }
+
+/* Statut d'une scène : pastille et menu déroulant (brouillon, à revoir, terminée). */
+.status-dot { display: inline-block; flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--status-draft); background: transparent; vertical-align: middle; }
+.status-dot.is-brouillon, .status-picker.is-brouillon .status-dot { border-color: var(--status-draft); background: var(--status-draft); }
+.status-dot.is-revoir, .status-picker.is-revoir .status-dot { border-color: var(--status-revise); background: var(--status-revise); }
+.status-dot.is-fini, .status-picker.is-fini .status-dot { border-color: var(--status-done); background: var(--status-done); }
+.status-picker { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 2px 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 12px var(--font-ui); }
+.status-picker select { min-height: 26px; padding: 0 4px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.status-picker:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (pointer: coarse) { .status-picker, .status-picker select { min-height: 44px; } }
+.card .status-picker { margin-top: 6px; }
+.ms-scenes .status-dot { margin-left: 6px; }

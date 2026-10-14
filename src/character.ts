@@ -53,12 +53,14 @@ export const isArcType = (v: unknown): v is ArcType => typeof v === "string" && 
 
 /** Champs montrés ailleurs que dans la liste de la fiche (bande du moteur, choix de l'arc). */
 export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<string> {
+  // Le statut d'une scène a son propre sélecteur (SceneStatusPicker) : pas une ligne de la fiche.
+  if (card.type === "scene") return new Set<string>(["statut"]);
   return card.type === "personnage" ? new Set<string>([...motorFields(card), "arcType", "arc"]) : new Set<string>();
 }
 
 /** Valeur d'un champ telle qu'on la lit (le type d'arc est une clé, montrée par son libellé). */
 export const ficheText = (key: string, value: string, arcLabels?: Record<string, string>) =>
-  key === "arcType" ? (arcLabels?.[value] ?? value) : value;
+  key === "arcType" || key === "statut" ? (arcLabels?.[value] ?? value) : value;
 
 /** Fiche d'un lieu (idée reprise de la Bible du fork de NEO). */
 export const PLACE_FIELDS = ["epoque", "ambiance", "evenements", "importance"] as const;
@@ -71,7 +73,13 @@ export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obsta
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
 /** Scène d'un roman : ce qui s'y passe, en une phrase (le scénario garde le sien dans le fichier Fountain). */
-export const SCENE_FIELDS = ["synopsis"] as const;
+export const SCENE_FIELDS = ["synopsis", "statut"] as const;
+
+/** Statut d'une scène : valeurs écrites dans le fichier (`fiche.statut`), jamais traduites. Libellés : `t.status.values`. */
+export const SCENE_STATUSES = ["brouillon", "revoir", "fini"] as const;
+export type SceneStatus = (typeof SCENE_STATUSES)[number];
+export const isSceneStatus = (v: unknown): v is SceneStatus => typeof v === "string" && (SCENE_STATUSES as readonly string[]).includes(v);
+export const sceneStatus = (card: Pick<CardData, "type" | "fiche">): SceneStatus | null => (card.type === "scene" && isSceneStatus(card.fiche?.statut) ? card.fiche!.statut as SceneStatus : null);
 
 export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
   scene: SCENE_FIELDS,
@@ -112,6 +120,7 @@ export function readFiche(raw: unknown, type: CardType = "personnage"): Record<s
     const value = (raw as Record<string, unknown>)[key];
     if (typeof value !== "string" || !value.trim()) continue;
     if (key === "arcType" && !isArcType(value)) continue;
+    if (key === "statut" && !isSceneStatus(value)) continue;
     out[key] = value.slice(0, MAX_VALUE);
   }
   return Object.keys(out).length > 0 ? out : undefined;

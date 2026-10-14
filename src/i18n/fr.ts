@@ -588,6 +588,15 @@ export const fr = {
     renameMenu: "Renommer partout…",
   },
 
+  // Statut d'une scène (clés écrites dans le fichier : brouillon, revoir, fini).
+  sceneStatus: {
+    label: "Statut",
+    none: "Sans statut",
+    values: { brouillon: "Brouillon", revoir: "À revoir", fini: "Terminée" },
+    chooseFor: "Statut de la scène « {title} »",
+    done: "Scènes terminées",
+  },
+
   // Lecture continue du manuscrit : tout le livre qui défile.
   continuous: {
     aria: "Tout le livre, en lecture continue",
@@ -1316,6 +1325,7 @@ export const fr = {
       consulte: "Consultée le",
       pages: "Pages",
       synopsis: "Synopsis",
+      statut: "Statut",
     },
     placeholders: {
       epoque: "Aujourd’hui, 1912, l’an 3000…",

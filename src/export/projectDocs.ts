@@ -69,7 +69,7 @@ export function bibleOf(s: ProjectDocSource, ctx: DocContext, sections: CardType
       untitled: t.bible.untitled,
       linkedTo: t.bible.linkedTo,
       fields: { ...t.character.fields, ...t.fiche.fields },
-      arcTypes: t.character.arcTypes,
+      arcTypes: { ...t.character.arcTypes, ...t.sceneStatus.values },
       cover: { title: t.pitch.toc, fields: t.pitch.fields },
     },
     s.pitch,
@@ -94,7 +94,7 @@ export function canvasOf(s: ProjectDocSource, ctx: DocContext): ExportDoc {
       untitledFrame: t.exports.untitledFrame,
       linkedTo: t.bible.linkedTo,
       fields: { ...t.character.fields, ...t.fiche.fields },
-      arcTypes: t.character.arcTypes,
+      arcTypes: { ...t.character.arcTypes, ...t.sceneStatus.values },
     },
   );
 }

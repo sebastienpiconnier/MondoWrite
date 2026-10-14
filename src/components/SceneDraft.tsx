@@ -16,6 +16,7 @@ import { plainText } from "../search";
 import type { CardData } from "../types";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
+import { SceneStatusPicker } from "./SceneStatusPicker";
 
 /** Longueur de l'aperçu (caractères) : quelques lignes, le reste est dans la carte agrandie. */
 const EXCERPT = 280;
@@ -123,6 +124,7 @@ export function SceneCardBody({ card }: { card: CardData }) {
     <>
       {synopsis && <p className="draft-synopsis">{synopsis}</p>}
       <DraftPreview card={card} />
+      {!card.page && <SceneStatusPicker card={card} />}
     </>
   );
 }

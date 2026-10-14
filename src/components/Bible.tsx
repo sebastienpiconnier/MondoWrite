@@ -4,6 +4,7 @@
 // Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
+import { SceneStatusPicker } from "./SceneStatusPicker";
 import { headingOf } from "../screenplay/sceneText";
 import { DraftPreview } from "./SceneDraft";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -264,6 +265,7 @@ export function Bible() {
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. Pour une scène
                   de roman, c'est son manuscrit : un aperçu, qu'on écrit dans la carte agrandie. */}
               {type === "scene" && (kind !== "scenario" || headingOf(screenplay?.elements ?? [], card.id) >= 0) ? <DraftPreview card={card} className="is-bible" /> : <BibleBody card={card} />}
+              {type === "scene" && !card.page && <SceneStatusPicker card={card} />}
               {type === "personnage" && (
                 <>
                   <CardSheet card={card} startOpen={false} />

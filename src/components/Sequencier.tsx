@@ -3,6 +3,7 @@
 // Changer l'ordre ici déplace la scène entière dans scenario.fountain.
 // Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
 
+import { SceneStatusPicker } from "./SceneStatusPicker";
 import { isBeat, type PlanBeat } from "../plan";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -230,6 +231,7 @@ export function Sequencier() {
                     onSave={(text) => setScreenplay({ ...screenplay, elements: setSceneSynopsis(screenplay.elements, block.start, text) }, true)}
                   />
                   {cardText && <p className="sq-desc">{cardText.length > 140 ? `${cardText.slice(0, 140)}…` : cardText}</p>}
+                  {card && <SceneStatusPicker card={card} />}
                   {speakers.length > 0 && (
                     <ul className="sq-speakers" aria-label={sq.charactersAria}>
                       {speakers.map((speaker) => {

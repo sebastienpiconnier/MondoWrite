@@ -2,6 +2,7 @@
 // « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
+import { StatusDot } from "./SceneStatusPicker";
 import { blocks, moveBlock } from "../screenplay/sequence";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
@@ -331,6 +332,8 @@ export function ScreenplayView() {
     [screenplay, sceneCards],
   );
   const scene = sceneAt(scenes, current.index);
+  // Statut des scènes (pastille dans la liste) : lu dans la fiche de leur carte.
+  const statusCards = useMemo(() => new Map(nodes.filter((n) => n.data.type === "scene").map((n) => [n.id, n.data])), [nodes]);
   // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée ; la frappe en attente part d'abord.
   const openReplace = () => {
     emit();
@@ -548,6 +551,7 @@ export function ScreenplayView() {
                 <span className="is-slugline">
                   {s.number}. {s.text || sp.untitledScene}
                 </span>
+                {statusCards.get(s.cardId ?? "") && <StatusDot card={statusCards.get(s.cardId!)!} />}
                 {pagination && pagination.startPage[s.index] !== undefined && (
                   <span className="sp-towrite">{fmt(sp.pageShort, { n: pagination.startPage[s.index] })}</span>
                 )}

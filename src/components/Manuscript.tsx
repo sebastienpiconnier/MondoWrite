@@ -9,6 +9,8 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { sceneStatus } from "../character";
+import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { ContinuousBook } from "./ContinuousBook";
 import { SynopsisField } from "./SynopsisField";
 import { DropCap } from "./dropCap";
@@ -579,6 +581,7 @@ export function Manuscript() {
                           </>
                         )}
                       </span>
+                      {c && <StatusDot card={c} />}
                       {count > 0 && <span className="ms-words">{num(count)}</span>}
                     </button>
                     {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}
@@ -643,6 +646,7 @@ export function Manuscript() {
                 ))}
               </select>
             </label>
+            {!pageKind && <SceneStatusPicker card={card} />}
             {!pageKind && !opensChapter && (
               <button type="button" className="ghost-button ms-start-chapter" onClick={() => startChapterAt(current)}>
                 {b.startChapter}
@@ -740,7 +744,7 @@ export function Manuscript() {
       </div>
 
       <aside className="sp-side">
-        <StatsBox stats={stats} chapters={numbers.size} sceneWords={sceneWords} place={measured > 0 ? { first: firstPageOf(before), last: firstPageOf(before) + measured - 1 } : null} />
+        <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={measured > 0 ? { first: firstPageOf(before), last: firstPageOf(before) + measured - 1 } : null} />
         <section className="sp-box">
           <h2 className="sp-box-title">{m.inScene}</h2>
           {detected.length === 0 ? (
@@ -781,8 +785,11 @@ function StatsBox({
   chapters,
   sceneWords,
   place,
+  done,
 }: {
   stats: ReturnType<typeof manuscriptStats>;
+  /** Scènes du récit marquées « terminée ». */
+  done: number;
   chapters: number;
   sceneWords: number;
   /** Pages occupées par la scène dans le livre (mesurées à l'écran). */
@@ -836,6 +843,12 @@ function StatsBox({
           <dt>{s.scenes}</dt>
           <dd>{fmt(s.of, { n: num(stats.written), total: num(stats.scenes) })}</dd>
         </div>
+        {done > 0 && (
+          <div>
+            <dt>{t.sceneStatus.done}</dt>
+            <dd>{fmt(s.of, { n: num(done), total: num(stats.scenes) })}</dd>
+          </div>
+        )}
         {chapters > 0 && (
           <div>
             <dt>{s.chapters}</dt>
