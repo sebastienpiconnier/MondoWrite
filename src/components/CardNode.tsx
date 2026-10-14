@@ -19,6 +19,7 @@ import { useCosmos, type CardNode as CardNodeT } from "../store";
 import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
+import { CardActions } from "./CardActions";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { useMediaUrl } from "./useMediaUrl";
 import { CARD_MAX_WIDTH, CARD_MIN_WIDTH } from "../media";
@@ -412,20 +413,19 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
             </svg>
           </button>
         )}
+        {/* Agrandir : titre, texte, fiche et image dans une grande fenêtre (aussi Cmd/Ctrl + Entrée). */}
         <button
           type="button"
-          className="card-delete card-image-add nodrag"
-          aria-label={data.image ? t.card.changeImage : t.card.addImage}
-          title={data.image ? t.card.changeImage : t.card.addImage}
-          // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
-          onClick={() => useCosmos.getState().openPhotos({ kind: "card", id })}
+          className="card-delete card-expand nodrag"
+          aria-label={t.card.expand}
+          title={t.card.expand}
+          onClick={() => useCosmos.getState().expandCard(id)}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
-            <circle cx="9" cy="10" r="1.6" />
-            <path d="M5 17l4.5-4.5 3.5 3.5 2.5-2.5L20 17" />
+            <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" />
           </svg>
         </button>
+        <CardActions id={id} hasImage={!!data.image} />
         <button
           type="button"
           className="card-delete nodrag"

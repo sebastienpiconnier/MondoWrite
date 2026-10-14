@@ -22,6 +22,21 @@ export const fr = {
     exportCopy: "Exporter une copie…",
   },
 
+  filter: {
+    button: "Filtrer les cartes",
+    short: "Filtrer",
+    hint: "Masquer des types de cartes (rien n’est supprimé)",
+    title: "Types affichés",
+    showAll: "Tout afficher",
+    typesOne: "Filtre actif : un type masqué",
+    typesMany: "Filtre actif : {n} types masqués",
+    card: "Filtre actif : « {title} » et ses voisines",
+  },
+
+  spotlight: {
+    hint: "Carte mise en avant · Échap ou un clic sur le fond pour tout revoir",
+  },
+
   conflict: {
     changed: "Modifié aussi hors de MondoWrite : {what}. La version du disque est gardée, la tienne est enregistrée à côté ({file}).",
     deleted: "Supprimé ici mais modifié hors de MondoWrite : {what}. La version du disque est gardée.",
@@ -151,6 +166,11 @@ export const fr = {
     linkAddress: "Colle ou tape l’adresse (https://…)",
     bodyAria: "Contenu de la carte",
     delete: "Supprimer la carte",
+    expand: "Agrandir la carte",
+    actions: "Plus d’actions",
+    spotlight: "Mettre en avant",
+    filterHere: "Filtrer sur cette carte",
+    expandedTitle: "Carte agrandie",
     moreDetails: "Plus de détails",
     addImage: "Ajouter une image",
     openSheet: "Ouvrir sa fiche dans la Bible",
@@ -1072,7 +1092,8 @@ export const fr = {
       newCard: "Nouvelle carte",
       newFrame: "Nouveau cadre",
       changeType: "Changer le type (en début de ligne)",
-      mention: "Citer une autre carte",
+      mention: "Citer une autre carte (ou [[)",
+      expand: "Agrandir la carte choisie",
       width: "Élargir ou rétrécir la carte",
       selectArea: "Entourer plusieurs cartes",
       selectMore: "Ajouter une carte à la sélection",

@@ -7,6 +7,7 @@ import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge
 import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
 import { SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
+import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, type Paper } from "./screenplay/layout";
@@ -136,8 +137,27 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | null) => void;
+  /**
+   * États d'affichage du canevas, jamais enregistrés ni annulables : carte mise en avant (le reste estompé),
+   * filtre, carte agrandie, menu d'une carte.
+   */
+  spotlightId: string | null;
+  setSpotlight: (id: string | null) => void;
+  filter: CanvasFilter;
+  /** Types masqués (filtre par type). La sélection des cartes masquées est retirée. */
+  setFilterTypes: (types: CardType[]) => void;
+  /** « Filtrer sur cette carte » : elle et ses voisines directes ; null l'enlève. */
+  setFilterCard: (id: string | null) => void;
+  /** « Tout afficher ». */
+  clearFilter: () => void;
+  /** Carte ouverte en grand (titre, texte, fiche, image), dans la fenêtre « card ». */
+  expandedId: string | null;
+  expandCard: (id: string | null) => void;
+  /** Carte dont le menu (⋯, clic droit) est ouvert. */
+  cardMenu: string | null;
+  setCardMenu: (id: string | null) => void;
   /** Ouvre une scène dans le manuscrit. */
   openInManuscript: (id: string) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
@@ -475,6 +495,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
       lastFiles: files,
       conflicts: [],
       saveError: null,
+      spotlightId: null,
+      filter: NO_FILTER,
+      expandedId: null,
+      cardMenu: null,
       screen: "project",
       view: "toile",
       focusId: null,
@@ -513,6 +537,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
       ...(SCREENPLAY_FILE in patch ? {} : { screenplay, savedScreenplay }),
       lastFiles: patchFiles(lastFiles, patch),
     });
+  };
+  /** Pose un filtre : les cartes présentes forment sa base, celles qu'il masque ne restent pas sélectionnées. */
+  const applyFilter = (next: CanvasFilter) => {
+    if (!filterActive(next)) {
+      set({ filter: NO_FILTER });
+      return;
+    }
+    const filter = { ...next, base: get().nodes.map((n) => n.id) };
+    const hidden = hiddenCards(get().nodes.map((n) => n.data), get().edges, filter);
+    set({ filter, nodes: get().nodes.map((n) => (n.selected && hidden.has(n.id) ? { ...n, selected: false } : n)) });
   };
   /** Une relecture demandée pendant un enregistrement attend sa fin. */
   let syncing = false;
@@ -596,7 +630,20 @@ export const useCosmos = create<CosmosState>((set, get) => {
     clearBibleTarget: () => set({ bibleTarget: null }),
     dialog: null,
     // Ouvrir la corbeille efface le message « mis à la corbeille » : on y est.
-    setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}) }),
+    setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}), ...(dialog !== "card" ? { expandedId: null } : {}) }),
+    spotlightId: null,
+    setSpotlight: (spotlightId) => set({ spotlightId: spotlightId && get().nodes.some((n) => n.id === spotlightId) ? spotlightId : null }),
+    filter: NO_FILTER,
+    setFilterTypes: (types) => applyFilter({ ...get().filter, types }),
+    setFilterCard: (card) => applyFilter({ ...get().filter, card }),
+    clearFilter: () => set({ filter: NO_FILTER }),
+    expandedId: null,
+    expandCard: (id) => {
+      if (id && !get().nodes.some((n) => n.id === id)) return;
+      set({ expandedId: id, dialog: id ? "card" : null, cardMenu: null });
+    },
+    cardMenu: null,
+    setCardMenu: (cardMenu) => set({ cardMenu }),
     addResearchCard: ({ title, html, fiche, image, fichier, type = "idee" }, at) => {
       record();
       // Comme dans Milanote : la carte naît là où l'on colle ou dépose, sans cadre imposé. « Organiser » la
@@ -1059,6 +1106,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     organizeCanvas: () => {
+      // « Organiser » range tout le projet : le filtre et la mise en avant s'effacent d'abord.
+      set({ filter: NO_FILTER, spotlightId: null });
       const { nodes, edges, plan, kind } = get();
       // Les cadres verrouillés restent tels quels, avec les cartes dont le centre est dedans. Tout le reste
       // se range, Liens, Images et Documents compris, sous ces cadres pour ne jamais les chevaucher.
@@ -1208,6 +1257,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
         lastFiles: {},
         conflicts: [],
         saveError: null,
+        spotlightId: null,
+        filter: NO_FILTER,
+        expandedId: null,
+        cardMenu: null,
         screen: "project",
         view: "toile",
         focusId: null,
@@ -1255,6 +1308,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
         lastFiles: {},
         conflicts: [],
         saveError: null,
+        spotlightId: null,
+        filter: NO_FILTER,
+        expandedId: null,
+        cardMenu: null,
         screen: "project",
         view: "manuscrit",
         focusId: null,
@@ -1587,11 +1644,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     // La sélection est un état d'affichage : ni historique, ni projet « modifié ».
-    selectAll: () =>
+    selectAll: () => {
+      // Les cartes masquées par un filtre ne sont pas choisies : Suppr ne doit toucher que ce qu'on voit.
+      const hidden = hiddenCards(get().nodes.map((n) => n.data), get().edges, get().filter);
       set({
-        nodes: get().nodes.map((n) => (n.selected ? n : { ...n, selected: true })),
+        nodes: get().nodes.map((n) => (hidden.has(n.id) ? (n.selected ? { ...n, selected: false } : n) : n.selected ? n : { ...n, selected: true })),
         frames: get().frames.map((f) => (f.selected ? f : { ...f, selected: true })),
-      }),
+      });
+    },
     clearSelection: () =>
       set({
         nodes: get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
@@ -1634,6 +1694,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
         lastFiles: files ?? {},
         conflicts: [],
         saveError: null,
+        spotlightId: null,
+        filter: NO_FILTER,
+        expandedId: null,
+        cardMenu: null,
         loaded: true,
         screen: "project",
         view: "toile",

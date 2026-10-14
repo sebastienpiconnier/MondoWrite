@@ -17,6 +17,7 @@ export const SHORTCUT_GROUPS = {
     ["newFrame", ["C"]],
     ["changeType", ["/"]],
     ["mention", ["@"]],
+    ["expand", ["Mod", "Entrée"]],
     ["width", ["Alt", "← →"]],
     ["selectArea", ["Shift", "Glisser"]],
     ["selectMore", ["Mod", "Clic"]],

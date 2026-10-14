@@ -26,6 +26,10 @@ type CanvasFormat = (typeof CANVAS_FORMATS)[number];
 async function canvasViewport(): Promise<HTMLElement | null> {
   const s = useCosmos.getState();
   if (s.view !== "toile") s.setView("toile");
+  // L'export montre tout le canevas : ni filtre, ni carte mise en avant (états d'affichage seulement).
+  s.clearFilter();
+  s.setSpotlight(null);
+  await new Promise((r) => setTimeout(r, 60));
   for (let i = 0; i < 40; i++) {
     const el = document.querySelector<HTMLElement>(".toile .react-flow__viewport");
     // Les cartes sont mesurées : React Flow les montre (visibility) dès qu'il connaît leur taille.

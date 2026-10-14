@@ -360,6 +360,14 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 
 /* Recherche de photos libres : source (boutons), champ, grille de vignettes (des boutons), crédit en pied. */
 .app-dialog.is-photos { width: min(920px, calc(100vw - 24px)); }
+/* Carte agrandie : la même carte, avec la place d'écrire. */
+.app-dialog.is-card { width: min(860px, calc(100vw - 24px)); }
+.expanded-card { display: flex; flex-direction: column; gap: 12px; }
+.expanded-type { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--type); }
+.expanded-title { width: 100%; field-sizing: content; resize: none; padding: 4px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font: 700 26px/1.25 var(--font-display); }
+.expanded-title:focus-visible { outline: none; border-bottom-color: var(--accent); }
+.expanded-image { display: block; max-width: 100%; max-height: 360px; margin: 0 auto; border-radius: 12px; object-fit: contain; }
+.expanded-body { min-height: 220px; font: 17px/1.6 var(--font-text); }
 .photos-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .photos-head h2 { margin: 0; }
 .photos-device { min-height: 44px; }

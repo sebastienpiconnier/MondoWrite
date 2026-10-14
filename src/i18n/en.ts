@@ -21,6 +21,21 @@ export const en: Messages = {
     exportCopy: "Export a copy…",
   },
 
+  filter: {
+    button: "Filter cards",
+    short: "Filter",
+    hint: "Hide card types (nothing is deleted)",
+    title: "Types shown",
+    showAll: "Show all",
+    typesOne: "Filter on: one type hidden",
+    typesMany: "Filter on: {n} types hidden",
+    card: "Filter on: “{title}” and its neighbours",
+  },
+
+  spotlight: {
+    hint: "Card in the spotlight · Esc or click the background to see everything",
+  },
+
   conflict: {
     changed: "Also changed outside MondoWrite: {what}. The version on disk is kept, yours is saved next to it ({file}).",
     deleted: "Deleted here but changed outside MondoWrite: {what}. The version on disk is kept.",
@@ -151,6 +166,11 @@ export const en: Messages = {
     linkAddress: "Paste or type the address (https://…)",
     bodyAria: "Card content",
     delete: "Delete card",
+    expand: "Expand card",
+    actions: "More actions",
+    spotlight: "Put in the spotlight",
+    filterHere: "Filter on this card",
+    expandedTitle: "Expanded card",
     addImage: "Add an image",
     openSheet: "Open its sheet in the Bible",
     changeImage: "Change the image",
@@ -1087,7 +1107,8 @@ export const en: Messages = {
       newCard: "New card",
       newFrame: "New frame",
       changeType: "Change the type (at line start)",
-      mention: "Mention another card",
+      mention: "Mention another card (or [[)",
+      expand: "Expand the selected card",
       width: "Widen or narrow the card",
       selectArea: "Draw around several cards",
       selectMore: "Add a card to the selection",

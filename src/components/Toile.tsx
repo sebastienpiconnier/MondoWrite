@@ -15,6 +15,8 @@ import {
   type Edge,
 } from "@xyflow/react";
 import { heldCardIds, useCosmos } from "../store";
+import { filterActive, hiddenCards } from "../canvasFilter";
+import { CanvasFilterMenu } from "./CanvasFilterMenu";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
@@ -82,10 +84,28 @@ export function Toile() {
   const addFrame = useCosmos((s) => s.addFrame);
   // Les cadres d'abord : ils se dessinent derrière les cartes.
   // Une carte tenue par un cadre verrouillé ne se déplace pas : React Flow ne la laisse pas glisser.
+  // Filtre (cartes masquées, avec leurs fils) et mise en avant (une carte nette, le reste estompé) :
+  // des états d'affichage, posés ici sur les nœuds passés à React Flow, jamais dans le projet.
+  const filter = useCosmos((s) => s.filter);
+  const spotlightId = useCosmos((s) => s.spotlightId);
+  const hidden = useMemo(() => hiddenCards(nodes.map((n) => n.data), edges, filter), [nodes, edges, filter]);
   const allNodes = useMemo(() => {
     const held = heldCardIds(nodes, frames);
-    return [...frames, ...(held.size === 0 ? nodes : nodes.map((n) => (held.has(n.id) ? { ...n, draggable: false } : n)))];
-  }, [frames, nodes]);
+    if (held.size === 0 && hidden.size === 0 && !spotlightId) return [...frames, ...nodes];
+    return [
+      ...frames,
+      ...nodes.map((n) => {
+        const lock = held.has(n.id);
+        const off = hidden.has(n.id);
+        const lit = n.id === spotlightId;
+        return lock || off || lit ? { ...n, ...(lock ? { draggable: false } : {}), ...(off ? { hidden: true } : {}), ...(lit ? { className: "is-spotlit" } : {}) } : n;
+      }),
+    ];
+  }, [frames, nodes, hidden, spotlightId]);
+  const shownEdges = useMemo(
+    () => (hidden.size === 0 ? edges : edges.map((e) => (hidden.has(e.source) || hidden.has(e.target) ? { ...e, hidden: true } : e))),
+    [edges, hidden],
+  );
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
   const { screenToFlowPosition, fitView } = useReactFlow();
@@ -221,8 +241,19 @@ export function Toile() {
         useCosmos.getState().selectAll();
         return;
       }
+      // Cmd/Ctrl + Entrée : la carte choisie s'ouvre en grand (dans son texte, Cmd/Ctrl + Entrée reste un saut de ligne).
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        const chosen = useCosmos.getState().nodes.filter((n) => n.selected);
+        if (chosen.length === 1) {
+          e.preventDefault();
+          useCosmos.getState().expandCard(chosen[0].id);
+        }
+        return;
+      }
       if (e.key === "Escape" && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        const { nodes: all, frames: boxesNow, clearSelection } = useCosmos.getState();
+        const { nodes: all, frames: boxesNow, clearSelection, spotlightId: lit, setSpotlight, cardMenu, setCardMenu } = useCosmos.getState();
+        if (cardMenu) setCardMenu(null);
+        if (lit) setSpotlight(null);
         if (all.some((n) => n.selected) || boxesNow.some((b) => b.selected)) clearSelection();
         setSelecting(false);
         return;
@@ -344,6 +375,14 @@ export function Toile() {
     setLabelEditor({ edgeId: edge.id, x: x - (rect?.left ?? 0), y: y - (rect?.top ?? 0), value: String(edge.label ?? "") });
   };
 
+  // Le filtre actif, en mots : les types masqués, la carte dont on ne voit que le voisinage.
+  const filterSummary = [
+    filter.types.length === 1 ? t.filter.typesOne : filter.types.length > 1 ? fmt(t.filter.typesMany, { n: filter.types.length }) : "",
+    filter.card ? fmt(t.filter.card, { title: nodes.find((n) => n.id === filter.card)?.data.title.trim() || t.bible.untitled }) : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   const commitLabel = () => {
     if (labelEditor) renameLink(labelEditor.edgeId, labelEditor.value.trim());
     setLabelEditor(null);
@@ -351,7 +390,7 @@ export function Toile() {
 
   return (
     <div
-      className={`toile${selectedCards + selectedFrames > 1 ? " has-multi" : ""}`}
+      className={`toile${selectedCards + selectedFrames > 1 ? " has-multi" : ""}${spotlightId ? " has-spotlight" : ""}`}
       ref={wrapper}
       onDoubleClick={onDoubleClick}
       onPointerMove={(e) => {
@@ -367,13 +406,25 @@ export function Toile() {
     >
       <ReactFlow
         nodes={allNodes}
-        edges={edges}
+        edges={shownEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnectStart={() => (edgeCountBeforeConnect.current = useCosmos.getState().edges.length)}
         onConnect={onConnect}
+        // Un clic sur le fond rend tout le canevas : fin de la mise en avant, menu de carte fermé.
+        onPaneClick={() => {
+          const s = useCosmos.getState();
+          if (s.spotlightId) s.setSpotlight(null);
+          if (s.cardMenu) s.setCardMenu(null);
+        }}
+        // Clic droit sur une carte, hors de son texte (le menu du navigateur y reste, pour l'orthographe) : son menu.
+        onNodeContextMenu={(event, node) => {
+          if (node.type !== "card" || (event.target as HTMLElement).closest(".card-body, .card-title")) return;
+          event.preventDefault();
+          useCosmos.getState().setCardMenu(node.id);
+        }}
         // Clic droit sur le canevas : nouvelle carte à cet endroit (le menu du navigateur reste sur les cartes).
         onPaneContextMenu={(event) => {
           event.preventDefault();
@@ -482,6 +533,7 @@ export function Toile() {
           </svg>
           <span className="tool-label" aria-hidden="true">{t.organize.short}</span>
         </button>
+        <CanvasFilterMenu />
         <button
           type="button"
           className={`icon-button has-label${selecting ? " is-on" : ""}`}
@@ -511,6 +563,17 @@ export function Toile() {
       </div>
       </div>
 
+      {/* En haut du canevas, l'un sous l'autre : filtre actif, mise en avant, sélection multiple ou aide. */}
+      <div className="canvas-top">
+      {filterActive(filter) && (
+        <div className="filter-banner" role="status">
+          <span>{filterSummary}</span>
+          <button type="button" className="ghost-button" onClick={() => useCosmos.getState().clearFilter()}>
+            {t.filter.showAll}
+          </button>
+        </div>
+      )}
+      {spotlightId && <div className="toile-hint is-spotlight">{t.spotlight.hint}</div>}
       {/* Plusieurs cartes choisies : ce qu'on peut en faire d'un coup, aussi au doigt (pas de clavier). */}
       {selectedCards + selectedFrames > 1 && (
         <div className="selection-bar" role="toolbar" aria-label={t.toile.select}>
@@ -548,8 +611,9 @@ export function Toile() {
         </div>
       )}
 
-      <div className="toile-hint" hidden={selectedCards + selectedFrames > 1}>
+      <div className="toile-hint" hidden={selectedCards + selectedFrames > 1 || !!spotlightId || filterActive(filter)}>
         {touch ? t.toile.hintTouch : t.toile.hintMouse} · {t.toile.hintLink} · <strong>/</strong> {t.toile.hintTransform}
+      </div>
       </div>
     </div>
   );

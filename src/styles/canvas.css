@@ -26,8 +26,19 @@
 .react-flow__minimap-node.type-image { fill: var(--type-image); }
 .react-flow__minimap-node.type-document { fill: var(--type-document); }
 .react-flow__minimap-node.type-question { fill: var(--type-question); }
+/* Haut du canevas : filtre actif, mise en avant, sélection multiple ou aide, l'un sous l'autre, centrés. */
+.canvas-top {
+  position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: calc(100% - 32px); pointer-events: none;
+}
+.canvas-top > :not(.toile-hint) { pointer-events: auto; }
+.filter-banner {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; padding: 6px 8px 6px 16px;
+  border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); box-shadow: var(--shadow-card); font-size: 14px; font-weight: 500;
+}
+.filter-banner .ghost-button { min-height: 40px; }
 .toile-hint {
-  position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
   background: var(--surface); border-radius: 999px; padding: 9px 18px; font-size: 13px; color: var(--ink-2);
   box-shadow: var(--shadow-card); pointer-events: none; white-space: nowrap;
 }
@@ -83,7 +94,9 @@
   content: ""; position: absolute; z-index: 1; left: 0; top: 0; bottom: 0; width: 4px;
   border-radius: 10px 0 0 10px; background: var(--type); pointer-events: none;
 }
-.card-handle { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 2px; cursor: grab; }
+.card-handle { display: flex; align-items: center; gap: 2px; padding: 10px 12px 2px; cursor: grab; }
+/* Le type à gauche (il cède la place sur une carte étroite), les boutons de la carte à droite. */
+.card-handle > .card-type { margin-right: auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .card-handle:active { cursor: grabbing; }
 /* Carte tenue par un cadre verrouillé : elle ne se déplace pas. */
 .react-flow__node-card:not(.draggable) :is(.card-handle, .card-image) { cursor: default; }
@@ -106,8 +119,18 @@
 .card-image-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(18px) saturate(1.1); transform: scale(1.25); opacity: 0.85; pointer-events: none; }
 .card-image-remove { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border: 0; border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; opacity: 0; box-shadow: var(--shadow-card); }
 .card:hover .card-image-remove, .card.is-selected .card-image-remove, .card-image-remove:focus-visible { opacity: 1; }
-.card-image-add, .card-bible { display: grid; place-items: center; margin-left: auto; font-size: 0; }
-.card-bible + .card-image-add { margin-left: 0; }
+.card-bible, .card-expand, .card-actions > .card-delete { display: grid; place-items: center; font-size: 0; }
+/* Menu d'une carte (⋯) : sous le bouton, au-dessus des cartes voisines. */
+.card-actions { position: relative; display: flex; }
+.card:has(.card-actions-menu) .card-delete { opacity: 1; }
+.react-flow__node:has(.card-actions-menu) { z-index: 1000 !important; }
+.card-actions-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 220px; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop);
+}
+.card-actions-menu button { min-height: 40px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.card-actions-menu button:hover, .card-actions-menu button:focus-visible { background: var(--ground); outline: none; }
+.card-actions-menu button:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 /* Coin bas droit d'une carte sélectionnée : on le tire pour changer sa largeur.
    Le milieu du bord droit reste au point d'accroche des fils. */
 .card-resize.react-flow__resize-control.handle { width: 14px; height: 14px; border: 2px solid var(--accent); border-radius: 4px; background: var(--surface); cursor: ew-resize; z-index: 4; }
@@ -145,6 +168,27 @@
 .card-questions { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-height: 32px; margin: 0 12px 12px; padding: 4px 10px 4px 4px; border: 1px dashed var(--type); border-radius: 999px; background: transparent; color: var(--ink-2); font: 500 13px var(--font-ui); text-align: left; cursor: pointer; }
 .card-questions:hover { background: var(--ground); color: var(--ink); }
 .card-questions-count { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border: 2px solid var(--type); border-radius: 999px; background: var(--surface); color: var(--ink); font-weight: 700; font-size: 12px; }
+/* Mise en avant : une carte nette, avec un halo d'accent ; le reste (cartes, cadres, fils, étiquettes) s'estompe. */
+.toile .react-flow__node, .toile .react-flow__edge, .toile .react-flow__edgelabel-renderer > * { transition: opacity 0.2s ease; }
+.toile.has-spotlight .react-flow__node:not(.is-spotlit),
+.toile.has-spotlight .react-flow__edge,
+.toile.has-spotlight .react-flow__edgelabel-renderer > * { opacity: 0.2; }
+.react-flow__node.is-spotlit .card { box-shadow: var(--shadow-pop), 0 0 0 4px var(--accent); }
+.toile-hint.is-spotlight { color: var(--accent-ink); }
+@media (prefers-reduced-motion: reduce) {
+  .toile .react-flow__node, .toile .react-flow__edge, .toile .react-flow__edgelabel-renderer > * { transition: none; }
+}
+/* Filtre par type : la liste s'ouvre au-dessus du bouton (la rangée est en bas). */
+.canvas-filter { position: relative; }
+.canvas-filter-panel {
+  position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 20; min-width: 230px; padding: 10px;
+  display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop);
+}
+.canvas-filter-title { margin: 0 4px 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.canvas-filter-item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: 8px; color: var(--ink); font-size: 14px; cursor: pointer; }
+.canvas-filter-item:hover { background: var(--ground); }
+.canvas-filter-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.canvas-filter-panel .ghost-button { margin-top: 6px; min-height: 40px; }
 .card-port { width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--accent); opacity: 0; transition: opacity 0.15s; z-index: 3; }
 .card:hover .card-port, .card.is-selected .card-port, .react-flow__node.connecting .card-port { opacity: 1; }
 
@@ -287,7 +331,6 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Sélection multiple : bouton « Sélection » enfoncé, barre des actions sur la sélection (en haut, à la place de l'aide). */
 .history-buttons .icon-button.is-on { background: var(--accent-soft); color: var(--accent-ink); }
 .selection-bar {
-  position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 6;
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
   max-width: calc(100% - 32px); padding: 6px 8px 6px 16px; border-radius: 999px;
   background: var(--surface); box-shadow: var(--shadow-pop); font-size: 14px; color: var(--ink);

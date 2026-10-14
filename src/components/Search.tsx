@@ -54,10 +54,16 @@ export function Search() {
     setOpen(false);
     if (refocus) buttonRef.current?.focus();
   };
+  // La carte trouvée est centrée et mise en avant : le reste du canevas s'estompe (Échap ou un clic sur le fond le rend).
   const choose = (id: string) => {
     close(false);
     revealCard(id);
+    useCosmos.getState().setSpotlight(id);
   };
+  // Une nouvelle recherche rend tout le canevas.
+  useEffect(() => {
+    if (open) useCosmos.getState().setSpotlight(null);
+  }, [open]);
 
   return (
     <div className="settings" ref={rootRef}>

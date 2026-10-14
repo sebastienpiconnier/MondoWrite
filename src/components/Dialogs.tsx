@@ -12,11 +12,13 @@ import { TrashList } from "./TrashList";
 import { DocumentViewer } from "./DocumentViewer";
 import { PhotoSearch } from "./PhotoSearch";
 import { UpdateSettings } from "./Updates";
+import { ExpandedCard } from "./ExpandedCard";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
 export function Dialogs() {
   const dialog = useCosmos((s) => s.dialog);
+  const expanded = useCosmos((s) => (s.dialog === "card" ? s.nodes.find((n) => n.id === s.expandedId)?.data : undefined));
   const setDialog = useCosmos((s) => s.setDialog);
   const ref = useRef<HTMLDialogElement>(null);
   const t = useT();
@@ -28,12 +30,27 @@ export function Dialogs() {
     if (!dialog && el.open) el.close();
   }, [dialog]);
 
+  // La carte agrandie a disparu (supprimée, annulée) : la fenêtre se ferme.
+  useEffect(() => {
+    if (dialog === "card" && !expanded) setDialog(null);
+  }, [dialog, expanded, setDialog]);
+
   const apple = isAppleKeyboard();
   const keyName = (k: string) =>
     ({ Mod: apple ? "⌘" : "Ctrl", Shift: apple ? "⇧" : t.shortcuts.shift, Alt: apple ? "⌥" : "Alt", Entrée: t.shortcuts.enter, Échap: t.shortcuts.escape, Suppr: t.shortcuts.delete, Glisser: t.shortcuts.drag, Clic: t.shortcuts.click })[k] ?? k;
 
   return (
-    <dialog ref={ref} className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : ""}`} aria-labelledby="app-dialog-title" onClose={() => setDialog(null)}>
+    <dialog
+      ref={ref}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : ""}`}
+      aria-labelledby="app-dialog-title"
+      onClose={() => setDialog(null)}
+      // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme.
+      onClick={(e) => {
+        if (dialog === "card" && e.target === e.currentTarget) setDialog(null);
+      }}
+    >
+      {dialog === "card" && expanded && <ExpandedCard card={expanded} />}
       {dialog === "shortcuts" && (
         <>
           <h2 id="app-dialog-title">{t.shortcuts.title}</h2>
