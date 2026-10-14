@@ -39,6 +39,26 @@ describe("ce qu'on tape après @", () => {
   });
 });
 
+describe("ce qu'on tape après [[ (comme dans Obsidian)", () => {
+  it("[[ ouvre le même menu, partout dans la ligne ; la mention remplace aussi les crochets", () => {
+    expect(mentionQuery("[[")).toEqual({ query: "", length: 2 });
+    expect(mentionQuery("Elle parle à [[Inè")).toEqual({ query: "Inè", length: 5 });
+    expect(mentionQuery("voir[[Yann Le")).toEqual({ query: "Yann Le", length: 9 });
+  });
+
+  it("le déclencheur le plus récent l'emporte", () => {
+    expect(mentionQuery("@Inès puis [[Ya")).toEqual({ query: "Ya", length: 4 });
+    expect(mentionQuery("[[Inès puis @Ya")).toEqual({ query: "Ya", length: 3 });
+  });
+
+  it("pas une mention : crochets refermés, espace juste après, texte trop long", () => {
+    expect(mentionQuery("[[Inès]]")).toBeNull();
+    expect(mentionQuery("[[ Inès")).toBeNull();
+    expect(mentionQuery("[[" + "x".repeat(41))).toBeNull();
+    expect(mentionQuery("[un seul crochet")).toBeNull();
+  });
+});
+
 describe("cartes proposées", () => {
   it("sans la carte elle-même ni les cartes sans titre", () => {
     expect(mentionCandidates(cards, "", "a1", "fr").map((c) => c.id)).toEqual(["d4", "c3", "b2"]);

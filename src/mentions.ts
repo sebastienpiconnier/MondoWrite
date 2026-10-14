@@ -49,15 +49,23 @@ const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCa
 export const MENTION_QUERY_MAX = 40;
 
 /**
- * Ce qui est en train d'être tapé après un « @ », d'après le texte placé avant le curseur.
- * Le « @ » doit ouvrir un mot (pas une adresse de courriel). Rend null s'il n'y a pas de mention en cours.
+ * Ce qui est en train d'être tapé après un « @ » ou un « [[ » (l'habitude d'Obsidian), d'après le texte placé
+ * avant le curseur. `length` couvre le déclencheur : c'est ce que la mention remplace. Le « @ » doit ouvrir
+ * un mot (pas une adresse de courriel). Rend null s'il n'y a pas de mention en cours.
+ * Les deux déclencheurs donnent la même mention, écrite `[@Titre](cosmos:<id>)` : une seule syntaxe.
  */
 export function mentionQuery(before: string): { query: string; length: number } | null {
   const at = before.lastIndexOf("@");
+  const brackets = before.lastIndexOf("[[");
+  const valid = (query: string) => query.length <= MENTION_QUERY_MAX && !/^\s/.test(query) && !/[\n￼]/.test(query);
+  if (brackets >= 0 && brackets > at) {
+    const query = before.slice(brackets + 2);
+    // « [[Titre]] » déjà fermé, ou crochets dans ce qu'on tape : ce n'est plus une mention en cours.
+    return valid(query) && !/[[\]]/.test(query) ? { query, length: query.length + 2 } : null;
+  }
   if (at < 0 || (at > 0 && !/[\s(«“"'’]/.test(before[at - 1]))) return null;
   const query = before.slice(at + 1);
-  if (query.length > MENTION_QUERY_MAX || /^\s/.test(query) || /[\n￼]/.test(query)) return null;
-  return { query, length: query.length + 1 };
+  return valid(query) ? { query, length: query.length + 1 } : null;
 }
 
 export interface MentionCandidate {

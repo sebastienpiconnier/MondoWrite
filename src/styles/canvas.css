@@ -77,7 +77,12 @@
   position: relative; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-card);
   border: 2px solid transparent; transition: border-color 0.15s;
 }
-.card.is-selected { border-color: var(--accent); }
+.card.is-selected { border-color: var(--accent); box-shadow: var(--shadow-card), 0 0 0 3px var(--accent-soft); }
+/* Liseré du type, à gauche, à l'intérieur de la bordure : la sélection (bordure et halo d'accent) reste entière. */
+.card::before {
+  content: ""; position: absolute; z-index: 1; left: 0; top: 0; bottom: 0; width: 4px;
+  border-radius: 10px 0 0 10px; background: var(--type); pointer-events: none;
+}
 .card-handle { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 2px; cursor: grab; }
 .card-handle:active { cursor: grabbing; }
 /* Carte tenue par un cadre verrouillé : elle ne se déplace pas. */
