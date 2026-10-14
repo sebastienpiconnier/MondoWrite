@@ -603,6 +603,8 @@ export const en: Messages = {
     orphans: "Texts without a card",
     orphansHint: "The card of these scenes was deleted. Their text is still in the project.",
     restore: "Recreate the card",
+    sceneDrag: "Drag the scene to move it (Alt + ↑ ↓ on the keyboard)",
+    sceneMoved: "Scene “{title}” moved.",
   },
 
   plan: {

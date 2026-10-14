@@ -356,3 +356,38 @@ export function chapterStep(plan: Plan, order: string[], id: string, way: "up" |
   if (i >= groups.length - 1) return undefined;
   return groups[i + 2]?.ids[0] ?? null;
 }
+
+/**
+ * Déplace une scène juste avant ou juste après une autre (`target`) : dans le volet du manuscrit. Elle prend
+ * la case du gabarit et le chapitre de `target`, pour se lire à sa nouvelle place. Une scène posée près d'une
+ * scène pas encore rangée devient « à placer » (dont l'ordre suit le canevas). Même objet si rien ne change.
+ */
+export function moveSceneTo(plan: Plan, sceneIds: string[], id: string, target: string, side: "before" | "after"): Plan {
+  if (id === target || !sceneIds.includes(id) || !sceneIds.includes(target)) return plan;
+  const { beats, unplaced } = arrange(plan, sceneIds);
+  const entries: { id: string; beat: string | null }[] = [...beats.flatMap((b) => b.ids.map((x) => ({ id: x, beat: b.key }))), ...unplaced.map((x) => ({ id: x, beat: null }))];
+  const rest = entries.filter((e) => e.id !== id);
+  const ti = rest.findIndex((e) => e.id === target);
+  const beat = rest[ti].beat;
+  const at = side === "before" ? ti : ti + 1;
+  const next = [...rest.slice(0, at), { id, beat }, ...rest.slice(at)];
+  const same = next.every((e, i) => e.id === entries[i].id && e.beat === entries[i].beat);
+  const moved = same ? plan : withBeats(plan, beats.map((b) => ({ key: b.key, ids: next.filter((e) => e.beat === b.key).map((e) => e.id) })));
+  return assignChapter(moved, id, chapterOf(plan, target)?.id ?? null);
+}
+
+/**
+ * Un cran plus haut ou plus bas dans le récit, pour le volet du manuscrit (flèches, Alt + flèche). Au bord
+ * d'un chapitre, la scène change d'abord de chapitre sans changer de place ; ensuite elle passe la voisine.
+ * Même objet si elle ne peut pas bouger.
+ */
+export function stepSceneInBook(plan: Plan, sceneIds: string[], id: string, way: "up" | "down"): Plan {
+  const order = planOrder(plan, sceneIds);
+  const i = order.indexOf(id);
+  const other = order[way === "up" ? i - 1 : i + 1];
+  if (i < 0 || other === undefined) return plan;
+  const mine = chapterOf(plan, id)?.id ?? null;
+  const theirs = chapterOf(plan, other)?.id ?? null;
+  if (mine !== theirs) return assignChapter(plan, id, theirs);
+  return moveSceneTo(plan, sceneIds, id, other, way === "up" ? "before" : "after");
+}

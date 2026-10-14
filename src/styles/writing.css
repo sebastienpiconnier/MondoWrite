@@ -404,3 +404,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .update-inline .update-text { font-size: 14px; }
 .about-updates { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .about-updates:empty { display: none; }
+
+/* Volet du manuscrit : une scène qu'on glisse, et le trait qui dit où elle ira (avant ou après). */
+.ms-scenes .sp-scene-list li[draggable="true"] { cursor: grab; border-radius: 8px; }
+.ms-scenes .sp-scene-list li.is-dragged { opacity: 0.5; }
+.ms-scenes .sp-scene-list li.is-drop-before { box-shadow: inset 0 3px 0 var(--accent); }
+.ms-scenes .sp-scene-list li.is-drop-after { box-shadow: inset 0 -3px 0 var(--accent); }
+.ms-scenes .sp-scene-list li > button { width: 100%; }

@@ -219,6 +219,10 @@ export function Manuscript() {
   const [dragged, setDragged] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
+  // Scène qu'on glisse dans la colonne (même raison : une ref) et l'endroit où elle irait.
+  const sceneDragRef = useRef<string | null>(null);
+  const [sceneDrag, setSceneDrag] = useState<string | null>(null);
+  const [sceneOver, setSceneOver] = useState<{ id: string; side: "before" | "after" } | null>(null);
   const deleteCard = useCosmos((s) => s.deleteCard);
   const b = t.book;
   const focusMode = useCosmos((s) => s.focusMode);
@@ -484,9 +488,72 @@ export function Manuscript() {
               {group.ids.map((id) => {
                 const c = cards.find((x) => x.id === id);
                 const count = stats.perScene.get(id) ?? 0;
+                const movable = story.includes(id);
+                const name = c?.title.trim() || m.untitled;
+                const step = (way: "up" | "down") => {
+                  if (!useCosmos.getState().stepBookScene(id, way)) return false;
+                  setSaid(fmt(m.sceneMoved, { title: name }));
+                  return true;
+                };
+                const drop = sceneOver?.id === id && sceneDrag !== id ? ` is-drop-${sceneOver.side}` : "";
                 return (
-                  <li key={id}>
-                    <button type="button" className={id === current ? "is-current" : ""} aria-current={id === current ? "true" : undefined} onClick={() => go(id)}>
+                  <li
+                    key={id}
+                    className={`${sceneDrag === id ? "is-dragged" : ""}${drop}`}
+                    draggable={movable}
+                    onDragStart={(e) => {
+                      if (!movable) return;
+                      e.stopPropagation();
+                      sceneDragRef.current = id;
+                      setSceneDrag(id);
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", name);
+                    }}
+                    onDragEnd={() => {
+                      sceneDragRef.current = null;
+                      setSceneDrag(null);
+                      setSceneOver(null);
+                    }}
+                    onDragOver={(e) => {
+                      const from = sceneDragRef.current;
+                      if (!from || !movable || from === id) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = "move";
+                      // Moitié haute : avant cette scène ; moitié basse : après (même chapitre qu'elle).
+                      const box = e.currentTarget.getBoundingClientRect();
+                      const side = e.clientY < box.top + box.height / 2 ? "before" : "after";
+                      setSceneOver((o) => (o?.id === id && o.side === side ? o : { id, side }));
+                    }}
+                    onDragLeave={() => setSceneOver((o) => (o?.id === id ? null : o))}
+                    onDrop={(e) => {
+                      const from = sceneDragRef.current;
+                      const side = sceneOver?.id === id ? sceneOver.side : "before";
+                      sceneDragRef.current = null;
+                      setSceneDrag(null);
+                      setSceneOver(null);
+                      if (!from || !movable) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (useCosmos.getState().moveBookScene(from, id, side)) setSaid(fmt(m.sceneMoved, { title: cards.find((x) => x.id === from)?.title.trim() || m.untitled }));
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className={id === current ? "is-current" : ""}
+                      aria-current={id === current ? "true" : undefined}
+                      aria-keyshortcuts={movable ? "Alt+ArrowUp Alt+ArrowDown" : undefined}
+                      title={movable ? m.sceneDrag : undefined}
+                      onClick={() => go(id)}
+                      onKeyDown={(e) => {
+                        // Au clavier : Alt + flèche déplace la scène d'un cran (le focus reste sur elle).
+                        if (!movable || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+                        e.preventDefault();
+                        const button = e.currentTarget;
+                        if (step(e.key === "ArrowUp" ? "up" : "down")) requestAnimationFrame(() => button.isConnected ? button.focus() : document.querySelector<HTMLButtonElement>(`[data-scene="${id}"]`)?.focus());
+                      }}
+                      data-scene={id}
+                    >
                       <span className="ms-name">
                         {pageLabel(id) ? (
                           <em>{c?.title.trim() && c.title.trim() !== pageLabel(id) ? `${pageLabel(id)} · ${c.title.trim()}` : pageLabel(id)}</em>
@@ -498,6 +565,20 @@ export function Manuscript() {
                       </span>
                       {count > 0 && <span className="ms-words">{num(count)}</span>}
                     </button>
+                    {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}
+                    {id === current && movable && story.length > 1 && (
+                      <span className="sp-scene-moves">
+                        {(["up", "down"] as const).map((way) => {
+                          const label = fmt(way === "up" ? t.plan.moveUp : t.plan.moveDown, { title: name });
+                          const edge = way === "up" ? story[0] === id : story[story.length - 1] === id;
+                          return (
+                            <button key={way} type="button" className="icon-button" disabled={edge} aria-label={label} title={label} onClick={() => step(way)}>
+                              <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
+                            </button>
+                          );
+                        })}
+                      </span>
+                    )}
                   </li>
                 );
               })}

@@ -580,6 +580,8 @@ export const fr = {
     orphans: "Textes sans carte",
     orphansHint: "La carte de ces scènes a été supprimée. Leur texte est toujours dans le projet.",
     restore: "Recréer la carte",
+    sceneDrag: "Glisse la scène pour la déplacer (Alt + ↑ ↓ au clavier)",
+    sceneMoved: "Scène « {title} » déplacée.",
   },
 
   // Plan d'un roman : gabarits et cases où ranger les scènes.

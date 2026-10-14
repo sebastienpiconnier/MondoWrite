@@ -506,6 +506,7 @@ export function ScreenplayView() {
                 className={s.index === scene?.index ? "is-current" : ""}
                 aria-current={s.index === scene?.index ? "true" : undefined}
                 aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                title={t.manuscript.sceneDrag}
                 onClick={() => goTo(s.index)}
                 onKeyDown={(e) => {
                   // Au clavier : Alt + flèche déplace la scène d'un cran.

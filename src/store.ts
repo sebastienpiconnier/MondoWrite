@@ -22,7 +22,7 @@ import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
 import { isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type SheetField } from "./character";
-import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, type Plan, type PlanTemplate } from "./plan";
+import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
 import { organize } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
@@ -54,6 +54,10 @@ interface CosmosState {
   placeInPlan: (id: string, beat: string | null, index?: number) => void;
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
   stepInPlan: (id: string, way: "up" | "down") => boolean;
+  /** Volet du manuscrit : une scène avant ou après une autre (case et chapitre de la voisine). */
+  moveBookScene: (id: string, target: string, side: "before" | "after") => boolean;
+  /** Volet du manuscrit : un cran plus haut ou plus bas (au bord d'un chapitre, change de chapitre). */
+  stepBookScene: (id: string, way: "up" | "down") => boolean;
   /** Crée une carte Scène et la range dans cette case du plan. */
   addPlanScene: (title: string, beat: string, chapterId?: string | null) => string;
   /**
@@ -1013,6 +1017,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     stepInPlan: (id, way) => {
       const plan = stepScene(get().plan, planScenes(get().nodes), id, way);
+      if (plan === get().plan) return false;
+      record();
+      set({ plan });
+      touch();
+      return true;
+    },
+    moveBookScene: (id, target, side) => {
+      const plan = moveSceneTo(get().plan, planScenes(get().nodes), id, target, side);
+      if (plan === get().plan) return false;
+      record();
+      set({ plan });
+      touch();
+      return true;
+    },
+    stepBookScene: (id, way) => {
+      const plan = stepSceneInBook(get().plan, planScenes(get().nodes), id, way);
       if (plan === get().plan) return false;
       record();
       set({ plan });
