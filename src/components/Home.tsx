@@ -19,7 +19,7 @@ export function Home() {
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
-  const { openProject, openFolder, createProject, tryExample, unlistProject, importScreenplay } = useCosmos.getState();
+  const { openProject, openFolder, createProject, tryExample, unlistProject, importFile } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
@@ -116,7 +116,7 @@ export function Home() {
                 {h.openFolder}
               </button>
             )}
-            <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importScreenplay)}>
+            <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importFile)}>
               {h.importFountain}
             </button>
           </div>

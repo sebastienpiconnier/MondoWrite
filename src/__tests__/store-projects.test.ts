@@ -203,8 +203,8 @@ describe("importer un scénario Fountain", () => {
 
   it("nouveau projet scénario, ouvert sur le texte, avec ses cartes et ses fichiers", async () => {
     await state().start();
-    vi.spyOn(storage, "pickTextFile").mockResolvedValue({ name: "kerlaouen.fountain", text: fountain });
-    await state().importScreenplay();
+    vi.spyOn(storage, "pickFile").mockResolvedValue({ name: "kerlaouen.fountain", data: new TextEncoder().encode(fountain) });
+    await state().importFile();
 
     expect(state()).toMatchObject({ screen: "project", view: "manuscrit", title: "Kerlaouen", kind: "scenario", status: "enregistre" });
     expect(state().nodes.map((n) => `${n.data.type}: ${n.data.title}`)).toEqual([
@@ -224,17 +224,17 @@ describe("importer un scénario Fountain", () => {
 
   it("l'auteur annule le choix du fichier : rien ne se passe", async () => {
     await state().start();
-    vi.spyOn(storage, "pickTextFile").mockResolvedValue(null);
+    vi.spyOn(storage, "pickFile").mockResolvedValue(null);
     const create = vi.spyOn(storage, "create");
-    await state().importScreenplay();
+    await state().importFile();
     expect(create).not.toHaveBeenCalled();
     expect(state()).toMatchObject({ screen: "home", importNotice: null });
   });
 
   it("fichier sans scénario : un message, pas de projet", async () => {
     await state().start();
-    vi.spyOn(storage, "pickTextFile").mockResolvedValue({ name: "vide.fountain", text: "\n\n" });
-    await state().importScreenplay();
+    vi.spyOn(storage, "pickFile").mockResolvedValue({ name: "vide.fountain", data: new TextEncoder().encode("\n\n") });
+    await state().importFile();
     expect(state()).toMatchObject({ screen: "home", importNotice: "empty" });
     expect(localStorage.length).toBe(0);
   });
@@ -244,13 +244,13 @@ describe("importer un scénario Fountain", () => {
     await state().createProject({ title: "Roman", kind: "roman" });
     await state().closeProject();
     const id = state().projects[0].id;
-    vi.spyOn(storage, "pickTextFile").mockResolvedValue({ name: "kerlaouen.fountain", text: fountain });
+    vi.spyOn(storage, "pickFile").mockResolvedValue({ name: "kerlaouen.fountain", data: new TextEncoder().encode(fountain) });
     vi.spyOn(storage, "create").mockImplementation(async () => {
       storage.select(id);
       return true;
     });
 
-    await state().importScreenplay();
+    await state().importFile();
 
     expect(state()).toMatchObject({ screen: "home", importNotice: "taken" });
     storage.select(id);

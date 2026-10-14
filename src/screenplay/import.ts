@@ -6,6 +6,7 @@
 import type { CardData, CardLayout, Link, Project } from "../types";
 import { titleCase } from "./editor/autocomplete";
 import { parse } from "./parse";
+import type { Screenplay } from "./model";
 import { characterName, headingParts } from "./scenes";
 
 export interface ImportOptions {
@@ -20,10 +21,13 @@ export interface ImportOptions {
 const COLUMNS = 5;
 const STEP_X = 280;
 const STEP_Y = 200;
-const escapeHtml = (text: string) => text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
 
 export function importFountain(source: string, options: ImportOptions): Project {
-  const screenplay = parse(source);
+  return importScreenplayModel(parse(source), options);
+}
+
+/** Un scénario déjà lu (Fountain, ou Final Draft par fdxImport.ts) → le projet. */
+export function importScreenplayModel(screenplay: Screenplay, options: ImportOptions): Project {
   const upper = (s: string) => s.toLocaleUpperCase(options.locale);
 
   const titleKey = Object.keys(screenplay.titlePage).find((key) => key.trim().toLowerCase() === "title");
@@ -36,7 +40,7 @@ export function importFountain(source: string, options: ImportOptions): Project 
   const scenes: CardData[] = [];
   const links: Link[] = [];
 
-  const elements = screenplay.elements.map((el, index) => {
+  const elements = screenplay.elements.map((el) => {
     if (el.type === "character") {
       const name = upper(characterName(el.text));
       if (name && !characters.has(name)) {
@@ -46,14 +50,8 @@ export function importFountain(source: string, options: ImportOptions): Project 
     }
     if (el.type !== "sceneHeading") return el;
 
-    // Le synopsis Fountain qui suit l'en-tête (« = … ») devient le texte de la carte.
-    const next = screenplay.elements[index + 1];
-    const card: CardData = {
-      id: options.newId(),
-      type: "scene",
-      title: el.text,
-      html: next?.type === "synopsis" && next.text ? `<p>${escapeHtml(next.text)}</p>` : "",
-    };
+    // Le synopsis Fountain qui suit l'en-tête (« = … ») reste dans le scénario : c'est celui de la carte.
+    const card: CardData = { id: options.newId(), type: "scene", title: el.text, html: "" };
     scenes.push(card);
 
     const { prefix, location } = headingParts(el.text);

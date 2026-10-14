@@ -17,7 +17,7 @@ import { setSceneSynopsis } from "./screenplay/scenes";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { visibleSections } from "./bibleSections";
-import { importFountain } from "./screenplay/import";
+import { IMPORT_EXTENSIONS, projectFromFile } from "./import";
 import { CARD_SIZE, firstFreeCell, freeSpot } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension } from "./media";
 import { documentFiche, documentTitle } from "./documents";
@@ -279,7 +279,8 @@ interface CosmosState {
   openProject: (id: string) => Promise<void>;
   createProject: (options: { title: string; kind: ProjectKind }) => Promise<void>;
   /** Un fichier Fountain existant devient un nouveau projet scénario, avec ses cartes. */
-  importScreenplay: () => Promise<void>;
+  /** Accueil : un manuscrit (.docx, .md, .txt) ou un scénario (.fountain, .fdx) devient un nouveau projet. */
+  importFile: () => Promise<void>;
   /** L'import n'a pas eu lieu : dossier déjà occupé par un projet, ou fichier sans scénario. */
   importNotice: "taken" | "empty" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
@@ -1372,25 +1373,28 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     importNotice: null,
-    importScreenplay: async () => {
+    importFile: async () => {
       set({ importNotice: null, homeNotice: false, openFailed: false });
       const t = getT();
-      let file: { name: string; text: string } | null = null;
+      let file: { name: string; data: Uint8Array } | null = null;
       try {
-        file = await storage.pickTextFile(t.home.fountainFiles, ["fountain", "spmd", "txt"]);
+        file = await storage.pickFile(t.home.fountainFiles, IMPORT_EXTENSIONS);
       } catch (err) {
         console.error(err);
         set({ importNotice: "empty" });
         return;
       }
       if (!file) return;
-      const project = importFountain(file.text, {
+      const project = await projectFromFile(file, {
         fileName: file.name,
         locale: useSettings.getState().lang,
         linkLabel: t.screenplay.linkSetIn,
         newId,
+      }).catch((err) => {
+        console.error(err);
+        return null;
       });
-      if (!project.screenplay || project.screenplay.elements.length === 0) {
+      if (!project) {
         set({ importNotice: "empty" });
         return;
       }
