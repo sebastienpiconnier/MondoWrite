@@ -60,7 +60,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-MondoWrite est en cours de développement (version 0.1.10).
+MondoWrite est en cours de développement (version 0.1.11).
 
 ## Fonctionnalités
 
@@ -74,11 +74,11 @@ MondoWrite est en cours de développement (version 0.1.10).
 - **À faire :** les cases non cochées, les passages « à reprendre », les questions gardées pour plus tard et les questions ouvertes, rassemblés dans un seul panneau, chacun relié à sa carte ou à sa scène.
 - **Raccourcis clavier** pour tout ce qui compte ; Ctrl/Cmd+/ en donne la liste.
 - **Fils étiquetés :** tirez un fil d'une carte à une autre et nommez le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Clic sur le fil (ou appui au doigt) pour le renommer ou le **délier** ; dans la Bible, la croix d'un lien fait de même.
-- **Mentions :** tapez `@` dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si vous renommez la carte, et vous pouvez créer la carte citée sans quitter votre phrase.
-- **Images :** déposez une image sur une carte ou sur le canevas, ou utilisez le bouton image de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
+- **Mentions :** tapez `@` (ou `[[`, comme dans Obsidian) dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si vous renommez la carte, et vous pouvez créer la carte citée sans quitter votre phrase.
+- **Images :** déposez une image sur une carte ou sur le canevas, ou passez par le menu ⋯ de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
 - **PDF :** déposez, collez ou importez un PDF (menu « Nouvelle carte », « Document… ») : une carte **Document** naît, avec l'aperçu de sa première page, son nombre de pages, son auteur et son année quand le fichier les donne. « Lire le document » l'ouvre dans l'app, page après page. Le PDF est copié dans `medias/`.
 - **Votre profil d'auteur :** sur la page des projets, saisissez une fois votre prénom, votre nom, votre nom de plume et vos coordonnées. Chaque nouveau scénario les reprend sur sa page de titre (auteur et contact), et le manuscrit exporté les porte sur sa page de garde. Ils restent sur l'appareil et se modifient à tout moment.
-- **Photos libres :** le menu « Nouvelle carte », « Image… » (ou « Ajouter des photos » dans la galerie d'une fiche) cherche des photos sur **Openverse** (images sous licence libre, sans clé), **Pixabay** ou **Unsplash** (clé gratuite, collée une fois, gardée sur l'appareil). La photo choisie devient une carte Image, avec l'auteur, le lien, la source et la licence dans sa fiche. Le bouton image d'une carte (et le portrait d'un personnage dans la Bible) ouvre la même fenêtre : une photo libre, ou une image de l'appareil.
+- **Photos libres :** le menu « Nouvelle carte », « Image… » (ou « Ajouter des photos » dans la galerie d'une fiche) cherche des photos sur **Openverse** (images sous licence libre, sans clé), **Pixabay** ou **Unsplash** (clé gratuite, collée une fois, gardée sur l'appareil). La photo choisie devient une carte Image, avec l'auteur, le lien, la source et la licence dans sa fiche. « Ajouter une image » dans le menu ⋯ d'une carte (et le portrait d'un personnage dans la Bible) ouvre la même fenêtre : une photo libre, ou une image de l'appareil.
 - **Lien vers la fiche :** chaque carte typée a un bouton qui ouvre sa fiche dans la Bible.
 - **Sélection multiple :** Maj + glisser entoure des cartes, Ctrl/Cmd + clic en ajoute une, Ctrl/Cmd + A sélectionne tout, Échap désélectionne ; au doigt, le bouton « Sélection ». Les cartes choisies se déplacent ensemble, et une barre propose de les encadrer ou de les mettre à la corbeille.
 - **Largeur des cartes :** tirez la poignée du coin bas droit d'une carte sélectionnée, ou Alt+→ et Alt+←.
@@ -87,7 +87,11 @@ MondoWrite est en cours de développement (version 0.1.10).
 - **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac, images, liens, documents, pages du livre) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit, sous les cadres verrouillés qu'il laisse en place. En paysage : les cases se suivent de gauche à droite, rangées de 8 scènes au plus. Ctrl/Cmd+Z remet tout comme avant.
 - **Corbeille :** une carte supprimée (sur le canevas, dans le plan, le séquencier ou le manuscrit) part à la corbeille avec ses fils, et dans un scénario avec le texte de sa scène. Un message propose d'annuler ; la corbeille (dans les Réglages) remet chaque carte à sa place ou la supprime pour de bon. Elle vit dans le dossier `corbeille/` du projet.
 - **Annuler et rétablir :** Ctrl/Cmd+Z et Ctrl/Cmd+Maj+Z, ou les deux boutons du canevas. Cartes, fils, déplacements et textes.
-- **Recherche :** la loupe de la barre du haut, ou Ctrl/Cmd+F, retrouve une carte par son titre ou son texte et la montre sur le canevas.
+- **Recherche :** la loupe de la barre du haut, ou Ctrl/Cmd+F, retrouve une carte par son titre ou son texte et la met en avant sur le canevas.
+- **Couleur du type :** chaque carte porte un liseré de la couleur de son type, lisible d'un coup d'œil, en clair comme en sombre.
+- **Menu d'une carte :** le bouton ⋯ (ou un clic droit sur la carte) ajoute ou change son image, la **met en avant** (le reste du canevas s'estompe ; un clic sur le fond ou Échap rend tout) ou **filtre sur elle** (seules ses voisines, par fil ou par mention, restent visibles).
+- **Filtres :** le bouton « Filtrer » de la rangée du bas masque des types de carte (n'afficher que les personnages et les lieux, par exemple). Un bandeau rappelle le filtre actif, « Tout afficher » le retire. Rien n'est enregistré, rien n'est supprimé.
+- **Agrandir une carte :** le bouton d'agrandissement, ou Ctrl/Cmd+Entrée sur la carte choisie, l'ouvre en grand avec la place d'écrire, son image et sa fiche. C'est la même carte : ce que vous y écrivez est aussitôt sur le canevas.
 - **Mini-carte et zoom** pour s'y retrouver quand le canevas grandit.
 
 ### La Bible
@@ -169,7 +173,7 @@ Elle questionne, elle n'écrit pas : aucune action ne modifie votre projet sans 
 - **Ranger les idées :** propose un type (Personnage, Lieu, Scène…) pour vos idées en vrac. Vous appliquez ou vous ignorez, une par une, puis « Organiser le canevas » range tout en cadres.
 - **Questions sur mesure :** dans l'assistant personnage, une question posée d'après ce que dit déjà la fiche. C'est vous qui répondez.
 - **Synthèse d'un personnage :** remet en ordre ce que vous avez écrit, sans rien ajouter.
-- **Décrire un lieu d'après une photo :** si vous le demandez, l'IA relève en notes ce que montre la photo (lumière, matières, ambiance), sans rien inventer. Il faut un modèle qui lit les images.
+- **Décrire une photo :** si vous le demandez, depuis la galerie d'une fiche, l'IA relève en notes ce que montre la photo (lumière, matières, ambiance), sans rien inventer. Pour un **personnage**, elle propose aussi son âge apparent et son apparence : chaque champ s'ajoute à la fiche, la remplace ou s'ignore, d'un clic. Elle ne dit jamais qui est la personne et ne devine ni origine, ni religion, ni santé, ni caractère. Il faut un modèle qui lit les images.
 - **Vérifier la cohérence :** relève les contradictions possibles entre vos cartes (un âge, une date, un lieu), sous forme de questions que vous pouvez garder pour plus tard.
 
 Quand l'IA parle d'une carte, elle la nomme par son titre et son type, par exemple « Inès Morvan (personnage) ».
@@ -227,6 +231,10 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 ```
 
 **Travailler sur plusieurs ordinateurs :** placez le dossier du projet dans iCloud Drive, Dropbox ou OneDrive, en évitant de l'ouvrir sur deux machines en même temps. Le dossier choisi reste autorisé d'un lancement à l'autre, où qu'il soit (autre disque, OneDrive, clé USB). Si l'app ne parvient plus à l'ouvrir, elle vous le dit et vous le choisissez à nouveau avec « Ouvrir un dossier ».
+
+**Modifié ailleurs :** si un fichier du projet change hors de MondoWrite (un autre éditeur, une synchronisation), l'app le reprend d'elle-même. S'il a aussi changé dans l'app, rien n'est écrasé : votre version est gardée à côté, dans un fichier « … (MondoWrite).md », et un bandeau vous laisse choisir laquelle garder.
+
+**Enregistrement impossible :** le message dit pourquoi (disque plein, droits refusés, dossier introuvable) et propose de réessayer, d'indiquer où est passé le dossier du projet ou d'exporter une copie complète en .zip.
 
 ## À venir
 

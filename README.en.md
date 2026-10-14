@@ -60,7 +60,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-MondoWrite is under active development (version 0.1.10).
+MondoWrite is under active development (version 0.1.11).
 
 ## Features
 
@@ -74,11 +74,11 @@ MondoWrite is under active development (version 0.1.10).
 - **To do:** unticked boxes, passages “to revisit”, questions kept for later and open questions, gathered in one panel, each linked to its card or scene.
 - **Keyboard shortcuts** for everything that matters; Ctrl/Cmd+/ lists them.
 - **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Click the thread (or tap it) to rename it or **unlink** the cards; in the Bible, a link’s cross does the same.
-- **Mentions:** type `@` in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
-- **Images:** drop an image on a card or on the canvas, or use the card’s image button. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
+- **Mentions:** type `@` (or `[[`, as in Obsidian) in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
+- **Images:** drop an image on a card or on the canvas, or go through the card’s ⋯ menu. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
 - **PDF:** drop, paste or import a PDF (“New card” menu, “Document…”): a **Document** card appears, with a preview of its first page, its page count, author and year when the file gives them. “Read the document” opens it in the app, page by page. The PDF is copied into `medias/`.
 - **Your author profile:** on the projects page, enter your first name, last name, pen name and contact details once. Every new screenplay puts them on its title page (author and contact), and the exported manuscript carries them on its cover page. They stay on the device and can be edited anytime.
-- **Free photos:** the “New card” menu, “Image…” (or “Add photos” in a sheet’s gallery) searches **Openverse** (openly licensed images, no key), **Pixabay** or **Unsplash** (free key, pasted once, kept on the device). The photo you pick becomes an Image card, with the author, link, source and licence in its sheet. A card’s image button (and a character’s portrait in the Bible) opens the same window: a free photo, or an image from the device.
+- **Free photos:** the “New card” menu, “Image…” (or “Add photos” in a sheet’s gallery) searches **Openverse** (openly licensed images, no key), **Pixabay** or **Unsplash** (free key, pasted once, kept on the device). The photo you pick becomes an Image card, with the author, link, source and licence in its sheet. “Add an image” in a card’s ⋯ menu (and a character’s portrait in the Bible) opens the same window: a free photo, or an image from the device.
 - **Link to the sheet:** every typed card has a button that opens its sheet in the Bible.
 - **Multiple selection:** `Shift` + drag draws around cards, `Ctrl`/`Cmd` + click adds one, `Ctrl`/`Cmd`+`A` selects everything, `Esc` deselects; with a finger, the “Select” button. Selected cards move together, and a bar offers to frame them or move them to the trash.
 - **Card width:** drag the bottom-right handle of a selected card, or `Alt`+`→` and `Alt`+`←`.
@@ -87,7 +87,11 @@ MondoWrite is under active development (version 0.1.10).
 - **Organise the canvas:** one button puts every card in a frame (characters, places, themes, questions, loose ideas, images, links, documents, book pages) and the scenes by template beat and chapter, linked in story order, below the locked frames it leaves in place. Landscape first: beats follow each other left to right, in rows of at most 8 scenes. `Ctrl`/`Cmd`+`Z` puts everything back.
 - **Trash:** a deleted card (from the canvas, the outline, the step outline or the manuscript) goes to the trash with its threads, and in a screenplay with its scene’s text. A message offers to undo; the trash (in Settings) puts each card back where it was or deletes it for good. It lives in the project’s `corbeille/` folder.
 - **Undo and redo:** `Ctrl`/`Cmd`+`Z` and `Ctrl`/`Cmd`+`Shift`+`Z`, or the two buttons on the canvas. Cards, threads, moves and text.
-- **Search:** the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and shows it on the canvas.
+- **Search:** the magnifier in the top bar, or `Ctrl`/`Cmd`+`F`, finds a card by its title or text and spotlights it on the canvas.
+- **Type colour:** each card has a stripe in its type’s colour, readable at a glance, in light and dark mode.
+- **Card menu:** the ⋯ button (or a right-click on the card) adds or changes its image, **spotlights** it (the rest of the canvas fades; a click on the background or Esc brings everything back) or **filters on it** (only its neighbours, by thread or mention, stay visible).
+- **Filters:** the “Filter” button in the bottom row hides card types (show only characters and places, for instance). A banner reminds you a filter is on, “Show all” removes it. Nothing is saved, nothing is deleted.
+- **Expand a card:** the expand button, or `Ctrl`/`Cmd`+`Enter` on the selected card, opens it large with room to write, its image and its sheet. It is the same card: what you write there is on the canvas at once.
 - **Minimap and zoom** to find your way as the canvas grows.
 
 ### The Bible
@@ -168,7 +172,7 @@ It asks, it doesn’t write: no action changes your project without your say.
 - **Tidy up ideas:** suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one, then “Organise the canvas” puts everything in frames.
 - **Tailored questions:** in the character assistant, a question based on what the entry already says. You do the answering.
 - **Character summary:** puts what you wrote in order, adding nothing.
-- **Describe a place from a photo:** if you ask, the AI notes what the photo shows (light, materials, atmosphere), inventing nothing. It needs a model that can read images.
+- **Describe a photo:** if you ask, from a sheet’s gallery, the AI notes what the photo shows (light, materials, atmosphere), inventing nothing. For a **character**, it also suggests an apparent age and appearance: each field is added to the sheet, replaces it or is ignored, in one click. It never says who the person is and never guesses origin, religion, health or personality. It needs a model that can read images.
 - **Check consistency:** points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
 
 When the AI talks about a card, it names it by its title and type, for example “Inès Morvan (character)”.
@@ -228,6 +232,10 @@ Stand-in keeper. Can’t stand **silence**.
 ```
 
 **Working on several computers:** put the project folder in iCloud Drive, Dropbox or OneDrive, and avoid opening it on two machines at once. The folder you choose stays allowed from one launch to the next, wherever it is (another drive, OneDrive, a USB stick). If the app can no longer open it, it tells you and you choose it again with “Open folder”.
+
+**Changed elsewhere:** if a project file changes outside MondoWrite (another editor, a sync), the app picks it up on its own. If it also changed in the app, nothing is overwritten: your version is kept next to it, in a “… (MondoWrite).md” file, and a banner lets you choose which to keep.
+
+**Cannot save:** the message says why (disk full, access denied, folder not found) and offers to retry, to point to where the project folder went, or to export a full copy as a .zip.
 
 ## Coming next
 

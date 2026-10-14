@@ -37,6 +37,7 @@ import { readTitleField, writeTitleField, type TitleField } from "./screenplay/t
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
+import { fileName } from "./screenplay/export";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
@@ -1803,7 +1804,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
     exportProjectCopy: async () => {
       try {
         const { zip } = await import("./export/zip");
-        const { fileName } = await import("./screenplay/export");
         const entries = Object.entries(currentFiles()).map(([path, data]) => ({ path, data }));
         const data = zip(entries);
         return await storage.saveAs({ name: `${fileName(get().title, "mondowrite")}.zip`, extension: "zip", mime: "application/zip", data }, "ZIP");
