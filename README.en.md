@@ -60,7 +60,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-MondoWrite is under active development (version 0.1.12).
+MondoWrite is under active development (version 0.1.13).
 
 ## Features
 
