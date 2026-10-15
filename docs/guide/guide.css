@@ -1,0 +1,95 @@
+/* Guide de l'utilisateur de MondoWrite : mise en page A4 pour Chromium (scripts/guide/build.mjs). */
+@font-face { font-family: "Plex Sans"; src: url("../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2"); font-weight: 400; }
+@font-face { font-family: "Plex Sans"; src: url("../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-italic.woff2"); font-weight: 400; font-style: italic; }
+@font-face { font-family: "Plex Sans"; src: url("../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2"); font-weight: 600; }
+@font-face { font-family: "Plex Sans"; src: url("../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "Plex Sans"; src: url("../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-ext-400-normal.woff2"); font-weight: 400; }
+@font-face { font-family: "Plex Serif"; src: url("../../node_modules/@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-400-normal.woff2"); font-weight: 400; }
+@font-face { font-family: "Plex Serif"; src: url("../../node_modules/@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-400-italic.woff2"); font-weight: 400; font-style: italic; }
+@font-face { font-family: "Grotesk"; src: url("../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2"); font-weight: 500; }
+@font-face { font-family: "Grotesk"; src: url("../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "Playfair"; src: url("../../node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "Playfair"; src: url("../../node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff2"); font-weight: 400; font-style: italic; }
+
+@page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+
+:root {
+  --ink: #1d2030;
+  --ink-2: #4a4f63;
+  --line: #dfe1ea;
+  --accent: #3a3fb8;
+  --accent-soft: #eceefc;
+  --navy: #141b2d;
+  --gold: #f2c14e;
+  --note: #fff7df;
+  --note-line: #e7c766;
+}
+
+html { font-family: "Plex Sans", sans-serif; font-size: 10pt; line-height: 1.5; color: var(--ink); }
+body { margin: 0; }
+
+h1, h2, h3, h4 { font-family: "Grotesk", sans-serif; font-weight: 700; line-height: 1.2; color: var(--navy); break-after: avoid; }
+h2 { font-size: 22pt; margin: 0 0 6mm; break-before: page; padding-top: 2mm; }
+h2 .num { display: block; font-size: 10pt; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 2mm; }
+h3 { font-size: 13.5pt; margin: 7mm 0 2.5mm; }
+h4 { font-size: 11pt; margin: 5mm 0 1.5mm; }
+p { margin: 0 0 2.6mm; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+li { margin: 0 0 1.2mm; }
+strong { font-weight: 600; }
+a { color: var(--accent); text-decoration: none; }
+code { font-family: "Courier Prime", monospace; font-size: 9.5pt; background: #f2f3f7; padding: 0 1mm; border-radius: 1mm; }
+
+.lead { font-size: 11.5pt; color: var(--ink-2); margin-bottom: 5mm; }
+
+/* Touches et éléments de l'interface. */
+kbd { font-family: "Plex Sans", sans-serif; font-size: 8.5pt; font-weight: 600; border: 1px solid #c6c9d6; border-bottom-width: 2px; border-radius: 1.2mm; padding: 0 1.3mm; background: #fafbfd; white-space: nowrap; }
+.ui { font-weight: 600; color: var(--navy); }
+
+figure { margin: 4mm 0 5mm; break-inside: avoid; text-align: center; }
+figure img { max-width: 100%; max-height: 108mm; border: 1px solid var(--line); border-radius: 2mm; box-shadow: 0 1mm 3mm rgba(20, 27, 45, 0.08); }
+figure.small img { max-width: 60%; }
+figure.medium img { max-width: 78%; }
+figure.tall img { max-height: 165mm; }
+figcaption { font-size: 8.8pt; color: var(--ink-2); margin-top: 2mm; font-style: italic; }
+.pair { display: flex; gap: 5mm; align-items: flex-start; break-inside: avoid; }
+.pair figure { flex: 1; margin-top: 2mm; }
+
+.note, .tip, .warn { break-inside: avoid; border-left: 1.2mm solid var(--accent); background: var(--accent-soft); padding: 2.5mm 4mm; margin: 3mm 0 4mm; border-radius: 0 2mm 2mm 0; }
+.note p:last-child, .tip p:last-child, .warn p:last-child { margin-bottom: 0; }
+.tip { border-color: var(--note-line); background: var(--note); }
+.warn { border-color: #c0392b; background: #fdeeee; }
+.note::before, .tip::before, .warn::before { display: block; font-family: "Grotesk", sans-serif; font-weight: 700; font-size: 8.5pt; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1mm; content: attr(data-label); color: var(--accent); }
+.tip::before { color: #9a7400; }
+.warn::before { color: #c0392b; }
+
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 5mm; font-size: 9.3pt; break-inside: auto; }
+th, td { text-align: left; vertical-align: top; padding: 1.6mm 2mm; border-bottom: 1px solid var(--line); }
+th { font-family: "Grotesk", sans-serif; font-weight: 700; color: var(--navy); background: #f5f6fa; }
+tr { break-inside: avoid; }
+td.keys { white-space: nowrap; width: 38%; }
+
+.steps { counter-reset: s; list-style: none; padding-left: 0; }
+.steps > li { counter-increment: s; position: relative; padding-left: 8mm; }
+.steps > li::before { content: counter(s); position: absolute; left: 0; top: 0.2mm; width: 5mm; height: 5mm; border-radius: 50%; background: var(--accent); color: #fff; font-size: 8pt; font-weight: 700; text-align: center; line-height: 5mm; }
+
+/* Couverture. */
+.cover { height: 257mm; display: flex; flex-direction: column; justify-content: space-between; background: var(--navy); color: #f4f0e8; margin: -20mm -18mm 0; padding: 30mm 22mm 24mm; break-after: page; }
+.cover .logo { width: 44mm; }
+.cover .brand { font-family: "Playfair", serif; font-size: 40pt; margin: 8mm 0 0; color: #f4f0e8; }
+.cover .brand em { font-weight: 400; font-style: italic; }
+.cover .slogan { letter-spacing: 0.32em; text-transform: uppercase; font-size: 9pt; color: #c9c6be; margin-top: 2mm; }
+.cover h1 { font-size: 30pt; color: #fff; margin: 0 0 4mm; }
+.cover .sub { font-size: 12pt; color: #d9d6ce; max-width: 130mm; }
+.cover .meta { font-size: 9.5pt; color: #b9b6ae; }
+.cover .star { color: var(--gold); }
+
+/* Sommaire. */
+.toc { break-after: page; }
+.toc h2 { break-before: auto; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li { display: flex; align-items: baseline; gap: 2mm; margin: 0; padding: 1.1mm 0; }
+.toc li.lvl2 { font-family: "Grotesk", sans-serif; font-weight: 700; font-size: 11pt; margin-top: 3mm; color: var(--navy); }
+.toc li.lvl3 { padding-left: 7mm; font-size: 9.6pt; color: var(--ink-2); }
+.toc .dots { flex: 1; border-bottom: 1px dotted #b8bccb; transform: translateY(-1mm); }
+.toc .pg { min-width: 8mm; text-align: right; font-variant-numeric: tabular-nums; }

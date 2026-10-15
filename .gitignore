@@ -3,3 +3,7 @@ dist
 src-tauri/target
 src-tauri/gen
 .DS_Store
+
+# Guide de l’utilisateur : les PDF se refabriquent (npm run guide), on les joint aux Releases
+docs/guide/*.pdf
+docs/guide/.build-*.html

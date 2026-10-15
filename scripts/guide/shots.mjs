@@ -1,0 +1,454 @@
+// Captures d'écran du guide (docs/guide/images/<langue>/), prises sur le projet d'exemple et sur un court
+// scénario importé (docs/guide/exemples/). Il faut l'app servie sur http://localhost:4319 :
+//   npm run build && npx vite preview --port 4319
+// puis : node scripts/guide/shots.mjs fr   (ou en)
+
+import { chromium } from "playwright-core";
+import { mkdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+
+const LANG = process.argv[2] || "fr";
+const FR = LANG === "fr";
+const T = (fr, en) => (FR ? fr : en);
+const root = resolve(import.meta.dirname, "../..");
+const OUT = join(root, "docs/guide/images", LANG);
+const SAMPLE = join(root, "docs/guide/exemples", FR ? "chaperon.fountain" : "chaperon.en.fountain");
+const URL = process.env.GUIDE_URL || "http://localhost:4319/";
+const only = process.argv[3] ? new Set(process.argv[3].split(",")) : null;
+mkdirSync(OUT, { recursive: true });
+
+// Chromium : celui indiqué par CHROMIUM, sinon le Google Chrome installé sur la machine.
+const browser = await chromium.launch(
+  process.env.CHROMIUM
+    ? { executablePath: process.env.CHROMIUM, args: ["--no-sandbox", "--disable-background-networking", "--disable-component-update", "--disable-sync", "--no-first-run"] }
+    : { channel: "chrome" },
+);
+let page;
+async function open(o = {}) {
+  page = await browser.newPage({ viewport: o.viewport ?? { width: 1440, height: 900 }, deviceScaleFactor: o.scale ?? 1.5, locale: FR ? "fr-FR" : "en-US", colorScheme: o.scheme ?? "light", hasTouch: !!o.touch, isMobile: !!o.mobile, acceptDownloads: true });
+  page.on("pageerror", (e) => console.log("PAGEERROR", e.message));
+}
+const wait = (ms) => page.waitForTimeout(ms);
+async function shot(name, o = {}) {
+  if (only && !only.has(name)) return;
+  await wait(o.wait ?? 350);
+  const opts = { path: `${OUT}/${name}.jpg`, type: "jpeg", quality: 82 };
+  if (o.el) await page.locator(o.el).first().screenshot(opts);
+  else if (o.clip) await page.screenshot({ ...opts, clip: o.clip });
+  else await page.screenshot(opts);
+  console.log("shot", name);
+}
+async function union(sels, pad = 24) {
+  const boxes = [];
+  for (const s of sels) {
+    const loc = typeof s === "string" ? page.locator(s).first() : s;
+    const b = await loc.boundingBox({ timeout: 3000 }).catch(() => null);
+    if (b) boxes.push(b);
+  }
+  const vp = page.viewportSize();
+  const x0 = Math.max(0, Math.min(...boxes.map((b) => b.x)) - pad), y0 = Math.max(0, Math.min(...boxes.map((b) => b.y)) - pad);
+  const x1 = Math.min(vp.width, Math.max(...boxes.map((b) => b.x + b.width)) + pad), y1 = Math.min(vp.height, Math.max(...boxes.map((b) => b.y + b.height)) + pad);
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
+async function scrollToText(text, offset = 70) {
+  return page.evaluate(([t, off]) => {
+    const all = [...document.querySelectorAll("article, section, li, div")].filter((a) => a.textContent.includes(t));
+    const el = all.filter((a) => !all.some((b) => b !== a && a.contains(b))).pop();
+    if (!el) return false;
+    const target = el.closest("article") ?? el;
+    let p = target.parentElement;
+    while (p && !(p.scrollHeight > p.clientHeight + 10 && /(auto|scroll)/.test(getComputedStyle(p).overflowY))) p = p.parentElement;
+    const scroller = p ?? document.scrollingElement;
+    scroller.scrollTop = Math.max(0, target.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - off);
+    return true;
+  }, [text, offset]);
+}
+const step = async (name, fn) => { try { await fn(); } catch (e) { console.log("ÉCHEC", name, e.message.split("\n")[0]); } };
+const view = async (v) => { await page.locator("nav button, [aria-label] button", { hasText: v }).first().click(); await wait(1000); };
+const closeDialog = () => page.locator("dialog[open] .app-dialog-actions button").first().click();
+const bg = async () => { await page.mouse.click(900, 200); await wait(200); };
+const fit = async () => { await page.getByRole("button", { name: "Fit View" }).click(); await wait(400); };
+const node = (text) => page.locator(".react-flow__node", { hasText: text }).first();
+async function cardButton(text, label) { const n = node(text); await n.hover(); await n.getByRole("button", { name: label }).click(); }
+
+async function startExample(profile = true) {
+  await page.goto(URL);
+  await wait(600);
+  if (profile) {
+    await page.getByLabel(T("Prénom", "First name"), { exact: true }).fill("Charles");
+    await page.getByLabel(T("Nom", "Last name"), { exact: true }).fill("Perrault");
+    await page.getByLabel(T("Courriel", "Email")).fill(T("charles.perrault@exemple.fr", "charles.perrault@example.com"));
+    await page.locator(".home-create", { hasText: T("Enregistrer", "Save") }).click();
+  }
+  await page.locator(".ghost-button", { hasText: T("Essayer avec un exemple", "Try with an example") }).click();
+  await wait(1500);
+}
+async function closeTour() {
+  const b = page.getByRole("button", { name: T("Fermer la visite", "Close the tour") });
+  if (await b.count()) await b.click();
+  await wait(300);
+}
+
+// Textes du projet d'exemple, dans la langue de l'interface.
+const D = {
+  wolf: T("Compère le Loup", "Old Father Wolf"),
+  idea: T("Et si on racontait", "What if we told"),
+  meeting: T("La rencontre dans le bois", "The meeting in the woods"),
+  mother: T("Elle a cuit des galettes", "She has baked cakes"),
+  grandma: T("Elle est malade et garde le lit", "She is ill and keeps to her bed"),
+  newTitle: T("Le bûcheron", "The woodcutter"),
+  newBody: T("Il coupe du bois avec son frère. Il a vu passer ", "He chops wood with his brother. He saw "),
+  mention: T("@Lou", "@The Wo"),
+  after: T(" ce matin.", " this morning."),
+  search: T("galette", "cake"),
+  find: T("Mère-grand", "Grandmother"),
+  repl: T("grand-mère", "Granny"),
+  lastLine: T("C'est pour te manger.", "All the better to eat you with."),
+};
+
+// ---------------------------------------------------------------------------------------------------
+// Accueil, visite, canevas
+await open();
+await page.goto(URL);
+await wait(800);
+await shot("accueil-vide");
+await startExample();
+await shot("visite");
+await closeTour();
+await shot("canevas");
+
+await step("cartes", async () => {
+  await page.mouse.move(1300, 720);
+  await page.mouse.wheel(0, -500);
+  await wait(500);
+  await page.mouse.dblclick(1080, 230);
+  await wait(700);
+  await page.keyboard.type(D.newTitle);
+  await page.evaluate(() => document.activeElement.closest(".react-flow__node").setAttribute("data-shot", "new"));
+  await wait(400);
+  await page.keyboard.press("Enter");
+  await wait(400);
+  await page.keyboard.type("/");
+  await wait(400);
+  const n = page.locator("[data-shot=new]");
+  await shot("carte-type", { clip: await union([n, "[role=menu], [role=listbox]"]) });
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.type(D.newBody);
+  await page.keyboard.type(D.mention);
+  await wait(400);
+  await shot("carte-mention", { clip: await union([n, "[role=listbox], .suggestion-menu"]) });
+  await page.keyboard.press("Enter");
+  await page.keyboard.type(D.after);
+  await page.mouse.click(1000, 120);
+  await wait(400);
+  await shot("carte-mention-faite", { clip: await union([n], 60) });
+  await fit();
+});
+await step("nouvelle carte", async () => {
+  await page.locator(".add-card-more").click();
+  await wait(300);
+  await shot("nouvelle-carte-menu", { clip: await union([".add-card-more", "[role=menu]"]) });
+  await page.keyboard.press("Escape");
+});
+await step("fils", async () => {
+  await page.mouse.move(300, 250);
+  await page.mouse.wheel(0, -300);
+  await wait(500);
+  await shot("canevas-fils", { clip: { x: 0, y: 70, width: 1000, height: 600 } });
+  await fit();
+});
+await step("menu carte", async () => {
+  const n = node(D.wolf);
+  await n.hover();
+  await n.getByRole("button", { name: T("Plus d’actions", "More actions") }).click();
+  await wait(300);
+  await shot("carte-menu", { clip: await union([n, page.locator("[role=menu]").first()]) });
+  await page.getByRole("menuitem", { name: T("Mettre en avant", "Put in the spotlight") }).click();
+  await wait(500);
+  await shot("mise-en-avant");
+  await page.keyboard.press("Escape");
+  await bg();
+});
+await step("filtre", async () => {
+  const b = page.getByRole("button", { name: T("Filtrer les cartes", "Filter cards") });
+  await b.click();
+  await wait(300);
+  await shot("filtre", { clip: await union([page.locator(".filter-panel, [role=dialog], [role=group]").last(), b], 30) });
+  await page.keyboard.press("Escape");
+});
+await step("sélection et cadre", async () => {
+  await page.keyboard.down("Shift");
+  await page.mouse.move(120, 150);
+  await page.mouse.down();
+  await page.mouse.move(640, 430, { steps: 8 });
+  await page.mouse.up();
+  await page.keyboard.up("Shift");
+  await wait(400);
+  await shot("selection");
+  await page.keyboard.press("c");
+  await wait(600);
+  await page.locator(`[aria-label='${T("Nom du cadre", "Frame name")}']`).first().fill(T("La famille", "The family"), { force: true });
+  await bg();
+  await shot("cadre", { clip: await union([page.locator(".react-flow__node-frame").first()], 30) });
+});
+await step("organiser", async () => {
+  await page.getByRole("button", { name: T("Organiser le canevas", "Organize the canvas") }).click();
+  await wait(900);
+  await fit();
+  await shot("organiser");
+  await page.keyboard.press("Control+z");
+  await wait(600);
+  await fit();
+});
+await step("recherche", async () => {
+  await page.keyboard.press("Control+f");
+  await wait(300);
+  await page.keyboard.type(D.search);
+  await wait(500);
+  await shot("recherche");
+  await page.keyboard.press("Escape");
+});
+await step("cartes agrandies", async () => {
+  await cardButton(D.meeting, T("Agrandir la carte", "Expand card"));
+  await wait(800);
+  await shot("carte-agrandie-scene");
+  await closeDialog();
+  await wait(300);
+  await cardButton(D.mother, T("Agrandir la carte", "Expand card"));
+  await wait(800);
+  await shot("carte-agrandie-personnage", { el: "dialog[open]" });
+  await closeDialog();
+  await wait(300);
+});
+await step("à faire", async () => {
+  await page.getByRole("button", { name: T(/À faire/, /To do/) }).click();
+  await wait(400);
+  await shot("a-faire", { clip: { x: 640, y: 0, width: 800, height: 600 } });
+  await page.keyboard.press("Escape");
+});
+await step("corbeille", async () => {
+  await cardButton(D.idea, T("Supprimer la carte", "Delete card"));
+  await wait(400);
+  await shot("corbeille-message", { clip: { x: 0, y: 600, width: 1440, height: 300 } });
+  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await page.getByRole("button", { name: T(/Corbeille \(/, /Trash \(/) }).click();
+  await wait(500);
+  await shot("corbeille", { el: "dialog[open]" });
+  await closeDialog();
+});
+await step("photos", async () => {
+  await page.locator(".add-card-more").click();
+  await page.getByRole("menuitem", { name: /Image/ }).first().click();
+  await wait(800);
+  await shot("photos", { el: "dialog[open]" });
+  await closeDialog();
+});
+await page.getByRole("button", { name: T("Projets", "Projects") }).click();
+await wait(800);
+await shot("accueil");
+await page.close();
+
+// ---------------------------------------------------------------------------------------------------
+// Bible, Plan, Manuscrit, exports, réglages
+await open();
+await startExample();
+await closeTour();
+await view("Bible");
+await shot("bible-couverture");
+await step("personnage", async () => {
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await wait(900);
+  await scrollToText(D.grandma, 20);
+  await wait(400);
+  await shot("bible-personnage");
+});
+await step("assistant", async () => {
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await wait(600);
+  await page.getByRole("button", { name: T(/Questionner/, /Ask about/) }).first().click();
+  await wait(600);
+  await page.locator(".assistant, .character-assistant").first().scrollIntoViewIfNeeded();
+  await wait(300);
+  await shot("bible-assistant");
+});
+await step("relations", async () => {
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await wait(500);
+  await page.getByRole("button", { name: T("Relations", "Relationships"), exact: true }).first().click();
+  await wait(800);
+  await shot("bible-relations");
+  await page.getByRole("button", { name: T("Fiches", "Sheets"), exact: true }).first().click();
+});
+await step("lieux", async () => {
+  await page.getByRole("button", { name: T(/^Lieux/, /^Places/) }).click();
+  await wait(800);
+  await shot("bible-lieux");
+});
+await step("rubriques", async () => {
+  await page.getByRole("button", { name: T("Choisir et ranger les rubriques", "Choose and order sections") }).click();
+  await wait(400);
+  await shot("bible-rubriques", { clip: { x: 0, y: 64, width: 520, height: 836 } });
+  await page.getByRole("button", { name: T("Terminé", "Done") }).click();
+});
+await view(T("Plan", "Outline"));
+await shot("plan-liste");
+await step("plan", async () => {
+  const sel = page.locator("select").first();
+  await sel.selectOption({ label: "Save the Cat" });
+  await wait(800);
+  await shot("plan-gabarit");
+  await sel.selectOption({ label: T("Trois actes", "Three acts") });
+  await wait(600);
+  await page.getByRole("button", { name: T("Fiches", "Index cards"), exact: true }).click();
+  await wait(800);
+  await shot("plan-fiches");
+  await page.getByRole("button", { name: T("Chronologie", "Timeline"), exact: true }).click();
+  await wait(800);
+  await shot("plan-chronologie");
+  await page.getByRole("button", { name: T("Liste", "List"), exact: true }).click();
+});
+await view(T("Manuscrit", "Manuscript"));
+await shot("manuscrit");
+await shot("manuscrit-colonne", { clip: { x: 0, y: 64, width: 360, height: 836 } });
+await shot("manuscrit-stats", { clip: { x: 1080, y: 64, width: 360, height: 836 } });
+await step("remplacer", async () => {
+  await page.getByRole("button", { name: T("Remplacer", "Replace"), exact: true }).click();
+  await wait(400);
+  await page.keyboard.type(D.find);
+  await page.keyboard.press("Tab");
+  await page.keyboard.type(D.repl);
+  await wait(400);
+  await shot("remplacer", { el: "dialog[open]" });
+  await closeDialog();
+});
+await step("lecture continue", async () => {
+  await page.getByRole("button", { name: T("Lecture continue", "Continuous reading") }).click();
+  await wait(900);
+  await shot("lecture-continue");
+  await page.getByRole("button", { name: T("Une scène par page", "One scene per page") }).click();
+  await wait(500);
+});
+await step("focus", async () => {
+  await page.getByRole("button", { name: T("Mode focus", "Focus mode") }).click();
+  await wait(800);
+  await page.locator(".ProseMirror").first().click();
+  await wait(500);
+  await shot("mode-focus");
+  await page.keyboard.press("Escape");
+  await wait(400);
+});
+await step("exporter", async () => {
+  await page.getByRole("button", { name: T("Exporter", "Export") }).click();
+  await wait(400);
+  await shot("exporter", { clip: await union([".export-panel"], 20) });
+  await page.getByRole("button", { name: T("Livre broché (KDP)…", "Paperback (KDP)…") }).click();
+  await page.waitForSelector(T("text=pages, dos de", "text=pages, spine"), { timeout: 20000 });
+  await shot("livre-broche", { el: "dialog[open]" });
+  await closeDialog();
+});
+await step("réglages", async () => {
+  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await wait(400);
+  await shot("reglages", { clip: await union([".settings-panel"], 20) });
+  await page.getByRole("button", { name: T("Raccourcis clavier", "Keyboard shortcuts") }).click();
+  await wait(400);
+  await shot("raccourcis", { el: "dialog[open]" });
+  await closeDialog();
+  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await page.getByRole("button", { name: T("À propos de MondoWrite", "About MondoWrite") }).click();
+  await wait(400);
+  await shot("a-propos", { el: "dialog[open]" });
+  await closeDialog();
+});
+await step("ia", async () => {
+  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await page.locator(".settings-panel select").last().selectOption({ index: 4 });
+  await wait(300);
+  await page.locator(".settings-panel input").last().fill("gemma3");
+  await wait(300);
+  await shot("reglages-ia", { clip: await union([".settings-panel"], 20) });
+  await page.keyboard.press("Escape");
+  await page.mouse.click(700, 500);
+  await view(T("Canevas", "Canvas"));
+  const b = page.getByRole("button", { name: T("IA", "AI"), exact: true });
+  await b.click();
+  await wait(300);
+  await shot("ia-menu", { clip: await union([b, page.locator("[role=menu], .ai-panel, .settings-panel").last()], 24) });
+});
+await page.close();
+
+// ---------------------------------------------------------------------------------------------------
+// Scénario importé
+await open();
+await page.goto(URL);
+await wait(600);
+await step("import", async () => {
+  const chooser = page.waitForEvent("filechooser");
+  await page.locator(".ghost-button", { hasText: T("Importer un manuscrit", "Import a manuscript") }).click();
+  await (await chooser).setFiles(SAMPLE);
+  await wait(2000);
+  await closeTour();
+});
+await view(T("Scénario", "Screenplay"));
+await shot("scenario");
+await step("complétion", async () => {
+  const target = page.getByText(D.lastLine).last();
+  await target.scrollIntoViewIfNeeded();
+  await wait(300);
+  const bb = await target.boundingBox();
+  await page.mouse.click(bb.x + 40, bb.y + bb.height + 60);
+  await wait(200);
+  await page.keyboard.press("Enter");
+  await page.keyboard.type(T("ext. b", "ext. w"));
+  await wait(600);
+  await shot("scenario-completion");
+  await page.keyboard.press("Escape");
+  for (let i = 0; i < 7; i++) await page.keyboard.press("Backspace");
+  await wait(300);
+});
+await step("page de titre", async () => {
+  await page.locator(`[aria-label='${T("Page de titre du scénario", "Screenplay title page")}']`).first().scrollIntoViewIfNeeded();
+  await wait(400);
+  await shot("scenario-page-titre");
+});
+await step("séquencier", async () => {
+  await view(T("Séquencier", "Step outline"));
+  await shot("sequencier");
+  await page.locator("select").first().selectOption({ index: 1 });
+  await wait(800);
+  await page.getByRole("button", { name: T("Fiches", "Index cards"), exact: true }).click();
+  await wait(600);
+  await shot("sequencier-fiches");
+  await page.getByRole("button", { name: T("Liste", "List"), exact: true }).click();
+});
+await step("export scénario", async () => {
+  await page.getByRole("button", { name: T("Exporter", "Export") }).click();
+  await wait(300);
+  await shot("exporter-scenario", { clip: await union([".export-panel"], 20) });
+  await page.keyboard.press("Escape");
+});
+await step("canevas scénario", async () => {
+  await view(T("Canevas", "Canvas"));
+  await fit();
+  await shot("scenario-canevas");
+  const sc = page.locator(".react-flow__node:has(.type-scene)").nth(1);
+  await sc.hover();
+  await sc.getByRole("button", { name: T("Agrandir la carte", "Expand card") }).click();
+  await wait(800);
+  await shot("carte-agrandie-scenario", { el: "dialog[open]" });
+  await closeDialog();
+});
+await page.close();
+
+// ---------------------------------------------------------------------------------------------------
+// Sombre, téléphone
+await open({ scheme: "dark" });
+await startExample();
+await closeTour();
+await shot("sombre-canevas");
+await view(T("Manuscrit", "Manuscript"));
+await shot("sombre-manuscrit");
+await page.close();
+
+await browser.close();

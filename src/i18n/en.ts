@@ -1400,7 +1400,7 @@ export const en: Messages = {
 
   organize: {
     short: "Organize",
-    button: "Organise the canvas",
+    button: "Organize the canvas",
     hint: "Puts every card in a frame: characters, places, themes, questions, scenes by template beat and chapter, loose ideas. Scenes are linked in order. Undo with Ctrl or Cmd + Z.",
     pages: "Book pages",
   },

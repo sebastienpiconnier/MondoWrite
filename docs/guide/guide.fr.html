@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>MondoWrite, guide de l’utilisateur</title>
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <img class="logo" src="../../src-tauri/icons/icon.svg" alt="">
+    <p class="brand">Mondo<em>Write</em></p>
+    <p class="slogan">Du chaos au monde ordonné</p>
+  </div>
+  <div>
+    <h1>Guide de l’utilisateur</h1>
+    <p class="sub">Tout MondoWrite, pas à pas : le canevas, la Bible, le Plan, le Manuscrit, le Scénario, l’IA facultative et les exports, jusqu’au livre broché prêt pour l’impression.</p>
+  </div>
+  <p class="meta">Version {{VERSION}} <span class="star">✦</span> {{DATE}}</p>
+</section>
+
+<nav class="toc">
+  <h2>Sommaire</h2>
+  <ol>{{TOC}}</ol>
+</nav>
+
+<!-- ===================================================================================== -->
+<h2 id="bienvenue"><span class="num">Chapitre 1</span>Bienvenue dans MondoWrite</h2>
+
+<p class="lead">MondoWrite est un atelier d’écriture pour les romanciers et les scénaristes qui aiment construire leur histoire avant de l’écrire. On commence par poser ses idées en vrac, on les relie, on les range peu à peu, puis on écrit. D’où sa devise : <em>du chaos au monde ordonné</em>.</p>
+
+<h3>Un seul contenu, quatre vues</h3>
+<p>Ton projet est un seul ensemble de cartes et de textes. Les quatre vues de la barre du haut en sont quatre lectures différentes : rien n’est jamais recopié de l’une à l’autre.</p>
+<table>
+  <tr><th>Vue</th><th>À quoi elle sert</th></tr>
+  <tr><td><span class="ui">Canevas</span></td><td>Le tableau libre où naissent les idées : des cartes que l’on pose, relie par des fils et regroupe dans des cadres.</td></tr>
+  <tr><td><span class="ui">Bible</span></td><td>Les fiches de ton monde (personnages, lieux, intrigues, thèmes…), rangées toutes seules par type, avec la couverture du projet en tête.</td></tr>
+  <tr><td><span class="ui">Plan</span></td><td>L’ordre du récit : des gabarits (trois actes, Save the Cat…) où ranger les scènes, des chapitres et une chronologie.</td></tr>
+  <tr><td><span class="ui">Manuscrit</span></td><td>Le texte, scène par scène, mis en pages comme un livre. Dans un projet de scénario, cette vue devient <span class="ui">Scénario</span> et le Plan devient le <span class="ui">Séquencier</span>.</td></tr>
+</table>
+<p>Une scène créée dans le Plan a aussitôt sa carte sur le canevas ; un personnage écrit dans le scénario a sa fiche dans la Bible ; le texte écrit dans une carte Scène est celui du Manuscrit.</p>
+
+<h3>Les principes de l’app</h3>
+<ul>
+  <li><strong>La structure émerge, on ne la configure pas.</strong> Aucun champ obligatoire, aucun formulaire à remplir : une carte naît « Idée » et devient Personnage, Lieu ou Scène quand tu le décides.</li>
+  <li><strong>Trois gestes suffisent :</strong> taper (pour créer et écrire), tirer un fil (pour relier), déposer (une image, un lien, un fichier).</li>
+  <li><strong>Tes textes t’appartiennent :</strong> tout est enregistré dans un dossier de fichiers Markdown, lisibles avec n’importe quel éditeur de texte. Aucun compte, aucun serveur.</li>
+  <li><strong>L’IA est facultative</strong> et ne fait que questionner et proposer. Elle n’écrit jamais à ta place.</li>
+  <li><strong>Souris, doigt ou clavier :</strong> chaque action a un chemin pour chacun. L’app existe en français et en anglais, en clair et en sombre.</li>
+</ul>
+
+<h3>Comment lire ce guide</h3>
+<p>Les captures montrent le projet d’exemple livré avec l’app, <em>Le Petit Chaperon rouge</em> de Charles Perrault (1697), illustré par les gravures de Gustave Doré. Les noms de boutons sont écrits <span class="ui">comme ceci</span>. Les raccourcis sont donnés pour Windows et Linux : <kbd>Ctrl</kbd> ; sur Mac, remplace-le par <kbd>⌘</kbd> (Cmd). <kbd>Maj</kbd> est la touche Majuscule (Shift).</p>
+
+<!-- ===================================================================================== -->
+<h2 id="installer"><span class="num">Chapitre 2</span>Installer et mettre à jour</h2>
+
+<h3>Télécharger l’app</h3>
+<p>MondoWrite est une application de bureau pour macOS, Windows et Linux. Les installeurs sont publiés sur la page des versions du projet : <a href="https://github.com/sebastienpiconnier/MondoWrite/releases">github.com/sebastienpiconnier/MondoWrite/releases</a>. Prends la version la plus récente, puis le fichier qui correspond à ton système :</p>
+<table>
+  <tr><th>Système</th><th>Fichier</th></tr>
+  <tr><td>Mac avec puce Apple (M1 et suivants)</td><td><code>MondoWrite_x.y.z_aarch64.dmg</code></td></tr>
+  <tr><td>Mac avec processeur Intel</td><td><code>MondoWrite_x.y.z_x64.dmg</code></td></tr>
+  <tr><td>Windows</td><td><code>MondoWrite_x.y.z_x64-setup.exe</code> (ou le <code>.msi</code>)</td></tr>
+  <tr><td>Linux</td><td><code>.AppImage</code> (toutes distributions), <code>.deb</code> (Debian, Ubuntu) ou <code>.rpm</code> (Fedora)</td></tr>
+</table>
+<p>Sur Mac, ouvre le <code>.dmg</code> et fais glisser MondoWrite dans le dossier Applications. Sur Windows, lance l’installeur. Sur Linux, rends l’AppImage exécutable ou installe le paquet de ta distribution.</p>
+<div class="tip" data-label="Astuce"><p>Si macOS refuse d’ouvrir une app téléchargée hors de l’App Store, fais un clic droit sur MondoWrite dans Applications, puis <span class="ui">Ouvrir</span>, et confirme. Windows peut afficher un avertissement SmartScreen : <span class="ui">Informations complémentaires</span>, puis <span class="ui">Exécuter quand même</span>.</p></div>
+
+<h3>Les mises à jour</h3>
+<p>Au lancement, l’app regarde (une fois par jour au plus) si une nouvelle version est publiée. Si oui, un bandeau l’annonce : <span class="ui">Mettre à jour</span> télécharge et installe la nouvelle version, après avoir enregistré ton projet ; MondoWrite redémarre tout seul. <span class="ui">Nouveautés</span> ouvre la page de la version, <span class="ui">Plus tard</span> referme le bandeau.</p>
+<p>Tu peux aussi chercher toi-même : <span class="ui">Réglages</span>, section <span class="ui">Mises à jour</span>, bouton <span class="ui">Rechercher les mises à jour</span> (également dans <span class="ui">À propos de MondoWrite</span>). La case <span class="ui">Chercher les mises à jour au lancement</span> désactive la vérification automatique. Rien n’est jamais installé sans ton accord.</p>
+
+<h3>La version navigateur</h3>
+<p>MondoWrite fonctionne aussi dans un navigateur, pour découvrir l’app. Les projets y sont alors gardés dans la mémoire du navigateur, pas dans un dossier : pour un vrai travail, utilise l’app de bureau.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="premiers-pas"><span class="num">Chapitre 3</span>Premiers pas</h2>
+
+<h3>La page des projets</h3>
+<p>MondoWrite s’ouvre toujours sur la page des projets. On y trouve trois blocs : <span class="ui">Tes projets</span> (ceux que tu as ouverts sur cet appareil), <span class="ui">Nouveau projet</span> et <span class="ui">Toi, l’auteur</span>.</p>
+<figure><img src="images/fr/accueil-vide.jpg"><figcaption>La page des projets à la première ouverture.</figcaption></figure>
+
+<h3>Ton profil d’auteur</h3>
+<p>Remplis une fois pour toutes le bloc <span class="ui">Toi, l’auteur</span> : prénom, nom, nom de plume (facultatif : le nom signé sur tes œuvres s’il n’est pas ton nom), courriel, téléphone, adresse. Ces informations restent sur ton appareil, jamais dans un projet. Elles servent à :</p>
+<ul>
+  <li>signer tes exports (le nom de plume s’il existe, sinon prénom et nom) ;</li>
+  <li>remplir la page de garde du manuscrit exporté avec tes coordonnées ;</li>
+  <li>remplir la page de titre de chaque nouveau scénario.</li>
+</ul>
+<p>Une fois enregistré, le profil se résume à ton nom ; <span class="ui">Modifier mon profil</span> le rouvre.</p>
+<figure><img src="images/fr/accueil.jpg"><figcaption>Le profil enregistré et le projet d’exemple dans la liste.</figcaption></figure>
+
+<h3>Créer un projet</h3>
+<ol class="steps">
+  <li>Dans <span class="ui">Nouveau projet</span>, tape un <span class="ui">Titre de travail</span> (tu pourras le changer).</li>
+  <li>Choisis <span class="ui">Un roman</span> ou <span class="ui">Un scénario</span>. Le canevas et la Bible sont les mêmes, seuls l’atelier d’écriture et le vocabulaire changent. Tu pourras basculer plus tard.</li>
+  <li>Clique <span class="ui">Créer le projet</span>, puis choisis le dossier où l’enregistrer. Un projet est un dossier : place-le où tu veux, y compris dans iCloud Drive, Dropbox ou OneDrive.</li>
+</ol>
+<div class="note" data-label="Bon à savoir"><p>Si le dossier choisi contient déjà un projet MondoWrite, l’app l’ouvre au lieu de l’écraser. Créer n’écrase jamais rien.</p></div>
+
+<h3>Ouvrir, retirer un projet</h3>
+<p>Clique un projet de la liste pour l’ouvrir. <span class="ui">Ouvrir un dossier…</span> ouvre un projet qui n’est pas encore dans la liste (copié depuis un autre ordinateur, par exemple). Retirer un projet de la liste ne supprime aucun fichier : il reste dans son dossier.</p>
+
+<h3>Essayer avec un exemple</h3>
+<p><span class="ui">Essayer avec un exemple</span> crée le projet <em>Le Petit Chaperon rouge</em> : des personnages, des lieux, des scènes reliées, un plan en deux chapitres, le texte complet du conte et trois gravures de Doré. C’est le meilleur moyen de découvrir l’app. Une <span class="ui">Visite guidée</span> en six étapes s’ouvre alors ; elle reste disponible dans les <span class="ui">Réglages</span>.</p>
+<figure><img src="images/fr/visite.jpg"><figcaption>La visite guidée présente chaque vue en quelques lignes.</figcaption></figure>
+
+<h3>Importer un manuscrit ou un scénario</h3>
+<p><span class="ui">Importer un manuscrit ou un scénario…</span> crée un projet à partir d’un fichier existant :</p>
+<ul>
+  <li><strong>Word (<code>.docx</code>), Markdown (<code>.md</code>) ou texte (<code>.txt</code>)</strong> : un projet roman. Les chapitres sont reconnus (titres Word, « Chapitre 3 », numéros seuls, sauts de page), les séparateurs comme <code>* * *</code> coupent les scènes, et le titre et « par Untel » en tête deviennent le titre du projet. Un prologue ou un épilogue d’une seule scène devient une page du livre.</li>
+  <li><strong>Fountain (<code>.fountain</code>) ou Final Draft (<code>.fdx</code>)</strong> : un projet scénario, avec ses cartes Scène, Personnage et Décor. Un fichier texte qui contient au moins deux en-têtes de scène (INT., EXT.) est aussi lu comme un scénario.</li>
+</ul>
+<p>L’import se fait toujours dans un dossier vide : il ne remplace jamais un projet existant.</p>
+
+<h3>La barre du haut</h3>
+<p>Une fois un projet ouvert, la barre du haut réunit tout ce qui sert partout :</p>
+<ul>
+  <li>le <strong>titre du projet</strong>, modifiable d’un clic ;</li>
+  <li>les <strong>quatre vues</strong> (<kbd>Ctrl</kbd> <kbd>1</kbd> à <kbd>4</kbd>) ;</li>
+  <li>l’<strong>état de l’enregistrement</strong> (<span class="ui">Enregistré</span>, <span class="ui">Non enregistré</span>, <span class="ui">Enregistrement…</span>) ;</li>
+  <li><span class="ui">Projets</span>, qui enregistre et revient à la liste ; le bouton disquette (<kbd>Ctrl</kbd> <kbd>S</kbd>) ;</li>
+  <li><span class="ui">Exporter</span> ; <span class="ui">À faire</span> (la coche, avec le nombre de choses en attente) ; la loupe de recherche (<kbd>Ctrl</kbd> <kbd>F</kbd>) ; les <span class="ui">Réglages</span> ; et le bouton <span class="ui">IA</span> si tu en as branché une.</li>
+</ul>
+<div class="note" data-label="Enregistrement"><p>Tu n’as jamais besoin d’enregistrer : l’app le fait toute seule, moins d’une seconde après ta dernière modification. Le bouton disquette force un enregistrement immédiat.</p></div>
+
+<!-- ===================================================================================== -->
+<h2 id="canevas"><span class="num">Chapitre 4</span>Le canevas</h2>
+
+<p class="lead">Le canevas est un grand tableau sans bords. On y pose des cartes, on les relie par des fils, on les regroupe dans des cadres. C’est le lieu du chaos fertile.</p>
+<figure><img src="images/fr/canevas.jpg"><figcaption>Le canevas du projet d’exemple : personnages et images en haut, lieux au milieu, scènes en bas, reliés par des fils nommés.</figcaption></figure>
+
+<p>Pour te déplacer, fais glisser le fond (ou deux doigts sur un pavé tactile), et zoome à la molette ou en pinçant. Les boutons <span class="ui">+</span>, <span class="ui">−</span> et le cadre en bas à droite zooment et montrent tout le tableau. La mini-carte en haut à droite montre où tu te trouves ; chaque type de carte y a sa couleur.</p>
+
+<h3>Créer une carte</h3>
+<p>Il y a cinq façons de créer une carte, pour la souris, le doigt et le clavier :</p>
+<ul>
+  <li>un <strong>double-clic</strong> sur le fond, ou un <strong>clic droit</strong> ;</li>
+  <li>un <strong>appui long</strong> au doigt sur une tablette ;</li>
+  <li>le bouton <span class="ui">Nouvelle carte</span>, en bas à gauche ;</li>
+  <li>la touche <kbd>N</kbd>, quand tu n’écris pas dans une carte.</li>
+</ul>
+<p>La carte naît là où tu as cliqué, jamais par-dessus une autre. Le curseur est dans son <strong>titre</strong> ; <kbd>Entrée</kbd> passe au <strong>texte</strong> de la carte.</p>
+<p>La flèche à droite de <span class="ui">Nouvelle carte</span> ouvre la liste de tous les types : une carte vide, un personnage, un lieu, une scène, une intrigue, un thème, une question, une image (photo libre ou image de l’appareil), un lien ou un document PDF.</p>
+<figure class="small"><img src="images/fr/nouvelle-carte-menu.jpg"><figcaption>Le menu de « Nouvelle carte ».</figcaption></figure>
+
+<h3>Les types de carte</h3>
+<table>
+  <tr><th>Type</th><th>Ce qu’il représente</th></tr>
+  <tr><td><span class="ui">Idée</span></td><td>Le type de départ : une note en vrac, qui deviendra autre chose ou restera une idée.</td></tr>
+  <tr><td><span class="ui">Personnage</span></td><td>Une personne de l’histoire, avec sa fiche d’identité, son moteur et son arc dans la Bible.</td></tr>
+  <tr><td><span class="ui">Lieu</span> (<span class="ui">Décor</span> en scénario)</td><td>Un endroit, avec son époque, son ambiance, ce qui s’y passe.</td></tr>
+  <tr><td><span class="ui">Scène</span></td><td>Une scène du récit. Son texte est celui du Manuscrit ou du Scénario.</td></tr>
+  <tr><td><span class="ui">Intrigue</span></td><td>Une ligne d’histoire (principale, secondaire, sentimentale…) avec sa question dramatique.</td></tr>
+  <tr><td><span class="ui">Thème</span></td><td>Une idée qui traverse le récit.</td></tr>
+  <tr><td><span class="ui">Question</span></td><td>Une chose à creuser plus tard. Les questions sont réunies dans « À creuser ».</td></tr>
+  <tr><td><span class="ui">Image</span>, <span class="ui">Lien</span>, <span class="ui">Document</span></td><td>Tes sources : une image, une page web, un PDF, avec l’auteur et la date.</td></tr>
+</table>
+
+<h3>Changer le type : la barre oblique</h3>
+<p>Tape <kbd>/</kbd> au début d’une ligne du texte de la carte (ou dans un titre vide) : le menu <span class="ui">Transformer en…</span> s’ouvre. Choisis avec les flèches et <kbd>Entrée</kbd>, ou à la souris. Au doigt ou à la souris, tu peux aussi toucher l’étiquette du type, en haut à gauche de la carte. Changer de type ne perd rien : le texte et les fils restent.</p>
+<div class="pair">
+  <figure><img src="images/fr/carte-type.jpg"><figcaption>« / » ouvre le menu des types.</figcaption></figure>
+  <figure><img src="images/fr/carte-mention.jpg"><figcaption>« @ » propose les cartes du projet.</figcaption></figure>
+</div>
+
+<h3>Écrire dans une carte</h3>
+<p>Le texte d’une carte se met en forme comme un traitement de texte léger. Sélectionne un passage : une petite barre propose gras, italique, barré, intertitre, liste, case à cocher, citation et <span class="ui">À reprendre</span> (un surlignage pour les passages à retravailler). Tu peux aussi écrire en Markdown, qui se transforme à la frappe : <code>**gras**</code>, <code>*italique*</code>, <code># Titre</code>, <code>- liste</code>, <code>[ ]</code> pour une case à cocher. Un texte Markdown collé est mis en forme de la même façon.</p>
+<p>Une carte dont le texte dépasse une certaine hauteur se replie, avec <span class="ui">Plus de détails</span> pour la déplier ; elle reste dépliée pendant que tu écris.</p>
+
+<h3>Citer une autre carte : @</h3>
+<p>Tape <kbd>@</kbd> (ou <kbd>[[</kbd>, comme dans Obsidian) suivi du début d’un nom : la liste des cartes du projet apparaît. Choisis-en une : son nom s’insère comme une <strong>mention</strong>, et un fil se tire tout seul entre les deux cartes. Si la carte n’existe pas encore, <span class="ui">Créer « … »</span> la crée sur-le-champ.</p>
+<p>Une mention suit sa carte : si tu renommes la carte, le nom change partout où elle est citée ; si tu la supprimes, la mention redevient un simple texte.</p>
+<figure class="small"><img src="images/fr/carte-mention-faite.jpg"><figcaption>La mention « Le Loup » et le fil tiré automatiquement.</figcaption></figure>
+
+<h3>Relier par des fils</h3>
+<p>Survole une carte : un petit rond apparaît au milieu de chaque bord. Tire depuis l’un d’eux jusqu’à une autre carte (n’importe où sur la carte) : un fil les relie. Clique le fil pour lui donner une <strong>étiquette</strong>, la nature du lien : « mère de », « se passe à », « soupçonne »… Ces étiquettes réapparaissent dans la Bible (<span class="ui">Relié à</span>) et sur la carte des relations. Pour retirer un fil, clique-le puis <span class="ui">Délier</span>.</p>
+<figure><img src="images/fr/canevas-fils.jpg"><figcaption>Des fils nommés : « veut la manger », « dévore », « mère de », « habite »…</figcaption></figure>
+
+<h3>Déplacer, élargir, agrandir</h3>
+<ul>
+  <li><strong>Déplacer</strong> : saisis la carte par son en-tête (ou son image) et fais-la glisser.</li>
+  <li><strong>Élargir</strong> : tire la poignée en bas à droite de la carte, ou <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd>. La hauteur suit toujours le texte.</li>
+  <li><strong>Agrandir</strong> : le bouton aux deux flèches (ou <kbd>Ctrl</kbd> <kbd>Entrée</kbd> sur la carte choisie) ouvre la carte en grand, avec toute sa fiche. Un clic à côté la referme.</li>
+</ul>
+<figure class="medium"><img src="images/fr/carte-agrandie-personnage.jpg"><figcaption>Une carte Personnage agrandie : son texte et sa fiche d’identité.</figcaption></figure>
+
+<h3>Le menu ⋯ d’une carte</h3>
+<p>Le bouton <span class="ui">⋯</span> (ou un clic droit hors du texte de la carte) propose :</p>
+<ul>
+  <li><span class="ui">Ajouter une image</span> ou <span class="ui">Changer l’image</span> ;</li>
+  <li><span class="ui">Mettre en avant</span> : les autres cartes s’estompent pour que celle-ci ressorte. <kbd>Échap</kbd> ou un clic sur le fond rétablit tout ;</li>
+  <li><span class="ui">Filtrer sur cette carte</span> : n’afficher que cette carte et ses voisines (reliées par un fil ou une mention) ;</li>
+  <li><span class="ui">Renommer partout…</span> : changer le nom de la carte et le remplacer aussi dans tout le texte (voir le Manuscrit, « Rechercher et remplacer »).</li>
+</ul>
+<div class="pair">
+  <figure><img src="images/fr/carte-menu.jpg"><figcaption>Le menu ⋯ d’une carte.</figcaption></figure>
+  <figure><img src="images/fr/mise-en-avant.jpg"><figcaption>Une carte mise en avant.</figcaption></figure>
+</div>
+<p>Le bouton de fiche (la petite page) d’une carte typée ouvre sa fiche dans la Bible.</p>
+
+<h3>Images, liens et documents</h3>
+<p>Le canevas sert aussi à garder tes sources sous la main :</p>
+<ul>
+  <li><strong>Une image</strong> : dépose un fichier image sur le canevas, colle-la (<kbd>Ctrl</kbd> <kbd>V</kbd>), ou choisis <span class="ui">Image…</span> dans le menu de <span class="ui">Nouvelle carte</span>. Une image déposée sur une carte devient son image. Les images sont copiées dans le dossier du projet, et gardent leurs proportions.</li>
+  <li><strong>Un lien</strong> : colle une adresse web sur le canevas. Une carte Lien naît, avec le titre, l’auteur, la date et l’image de la page. Une adresse collée dans une carte vide en fait la carte Lien elle-même.</li>
+  <li><strong>Un PDF</strong> : dépose-le ou choisis <span class="ui">Document…</span>. La carte Document montre l’aperçu de la première page, le nombre de pages et l’auteur ; <span class="ui">Lire le document</span> l’ouvre dans la liseuse de l’app.</li>
+  <li><strong>Un texte</strong> collé devient une Idée ; un fichier <code>.md</code> ou <code>.txt</code> déposé devient une carte (une note Obsidian garde son titre et son type).</li>
+</ul>
+<h4>Les photos libres</h4>
+<p><span class="ui">Image…</span> ouvre la fenêtre <span class="ui">Photos libres</span> : cherche un mot (« phare, tempête, forêt la nuit… ») et choisis une photo. Trois sources : <strong>Openverse</strong>, sans clé, qui réunit des images sous licence libre (Flickr, Wikimedia, musées) ; <strong>Pixabay</strong> et <strong>Unsplash</strong>, qui demandent une clé gratuite, gardée sur ton appareil. L’auteur, la page et la licence de la photo sont notés dans la fiche de la carte. <span class="ui">Choisir une image sur l’appareil…</span> prend un fichier de ton ordinateur.</p>
+<figure class="medium"><img src="images/fr/photos.jpg"><figcaption>La fenêtre des photos libres.</figcaption></figure>
+
+<h3>Les cadres</h3>
+<p>Un cadre regroupe des cartes sans rien leur imposer : « La famille », « Acte I », « Recherche ». Sélectionne des cartes et appuie sur <kbd>C</kbd> (ou le bouton <span class="ui">Cadre</span>) : le cadre les entoure. Donne-lui un nom dans son en-tête. Déplacer le cadre déplace les cartes qui sont dedans ; tire ses bords pour le redimensionner. Supprimer un cadre ne supprime pas ses cartes.</p>
+<p>Le <strong>cadenas</strong> de l’en-tête verrouille le cadre : ni lui ni ses cartes ne bougent plus, même avec <span class="ui">Organiser</span>. Les cartes restent modifiables, reliables et supprimables.</p>
+<figure class="medium"><img src="images/fr/cadre.jpg"><figcaption>Un cadre « La famille » autour des personnages et des lieux.</figcaption></figure>
+
+<h3>Sélectionner plusieurs cartes</h3>
+<p>À la souris : <kbd>Maj</kbd> + glisser entoure des cartes ; <kbd>Ctrl</kbd> + clic ajoute une carte à la sélection ; <kbd>Ctrl</kbd> <kbd>A</kbd> sélectionne tout, <kbd>Échap</kbd> désélectionne. Au doigt : le bouton <span class="ui">Sélection</span> fait que glisser entoure au lieu de déplacer la vue. Une barre en haut propose alors <span class="ui">Encadrer</span>, <span class="ui">Corbeille</span> et <span class="ui">Désélectionner</span> ; les cartes choisies se déplacent ensemble.</p>
+<figure><img src="images/fr/selection.jpg"><figcaption>Six cartes sélectionnées et la barre de sélection.</figcaption></figure>
+
+<h3>Organiser le canevas</h3>
+<p>Quand tout déborde, <span class="ui">Organiser</span> range toutes les cartes en cadres : personnages, lieux, intrigues, thèmes, questions, images, liens, idées en vrac, et les scènes par case du gabarit et par chapitre, reliées dans l’ordre du récit par des fils « puis ». Les cadres verrouillés restent en place. Une seule annulation (<kbd>Ctrl</kbd> <kbd>Z</kbd>) remet tout comme avant.</p>
+<figure><img src="images/fr/organiser.jpg"><figcaption>Le canevas après « Organiser ».</figcaption></figure>
+
+<h3>Filtrer et rechercher</h3>
+<p><span class="ui">Filtrer</span> masque des types de cartes (rien n’est supprimé) : décoche les types que tu ne veux plus voir. Un bandeau « Filtre actif » le rappelle en haut ; <span class="ui">Tout afficher</span> rétablit tout.</p>
+<p>La loupe (<kbd>Ctrl</kbd> <kbd>F</kbd>) cherche dans les titres et le texte des cartes, sans tenir compte des majuscules ni des accents, et aussi dans le texte des scènes (« dans le texte »). Choisis un résultat : la carte est mise en avant sur le canevas, ou la scène s’ouvre dans le Manuscrit.</p>
+<div class="pair">
+  <figure><img src="images/fr/filtre.jpg"><figcaption>Le filtre par type.</figcaption></figure>
+  <figure><img src="images/fr/recherche.jpg"><figcaption>La recherche, dans les cartes et dans le texte.</figcaption></figure>
+</div>
+
+<h3>Annuler, supprimer, la corbeille</h3>
+<p><span class="ui">Annuler</span> et <span class="ui">Rétablir</span> (en bas, ou <kbd>Ctrl</kbd> <kbd>Z</kbd> et <kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>Z</kbd>) défont et refont les changements du canevas, du plan et de la corbeille. Dans un texte, ces raccourcis annulent la frappe.</p>
+<p>Supprimer une carte (le <span class="ui">×</span> de la carte, ou <kbd>Suppr</kbd>) la met à la <strong>corbeille</strong>, avec sa place et ses fils. Un message propose aussitôt <span class="ui">Annuler</span>. La corbeille s’ouvre depuis les <span class="ui">Réglages</span> (<span class="ui">Corbeille (n)</span>) : <span class="ui">Remettre</span> replace la carte, <span class="ui">Supprimer</span> l’efface pour de bon. Le texte d’une scène n’est jamais perdu avec sa carte.</p>
+<div class="pair">
+  <figure><img src="images/fr/corbeille-message.jpg"><figcaption>Le message après une suppression.</figcaption></figure>
+  <figure><img src="images/fr/corbeille.jpg"><figcaption>La corbeille.</figcaption></figure>
+</div>
+
+<h3>À faire</h3>
+<p>Le bouton <span class="ui">À faire</span> (<kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>L</kbd>) rassemble tout ce qui attend : les cases non cochées de tes cartes, les passages marqués <span class="ui">À reprendre</span> dans le manuscrit, et les questions <span class="ui">À creuser</span> (questions gardées dans une fiche de personnage et cartes Question). Une tâche reste là où tu l’as posée : cocher dans le panneau la coche dans sa carte.</p>
+<figure class="medium"><img src="images/fr/a-faire.jpg"><figcaption>Le panneau « À faire ».</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="bible"><span class="num">Chapitre 5</span>La Bible</h2>
+
+<p class="lead">La Bible rassemble les fiches de ton monde. Elle se construit toute seule : chaque carte typée du canevas y a sa fiche, rangée par type. Rien n’y est recopié : modifier une fiche modifie la carte.</p>
+
+<h3>Le sommaire</h3>
+<p>À gauche, le <strong>sommaire</strong> liste les rubriques avec leur nombre de fiches ; un clic y mène. Dessous, <span class="ui">Nouvelle fiche</span> crée une fiche du type choisi (et donc une carte sur le canevas). <span class="ui">Choisir et ranger les rubriques</span> permet de masquer des rubriques et de changer leur ordre, avec les flèches ; ce réglage vaut aussi pour l’export de la Bible.</p>
+<figure class="small"><img src="images/fr/bible-rubriques.jpg"><figcaption>Choisir et ranger les rubriques.</figcaption></figure>
+
+<h3>La couverture du projet</h3>
+<p>La Bible s’ouvre sur la couverture : la carte d’identité de ton livre, utile pour le présenter à un éditeur, un agent ou un producteur.</p>
+<ul>
+  <li>la <strong>jaquette</strong> : titre, <strong>tagline</strong> (une phrase qui donne envie) et des <strong>pastilles</strong> pour le genre, le public, le format, le point de vue, le temps du récit et le ton (des suggestions sont proposées, ou une saisie libre avec <span class="ui">Autre</span>) ;</li>
+  <li>la <strong>logline</strong> (qui veut quoi, ce qui l’en empêche, ce qu’il risque), le <strong>résumé</strong>, les <strong>comparables</strong> (« Dune » rencontre « Le Nom de la rose ») et la <strong>note d’intention</strong> ;</li>
+  <li>le <strong>volume</strong>, calculé à partir du manuscrit (mots écrits et objectif), et les <strong>thèmes</strong>, qui sont tes cartes Thème.</li>
+</ul>
+<figure><img src="images/fr/bible-couverture.jpg"><figcaption>La couverture du projet, en tête de la Bible.</figcaption></figure>
+
+<h3>La fiche d’un personnage</h3>
+<p>Chaque personnage a une fiche qui va à l’essentiel :</p>
+<ul>
+  <li>son <strong>portrait</strong> (l’image de sa carte, en rond), son rôle, et combien de fois il est cité dans le manuscrit, depuis quelle scène ;</li>
+  <li>son <strong>moteur</strong> : ce qu’il <span class="ui">Veut</span>, ce dont il <span class="ui">A besoin</span>, sa <span class="ui">Blessure</span>. Si son rôle dit « antagoniste », le moteur devient <span class="ui">Motivation</span>, <span class="ui">Force</span>, <span class="ui">Faille</span> ;</li>
+  <li>son <strong>type d’arc</strong>, dessiné : <span class="ui">Positif</span> (il grandit), <span class="ui">Tragique</span> (il chute), <span class="ui">Plat</span> (il ne change pas mais change le monde), et son évolution en quelques mots ;</li>
+  <li>ton <strong>texte</strong> libre (le texte de la carte), modifiable sur place ;</li>
+  <li>la <strong>fiche d’identité</strong>, repliée : genre, âge, métier, surnoms, origine, apparence, personnalité, voix, peur, secret, relations… Tout est facultatif ;</li>
+  <li>la <strong>galerie</strong> de photos de référence (<span class="ui">Ajouter des photos</span>), et les cartes <span class="ui">Relié à</span>, avec l’étiquette de chaque fil.</li>
+</ul>
+<figure><img src="images/fr/bible-personnage.jpg"><figcaption>La fiche de la Mère-grand : portrait, moteur, arc, texte, fiche d’identité, galerie et liens.</figcaption></figure>
+
+<h3>L’assistant personnage</h3>
+<p><span class="ui">Questionner …</span> ouvre l’assistant, qui t’aide à creuser un personnage en te posant des questions, une à la fois. Il ne répond jamais à ta place.</p>
+<ul>
+  <li>Les questions sont rangées par <strong>thèmes</strong> : <span class="ui">L’essentiel</span>, <span class="ui">Passé</span>, <span class="ui">Corps</span>, <span class="ui">Voix</span>, <span class="ui">Quotidien</span>, <span class="ui">Émotions</span>, <span class="ui">Colère</span>, <span class="ui">Relations</span>, <span class="ui">Espoirs</span>, <span class="ui">Façon de penser</span>, <span class="ui">Zones sombres</span>. Chaque thème indique combien de questions ont une réponse.</li>
+  <li>Écris ta réponse, même en trois mots, puis <span class="ui">Ajouter à la fiche</span>. Si la question correspond à un champ de la fiche (« Que veut ce personnage, plus que tout ? » remplit <span class="ui">Veut</span>), la réponse va dans ce champ ; sinon elle est gardée dans <span class="ui">Réponses aux questions</span>, sous la fiche.</li>
+  <li><span class="ui">Je ne sais pas encore</span> garde la question pour plus tard, dans l’onglet <span class="ui">À creuser</span> (et dans « À faire »). <span class="ui">Autre question</span> passe à la suivante.</li>
+  <li>Avec une IA branchée, <span class="ui">Sur mesure</span> demande une question écrite d’après la fiche, et <span class="ui">Synthèse par l’IA</span> remet en ordre ce que tu as écrit (voir le chapitre sur l’IA).</li>
+</ul>
+<figure><img src="images/fr/bible-assistant.jpg"><figcaption>L’assistant pose une question du thème « L’essentiel ».</figcaption></figure>
+
+<h3>La carte des relations</h3>
+<p>Dans la rubrique Personnages, l’onglet <span class="ui">Relations</span> dessine les personnages et les fils qui les relient sur le canevas, avec leurs étiquettes, puis la liste des relations. Tire un fil entre deux personnages et nomme-le (« sœur de », « trahit ») : il apparaît ici. Touche un portrait pour ouvrir sa fiche.</p>
+<figure class="medium"><img src="images/fr/bible-relations.jpg"><figcaption>Les relations entre les personnages du conte.</figcaption></figure>
+
+<h3>Les autres fiches</h3>
+<p>Chaque type a sa fiche, repliée sous le texte :</p>
+<ul>
+  <li><strong>Lieu</strong> : époque, ambiance (sons, odeurs, lumière), ce qui s’y passe, pourquoi il compte. Le nombre de scènes qui s’y déroulent est indiqué.</li>
+  <li><strong>Intrigue</strong> : nature, question dramatique, enjeu, déclencheur, obstacles, point de bascule, résolution.</li>
+  <li><strong>Scène</strong> : son synopsis, son statut et le début de son texte (un clic l’ouvre pour l’écrire).</li>
+  <li><strong>Lien, Image, Document</strong> : adresse, auteur, publication, date de consultation. <span class="ui">Compléter depuis la page</span> va chercher le titre et l’auteur sur la page web.</li>
+</ul>
+<p>Les questions <span class="ui">À creuser</span> et les idées en vrac ont aussi leur rubrique. <span class="ui">Voir sur le canevas</span> montre la carte d’une fiche.</p>
+<figure><img src="images/fr/bible-lieux.jpg"><figcaption>La rubrique des lieux.</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="plan"><span class="num">Chapitre 6</span>Le Plan</h2>
+
+<p class="lead">Le Plan donne une forme au récit : l’ordre des scènes, leur place dans une structure, leurs chapitres. Il ne contient que des scènes : celles du canevas, de la Bible ou du Manuscrit, toujours les mêmes.</p>
+
+<h3>Les gabarits</h3>
+<p>Le menu <span class="ui">Gabarit</span> propose une structure, avec une phrase qui l’explique :</p>
+<ul>
+  <li><span class="ui">Libre</span> : une seule liste, dans l’ordre où tu ranges les scènes ;</li>
+  <li><span class="ui">Trois actes</span> : exposition, élément déclencheur, confrontation, point médian, crise, climax, résolution ;</li>
+  <li><span class="ui">Save the Cat</span> : les quinze étapes de Blake Snyder, de l’image d’ouverture à l’image finale ;</li>
+  <li><span class="ui">Voyage du héros</span> : les douze étapes de Christopher Vogler, d’après Joseph Campbell.</li>
+</ul>
+<p>Chaque case a son nom et une aide (« L’événement qui rompt l’équilibre »). Changer de gabarit ne perd aucun rangement : chaque gabarit garde le sien.</p>
+<figure><img src="images/fr/plan-gabarit.jpg"><figcaption>Le gabarit Save the Cat, ses cases et leur aide.</figcaption></figure>
+
+<h3>Ranger les scènes</h3>
+<p>Dans la présentation <span class="ui">Liste</span>, chaque scène montre son titre, son synopsis, son statut et son chapitre. Pour la déplacer :</p>
+<ul>
+  <li>glisse-la dans une autre case ou à une autre place ;</li>
+  <li>ou utilise ses flèches, ou le menu <span class="ui">Ranger dans</span>.</li>
+</ul>
+<p>Les scènes pas encore rangées attendent dans <span class="ui">À placer</span>, dans l’ordre du canevas. <span class="ui">Nouvelle scène…</span> en bas de chaque case crée une scène directement à cette place (et sa carte sur le canevas). Le bouton aux flèches montre la carte sur le canevas, la corbeille la supprime.</p>
+<figure><img src="images/fr/plan-liste.jpg"><figcaption>Le plan en trois actes, présenté en liste, avec les chapitres.</figcaption></figure>
+
+<h3>Les chapitres</h3>
+<p>Les chapitres découpent le récit. Le menu <span class="ui">Chapitre</span> d’une scène propose <span class="ui">Nouveau chapitre à partir d’ici</span> ; chaque chapitre peut avoir un titre (facultatif). Les chapitres sont numérotés tout seuls, d’après leur place. Supprimer un chapitre rend ses scènes au chapitre précédent : aucune scène n’est supprimée. Dans le Manuscrit, on crée aussi un chapitre au clavier (voir plus loin).</p>
+
+<h3>Liste, fiches, chronologie</h3>
+<p>Trois présentations du même plan :</p>
+<ul>
+  <li><span class="ui">Liste</span>, pour lire et réordonner ;</li>
+  <li><span class="ui">Fiches</span>, comme des fiches bristol posées sur une table ;</li>
+  <li><span class="ui">Chronologie</span> : une colonne par scène, une ligne par intrigue, thème, personnage et lieu. Un rond plein indique un fil entre la carte et la scène, un rond vide que la scène la nomme dans son texte. Touche une case pour tirer le fil ou le retirer.</li>
+</ul>
+<div class="pair">
+  <figure><img src="images/fr/plan-fiches.jpg"><figcaption>Les fiches.</figcaption></figure>
+  <figure><img src="images/fr/plan-chronologie.jpg"><figcaption>La chronologie par intrigue.</figcaption></figure>
+</div>
+<p><span class="ui">Organiser le canevas</span> range aussi le canevas d’après le plan : une case de gabarit, puis un chapitre, par cadre.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="manuscrit"><span class="num">Chapitre 7</span>Le Manuscrit</h2>
+
+<p class="lead">Le Manuscrit est le lieu où l’on écrit, une scène à la fois, dans l’ordre du plan, sur une page mise en forme comme celle d’un livre.</p>
+<figure><img src="images/fr/manuscrit.jpg"><figcaption>La vue Manuscrit : les scènes à gauche, la page au milieu, les statistiques et la scène en cours à droite.</figcaption></figure>
+
+<h3>La colonne des scènes</h3>
+<p>À gauche, toutes les scènes du livre, par chapitre, avec leur nombre de mots. Un clic ouvre une scène. Pour en déplacer une, glisse-la (dans la moitié haute d’une autre scène pour la mettre avant, dans la moitié basse pour la mettre après), ou utilise ses flèches ou <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. Elle prend le chapitre et la case de sa nouvelle voisine. Un chapitre entier se déplace aussi, en glissant son titre ou avec ses flèches.</p>
+<figure class="small"><img src="images/fr/manuscrit-colonne.jpg"><figcaption>La colonne des scènes.</figcaption></figure>
+
+<h3>La page</h3>
+<p>Au-dessus de la page, une barre discrète : les flèches de scène, le titre de la scène, son type de page, son statut, et les boutons <span class="ui">Mode focus</span>, <span class="ui">Lecture continue</span>, <span class="ui">Remplacer</span> et la corbeille. Le numéro et le titre du chapitre sont dans la marge du haut ; la première lettre d’un chapitre devient une lettrine quand tu n’écris pas dans ce paragraphe. Le synopsis de la scène apparaît en filigrane dans une scène encore vide, comme une note de plan.</p>
+
+<h3>Couper une scène, ouvrir un chapitre</h3>
+<p>Tu peux découper le récit sans quitter le clavier :</p>
+<ul>
+  <li><kbd>Entrée</kbd> deux fois (sur une ligne vide) coupe la scène : une nouvelle scène naît, la suite du texte y passe, et sa carte apparaît sur le canevas juste sous la précédente ;</li>
+  <li><kbd>Entrée</kbd> trois fois ouvre un nouveau chapitre ;</li>
+  <li><kbd>Retour arrière</kbd> dans la scène qui vient de naître, encore vide, annule la coupure.</li>
+</ul>
+<p>Un message <span class="ui">Annuler</span> s’affiche dix secondes après chaque coupure.</p>
+
+<h3>Les pages du livre</h3>
+<p>Un livre publié a aussi des pages hors du récit. Le menu <span class="ui">Ajouter une page…</span>, sous la colonne des scènes, en crée : <span class="ui">Page de titre</span>, <span class="ui">Mentions légales</span>, <span class="ui">Dédicace</span>, <span class="ui">Épigraphe</span>, <span class="ui">Prologue</span>, <span class="ui">Épilogue</span>, <span class="ui">Remerciements</span>, <span class="ui">À propos de l’auteur</span>. Elles se placent d’elles-mêmes au début ou à la fin du livre et se composent chacune à sa façon (une dédicace centrée en italique, des mentions légales en petits caractères…). Le menu de type de page, dans la barre, transforme une scène en page du livre et inversement.</p>
+
+<h3>Le statut des scènes</h3>
+<p>Chaque scène a un statut : <span class="ui">Brouillon</span>, <span class="ui">À revoir</span> ou <span class="ui">Terminée</span>. On le choisit partout où l’on voit la scène (la barre du Manuscrit, la carte, la Bible, le Plan), et une pastille de couleur le rappelle dans les listes. Les statistiques comptent les scènes terminées.</p>
+
+<h3>Statistiques et objectifs</h3>
+<p>La colonne de droite affiche les <strong>statistiques</strong> du livre : mots, pages (estimées à 250 mots par page, comme un roman imprimé), temps de lecture, scènes écrites, chapitres, mots par scène, et pour la scène en cours son nombre de mots et sa place dans le livre. Fixe un <span class="ui">Objectif du jour</span> et un <span class="ui">Objectif du livre</span> en nombre de mots : la progression du jour, le nombre de jours d’affilée et l’avancée du livre s’affichent.</p>
+<p>Dessous, <span class="ui">Dans cette scène</span> liste les personnages et les lieux cités dans le texte (un clic montre leur carte), puis le <span class="ui">Synopsis</span> de la scène, modifiable sur place.</p>
+<figure class="small"><img src="images/fr/manuscrit-stats.jpg"><figcaption>Statistiques, objectifs, « Dans cette scène » et synopsis.</figcaption></figure>
+
+<h3>Lecture continue</h3>
+<p><span class="ui">Lecture continue</span> fait défiler tout le livre d’un seul tenant, chapitre après chapitre, avec les séparateurs entre les scènes. Un clic sur un passage le rend modifiable sur place, curseur là où tu as cliqué. <span class="ui">Une scène par page</span> revient à l’affichage habituel.</p>
+<figure><img src="images/fr/lecture-continue.jpg"><figcaption>La lecture continue.</figcaption></figure>
+
+<h3>Le mode focus</h3>
+<p><span class="ui">Mode focus</span> (<kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>F</kbd>) ne garde que la page à l’écran. En haut, deux réglages : <span class="ui">Machine à écrire</span> garde la ligne en cours au milieu de l’écran, et <span class="ui">Mettre en valeur</span> estompe tout sauf la phrase, la ligne ou le paragraphe en cours. <kbd>Échap</kbd> en sort.</p>
+<figure><img src="images/fr/mode-focus.jpg"><figcaption>Le mode focus.</figcaption></figure>
+
+<h3>Typographie à la frappe</h3>
+<p>Pendant que tu écris, MondoWrite pose la bonne typographie : guillemets « » avec leurs espaces insécables, espace fine avant ; ! ?, apostrophe ’, points de suspension …, tiret à partir de deux traits d’union. Le réglage <span class="ui">Typographie à la frappe</span> choisit : selon la langue, française, anglaise (“ ”) ou aucune.</p>
+
+<h3>Rechercher et remplacer</h3>
+<p><span class="ui">Remplacer</span> (<kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>H</kbd>) cherche un mot dans tout le texte ou dans la scène en cours, avec ou sans les cartes. <span class="ui">Respecter la casse</span> et <span class="ui">Mot entier</span> affinent la recherche ; le nombre d’occurrences s’affiche pendant la frappe. Le mot remplacé garde ses majuscules. <span class="ui">Annuler</span> remet tout comme avant. Les mentions @ ne sont jamais touchées : elles suivent déjà leur carte.</p>
+<figure class="small"><img src="images/fr/remplacer.jpg"><figcaption>Rechercher et remplacer.</figcaption></figure>
+
+<h3>Écrire depuis la carte</h3>
+<p>Une carte Scène porte son texte. Sur le canevas, elle montre son synopsis, le début de sa scène et son nombre de mots. Agrandie, elle devient une page où l’on écrit la scène, la même que dans le Manuscrit ; <span class="ui">Ouvrir dans le Manuscrit</span> y mène.</p>
+<figure><img src="images/fr/carte-agrandie-scene.jpg"><figcaption>La scène « La rencontre dans le bois » écrite dans sa carte agrandie.</figcaption></figure>
+
+<h3>Textes sans carte</h3>
+<p>Supprimer une carte Scène ne supprime jamais son texte. Si une scène a perdu sa carte, elle apparaît dans <span class="ui">Textes sans carte</span>, au bas de la colonne : <span class="ui">Recréer la carte</span> la remet dans le livre.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="scenario"><span class="num">Chapitre 8</span>Le Scénario</h2>
+
+<p class="lead">Dans un projet de scénario, le Manuscrit devient la vue <span class="ui">Scénario</span> : un éditeur au format standard du cinéma, qui enregistre le texte en Fountain, un format ouvert lu par Highland, Fade In, WriterSolo, Slugline ou Trelby. Le Plan devient le <span class="ui">Séquencier</span>.</p>
+
+<h3>Passer en scénario</h3>
+<p>Crée un projet en choisissant <span class="ui">Un scénario</span>, importe un fichier Fountain ou Final Draft, ou bascule un projet existant dans <span class="ui">Réglages</span> › <span class="ui">Ce projet</span> › <span class="ui">Type de projet</span>. Le vocabulaire suit : les Lieux s’appellent Décors, le titre d’une carte Scène est son en-tête (« INT. PHARE - NUIT »), et la longueur se compte en pages et en minutes (une page vaut environ une minute), affichée dans la barre du haut.</p>
+
+<h3>L’éditeur</h3>
+<figure><img src="images/fr/scenario.jpg"><figcaption>La vue Scénario : les scènes à gauche, la feuille au milieu, « Dans cette scène » à droite.</figcaption></figure>
+<p>Le scénario est fait d’<strong>éléments</strong> : <span class="ui">En-tête de scène</span>, <span class="ui">Action</span>, <span class="ui">Personnage</span>, <span class="ui">Didascalie</span>, <span class="ui">Dialogue</span>, <span class="ui">Transition</span>. La barre au-dessus de la feuille montre l’élément en cours et permet d’en changer d’un clic. Au clavier :</p>
+<ul>
+  <li><kbd>Tab</kbd> change le type de l’élément (<kbd>Maj</kbd> <kbd>Tab</kbd> dans l’autre sens) ;</li>
+  <li><kbd>Entrée</kbd> passe à l’élément suivant logique : personnage puis dialogue, dialogue puis action… ;</li>
+  <li><kbd>Échap</kbd> sort de la feuille et donne la main à la barre des éléments.</li>
+</ul>
+<p>L’app reconnaît ce que tu tapes : une ligne qui commence par « int. » ou « ext. » devient un en-tête, une parenthèse sous un personnage une didascalie. L’élément en cours d’écriture passe en majuscules quand il le faut. La feuille est découpée en vraies pages (Letter ou A4), avec le numéro de page et la durée en bas.</p>
+
+<h3>La complétion</h3>
+<p>Pendant que tu écris un en-tête ou un nom de personnage, MondoWrite propose les décors et les personnages de la Bible, les moments (JOUR, NUIT…), les extensions (V.O., H.C., SUITE). Choisis avec les flèches et <kbd>Entrée</kbd>. Un nouveau nom propose <span class="ui">Créer la fiche…</span> ou <span class="ui">Créer le décor…</span>.</p>
+<figure><img src="images/fr/scenario-completion.jpg"><figcaption>La complétion propose le décor « Bois » de la Bible.</figcaption></figure>
+<p>Une scène ou un personnage écrits dans le scénario reçoivent leur carte sur le canevas (avec la carte du décor et le fil « se passe à »), sans rien recopier.</p>
+
+<h3>La colonne des scènes et « Dans cette scène »</h3>
+<p>À gauche, la liste des scènes avec leur synopsis et leur page ; un clic y mène. Elles se réordonnent en les glissant, avec leurs flèches ou <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. <span class="ui">+ Synopsis</span> ajoute un synopsis à la scène (une ligne Fountain <code>= …</code>, ignorée à l’impression). À droite, <span class="ui">Dans cette scène</span> montre la carte de la scène, son décor (avec le nombre de scènes qui s’y passent) et les personnages qui parlent, avec leur nombre de répliques.</p>
+
+<h3>Page de titre et options</h3>
+<p>En haut de la feuille, la page de titre se remplit sur place : titre, mention (« Écrit par »), auteur, source, contact, date de la version. Le nom de ton profil y est mis pour chaque nouveau scénario.</p>
+<p>Dans la barre, <span class="ui">Numéros</span> numérote les scènes et <span class="ui">Souligner</span> souligne les en-têtes, à l’écran, dans le PDF et dans l’export Final Draft. <span class="ui">Mode focus</span> et <span class="ui">Remplacer</span> fonctionnent comme dans le Manuscrit. Le format de page (US Letter ou A4) se règle dans <span class="ui">Réglages</span> › <span class="ui">Ce projet</span>.</p>
+<figure><img src="images/fr/scenario-page-titre.jpg"><figcaption>La page de titre du scénario.</figcaption></figure>
+
+<h3>Le séquencier</h3>
+<p>Le séquencier liste les scènes dans l’ordre du scénario, avec leur synopsis, leurs personnages, leur longueur et leur statut. Glisse une scène ou utilise ses flèches pour changer l’ordre du scénario lui-même.</p>
+<p>Le menu <span class="ui">Gabarit</span> propose : aucun, trois actes, Save the Cat, huit séquences (le film en huit séquences d’un quart d’heure) et épisode de série (pré-générique, quatre actes, épilogue). Les cases du gabarit sont des sections du fichier Fountain, que les autres logiciels voient comme de simples sections ; range les scènes avec <span class="ui">Ranger dans</span>, les flèches ou en les glissant. Chaque case affiche son aide et sa durée.</p>
+<div class="pair">
+  <figure><img src="images/fr/sequencier.jpg"><figcaption>Le séquencier en liste.</figcaption></figure>
+  <figure><img src="images/fr/sequencier-fiches.jpg"><figcaption>En fiches, avec le gabarit en trois actes.</figcaption></figure>
+</div>
+
+<h3>Une scène dans sa carte</h3>
+<p>Agrandie, une carte Scène d’un scénario montre son en-tête, son synopsis et un éditeur limité au texte de cette scène, avec la même barre des éléments.</p>
+<figure class="medium"><img src="images/fr/carte-agrandie-scenario.jpg"><figcaption>La scène « EXT. BOIS - JOUR » écrite dans sa carte.</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="ia"><span class="num">Chapitre 9</span>L’IA, facultative</h2>
+
+<p class="lead">MondoWrite fonctionne entièrement sans IA. Si tu en branches une, elle pose des questions et fait des propositions ; elle n’écrit jamais ton texte, et rien ne change sans ton accord.</p>
+
+<h3>Brancher un service</h3>
+<p>Dans <span class="ui">Réglages</span> › <span class="ui">IA (facultative)</span>, choisis un <span class="ui">Service</span> :</p>
+<ul>
+  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong> : des services en ligne. Colle ta <span class="ui">Clé d’API</span> ; elle reste sur ton appareil, jamais dans le projet. Tes cartes ne partent vers le service que lorsque tu lances une action IA.</li>
+  <li><strong>Ollama, LM Studio</strong> : des modèles qui tournent sur ton ordinateur. Tes textes n’en sortent pas. Indique l’adresse du serveur (celle par défaut convient le plus souvent).</li>
+</ul>
+<p><span class="ui">Tester et lister les modèles</span> vérifie la connexion et propose la liste des modèles disponibles. Le bouton <span class="ui">IA</span> apparaît alors dans la barre du haut.</p>
+<div class="pair">
+  <figure><img src="images/fr/reglages-ia.jpg"><figcaption>Brancher Ollama dans les Réglages.</figcaption></figure>
+  <figure><img src="images/fr/ia-menu.jpg"><figcaption>Le menu IA.</figcaption></figure>
+</div>
+
+<h3>Ce que l’IA peut faire</h3>
+<ul>
+  <li><span class="ui">Ranger les idées</span> : propose un type pour chacune de tes idées en vrac (« ce personnage », « ce lieu »), avec sa raison. Applique ou ignore chaque proposition, ou <span class="ui">Tout appliquer</span> ; tout s’annule sur le canevas.</li>
+  <li><span class="ui">Vérifier la cohérence</span> : relève les contradictions possibles entre tes cartes, sous forme de questions. Une question peut devenir une carte Question.</li>
+  <li><strong>Questions sur mesure</strong> : dans l’assistant d’un personnage, <span class="ui">Sur mesure</span> demande une question écrite d’après sa fiche. C’est toi qui réponds.</li>
+  <li><strong>Synthèse</strong> : <span class="ui">Synthèse par l’IA</span> remet en ordre ce que tu as écrit sur un personnage (fiche, notes, réponses), sans rien inventer ; elle n’entre dans la fiche que sur ton clic.</li>
+  <li><strong>Décrire une photo</strong> : agrandis une photo de la galerie, puis <span class="ui">Décrire avec l’IA</span>. Pour un lieu, l’IA relève ce que montre la photo en notes ; pour un personnage, elle propose l’âge apparent et l’apparence, que tu acceptes champ par champ. Elle ne cherche jamais à identifier une personne. Le modèle doit savoir lire les images.</li>
+</ul>
+<p>L’IA nomme toujours les cartes par leur titre. En cas de problème, un message dit ce qui ne va pas : service injoignable, clé refusée, modèle inconnu, limite atteinte.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="exporter"><span class="num">Chapitre 10</span>Exporter et publier</h2>
+
+<p class="lead">Le bouton <span class="ui">Exporter</span> fabrique tes fichiers dans l’app, sans aucun outil externe. Choisis le format : le fichier est enregistré là où tu le décides.</p>
+<figure class="small"><img src="images/fr/exporter.jpg"><figcaption>Le menu Exporter d’un roman.</figcaption></figure>
+
+<h3>Le manuscrit</h3>
+<ul>
+  <li><span class="ui">PDF, format manuscrit</span> : le format attendu par les agents et les éditeurs (dit « Shunn ») : Courier 12, double interligne, alinéas, tes coordonnées en haut à gauche de la page de garde, le nombre de mots arrondi à droite, le titre au milieu et « par » ton nom. Chaque page porte l’en-tête « Nom / TITRE / page », chaque chapitre commence sur une nouvelle page, et un « # » sépare deux scènes. Le PDF a un signet par chapitre.</li>
+  <li><span class="ui">Word (.docx)</span>, à retravailler ou à envoyer ;</li>
+  <li><span class="ui">EPUB (liseuse)</span>, avec sa table des matières ;</li>
+  <li><span class="ui">Markdown</span>, un seul fichier texte.</li>
+</ul>
+<p>Les scènes d’un même chapitre forment un chapitre, séparées par « * * * ». Les pages du livre (dédicace, prologue…) sont à leur place.</p>
+
+<h3>Le livre broché (KDP)</h3>
+<p><span class="ui">Livre broché (KDP)…</span> prépare ton livre pour l’impression à la demande (Amazon KDP) : un PDF d’intérieur prêt à téléverser, et un gabarit de couverture à sa mesure.</p>
+<figure class="medium"><img src="images/fr/livre-broche.jpg"><figcaption>La fenêtre « Livre broché ».</figcaption></figure>
+<h4>Les réglages</h4>
+<ul>
+  <li><span class="ui">Format</span> : 5 × 8, 5,25 × 8, 5,5 × 8,5 ou 6 × 9 pouces (de 127 × 203 à 152 × 229 mm). Le corps du texte et les marges suivent le format.</li>
+  <li><span class="ui">Papier</span> : blanc, crème ou journal. Il fait l’épaisseur du dos.</li>
+  <li><span class="ui">ISBN</span> (facultatif), imprimé sur la page de copyright.</li>
+  <li><span class="ui">Table des matières</span>, <span class="ui">Lettrine au début des chapitres</span>, mention <span class="ui">« œuvre de fiction »</span>, <span class="ui">Mot au lecteur à la fin du livre</span> (« Merci de votre lecture », avec ton <span class="ui">Site web</span> et ta <span class="ui">Lettre d’information</span>), et la liste <span class="ui">Du même auteur</span>.</li>
+</ul>
+<p>Les réglages sont gardés avec le projet. Dès l’ouverture de la fenêtre et à chaque changement, le livre est mis en page : la fenêtre annonce le nombre de pages et la largeur du dos, et prévient si KDP refuserait le livre (moins de 24 pages, ou trop de pages pour ce papier).</p>
+<h4>Ce que contient l’intérieur</h4>
+<ul>
+  <li>Une vraie mise en page de livre : marges en miroir, avec un grand fond (la marge côté reliure) qui grandit avec le nombre de pages, comme KDP le demande ;</li>
+  <li>la page de titre, la page de copyright au dos (la tienne si tu as écrit la page « Mentions légales », sinon une page par défaut : copyright, droits réservés, mention de fiction, ISBN), la dédicace et l’épigraphe en belle page, la table des matières avec les numéros de page ;</li>
+  <li>chaque chapitre en belle page (à droite), la page 1 au début du récit, des titres courants (ton nom sur les pages de gauche, le titre sur celles de droite) et les numéros de page aux coins extérieurs ;</li>
+  <li>un texte justifié et coupé en fin de ligne selon la langue (français ou anglais), sans ligne isolée en haut ou en bas de page, dans la police Crimson Text avec son italique ;</li>
+  <li>les pages de fin : mot au lecteur, remerciements, à propos de l’auteur, « Du même auteur » ; un nombre de pages pair ; un signet par chapitre.</li>
+</ul>
+<h4>Le gabarit de couverture</h4>
+<p><span class="ui">Enregistrer le gabarit de couverture (PDF)</span> donne une page à la taille exacte de ta couverture complète (quatrième, dos, première), fond perdu compris : le dos calculé d’après le nombre de pages et le papier, les zones sûres où garder le texte, la place du code-barres que KDP ajoute, et les mesures écrites dessus. Sers-t’en comme calque guide dans ton logiciel de dessin, puis masque-le avant d’exporter ta couverture. Sous 79 pages, KDP n’accepte pas de texte sur le dos.</p>
+<div class="tip" data-label="Conseil"><p>Remplis les pages « Page de titre », « Mentions légales », « Dédicace » ou « Remerciements » dans le Manuscrit pour qu’elles remplacent celles que MondoWrite fabrique. Vérifie toujours l’aperçu de KDP avant de publier.</p></div>
+
+<h3>Le scénario</h3>
+<ul>
+  <li><span class="ui">PDF, format standard</span> : Courier 12, marges normalisées, une page par minute environ, répliques coupées proprement entre deux pages (« (À SUIVRE) », « (SUITE) ») ;</li>
+  <li><span class="ui">Fountain</span>, le fichier texte du scénario ;</li>
+  <li><span class="ui">Final Draft (FDX)</span>, pour les productions qui l’utilisent.</li>
+</ul>
+<figure class="small"><img src="images/fr/exporter-scenario.jpg"><figcaption>Le menu Exporter d’un scénario.</figcaption></figure>
+
+<h3>La Bible et le canevas</h3>
+<p>La <strong>Bible</strong> s’exporte en PDF, Word ou Markdown : la couverture du projet, puis les rubriques choisies dans la Bible, dans leur ordre, avec les images de chaque fiche et leurs liens. Le <strong>canevas</strong> s’exporte en image PNG de tout le tableau, en PDF standard (A4, à envoyer) ou grand format (A1, à imprimer et afficher au mur), ou en texte des cartes (Word, Markdown), un cadre par partie.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="fichiers"><span class="num">Chapitre 11</span>Tes fichiers</h2>
+
+<p class="lead">Un projet MondoWrite est un dossier ordinaire, rempli de fichiers texte que tu peux ouvrir, copier, sauvegarder ou versionner comme tu veux.</p>
+
+<h3>Le dossier d’un projet</h3>
+<table>
+  <tr><th>Fichier ou dossier</th><th>Contenu</th></tr>
+  <tr><td><code>cosmos.json</code></td><td>Le titre, le type, la place des cartes, les fils, les cadres, le plan, les objectifs, la couverture du projet, les réglages du livre broché.</td></tr>
+  <tr><td><code>cartes/</code></td><td>Une carte par fichier Markdown, avec un petit en-tête (type, titre, image, fiche).</td></tr>
+  <tr><td><code>manuscrit/</code></td><td>Le texte de chaque scène d’un roman, en Markdown.</td></tr>
+  <tr><td><code>scenario.fountain</code></td><td>Le texte du scénario, en Fountain.</td></tr>
+  <tr><td><code>medias/</code></td><td>Les images et les PDF des cartes.</td></tr>
+  <tr><td><code>corbeille/</code></td><td>Les cartes supprimées, en attendant d’être remises ou effacées.</td></tr>
+  <tr><td><code>markdown/</code></td><td>Des copies lisibles du manuscrit, de la bible et du canevas, avec une version par jour.</td></tr>
+</table>
+<p>Une mention d’une carte s’écrit comme un lien Markdown ordinaire : <code>[@Le Loup](cosmos:…)</code>. Tout reste lisible dans n’importe quel éditeur de texte (le nom « cosmos » vient de l’ancien nom de l’app).</p>
+
+<h3>Les copies Markdown et les versions</h3>
+<p>Après chaque enregistrement, l’app de bureau écrit dans <code>markdown/</code> le manuscrit (ou rien pour un scénario, qui est déjà du texte), la bible et le canevas en Markdown, avec des liens entre les fiches. Une copie datée est gardée chaque jour dans <code>markdown/versions/</code> : trente jours, puis une par mois. Ces copies ne sont jamais relues : écris toujours dans l’app. Le réglage <span class="ui">Copies Markdown dans le dossier du projet</span> (<span class="ui">Réglages</span> › <span class="ui">Ce projet</span>) les arrête.</p>
+
+<h3>Modifier hors de MondoWrite</h3>
+<p>Tu peux modifier un fichier du projet avec un autre logiciel, ou depuis un autre ordinateur par un dossier synchronisé. L’app le remarque et reprend la nouvelle version. Si le même fichier a changé des deux côtés, aucun n’est écrasé : la version du disque est gardée, la tienne est enregistrée à côté (« … (MondoWrite).md »), et un bandeau te laisse choisir : <span class="ui">Garder ma version</span> ou <span class="ui">Garder celle du disque</span>.</p>
+
+<h3>Si l’enregistrement échoue</h3>
+<p>Un message sous la barre du haut dit pourquoi (disque plein, droits insuffisants, dossier introuvable) et propose : <span class="ui">Réessayer</span> ; <span class="ui">Indiquer le dossier du projet…</span> s’il a été déplacé ou renommé ; <span class="ui">Exporter une copie…</span> (tout le projet dans un fichier .zip, pour ne rien perdre) ; ou <span class="ui">Revenir aux projets sans enregistrer</span>.</p>
+<div class="tip" data-label="Sauvegardes"><p>Place tes projets dans un dossier synchronisé (iCloud Drive, Dropbox, OneDrive) ou sauvegarde-les régulièrement. Comme ce sont des fichiers texte, ils prennent très peu de place.</p></div>
+
+<!-- ===================================================================================== -->
+<h2 id="reglages"><span class="num">Chapitre 12</span>Réglages et apparence</h2>
+
+<p>Le bouton <span class="ui">Réglages</span> (les curseurs, en haut à droite) ouvre trois colonnes.</p>
+<figure><img src="images/fr/reglages.jpg"><figcaption>Les réglages.</figcaption></figure>
+<table>
+  <tr><th>Réglage</th><th>Effet</th></tr>
+  <tr><td><span class="ui">Ce projet</span></td><td>Type de projet (roman ou scénario) ; pour un scénario, le format de page et les options de numérotation ; les copies Markdown ; la <span class="ui">Corbeille</span>.</td></tr>
+  <tr><td><span class="ui">Langue</span></td><td>Français ou anglais. À la première ouverture, la langue du système.</td></tr>
+  <tr><td><span class="ui">Apparence</span></td><td>Comme le système, claire ou sombre.</td></tr>
+  <tr><td><span class="ui">Typographie à la frappe</span></td><td>Selon la langue, française, anglaise ou aucune.</td></tr>
+  <tr><td><span class="ui">Nom d’auteur</span></td><td>Lu dans ton profil, à modifier sur la page des projets.</td></tr>
+  <tr><td><span class="ui">Photos libres</span></td><td>Les clés Pixabay et Unsplash (Openverse n’en demande pas).</td></tr>
+  <tr><td><span class="ui">IA (facultative)</span></td><td>Le service, la clé ou l’adresse, le modèle.</td></tr>
+  <tr><td><span class="ui">Mises à jour</span></td><td>La recherche au lancement et le bouton de recherche (app de bureau).</td></tr>
+</table>
+<p>En bas : <span class="ui">Visite guidée</span>, <span class="ui">Raccourcis clavier</span> et <span class="ui">À propos de MondoWrite</span>. La langue, l’apparence, les clés et le profil sont des réglages de l’appareil ; le type de projet et le livre broché sont gardés dans le projet.</p>
+
+<h3>Le mode sombre</h3>
+<p>Toute l’app existe en sombre, jusqu’à la page du manuscrit. Choisis <span class="ui">Sombre</span>, ou <span class="ui">Comme le système</span> pour suivre ton ordinateur.</p>
+<div class="pair">
+  <figure><img src="images/fr/sombre-canevas.jpg"><figcaption>Le canevas en sombre.</figcaption></figure>
+  <figure><img src="images/fr/sombre-manuscrit.jpg"><figcaption>Le manuscrit en sombre.</figcaption></figure>
+</div>
+
+<h3>Au doigt</h3>
+<p>Sur un écran tactile, tout se fait au doigt : un appui long crée une carte, toucher l’étiquette d’une carte change son type, le bouton <span class="ui">Sélection</span> permet d’entourer des cartes, et chaque action déclenchée par un glisser-déposer a aussi un bouton.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="raccourcis"><span class="num">Chapitre 13</span>Raccourcis clavier</h2>
+<p>La liste complète s’ouvre à tout moment avec <kbd>Ctrl</kbd> <kbd>/</kbd>. Sur Mac, <kbd>Ctrl</kbd> devient <kbd>⌘</kbd>, <kbd>Alt</kbd> devient <kbd>⌥</kbd>.</p>
+
+<h3>Partout</h3>
+<table>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>/</kbd></td><td>La liste des raccourcis</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>1</kbd> … <kbd>4</kbd></td><td>Canevas, Plan, Bible, Manuscrit</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>F</kbd></td><td>Rechercher une carte ou un passage</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>H</kbd></td><td>Rechercher et remplacer dans le texte</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>L</kbd></td><td>À faire</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>S</kbd></td><td>Enregistrer</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Z</kbd> · <kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>Z</kbd></td><td>Annuler · Rétablir</td></tr>
+</table>
+<h3>Canevas</h3>
+<table>
+  <tr><td class="keys"><kbd>N</kbd></td><td>Nouvelle carte</td></tr>
+  <tr><td class="keys"><kbd>C</kbd></td><td>Nouveau cadre (autour de la sélection)</td></tr>
+  <tr><td class="keys"><kbd>/</kbd></td><td>Changer le type (en début de ligne, ou dans un titre vide)</td></tr>
+  <tr><td class="keys"><kbd>@</kbd> ou <kbd>[[</kbd></td><td>Citer une autre carte</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Entrée</kbd></td><td>Agrandir la carte choisie</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Élargir ou rétrécir la carte</td></tr>
+  <tr><td class="keys"><kbd>Maj</kbd> + glisser</td><td>Entourer plusieurs cartes</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> + clic</td><td>Ajouter une carte à la sélection</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>A</kbd> · <kbd>Échap</kbd></td><td>Tout sélectionner · Tout désélectionner</td></tr>
+  <tr><td class="keys"><kbd>Suppr</kbd></td><td>Mettre la sélection à la corbeille</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>V</kbd></td><td>Coller un lien, une image ou un texte : une carte</td></tr>
+</table>
+<h3>Texte (cartes, Bible, manuscrit)</h3>
+<table>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>B</kbd> · <kbd>Ctrl</kbd> <kbd>I</kbd></td><td>Gras · Italique</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>S</kbd></td><td>Barré</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>1</kbd> … <kbd>3</kbd></td><td>Titre, intertitre</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>8</kbd> · <kbd>7</kbd></td><td>Liste à puces · Liste numérotée</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>9</kbd></td><td>Case à cocher</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>B</kbd></td><td>Citation</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>X</kbd></td><td>Marquer « à reprendre »</td></tr>
+  <tr><td class="keys"><kbd>**</kbd> <kbd>*</kbd> <kbd>#</kbd> <kbd>-</kbd> <kbd>[ ]</kbd></td><td>Markdown à la frappe et au collage</td></tr>
+</table>
+<h3>Manuscrit</h3>
+<table>
+  <tr><td class="keys"><kbd>Entrée</kbd> <kbd>Entrée</kbd></td><td>Couper la scène (sur une ligne vide)</td></tr>
+  <tr><td class="keys"><kbd>Entrée</kbd> <kbd>Entrée</kbd> <kbd>Entrée</kbd></td><td>Nouveau chapitre</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>F</kbd> · <kbd>Échap</kbd></td><td>Mode focus · En sortir</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Déplacer la scène (colonne des scènes)</td></tr>
+</table>
+<h3>Scénario</h3>
+<table>
+  <tr><td class="keys"><kbd>Tab</kbd> · <kbd>Maj</kbd> <kbd>Tab</kbd></td><td>Changer d’élément</td></tr>
+  <tr><td class="keys"><kbd>Entrée</kbd></td><td>Élément suivant</td></tr>
+  <tr><td class="keys"><kbd>Échap</kbd></td><td>Barre des éléments</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Déplacer la scène (colonne des scènes)</td></tr>
+</table>
+
+<!-- ===================================================================================== -->
+<h2 id="faq"><span class="num">Chapitre 14</span>Questions fréquentes</h2>
+
+<h4>Où sont enregistrés mes textes ?</h4>
+<p>Dans le dossier que tu as choisi en créant le projet. Le chemin n’est pas affiché dans l’app : retrouve-le avec <span class="ui">Ouvrir un dossier…</span>, ou cherche le fichier <code>cosmos.json</code> sur ton ordinateur.</p>
+<h4>Comment travailler sur deux ordinateurs ?</h4>
+<p>Place le dossier du projet dans iCloud Drive, Dropbox ou OneDrive, et ouvre-le avec <span class="ui">Ouvrir un dossier…</span> sur l’autre ordinateur. Évite d’écrire sur les deux en même temps : en cas de modification des deux côtés, l’app garde les deux versions et te laisse choisir.</p>
+<h4>J’ai supprimé une carte par erreur.</h4>
+<p><kbd>Ctrl</kbd> <kbd>Z</kbd>, ou le bouton <span class="ui">Annuler</span> du message, ou <span class="ui">Réglages</span> › <span class="ui">Corbeille</span> › <span class="ui">Remettre</span>. Le texte d’une scène n’est jamais effacé avec sa carte.</p>
+<h4>Comment transformer un roman en scénario ?</h4>
+<p><span class="ui">Réglages</span> › <span class="ui">Ce projet</span> › <span class="ui">Type de projet</span>. Les cartes, la Bible et les fichiers ne changent pas. Au premier passage, les scènes deviennent des en-têtes de scénario et leur synopsis les accompagne ; le texte en prose reste dans le manuscrit, disponible si tu reviens au roman.</p>
+<h4>Mon PDF de livre broché a trop peu de pages.</h4>
+<p>KDP demande au moins 24 pages. Un format plus petit (5 × 8) ou une table des matières et des pages de fin ajoutent quelques pages ; sinon, le texte est simplement trop court pour un livre broché.</p>
+<h4>L’IA ne répond pas.</h4>
+<p>Pour Ollama ou LM Studio, vérifie que le logiciel est lancé et qu’un modèle est chargé, puis <span class="ui">Tester et lister les modèles</span>. Pour un service en ligne, vérifie la clé d’API et ton crédit. Le message d’erreur dit ce qui bloque.</p>
+<h4>Ma photo ne se décrit pas.</h4>
+<p>Le modèle choisi doit savoir lire les images (par exemple gemma3, qwen2.5vl ou llava avec Ollama).</p>
+<h4>MondoWrite est-il gratuit ?</h4>
+<p>Oui. MondoWrite est un logiciel libre (licence GNU GPL 3.0 ou ultérieure) : tu peux l’utiliser, l’étudier, le modifier et le partager. Le code source est sur <a href="https://github.com/sebastienpiconnier/MondoWrite">github.com/sebastienpiconnier/MondoWrite</a>. Il est inspiré entre autres par NEO, le logiciel d’écriture de Hugh Howey.</p>
+
+<figure class="medium"><img src="images/fr/a-propos.jpg"><figcaption>À propos de MondoWrite.</figcaption></figure>
+
+</body>
+</html>

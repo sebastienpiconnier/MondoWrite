@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MondoWrite, user guide</title>
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <img class="logo" src="../../src-tauri/icons/icon.svg" alt="">
+    <p class="brand">Mondo<em>Write</em></p>
+    <p class="slogan">From chaos to an ordered world</p>
+  </div>
+  <div>
+    <h1>User guide</h1>
+    <p class="sub">All of MondoWrite, step by step: the canvas, the Bible, the Outline, the Manuscript, the Screenplay, the optional AI and the exports, all the way to a print-ready paperback.</p>
+  </div>
+  <p class="meta">Version {{VERSION}} <span class="star">✦</span> {{DATE}}</p>
+</section>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>{{TOC}}</ol>
+</nav>
+
+<!-- ===================================================================================== -->
+<h2 id="welcome"><span class="num">Chapter 1</span>Welcome to MondoWrite</h2>
+
+<p class="lead">MondoWrite is a writing workshop for novelists and screenwriters who like to build their story before they write it. You start by dropping your ideas anywhere, you connect them, you sort them out little by little, then you write. Hence its motto: <em>from chaos to an ordered world</em>.</p>
+
+<h3>One content, four views</h3>
+<p>Your project is a single set of cards and texts. The four views in the top bar are four ways of reading it: nothing is ever copied from one to another.</p>
+<table>
+  <tr><th>View</th><th>What it is for</th></tr>
+  <tr><td><span class="ui">Canvas</span></td><td>The free board where ideas are born: cards you drop, connect with threads and gather in frames.</td></tr>
+  <tr><td><span class="ui">Bible</span></td><td>The entries of your world (characters, places, plots, themes…), sorted by type on their own, with the project cover at the top.</td></tr>
+  <tr><td><span class="ui">Outline</span></td><td>The order of the story: templates (three acts, Save the Cat…) to place scenes in, chapters and a timeline.</td></tr>
+  <tr><td><span class="ui">Manuscript</span></td><td>The text, scene by scene, laid out like a book. In a screenplay project this view becomes <span class="ui">Screenplay</span> and the Outline becomes the <span class="ui">Step outline</span>.</td></tr>
+</table>
+<p>A scene created in the Outline immediately has its card on the canvas; a character written in the screenplay has its entry in the Bible; the text written in a Scene card is the text of the Manuscript.</p>
+
+<h3>The app’s principles</h3>
+<ul>
+  <li><strong>Structure emerges, you don’t set it up.</strong> No required field, no form to fill in: a card is born an “Idea” and becomes a Character, a Place or a Scene when you decide.</li>
+  <li><strong>Three gestures are enough:</strong> type (to create and write), drag a thread (to connect), drop (an image, a link, a file).</li>
+  <li><strong>Your texts belong to you:</strong> everything is saved in a folder of Markdown files, readable with any text editor. No account, no server.</li>
+  <li><strong>AI is optional</strong> and only asks questions and makes suggestions. It never writes for you.</li>
+  <li><strong>Mouse, finger or keyboard:</strong> every action has a path for each. The app comes in English and French, in light and dark.</li>
+</ul>
+
+<h3>How to read this guide</h3>
+<p>The screenshots show the example project that comes with the app, <em>Little Red Riding Hood</em> by Charles Perrault (1697), illustrated with Gustave Doré’s engravings. Button names are written <span class="ui">like this</span>. Shortcuts are given for Windows and Linux with <kbd>Ctrl</kbd>; on a Mac, use <kbd>⌘</kbd> (Cmd) instead.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="install"><span class="num">Chapter 2</span>Install and update</h2>
+
+<h3>Download the app</h3>
+<p>MondoWrite is a desktop application for macOS, Windows and Linux. The installers are published on the project’s releases page: <a href="https://github.com/sebastienpiconnier/MondoWrite/releases">github.com/sebastienpiconnier/MondoWrite/releases</a>. Take the latest version, then the file for your system:</p>
+<table>
+  <tr><th>System</th><th>File</th></tr>
+  <tr><td>Mac with Apple silicon (M1 and later)</td><td><code>MondoWrite_x.y.z_aarch64.dmg</code></td></tr>
+  <tr><td>Mac with an Intel processor</td><td><code>MondoWrite_x.y.z_x64.dmg</code></td></tr>
+  <tr><td>Windows</td><td><code>MondoWrite_x.y.z_x64-setup.exe</code> (or the <code>.msi</code>)</td></tr>
+  <tr><td>Linux</td><td><code>.AppImage</code> (any distribution), <code>.deb</code> (Debian, Ubuntu) or <code>.rpm</code> (Fedora)</td></tr>
+</table>
+<p>On a Mac, open the <code>.dmg</code> and drag MondoWrite into the Applications folder. On Windows, run the installer. On Linux, make the AppImage executable or install your distribution’s package.</p>
+<div class="tip" data-label="Tip"><p>If macOS refuses to open an app downloaded outside the App Store, right-click MondoWrite in Applications, choose <span class="ui">Open</span> and confirm. Windows may show a SmartScreen warning: <span class="ui">More info</span>, then <span class="ui">Run anyway</span>.</p></div>
+
+<h3>Updates</h3>
+<p>At launch, the app checks (at most once a day) whether a new version has been published. If so, a banner says so: <span class="ui">Update</span> downloads and installs the new version, after saving your project; MondoWrite restarts on its own. <span class="ui">What’s new</span> opens the version’s page, <span class="ui">Later</span> closes the banner.</p>
+<p>You can also check yourself: <span class="ui">Settings</span>, <span class="ui">Updates</span> section, <span class="ui">Check for updates</span> (also in <span class="ui">About MondoWrite</span>). The <span class="ui">Check for updates at launch</span> box turns off the automatic check. Nothing is ever installed without your consent.</p>
+
+<h3>The browser version</h3>
+<p>MondoWrite also works in a web browser, to discover the app. Projects are then kept in the browser’s storage, not in a folder: for real work, use the desktop app.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="first-steps"><span class="num">Chapter 3</span>First steps</h2>
+
+<h3>The projects page</h3>
+<p>MondoWrite always opens on the projects page. It has three blocks: <span class="ui">Your projects</span> (the ones you have opened on this device), <span class="ui">New project</span> and <span class="ui">You, the writer</span>.</p>
+<figure><img src="images/en/accueil-vide.jpg"><figcaption>The projects page the first time you open the app.</figcaption></figure>
+
+<h3>Your writer profile</h3>
+<p>Fill in the <span class="ui">You, the writer</span> block once and for all: first name, last name, pen name (optional: the name you sign your work with, if it isn’t your own), email, phone, address. This information stays on your device, never in a project. It is used to:</p>
+<ul>
+  <li>sign your exports (the pen name if there is one, otherwise first and last name);</li>
+  <li>fill in the cover page of the exported manuscript with your contact details;</li>
+  <li>fill in the title page of every new screenplay.</li>
+</ul>
+<p>Once saved, the profile shrinks to your name; <span class="ui">Edit my profile</span> opens it again.</p>
+<figure><img src="images/en/accueil.jpg"><figcaption>The saved profile and the example project in the list.</figcaption></figure>
+
+<h3>Create a project</h3>
+<ol class="steps">
+  <li>In <span class="ui">New project</span>, type a <span class="ui">Working title</span> (you can change it).</li>
+  <li>Choose <span class="ui">A novel</span> or <span class="ui">A screenplay</span>. The canvas and the Bible are the same, only the writing workshop and the vocabulary change. You can switch later.</li>
+  <li>Click <span class="ui">Create project</span>, then choose the folder to save it in. A project is a folder: put it wherever you like, including iCloud Drive, Dropbox or OneDrive.</li>
+</ol>
+<div class="note" data-label="Good to know"><p>If the chosen folder already contains a MondoWrite project, the app opens it instead of overwriting it. Creating never overwrites anything.</p></div>
+
+<h3>Open or remove a project</h3>
+<p>Click a project in the list to open it. <span class="ui">Open folder…</span> opens a project that isn’t in the list yet (copied from another computer, for example). Removing a project from the list deletes no file: it stays in its folder.</p>
+
+<h3>Try with an example</h3>
+<p><span class="ui">Try with an example</span> creates the <em>Little Red Riding Hood</em> project: characters, places, connected scenes, an outline in two chapters, the complete text of the tale and three engravings by Doré. It is the best way to discover the app. A six-step <span class="ui">Guided tour</span> opens; it stays available in <span class="ui">Settings</span>.</p>
+<figure><img src="images/en/visite.jpg"><figcaption>The guided tour introduces each view in a few lines.</figcaption></figure>
+
+<h3>Import a manuscript or a screenplay</h3>
+<p><span class="ui">Import a manuscript or a screenplay…</span> creates a project from an existing file:</p>
+<ul>
+  <li><strong>Word (<code>.docx</code>), Markdown (<code>.md</code>) or text (<code>.txt</code>)</strong>: a novel project. Chapters are recognised (Word headings, “Chapter 3”, bare numbers, page breaks), separators such as <code>* * *</code> split scenes, and a title and “by So-and-so” at the top become the project title. A prologue or epilogue of a single scene becomes a book page.</li>
+  <li><strong>Fountain (<code>.fountain</code>) or Final Draft (<code>.fdx</code>)</strong>: a screenplay project, with its Scene, Character and Location cards. A text file with at least two scene headings (INT., EXT.) is also read as a screenplay.</li>
+</ul>
+<p>An import always goes into an empty folder: it never replaces an existing project.</p>
+
+<h3>The top bar</h3>
+<p>Once a project is open, the top bar gathers everything you use everywhere:</p>
+<ul>
+  <li>the <strong>project title</strong>, editable with a click;</li>
+  <li>the <strong>four views</strong> (<kbd>Ctrl</kbd> <kbd>1</kbd> to <kbd>4</kbd>);</li>
+  <li>the <strong>save status</strong> (<span class="ui">Saved</span>, <span class="ui">Not saved</span>, <span class="ui">Saving…</span>);</li>
+  <li><span class="ui">Projects</span>, which saves and goes back to the list; the disk button (<kbd>Ctrl</kbd> <kbd>S</kbd>);</li>
+  <li><span class="ui">Export</span>; <span class="ui">To do</span> (the tick, with the number of things waiting); the search magnifier (<kbd>Ctrl</kbd> <kbd>F</kbd>); <span class="ui">Settings</span>; and the <span class="ui">AI</span> button if you have plugged one in.</li>
+</ul>
+<div class="note" data-label="Saving"><p>You never need to save: the app does it on its own, less than a second after your last change. The disk button forces an immediate save.</p></div>
+
+<!-- ===================================================================================== -->
+<h2 id="canvas"><span class="num">Chapter 4</span>The canvas</h2>
+
+<p class="lead">The canvas is a large board with no edges. You drop cards on it, connect them with threads, gather them in frames. It is the place of fertile chaos.</p>
+<figure><img src="images/en/canevas.jpg"><figcaption>The example project’s canvas: characters and images at the top, places in the middle, scenes at the bottom, connected by named threads.</figcaption></figure>
+
+<p>To move around, drag the background (or use two fingers on a trackpad), and zoom with the wheel or by pinching. The <span class="ui">+</span>, <span class="ui">−</span> and frame buttons at the bottom right zoom and show the whole board. The minimap at the top right shows where you are; each card type has its colour there.</p>
+
+<h3>Create a card</h3>
+<p>There are five ways to create a card, for mouse, finger and keyboard:</p>
+<ul>
+  <li>a <strong>double-click</strong> on the background, or a <strong>right-click</strong>;</li>
+  <li>a <strong>long press</strong> with a finger on a tablet;</li>
+  <li>the <span class="ui">New card</span> button, at the bottom left;</li>
+  <li>the <kbd>N</kbd> key, when you are not typing in a card.</li>
+</ul>
+<p>The card is born where you clicked, never on top of another one. The cursor is in its <strong>title</strong>; <kbd>Enter</kbd> moves to the card’s <strong>text</strong>.</p>
+<p>The arrow to the right of <span class="ui">New card</span> opens the list of all types: an empty card, a character, a place, a scene, a plot, a theme, a question, an image (free photo or image from your device), a link or a PDF document.</p>
+<figure class="small"><img src="images/en/nouvelle-carte-menu.jpg"><figcaption>The “New card” menu.</figcaption></figure>
+
+<h3>Card types</h3>
+<table>
+  <tr><th>Type</th><th>What it stands for</th></tr>
+  <tr><td><span class="ui">Idea</span></td><td>The starting type: a loose note, which will become something else or stay an idea.</td></tr>
+  <tr><td><span class="ui">Character</span></td><td>A person in the story, with their character sheet, motor and arc in the Bible.</td></tr>
+  <tr><td><span class="ui">Place</span> (<span class="ui">Location</span> in a screenplay)</td><td>A setting, with its period, atmosphere, what happens there.</td></tr>
+  <tr><td><span class="ui">Scene</span></td><td>A scene of the story. Its text is the Manuscript’s or the Screenplay’s.</td></tr>
+  <tr><td><span class="ui">Plot</span></td><td>A storyline (main, secondary, romantic…) with its dramatic question.</td></tr>
+  <tr><td><span class="ui">Theme</span></td><td>An idea that runs through the story.</td></tr>
+  <tr><td><span class="ui">Question</span></td><td>Something to dig into later. Questions are gathered in “To dig into”.</td></tr>
+  <tr><td><span class="ui">Image</span>, <span class="ui">Link</span>, <span class="ui">Document</span></td><td>Your sources: an image, a web page, a PDF, with author and date.</td></tr>
+</table>
+
+<h3>Change the type: the slash</h3>
+<p>Type <kbd>/</kbd> at the start of a line of the card’s text (or in an empty title): the <span class="ui">Turn into…</span> menu opens. Choose with the arrows and <kbd>Enter</kbd>, or with the mouse. With a finger or the mouse, you can also tap the type label at the top left of the card. Changing the type loses nothing: the text and the threads stay.</p>
+<div class="pair">
+  <figure><img src="images/en/carte-type.jpg"><figcaption>“/” opens the type menu.</figcaption></figure>
+  <figure><img src="images/en/carte-mention.jpg"><figcaption>“@” suggests the project’s cards.</figcaption></figure>
+</div>
+
+<h3>Write in a card</h3>
+<p>A card’s text is formatted like a light word processor. Select a passage: a small bar offers bold, italic, strikethrough, heading, list, checkbox, quote and <span class="ui">To revisit</span> (a highlight for passages to rework). You can also write Markdown, which turns into formatting as you type: <code>**bold**</code>, <code>*italic*</code>, <code># Heading</code>, <code>- list</code>, <code>[ ]</code> for a checkbox. Pasted Markdown text is formatted the same way.</p>
+<p>A card whose text is taller than a certain height folds, with <span class="ui">More details</span> to unfold it; it stays open while you write.</p>
+
+<h3>Mention another card: @</h3>
+<p>Type <kbd>@</kbd> (or <kbd>[[</kbd>, as in Obsidian) followed by the start of a name: the list of the project’s cards appears. Pick one: its name is inserted as a <strong>mention</strong>, and a thread is drawn on its own between the two cards. If the card doesn’t exist yet, <span class="ui">Create “…”</span> creates it on the spot.</p>
+<p>A mention follows its card: if you rename the card, the name changes wherever it is mentioned; if you delete it, the mention becomes plain text again.</p>
+<figure class="small"><img src="images/en/carte-mention-faite.jpg"><figcaption>The “The Wolf” mention.</figcaption></figure>
+
+<h3>Connect with threads</h3>
+<p>Hover over a card: a small dot appears in the middle of each edge. Drag from one of them to another card (anywhere on the card): a thread connects them. Click the thread to give it a <strong>label</strong>, the kind of link: “mother of”, “takes place in”, “suspects”… These labels show up again in the Bible (<span class="ui">Linked to</span>) and on the relationship map. To remove a thread, click it, then <span class="ui">Unlink</span>.</p>
+<figure><img src="images/en/canevas-fils.jpg"><figcaption>Named threads.</figcaption></figure>
+
+<h3>Move, widen, expand</h3>
+<ul>
+  <li><strong>Move</strong>: grab the card by its header (or its image) and drag it.</li>
+  <li><strong>Widen</strong>: drag the handle at the card’s bottom right corner, or <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd>. The height always follows the text.</li>
+  <li><strong>Expand</strong>: the two-arrow button (or <kbd>Ctrl</kbd> <kbd>Enter</kbd> on the selected card) opens the card in large, with its full sheet. A click beside it closes it.</li>
+</ul>
+<figure class="medium"><img src="images/en/carte-agrandie-personnage.jpg"><figcaption>An expanded Character card: its text and its character sheet.</figcaption></figure>
+
+<h3>A card’s ⋯ menu</h3>
+<p>The <span class="ui">⋯</span> button (or a right-click outside the card’s text) offers:</p>
+<ul>
+  <li><span class="ui">Add an image</span> or <span class="ui">Change the image</span>;</li>
+  <li><span class="ui">Put in the spotlight</span>: the other cards fade so this one stands out. <kbd>Esc</kbd> or a click on the background brings everything back;</li>
+  <li><span class="ui">Filter on this card</span>: show only this card and its neighbours (connected by a thread or a mention);</li>
+  <li><span class="ui">Rename everywhere…</span>: change the card’s name and replace it throughout the text too (see the Manuscript, “Find and replace”).</li>
+</ul>
+<div class="pair">
+  <figure><img src="images/en/carte-menu.jpg"><figcaption>A card’s ⋯ menu.</figcaption></figure>
+  <figure><img src="images/en/mise-en-avant.jpg"><figcaption>A card in the spotlight.</figcaption></figure>
+</div>
+<p>The sheet button (the small page) of a typed card opens its entry in the Bible.</p>
+
+<h3>Images, links and documents</h3>
+<p>The canvas also keeps your sources at hand:</p>
+<ul>
+  <li><strong>An image</strong>: drop an image file on the canvas, paste it (<kbd>Ctrl</kbd> <kbd>V</kbd>), or choose <span class="ui">Image…</span> in the <span class="ui">New card</span> menu. An image dropped on a card becomes its image. Images are copied into the project folder and keep their proportions.</li>
+  <li><strong>A link</strong>: paste a web address on the canvas. A Link card is born, with the page’s title, author, date and image. An address pasted into an empty card turns that card itself into a Link.</li>
+  <li><strong>A PDF</strong>: drop it or choose <span class="ui">Document…</span>. The Document card shows a preview of the first page, the page count and the author; <span class="ui">Read the document</span> opens it in the app’s reader.</li>
+  <li><strong>Pasted text</strong> becomes an Idea; a dropped <code>.md</code> or <code>.txt</code> file becomes a card (an Obsidian note keeps its title and type).</li>
+</ul>
+<h4>Free photos</h4>
+<p><span class="ui">Image…</span> opens the <span class="ui">Free photos</span> window: search for a word (“lighthouse, storm, forest at night…”) and pick a photo. Three sources: <strong>Openverse</strong>, with no key, which gathers openly licensed images (Flickr, Wikimedia, museums); <strong>Pixabay</strong> and <strong>Unsplash</strong>, which need a free key, kept on your device. The photo’s author, page and licence are noted in the card’s sheet. <span class="ui">Choose an image on this device…</span> takes a file from your computer.</p>
+<figure class="medium"><img src="images/en/photos.jpg"><figcaption>The free photos window.</figcaption></figure>
+
+<h3>Frames</h3>
+<p>A frame gathers cards without imposing anything on them: “The family”, “Act I”, “Research”. Select cards and press <kbd>C</kbd> (or the <span class="ui">Frame</span> button): the frame surrounds them. Name it in its header. Moving the frame moves the cards inside; drag its edges to resize it. Deleting a frame doesn’t delete its cards.</p>
+<p>The <strong>padlock</strong> in the header locks the frame: neither it nor its cards move any more, even with <span class="ui">Organize</span>. The cards stay editable, connectable and deletable.</p>
+<figure class="medium"><img src="images/en/cadre.jpg"><figcaption>A “The family” frame around the characters and places.</figcaption></figure>
+
+<h3>Select several cards</h3>
+<p>With a mouse: <kbd>Shift</kbd> + drag draws around cards; <kbd>Ctrl</kbd> + click adds a card to the selection; <kbd>Ctrl</kbd> <kbd>A</kbd> selects everything, <kbd>Esc</kbd> deselects. With a finger: the <span class="ui">Select</span> button makes dragging draw around cards instead of moving the view. A bar at the top then offers <span class="ui">Frame</span>, <span class="ui">Trash</span> and <span class="ui">Deselect</span>; the chosen cards move together.</p>
+<figure><img src="images/en/selection.jpg"><figcaption>Six selected cards and the selection bar.</figcaption></figure>
+
+<h3>Organize the canvas</h3>
+<p>When everything overflows, <span class="ui">Organize</span> puts every card in a frame: characters, places, plots, themes, questions, images, links, loose ideas, and scenes by template beat and by chapter, linked in story order by “then” threads. Locked frames stay in place. A single undo (<kbd>Ctrl</kbd> <kbd>Z</kbd>) puts everything back.</p>
+<figure><img src="images/en/organiser.jpg"><figcaption>The canvas after “Organize”.</figcaption></figure>
+
+<h3>Filter and search</h3>
+<p><span class="ui">Filter</span> hides card types (nothing is deleted): untick the types you no longer want to see. A “Filter on” banner reminds you at the top; <span class="ui">Show all</span> brings everything back.</p>
+<p>The magnifier (<kbd>Ctrl</kbd> <kbd>F</kbd>) searches card titles and text, ignoring case and accents, and also the text of scenes (“in the text”). Pick a result: the card is put in the spotlight on the canvas, or the scene opens in the Manuscript.</p>
+<div class="pair">
+  <figure><img src="images/en/filtre.jpg"><figcaption>Filtering by type.</figcaption></figure>
+  <figure><img src="images/en/recherche.jpg"><figcaption>Search, in cards and in the text.</figcaption></figure>
+</div>
+
+<h3>Undo, delete, the trash</h3>
+<p><span class="ui">Undo</span> and <span class="ui">Redo</span> (at the bottom, or <kbd>Ctrl</kbd> <kbd>Z</kbd> and <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd>) undo and redo changes to the canvas, the outline and the trash. Inside a text, these shortcuts undo typing.</p>
+<p>Deleting a card (the card’s <span class="ui">×</span>, or <kbd>Delete</kbd>) moves it to the <strong>trash</strong>, with its place and threads. A message immediately offers <span class="ui">Undo</span>. The trash opens from <span class="ui">Settings</span> (<span class="ui">Trash (n)</span>): <span class="ui">Restore</span> puts the card back, <span class="ui">Delete</span> erases it for good. A scene’s text is never lost with its card.</p>
+<div class="pair">
+  <figure><img src="images/en/corbeille-message.jpg"><figcaption>The message after a deletion.</figcaption></figure>
+  <figure><img src="images/en/corbeille.jpg"><figcaption>The trash.</figcaption></figure>
+</div>
+
+<h3>To do</h3>
+<p>The <span class="ui">To do</span> button (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd>) gathers everything that is waiting: unticked boxes in your cards, passages marked <span class="ui">To revisit</span> in the manuscript, and the questions <span class="ui">To dig into</span> (questions kept in a character’s entry and Question cards). A task stays where you put it: ticking it in the panel ticks it in its card.</p>
+<figure class="medium"><img src="images/en/a-faire.jpg"><figcaption>The “To do” panel.</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="bible"><span class="num">Chapter 5</span>The Bible</h2>
+
+<p class="lead">The Bible gathers the entries of your world. It builds itself: each typed card on the canvas has its entry there, sorted by type. Nothing is copied: editing an entry edits the card.</p>
+
+<h3>The contents</h3>
+<p>On the left, the <strong>contents</strong> list the sections with their number of entries; a click takes you there. Below, <span class="ui">New entry</span> creates an entry of the chosen type (and so a card on the canvas). <span class="ui">Choose and order sections</span> lets you hide sections and change their order with the arrows; this setting also applies to the Bible export.</p>
+<figure class="small"><img src="images/en/bible-rubriques.jpg"><figcaption>Choose and order sections.</figcaption></figure>
+
+<h3>The project cover</h3>
+<p>The Bible opens on the cover: your book’s identity card, useful to present it to a publisher, an agent or a producer.</p>
+<ul>
+  <li>the <strong>jacket</strong>: title, <strong>tagline</strong> (one line that makes people want more) and <strong>chips</strong> for genre, audience, format, point of view, tense and tone (suggestions are offered, or free text with <span class="ui">Other</span>);</li>
+  <li>the <strong>logline</strong> (who wants what, what stands in the way, what is at stake), the <strong>summary</strong>, the <strong>comparable titles</strong> (“Dune” meets “The Name of the Rose”) and the <strong>statement of intent</strong>;</li>
+  <li>the <strong>length</strong>, computed from the manuscript (words written and goal), and the <strong>themes</strong>, which are your Theme cards.</li>
+</ul>
+<figure><img src="images/en/bible-couverture.jpg"><figcaption>The project cover, at the top of the Bible.</figcaption></figure>
+
+<h3>A character’s entry</h3>
+<p>Each character has an entry that gets to the point:</p>
+<ul>
+  <li>their <strong>portrait</strong> (the card’s image, in a circle), their role, and how many times they are mentioned in the manuscript, from which scene;</li>
+  <li>their <strong>motor</strong>: what they <span class="ui">Want</span>, what they <span class="ui">Need</span>, their <span class="ui">Wound</span>. If their role says “antagonist”, the motor becomes <span class="ui">Motivation</span>, <span class="ui">Strength</span>, <span class="ui">Flaw</span>;</li>
+  <li>their <strong>arc type</strong>, drawn: <span class="ui">Positive</span> (they grow), <span class="ui">Tragic</span> (they fall), <span class="ui">Flat</span> (they don’t change but change the world), and their evolution in a few words;</li>
+  <li>your free <strong>text</strong> (the card’s text), editable in place;</li>
+  <li>the folded <strong>character sheet</strong>: gender, age, occupation, nicknames, origin, appearance, personality, voice, fear, secret, relationships… Everything is optional;</li>
+  <li>the <strong>gallery</strong> of reference photos (<span class="ui">Add photos</span>), and the <span class="ui">Linked to</span> cards, with each thread’s label.</li>
+</ul>
+<figure><img src="images/en/bible-personnage.jpg"><figcaption>The Grandmother’s entry: portrait, motor, arc, text, character sheet, gallery and links.</figcaption></figure>
+
+<h3>The character assistant</h3>
+<p><span class="ui">Ask about …</span> opens the assistant, which helps you dig into a character by asking questions, one at a time. It never answers for you.</p>
+<ul>
+  <li>Questions are sorted by <strong>theme</strong>: <span class="ui">The essentials</span>, <span class="ui">Past</span>, <span class="ui">Body</span>, <span class="ui">Voice</span>, <span class="ui">Daily life</span>, <span class="ui">Emotions</span>, <span class="ui">Anger</span>, <span class="ui">Relationships</span>, <span class="ui">Hopes</span>, <span class="ui">Way of thinking</span>, <span class="ui">Dark places</span>. Each theme shows how many questions have an answer.</li>
+  <li>Write your answer, even in three words, then <span class="ui">Add to the entry</span>. If the question matches a field of the sheet, the answer goes into that field; otherwise it is kept in <span class="ui">Answers to questions</span>, below the sheet.</li>
+  <li><span class="ui">I don’t know yet</span> keeps the question for later, in the <span class="ui">To dig into</span> tab (and in “To do”). <span class="ui">Another question</span> moves to the next one.</li>
+  <li>With an AI plugged in, <span class="ui">Tailored</span> asks for a question written from the entry, and <span class="ui">AI summary</span> puts what you wrote in order (see the AI chapter).</li>
+</ul>
+<figure><img src="images/en/bible-assistant.jpg"><figcaption>The assistant asks a question from “The essentials”.</figcaption></figure>
+
+<h3>The relationship map</h3>
+<p>In the Characters section, the <span class="ui">Relationships</span> tab draws the characters and the threads that connect them on the canvas, with their labels, then the list of relationships. Draw a thread between two characters and name it (“sister of”, “betrays”): it shows up here. Tap a portrait to open their entry.</p>
+<figure class="medium"><img src="images/en/bible-relations.jpg"><figcaption>The relationships between the tale’s characters.</figcaption></figure>
+
+<h3>Other entries</h3>
+<p>Each type has its sheet, folded under the text:</p>
+<ul>
+  <li><strong>Place</strong>: period, atmosphere (sounds, smells, light), what happens there, why it matters. The number of scenes set there is shown.</li>
+  <li><strong>Plot</strong>: nature, dramatic question, stakes, trigger, obstacles, turning point, resolution.</li>
+  <li><strong>Scene</strong>: its synopsis, its status and the start of its text (a click opens it to write).</li>
+  <li><strong>Link, Image, Document</strong>: address, author, publication, date accessed. <span class="ui">Fill in from the page</span> fetches the title and author from the web page.</li>
+</ul>
+<p>Questions <span class="ui">To dig into</span> and loose ideas have their own sections too. <span class="ui">Show on canvas</span> shows an entry’s card.</p>
+<figure><img src="images/en/bible-lieux.jpg"><figcaption>The places section.</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="outline"><span class="num">Chapter 6</span>The Outline</h2>
+
+<p class="lead">The Outline shapes the story: the order of scenes, their place in a structure, their chapters. It contains only scenes: those of the canvas, the Bible or the Manuscript, always the same ones.</p>
+
+<h3>Templates</h3>
+<p>The <span class="ui">Template</span> menu offers a structure, with a sentence that explains it:</p>
+<ul>
+  <li><span class="ui">Free</span>: a single list, in the order you arrange the scenes;</li>
+  <li><span class="ui">Three acts</span>: setup, inciting incident, confrontation, midpoint, crisis, climax, resolution;</li>
+  <li><span class="ui">Save the Cat</span>: Blake Snyder’s fifteen beats, from the opening image to the final image;</li>
+  <li><span class="ui">Hero’s journey</span>: Christopher Vogler’s twelve stages, after Joseph Campbell.</li>
+</ul>
+<p>Each beat has a name and a hint. Changing templates loses no arrangement: each template keeps its own.</p>
+<figure><img src="images/en/plan-gabarit.jpg"><figcaption>The Save the Cat template, its beats and their hints.</figcaption></figure>
+
+<h3>Arrange scenes</h3>
+<p>In the <span class="ui">List</span> layout, each scene shows its title, synopsis, status and chapter. To move it:</p>
+<ul>
+  <li>drag it into another beat or to another place;</li>
+  <li>or use its arrows, or the <span class="ui">Move to</span> menu.</li>
+</ul>
+<p>Scenes not yet placed wait in <span class="ui">To place</span>, in canvas order. <span class="ui">New scene…</span> at the bottom of each beat creates a scene right there (and its card on the canvas). The arrow button shows the card on the canvas, the trash button deletes it.</p>
+<figure><img src="images/en/plan-liste.jpg"><figcaption>The three-act outline, as a list, with chapters.</figcaption></figure>
+
+<h3>Chapters</h3>
+<p>Chapters divide the story. A scene’s <span class="ui">Chapter</span> menu offers <span class="ui">New chapter from here</span>; each chapter may have a title (optional). Chapters are numbered automatically, from their place. Deleting a chapter gives its scenes back to the previous chapter: no scene is deleted. In the Manuscript, you can also start a chapter from the keyboard (see below).</p>
+
+<h3>List, index cards, timeline</h3>
+<p>Three layouts of the same outline:</p>
+<ul>
+  <li><span class="ui">List</span>, to read and reorder;</li>
+  <li><span class="ui">Index cards</span>, like cards spread on a table;</li>
+  <li><span class="ui">Timeline</span>: one column per scene, one row per plot, theme, character and place. A filled dot means a thread between the card and the scene, a hollow dot that the scene names it in its text. Tap a cell to draw or remove the thread.</li>
+</ul>
+<div class="pair">
+  <figure><img src="images/en/plan-fiches.jpg"><figcaption>Index cards.</figcaption></figure>
+  <figure><img src="images/en/plan-chronologie.jpg"><figcaption>The timeline by plot.</figcaption></figure>
+</div>
+<p><span class="ui">Organize the canvas</span> also arranges the canvas from the outline: one template beat, then one chapter, per frame.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="manuscript"><span class="num">Chapter 7</span>The Manuscript</h2>
+
+<p class="lead">The Manuscript is where you write, one scene at a time, in outline order, on a page laid out like a book’s.</p>
+<figure><img src="images/en/manuscrit.jpg"><figcaption>The Manuscript view: scenes on the left, the page in the middle, statistics and the current scene on the right.</figcaption></figure>
+
+<h3>The scenes column</h3>
+<p>On the left, all the book’s scenes, by chapter, with their word count. A click opens a scene. To move one, drag it (onto the top half of another scene to put it before, the bottom half to put it after), or use its arrows or <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. It takes the chapter and beat of its new neighbour. A whole chapter moves too, by dragging its title or with its arrows.</p>
+<figure class="small"><img src="images/en/manuscrit-colonne.jpg"><figcaption>The scenes column.</figcaption></figure>
+
+<h3>The page</h3>
+<p>Above the page, a discreet bar: the scene arrows, the scene title, its page type, its status, and the <span class="ui">Focus mode</span>, <span class="ui">Continuous reading</span>, <span class="ui">Replace</span> and trash buttons. The chapter number and title sit in the top margin; the first letter of a chapter becomes a drop cap when you are not writing in that paragraph. The scene’s synopsis shows as a watermark in a scene that is still empty, like an outline note.</p>
+
+<h3>Split a scene, start a chapter</h3>
+<p>You can divide the story without leaving the keyboard:</p>
+<ul>
+  <li><kbd>Enter</kbd> twice (on an empty line) splits the scene: a new scene is born, the rest of the text moves into it, and its card appears on the canvas just below the previous one;</li>
+  <li><kbd>Enter</kbd> three times starts a new chapter;</li>
+  <li><kbd>Backspace</kbd> in the newly born, still empty scene undoes the split.</li>
+</ul>
+<p>An <span class="ui">Undo</span> message shows for ten seconds after each split.</p>
+
+<h3>Book pages</h3>
+<p>A published book also has pages outside the story. The <span class="ui">Add a page…</span> menu, below the scenes column, creates them: <span class="ui">Title page</span>, <span class="ui">Copyright</span>, <span class="ui">Dedication</span>, <span class="ui">Epigraph</span>, <span class="ui">Prologue</span>, <span class="ui">Epilogue</span>, <span class="ui">Acknowledgments</span>, <span class="ui">About the author</span>. They place themselves at the start or end of the book and are each laid out in their own way (a centred italic dedication, a copyright page in small print…). The page type menu, in the bar, turns a scene into a book page and back.</p>
+
+<h3>Scene status</h3>
+<p>Each scene has a status: <span class="ui">Draft</span>, <span class="ui">To revise</span> or <span class="ui">Done</span>. You choose it wherever you see the scene (the Manuscript bar, the card, the Bible, the Outline), and a coloured dot recalls it in lists. The statistics count finished scenes.</p>
+
+<h3>Statistics and goals</h3>
+<p>The right column shows the book’s <strong>statistics</strong>: words, pages (estimated at 250 words a page, like a printed novel), reading time, scenes written, chapters, words per scene, and for the current scene its word count and place in the book. Set a <span class="ui">Daily goal</span> and a <span class="ui">Book goal</span> in words: today’s progress, the number of days in a row and the book’s progress are shown.</p>
+<p>Below, <span class="ui">In this scene</span> lists the characters and places mentioned in the text (a click shows their card), then the scene’s <span class="ui">Synopsis</span>, editable in place.</p>
+<figure class="small"><img src="images/en/manuscrit-stats.jpg"><figcaption>Statistics, goals, “In this scene” and synopsis.</figcaption></figure>
+
+<h3>Continuous reading</h3>
+<p><span class="ui">Continuous reading</span> scrolls the whole book in one go, chapter after chapter, with separators between scenes. A click on a passage makes it editable in place, with the cursor where you clicked. <span class="ui">One scene per page</span> returns to the usual display.</p>
+<figure><img src="images/en/lecture-continue.jpg"><figcaption>Continuous reading.</figcaption></figure>
+
+<h3>Focus mode</h3>
+<p><span class="ui">Focus mode</span> (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd>) keeps only the page on screen. At the top, two settings: <span class="ui">Typewriter</span> keeps the current line in the middle of the screen, and <span class="ui">Highlight</span> fades everything except the current sentence, line or paragraph. <kbd>Esc</kbd> leaves it.</p>
+<figure><img src="images/en/mode-focus.jpg"><figcaption>Focus mode.</figcaption></figure>
+
+<h3>Typography as you type</h3>
+<p>As you write, MondoWrite sets the right typography: curly quotes “ ”, apostrophe ’, ellipsis …, dash from two hyphens, and in French « » with their non-breaking spaces. The <span class="ui">Typography as you type</span> setting chooses: follow the language, French, English or none.</p>
+
+<h3>Find and replace</h3>
+<p><span class="ui">Replace</span> (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>H</kbd>) searches the whole text or the current scene, with or without the cards. <span class="ui">Match case</span> and <span class="ui">Whole word</span> refine the search; the number of matches shows as you type. The replaced word keeps its capitals. <span class="ui">Undo</span> puts everything back. @ mentions are never touched: they already follow their card.</p>
+<figure class="small"><img src="images/en/remplacer.jpg"><figcaption>Find and replace.</figcaption></figure>
+
+<h3>Write from the card</h3>
+<p>A Scene card carries its text. On the canvas, it shows its synopsis, the start of its scene and its word count. Expanded, it becomes a page where you write the scene, the same as in the Manuscript; <span class="ui">Open in Manuscript</span> takes you there.</p>
+<figure><img src="images/en/carte-agrandie-scene.jpg"><figcaption>The scene “The meeting in the woods” written in its expanded card.</figcaption></figure>
+
+<h3>Texts without a card</h3>
+<p>Deleting a Scene card never deletes its text. If a scene has lost its card, it appears in <span class="ui">Texts without a card</span>, at the bottom of the column: <span class="ui">Recreate the card</span> puts it back in the book.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="screenplay"><span class="num">Chapter 8</span>The Screenplay</h2>
+
+<p class="lead">In a screenplay project, the Manuscript becomes the <span class="ui">Screenplay</span> view: an editor in standard film format, which saves the text as Fountain, an open format read by Highland, Fade In, WriterSolo, Slugline or Trelby. The Outline becomes the <span class="ui">Step outline</span>.</p>
+
+<h3>Switch to screenplay</h3>
+<p>Create a project with <span class="ui">A screenplay</span>, import a Fountain or Final Draft file, or switch an existing project in <span class="ui">Settings</span> › <span class="ui">This project</span> › <span class="ui">Project type</span>. The vocabulary follows: Places are called Locations, a Scene card’s title is its heading (“INT. LIGHTHOUSE - NIGHT”), and length is counted in pages and minutes (one page is about one minute), shown in the top bar.</p>
+
+<h3>The editor</h3>
+<figure><img src="images/en/scenario.jpg"><figcaption>The Screenplay view: scenes on the left, the page in the middle, “In this scene” on the right.</figcaption></figure>
+<p>The screenplay is made of <strong>elements</strong>: <span class="ui">Scene heading</span>, <span class="ui">Action</span>, <span class="ui">Character</span>, <span class="ui">Parenthetical</span>, <span class="ui">Dialogue</span>, <span class="ui">Transition</span>. The bar above the page shows the current element and lets you change it with a click. From the keyboard:</p>
+<ul>
+  <li><kbd>Tab</kbd> changes the element type (<kbd>Shift</kbd> <kbd>Tab</kbd> the other way);</li>
+  <li><kbd>Enter</kbd> moves to the next logical element: character then dialogue, dialogue then action…;</li>
+  <li><kbd>Esc</kbd> leaves the page and hands over to the element bar.</li>
+</ul>
+<p>The app recognises what you type: a line starting with “int.” or “ext.” becomes a heading, a parenthesis under a character a parenthetical. The element you are writing switches to capitals when needed. The page is cut into real pages (Letter or A4), with the page number and length at the bottom.</p>
+
+<h3>Autocomplete</h3>
+<p>While you write a heading or a character name, MondoWrite suggests the locations and characters from the Bible, times of day (DAY, NIGHT…), extensions (V.O., O.S., CONT’D). Choose with the arrows and <kbd>Enter</kbd>. A new name offers to create its entry or location.</p>
+<figure><img src="images/en/scenario-completion.jpg"><figcaption>Autocomplete suggests the “Woods” location from the Bible.</figcaption></figure>
+<p>A scene or a character written in the screenplay gets its card on the canvas (with the location’s card and the “takes place in” thread), without anything being copied.</p>
+
+<h3>The scenes column and “In this scene”</h3>
+<p>On the left, the list of scenes with their synopsis and page; a click takes you there. They reorder by dragging, with their arrows or <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. <span class="ui">+ Synopsis</span> adds a synopsis to the scene (a Fountain <code>= …</code> line, ignored when printing). On the right, <span class="ui">In this scene</span> shows the scene’s card, its location (with the number of scenes set there) and the characters who speak, with their number of lines.</p>
+
+<h3>Title page and options</h3>
+<p>At the top of the page, the title page is filled in place: title, credit (“Written by”), author, source, contact, draft date. Your profile’s name is put there for every new screenplay.</p>
+<p>In the bar, <span class="ui">Numbers</span> numbers the scenes and <span class="ui">Underline</span> underlines the headings, on screen, in the PDF and in the Final Draft export. <span class="ui">Focus mode</span> and <span class="ui">Replace</span> work as in the Manuscript. The page size (US Letter or A4) is set in <span class="ui">Settings</span> › <span class="ui">This project</span>.</p>
+<figure><img src="images/en/scenario-page-titre.jpg"><figcaption>The screenplay’s title page.</figcaption></figure>
+
+<h3>The step outline</h3>
+<p>The step outline lists the scenes in screenplay order, with their synopsis, characters, length and status. Drag a scene or use its arrows to change the order of the screenplay itself.</p>
+<p>The <span class="ui">Template</span> menu offers: none, three acts, Save the Cat, eight sequences (the film in eight sequences of about fifteen minutes) and TV episode (teaser, four acts, tag). The template’s beats are sections of the Fountain file, which other software sees as plain sections; place scenes with <span class="ui">Move to</span>, the arrows or by dragging. Each beat shows its hint and its length.</p>
+<div class="pair">
+  <figure><img src="images/en/sequencier.jpg"><figcaption>The step outline as a list.</figcaption></figure>
+  <figure><img src="images/en/sequencier-fiches.jpg"><figcaption>As index cards, with the three-act template.</figcaption></figure>
+</div>
+
+<h3>A scene in its card</h3>
+<p>Expanded, a screenplay Scene card shows its heading, its synopsis and an editor limited to the text of that scene, with the same element bar.</p>
+<figure class="medium"><img src="images/en/carte-agrandie-scenario.jpg"><figcaption>The scene “EXT. WOODS - DAY” written in its card.</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="ai"><span class="num">Chapter 9</span>AI, optional</h2>
+
+<p class="lead">MondoWrite works entirely without AI. If you plug one in, it asks questions and makes suggestions; it never writes your text, and nothing changes without your say.</p>
+
+<h3>Plug in a service</h3>
+<p>In <span class="ui">Settings</span> › <span class="ui">AI (optional)</span>, choose a <span class="ui">Service</span>:</p>
+<ul>
+  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: online services. Paste your <span class="ui">API key</span>; it stays on your device, never in the project. Your cards are only sent to the service when you run an AI action.</li>
+  <li><strong>Ollama, LM Studio</strong>: models running on your computer. Your texts never leave it. Give the server address (the default one usually works).</li>
+</ul>
+<p><span class="ui">Test and list models</span> checks the connection and offers the list of available models. The <span class="ui">AI</span> button then appears in the top bar.</p>
+<div class="pair">
+  <figure><img src="images/en/reglages-ia.jpg"><figcaption>Plugging in Ollama in Settings.</figcaption></figure>
+  <figure><img src="images/en/ia-menu.jpg"><figcaption>The AI menu.</figcaption></figure>
+</div>
+
+<h3>What the AI can do</h3>
+<ul>
+  <li><span class="ui">Tidy up ideas</span>: suggests a type for each of your loose ideas (“this one is a character”, “this one a place”), with its reason. Apply or ignore each suggestion, or <span class="ui">Apply all</span>; everything can be undone on the canvas.</li>
+  <li><span class="ui">Check consistency</span>: points out possible contradictions between your cards, as questions. A question can become a Question card.</li>
+  <li><strong>Tailored questions</strong>: in a character’s assistant, <span class="ui">Tailored</span> asks for a question written from their entry. You answer.</li>
+  <li><strong>Summary</strong>: <span class="ui">AI summary</span> puts in order what you wrote about a character (sheet, notes, answers), inventing nothing; it only goes into the entry when you click.</li>
+  <li><strong>Describe a photo</strong>: enlarge a photo in the gallery, then <span class="ui">Describe with AI</span>. For a place, the AI notes what the photo shows; for a character, it suggests the apparent age and appearance, which you accept field by field. It never tries to identify a person. The model must be able to read images.</li>
+</ul>
+<p>The AI always names cards by their title. When something goes wrong, a message says what: service unreachable, key rejected, unknown model, limit reached.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="export"><span class="num">Chapter 10</span>Export and publish</h2>
+
+<p class="lead">The <span class="ui">Export</span> button makes your files inside the app, with no external tool. Choose the format: the file is saved wherever you decide.</p>
+<figure class="small"><img src="images/en/exporter.jpg"><figcaption>The Export menu of a novel.</figcaption></figure>
+
+<h3>The manuscript</h3>
+<ul>
+  <li><span class="ui">PDF, manuscript format</span>: the format agents and editors expect (known as “Shunn”): Courier 12, double spacing, indents, your contact details at the top left of the cover page, the rounded word count on the right, the title in the middle and “by” your name. Each page has the header “Name / TITLE / page”, each chapter starts on a new page, and a “#” separates two scenes. The PDF has a bookmark per chapter.</li>
+  <li><span class="ui">Word (.docx)</span>, to rework or send;</li>
+  <li><span class="ui">EPUB (e-reader)</span>, with its table of contents;</li>
+  <li><span class="ui">Markdown</span>, a single text file.</li>
+</ul>
+<p>Scenes of the same chapter form one chapter, separated by “* * *”. Book pages (dedication, prologue…) are in their place.</p>
+
+<h3>The paperback (KDP)</h3>
+<p><span class="ui">Paperback (KDP)…</span> prepares your book for print on demand (Amazon KDP): a print-ready interior PDF, and a cover template sized to it.</p>
+<figure class="medium"><img src="images/en/livre-broche.jpg"><figcaption>The “Paperback” window.</figcaption></figure>
+<h4>Settings</h4>
+<ul>
+  <li><span class="ui">Trim size</span>: 5 × 8, 5.25 × 8, 5.5 × 8.5 or 6 × 9 inches. The type size and margins follow the trim.</li>
+  <li><span class="ui">Paper</span>: white, cream or groundwood. It sets the spine thickness.</li>
+  <li><span class="ui">ISBN</span> (optional), printed on the copyright page.</li>
+  <li><span class="ui">Table of contents</span>, <span class="ui">Drop cap at the start of chapters</span>, the <span class="ui">“Work of fiction”</span> notice, <span class="ui">A note to the reader at the end of the book</span> (“Thank You for Reading”, with your <span class="ui">Website</span> and <span class="ui">Newsletter</span>), and the <span class="ui">Also by</span> list.</li>
+</ul>
+<p>The settings are kept with the project. As soon as the window opens, and at each change, the book is laid out: the window shows the page count and spine width, and warns if KDP would refuse the book (fewer than 24 pages, or too many pages for this paper).</p>
+<h4>What the interior contains</h4>
+<ul>
+  <li>A real book layout: mirror margins, with a gutter (the margin on the binding side) that grows with the page count, as KDP requires;</li>
+  <li>the title page, the copyright page on its back (yours if you wrote the “Copyright” page, otherwise a default page: copyright, all rights reserved, fiction notice, ISBN), the dedication and epigraph on right-hand pages, the table of contents with page numbers;</li>
+  <li>each chapter on a right-hand page, page 1 at the start of the story, running heads (your name on left-hand pages, the title on right-hand ones) and page numbers at the outside corners;</li>
+  <li>justified text, hyphenated according to the language (English or French), with no stray line at the top or bottom of a page, in Crimson Text with its italic;</li>
+  <li>the back pages: note to the reader, acknowledgments, about the author, “Also by”; an even page count; a bookmark per chapter.</li>
+</ul>
+<h4>The cover template</h4>
+<p><span class="ui">Save the cover template (PDF)</span> gives a page at the exact size of your full cover (back, spine, front), bleed included: the spine computed from the page count and paper, the safe areas to keep text inside, the area for the barcode KDP adds, and the measurements written on it. Use it as a guide layer in your design software, then hide it before exporting your cover. Under 79 pages, KDP doesn’t accept text on the spine.</p>
+<div class="tip" data-label="Advice"><p>Fill in the “Title page”, “Copyright”, “Dedication” or “Acknowledgments” pages in the Manuscript so they replace the ones MondoWrite makes. Always check KDP’s previewer before publishing.</p></div>
+
+<h3>The screenplay</h3>
+<ul>
+  <li><span class="ui">PDF, standard format</span>: Courier 12, standard margins, about a page a minute, dialogue split cleanly across pages (“(MORE)”, “(CONT’D)”);</li>
+  <li><span class="ui">Fountain</span>, the screenplay’s text file;</li>
+  <li><span class="ui">Final Draft (FDX)</span>, for productions that use it.</li>
+</ul>
+<figure class="small"><img src="images/en/exporter-scenario.jpg"><figcaption>The Export menu of a screenplay.</figcaption></figure>
+
+<h3>The Bible and the canvas</h3>
+<p>The <strong>Bible</strong> exports to PDF, Word or Markdown: the project cover, then the sections chosen in the Bible, in their order, with each entry’s images and links. The <strong>canvas</strong> exports to a PNG image of the whole board, a standard PDF (A4, to send) or a large-format one (A1, to print and pin on the wall), or as card text (Word, Markdown), one part per frame.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="files"><span class="num">Chapter 11</span>Your files</h2>
+
+<p class="lead">A MondoWrite project is an ordinary folder, full of text files you can open, copy, back up or version as you like.</p>
+
+<h3>A project’s folder</h3>
+<table>
+  <tr><th>File or folder</th><th>Contents</th></tr>
+  <tr><td><code>cosmos.json</code></td><td>The title, type, card positions, threads, frames, outline, goals, project cover, paperback settings.</td></tr>
+  <tr><td><code>cartes/</code></td><td>One card per Markdown file, with a small header (type, title, image, sheet).</td></tr>
+  <tr><td><code>manuscrit/</code></td><td>The text of each scene of a novel, in Markdown.</td></tr>
+  <tr><td><code>scenario.fountain</code></td><td>The screenplay’s text, in Fountain.</td></tr>
+  <tr><td><code>medias/</code></td><td>The cards’ images and PDFs.</td></tr>
+  <tr><td><code>corbeille/</code></td><td>Deleted cards, waiting to be restored or erased.</td></tr>
+  <tr><td><code>markdown/</code></td><td>Readable copies of the manuscript, bible and canvas, with one version a day.</td></tr>
+</table>
+<p>A mention of a card is written as an ordinary Markdown link: <code>[@The Wolf](cosmos:…)</code>. Everything stays readable in any text editor (the folder names are French, and “cosmos” comes from the app’s former name).</p>
+
+<h3>Markdown copies and versions</h3>
+<p>After each save, the desktop app writes into <code>markdown/</code> the manuscript, the bible and the canvas in Markdown, with links between entries. A dated copy is kept every day in <code>markdown/versions/</code>: thirty days, then one per month. These copies are never read back: always write in the app. The <span class="ui">Markdown copies in the project folder</span> setting (<span class="ui">Settings</span> › <span class="ui">This project</span>) turns them off.</p>
+
+<h3>Editing outside MondoWrite</h3>
+<p>You can edit a project file with other software, or from another computer through a synced folder. The app notices and picks up the new version. If the same file changed on both sides, neither is overwritten: the version on disk is kept, yours is saved next to it (“… (MondoWrite).md”), and a banner lets you choose: <span class="ui">Keep mine</span> or <span class="ui">Keep the disk version</span>.</p>
+
+<h3>If saving fails</h3>
+<p>A message under the top bar says why (disk full, insufficient rights, folder not found) and offers: <span class="ui">Try again</span>; <span class="ui">Locate the project folder…</span> if it was moved or renamed; <span class="ui">Export a copy…</span> (the whole project in a .zip file, so nothing is lost); or <span class="ui">Back to projects without saving</span>.</p>
+<div class="tip" data-label="Backups"><p>Keep your projects in a synced folder (iCloud Drive, Dropbox, OneDrive) or back them up regularly. Since they are text files, they take up very little space.</p></div>
+
+<!-- ===================================================================================== -->
+<h2 id="settings"><span class="num">Chapter 12</span>Settings and appearance</h2>
+
+<p>The <span class="ui">Settings</span> button (the sliders, at the top right) opens three columns.</p>
+<figure><img src="images/en/reglages.jpg"><figcaption>Settings.</figcaption></figure>
+<table>
+  <tr><th>Setting</th><th>Effect</th></tr>
+  <tr><td><span class="ui">This project</span></td><td>Project type (novel or screenplay); for a screenplay, the page size and numbering options; Markdown copies; the <span class="ui">Trash</span>.</td></tr>
+  <tr><td><span class="ui">Language</span></td><td>English or French. The first time, the system’s language.</td></tr>
+  <tr><td><span class="ui">Appearance</span></td><td>Match system, light or dark.</td></tr>
+  <tr><td><span class="ui">Typography as you type</span></td><td>Follow the language, French, English or none.</td></tr>
+  <tr><td><span class="ui">Author name</span></td><td>Read from your profile, edited on the projects page.</td></tr>
+  <tr><td><span class="ui">Free photos</span></td><td>The Pixabay and Unsplash keys (Openverse needs none).</td></tr>
+  <tr><td><span class="ui">AI (optional)</span></td><td>The service, the key or address, the model.</td></tr>
+  <tr><td><span class="ui">Updates</span></td><td>The check at launch and the check button (desktop app).</td></tr>
+</table>
+<p>At the bottom: <span class="ui">Guided tour</span>, <span class="ui">Keyboard shortcuts</span> and <span class="ui">About MondoWrite</span>. Language, appearance, keys and profile are device settings; the project type and the paperback settings are kept in the project.</p>
+
+<h3>Dark mode</h3>
+<p>The whole app exists in dark, down to the manuscript page. Choose <span class="ui">Dark</span>, or <span class="ui">Match system</span> to follow your computer.</p>
+<div class="pair">
+  <figure><img src="images/en/sombre-canevas.jpg"><figcaption>The canvas in dark mode.</figcaption></figure>
+  <figure><img src="images/en/sombre-manuscrit.jpg"><figcaption>The manuscript in dark mode.</figcaption></figure>
+</div>
+
+<h3>With a finger</h3>
+<p>On a touch screen, everything works with a finger: a long press creates a card, tapping a card’s label changes its type, the <span class="ui">Select</span> button lets you draw around cards, and every drag-and-drop action also has a button.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="shortcuts"><span class="num">Chapter 13</span>Keyboard shortcuts</h2>
+<p>The full list opens at any time with <kbd>Ctrl</kbd> <kbd>/</kbd>. On a Mac, <kbd>Ctrl</kbd> becomes <kbd>⌘</kbd> and <kbd>Alt</kbd> becomes <kbd>⌥</kbd>.</p>
+
+<h3>Everywhere</h3>
+<table>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>/</kbd></td><td>The list of shortcuts</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>1</kbd> … <kbd>4</kbd></td><td>Canvas, Outline, Bible, Manuscript</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>F</kbd></td><td>Search for a card or a passage</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>H</kbd></td><td>Find and replace in the text</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd></td><td>To do</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>S</kbd></td><td>Save</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Z</kbd> · <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd></td><td>Undo · Redo</td></tr>
+</table>
+<h3>Canvas</h3>
+<table>
+  <tr><td class="keys"><kbd>N</kbd></td><td>New card</td></tr>
+  <tr><td class="keys"><kbd>C</kbd></td><td>New frame (around the selection)</td></tr>
+  <tr><td class="keys"><kbd>/</kbd></td><td>Change type (at the start of a line, or in an empty title)</td></tr>
+  <tr><td class="keys"><kbd>@</kbd> or <kbd>[[</kbd></td><td>Mention another card</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Enter</kbd></td><td>Expand the selected card</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Widen or narrow the card</td></tr>
+  <tr><td class="keys"><kbd>Shift</kbd> + drag</td><td>Draw around several cards</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> + click</td><td>Add a card to the selection</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>A</kbd> · <kbd>Esc</kbd></td><td>Select all · Deselect all</td></tr>
+  <tr><td class="keys"><kbd>Delete</kbd></td><td>Move the selection to the trash</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>V</kbd></td><td>Paste a link, an image or text: a card</td></tr>
+</table>
+<h3>Text (cards, Bible, manuscript)</h3>
+<table>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>B</kbd> · <kbd>Ctrl</kbd> <kbd>I</kbd></td><td>Bold · Italic</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd></td><td>Strikethrough</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>1</kbd> … <kbd>3</kbd></td><td>Title, heading</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>8</kbd> · <kbd>7</kbd></td><td>Bulleted list · Numbered list</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>9</kbd></td><td>Checkbox</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>B</kbd></td><td>Quote</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>X</kbd></td><td>Mark “to revisit”</td></tr>
+  <tr><td class="keys"><kbd>**</kbd> <kbd>*</kbd> <kbd>#</kbd> <kbd>-</kbd> <kbd>[ ]</kbd></td><td>Markdown as you type and paste</td></tr>
+</table>
+<h3>Manuscript</h3>
+<table>
+  <tr><td class="keys"><kbd>Enter</kbd> <kbd>Enter</kbd></td><td>Split the scene (on an empty line)</td></tr>
+  <tr><td class="keys"><kbd>Enter</kbd> <kbd>Enter</kbd> <kbd>Enter</kbd></td><td>New chapter</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd> · <kbd>Esc</kbd></td><td>Focus mode · Leave it</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Move the scene (scenes column)</td></tr>
+</table>
+<h3>Screenplay</h3>
+<table>
+  <tr><td class="keys"><kbd>Tab</kbd> · <kbd>Shift</kbd> <kbd>Tab</kbd></td><td>Change element</td></tr>
+  <tr><td class="keys"><kbd>Enter</kbd></td><td>Next element</td></tr>
+  <tr><td class="keys"><kbd>Esc</kbd></td><td>Element bar</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Move the scene (scenes column)</td></tr>
+</table>
+
+<!-- ===================================================================================== -->
+<h2 id="faq"><span class="num">Chapter 14</span>Frequently asked questions</h2>
+
+<h4>Where are my texts saved?</h4>
+<p>In the folder you chose when creating the project. The path isn’t shown in the app: find it with <span class="ui">Open folder…</span>, or search your computer for the <code>cosmos.json</code> file.</p>
+<h4>How do I work on two computers?</h4>
+<p>Put the project folder in iCloud Drive, Dropbox or OneDrive, and open it with <span class="ui">Open folder…</span> on the other computer. Avoid writing on both at the same time: if a file changes on both sides, the app keeps both versions and lets you choose.</p>
+<h4>I deleted a card by mistake.</h4>
+<p><kbd>Ctrl</kbd> <kbd>Z</kbd>, or the message’s <span class="ui">Undo</span> button, or <span class="ui">Settings</span> › <span class="ui">Trash</span> › <span class="ui">Restore</span>. A scene’s text is never erased with its card.</p>
+<h4>How do I turn a novel into a screenplay?</h4>
+<p><span class="ui">Settings</span> › <span class="ui">This project</span> › <span class="ui">Project type</span>. Cards, the Bible and files don’t change. The first time, scenes become screenplay headings and their synopsis comes along; the prose text stays in the manuscript, available if you switch back to the novel.</p>
+<h4>My paperback PDF has too few pages.</h4>
+<p>KDP requires at least 24 pages. A smaller trim (5 × 8) or a table of contents and back pages add a few pages; otherwise the text is simply too short for a paperback.</p>
+<h4>The AI doesn’t answer.</h4>
+<p>For Ollama or LM Studio, check that the software is running and a model is loaded, then <span class="ui">Test and list models</span>. For an online service, check the API key and your credit. The error message says what is blocking.</p>
+<h4>My photo can’t be described.</h4>
+<p>The chosen model must be able to read images (for example gemma3, qwen2.5vl or llava with Ollama).</p>
+<h4>Is MondoWrite free?</h4>
+<p>Yes. MondoWrite is free software (GNU GPL 3.0 or later licence): you can use, study, modify and share it. The source code is at <a href="https://github.com/sebastienpiconnier/MondoWrite">github.com/sebastienpiconnier/MondoWrite</a>. It is inspired, among others, by NEO, Hugh Howey’s writing software.</p>
+
+<figure class="medium"><img src="images/en/a-propos.jpg"><figcaption>About MondoWrite.</figcaption></figure>
+
+</body>
+</html>
