@@ -19,9 +19,12 @@ import "./styles/screenplay.css";
 import "./styles/writing.css";
 import { App } from "./App";
 import { initSettings } from "./settings";
+import { initAppMenu } from "./appMenu";
 
 // Langue et thème appliqués avant le premier rendu (pas de flash clair en mode sombre).
 initSettings();
+// Mac : barre des menus dans la langue de l'app, avec le menu Aide.
+initAppMenu();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

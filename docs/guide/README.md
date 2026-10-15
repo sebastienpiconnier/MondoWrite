@@ -2,7 +2,7 @@
 
 Le guide complet de MondoWrite, en français et en anglais, illustré de captures d’écran : `guide.fr.html` et `guide.en.html` (le texte), `guide.css` (la mise en page A4), `images/fr/` et `images/en/` (les captures), `exemples/` (le court scénario importé pour les captures du chapitre Scénario).
 
-Les PDF (`MondoWrite-guide-fr.pdf`, `MondoWrite-guide-en.pdf`) ne sont pas versionnés : on les fabrique, puis on les joint à la Release.
+Les PDF (`MondoWrite-guide-fr.pdf`, `MondoWrite-guide-en.pdf`) sont versionnés : c’est l’aide en ligne de l’app (F1, Réglages, menu Aide du Mac), qui les ouvre sur GitHub (`guideUrl`, src/help.ts, branche `main`). Les refaire et les committer après chaque changement du guide ; on peut aussi les joindre à la Release.
 
 ## Fabriquer les PDF
 

@@ -13,7 +13,7 @@ import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
 import type { Screenplay, ScreenplayElement } from "./screenplay/model";
-import { setSceneSynopsis } from "./screenplay/scenes";
+import { listScenes, setSceneSynopsis } from "./screenplay/scenes";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { visibleSections } from "./bibleSections";
@@ -27,7 +27,7 @@ import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./
 import { isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type SheetField } from "./character";
 import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
-import { organize } from "./organize";
+import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
 import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
@@ -490,6 +490,105 @@ export const useCosmos = create<CosmosState>((set, get) => {
   const forgetHistory = () => {
     lastTag = "";
     if (get().past.length > 0 || get().future.length > 0) set({ past: [], future: [] });
+  };
+  /** Ordre du récit : celui du Plan (roman), celui du fichier Fountain (scénario), puis les scènes pas encore écrites. */
+  const storyOrder = (nodes: CardNode[]): string[] => {
+    const { plan, kind, screenplay } = get();
+    const ids = planScenes(nodes);
+    if (kind !== "scenario" || !screenplay) return planOrder(plan, ids);
+    const known = new Set(ids);
+    const linked = [...new Set(listScenes(screenplay.elements).map((s) => s.cardId ?? ""))].filter((id) => known.has(id));
+    const written = new Set(linked);
+    return [...linked, ...ids.filter((id) => !written.has(id))];
+  };
+  /**
+   * Range tout le canevas (« Organiser »). `before` est appelé juste avant le changement (étape
+   * d'historique) ; rien n'est appelé s'il n'y a rien à ranger.
+   */
+  const arrangeCanvas = (before: () => void) => {
+    const { nodes, edges, plan, kind } = get();
+    // Les cadres verrouillés restent tels quels, avec les cartes dont le centre est dedans. Tout le reste
+    // se range, Liens, Images et Documents compris, sous ces cadres pour ne jamais les chevaucher.
+    const locked = get().frames.filter((f) => f.data.locked).map(frameBox);
+    const held = heldCardIds(nodes, get().frames);
+    const arranged = nodes.filter((n) => !held.has(n.id));
+    if (arranged.length === 0) return;
+    const t = getT();
+    const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
+    const sizes = boxes(arranged);
+    const result = organize({
+      cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
+      // Un scénario n'a pas de plan dans cosmos.json : ses scènes suivent le fichier Fountain, d'un seul tenant.
+      plan: kind === "scenario" ? EMPTY_PLAN : plan,
+      sceneIds: kind === "scenario" ? storyOrder(arranged) : planScenes(arranged),
+      labels: {
+        groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
+        beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
+        chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
+        unplaced: t.plan.unplaced,
+        story: types.scene.section,
+        pages: t.organize.pages,
+      },
+      origin:
+        locked.length > 0
+          ? { x: Math.min(...locked.map((f) => f.x), ...sizes.map((b) => b.x)), y: Math.max(...locked.map((f) => f.y + f.height)) + LOCKED_GAP }
+          : { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) },
+      newId,
+    });
+    before();
+    let nextEdges = edges;
+    const linked = (a: string, b: string) => nextEdges.some((e) => (e.source === a && e.target === b) || (e.source === b && e.target === a));
+    for (const [source, target] of result.sequence) {
+      if (linked(source, target)) continue;
+      nextEdges = addEdge({ id: newId(), source, target, sourceHandle: null, targetHandle: null, label: t.chapters.next, type: "floating" }, nextEdges);
+    }
+    const positions = result.positions;
+    set({
+      nodes: nodes.map((n) => {
+        const at = positions.get(n.id);
+        return at ? { ...n, position: at, selected: false } : n;
+      }),
+      // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement, sauf les cadres verrouillés.
+      frames: [...get().frames.filter((f) => f.data.locked).map((f) => ({ ...f, selected: false })), ...result.frames.map(toFrameNode)],
+      edges: nextEdges,
+    });
+    touch();
+  };
+  /**
+   * Le récit vient de changer d'ordre (Plan, Manuscrit, séquencier, liste des scènes) : le canevas suit, sans
+   * passer par « Organiser » et dans la même étape d'historique que le déplacement. Un canevas déjà rangé
+   * (des cadres du récit : cases, chapitres, « Scènes ») est rangé de nouveau ; sinon les scènes échangent
+   * leurs places, et le reste du canevas ne bouge pas. Les cartes tenues par un cadre verrouillé restent.
+   */
+  const followStory = () => {
+    const { nodes, frames } = get();
+    const held = heldCardIds(nodes, frames);
+    const t = getT();
+    const sizes = boxes(nodes);
+    const sceneIds = new Set(planScenes(nodes));
+    const storyFrames = frames.filter((f) => {
+      if (f.data.locked) return false;
+      const box = frameBox(f);
+      return nodes.some((n, i) => sceneIds.has(n.id) && insideBox(sizes[i].x + sizes[i].width / 2, sizes[i].y + sizes[i].height / 2, box));
+    });
+    const pattern = (s: string) => new RegExp(`^${s.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{n\}/g, "\\d+").replace(/\{title\}/g, ".+")}$`);
+    const chapterTitle = [pattern(t.chapters.numbered), pattern(t.chapters.numberedTitle)];
+    const known = new Set([
+      ...Object.values(t.plan.beats).map((b) => b.label),
+      t.plan.unplaced,
+      t.types.scene.section,
+      t.scenario.types.scene?.section ?? t.types.scene.section,
+    ]);
+    const organized =
+      storyFrames.length > 0 && storyFrames.every((f) => known.has(f.data.title) || chapterTitle.some((re) => re.test(f.data.title)));
+    if (organized) return arrangeCanvas(() => {});
+    const free = nodes.filter((n) => sceneIds.has(n.id) && !held.has(n.id));
+    const moved = reorderSlots(
+      free.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y })),
+      storyOrder(nodes),
+    );
+    if (moved.size === 0) return;
+    set({ nodes: nodes.map((n) => (moved.has(n.id) ? { ...n, position: moved.get(n.id)! } : n)) });
   };
   const restore = (from: "past" | "future") => {
     const { past, future, nodes, frames, edges, screenplay, plan, trash } = get();
@@ -1081,6 +1180,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return;
       record();
       set({ plan });
+      followStory();
       touch();
     },
     placeInPlan: (id, beat, index) => {
@@ -1088,6 +1188,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return;
       record();
       set({ plan });
+      followStory();
       touch();
     },
     stepInPlan: (id, way) => {
@@ -1095,6 +1196,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return false;
       record();
       set({ plan });
+      followStory();
       touch();
       return true;
     },
@@ -1103,6 +1205,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return false;
       record();
       set({ plan });
+      followStory();
       touch();
       return true;
     },
@@ -1111,6 +1214,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return false;
       record();
       set({ plan });
+      followStory();
       touch();
       return true;
     },
@@ -1170,6 +1274,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return null;
       record();
       set({ plan });
+      followStory();
       touch();
       return id;
     },
@@ -1178,6 +1283,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return;
       record();
       set({ plan });
+      followStory();
       touch();
     },
     renamePlanChapter: (id, title) => {
@@ -1192,6 +1298,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return;
       record();
       set({ plan });
+      followStory();
       touch();
     },
     deletePlanChapter: (id) => {
@@ -1199,60 +1306,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return;
       record();
       set({ plan });
+      followStory();
       touch();
     },
     organizeCanvas: () => {
       // « Organiser » range tout le projet : le filtre et la mise en avant s'effacent d'abord.
       set({ filter: NO_FILTER, spotlightId: null });
-      const { nodes, edges, plan, kind } = get();
-      // Les cadres verrouillés restent tels quels, avec les cartes dont le centre est dedans. Tout le reste
-      // se range, Liens, Images et Documents compris, sous ces cadres pour ne jamais les chevaucher.
-      const locked = get().frames.filter((f) => f.data.locked).map(frameBox);
-      const held = heldCardIds(nodes, get().frames);
-      const arranged = nodes.filter((n) => !held.has(n.id));
-      if (arranged.length === 0) return;
-      const t = getT();
-      const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
-      const sizes = boxes(arranged);
-      const result = organize({
-        cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
-        plan,
-        sceneIds: planScenes(arranged),
-        labels: {
-          groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
-          beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
-          chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
-          unplaced: t.plan.unplaced,
-          story: types.scene.section,
-          pages: t.organize.pages,
-        },
-        origin:
-          locked.length > 0
-            ? { x: Math.min(...locked.map((f) => f.x), ...sizes.map((b) => b.x)), y: Math.max(...locked.map((f) => f.y + f.height)) + LOCKED_GAP }
-            : { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) },
-        newId,
-      });
       // Une seule étape d'historique : Ctrl/Cmd+Z remet le canevas tel qu'il était.
-      record();
-      let nextEdges = edges;
-      const linked = (a: string, b: string) => nextEdges.some((e) => (e.source === a && e.target === b) || (e.source === b && e.target === a));
-      for (const [source, target] of result.sequence) {
-        if (linked(source, target)) continue;
-        nextEdges = addEdge({ id: newId(), source, target, sourceHandle: null, targetHandle: null, label: t.chapters.next, type: "floating" }, nextEdges);
-      }
-      const positions = result.positions;
-      set({
-        nodes: nodes.map((n) => {
-          const at = positions.get(n.id);
-          return at ? { ...n, position: at, selected: false } : n;
-        }),
-        // Les cadres d'avant se vidaient : ils sont remplacés par ceux du rangement, sauf les cadres verrouillés.
-        frames: [...get().frames.filter((f) => f.data.locked).map((f) => ({ ...f, selected: false })), ...result.frames.map(toFrameNode)],
-        edges: nextEdges,
-        view: "toile",
-        fitRequest: Date.now(),
-      });
-      touch();
+      arrangeCanvas(() => record());
+      set({ view: "toile", fitRequest: Date.now() });
     },
     paper: "letter",
     paperChosen: false,
@@ -1301,7 +1363,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     setScreenplay: (screenplay, undoable = false) => {
       if (undoable) record();
       else forgetHistory();
+      const before = get().screenplay;
       set({ screenplay, nodes: titlesFromHeadings(get().nodes, screenplay) });
+      // Scènes déplacées (séquencier, liste des scènes) : le canevas suit l'ordre du fichier.
+      const order = (sp: Screenplay | null) => (sp ? listScenes(sp.elements).map((s) => s.cardId ?? "").join(" ") : "");
+      if (undoable && before && order(before) !== order(screenplay)) followStory();
       touch();
     },
     setTitlePageField: (field, value) => {

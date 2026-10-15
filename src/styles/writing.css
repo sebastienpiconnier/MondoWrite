@@ -482,10 +482,20 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .status-dot.is-brouillon, .status-picker.is-brouillon .status-dot { border-color: var(--status-draft); background: var(--status-draft); }
 .status-dot.is-revoir, .status-picker.is-revoir .status-dot { border-color: var(--status-revise); background: var(--status-revise); }
 .status-dot.is-fini, .status-picker.is-fini .status-dot { border-color: var(--status-done); background: var(--status-done); }
-.status-picker { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 2px 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 12px var(--font-ui); }
-.status-picker select { min-height: 26px; padding: 0 4px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-.status-picker:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
-@media (pointer: coarse) { .status-picker, .status-picker select { min-height: 44px; } }
+.status-picker { display: inline-flex; vertical-align: middle; }
+.status-picker-button { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px 0 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 12px var(--font-ui); cursor: pointer; white-space: nowrap; }
+.status-picker-button:hover { background: var(--hover); color: var(--ink); }
+.status-picker-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.status-chevron { flex: none; opacity: 0.7; }
+/* Le menu est posé dans <body>, en position fixe sous le bouton (ou au-dessus, `is-up`). */
+.status-menu { position: fixed; z-index: 2000; min-width: 170px; padding: 6px; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); font: 14px var(--font-ui); }
+.status-menu.is-up { transform: translateY(-100%); }
+.status-option { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.status-option:focus-visible, .status-option:hover { background: var(--ground); outline: none; }
+.status-option:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+.status-option[aria-selected="true"] { font-weight: 600; }
+.status-check { margin-left: auto; color: var(--accent); }
+@media (pointer: coarse) { .status-picker-button, .status-option { min-height: 44px; } }
 .card .status-picker { margin-top: 6px; }
 .ms-scenes .status-dot { margin-left: 6px; }
 

@@ -229,3 +229,26 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
   for (let i = 1; i < told.length; i++) out.sequence.push([told[i - 1], told[i]]);
   return out;
 }
+
+/**
+ * Le récit a changé d'ordre (Plan, Manuscrit, séquencier) sur un canevas qui n'a pas été rangé par
+ * « Organiser » : les scènes échangent leurs places. Les places restent celles de l'auteur, lues de haut en
+ * bas puis de gauche à droite (l'ordre par défaut du Plan) ; la n-ième revient à la n-ième scène du récit.
+ * Rend seulement les positions qui changent.
+ */
+export function reorderSlots(cards: { id: string; x: number; y: number }[], order: string[]): Map<string, { x: number; y: number }> {
+  const known = new Set(cards.map((c) => c.id));
+  const wanted = order.filter((id) => known.has(id));
+  const slots = cards
+    .filter((c) => wanted.includes(c.id))
+    .map((c) => ({ x: c.x, y: c.y }))
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+  const out = new Map<string, { x: number; y: number }>();
+  const at = new Map(cards.map((c) => [c.id, c]));
+  wanted.forEach((id, i) => {
+    const slot = slots[i];
+    const card = at.get(id)!;
+    if (slot.x !== card.x || slot.y !== card.y) out.set(id, slot);
+  });
+  return out;
+}

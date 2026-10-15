@@ -164,7 +164,23 @@ describe("autres éléments", () => {
 describe("titre d'une carte créée", () => {
   it("majuscules initiales, accents et apostrophes compris", () => {
     expect(titleCase("LE GARDIEN", "fr")).toBe("Le Gardien");
-    expect(titleCase("ÉLODIE D’ARC", "fr")).toBe("Élodie D’Arc");
+    expect(titleCase("ÉLODIE D’ARC", "fr")).toBe("Élodie d’Arc");
     expect(titleCase("MARIE-CLAIRE", "fr")).toBe("Marie-Claire");
+  });
+});
+
+describe("titleCase", () => {
+  it("garde les petits mots d'un lieu en minuscules, sauf en tête", () => {
+    expect(titleCase("MAISON DE LA MÈRE", "fr", true)).toBe("Maison de la Mère");
+    expect(titleCase("LA FORÊT", "fr", true)).toBe("La Forêt");
+    expect(titleCase("CHEMIN DE L'ÉCOLE", "fr", true)).toBe("Chemin de l'École");
+    expect(titleCase("HOUSE OF THE RISING SUN", "en", true)).toBe("House of the Rising Sun");
+    expect(titleCase("SAINT-MALO", "fr", true)).toBe("Saint-Malo");
+  });
+  it("ne garde que les particules d'un nom de personne", () => {
+    expect(titleCase("HUGO LE BRIS", "fr")).toBe("Hugo Le Bris");
+    expect(titleCase("JEAN DE FLORETTE", "fr")).toBe("Jean de Florette");
+    expect(titleCase("O'BRIEN", "en")).toBe("O'Brien");
+    expect(titleCase("LE GARDIEN", "fr")).toBe("Le Gardien");
   });
 });

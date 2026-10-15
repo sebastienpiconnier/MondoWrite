@@ -137,3 +137,7 @@
 .sp-card-body p { margin: 0 0 6px; }
 .sp-speakers { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 4px; }
 .sp-speakers li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+
+/* En-tête encore vide (on l'écrit, ou on vient de l'effacer) : le libellé « Scène sans titre » reste discret,
+   comme le texte indicatif de l'éditeur. */
+.is-slugline.is-untitled { color: var(--placeholder); font-style: italic; }

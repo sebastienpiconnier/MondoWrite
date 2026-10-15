@@ -59,7 +59,7 @@ export function importScreenplayModel(screenplay: Screenplay, options: ImportOpt
       const key = upper(location);
       let place = locations.get(key);
       if (!place) {
-        place = { id: options.newId(), type: "lieu", title: titleCase(key, options.locale), html: "" };
+        place = { id: options.newId(), type: "lieu", title: titleCase(key, options.locale, true), html: "" };
         locations.set(key, place);
       }
       links.push({ id: options.newId(), source: card.id, target: place.id, label: options.linkLabel });

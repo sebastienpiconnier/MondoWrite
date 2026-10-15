@@ -31,7 +31,6 @@ export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage
   const items: [string, () => void][] = [
     // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
     [hasImage ? t.changeImage : t.addImage, () => useCosmos.getState().openPhotos({ kind: "card", id })],
-    [t.spotlight, () => useCosmos.getState().setSpotlight(id)],
     [t.filterHere, () => useCosmos.getState().setFilterCard(id)],
     // Un nom propre change : la carte et toutes ses occurrences dans le texte.
     ...(title.trim() ? [[all.replace.renameMenu, () => useCosmos.getState().openReplace({ find: title.trim(), renameId: id })] as [string, () => void]] : []),

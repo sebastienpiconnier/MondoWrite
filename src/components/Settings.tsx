@@ -1,6 +1,7 @@
 // Bouton « Réglages » : langue de l'interface et apparence (système, claire, sombre).
 // Listes déroulantes natives : accessibles au clavier, au lecteur d'écran et au doigt.
 
+import { openGuide } from "../help";
 import { isTypographySetting } from "../typography";
 import { UpdateSettings } from "./Updates";
 import { storage } from "../storage";
@@ -341,6 +342,9 @@ export function Settings({ project = true }: { project?: boolean }) {
               }}
             >
               {t.tour.open}
+            </button>
+            <button type="button" className="link-button" title={t.help.guideHint} onClick={() => { setOpen(false); void openGuide(); }}>
+              {t.help.guide} <span aria-hidden="true">↗</span>
             </button>
             <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setDialog("shortcuts"); }}>
               {t.shortcuts.open}

@@ -548,7 +548,7 @@ export function ScreenplayView() {
                   moveScene(s.index, other.index, true);
                 }}
               >
-                <span className="is-slugline">
+                <span className={`is-slugline${s.text ? "" : " is-untitled"}`}>
                   {s.number}. {s.text || sp.untitledScene}
                 </span>
                 {statusCards.get(s.cardId ?? "") && <StatusDot card={statusCards.get(s.cardId!)!} />}

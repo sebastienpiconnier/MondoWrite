@@ -273,6 +273,15 @@ describe("détection à la frappe", () => {
     }
   });
 
+  it("aussi dans un personnage ou une transition vides (scène suivante après une réplique)", () => {
+    for (const type0 of ["character", "transition"] as const) {
+      open([{ type: type0, text: "" }]);
+      type("ext. ");
+      expect(shape(), type0).toEqual(["sceneHeading: EXT. "]);
+      editor.destroy();
+    }
+  });
+
   it("pas au milieu d'une phrase, ni pour un mot qui commence pareil", () => {
     open();
     type("Il dit : int. ");

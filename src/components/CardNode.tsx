@@ -493,7 +493,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       {/* Texte long : replié au-delà de CARD_BODY_MAX, « Plus de détails » le déplie. Pendant l'écriture,
           il reste déplié. Un état d'affichage, rien n'est enregistré. */}
       {novelScene ? (
-        <div className="card-body nodrag nowheel nopan">
+        <div className="card-body is-scene nodrag nowheel nopan">
           <SceneCardBody card={data} />
         </div>
       ) : (

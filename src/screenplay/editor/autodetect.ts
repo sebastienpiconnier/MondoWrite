@@ -1,5 +1,6 @@
 // Ce qui se décide pendant la frappe :
-// - « int. », « ext. », « int./ext. », « i/e » en début d'action → en-tête de scène ;
+// - « int. », « ext. », « int./ext. », « i/e » en début d'action, de personnage ou de transition → en-tête de scène
+//   (après une réplique, Entrée mène au personnage : c'est là qu'on tape souvent la scène suivante) ;
 // - « ( » au début d'un dialogue vide → didascalie ;
 // - en-têtes, personnages et transitions passent en majuscules à mesure qu'on les écrit.
 // Chaque détection est une seule étape d'historique : Ctrl/Cmd+Z l'annule.
@@ -9,6 +10,8 @@ import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
 
 const UPPERCASE = new Set(["sceneHeading", "character", "transition"]);
+/** Éléments où « int. » ou « ext. » tapés en tête font un en-tête de scène. */
+const HEADING_FROM = new Set(["action", "character", "transition"]);
 
 export interface AutodetectOptions {
   /** Langue courante, pour les majuscules accentuées (É, À, Ç). */
@@ -25,9 +28,9 @@ export const Autodetect = Extension.create<AutodetectOptions>({
         find: /^(?:int\.?\/ext\.?|int\.|ext\.|est\.|i\/e)\s$/i,
         handler: ({ state, range, match }) => {
           const { tr, schema } = state;
-          // Seulement si le préfixe (espace tapée comprise) est tout ce que contient l'action.
+          // Seulement si le préfixe (espace tapée comprise) est tout ce que contient l'élément.
           const $from = tr.doc.resolve(range.from);
-          if ($from.parent.type.name !== "action" || $from.parent.content.size !== range.to - range.from) return null;
+          if (!HEADING_FROM.has($from.parent.type.name) || $from.parent.content.size !== range.to - range.from) return null;
           tr.insertText(match[0].toUpperCase(), range.from, range.to);
           tr.setBlockType(range.from, range.from, schema.nodes.sceneHeading);
         },

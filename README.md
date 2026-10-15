@@ -60,7 +60,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-MondoWrite est en cours de développement (version 0.1.13). Le guide de l’utilisateur, illustré, est joint à chaque version (PDF) ; ses sources sont dans [docs/guide](docs/guide).
+MondoWrite est en cours de développement (version 0.1.13). **Guide de l’utilisateur illustré (PDF) : [en français](docs/guide/MondoWrite-guide-fr.pdf), [in English](docs/guide/MondoWrite-guide-en.pdf).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
 
 ## Fonctionnalités
 

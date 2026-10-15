@@ -1,3 +1,4 @@
+import { openGuide } from "./help";
 import { useEffect } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useCosmos } from "./store";
@@ -88,6 +89,12 @@ export function App() {
   // Cmd/Ctrl + S : sauvegarde immédiate. Cmd/Ctrl + Z, Maj + Z ou Y : annuler, rétablir.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // F1 : le guide de l'utilisateur (aide en ligne), partout. Sur Mac, aussi dans le menu Aide.
+      if (e.key === "F1" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        void openGuide();
+        return;
+      }
       if (!(e.metaKey || e.ctrlKey)) return;
       const key = e.key.toLowerCase();
       // Cmd/Ctrl + / : la liste des raccourcis, partout (accueil compris).

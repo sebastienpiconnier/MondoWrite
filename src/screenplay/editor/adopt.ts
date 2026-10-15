@@ -42,7 +42,7 @@ export function adoptNew(editor: Editor, host: AdoptHost): PMNode | null {
       if (prefix && location) {
         const place =
           host.locationCards().find((card) => fold(card.title) === fold(location))?.id ??
-          host.addCard("lieu", titleCase(location.toLocaleUpperCase(host.locale), host.locale));
+          host.addCard("lieu", titleCase(location.toLocaleUpperCase(host.locale), host.locale, true));
         host.linkSceneToLocation(cardId, place);
       }
     }

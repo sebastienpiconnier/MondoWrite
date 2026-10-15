@@ -164,9 +164,6 @@ await step("menu carte", async () => {
   await n.getByRole("button", { name: T("Plus d’actions", "More actions") }).click();
   await wait(300);
   await shot("carte-menu", { clip: await union([n, page.locator("[role=menu]").first()]) });
-  await page.getByRole("menuitem", { name: T("Mettre en avant", "Put in the spotlight") }).click();
-  await wait(500);
-  await shot("mise-en-avant");
   await page.keyboard.press("Escape");
   await bg();
 });
@@ -207,7 +204,14 @@ await step("recherche", async () => {
   await page.keyboard.type(D.search);
   await wait(500);
   await shot("recherche");
+  // Le premier résultat choisi : la carte est mise en avant sur le canevas.
+  await page.locator(".search-result").first().click();
+  await wait(900);
+  await shot("mise-en-avant");
   await page.keyboard.press("Escape");
+  await wait(300);
+  // La recherche a recentré la vue sur la carte : on revoit tout le canevas.
+  await fit();
 });
 await step("cartes agrandies", async () => {
   await cardButton(D.meeting, T("Agrandir la carte", "Expand card"));

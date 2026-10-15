@@ -52,11 +52,38 @@ const MAX = 6;
 /** Comparaison sans casse ni accents : « ines » retrouve « INÈS ». */
 export const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
 
-/** « LE GARDIEN » → « Le Gardien » : titre de la carte créée depuis un nom en majuscules. */
-export function titleCase(name: string, locale: string): string {
+// Petits mots laissés en minuscules au milieu d'un titre : « MAISON DE LA MÈRE » → « Maison de la Mère ».
+// Les noms de personnes ne gardent que les particules (« Jean de Florette ») : « Le Bris », « Le Goff »
+// sont des noms de famille.
+const PARTICLES = new Set(["de", "du", "des", "d", "of", "von", "van", "da", "di", "del", "della"]);
+const SMALL_WORDS = new Set([
+  ...PARTICLES,
+  ...["la", "le", "les", "l", "un", "une", "et", "à", "au", "aux", "en", "sur", "sous", "dans", "chez", "pour", "par", "avec", "vers"],
+  ...["the", "a", "an", "and", "or", "in", "on", "at", "to", "for", "by", "with", "from", "into"],
+]);
+
+/** « LE GARDIEN » → « Le Gardien » : titre de la carte créée depuis un nom en majuscules. Un lieu
+ *  (`place`) garde aussi les articles et prépositions en minuscules, sauf en tête. */
+export function titleCase(name: string, locale: string, place = false): string {
+  const small = place ? SMALL_WORDS : PARTICLES;
+  const up = (w: string) => w.replace(/(^|[-,])(\p{L})/gu, (_m, before: string, letter: string) => before + letter.toLocaleUpperCase(locale));
+  let first = true;
   return name
     .toLocaleLowerCase(locale)
-    .replace(/(^|[\s\-'’,])(\p{L})/gu, (_m, before: string, letter: string) => before + letter.toLocaleUpperCase(locale));
+    .split(/(\s+)/)
+    .map((word) => {
+      if (!word.trim()) return word;
+      const isFirst = first;
+      first = false;
+      // Élision : « l'auberge », « d'Artagnan » ; le mot qui suit l'apostrophe prend sa majuscule.
+      const elided = /^(\p{L}+)(['’])(.+)$/u.exec(word);
+      if (elided) {
+        const head = small.has(elided[1]) && !isFirst ? elided[1] : up(elided[1]);
+        return head + elided[2] + up(elided[3]);
+      }
+      return small.has(word) && !isFirst ? word : up(word);
+    })
+    .join("");
 }
 
 const ARTICLES = new Set(["LE", "LA", "LES", "UN", "UNE", "DES", "THE", "A", "AN"]);
@@ -210,7 +237,7 @@ function suggestHeading(text: string, data: SuggestData): SuggestResult {
     text: head + moment,
   }));
   if (location && !hasLocationCard(data, location)) {
-    const title = titleCase(location, data.locale);
+    const title = titleCase(location, data.locale, true);
     items.push({
       key: "create",
       label: fill(data.labels.createLocation, title),
