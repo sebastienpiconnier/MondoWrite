@@ -47,6 +47,12 @@ export interface ExportDoc {
   chapters: Chapter[];
   /** Manuscrit : alinéa en début de paragraphe dans le PDF. */
   indent?: boolean;
+  /**
+   * Manuscrit au format « Shunn » (celui qu'attendent agents et éditeurs) : en-tête « Nom / TITRE / page »,
+   * nombre de mots arrondi sur la page de garde, chapitres en haut d'une nouvelle page, « # » entre deux
+   * scènes. Seul le PDF s'en sert.
+   */
+  shunn?: { running: string; words: string; byline: string };
   /** Images citées par les blocs `image`, chargées avant l'export. Une image absente est ignorée. */
   images?: Record<string, DocImage>;
 }

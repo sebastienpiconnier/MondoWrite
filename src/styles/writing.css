@@ -488,3 +488,15 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 @media (pointer: coarse) { .status-picker, .status-picker select { min-height: 44px; } }
 .card .status-picker { margin-top: 6px; }
 .ms-scenes .status-dot { margin-left: 6px; }
+
+/* Fenêtre « Livre broché (KDP) » : mêmes champs que « Rechercher et remplacer », sur deux colonnes quand la place le permet. */
+.app-dialog.is-paperback { width: min(620px, calc(100vw - 32px)); }
+.paperback-intro, .paperback-note { margin: 0; font-size: 14px; color: var(--ink-2); }
+.paperback-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.paperback-panel select, .paperback-panel textarea { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 15px var(--font-ui); }
+.paperback-panel textarea { padding: 10px 12px; resize: vertical; }
+.paperback-panel select:focus-visible, .paperback-panel textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.paperback-options { flex-direction: column; gap: 2px; }
+.paperback-options label { min-height: 36px; }
+.paperback-warning { color: var(--danger); font-weight: 600; }
+.paperback-panel .replace-actions { flex-wrap: wrap; }

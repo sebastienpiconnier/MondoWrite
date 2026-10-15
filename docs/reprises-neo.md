@@ -57,7 +57,7 @@ Ce que fait NEO (`app.js`, PRINT BOOK ; `main.js`, makePaperback) :
 - **Contrôles** : moins de 24 pages ou plus que le maximum du papier signalés.
 - **Ailleurs** : format manuscrit à la Shunn (Times ou Courier, en-tête « Nom / TITRE / page », nombre de mots arrondi sur la page de titre, « # » entre les scènes, FIN), signets du PDF par chapitre, instantané PDF horodaté avec empreinte SHA-256, EPUB conforme aux règles de KDP.
 
-Ce que MondoWrite pourrait reprendre, par ordre d'intérêt :
+Repris en octobre 2026 (points 1 à 7, `src/export/paperback.ts`, `paperbackPdf.ts`, fenêtre « Livre broché (KDP) » du menu Exporter). La police est Crimson Text (OFL), avec son italique et son gras ; le sommaire se fait en deux passages, le grand fond se recalcule tant que le nombre de pages change de palier. Liste d'origine :
 
 1. **Un export « Livre broché (KDP) »** : formats, marges miroir et petit fond par paliers, chapitres sur une belle page, page 1 au début du récit, nombre de pages pair, titres courants et folios aux coins extérieurs, pages de début et de fin tirées de nos pages du livre (titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements, à propos de l'auteur). C'est le cœur ; tout se calcule dans un module pur et testé (`book.ts` de l'export), comme `prose.ts`.
 2. **Texte composé** : justification, césure française et anglaise (paquet `hyphen` et ses motifs, chargés à l'export), veuves et orphelines, lettrine, sans alinéa après un titre ou un séparateur. Il faut embarquer une police à empattements libre avec son italique (EB Garamond, Libre Baskerville ou Source Serif, licence OFL).

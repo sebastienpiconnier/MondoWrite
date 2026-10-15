@@ -188,7 +188,8 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 
 ### Exports
 
-- **Manuscript:** scenes of the same chapter form one chapter, separated by “* * *”. PDF in manuscript format (Courier 12, double spaced), Word (.docx), EPUB for e-readers, or a single Markdown file.
+- **Manuscript:** scenes of the same chapter form one chapter, separated by “* * *”. PDF in Shunn manuscript format, the one agents and editors expect (Courier 12, double spaced, “Name / TITLE / page” header, rounded word count on the title page, each chapter on a new page, “#” between scenes, bookmarks per chapter), Word (.docx), EPUB for e-readers, or a single Markdown file.
+- **Paperback (KDP):** a print-ready interior PDF for Amazon KDP print on demand, and a cover template sized to it. Four trim sizes (5 × 8 to 6 × 9 inches), mirror margins with a gutter set by page count, chapters on right-hand pages, page 1 at the start of the story, running heads and folios at the outside corners, justified and hyphenated text (French, English), widows and orphans avoided, drop caps. A default copyright page (all rights reserved, fiction notice, ISBN) when the book has none of its own, a table of contents with page numbers, a note to the reader with your links, “Also by”, bookmarks per chapter. The cover template gives the spine for the paper, the bleed, the safe areas and the barcode area. Settings are kept in the project.
 - **Screenplay:** PDF in standard format (Courier 12, standard margins, dialogue split cleanly across pages), Fountain and Final Draft (FDX).
 - **Bible:** PDF, Word or Markdown, the project cover first, then the sections chosen in the Bible, in its order, with each entry’s images and links.
 - **Canvas:** a PNG image of the whole board, a standard PDF (A4, to send) or large-format PDF (A1, to print), and the card text in Word or Markdown, one part per frame.
@@ -312,6 +313,6 @@ Architecture, conventions and detailed roadmap: see [CLAUDE.md](CLAUDE.md) (in F
 
 MondoWrite is free software, released under the [GNU GPL v3.0 or later](LICENSE). You can use, study, change and redistribute it; any modified version you distribute must stay under the same license.
 
-The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets/fonts/OFL.txt)).
+The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets/fonts/OFL.txt)), and the paperback the Crimson Text font (SIL OFL license, see [OFL-CrimsonText.txt](src/assets/fonts/OFL-CrimsonText.txt)). Hyphenation uses TeX patterns from the `hyphen` package.
 
 The example project uses Charles Perrault’s “Le Petit Chaperon rouge” (*Histoires ou contes du temps passé*, 1697) and three engravings by Gustave Doré, wood-engraved by Pannemaker (Hetzel edition, 1862), all in the public domain. The English translation of the tale was made for MondoWrite.

@@ -6,10 +6,14 @@ import fontkit from "@pdf-lib/fontkit";
 import regularData from "../assets/fonts/CourierPrime-Regular.ttf?inline";
 import boldData from "../assets/fonts/CourierPrime-Bold.ttf?inline";
 import type { ExportDoc } from "./doc";
+import { addOutline } from "./outline";
 import { PROSE_CHAR, PROSE_LINE, PROSE_MARGIN, layoutProse, proseGeometry } from "./prose";
 
 const SIZE = 12;
 const ASCENT = 9;
+
+/** L'espace fine insécable (typographie française) n'est pas dans Courier Prime : une espace insécable ordinaire la remplace. */
+const noThinSpace = (s: string) => s.replace(/\u202f/g, "\u00a0");
 
 const fromDataUri = (uri: string) => Uint8Array.from(atob(uri.slice(uri.indexOf(",") + 1)), (c) => c.charCodeAt(0));
 
@@ -31,7 +35,8 @@ export async function buildProsePdf(doc: ExportDoc, paper: "a4" | "letter"): Pro
     }
   }
 
-  for (const sheet of layoutProse(doc, proseGeometry(width, height))) {
+  const sheets = layoutProse(doc, proseGeometry(width, height));
+  for (const sheet of sheets) {
     const page = pdf.addPage([width, height]);
     for (const image of sheet.images ?? []) {
       const jpg = embedded.get(image.name);
@@ -41,16 +46,18 @@ export async function buildProsePdf(doc: ExportDoc, paper: "a4" | "letter"): Pro
       const y = top - line.row * PROSE_LINE - ASCENT;
       for (const segment of line.segments) {
         const x = PROSE_MARGIN + segment.col * PROSE_CHAR;
-        page.drawText(segment.text, { x, y, size: SIZE, font: segment.bold ? bold : regular });
+        page.drawText(noThinSpace(segment.text), { x, y, size: SIZE, font: segment.bold ? bold : regular });
         // En Courier, l'italique se note par un soulignement.
         if (segment.underline) page.drawLine({ start: { x, y: y - 2 }, end: { x: x + segment.text.length * PROSE_CHAR, y: y - 2 }, thickness: 0.6 });
       }
     }
     if (sheet.number !== undefined) {
-      const label = String(sheet.number);
-      page.drawText(label, { x: width - PROSE_MARGIN - label.length * PROSE_CHAR, y: height - PROSE_MARGIN / 2 - ASCENT, size: SIZE, font: regular });
+      // Format Shunn : « Nom / TITRE / page » ; sinon le numéro seul.
+      const label = doc.indent && doc.shunn?.running ? `${doc.shunn.running} / ${sheet.number}` : String(sheet.number);
+      page.drawText(noThinSpace(label), { x: width - PROSE_MARGIN - label.length * PROSE_CHAR, y: height - PROSE_MARGIN / 2 - ASCENT, size: SIZE, font: regular });
     }
   }
+  addOutline(pdf, sheets.flatMap((sheet, i) => (sheet.marks ?? []).map((title) => ({ title, page: i }))));
   pdf.setTitle(doc.title);
   if (doc.author) pdf.setAuthor(doc.author);
   pdf.setLanguage(doc.lang);

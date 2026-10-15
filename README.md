@@ -189,7 +189,8 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 
 ### Les exports
 
-- **Manuscrit :** les scènes d'un même chapitre forment un chapitre, séparées par « * * * ». PDF au format manuscrit (Courier 12, double interligne), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
+- **Manuscrit :** les scènes d'un même chapitre forment un chapitre, séparées par « * * * ». PDF au format manuscrit « Shunn », celui qu'attendent agents et éditeurs (Courier 12, double interligne, en-tête « Nom / TITRE / page », nombre de mots arrondi sur la page de garde, chaque chapitre sur une nouvelle page, « # » entre deux scènes, signets par chapitre), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
+- **Livre broché (KDP) :** un PDF d'intérieur prêt pour l'impression à la demande d'Amazon KDP et un gabarit de couverture à sa mesure. Quatre formats (5 × 8 à 6 × 9 pouces), marges en miroir et grand fond selon le nombre de pages, chapitres en belle page, page 1 au début du récit, titres courants et folios aux coins extérieurs, texte justifié et césuré (français, anglais), veuves et orphelines évitées, lettrine. Page de copyright par défaut (droits réservés, mention de fiction, ISBN) si le livre n'a pas la sienne, table des matières avec numéros de page, mot au lecteur avec tes liens, « Du même auteur », signets par chapitre. Le gabarit de couverture donne le dos selon le papier, le fond perdu, les zones sûres et la place du code-barres. Réglages gardés dans le projet.
 - **Scénario :** PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
 - **Bible :** PDF, Word ou Markdown, la couverture du projet en tête, puis les rubriques choisies dans la Bible, dans son ordre, avec les images de chaque fiche et leurs liens.
 - **Canevas :** image PNG du tableau entier, PDF standard (A4, à envoyer) ou grand format (A1, à imprimer), et le texte des cartes en Word ou Markdown, un cadre par partie.
@@ -311,6 +312,6 @@ Architecture, conventions et feuille de route détaillée : voir [CLAUDE.md](CLA
 
 MondoWrite est un logiciel libre, distribué sous licence [GNU GPL v3.0 ou ultérieure](LICENSE). Vous pouvez l'utiliser, l'étudier, le modifier et le redistribuer ; toute version modifiée que vous distribuez doit rester sous la même licence.
 
-Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/assets/fonts/OFL.txt)).
+Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/assets/fonts/OFL.txt)), et le livre broché la police Crimson Text (licence SIL OFL, voir [OFL-CrimsonText.txt](src/assets/fonts/OFL-CrimsonText.txt)). La césure utilise les motifs de TeX du paquet `hyphen`.
 
 Le projet d'exemple reprend « Le Petit Chaperon rouge » de Charles Perrault (*Histoires ou contes du temps passé*, 1697) et trois gravures de Gustave Doré, gravées sur bois par Pannemaker (édition Hetzel, 1862), tous du domaine public. La traduction anglaise du conte a été faite pour MondoWrite.

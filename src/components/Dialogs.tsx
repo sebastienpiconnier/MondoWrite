@@ -14,6 +14,7 @@ import { PhotoSearch } from "./PhotoSearch";
 import { UpdateSettings } from "./Updates";
 import { ExpandedCard } from "./ExpandedCard";
 import { ReplacePanel } from "./ReplacePanel";
+import { PaperbackPanel } from "./PaperbackPanel";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
@@ -43,7 +44,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme.
@@ -78,6 +79,7 @@ export function Dialogs() {
       )}
       {dialog === "trash" && <TrashList />}
       {dialog === "replace" && <ReplacePanel />}
+      {dialog === "paperback" && <PaperbackPanel />}
       {dialog === "document" && <DocumentViewer />}
       {dialog === "photos" && <PhotoSearch />}
       {dialog === "about" && (
@@ -114,7 +116,7 @@ export function Dialogs() {
       {/* La liseuse a son bouton « Fermer » en haut : la place en bas va aux pages. */}
       {dialog !== "document" && (
         <div className="assistant-actions app-dialog-actions">
-          <button type="button" className={dialog === "replace" ? "" : "is-primary"} onClick={() => setDialog(null)} autoFocus={dialog !== "replace"}>
+          <button type="button" className={dialog === "replace" || dialog === "paperback" ? "" : "is-primary"} onClick={() => setDialog(null)} autoFocus={dialog !== "replace" && dialog !== "paperback"}>
             {t.gallery.close}
           </button>
         </div>

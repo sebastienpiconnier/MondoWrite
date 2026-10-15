@@ -6,6 +6,7 @@ import type { Paper } from "./screenplay/layout";
 import type { Plan } from "./plan";
 import type { Goals, Progress } from "./stats";
 import type { Pitch } from "./pitch";
+import type { PrintOptions } from "./export/printOptions";
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question" | "image" | "lien" | "document";
 
@@ -115,6 +116,8 @@ export interface ProjectMeta {
   progress?: Progress;
   /** Couverture du projet (tagline, logline, résumé, pastilles…), voir pitch.ts. Absent : rien de rempli. */
   pitch?: Pitch;
+  /** Réglages du livre broché (format, papier, ISBN, pages de fin), voir export/printOptions.ts. Absent : valeurs par défaut. */
+  print?: PrintOptions;
   viewport?: { x: number; y: number; zoom: number };
 }
 

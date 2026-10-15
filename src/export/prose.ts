@@ -2,7 +2,7 @@
 // double interligne et alinéa pour un manuscrit, italique rendu par un soulignement (l'usage en Courier).
 // Fonction pure : elle rend des pages de lignes, pdf.ts ne fait que les dessiner.
 
-import type { Block, ExportDoc, Run } from "./doc";
+import { SCENE_BREAK, runsText, type Block, type ExportDoc, type Run } from "./doc";
 
 export interface ProseGeometry {
   /** Caractères par ligne et lignes par page, entre les marges. */
@@ -45,7 +45,12 @@ export interface ProsePage {
   number?: number;
   lines: ProseLine[];
   images?: ProseImage[];
+  /** Chapitres qui commencent sur cette page (signets du PDF). */
+  marks?: string[];
 }
+
+/** Nombre de mots arrondi d'un manuscrit (page de garde) : à la centaine, au millier au-delà de 10 000. */
+export const roundWords = (n: number) => (n < 10000 ? Math.max(100, Math.round(n / 100) * 100) : Math.round(n / 1000) * 1000);
 
 /** Côté maximal d'une image dans le PDF (points) : 3 pouces. */
 export const PROSE_IMAGE_BOX = 216;
@@ -147,6 +152,19 @@ export function layoutProse(doc: ExportDoc, { cols, rows }: ProseGeometry): Pros
   (doc.contact ?? []).forEach((text, i) => {
     if (i < Math.floor(rows / 3) - 1) cover.push({ row: i, segments: segments(wrap([{ text }], () => cols)[0] ?? [], 0) });
   });
+  const shunn = doc.indent ? doc.shunn : undefined;
+  if (shunn) {
+    // Format Shunn : le nombre de mots en haut à droite, le titre au milieu de la page, « par Untel » dessous.
+    cover.splice(0, titleLines.length + (doc.author ? 1 : 0));
+    cover.push({ row: 0, segments: [{ col: Math.max(0, cols - shunn.words.length), text: shunn.words }] });
+    const middle = Math.floor(rows / 2) - 1;
+    titleLines.forEach((line, i) => cover.push({ row: middle + i * 2, segments: segments(line, Math.max(0, Math.floor((cols - lineLength(line)) / 2))) }));
+    if (shunn.byline) {
+      wrap([{ text: shunn.byline }], () => cols).forEach((line, i) =>
+        cover.push({ row: middle + titleLines.length * 2 + 2 + i * 2, segments: segments(line, Math.max(0, Math.floor((cols - lineLength(line)) / 2))) }),
+      );
+    }
+  }
   pages.push({ lines: cover });
 
   // Manuscrit : double interligne. Autre document (bible) : interligne simple, une ligne vide entre les paragraphes.
@@ -166,6 +184,10 @@ export function layoutProse(doc: ExportDoc, { cols, rows }: ProseGeometry): Pros
     room(1);
     page!.lines.push({ row, segments: segments(line, col) });
     row += step;
+  };
+  /** Signet : le chapitre commence sur la page en cours. */
+  const mark = (title: string) => {
+    if (page) (page.marks ??= []).push(title);
   };
   const skip = (n: number) => {
     if (page && row > 0) row += n;
@@ -204,10 +226,17 @@ export function layoutProse(doc: ExportDoc, { cols, rows }: ProseGeometry): Pros
   };
 
   for (const chapter of doc.chapters) {
+    if (shunn) {
+      // Chapitre en haut d'une nouvelle page, son titre au tiers de la hauteur.
+      newPage();
+      row = Math.floor(rows / 3);
+    }
     heading([{ text: chapter.title }], true);
+    mark(chapter.title);
     for (const block of chapter.blocks) {
       if (block.kind === "heading") heading(block.runs, false);
       else if (block.kind === "image") image(block.name);
+      else if (shunn && runsText(block.runs).trim() === SCENE_BREAK) put([{ text: "#" }], Math.floor((cols - 1) / 2));
       else paragraph(block);
     }
   }

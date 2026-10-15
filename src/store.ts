@@ -30,6 +30,7 @@ import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene,
 import { organize } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
+import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
 import type { Photo } from "./imageSources";
@@ -150,8 +151,8 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -204,6 +205,9 @@ interface CosmosState {
   /** Clés de cosmos.json écrites par une version plus récente et inconnues ici : réécrites telles quelles. */
   metaKeep: Record<string, unknown>;
   setPitch: (key: PitchField, value: string) => void;
+  /** Réglages du livre broché (fenêtre « Livre broché »), hors historique comme la couverture. */
+  print: PrintOptions;
+  setPrint: (patch: Partial<PrintOptions>) => void;
   progress: Progress;
   /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
   restoreScene: (id: string) => void;
@@ -1008,6 +1012,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const next = setPitchField(get().pitch, key, value);
       if (next === get().pitch) return;
       set({ pitch: next });
+      touch();
+    },
+    print: DEFAULT_PRINT,
+    setPrint: (patch) => {
+      // Nettoyé à l'écriture (printToMeta) : ici, on garde la frappe telle quelle (espaces compris).
+      const next = { ...get().print, ...patch };
+      if (JSON.stringify(next) === JSON.stringify(get().print)) return;
+      set({ print: next });
       touch();
     },
     trash: [],

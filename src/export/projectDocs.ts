@@ -7,7 +7,9 @@ import { CARD_TYPES } from "../types";
 import { vocab } from "../vocab";
 import { chapterNumbers, chapterOf, type Plan } from "../plan";
 import { bookOrder, isPageKind } from "../book";
-import { bibleDoc, manuscriptDoc, type ExportDoc } from "./doc";
+import { SCENE_BREAK, bibleDoc, htmlToBlocks, manuscriptDoc, type ExportDoc } from "./doc";
+import type { BookDoc, BookSection } from "./paperback";
+import { isBlank } from "../manuscript";
 import { canvasDoc } from "./canvas";
 import { boxes, frameBox, type CardNode, type FrameNode } from "../projectState";
 import type { Manuscript } from "../manuscript";
@@ -54,6 +56,39 @@ export function manuscriptOf(s: ProjectDocSource, ctx: DocContext, contact: stri
     const n = numbers.get(chapter.id) ?? 0;
     return { id: chapter.id, title: chapter.title.trim() ? fmt(t.chapters.numberedTitle, { n, title: chapter.title.trim() }) : fmt(t.chapters.numbered, { n }) };
   });
+}
+
+/**
+ * Le livre à imprimer (livre broché) : pages du livre à leur place, chapitres avec leur numéro et leur
+ * titre sur deux lignes, scènes d'un même chapitre séparées par « * * * ». Une scène sans texte n'y est pas.
+ */
+export function bookOf(s: ProjectDocSource, ctx: DocContext, year: number): BookDoc {
+  const { t } = ctx;
+  const cards = s.nodes.map((n) => n.data);
+  const order = bookOrder(s.nodes, s.plan);
+  const numbers = chapterNumbers(s.plan, order);
+  const sections: (BookSection & { key?: string })[] = [];
+  for (const id of order.filter((x) => !isBlank(s.manuscript[x]))) {
+    const card = cards.find((c) => c.id === id);
+    const blocks = htmlToBlocks(s.manuscript[id]);
+    if (isPageKind(card?.page)) {
+      sections.push({ kind: "page", page: card.page, title: t.book.kinds[card.page], blocks });
+      continue;
+    }
+    const chapter = chapterOf(s.plan, id);
+    const last = sections[sections.length - 1];
+    if (chapter && last?.key === chapter.id) {
+      last.blocks.push({ kind: "paragraph", runs: [{ text: SCENE_BREAK }] }, ...blocks);
+    } else if (chapter) {
+      const n = numbers.get(chapter.id) ?? 0;
+      const title = chapter.title.trim();
+      sections.push({ key: chapter.id, kind: "chapter", label: fmt(t.chapters.numbered, { n }), title, toc: title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n }), blocks });
+    } else {
+      const title = card?.title.trim() || t.manuscript.untitled;
+      sections.push({ kind: "chapter", label: "", title, toc: title, blocks });
+    }
+  }
+  return { ...info(s, ctx), year, sections: sections.map(({ key: _key, ...rest }) => rest as BookSection) };
 }
 
 /** Bible : couverture puis les rubriques données, dans leur ordre. */

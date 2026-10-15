@@ -35,3 +35,6 @@ export async function exportDocument(doc: ExportDoc, format: DocFormat, options:
   }
   return { name: `${fileName(options.name, "mondowrite")}.${format}`, extension: format, mime: MIME[format], data };
 }
+
+/** Livre broché (intérieur KDP et gabarit de couverture) : mise en page, police et césure chargées à la demande. */
+export const loadPaperback = () => import("./paperbackPdf");

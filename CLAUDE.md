@@ -209,6 +209,7 @@ src/
     ScriptSceneEditor.tsx  Une scène du scénario écrite dans sa carte agrandie : éditeur au format standard limité au corps de la scène, synopsis Fountain
     ContinuousBook.tsx  Lecture continue du manuscrit : tout le livre en texte, une scène cliquée devient modifiable sur place
     SceneStatusPicker.tsx  Statut d'une scène (pastille, menu déroulant) et sa pastille seule pour les listes
+    PaperbackPanel.tsx  Fenêtre « Livre broché (KDP) » (menu Exporter) : réglages, nombre de pages et dos, enregistrement des deux PDF
     ReplacePanel.tsx    Fenêtre « Rechercher et remplacer » (Cmd/Ctrl+Maj+H) et « Renommer partout » (menu d'une carte)
     TrashList.tsx       Fenêtre « Corbeille » (remettre, supprimer pour de bon, vider) et message « … est dans la corbeille · Annuler »
     TrashIcon.tsx       Icône des boutons « Mettre à la corbeille »
@@ -256,8 +257,12 @@ src/
     doc.ts              Modèle de document commun (chapitres, blocs) ; HTML des cartes et du manuscrit → blocs
     text.ts             Markdown, Word (.docx) et EPUB 3
     zip.ts              Archive ZIP sans compression, pour le .docx et le .epub
-    prose.ts            Mise en page du PDF au format manuscrit (pure, testée)
+    prose.ts            Mise en page du PDF au format manuscrit, Shunn si `ExportDoc.shunn` (pure, testée)
     pdf.ts              Dessin du PDF (pdf-lib, chargé à la demande)
+    printOptions.ts     Réglages du livre broché (`print` de cosmos.json) : formats, papier, grand fond, dos (léger, lu par le store)
+    paperback.ts        Livre broché KDP : césure, lignes justifiées, pages (belles pages, folios, titres courants, sommaire), gabarit de couverture (pur, testé)
+    paperbackPdf.ts     Dessin du livre broché et du gabarit (Crimson Text, motifs `hyphen`, chargés à la demande)
+    outline.ts          Signets d'un PDF (dictionnaire /Outlines écrit à la main)
     images.ts           Images d'un document à exporter : lues dans medias/, réduites, en JPEG (chargé à la demande)
     canvas.ts           Export du canevas : texte par cadre dans l'ordre de lecture (Word, Markdown), taille de l'image (fonctions pures)
     canvasImage.ts      Image du canevas (html-to-image) et PDF A4 ou A1 qui la porte (chargé à la demande)
@@ -271,7 +276,7 @@ src/
     browser.ts          Dossiers simulés dans localStorage, une clé par projet
     tauri.ts            Vrais dossiers sur disque : un par projet (choisi sur ordinateur, privé sur mobile)
   styles.css            Jetons de couleur (clair, sombre), base, accueil, barre du haut ; puis styles/ : canvas.css, bible.css, screenplay.css, writing.css, importés dans cet ordre par main.tsx
-  assets/fonts/         Courier Prime en TTF pour le PDF (licence OFL jointe)
+  assets/fonts/         Courier Prime (PDF manuscrit et scénario) et Crimson Text (livre broché) en TTF, licences OFL jointes
   assets/demo/          Trois gravures de Gustave Doré (1862, domaine public), en JPEG réduit, pour le projet d'exemple
 src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 .github/workflows/      ci.yml (vérification), release.yml (installeurs 3 systèmes)
@@ -281,7 +286,7 @@ src-tauri/              Coquille Rust (peu de code : plugins + permissions)
 
 ```
 MonRoman/
-  cosmos.json          titre, type (roman | scenario), format de page, numéros de scène et en-têtes soulignés (paper, sceneNumbers, underlineHeadings, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, avec ses chapitres, facultatif), objectifs et mots écrits par jour (goals, progress, facultatifs), couverture du projet (pitch, facultatif)
+  cosmos.json          titre, type (roman | scenario), format de page, numéros de scène et en-têtes soulignés (paper, sceneNumbers, underlineHeadings, facultatifs), positions des cartes, fils (avec étiquettes), cadres (frames, facultatif), plan du roman (plan, avec ses chapitres, facultatif), objectifs et mots écrits par jour (goals, progress, facultatifs), couverture du projet (pitch, facultatif), réglages du livre broché (print, facultatif)
   cartes/<id>.md       une carte par fichier
   manuscrit/<id>.md    texte d'une scène du roman (Markdown sans en-tête), au nom de sa carte Scène
   medias/<nom>.jpg     images des cartes (copiées dans le projet), et PDF des cartes Document (medias/<nom>.pdf)
@@ -419,7 +424,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. (fait) **Assistant personnage** : dans la Bible, 24 questions sur trois niveaux (Essentiel, Approfondi, Intime), plus un onglet « Par thème » (dix thèmes : passé, corps, voix, quotidien, émotions, colère, relations, espoirs, façon de penser, zones sombres), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question reliée
 7. (fait) IA optionnelle : « Ranger les idées », questions sur mesure dans l'assistant personnage, alertes de cohérence. Services : Claude, OpenAI, OpenRouter, Ollama, LM Studio. Reste : clé dans le trousseau du système, cohérence étendue au manuscrit
-8. (fait) Export : manuscrit en PDF, Word, EPUB et Markdown, bible en PDF, Word et Markdown, sans outil externe. Le nom d'auteur et les coordonnées viennent du profil (page des projets). Reste : EPUB de la bible
+8. (fait) Export : manuscrit en PDF (format Shunn), Word, EPUB et Markdown, livre broché KDP (intérieur et gabarit de couverture), bible en PDF, Word et Markdown, sans outil externe. Le nom d'auteur et les coordonnées viennent du profil (page des projets). Reste : EPUB de la bible
 9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand le canevas est très dézoomé (menu hors du zoom de React Flow)
 10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 
@@ -533,3 +538,5 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 - **Galerie d'une fiche** : un seul bouton, « Ajouter des photos », qui ouvre la fenêtre Photos (cible `gallery`) ; elle propose aussi « Choisir des images sur l'appareil… ». Le dépôt de fichiers sur la galerie marche toujours.
 - **Menu Exporter** : une colonne à la largeur de ses libellés (`width: max-content`, au moins 260 px), jamais la grille des Réglages, qui le rendait trop étroit avec une barre de défilement horizontale.
 - **Copies Markdown (`markdown/`)** : écrites APRÈS un enregistrement réussi (`syncCopies`, file d'attente, erreurs avalées : une copie manquée ne fait jamais échouer l'enregistrement), seulement par le stockage Tauri (`storage.copies`, absent du navigateur où `readAll` relirait tout). Elles ne sont ni dans la `FileMap` ni dans `TEXT_DIRS` : jamais relues, la source reste `cartes/`, `manuscrit/`, `cosmos.json`. Rien n'est réécrit si le texte n'a pas changé (copies connues relues une fois par projet), donc pas de version pour un simple déplacement de carte. Pas de date dans le texte, sinon chaque enregistrement le changerait. Version du jour : `versions/AAAA-MM-JJ/` complète, réécrite à chaque changement du jour (elle garde le dernier état) ; `versionsToRemove` garde 30 jours, puis la dernière version de chaque mois. C'est le seul endroit où l'app supprime des fichiers d'elle-même. Liens : mentions et cartes reliées (`Run.ref`) vers l'ancre de la fiche (`markdownAnchors`, ancres à la GitHub) dans `bible.md`, sinon `canevas.md` ; images `../medias/` (`../../../medias/` dans une version). Réglage du projet `markdownCopies` (absent = oui, écrit `false` seulement quand l'auteur l'arrête). Le menu Exporter et les copies passent par les mêmes documents (`export/projectDocs.ts`).
+- **Livre broché (KDP)** (`paperback.ts`, pur ; `paperbackPdf.ts`, `PaperbackPanel`) : repris de l'export « Paperback for KDP » de NEO (MIT). Le texte est mesuré par une fonction reçue (`Metrics`) : les polices de pdf-lib dans l'app, une mesure simple dans les tests. Coupure gloutonne avec césure aux traits d'union conditionnels (`hyphenateBook`, paquet `hyphen` chargé à l'export : jamais un mot à majuscule, ni à moins de trois lettres d'un bord, ni le dernier mot du paragraphe), au moins deux lignes de chaque côté d'une coupure de page. Le grand fond dépend du nombre de pages : `layoutPaperback` recompose tant qu'il change (il ne fait que grandir), puis une fois de plus pour les numéros du sommaire. Page 1 = première page du récit (prologue ou chapitre 1) ; pas de folio avant, ni sur une page blanche ; pas de titre courant sur une ouverture ni sur les pages de début et de fin. Nombre de pages pair. Les pages du livre de l'auteur (titre, mentions légales, dédicace, épigraphe) remplacent celles qu'on fabrique. Réglages : `print` dans cosmos.json (dans `KNOWN_META`, écrit seulement s'il diffère des valeurs par défaut, nettoyé par `cleanPrint` à la lecture et à l'écriture), hors historique comme la couverture. L'espace fine insécable n'est ni dans Crimson Text ni dans Courier Prime : les PDF la remplacent par une insécable ordinaire (`noThinSpace`). Le PDF ne se dessine qu'une fois par mise en page (`save` mémorisé).
+- **Signets des PDF** : `addOutline` (outline.ts) pour le livre broché et le manuscrit (`ProsePage.marks`). pdf-lib n'a pas de fonction pour cela : ne pas « simplifier » en retirant le dictionnaire écrit à la main.

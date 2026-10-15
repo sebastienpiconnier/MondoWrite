@@ -4,7 +4,9 @@
 // Menu de vrais boutons : souris, doigt et clavier (Échap referme, le focus revient sur le bouton).
 
 import { useEffect, useId, useRef, useState } from "react";
-import { contactLines } from "../profile";
+import { authorName, contactLines } from "../profile";
+import { countWords } from "../manuscript";
+import { roundWords } from "../export/prose";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
@@ -119,6 +121,17 @@ export function ExportMenu() {
     const contact = format === "epub" ? [] : contactLines(useSettings.getState().profile);
     const doc = manuscriptOf(useCosmos.getState(), ctx(), contact);
     if (doc.chapters.length === 0) return null;
+    if (format === "pdf") {
+      // Format Shunn : « Nom / TITRE / page » en tête, nombre de mots arrondi, « par Untel ».
+      const { lang, profile } = useSettings.getState();
+      const words = Object.values(useCosmos.getState().manuscript).reduce((n, html) => n + countWords(html), 0);
+      const surname = (authorName(profile) || doc.author).split(/\s+/).filter(Boolean).pop() ?? "";
+      doc.shunn = {
+        running: [surname, doc.title.toLocaleUpperCase(lang)].filter(Boolean).join(" / "),
+        words: fmt(x.aboutWords, { n: new Intl.NumberFormat(lang).format(roundWords(words)) }),
+        byline: doc.author ? fmt(x.byline, { author: doc.author }) : "",
+      };
+    }
     return exportDocument(doc, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });
   };
 
@@ -157,10 +170,17 @@ export function ExportMenu() {
   const groups = [
     kind === "scenario"
       ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
-      : { title: x.manuscript, items: MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })) },
+      : {
+          title: x.manuscript,
+          items: [
+            ...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })),
+            // Livre broché : une fenêtre de réglages, qui enregistre elle-même ses deux PDF.
+            { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") },
+          ],
+        },
     { title: x.bible, items: BIBLE_FORMATS.map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
     { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, label: canvasLabels[f], build: canvasFile(f) })) },
-  ] as { title: string; empty?: string; items: { key: string; label: string; build: () => Promise<ExportedFile | null> }[] }[];
+  ] as { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] }[];
   const failed = message === t.failed || message === x.emptyManuscript || message === x.emptyCanvas;
 
   return (
@@ -184,7 +204,12 @@ export function ExportMenu() {
             <div key={group.title} className="export-group" role="group" aria-label={group.title}>
               <span className="eyebrow">{group.title}</span>
               {group.items.map((item) => (
-                <button key={item.key} type="button" className="ghost-button" disabled={busy} onClick={() => run(`${group.title}, ${item.label}`, item.build, group.empty)}>
+                <button key={item.key} type="button" className="ghost-button" disabled={busy} onClick={() => {
+                    if (item.open) {
+                      setOpen(false);
+                      item.open();
+                    } else if (item.build) void run(`${group.title}, ${item.label}`, item.build, group.empty);
+                  }}>
                   {item.label}
                 </button>
               ))}

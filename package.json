@@ -35,6 +35,7 @@
     "@xyflow/react": "^12.12.0",
     "fflate": "^0.8.2",
     "html-to-image": "1.11.11",
+    "hyphen": "^1.14.1",
     "marked": "^18.1.0",
     "nanoid": "^6.0.2",
     "pdf-lib": "^1.17.1",

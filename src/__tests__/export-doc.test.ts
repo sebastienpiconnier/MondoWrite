@@ -332,3 +332,46 @@ describe("chapitres déplacés (recette d'octobre)", () => {
     expect(moved.beats.a_confrontation).toEqual(["c", "a", "b"]);
   });
 });
+
+describe("manuscrit au format Shunn", () => {
+  const geometry = { cols: 40, rows: 30 };
+  const shunn = { running: "Morvan / KERLAOUEN", words: "environ 80 000 mots", byline: "par Inès Morvan" };
+  const doc = (): ExportDoc => ({
+    ...info,
+    indent: true,
+    shunn,
+    contact: ["Inès Morvan", "ines@exemple.fr"],
+    chapters: [
+      { title: "Chapitre 1", blocks: [{ kind: "paragraph", runs: [{ text: "Un." }] }, { kind: "paragraph", runs: [{ text: "* * *" }] }, { kind: "paragraph", runs: [{ text: "Deux." }] }] },
+      { title: "Chapitre 2", blocks: [{ kind: "paragraph", runs: [{ text: "Trois." }] }] },
+    ],
+  });
+
+  it("mots arrondis à la centaine, puis au millier", async () => {
+    const { roundWords } = await import("../export/prose");
+    expect(roundWords(12)).toBe(100);
+    expect(roundWords(4349)).toBe(4300);
+    expect(roundWords(81499)).toBe(81000);
+  });
+
+  it("page de garde : coordonnées à gauche, mots à droite, titre au milieu et « par Untel »", () => {
+    const [cover] = layoutProse(doc(), geometry);
+    const row0 = cover.lines.filter((l) => l.row === 0).flatMap((l) => l.segments);
+    expect(row0.map((s) => s.text)).toEqual(["Inès Morvan", "environ 80 000 mots"]);
+    expect(row0[1].col + row0[1].text.length).toBe(40);
+    const title = cover.lines.find((l) => l.segments.some((s) => s.text === "KERLAOUEN"))!;
+    expect(title.row).toBe(14);
+    expect(cover.lines.some((l) => l.segments.some((s) => s.text === "par Inès Morvan"))).toBe(true);
+  });
+
+  it("chaque chapitre au tiers d'une nouvelle page, « # » entre deux scènes, un signet par chapitre", () => {
+    const pages = layoutProse(doc(), geometry);
+    expect(pages).toHaveLength(3);
+    expect(pages[1].marks).toEqual(["Chapitre 1"]);
+    expect(pages[2].marks).toEqual(["Chapitre 2"]);
+    const heading = pages[1].lines.find((l) => l.segments.some((s) => s.text === "Chapitre 1"))!;
+    expect(heading.row).toBeGreaterThanOrEqual(10);
+    expect(pages[1].lines.some((l) => l.segments.some((s) => s.text === "#"))).toBe(true);
+    expect(pages[1].lines.some((l) => l.segments.some((s) => s.text === "* * *"))).toBe(false);
+  });
+});
