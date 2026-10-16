@@ -53,7 +53,7 @@ MondoWrite brings it all into one place, from the first fragment to the printed 
 
 Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases).
 
-> **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, it isn't signed yet: if SmartScreen appears, click “More info”, then “Run anyway”.
+> **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, if SmartScreen appears, click “More info”, then “Run anyway”. See the [code signing policy](CODE_SIGNING.md#english).
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
@@ -296,7 +296,7 @@ npm test        # tests (Vitest)
 git tag v0.1.0 && git push --tags
 ```
 
-GitHub builds the installers for all three systems and puts them in a draft Release, which you then publish. The secrets needed to sign the apps (Apple developer account, update signing key, Windows certificate) are listed in `release.yml`. A Release published normally (not as a pre-release) is the one the app finds and installs.
+GitHub builds the installers for all three systems and puts them in a draft Release, which you then publish. The secrets needed to sign the apps (Apple developer account, update signing key, SignPath for Windows) are listed in `release.yml`; Windows signing follows the [code signing policy](CODE_SIGNING.md#english). A Release published normally (not as a pre-release) is the one the app finds and installs.
 
 ### Working on several computers
 
