@@ -10,7 +10,7 @@
 
 ![The MondoWrite canvas: four cards (idea, character, place, scene) connected by labeled threads](docs/images/canvas-en.png)
 
-<a href="https://youtu.be/QTNqWJBSaO4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the MondoWrite presentation video (1 min)"></a>
+<a href="https://github.com/sebastienpiconnier/MondoWrite/blob/main/docs/videos/mondowrite-presentation-en.mp4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the MondoWrite presentation video (1 min 20)"></a>
 
 [Download](#download) · [Features](#features) · [AI](#ai-if-you-want-it) · [Platforms](#platforms) · [Development](#development)
 
