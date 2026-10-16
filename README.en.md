@@ -53,7 +53,7 @@ MondoWrite brings it all into one place, from the first fragment to the printed 
 
 Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases).
 
-> **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, if SmartScreen appears, click “More info”, then “Run anyway”. See the [code signing policy](CODE_SIGNING.md#english).
+> **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, if SmartScreen appears, click “More info”, then “Run anyway”. Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org): see the [code signing policy](CODE_SIGNING.md#english).
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
