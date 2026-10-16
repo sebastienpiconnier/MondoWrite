@@ -315,4 +315,8 @@ MondoWrite is free software, released under the [GNU GPL v3.0 or later](LICENSE)
 
 The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets/fonts/OFL.txt)), and the paperback the Crimson Text font (SIL OFL license, see [OFL-CrimsonText.txt](src/assets/fonts/OFL-CrimsonText.txt)). Hyphenation uses TeX patterns from the `hyphen` package.
 
+Manuscript import and the paperback export reuse rules from Hugh Howey’s [NEO](https://github.com/hughhowey/neo) (MIT license). Copyright notices and licenses for everything MondoWrite reuses or bundles are gathered in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+To contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 The example project uses Charles Perrault’s “Le Petit Chaperon rouge” (*Histoires ou contes du temps passé*, 1697) and three engravings by Gustave Doré, wood-engraved by Pannemaker (Hetzel edition, 1862), all in the public domain. The English translation of the tale was made for MondoWrite.

@@ -314,4 +314,8 @@ MondoWrite est un logiciel libre, distribué sous licence [GNU GPL v3.0 ou ulté
 
 Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/assets/fonts/OFL.txt)), et le livre broché la police Crimson Text (licence SIL OFL, voir [OFL-CrimsonText.txt](src/assets/fonts/OFL-CrimsonText.txt)). La césure utilise les motifs de TeX du paquet `hyphen`.
 
+L'import de manuscrits et l'export en livre broché reprennent des règles de [NEO](https://github.com/hughhowey/neo) de Hugh Howey (licence MIT). Les mentions de copyright et les licences de tout ce que MondoWrite reprend ou embarque sont réunies dans [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+Pour contribuer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
+
 Le projet d'exemple reprend « Le Petit Chaperon rouge » de Charles Perrault (*Histoires ou contes du temps passé*, 1697) et trois gravures de Gustave Doré, gravées sur bois par Pannemaker (édition Hetzel, 1862), tous du domaine public. La traduction anglaise du conte a été faite pour MondoWrite.
