@@ -10,47 +10,46 @@
 
 <img width="1389" height="868" alt="preview (3)" src="https://github.com/user-attachments/assets/05dfbce7-cc79-433a-bb5a-b9e2ab889e2b" />
 
-<a href="https://github.com/sebastienpiconnier/MondoWrite/blob/main/docs/videos/mondowrite-presentation-fr.mp4"><img src="docs/images/video-poster-fr.jpg" width="640" alt="Voir la vidéo de présentation de MondoWrite (1 min 20)"></a>
+<a href="https://youtu.be/HW7D9uyo8l8"><img src="docs/images/video-poster-fr.jpg" width="640" alt="Voir la vidéo de présentation de MondoWrite (1 min 20)"></a>
 
 [Télécharger](#télécharger) · [Fonctionnalités](#fonctionnalités) · [L'IA](#lia-si-vous-le-souhaitez) · [Plateformes](#plateformes) · [Développer](#pour-développer)
 
 ---
 
-## 🏛️ Chers auteurs architectes
+## ✍️ Romanciers, scénaristes
 
-Vous ne commencez pas un roman en naviguant à vue. Vous ne faites pas sauter vos personnages du haut d'une falaise en espérant qu'un filet apparaisse au chapitre suivant.
+Une histoire ne commence jamais au chapitre un. Elle commence par des fragments : une image, un personnage, un lieu, une question sans réponse.
 
-Pour vous, écrire est un acte de construction. Avant d'aligner la première phrase du chapitre un, vous avez besoin de voir l'ossature, d'éprouver la charpente, de cartographier la géographie du monde et d'établir les motivations profondes de chaque protagoniste.
+Puis il faut tout faire tenir ensemble : un tableau d'idées d'un côté, un traitement de texte ou un logiciel de scénario de l'autre, des notes éparpillées, des fiches personnages recopiées trois fois… Le chaos avant l'ordre.
 
-Mais jusqu'ici, vous deviez jongler : un tableau virtuel d'un côté, un traitement de texte de l'autre, des dossiers de notes éparpillés, des fiches personnages dupliquées trois fois… Le chaos avant l'ordre.
+MondoWrite rassemble tout au même endroit, du premier fragment jusqu'au livre imprimé ou au scénario prêt à envoyer.
 
-En grec, *kosmos* désigne justement l'ordre du monde, né du chaos.
-
-## 📐 Un outil pensé pour votre méthode de travail
-
-MondoWrite a été conçu sur un principe fondamental : votre structure doit émerger naturellement, sans bureaucratie.
+## 📐 Ce que fait MondoWrite
 
 ```text
    [ IDÉES & FRAGMENTS ] ──► ( Canevas interactif )
                                      │
            ┌─────────────────────────┼─────────────────────────┐
            ▼                         ▼                         ▼
-   [ BIBLE DU RÉCIT ]       [ PLAN & GABARITS ]      [ MANUSCRIT CLEAN ]
+   [ BIBLE DU RÉCIT ]       [ PLAN & GABARITS ]      [ MANUSCRIT OU SCÉNARIO ]
    Fiches synchronisées     3 actes, Save the Cat    Fichiers Markdown
-   sans aucune retape       ou Voyage du héros       locaux et pérennes
+   sans aucune retape       ou Voyage du héros       et Fountain, chez vous
 ```
 
-- **4 vues, 1 seul contenu.** Modifiez un trait de caractère sur le Canevas, la Bible se met à jour immédiatement. Renommez une scène dans le Plan, le Manuscrit suit. Vous ne recopiez plus jamais la même information.
-- **Des gabarits de structure éprouvés.** Placez vos scènes selon le Voyage du héros, Save the Cat! ou la structure en trois actes. Visualisez la chronologie par intrigue pour repérer d'un coup d'œil où un sous-fil narratif s'estompe.
-- **La fiche personnage comme moteur dramatique.** Définissez en trois cases lisibles le moteur de vos personnages (Veut, A besoin de, Blessure). Laissez l'assistant vous poser les bonnes questions pour combler vos zones d'ombre.
-- **Souveraineté et pérennité.** Pas de cloud propriétaire, pas d'abonnement, pas de format verrouillé. Vos projets sont de simples dossiers de fichiers Markdown enregistrés sur votre machine. Vous gardez 100 % du contrôle sur votre œuvre.
-- **Libre et gratuit.** MondoWrite est un logiciel libre, distribué sous licence GPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
+- **4 vues, 1 seul contenu.** Canevas, Bible, Plan et Manuscrit restent synchronisés : modifiez un trait de caractère sur le Canevas, la Bible se met à jour. Vous ne recopiez jamais la même information.
+- **La scène là où vous l'avez imaginée.** Chaque carte Scène porte son texte, son synopsis et son statut (brouillon, à revoir, terminée). Écrivez-la dans la carte agrandie ou dans le Manuscrit.
+- **Un vrai éditeur de scénario.** Format cinéma, pages et minutes en temps réel, séquencier, complétion des personnages et des décors, import et export Fountain et Final Draft.
+- **Des gabarits de structure éprouvés.** Voyage du héros, Save the Cat! ou trois actes, et une chronologie par intrigue pour repérer d'un coup d'œil où un sous-fil s'estompe.
+- **La fiche personnage comme moteur dramatique.** Veut, A besoin de, Blessure, en trois cases lisibles, et un assistant qui vous pose les bonnes questions.
+- **Du premier jet au livre imprimé.** PDF au format manuscrit, Word, EPUB, livre broché prêt pour Amazon KDP. Et dans l'autre sens, importez votre manuscrit Word ou votre scénario existant.
+- **Votre œuvre vous appartient.** Pas de compte, pas de cloud, pas d'abonnement : vos projets sont de simples fichiers Markdown sur votre machine.
+- **Libre et gratuit, et ça le restera.** MondoWrite est un logiciel libre, distribué sous licence GPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
 
-**L'IA ne rédigera pas votre livre.** Si vous choisissez de l'activer (y compris un modèle 100 % local sur votre ordinateur), elle se contente d'analyser vos incohérences, de remettre vos notes en ordre et de vous poser des questions pointues. Vous restez l'unique architecte.
+**L'IA n'écrira pas votre histoire.** Si vous choisissez de l'activer (y compris un modèle 100 % local sur votre ordinateur), elle relève vos incohérences, remet vos notes en ordre et vous pose des questions pointues. Vous restez l'auteur.
 
-## 🧱 Prêts à bâtir votre prochain univers ?
+## 🧱 Prêts à écrire votre prochain monde ?
 
-[Téléchargez MondoWrite](https://github.com/sebastienpiconnier/MondoWrite/releases/latest) gratuitement pour macOS, Windows ou Linux, et transformez vos fragments d'idées en un monde parfaitement ordonné.
+[Téléchargez MondoWrite](https://mondowrite.app) gratuitement pour macOS, Windows ou Linux. Auteurs testeurs bienvenus : vos retours façonnent MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
 
 ## Télécharger
 

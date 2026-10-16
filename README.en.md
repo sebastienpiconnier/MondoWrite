@@ -10,47 +10,46 @@
 
 ![The MondoWrite canvas: four cards (idea, character, place, scene) connected by labeled threads](docs/images/canvas-en.png)
 
-<a href="https://github.com/sebastienpiconnier/MondoWrite/blob/main/docs/videos/mondowrite-presentation-en.mp4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the MondoWrite presentation video (1 min 20)"></a>
+<a href="https://youtu.be/o6AGiJrQib4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the MondoWrite presentation video (1 min 20)"></a>
 
 [Download](#download) · [Features](#features) · [AI](#ai-if-you-want-it) · [Platforms](#platforms) · [Development](#development)
 
 ---
 
-## 🏛️ Dear architect writers
+## ✍️ Novelists, screenwriters
 
-You don’t start a novel by sailing blind. You don’t push your characters off a cliff hoping a net will appear in the next chapter.
+A story never starts at chapter one. It starts with fragments: an image, a character, a place, a question with no answer yet.
 
-For you, writing is an act of construction. Before you set down the first sentence of chapter one, you need to see the skeleton, test the framework, map the geography of the world and pin down the deep motivations of every character.
+Then you have to hold it all together: an idea board on one side, a word processor or a screenwriting app on the other, scattered notes, character sheets copied three times over… Chaos before order.
 
-But until now, you had to juggle: a virtual board on one side, a word processor on the other, scattered folders of notes, character sheets copied three times over… Chaos before order.
+MondoWrite brings it all into one place, from the first fragment to the printed book or the screenplay ready to send.
 
-In Greek, *kosmos* means precisely that: the order of the world, born out of chaos.
-
-## 📐 A tool built around the way you work
-
-MondoWrite was designed on one core principle: your structure should emerge naturally, without bureaucracy.
+## 📐 What MondoWrite does
 
 ```text
    [ IDEAS & FRAGMENTS ] ──► ( Interactive canvas )
                                      │
            ┌─────────────────────────┼─────────────────────────┐
            ▼                         ▼                         ▼
-   [ STORY BIBLE ]          [ OUTLINE & TEMPLATES ]  [ CLEAN MANUSCRIPT ]
-   Synced character and     3 acts, Save the Cat     Local, future-proof
-   place sheets, no retype  or Hero’s Journey        Markdown files
+   [ STORY BIBLE ]          [ OUTLINE & TEMPLATES ]  [ MANUSCRIPT OR SCREENPLAY ]
+   Synced character and     3 acts, Save the Cat     Markdown and Fountain
+   place sheets, no retype  or Hero’s Journey        files, on your machine
 ```
 
-- **4 views, 1 single content.** Change a character trait on the Canvas and the Bible updates instantly. Rename a scene in the Outline and the Manuscript follows. You never copy the same information twice.
-- **Proven structure templates.** Place your scenes along the Hero’s Journey, Save the Cat! or the three-act structure. See the timeline by plotline and spot at a glance where a subplot fades out.
-- **The character sheet as a dramatic engine.** Define your characters’ engine in three readable boxes (Wants, Needs, Wound). Let the assistant ask you the right questions to fill in the blanks.
-- **Ownership and longevity.** No proprietary cloud, no subscription, no locked format. Your projects are plain folders of Markdown files saved on your own machine. You keep 100% control over your work.
-- **Free and open source.** MondoWrite is free software, released under the GPL-3.0: you can use it, study it, change it and share it.
+- **4 views, 1 single content.** Canvas, Bible, Outline and Manuscript stay in sync: change a character trait on the Canvas and the Bible updates. You never copy the same information twice.
+- **The scene where you imagined it.** Every Scene card holds its text, its synopsis and its status (draft, to revise, done). Write it in the expanded card or in the Manuscript.
+- **A true screenplay editor.** Industry format, live page and minute count, step outline, character and location completion, Fountain and Final Draft import and export.
+- **Proven structure templates.** The Hero’s Journey, Save the Cat! or three acts, plus a timeline by plotline to spot at a glance where a subplot fades out.
+- **The character sheet as a dramatic engine.** Wants, Needs, Wound, in three readable boxes, and an assistant that asks you the right questions.
+- **From first draft to printed book.** Manuscript-format PDF, Word, EPUB, and a paperback ready for Amazon KDP. And the other way round, import your Word manuscript or your existing screenplay.
+- **Your work belongs to you.** No account, no cloud, no subscription: your projects are plain Markdown files on your own machine.
+- **Free and open source, for good.** MondoWrite is free software, released under the GPL-3.0: you can use it, study it, change it and share it.
 
-**AI will not write your book.** If you choose to turn it on (including a 100% local model on your computer), it only points out inconsistencies, puts your notes back in order and asks you sharp questions. You remain the sole architect.
+**AI will not write your story.** If you choose to turn it on (including a 100% local model on your computer), it spots inconsistencies, puts your notes back in order and asks you sharp questions. You remain the author.
 
-## 🧱 Ready to build your next universe?
+## 🧱 Ready to write your next world?
 
-[Download MondoWrite](https://github.com/sebastienpiconnier/MondoWrite/releases/latest) for free on macOS, Windows or Linux, and turn your fragments of ideas into a perfectly ordered world.
+[Download MondoWrite](https://mondowrite.app) for free on macOS, Windows or Linux. Writers wanted as testers: your feedback shapes MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
 
 ## Download
 
