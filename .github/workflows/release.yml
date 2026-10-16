@@ -132,8 +132,6 @@ jobs:
           releaseBody: |
             MondoWrite pour macOS (Apple Silicon et Intel), Windows et Linux. *English below.*
 
-            Anciennement Cosmos : seul le nom change, tes projets et tes réglages restent les mêmes.
-
             **Installer**
             - macOS : ouvre le .dmg (aarch64 pour un Mac Apple Silicon, x64 pour un Mac Intel) et glisse MondoWrite dans Applications. L'app est signée et vérifiée par Apple.
             - Windows : lance le .exe (ou le .msi). L'app n'est pas encore signée : si SmartScreen s'affiche, « Informations complémentaires » puis « Exécuter quand même ».
@@ -144,8 +142,6 @@ jobs:
             ---
 
             MondoWrite for macOS (Apple Silicon and Intel), Windows and Linux.
-
-            Formerly Cosmos: only the name changes, your projects and settings stay the same.
 
             **Install**
             - macOS: open the .dmg (aarch64 for an Apple Silicon Mac, x64 for an Intel Mac) and drag MondoWrite to Applications. The app is signed and verified by Apple.

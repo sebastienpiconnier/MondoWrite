@@ -1289,7 +1289,7 @@ export const en: Messages = {
   },
   about: {
     open: "About MondoWrite",
-    intro: "A canvas for novelists and screenwriters who build their story before writing it. In Greek, kosmos means the order of the world, born from chaos: that is the path the app takes you along, from loose ideas to a bible, an outline and then the text.",
+    intro: "A canvas for novelists and screenwriters who build their story before writing it. MondoWrite means writing a world: you start from loose ideas, then move at your own pace to a bible, an outline and finally the text. From chaos to an ordered world.",
     pillars: [
       "Free and open source: you can use, study, change and share it.",
       "Your data stays yours: Markdown files in your folder, no account, no server, nothing to train an AI.",
@@ -1298,7 +1298,7 @@ export const en: Messages = {
     ],
     creditsTitle: "Credits",
     author: "Designed by Sébastien Piconnier.",
-    credits: "Inspired among others by NEO, Hugh Howey’s writing app. Built with Tauri, React, React Flow and TipTap. Fonts IBM Plex, Space Grotesk and Courier Prime (SIL Open Font License).",
+    credits: "Built with Tauri, React, React Flow, TipTap and pdf-lib. Fonts IBM Plex, Space Grotesk, Playfair Display, Courier Prime and Crimson Text (SIL Open Font License). Manuscript import and the paperback export reuse rules from Hugh Howey’s NEO (MIT license).",
     license: "GNU GPL 3.0 or later.",
     source: "Source code:",
   },

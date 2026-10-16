@@ -2,8 +2,6 @@
 
 <img src="docs/images/logo-en.png" width="600" alt="MondoWrite, from chaos to an ordered world">
 
-*Formerly Cosmos: only the name changes, your projects and settings stay the same.*
-
 [Français](README.md) · **English**
 
 **From chaos to an ordered world: a canvas for novelists and screenwriters who build their story before writing it.**

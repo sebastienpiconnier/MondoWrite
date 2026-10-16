@@ -2,8 +2,6 @@
 
 <img src="docs/images/logo-fr.png" width="600" alt="MondoWrite, du chaos au monde ordonné">
 
-*Anciennement Cosmos : seul le nom change, vos projets et réglages restent les mêmes.*
-
 **Français** · [English](README.en.md)
 
 **Du chaos au monde ordonné : un canevas pour les romanciers et les scénaristes qui construisent leur histoire avant de l'écrire.**

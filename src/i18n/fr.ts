@@ -1275,7 +1275,7 @@ export const fr = {
   },
   about: {
     open: "À propos de MondoWrite",
-    intro: "Un canevas pour les romanciers et les scénaristes qui construisent leur histoire avant de l’écrire. En grec, kosmos désigne l’ordre du monde, né du chaos : c’est le chemin que l’app te fait parcourir, des idées en vrac à la bible, au plan puis au texte.",
+    intro: "Un canevas pour les romanciers et les scénaristes qui construisent leur histoire avant de l’écrire. MondoWrite, c’est écrire un monde : tu pars d’idées en vrac, puis tu avances à ton rythme vers la bible, le plan et enfin le texte. Du chaos au monde ordonné.",
     pillars: [
       "Libre et open source : tu peux l’utiliser, l’étudier, la modifier et la partager.",
       "Tes données restent à toi : des fichiers Markdown dans ton dossier, aucun compte, aucun serveur, rien pour entraîner une IA.",
@@ -1284,7 +1284,7 @@ export const fr = {
     ],
     creditsTitle: "Crédits",
     author: "Conçu par Sébastien Piconnier.",
-    credits: "Inspiré entre autres par NEO, le logiciel d’écriture de Hugh Howey. Construit avec Tauri, React, React Flow et TipTap. Polices IBM Plex, Space Grotesk et Courier Prime (licence SIL Open Font).",
+    credits: "Construit avec Tauri, React, React Flow, TipTap et pdf-lib. Polices IBM Plex, Space Grotesk, Playfair Display, Courier Prime et Crimson Text (licence SIL Open Font). L’import des manuscrits et le livre broché reprennent des règles de NEO, de Hugh Howey (licence MIT).",
     license: "Licence GNU GPL 3.0 ou ultérieure.",
     source: "Code source :",
   },

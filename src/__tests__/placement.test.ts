@@ -2,7 +2,7 @@
 // Les cartes ne se chevauchent pas à la création, d'où qu'elles viennent.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { CARD_SIZE, firstFreeCell, freeSpot, type Box } from "../placement";
+import { CARD_SIZE, firstFreeCell, freeSpot, placeCard, placeFrame, type Box } from "../placement";
 import { useCosmos } from "../store";
 
 const box = (x: number, y: number, height = CARD_SIZE.height): Box => ({ x, y, width: CARD_SIZE.width, height });
@@ -78,5 +78,33 @@ describe("dans le store", () => {
     for (const title of ["Inès", "Hugo", "Le gardien", "Phare"]) addTitledCard("personnage", title);
     expect(useCosmos.getState().nodes).toHaveLength(6);
     expect(overlapping()).toBe(false);
+  });
+});
+
+describe("cartes et cadres : jamais l'un sur l'autre", () => {
+  const frame = { x: 0, y: 0, width: 600, height: 400 };
+  it("demandée hors d'un cadre, une carte ne se pose pas dessus", () => {
+    const spot = placeCard({ x: 500, y: 300 }, { cards: [], frames: [{ x: 600, y: 200, width: 400, height: 400 }] });
+    expect(spot.x + CARD_SIZE.width <= 600 || spot.y + CARD_SIZE.height <= 200 || spot.x >= 1000 || spot.y >= 600).toBe(true);
+  });
+  it("demandée dans un cadre, elle y reste, tout entière, à côté de ses cartes", () => {
+    const inside = box(40, 70);
+    const spot = placeCard({ x: 50, y: 80 }, { cards: [inside], frames: [frame] });
+    expect(spot.x).toBeGreaterThanOrEqual(frame.x);
+    expect(spot.x + CARD_SIZE.width).toBeLessThanOrEqual(frame.x + frame.width);
+    expect(spot.y + CARD_SIZE.height).toBeLessThanOrEqual(frame.y + frame.height);
+    const overlap = spot.x < inside.x + inside.width && inside.x < spot.x + CARD_SIZE.width && spot.y < inside.y + inside.height && inside.y < spot.y + CARD_SIZE.height;
+    expect(overlap).toBe(false);
+  });
+  it("un cadre plein : la carte va dans un espace vide, dehors", () => {
+    const small = { x: 0, y: 0, width: 260, height: 220 };
+    const spot = placeCard({ x: 10, y: 60 }, { cards: [box(16, 56)], frames: [small] });
+    expect(spot.x >= 260 || spot.y >= 220 || spot.x + CARD_SIZE.width <= 0 || spot.y + CARD_SIZE.height <= 0).toBe(true);
+  });
+  it("première place libre et nouveau cadre : hors des cadres", () => {
+    const spot = firstFreeCell({ cards: [], frames: [{ x: 0, y: 0, width: 2000, height: 300 }] });
+    expect(spot.y).toBeGreaterThanOrEqual(300);
+    const f = placeFrame({ x: 0, y: 0 }, { cards: [], frames: [frame] }, { width: 520, height: 360 });
+    expect(f.x >= 600 || f.y >= 400 || f.x + 520 <= 0 || f.y + 360 <= 0).toBe(true);
   });
 });

@@ -63,9 +63,10 @@ describe("créer un cadre", () => {
 
 describe("déplacer un cadre", () => {
   it("les cartes dont le centre est dedans suivent, les autres non", () => {
+    // Le cadre d'abord : un cadre vide ne se pose jamais sur des cartes, une carte demandée dedans y reste.
+    const id = frameAroundOrigin();
     const inside = state().addCard({ x: 100, y: 100 });
     const outside = state().addCard({ x: 900, y: 100 });
-    const id = frameAroundOrigin();
     pause();
 
     state().onNodesChange([{ id, type: "position", position: { x: 60, y: 195 }, dragging: true }]);
@@ -77,8 +78,8 @@ describe("déplacer un cadre", () => {
   });
 
   it("un déplacement entier s'annule en une fois, cartes comprises", () => {
-    const inside = state().addCard({ x: 100, y: 100 });
     const id = frameAroundOrigin();
+    const inside = state().addCard({ x: 100, y: 100 });
     pause();
     for (let step = 1; step <= 5; step++) {
       state().onNodesChange([{ id, type: "position", position: { x: -40 + step * 40, y: -5 }, dragging: true }]);

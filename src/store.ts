@@ -18,7 +18,7 @@ import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { visibleSections } from "./bibleSections";
 import { IMPORT_EXTENSIONS, projectFromFile } from "./import";
-import { CARD_SIZE, firstFreeCell, freeSpot } from "./placement";
+import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension } from "./media";
 import { documentFiche, documentTitle } from "./documents";
 import { removeMentions, renameMentions } from "./mentions";
@@ -590,6 +590,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     if (moved.size === 0) return;
     set({ nodes: nodes.map((n) => (moved.has(n.id) ? { ...n, position: moved.get(n.id)! } : n)) });
   };
+  /** Cartes et cadres du canevas : une nouvelle carte ne se pose sur aucun d'eux. */
+  const occupied = (nodes: CardNode[] = get().nodes, frames: FrameNode[] = get().frames): Occupied => ({ cards: boxes(nodes), frames: frames.map(frameBox) });
   const restore = (from: "past" | "future") => {
     const { past, future, nodes, frames, edges, screenplay, plan, trash } = get();
     const stack = from === "past" ? past : future;
@@ -778,8 +780,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Comme dans Milanote : la carte naît là où l'on colle ou dépose, sans cadre imposé. « Organiser » la
       // rangera plus tard dans le cadre de son type (Images, Liens, Idées en vrac).
       const size = { width: CARD_SIZE.width, height: image ? CARD_SIZE.height + IMAGE_ROOM : CARD_SIZE.height };
-      const taken = boxes(get().nodes);
-      const spot = at ? freeSpot({ x: at.x - 20, y: at.y - 20 }, taken, size) : firstFreeCell(taken, size);
+      const taken = occupied();
+      const spot = at ? placeCard({ x: at.x - 20, y: at.y - 20 }, taken, size) : firstFreeCell(taken, size);
       const card: CardData = { id: newId(), type, title, html, ...(fiche && Object.keys(fiche).length > 0 ? { fiche } : {}), ...(image ? { image } : {}), ...(fichier ? { fichier } : {}) };
       // Scénario : une Scène qui arrive avec son en-tête entre aussitôt dans le texte, comme une carte titrée.
       const { screenplay, kind } = get();
@@ -1073,7 +1075,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Une seule étape d'historique pour la carte et ses fils.
       record();
       const card: CardData = { id: newId(), type: "question", title: title.trim(), html: "" };
-      const spot = firstFreeCell(boxes(nodes));
+      const spot = firstFreeCell(occupied(nodes));
       let next = edges;
       for (const target of new Set(cardIds)) {
         if (!nodes.some((n) => n.id === target)) continue;
@@ -1132,7 +1134,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const out = restoreCard(entry, new Set(nodes.map((n) => n.id)), get().screenplay);
       // Sa place d'avant si elle est libre, sinon la première place libre à côté.
       const width = entry.trashed.width ?? CARD_WIDTH;
-      const spot = freeSpot({ x: entry.trashed.x, y: entry.trashed.y }, [...boxes(nodes), ...frames.filter((f) => f.data.kind === "research").map(frameBox)], { width, height: CARD_SIZE.height });
+      const spot = placeCard({ x: entry.trashed.x, y: entry.trashed.y }, occupied(nodes, frames), { width, height: CARD_SIZE.height });
       set({
         nodes: [...nodes, toNode(out.card, spot.x, spot.y, entry.trashed.width)],
         edges: [...edges, ...out.links.filter((l) => !edges.some((e) => e.id === l.id)).map((l) => ({ ...l, type: "floating" }))],
@@ -1152,7 +1154,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const id = newId();
       const elements = screenplay.elements.slice();
       elements[start] = { ...heading, cardId: id };
-      const spot = firstFreeCell(boxes(nodes));
+      const spot = firstFreeCell(occupied(nodes));
       const card: CardData = { id, type: "scene", title: heading.text, html: "" };
       set(toTrash([id], { nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: get().edges, screenplay: { ...screenplay, elements } }));
       touch();
@@ -1170,7 +1172,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (get().nodes.some((n) => n.id === id) || !(id in get().manuscript)) return;
       record();
       const card: CardData = { id, type: "scene", title: "", html: "" };
-      const spot = firstFreeCell(boxes(get().nodes));
+      const spot = firstFreeCell(occupied());
       set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
       touch();
     },
@@ -1221,7 +1223,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     addPlanScene: (title, beat, chapterId) => {
       record();
       const card: CardData = { id: newId(), type: "scene", title, html: "" };
-      const spot = firstFreeCell(boxes(get().nodes));
+      const spot = firstFreeCell(occupied());
       const nodes = [...get().nodes, toNode(card, spot.x, spot.y)];
       let plan = placeScene(get().plan, planScenes(nodes), card.id, beat);
       // Sans chapitre précisé, la scène rejoint celui de la scène qui la précède dans le récit.
@@ -1244,7 +1246,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const card: CardData = { id: newId(), type: "scene", title: "", html: "" };
       // Sur le canevas, juste sous la scène coupée : l'ordre par défaut (de haut en bas) reste juste.
       const [box] = boxes([after]);
-      const spot = freeSpot({ x: box.x, y: box.y + box.height + 24 }, boxes(nodes), { width: CARD_SIZE.width, height: CARD_SIZE.height });
+      const spot = placeCard({ x: box.x, y: box.y + box.height + 24 }, occupied(nodes), { width: CARD_SIZE.width, height: CARD_SIZE.height });
       const next = [...nodes, toNode(card, spot.x, spot.y)];
       const ids = planScenes(next);
       const { beats } = arrange(plan, ids);
@@ -1553,13 +1555,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const bottom = Math.max(...around.map((b) => b.y + b.height)) + FRAME_PADDING.bottom;
         frame = { id: newId(), title: "", x: left, y: top, width: right - left, height: bottom - top };
       } else {
-        frame = {
-          id: newId(),
-          title: "",
-          x: Math.round(center.x - FRAME_SIZE.width / 2),
-          y: Math.round(center.y - FRAME_SIZE.height / 2),
-          ...FRAME_SIZE,
-        };
+        // Sans sélection : un cadre vide, dans un espace libre près du centre de la vue (jamais sur des cartes ni un autre cadre).
+        const spot = placeFrame({ x: Math.round(center.x - FRAME_SIZE.width / 2), y: Math.round(center.y - FRAME_SIZE.height / 2) }, occupied(), FRAME_SIZE);
+        frame = { id: newId(), title: "", x: spot.x, y: spot.y, ...FRAME_SIZE };
       }
       set({ frames: [...get().frames.map((f) => ({ ...f, selected: false })), { ...toFrameNode(frame), selected: true }] });
       touch();
@@ -1679,7 +1677,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record();
       const card: CardData = { id: newId(), type, title: "", html: "" };
       // À l'endroit demandé s'il est libre, sinon juste à côté : deux cartes ne se chevauchent pas.
-      const spot = freeSpot(pos, boxes(get().nodes), { width: CARD_SIZE.width, height });
+      const spot = placeCard(pos, occupied(), { width: CARD_SIZE.width, height });
       const node = { ...toNode(card, spot.x, spot.y), selected: true };
       set({ nodes: [...get().nodes.map((n) => ({ ...n, selected: false })), node], pendingFocusId: card.id });
       touch();
@@ -1688,7 +1686,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     addTitledCard: (type, title) => {
       record();
       const card: CardData = { id: newId(), type, title, html: "" };
-      const spot = firstFreeCell(boxes(get().nodes));
+      const spot = firstFreeCell(occupied());
       set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
       touch();
       return card.id;
