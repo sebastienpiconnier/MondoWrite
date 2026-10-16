@@ -2,7 +2,7 @@
 
 Le guide complet de MondoWrite, en français et en anglais, illustré de captures d’écran : `guide.fr.html` et `guide.en.html` (le texte), `guide.css` (la mise en page A4), `images/fr/` et `images/en/` (les captures), `exemples/` (le court scénario importé pour les captures du chapitre Scénario).
 
-Le guide est publié par la CI (workflow `.github/workflows/guide.yml`, à chaque changement de `docs/guide/` sur `main`) sur GitHub Pages : https://sebastienpiconnier.github.io/MondoWrite/ (`fr/`, `en/`, et les deux PDF à la racine). C'est l'aide en ligne de l'app : F1 l'ouvre au chapitre de la vue en cours (`src/help.ts`, `GUIDE_SECTIONS` : ne pas changer l'identifiant d'un chapitre sans mettre ce tableau à jour, un test le vérifie). Les PDF et le site ne sont pas versionnés.
+Le guide est publié par la CI (workflow `.github/workflows/guide.yml`, à chaque changement de `docs/guide/` sur `main`) sur GitHub Pages : https://sebastienpiconnier.github.io/MondoWrite/ (`fr/`, `en/`, et les deux PDF à la racine). C'est l'aide en ligne de l'app : F1 l'ouvre au chapitre de la vue en cours (`src/help.ts`, `GUIDE_SECTIONS` : ne pas changer l'identifiant d'un chapitre sans mettre ce tableau à jour, un test le vérifie). Le site n'est pas versionné. Les PDF le restent, à cette place et sous ce nom : MondoWrite 1.0.0 les ouvre sur GitHub (branche `main`) ; les refaire et les committer avec chaque changement du guide.
 
 Pour Pages, une seule fois : dans le dépôt, Settings > Pages > Source : « GitHub Actions ».
 

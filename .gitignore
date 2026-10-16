@@ -4,7 +4,7 @@ src-tauri/target
 src-tauri/gen
 .DS_Store
 
-# Guide de l’utilisateur : PDF et site se fabriquent (npm run guide, guide:site) et sont publiés par la CI sur GitHub Pages
-docs/guide/*.pdf
+# Guide de l’utilisateur : le site se fabrique (npm run guide:site) et est publié par la CI sur GitHub Pages.
+# Les PDF restent versionnés : MondoWrite 1.0.0 les ouvre à cette adresse sur GitHub.
 docs/guide/.site/
 docs/guide/.build-*.html
