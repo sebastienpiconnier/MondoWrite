@@ -22,6 +22,8 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
           type="text"
           className="frame-title nodrag"
           value={data.title}
+          // Titre coupé quand le cadre est étroit : il se lit en entier au survol.
+          title={data.title || undefined}
           size={Math.max(10, data.title.length)}
           placeholder={t.frameTitle}
           aria-label={t.frameTitleAria}

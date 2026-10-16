@@ -1459,6 +1459,7 @@ export const fr = {
     button: "Organiser le canevas",
     hint: "Range toutes les cartes en cadres : personnages, lieux, thèmes, questions, scènes par case du gabarit et par chapitre, idées en vrac. Les scènes se suivent, reliées dans l’ordre. Annulable avec Ctrl ou Cmd + Z.",
     pages: "Pages du livre",
+    continued: "{label} (suite)",
   },
 
   // Statistiques et objectifs du manuscrit.

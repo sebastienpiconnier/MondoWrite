@@ -4,36 +4,16 @@
 
 import { chromium } from "playwright-core";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { dir, prepare } from "./common.mjs";
 import { PDFDocument, PDFHexString, PDFName } from "pdf-lib";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const lang = process.argv[2] || "fr";
-const root = resolve(import.meta.dirname, "../..");
-const dir = join(root, "docs/guide");
-const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
-const date = new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-US", { month: "long", year: "numeric" }).format(new Date());
 const L = lang === "fr" ? { guide: "MondoWrite · Guide de l’utilisateur", title: "MondoWrite, guide de l’utilisateur" } : { guide: "MondoWrite · User guide", title: "MondoWrite, user guide" };
-
-const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const strip = (s) => s.replace(/<span class="num">.*?<\/span>/, "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
-
-let html = readFileSync(join(dir, `guide.${lang}.html`), "utf8").replaceAll("{{VERSION}}", version).replaceAll("{{DATE}}", date);
-// Typographie française : espaces insécables dans les guillemets et avant : ; ? ! (hors balises).
-if (lang === "fr") {
-  html = html.replace(/>([^<]+)</g, (m, t) => ">" + t.replace(/« /g, "«\u00a0").replace(/ »/g, "\u00a0»").replace(/ ([:;?!])(?=\s|$|<)/g, "\u00a0$1") + "<");
-}
-// Titres : un identifiant pour chaque h3, la liste pour le sommaire.
-const heads = [];
-html = html.replace(/<h([23])( id="([^"]+)")?>([\s\S]*?)<\/h\1>/g, (m, lvl, _a, id, inner) => {
-  const text = strip(inner);
-  if (!text || /^(Sommaire|Contents)$/.test(text)) return m;
-  const key = id || `${slug(text)}-${heads.length}`;
-  heads.push({ lvl: Number(lvl), text, id: key });
-  return `<h${lvl} id="${key}">${inner}</h${lvl}>`;
-});
+const { html, heads } = prepare(lang);
 const toc = (pages) => heads.map((h, i) => `<li class="lvl${h.lvl}"><a href="#${h.id}">${h.text}</a><span class="dots"></span><span class="pg">${pages?.[i] ?? "00"}</span></li>`).join("\n");
 
 const tmp = mkdtempSync(join(tmpdir(), "guide-"));

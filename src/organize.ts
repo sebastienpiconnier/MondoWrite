@@ -28,6 +28,8 @@ export interface OrganizeLabels {
   beat: (key: string) => string;
   /** Titre du cadre d'un chapitre : numéro et titre éventuel. */
   chapter: (n: number, title: string) => string;
+  /** Un chapitre déjà commencé dans une case précédente du gabarit : « Chapitre 2 (suite) ». */
+  continued: (label: string) => string;
   /** Scènes pas encore rangées dans une case. */
   unplaced: string;
   /** Cadre de toutes les scènes, quand le plan est libre et sans chapitre. */
@@ -81,10 +83,14 @@ interface Sized {
   height: number;
 }
 
+/** Largeur du titre d'un cadre (police de 16 px, environ 8,5 px par caractère, marges de l'en-tête et ses boutons). */
+const titleWidth = (title: string) => Math.ceil(title.length * 8.5) + 120;
+
 function size(item: Item): Sized {
   if (item.kind === "card") return { width: item.width, height: item.height };
   const inner = layoutSize(item.body);
-  return item.kind === "box" ? inner : { width: inner.width + PAD.side * 2, height: inner.height + PAD.top + PAD.bottom };
+  // Un cadre étroit (une seule carte) s'élargit pour que son titre se lise en entier.
+  return item.kind === "box" ? inner : { width: Math.max(inner.width + PAD.side * 2, titleWidth(item.title)), height: inner.height + PAD.top + PAD.bottom };
 }
 
 /** Largeur de chaque colonne et hauteur de chaque ligne d'une grille. */
@@ -168,10 +174,18 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
   const order = [...beats.flatMap((b) => b.ids), ...unplaced];
   const numbers = chapterNumbers(plan, order);
   // Les chapitres d'un groupe se suivent de gauche à droite, leurs scènes aussi.
+  // Un chapitre réparti sur plusieurs cases du gabarit : son titre complet dans la première, « (suite) » ensuite.
+  const titled = new Set<string>();
   const chaptered = (ids: string[]): { item: Item; count: number }[] =>
     groupByChapter(plan, ids).map((g) => {
       const body: Layout = { items: g.ids.flatMap(cardItem), columns: sceneColumns(g.ids.length), gap: GAP };
-      const item: Item = g.chapter ? { kind: "frame", title: labels.chapter(numbers.get(g.chapter.id) ?? 0, g.chapter.title.trim()), body } : { kind: "box", body };
+      let item: Item = { kind: "box", body };
+      if (g.chapter) {
+        const n = numbers.get(g.chapter.id) ?? 0;
+        const first = !titled.has(g.chapter.id);
+        titled.add(g.chapter.id);
+        item = { kind: "frame", title: first ? labels.chapter(n, g.chapter.title.trim()) : labels.continued(labels.chapter(n, "")), body };
+      }
       return { item, count: g.ids.length };
     });
   const free = plan.template === "libre" || PLAN_TEMPLATES[plan.template].length <= 1;

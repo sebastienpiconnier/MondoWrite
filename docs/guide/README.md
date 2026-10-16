@@ -2,7 +2,9 @@
 
 Le guide complet de MondoWrite, en français et en anglais, illustré de captures d’écran : `guide.fr.html` et `guide.en.html` (le texte), `guide.css` (la mise en page A4), `images/fr/` et `images/en/` (les captures), `exemples/` (le court scénario importé pour les captures du chapitre Scénario).
 
-Les PDF (`MondoWrite-guide-fr.pdf`, `MondoWrite-guide-en.pdf`) sont versionnés : c’est l’aide en ligne de l’app (F1, Réglages, menu Aide du Mac), qui les ouvre sur GitHub (`guideUrl`, src/help.ts, branche `main`). Les refaire et les committer après chaque changement du guide ; on peut aussi les joindre à la Release.
+Le guide est publié par la CI (workflow `.github/workflows/guide.yml`, à chaque changement de `docs/guide/` sur `main`) sur GitHub Pages : https://sebastienpiconnier.github.io/MondoWrite/ (`fr/`, `en/`, et les deux PDF à la racine). C'est l'aide en ligne de l'app : F1 l'ouvre au chapitre de la vue en cours (`src/help.ts`, `GUIDE_SECTIONS` : ne pas changer l'identifiant d'un chapitre sans mettre ce tableau à jour, un test le vérifie). Les PDF et le site ne sont pas versionnés.
+
+Pour Pages, une seule fois : dans le dépôt, Settings > Pages > Source : « GitHub Actions ».
 
 ## Fabriquer les PDF
 
@@ -11,6 +13,15 @@ npm run guide
 ```
 
 Chromium compose les pages (Google Chrome installé sur la machine, ou celui indiqué par la variable `CHROMIUM`). Un premier passage trouve la page de chaque titre, le second écrit le sommaire ; la couverture est ajoutée sans numéro, avec un signet par chapitre. La version et le mois viennent de `package.json` et de la date du jour.
+
+## Voir le site en local
+
+```bash
+npm run guide        # les PDF (facultatif : le site les propose s'ils existent)
+npm run guide:site   # docs/guide/.site/, à ouvrir avec n'importe quel petit serveur web
+```
+
+`docs/guide/site.css` adapte la mise en page à l'écran (sommaire à gauche, une colonne sur téléphone) ; `guide.css` reste celle du PDF.
 
 ## Refaire les captures
 

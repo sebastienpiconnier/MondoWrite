@@ -92,6 +92,7 @@ describe("organiser le canevas", () => {
     groups: { idee: "Idées", personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", image: "Images", lien: "Liens", document: "Documents" },
     beat: (k: string) => k,
     chapter: (n: number, title: string) => (title ? `Chapitre ${n} · ${title}` : `Chapitre ${n}`),
+    continued: (label: string) => `${label} (suite)`,
     unplaced: "À placer",
     story: "Scènes",
     pages: "Pages du livre",
@@ -122,6 +123,14 @@ describe("organiser le canevas", () => {
     // Aucun chevauchement entre cartes.
     const boxes = [...r.positions.values()].map((p) => ({ ...p, width: 240, height: 120 }));
     for (const a of boxes) for (const b of boxes) if (a !== b) expect(a.x + 240 <= b.x || b.x + 240 <= a.x || a.y + 120 <= b.y || b.y + 120 <= a.y).toBe(true);
+  });
+
+  it("un chapitre sur deux cases : son titre une fois, « (suite) » ensuite ; un cadre étroit laisse lire son titre", () => {
+    const plan: Plan = { template: "troisActes", beats: { a_setup: ["s1"], a_climax: ["s2", "s3"] }, chapters: [{ id: "c1", title: "Une très longue arrivée au phare", scenes: ["s1", "s2", "s3"] }] };
+    const r = organize({ cards, plan, sceneIds: ["s1", "s2", "s3"], labels, origin: { x: 0, y: 0 }, newId });
+    expect(r.frames.map((f) => f.title)).toEqual(["Personnages", "a_setup", "Chapitre 1 · Une très longue arrivée au phare", "a_climax", "Chapitre 1 (suite)", "Idées"]);
+    const chapter = r.frames[2];
+    expect(chapter.width).toBeGreaterThanOrEqual(Math.ceil(chapter.title.length * 8.5) + 120);
   });
 
   it("en paysage : cases côte à côte, nouvelle rangée avant 9 scènes, ensemble plus large que haut", () => {

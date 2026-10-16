@@ -525,6 +525,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
         beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
         chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
+        continued: (label) => fmt(t.organize.continued, { label }),
         unplaced: t.plan.unplaced,
         story: types.scene.section,
         pages: t.organize.pages,
@@ -572,7 +573,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       return nodes.some((n, i) => sceneIds.has(n.id) && insideBox(sizes[i].x + sizes[i].width / 2, sizes[i].y + sizes[i].height / 2, box));
     });
     const pattern = (s: string) => new RegExp(`^${s.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{n\}/g, "\\d+").replace(/\{title\}/g, ".+")}$`);
-    const chapterTitle = [pattern(t.chapters.numbered), pattern(t.chapters.numberedTitle)];
+    const chapterTitle = [pattern(t.chapters.numbered), pattern(t.chapters.numberedTitle), pattern(fmt(t.organize.continued, { label: t.chapters.numbered }))];
     const known = new Set([
       ...Object.values(t.plan.beats).map((b) => b.label),
       t.plan.unplaced,

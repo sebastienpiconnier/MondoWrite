@@ -343,7 +343,7 @@ export function Settings({ project = true }: { project?: boolean }) {
             >
               {t.tour.open}
             </button>
-            <button type="button" className="link-button" title={t.help.guideHint} onClick={() => { setOpen(false); void openGuide(); }}>
+            <button type="button" className="link-button" title={t.help.guideHint} onClick={() => { setOpen(false); void openGuide(null); }}>
               {t.help.guide} <span aria-hidden="true">↗</span>
             </button>
             <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setDialog("shortcuts"); }}>

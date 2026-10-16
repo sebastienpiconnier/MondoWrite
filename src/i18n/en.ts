@@ -1435,6 +1435,7 @@ export const en: Messages = {
     button: "Organize the canvas",
     hint: "Puts every card in a frame: characters, places, themes, questions, scenes by template beat and chapter, loose ideas. Scenes are linked in order. Undo with Ctrl or Cmd + Z.",
     pages: "Book pages",
+    continued: "{label} (continued)",
   },
 
   stats: {

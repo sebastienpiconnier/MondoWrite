@@ -1,0 +1,47 @@
+# Guide de l'utilisateur en ligne (aide de l'app : F1, Réglages, menu Aide du Mac).
+# Fabrique les PDF et le site web du guide, puis les publie sur GitHub Pages :
+# https://sebastienpiconnier.github.io/MondoWrite/ (fr/, en/, PDF à la racine).
+# À activer une fois dans le dépôt : Settings > Pages > Source : « GitHub Actions ».
+name: Guide
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/guide/**", "scripts/guide/**", "src-tauri/icons/**", "package.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Le Google Chrome du système de la CI compose les PDF (playwright-core, canal « chrome »).
+      - run: npm run guide
+      - run: node scripts/guide/site.mjs _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

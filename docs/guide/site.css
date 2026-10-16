@@ -1,0 +1,59 @@
+/* Guide de l'utilisateur, version web (scripts/guide/site.mjs) : par-dessus guide.css, qui reste la mise en page A4 du PDF. */
+@media screen {
+  html { font-size: 17px; line-height: 1.6; background: #fbfbfd; overflow-x: hidden; }
+  body {
+    display: grid; grid-template-columns: 260px minmax(0, 780px); column-gap: 56px; justify-content: center;
+    margin: 0; padding: 0 24px 96px;
+  }
+  .cover {
+    grid-column: 1 / -1; height: auto; min-height: 0; margin: 0 calc(50% - 50vw) 40px; padding: 48px max(24px, calc(50vw - 548px)) 40px;
+    gap: 24px; break-after: auto;
+  }
+  .cover .logo { width: 72px; }
+  .cover .brand { font-size: 34px; margin-top: 12px; }
+  .cover h1 { font-size: 30px; }
+  .cover .sub { font-size: 17px; max-width: 640px; }
+
+  /* Sommaire : colonne de gauche qui reste en vue. */
+  nav.toc { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow: auto; padding: 8px 0 24px; break-after: auto; font-size: 14px; }
+  nav.toc summary { font-family: "Grotesk", sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #4a4f63; cursor: pointer; padding: 6px 0; }
+  nav.toc ol { list-style: none; margin: 4px 0 0; padding: 0; }
+  nav.toc li { display: block; margin: 0; padding: 0; }
+  nav.toc li.lvl2 { font-size: 14px; margin-top: 10px; }
+  nav.toc li.lvl3 { padding-left: 14px; font-size: 13px; }
+  nav.toc a { display: block; padding: 3px 8px; border-radius: 6px; color: inherit; }
+  nav.toc li.lvl3 a { color: #4a4f63; }
+  nav.toc a:hover, nav.toc a:focus-visible { background: #eceefc; color: #3a3fb8; outline: none; }
+  .site-tools { margin: 16px 0 0; padding: 12px 8px 0; border-top: 1px solid #dfe1ea; font-size: 13px; }
+
+  main { min-width: 0; }
+  h2 { font-size: 30px; margin: 56px 0 18px; padding-top: 24px; border-top: 1px solid #dfe1ea; scroll-margin-top: 16px; }
+  main > h2:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
+  h2 .num { font-size: 12px; }
+  h3 { font-size: 21px; margin: 32px 0 10px; scroll-margin-top: 16px; }
+  h4 { font-size: 17px; }
+  p, li { orphans: auto; widows: auto; }
+  .lead { font-size: 19px; }
+  code, kbd { font-size: 0.85em; }
+  figure { margin: 20px 0 28px; }
+  figure img { max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 16px rgba(20, 27, 45, 0.08); }
+  figure.small img { max-width: min(100%, 420px); }
+  figure.medium img { max-width: min(100%, 620px); }
+  figure.tall img { max-height: 85vh; }
+  figcaption { font-size: 14px; margin-top: 8px; }
+  .pair { gap: 20px; }
+  .note, .tip, .warn { padding: 12px 16px; margin: 16px 0 20px; border-radius: 0 8px 8px 0; border-left-width: 4px; }
+  .note::before, .tip::before, .warn::before { font-size: 12px; margin-bottom: 4px; }
+  table { font-size: 15px; }
+  th, td { padding: 8px 10px; }
+  .steps > li { padding-left: 32px; }
+  .steps > li::before { width: 22px; height: 22px; line-height: 22px; font-size: 12px; top: 2px; }
+
+  @media (max-width: 960px) {
+    body { grid-template-columns: minmax(0, 1fr); padding: 0 16px 64px; }
+    .cover { margin: 0 calc(50% - 50vw) 24px; padding: 32px 16px; }
+    nav.toc { position: static; max-height: none; margin-bottom: 24px; padding: 12px 16px; border: 1px solid #dfe1ea; border-radius: 12px; background: #fff; }
+    nav.toc details:not([open]) + .site-tools { display: none; }
+    .pair { flex-direction: column; }
+  }
+}
