@@ -15,7 +15,7 @@
   width: 100%; min-height: 44px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
   padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-size: 13px; cursor: pointer;
 }
-.sp-scene-list button:hover { background: var(--hover); }
+@media (any-hover: hover) { .sp-scene-list button:hover { background: var(--hover); } }
 .sp-scene-list button.is-current { background: var(--accent-soft); color: var(--accent-ink); }
 /* Déplacer une scène : glisser dans la liste, ou les flèches de la scène en cours. */
 .sp-scene-list li[draggable] { cursor: grab; border-radius: 8px; }
@@ -35,7 +35,7 @@
   margin: 16px 16px 0; padding: 6px; background: var(--surface); border-radius: 12px;
 }
 .sp-bar button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; font-size: 14px; cursor: pointer; white-space: nowrap; }
-.sp-bar button:hover { background: var(--hover); }
+@media (any-hover: hover) { .sp-bar button:hover { background: var(--hover); } }
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 .sp-bar-hint { padding: 0 10px; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .sp-focus { border: 1px solid var(--line) !important; }
@@ -78,7 +78,7 @@
 .sp-title-center .sp-title-field { text-align: center; }
 .sp-title-field.is-title { font-weight: 700; }
 .sp-title-field::placeholder { color: var(--placeholder); }
-.sp-title-field:hover { background: var(--ground); }
+@media (any-hover: hover) { .sp-title-field:hover { background: var(--ground); } }
 .sp-editor > :first-child { margin-top: 0; }
 .sp-sceneHeading { font-weight: 700; text-transform: uppercase; }
 .sp-character { margin-left: 22ch; max-width: 38ch; text-transform: uppercase; }
