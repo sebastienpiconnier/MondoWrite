@@ -143,3 +143,54 @@ describe("typographie à la frappe", () => {
     expect(SHORTCUT_GROUPS.everywhere.some(([item]) => item === "replace")).toBe(true);
   });
 });
+
+describe("renommer un nom qui est aussi un mot", () => {
+  it("« Will » ne touche jamais « will », et l'auteur décide en tête de phrase", async () => {
+    const { findOccurrences, isAlsoAWord } = await import("../replace");
+    await state().createProject({ title: "Hope", kind: "roman" });
+    const will = state().addCard({ x: 0, y: 0 }, "personnage");
+    state().updateCard(will, { title: "Will" });
+    const scene = state().addCard({ x: 0, y: 400 }, "scene");
+    state().setManuscriptText(scene, "<p>Will you come? Will said he will.</p><p>Rose rose early. WILL.</p>");
+    const req = { find: "Will", replacement: "Liam", wholeWord: true, nameCase: true, cards: true, renameId: will };
+    const occ = findOccurrences(state(), req);
+    expect(occ.map((o) => o.match)).toEqual(["Will", "Will", "WILL"]);
+    expect(occ.map((o) => o.sentenceStart)).toEqual([true, true, true]);
+    expect(isAlsoAWord(state(), "Will")).toBe(true);
+    expect(isAlsoAWord(state(), "Rose")).toBe(true);
+    expect(isAlsoAWord(state(), "Liam")).toBe(false);
+    // L'auteur garde « Will you come? » (le mot) et renomme le reste.
+    expect(state().replaceText({ ...req, skip: [occ[0].key] })).toBe(2);
+    expect(state().manuscript[scene]).toBe("<p>Will you come? Liam said he will.</p><p>Rose rose early. LIAM.</p>");
+    expect(state().nodes.find((n) => n.id === will)!.data.title).toBe("Liam");
+    state().undoReplace();
+    expect(state().manuscript[scene]).toBe("<p>Will you come? Will said he will.</p><p>Rose rose early. WILL.</p>");
+  });
+
+  it("dans un scénario, une réplique en capitales n'est jamais en doute", async () => {
+    const { findOccurrences } = await import("../replace");
+    await state().createProject({ title: "Phare", kind: "scenario" });
+    const id = state().addCard({ x: 0, y: 0 }, "scene");
+    state().updateCard(id, { title: "INT. PHARE - NUIT" });
+    state().setSceneText(id, [
+      { type: "character", text: "HOPE" },
+      { type: "dialogue", text: "Hope is all we have." },
+    ]);
+    const occ = findOccurrences(state(), { find: "Hope", replacement: "Ada", wholeWord: true, nameCase: true });
+    expect(occ.map((o) => [o.match, o.sentenceStart, o.label])).toEqual([
+      ["HOPE", false, "INT. PHARE - NUIT"],
+      ["Hope", true, "INT. PHARE - NUIT"],
+    ]);
+  });
+});
+
+describe("nom à article", () => {
+  it("« The Wolf » trouve aussi « the Wolf » et garde l'article en minuscule", async () => {
+    const { finder, replaceInText, caseMode } = await import("../replace");
+    const req = { find: "The Wolf", wholeWord: true, nameCase: true };
+    const re = finder(req.find, req)!;
+    expect(replaceInText("The Wolf ran. Said the Wolf to the wolf.", re, "The Ogre", caseMode(req)).text).toBe("The Ogre ran. Said the Ogre to the wolf.");
+    const dv = { find: "de Villiers", wholeWord: true, nameCase: true };
+    expect(replaceInText("Puis de Villiers partit. DE VILLIERS.", finder(dv.find, dv)!, "Dupont", caseMode(dv)).text).toBe("Puis Dupont partit. DUPONT.");
+  });
+});
