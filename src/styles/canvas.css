@@ -50,7 +50,7 @@
 }
 .label-editor input { min-width: 200px; height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; outline: none; }
 .label-unlink { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 13px; cursor: pointer; }
-.label-unlink:hover { color: var(--danger); border-color: var(--danger); }
+@media (any-hover: hover) { .label-unlink:hover { color: var(--danger); border-color: var(--danger); } }
 @media (pointer: coarse) { .label-editor input, .label-unlink { min-height: 44px; } }
 
 /* ---------- Cadre de regroupement ---------- */
@@ -65,16 +65,18 @@
 .frame-handle { pointer-events: all; display: flex; align-items: center; gap: 6px; width: max-content; max-width: 100%; padding: 8px 10px; cursor: grab; }
 .frame-handle:active { cursor: grabbing; }
 .frame-title { min-width: 10ch; max-width: 100%; min-height: 32px; padding: 0 8px; field-sizing: content; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: 500 16px var(--font-display); text-overflow: ellipsis; }
-.frame-title:hover { border-color: var(--line-2); }
+@media (any-hover: hover) { .frame-title:hover { border-color: var(--line-2); } }
 .frame-title:focus-visible { border-color: var(--line-2); background: var(--surface); color: var(--ink); }
 .frame-title::placeholder { color: var(--placeholder); }
 .frame .card-delete { opacity: 0; }
-.frame:hover .card-delete, .frame.is-selected .card-delete, .frame .card-delete:focus-visible { opacity: 1; }
+.frame.is-selected .card-delete, .frame .card-delete:focus-visible { opacity: 1; }
+@media (any-hover: hover) { .frame:hover .card-delete { opacity: 1; } }
 .frame .react-flow__resize-control { pointer-events: all; }
 /* Verrou : discret tant que le cadre est libre (visible au survol, à la sélection, au clavier), toujours visible une fois verrouillé. */
 .frame-lock { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; opacity: 0; }
-.frame:hover .frame-lock, .frame.is-selected .frame-lock, .frame-lock:focus-visible, .frame-lock[aria-pressed="true"] { opacity: 1; }
-.frame-lock:hover { background: var(--hover); color: var(--ink); }
+.frame.is-selected .frame-lock, .frame-lock:focus-visible, .frame-lock[aria-pressed="true"] { opacity: 1; }
+@media (any-hover: hover) { .frame:hover .frame-lock { opacity: 1; } }
+@media (any-hover: hover) { .frame-lock:hover { background: var(--hover); color: var(--ink); } }
 .frame-lock[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent-soft); }
 .frame.is-locked { border-style: solid; }
 .frame.is-locked .frame-handle { cursor: default; }
@@ -105,11 +107,12 @@
   border: 0; border-radius: 6px; background: transparent; cursor: pointer;
   font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--type);
 }
-.card-type:hover { background: var(--ground); }
+@media (any-hover: hover) { .card-type:hover { background: var(--ground); } }
 .card-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--type); flex-shrink: 0; display: inline-block; }
 .card-delete { width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; opacity: 0; }
-.card:hover .card-delete, .card.is-selected .card-delete, .card-delete:focus-visible { opacity: 1; }
-.card-delete:hover { background: var(--ground); color: var(--ink); }
+.card.is-selected .card-delete, .card-delete:focus-visible { opacity: 1; }
+@media (any-hover: hover) { .card:hover .card-delete { opacity: 1; } }
+@media (any-hover: hover) { .card-delete:hover { background: var(--ground); color: var(--ink); } }
 
 /* Image d'une carte, en tête */
 /* L'image garde ses proportions ; si elle laisse des bandes, un fond flou tiré d'elle-même les comble. */
@@ -118,7 +121,8 @@
 .card-image-main { position: relative; display: block; width: 100%; max-height: 220px; object-fit: contain; }
 .card-image-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(18px) saturate(1.1); transform: scale(1.25); opacity: 0.85; pointer-events: none; }
 .card-image-remove { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border: 0; border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; opacity: 0; box-shadow: var(--shadow-card); }
-.card:hover .card-image-remove, .card.is-selected .card-image-remove, .card-image-remove:focus-visible { opacity: 1; }
+.card.is-selected .card-image-remove, .card-image-remove:focus-visible { opacity: 1; }
+@media (any-hover: hover) { .card:hover .card-image-remove { opacity: 1; } }
 .card-bible, .card-expand, .card-actions > .card-delete { display: grid; place-items: center; font-size: 0; }
 /* Menu d'une carte (⋯) : sous le bouton, au-dessus des cartes voisines. */
 .card-actions { position: relative; display: flex; }
@@ -129,7 +133,8 @@
   display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop);
 }
 .card-actions-menu button { min-height: 40px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
-.card-actions-menu button:hover, .card-actions-menu button:focus-visible { background: var(--ground); outline: none; }
+.card-actions-menu button:focus-visible { background: var(--ground); outline: none; }
+@media (any-hover: hover) { .card-actions-menu button:hover { background: var(--ground); outline: none; } }
 .card-actions-menu button:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 /* Coin bas droit d'une carte sélectionnée : on le tire pour changer sa largeur.
    Le milieu du bord droit reste au point d'accroche des fils. */
@@ -147,7 +152,7 @@
 .card-body.is-scene .draft-preview { margin: 0 -8px; width: calc(100% + 16px); }
 .card-body.is-clamped { max-height: 220px; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent); mask-image: linear-gradient(to bottom, #000 70%, transparent); }
 .card-more { display: inline-block; margin: -4px 12px 10px; padding: 4px 0; min-height: 28px; border: 0; background: transparent; color: var(--accent-ink); font: 600 13px var(--font-ui); cursor: pointer; }
-.card-more:hover { text-decoration: underline; }
+@media (any-hover: hover) { .card-more:hover { text-decoration: underline; } }
 .card-editor, .card-editor:focus-visible { padding: 4px 12px 12px; min-height: 28px; outline: none; font: 15px/1.5 var(--font-text); color: var(--ink); cursor: text; }
 /* Mention d'une autre carte (@), dans une carte, dans la Bible et dans le panneau du scénario. */
 [data-mention] { background: var(--accent-soft); border-radius: 4px; padding: 0 3px; font-weight: 500; white-space: nowrap; }
@@ -163,13 +168,13 @@
 
 /* Source : son adresse, un bouton qui l'ouvre dans le navigateur. */
 .card-source { display: flex; align-items: center; gap: 6px; max-width: calc(100% - 24px); min-height: 32px; margin: 0 12px 10px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink-2); font: 500 13px var(--font-ui); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card-source:hover { background: var(--ground); color: var(--ink); }
+@media (any-hover: hover) { .card-source:hover { background: var(--ground); color: var(--ink); } }
 .source-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .source-tools .ghost-button { width: auto; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); font-size: 14px; }
 .source-tools p { flex-basis: 100%; margin: 0; }
 /* Personnage : questions gardées pour plus tard, un lien vers sa fiche dans la Bible. */
 .card-questions { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-height: 32px; margin: 0 12px 12px; padding: 4px 10px 4px 4px; border: 1px dashed var(--type); border-radius: 999px; background: transparent; color: var(--ink-2); font: 500 13px var(--font-ui); text-align: left; cursor: pointer; }
-.card-questions:hover { background: var(--ground); color: var(--ink); }
+@media (any-hover: hover) { .card-questions:hover { background: var(--ground); color: var(--ink); } }
 .card-questions-count { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border: 2px solid var(--type); border-radius: 999px; background: var(--surface); color: var(--ink); font-weight: 700; font-size: 12px; }
 /* Mise en avant : une carte nette, avec un halo d'accent ; le reste (cartes, cadres, fils, étiquettes) s'estompe. */
 .toile .react-flow__node, .toile .react-flow__edge, .toile .react-flow__edgelabel-renderer > * { transition: opacity 0.2s ease; }
@@ -189,14 +194,16 @@
 }
 .canvas-filter-title { margin: 0 4px 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
 .canvas-filter-item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: 8px; color: var(--ink); font-size: 14px; cursor: pointer; }
-.canvas-filter-item:hover { background: var(--ground); }
+@media (any-hover: hover) { .canvas-filter-item:hover { background: var(--ground); } }
 .canvas-filter-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .canvas-filter-panel .ghost-button { margin-top: 6px; min-height: 40px; }
 .card-port { width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--accent); opacity: 0; transition: opacity 0.15s; z-index: 3; }
-.card:hover .card-port, .card.is-selected .card-port, .react-flow__node.connecting .card-port { opacity: 1; }
+.card.is-selected .card-port, .react-flow__node.connecting .card-port { opacity: 1; }
+@media (any-hover: hover) { .card:hover .card-port { opacity: 1; } }
 
 .card-dropzone { position: absolute; inset: 0; width: auto; height: auto; transform: none; border: 0; border-radius: 12px; background: transparent; z-index: 5; }
-.card-dropzone:hover, .card-dropzone.connectingto { background: var(--dropzone); outline: 2px dashed var(--accent); outline-offset: 2px; }
+.card-dropzone.connectingto { background: var(--dropzone); outline: 2px dashed var(--accent); outline-offset: 2px; }
+@media (any-hover: hover) { .card-dropzone:hover { background: var(--dropzone); outline: 2px dashed var(--accent); outline-offset: 2px; } }
 
 .slash-menu {
   position: absolute; left: 12px; top: calc(100% + 6px); z-index: 20; width: 220px;
@@ -206,7 +213,8 @@
 .slash-menu.opens-up { top: auto; bottom: calc(100% + 6px); }
 .slash-title { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px; }
 .slash-item { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 9px 10px; font-size: 14px; cursor: pointer; }
-.slash-item.is-active, .slash-item:hover { background: var(--accent-soft); }
+.slash-item.is-active { background: var(--accent-soft); }
+@media (any-hover: hover) { .slash-item:hover { background: var(--accent-soft); } }
 .slash-hint { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 
 /* Annuler et rétablir, à côté du bouton « Nouvelle carte » */
@@ -225,7 +233,7 @@
 .format-bar { z-index: 40; }
 .format-bar [role="toolbar"] { display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop); }
 .format-bar button { min-width: 32px; height: 32px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: 600 14px var(--font-text); cursor: pointer; }
-.format-bar button:hover { background: var(--ground); }
+@media (any-hover: hover) { .format-bar button:hover { background: var(--ground); } }
 .format-bar button.is-active { background: var(--accent-soft); color: var(--accent-ink); }
 .format-bar .format-italic span { font-style: italic; }
 .format-bar .format-strike span { text-decoration: line-through; }
@@ -247,7 +255,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .todo-group li { display: flex; align-items: flex-start; gap: 8px; }
 .todo-group li > input { width: 18px; height: 18px; margin-top: 12px; flex-shrink: 0; accent-color: var(--accent); }
 .todo-item { flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
-.todo-item:hover { background: var(--accent-soft); }
+@media (any-hover: hover) { .todo-item:hover { background: var(--accent-soft); } }
 .todo-text { font-size: 14px; }
 .todo-where { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
 
@@ -257,7 +265,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .search-input::placeholder { color: var(--placeholder); }
 .search-results { list-style: none; margin: 0; padding: 0; max-height: min(50vh, 420px); overflow: auto; display: flex; flex-direction: column; gap: 2px; }
 .search-result { width: 100%; min-height: 44px; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; }
-.search-result:hover, .search-result.is-active { background: var(--accent-soft); }
+.search-result.is-active { background: var(--accent-soft); }
+@media (any-hover: hover) { .search-result:hover { background: var(--accent-soft); } }
 .search-result-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .search-result-type { flex-shrink: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
 .search-result-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -272,13 +281,15 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .add-card > button { border: 0; background: transparent; color: var(--strong-fg); cursor: pointer; min-height: 48px; }
 .add-card-main { display: inline-flex; align-items: center; gap: 8px; padding: 0 14px 0 14px; border-radius: 999px 0 0 999px; font-size: 15px; font-weight: 600; }
 .add-card-more { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding: 0 12px 0 10px; border-left: 1px solid color-mix(in srgb, var(--strong-fg) 30%, transparent) !important; border-radius: 0 999px 999px 0; }
-.add-card > button:hover, .add-card > button[aria-expanded="true"] { background: var(--strong-hover); }
+.add-card > button[aria-expanded="true"] { background: var(--strong-hover); }
+@media (any-hover: hover) { .add-card > button:hover { background: var(--strong-hover); } }
 .add-card-menu {
-  position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 20; min-width: 280px; max-width: calc(100vw - 40px); max-height: calc(100vh - 220px); overflow-y: auto; padding: 6px;
+  position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 20; min-width: 280px; max-width: calc(100vw - 40px); max-height: calc(100vh - 220px); max-height: calc(100dvh - 220px); overflow-y: auto; padding: 6px;
   display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop);
 }
 .add-card-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
-.add-card-item:hover, .add-card-item:focus-visible { background: var(--ground); outline: none; }
+.add-card-item:focus-visible { background: var(--ground); outline: none; }
+@media (any-hover: hover) { .add-card-item:hover { background: var(--ground); outline: none; } }
 .add-card-item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 .add-card-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .add-card-text { display: flex; flex-direction: column; gap: 1px; }
@@ -326,7 +337,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Source collée ou déposée : annoncée quelques secondes, avec « Voir » (elle arrive souvent hors de la vue). */
 .toile-notice { position: absolute; z-index: 6; left: 50%; bottom: 140px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 14px; }
 .toile-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }
-.toile-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); }
+@media (any-hover: hover) { .toile-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); } }
 /* Cartes Lien et Image de la zone Recherche : un corps vide ne s'affiche que quand on écrit dans la carte. */
 /* Le corps reparaît quand on écrit le titre ou le texte, pas quand on touche un bouton (il bougerait sous le doigt). */
 .card:is(.is-image-card, .is-lien-card, .is-document-card):not(:has(.card-title:focus, .card-body:focus-within)) .card-body:has(.ProseMirror > p.is-editor-empty:only-child) { display: none; }
@@ -346,3 +357,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .is-capturing .card-editor p.is-editor-empty:first-child::before { visibility: hidden; }
 /* Plusieurs cartes choisies : pas de poignée de largeur sur chacune (on les déplace ensemble). */
 .toile.has-multi .card-resize { display: none; }
+
+/* Zones de sécurité (iPad, iPhone) : contrôles et minimap du canevas hors de la barre d'accueil et des coins arrondis. */
+.react-flow__panel.bottom { margin-bottom: max(15px, env(safe-area-inset-bottom)); }
+.react-flow__panel.left { margin-left: max(15px, env(safe-area-inset-left)); }
+.react-flow__panel.right { margin-right: max(15px, env(safe-area-inset-right)); }

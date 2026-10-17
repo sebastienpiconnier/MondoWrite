@@ -20,11 +20,14 @@ import "./styles/writing.css";
 import { App } from "./App";
 import { initSettings } from "./settings";
 import { initAppMenu } from "./appMenu";
+import { watchKeyboard } from "./keyboard";
 
 // Langue et thème appliqués avant le premier rendu (pas de flash clair en mode sombre).
 initSettings();
 // Mac : barre des menus dans la langue de l'app, avec le menu Aide.
 initAppMenu();
+// Écran tactile : la hauteur du clavier virtuel (--keyboard-h) laisse le texte défiler au-dessus.
+watchKeyboard();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
