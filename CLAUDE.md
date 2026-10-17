@@ -33,7 +33,7 @@ Cibles : **macOS, Windows, Linux** (Tauri, construits par la CI), **iOS et Andro
 
 Toute fonction doit respecter ces règles :
 
-1. **Rien ne dépend du survol.** Une action visible au survol de la souris doit l'être aussi sur écran tactile (`@media (pointer: coarse)` dans `styles.css`).
+1. **Rien ne dépend du survol.** Une action visible au survol de la souris doit l'être aussi sur écran tactile (`@media (pointer: coarse)`). Toute règle `:hover` est dans `@media (any-hover: hover)` (sinon l'effet reste « collé » après un toucher sur iPad) ; un sélecteur qui mélange survol et état (`.card:hover .x, .card.is-selected .x`) est coupé en deux règles, le survol seul dans le média.
 2. **Chaque action a trois chemins** : souris, doigt, clavier. Exemple : créer une carte = double-clic, appui long, bouton « Nouvelle carte » ; changer de type = `/` au clavier ou toucher l'étiquette du type.
 3. **Cibles tactiles ≥ 44 px** pour les actions principales.
 4. **Pas de chemin de fichier écrit à la main** : toujours `join()` de `@tauri-apps/api/path`, et toujours passer par `src/storage/`.
@@ -42,6 +42,7 @@ Toute fonction doit respecter ces règles :
 7. **Mobile** : pas de sélecteur de dossier, chaque projet a son dossier dans l'espace privé de l'app (`$APPDATA/projets/<id>/`). Pas de dialogue natif de dossier à appeler.
 8. Toute nouvelle permission Tauri va dans `src-tauri/capabilities/default.json` et doit fonctionner sur toutes les cibles.
 9. **Glisser-déposer** : ne fonctionne pas au doigt et pas partout. Toute action par dépôt (image, ordre des scènes) a aussi un bouton.
+10. **iPad et iPhone** (octobre 2026, vérifié par captures Playwright à 507, 744, 810, 834, 1080, 1133, 1194 et 1366 px en tactile émulé, pas encore sur appareil) : hauteurs en `100dvh` (avec `100vh` en repli juste avant), jamais `100vh` seul ; tout panneau fixe ou défilant tient compte des zones de sécurité (`env(safe-area-inset-*)`, en `max()` avec la marge normale) ; le clavier virtuel donne `--keyboard-h` sur `<html>` (`src/keyboard.ts`), ajouté à la marge du bas du Manuscrit, de la Bible et du séquencier (l'éditeur de scénario garde sa variable `--sp-keyboard`) ; barre du haut sur deux lignes jusqu'à 1100 px (le titre du projet se perdait en dessous) ; la Bible garde le sommaire et la fiche côte à côte dès 721 px (`.bible-main` a une base de 400 px). Reste à vérifier sur un vrai iPad : zones de sécurité, clavier, Split View et Stage Manager.
 
 Tester les deux modes : dans Chrome, outils de développement, mode appareil (tactile) en plus de la souris.
 
@@ -134,6 +135,7 @@ src/
   demoMedia.ts          Gravures de Doré du projet d'exemple (`src/assets/demo/`, en `?inline`), chargées seulement à sa création
   tour.ts               Visite guidée : étapes et vue de chacune (données pures)
   platform.ts           isTauri, isTouch, isMobileOS
+  keyboard.ts           Clavier virtuel : hauteur masquée (hiddenByKeyboard, pure, testée) et variable --keyboard-h sur <html> (watchKeyboard)
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents) et dans le texte des scènes, fonction pure
   replace.ts            Rechercher et remplacer : texte d'un HTML d'éditeur (hors balises et mentions), éléments du scénario, projet entier (applyReplace), garde la casse (fonctions pures)
