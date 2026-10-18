@@ -1,12 +1,13 @@
 // Stockage sur disque via Tauri.
 // - Ordinateur : chaque projet est un dossier choisi par l'auteur (la liste des projets ouverts est mémorisée).
-// - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, chaque projet a son dossier
-//   dans l'espace privé de l'app ($APPDATA/projets/). La synchronisation entre appareils viendra plus tard.
+// - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, chaque projet a son dossier dans
+//   projets/ : le conteneur iCloud de l'app sur iPhone et iPad (synchronisé avec le Mac), sinon Documents.
 // Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, documentDir, join } from "@tauri-apps/api/path";
+import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
 import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, isConflictCopy, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
@@ -25,22 +26,71 @@ let current: string | null = null;
 
 const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
-/** Mobile : les projets vivent dans Documents/projets, visible dans l'app Fichiers (partage de fichiers iOS). */
-async function mobileRoot() {
-  return join(await documentDir(), MOBILE_DIR);
+/** iCloud Drive (iPhone et iPad) : le choix de l'auteur, activé par défaut dès que le conteneur iCloud existe. */
+const ICLOUD_KEY = "cosmos:icloud";
+let icloudDocs: string | null | undefined;
+
+/** Dossier Documents du conteneur iCloud de l'app, ou null (hors iOS, session iCloud absente, droit non accordé). */
+async function icloudDir(): Promise<string | null> {
+  if (!mobile) return null;
+  if (icloudDocs === undefined) {
+    try {
+      icloudDocs = await invoke<string | null>("icloud_container");
+    } catch {
+      icloudDocs = null;
+    }
+  }
+  return icloudDocs;
 }
 
-/** Anciennes versions : les projets étaient dans le dossier privé de l'app (invisible). On les déplace une fois. */
+function icloudWanted() {
+  try {
+    return localStorage.getItem(ICLOUD_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+async function activeIcloud() {
+  return icloudWanted() ? icloudDir() : null;
+}
+
+/**
+ * Mobile : les projets vivent dans le conteneur iCloud de l'app (synchronisés, visibles dans Fichiers sous
+ * iCloud Drive > MondoWrite) ou, sans iCloud, dans Documents/projets (Fichiers, « Sur mon iPad »).
+ */
+async function mobileRoot() {
+  const cloud = await activeIcloud();
+  return join(cloud ?? (await documentDir()), MOBILE_DIR);
+}
+
+/** Les fichiers iCloud pas encore téléchargés sont des repères « .nom.icloud » : on demande leur téléchargement. */
+async function ensureDownloaded(dir: string) {
+  if (!(await activeIcloud())) return;
+  try {
+    for (let i = 0; i < 12; i++) {
+      const pending = await invoke<number>("icloud_download", { dir });
+      if (!pending) return;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  } catch {
+    // Le téléchargement continue en arrière-plan : on lit ce qui est déjà là.
+  }
+}
+
+/** Anciens emplacements (espace privé, Documents quand iCloud est actif) : on déplace les projets vers le dossier actuel. */
 async function migratePrivateProjects() {
   try {
-    const old = await join(await appDataDir(), MOBILE_DIR);
-    if (!(await exists(old))) return;
     const root = await mobileRoot();
-    await mkdir(root, { recursive: true });
-    for (const entry of await readDir(old)) {
-      if (!entry.isDirectory) continue;
-      const target = await join(root, entry.name);
-      if (!(await exists(target))) await rename(await join(old, entry.name), target);
+    const sources = [await join(await appDataDir(), MOBILE_DIR), await join(await documentDir(), MOBILE_DIR)];
+    for (const old of sources) {
+      if (old === root || !(await exists(old))) continue;
+      await mkdir(root, { recursive: true });
+      for (const entry of await readDir(old)) {
+        if (!entry.isDirectory) continue;
+        const target = await join(root, entry.name);
+        if (!(await exists(target))) await rename(await join(old, entry.name), target);
+      }
     }
   } catch {
     // Impossible de déplacer : les projets restent à leur place d'origine.
@@ -109,6 +159,20 @@ export const tauriStorage: Storage = {
   },
 
   kind: "tauri",
+  icloud: mobile
+    ? {
+        available: async () => (await icloudDir()) !== null,
+        enabled: () => icloudWanted(),
+        async set(on) {
+          try {
+            localStorage.setItem(ICLOUD_KEY, on ? "1" : "0");
+          } catch {
+            /* le choix vaut pour la session */
+          }
+          if (on) await migratePrivateProjects();
+        },
+      }
+    : undefined,
   canPickFolder: !mobile,
   canImportZip: mobile,
   location: () => (mobile || !current ? null : baseName(current)),
@@ -204,6 +268,7 @@ export const tauriStorage: Storage = {
   async readAll() {
     const dir = await projectFolder();
     if (!dir) return null;
+    await ensureDownloaded(dir);
     const metaPath = await join(dir, META_FILE);
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
@@ -255,8 +320,15 @@ export const tauriStorage: Storage = {
 
   async watch(onChange) {
     const dir = await projectFolder();
-    // Sur mobile, le dossier est dans Documents : pas de surveillance des changements externes.
-    if (!dir || mobile) return () => {};
+    if (!dir) return () => {};
+    // Mobile : pas de surveillance du système de fichiers ; avec iCloud, on relit régulièrement les changements venus d'un autre appareil.
+    if (mobile) {
+      if (!(await activeIcloud())) return () => {};
+      const timer = setInterval(() => {
+        if (document.visibilityState === "visible") onChange();
+      }, 20000);
+      return () => clearInterval(timer);
+    }
     // Délai anti-rebond : un enregistrement (ou une synchronisation OneDrive) écrit plusieurs fichiers d'affilée.
     return watch(
       dir,

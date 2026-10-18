@@ -29,6 +29,12 @@ export function Settings({ project = true }: { project?: boolean }) {
   // Modèle saisi à la main (absent de la liste du service).
   const [typing, setTyping] = useState(false);
   const [aiStatus, setAiStatus] = useState("");
+  // iPhone et iPad : synchronisation par iCloud Drive (proposée seulement si iCloud est disponible).
+  const [icloudOk, setIcloudOk] = useState(false);
+  const [icloudOn, setIcloudOn] = useState(() => storage.icloud?.enabled() ?? false);
+  useEffect(() => {
+    void storage.icloud?.available().then(setIcloudOk);
+  }, []);
   const [testing, setTesting] = useState(false);
   const provider = ai.provider;
   const config = aiConfig(ai);
@@ -62,7 +68,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -234,6 +240,26 @@ export function Settings({ project = true }: { project?: boolean }) {
             <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
             {t.settings.focusTypewriter}
           </label>
+          {icloudOk && storage.icloud && (
+            <>
+              <label className="settings-check" htmlFor={ids.icloud}>
+                <input
+                  id={ids.icloud}
+                  type="checkbox"
+                  aria-describedby={ids.icloudHint}
+                  checked={icloudOn}
+                  onChange={(e) => {
+                    setIcloudOn(e.target.checked);
+                    void storage.icloud?.set(e.target.checked);
+                  }}
+                />
+                {t.settings.icloud}
+              </label>
+              <p className="settings-hint" id={ids.icloudHint}>
+                {t.settings.icloudHint}
+              </p>
+            </>
+          )}
           {/* Typographie à la frappe (manuscrit, cartes, Bible) : selon la langue, ou choisie, ou aucune. */}
           <label htmlFor={ids.typography}>{t.settings.typography}</label>
           <select

@@ -1,6 +1,77 @@
+/// Conteneur iCloud de l'app (déclaré dans les droits iOS et dans Info.ios.plist).
+#[cfg(target_os = "ios")]
+const ICLOUD_CONTAINER: &str = "iCloud.app.cosmos.ecriture";
+
+#[cfg(target_os = "ios")]
+mod icloud {
+  use objc2_foundation::{NSFileManager, NSString, NSURL};
+
+  /// Chemin du conteneur iCloud, ou None si iCloud n'est pas disponible (session absente, droit non accordé).
+  /// Appel bloquant : à faire hors du fil principal.
+  #[allow(unused_unsafe)]
+  pub fn container(id: &str) -> Option<String> {
+    let manager = unsafe { NSFileManager::defaultManager() };
+    let id = NSString::from_str(id);
+    let url = unsafe { manager.URLForUbiquityContainerIdentifier(Some(&id)) }?;
+    unsafe { url.path() }.map(|p| p.to_string())
+  }
+
+  /// Demande à iCloud de télécharger un fichier absent de l'appareil.
+  #[allow(unused_unsafe)]
+  pub fn download(path: &str) {
+    let manager = unsafe { NSFileManager::defaultManager() };
+    let url = unsafe { NSURL::fileURLWithPath(&NSString::from_str(path)) };
+    let _ = unsafe { manager.startDownloadingUbiquitousItemAtURL_error(&url) };
+  }
+}
+
+/// Dossier Documents du conteneur iCloud (créé au besoin) et autorisé en lecture/écriture, ou None.
+#[tauri::command]
+async fn icloud_container(app: tauri::AppHandle) -> Option<String> {
+  #[cfg(target_os = "ios")]
+  {
+    use tauri_plugin_fs::FsExt;
+    let docs = format!("{}/Documents", icloud::container(ICLOUD_CONTAINER)?);
+    std::fs::create_dir_all(&docs).ok()?;
+    app.fs_scope().allow_directory(&docs, true).ok()?;
+    Some(docs)
+  }
+  #[cfg(not(target_os = "ios"))]
+  {
+    let _ = app;
+    None
+  }
+}
+
+/// Lance le téléchargement des fichiers iCloud pas encore présents sous `dir` (repères « .nom.icloud »)
+/// et renvoie combien restent à venir.
+#[tauri::command]
+async fn icloud_download(dir: String) -> usize {
+  fn walk(dir: &std::path::Path, pending: &mut usize) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+      let path = entry.path();
+      let name = entry.file_name().to_string_lossy().to_string();
+      if path.is_dir() {
+        walk(&path, pending);
+      } else if let Some(real) = name.strip_prefix('.').and_then(|n| n.strip_suffix(".icloud")) {
+        *pending += 1;
+        #[cfg(target_os = "ios")]
+        icloud::download(&dir.join(real).to_string_lossy());
+        #[cfg(not(target_os = "ios"))]
+        let _ = real;
+      }
+    }
+  }
+  let mut pending = 0;
+  walk(std::path::Path::new(&dir), &mut pending);
+  pending
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .invoke_handler(tauri::generate_handler![icloud_container, icloud_download])
     // Lecture/écriture du dossier projet (cosmos.json + cartes/*.md)
     .plugin(tauri_plugin_fs::init())
     // Sélecteur de dossier natif

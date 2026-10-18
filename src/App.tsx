@@ -61,7 +61,11 @@ export function App() {
       })
       .catch((err) => console.error(err));
     window.addEventListener("focus", sync);
+    // iPhone/iPad : au retour dans l'app (focus n'est pas toujours émis), relecture des changements venus d'iCloud.
+    const visible = () => document.visibilityState === "visible" && sync();
+    document.addEventListener("visibilitychange", visible);
     return () => {
+      document.removeEventListener("visibilitychange", visible);
       cancelled = true;
       stop?.();
       window.removeEventListener("focus", sync);

@@ -30,6 +30,8 @@ export interface Storage {
   canPickFolder: boolean;
   /** Mobile : pas de choix de dossier possible, on importe un projet exporté en .zip (Fichiers : iCloud Drive, OneDrive, Dropbox…). */
   canImportZip: boolean;
+  /** iPhone et iPad : synchronisation des projets par iCloud Drive (absent ailleurs). */
+  icloud?: { available(): Promise<boolean>; enabled(): boolean; set(on: boolean): Promise<void> };
   /** Nom du dossier projet choisi (null dans le navigateur, sur mobile, ou si rien n'est choisi). */
   location(): string | null;
   /** Demande un dossier à l'auteur (Tauri uniquement). Renvoie false si annulé. */

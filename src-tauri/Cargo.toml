@@ -36,5 +36,9 @@ tauri-plugin-process = "2"
 # Surveillance du dossier du projet (modifications faites dans un autre logiciel), ordinateur seulement.
 tauri-plugin-fs = { version = "2", features = ["watch"] }
 
+# iCloud Drive (iPhone et iPad) : conteneur de l'app et téléchargement des fichiers distants.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSFileManager", "NSURL", "NSString", "NSError"] }
+
 [patch.crates-io]
 num_threads = { path = "vendor/num_threads" }
