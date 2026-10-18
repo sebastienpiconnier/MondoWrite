@@ -114,6 +114,9 @@
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+/* Pas de zoom sur l'application (double appui, pincement hors canevas) ni de défilement de la page entière. */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { overscroll-behavior: none; }
 body { font-family: var(--font-ui); color: var(--ink); background: var(--ground); -webkit-font-smoothing: antialiased; }
 button { font: inherit; color: inherit; }
 

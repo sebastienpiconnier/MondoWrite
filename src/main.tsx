@@ -35,3 +35,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>,
 );
+
+// iOS : le pincement ne zoome pas l'application (le canevas gère le sien).
+document.addEventListener("gesturestart", (e) => e.preventDefault());

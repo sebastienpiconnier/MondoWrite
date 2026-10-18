@@ -58,4 +58,14 @@
   .ms-focus-bar .focus-exit-text { display: none; }
   .ms-focus-bar .focus-exit-x { display: block; }
   .manuscript.is-focus:not(.is-typewriter) .ms-main { padding-top: calc(env(safe-area-inset-top) + 56px); }
+
+  /* Réglages et menu Exporter : une feuille à l'écran, jamais accrochée au bouton (elle sortait par la gauche). */
+  .settings-panel, .settings-panel.has-project, .export-panel { position: fixed; z-index: 70; left: 8px; right: 8px; top: calc(env(safe-area-inset-top) + 64px); bottom: calc(env(safe-area-inset-bottom) + 68px); width: auto; min-width: 0; max-width: none; max-height: none; grid-template-columns: 1fr; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .export-panel { bottom: auto; max-height: calc(100dvh - env(safe-area-inset-top) - 140px); }
+  .export-error { position: fixed; left: 8px; right: 8px; top: calc(env(safe-area-inset-top) + 64px); white-space: normal; }
+  .settings-panel input, .settings-panel select, .settings-panel textarea { font-size: 16px; }
+
+  /* Autant d'onglets que de vues (4 pour un roman, 5 pour un scénario) sur la largeur de l'écran. */
+  .app.has-tabbar .views { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  .app.has-tabbar .views button { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
