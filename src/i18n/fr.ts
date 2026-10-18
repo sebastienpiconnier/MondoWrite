@@ -67,6 +67,8 @@ export const fr = {
     empty: "Aucun projet pour l’instant. Crée le premier, ou essaie avec un exemple.",
     openedOn: "ouvert le {date}",
     openFolder: "Ouvrir un dossier…",
+    importFolder: "Importer un projet depuis Fichiers…",
+    importFolderHint: "Choisis un dossier projet dans Fichiers (iCloud Drive, OneDrive, Dropbox, Drive…) : il est copié dans l’app, l’original n’est pas modifié.",
     unlist: "Retirer « {title} » de la liste",
     unlistHint: "Retire le projet de cette liste. Ses fichiers ne sont pas supprimés.",
     notAProject: "Ce dossier ne contient pas de projet MondoWrite. Pour en démarrer un, utilise « Nouveau projet ».",

@@ -665,12 +665,13 @@ export function Manuscript() {
       <EdgeHandle side="left" open={panels.scenes} label={m.panelScenes} onClick={() => togglePanel("scenes")} />
       <EdgeHandle side="right" open={panels.side} label={m.panelSide} onClick={() => togglePanel("side")} />
 
-      <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />
+      {!panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
           {/* Une barre discrète : les compteurs sont dans les colonnes, la page ressemble à un livre. */}
           <div className="ms-meta-wrap">
           <div className="ms-meta-anchor">
+          {panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
               <span aria-hidden="true">←</span>

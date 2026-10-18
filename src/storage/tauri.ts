@@ -47,6 +47,18 @@ async function migratePrivateProjects() {
   }
 }
 
+/** Copie récursivement un dossier (projet choisi dans Fichiers) ; les fichiers cachés sont ignorés. */
+async function copyTree(from: string, to: string) {
+  await mkdir(to, { recursive: true });
+  for (const entry of await readDir(from)) {
+    if (entry.name.startsWith(".")) continue;
+    const source = await join(from, entry.name);
+    const target = await join(to, entry.name);
+    if (entry.isDirectory) await copyTree(source, target);
+    else await writeFile(target, await readFile(source));
+  }
+}
+
 async function projectFolder(): Promise<string | null> {
   if (!current) return null;
   return mobile ? join(await mobileRoot(), current) : current;
@@ -70,6 +82,26 @@ async function copyPath(name: string): Promise<string | null> {
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Mobile : choisit un dossier projet dans Fichiers (n'importe quel fournisseur) et le copie dans l'app, sans jamais écraser un projet existant. */
+async function importFolder() {
+  try {
+    const picked = await open({ directory: true, recursive: true, title: getT().dialog.pickFolder });
+    if (typeof picked !== "string") return false;
+    const chosen = picked.startsWith("file://") ? decodeURIComponent(picked.slice(7)) : picked;
+    const root = await mobileRoot();
+    await mkdir(root, { recursive: true });
+    const base = baseName(chosen).replace(/[\\/:*?"<>|]/g, "-") || "projet";
+    let name = base;
+    for (let n = 2; await exists(await join(root, name)); n++) name = `${base}-${n}`;
+    await copyTree(chosen, await join(root, name));
+    current = name;
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
 
 export const tauriStorage: Storage = {
   copies: {
@@ -110,10 +142,11 @@ export const tauriStorage: Storage = {
 
   kind: "tauri",
   canPickFolder: !mobile,
+  canImportFolder: mobile,
   location: () => (mobile || !current ? null : baseName(current)),
 
   async pickFolder() {
-    if (mobile) return true;
+    if (mobile) return importFolder();
     // recursive : sans lui, Tauri n'autorise que les fichiers placés directement dans le dossier,
     // et l'écriture des cartes (sous-dossier cartes/) est refusée hors du dossier personnel.
     const chosen = await open({ directory: true, recursive: true, title: getT().dialog.pickFolder });

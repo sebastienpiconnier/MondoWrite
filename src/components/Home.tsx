@@ -111,9 +111,9 @@ export function Home() {
             </ul>
           )}
           <div className="home-buttons">
-            {storage.canPickFolder && (
-              <button type="button" className="ghost-button" disabled={busy} onClick={() => run(openFolder)}>
-                {h.openFolder}
+            {(storage.canPickFolder || storage.canImportFolder) && (
+              <button type="button" className="ghost-button" disabled={busy} title={storage.canImportFolder ? h.importFolderHint : undefined} onClick={() => run(openFolder)}>
+                {storage.canImportFolder ? h.importFolder : h.openFolder}
               </button>
             )}
             <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importFile)}>

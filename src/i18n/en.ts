@@ -66,6 +66,8 @@ export const en: Messages = {
     empty: "No project yet. Create the first one, or try with an example.",
     openedOn: "opened {date}",
     openFolder: "Open folder…",
+    importFolder: "Import a project from Files…",
+    importFolderHint: "Pick a project folder in Files (iCloud Drive, OneDrive, Dropbox, Drive…): it is copied into the app and the original is left untouched.",
     unlist: "Remove “{title}” from the list",
     unlistHint: "Removes the project from this list. Its files are not deleted.",
     notAProject: "This folder doesn’t contain a MondoWrite project. To start one, use “New project”.",
