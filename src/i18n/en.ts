@@ -6,6 +6,7 @@ export const en: Messages = {
   meta: { name: "English" },
 
   app: {
+    moreOptions: "More options",
     tagline: "From chaos to an ordered world",
     loading: "Opening project…",
     openFailed: "Your project folder couldn’t be opened. Choose it again with “Open folder”: your files have not been changed.",

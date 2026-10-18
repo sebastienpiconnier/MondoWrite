@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useCosmos, type View } from "../store";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { useVocab } from "../vocab";
@@ -20,8 +21,19 @@ export function TopBar() {
   const pageCount = fmt(new Intl.PluralRules(lang).select(pages) === "one" ? t.screenplay.pagesOne : t.screenplay.pagesMany, { n: pages });
   const { view, setView, status, save, closeProject, title, setTitle } = useCosmos();
 
+  // Téléphone : les actions se rangent derrière « ⋯ » ; les vues passent en barre d'onglets en bas (CSS).
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    if (!more) return;
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target instanceof Element) || !e.target.closest(".topbar")) setMore(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [more]);
+
   return (
-    <header className="topbar">
+    <header className={`topbar${more ? " more-open" : ""}`}>
       <div className="brand">
         <BrandMark size={34} />
         {/* Le nom, et dessous le titre du projet (modifiable sur place) : la colonne reste étroite, les vues
@@ -52,12 +64,23 @@ export function TopBar() {
             type="button"
             className={view === v ? "is-current" : ""}
             aria-current={view === v ? "page" : undefined}
-            onClick={() => setView(v)}
+            onClick={() => {
+              setView(v);
+              setMore(false);
+            }}
           >
             {views[v]}
           </button>
         ))}
       </nav>
+
+      <button type="button" className="icon-button topbar-more" aria-label={t.app.moreOptions} title={t.app.moreOptions} aria-expanded={more} onClick={() => setMore(!more)}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="19" cy="12" r="1.8" />
+        </svg>
+      </button>
 
       <div className="actions">
         {/* Toujours là pour un scénario, même vide : la barre ne bouge pas quand le texte arrive. */}

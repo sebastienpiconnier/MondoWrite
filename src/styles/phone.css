@@ -1,0 +1,45 @@
+/* Téléphone (≤ 720 px) : un écran plein, une barre d'onglets en bas, le reste derrière « ⋯ » ou dans des feuilles.
+   Rien ne change sur iPad, Mac ni PC : tout est dans cette requête. */
+.topbar-more { display: none; }
+@media (max-width: 720px) {
+  /* Haut : le nom, le titre du projet et « ⋯ ». */
+  .topbar { position: relative; display: flex; align-items: center; gap: 8px; padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
+  .topbar > .brand { flex: 1; min-width: 0; }
+  .brand-project { display: block; max-width: 100%; }
+  .topbar-more { display: grid; flex: none; width: 44px; height: 44px; }
+  .topbar > .actions { display: none; position: absolute; z-index: 60; top: calc(100% + 6px); left: 8px; right: 8px; flex-wrap: wrap; justify-content: flex-start; margin: 0; padding: 10px; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop); }
+  .topbar.more-open > .actions { display: flex; }
+  .topbar > .actions .icon-button, .topbar > .actions .ghost-button { min-height: 44px; }
+
+  /* Bas : les vues en onglets, à portée du pouce. */
+  .app.has-tabbar .views {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; width: auto; margin: 0; order: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; border-radius: 0; border-top: 1px solid var(--line); background: var(--surface);
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+  .app.has-tabbar .views button { min-height: 48px; padding: 6px 2px; border-radius: 12px; font-size: 13px; }
+  .app.has-tabbar .app-main { margin-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  html[data-keyboard="open"] .app.has-tabbar .views { display: none; }
+  html[data-keyboard="open"] .app.has-tabbar .app-main { margin-bottom: 0; }
+
+  /* Canevas : « + » rond, outils en une rangée défilante. */
+  .canvas-dock { left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); bottom: 10px; max-width: none; flex-wrap: nowrap; align-items: flex-end; }
+  .add-card { flex: none; }
+  .add-card-text-main, .add-card-more { display: none; }
+  .add-card-main { width: 56px; height: 56px; min-height: 56px; padding: 0; justify-content: center; border-radius: 50%; }
+  .add-card-main svg { width: 26px; height: 26px; }
+  .history-buttons { flex: 1; min-width: 0; justify-content: flex-end; gap: 4px; }
+  .history-buttons .icon-button { width: 42px; height: 42px; }
+  .react-flow__controls { display: none; } /* le pincement zoome */
+  /* Types de carte : une feuille pleine largeur au-dessus de la barre d'outils, deux colonnes. */
+  .add-card-menu { position: fixed; left: 8px; right: 8px; bottom: calc(60px + env(safe-area-inset-bottom) + 76px); max-width: none; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 10px; border-radius: 18px; }
+  .add-card-hint { display: none; }
+  .add-card-item { min-height: 52px; border: 1px solid var(--line); }
+
+  /* Manuscrit : la barre reste en haut, mais sur une seule rangée qui défile. */
+  .ms-meta { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding: 4px 6px; margin-top: 0; scrollbar-width: none; }
+  .ms-meta::-webkit-scrollbar { display: none; }
+  .ms-meta > * { flex: none; }
+  .ms-meta .ms-title { flex: 0 0 170px; min-width: 120px; }
+  .ms-meta .ms-panel-toggle, .ms-meta .ghost-button { min-height: 44px; }
+}

@@ -17,6 +17,9 @@ export function watchKeyboard(): () => void {
   const place = () => {
     const hidden = hiddenByKeyboard(window.innerHeight, viewport.height, viewport.offsetTop);
     root.style.setProperty("--keyboard-h", `${hidden}px`);
+    // Clavier ouvert : la barre d'onglets du téléphone s'efface (elle se retrouverait derrière).
+    if (hidden > 80) root.dataset.keyboard = "open";
+    else delete root.dataset.keyboard;
   };
   place();
   viewport.addEventListener("resize", place);
@@ -25,5 +28,6 @@ export function watchKeyboard(): () => void {
     viewport.removeEventListener("resize", place);
     viewport.removeEventListener("scroll", place);
     root.style.removeProperty("--keyboard-h");
+    delete root.dataset.keyboard;
   };
 }

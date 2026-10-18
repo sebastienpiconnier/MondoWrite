@@ -7,6 +7,7 @@ export const fr = {
   meta: { name: "Français" },
 
   app: {
+    moreOptions: "Plus d’options",
     tagline: "Du chaos au monde ordonné",
     loading: "Ouverture du projet…",
     openFailed: "Le dossier de ton projet n’a pas pu être ouvert. Choisis-le à nouveau avec « Ouvrir un dossier » : tes fichiers n’ont pas été modifiés.",

@@ -228,7 +228,9 @@ function readPanels(): { scenes: boolean; side: boolean } {
   } catch {
     /* ignoré */
   }
-  return { scenes: true, side: true };
+  // Téléphone : la page d'abord ; le plan et les infos s'ouvrent avec leurs boutons.
+  const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
+  return { scenes: !phone, side: !phone };
 }
 
 export function Manuscript() {
