@@ -6,6 +6,7 @@
 
 import { documentExtension, imageExtension } from "../media";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useLifted } from "../lifted";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { richTextExtensions } from "./editorKit";
@@ -47,6 +48,11 @@ interface MentionState {
 function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const updateCard = useCosmos((s) => s.updateCard);
   const deleteCard = useCosmos((s) => s.deleteCard);
+  // Soulevée par un appui long : sélectionnée + ombre portée ; elle se repose dès qu'elle n'est plus sélectionnée.
+  const lifted = useLifted((s) => s.id === id) && !!selected;
+  useEffect(() => {
+    if (!selected && useLifted.getState().id === id) useLifted.getState().set(null);
+  }, [selected, id]);
   const imageUrl = useMediaUrl(data.image);
   const { t, types, kind } = useVocab();
   // Scénario : le titre d'une scène est un en-tête de scène (INT./EXT. DÉCOR - MOMENT).
@@ -245,6 +251,13 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     onBlur: () => setMention(null),
   });
 
+  // Carte soulevée = mode déplacement : le texte n'est plus modifiable (React Flow ne déplace pas une carte
+  // saisie dans un champ éditable), donc on peut la saisir par n'importe quel endroit.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.setEditable(!lifted, false);
+  }, [editor, lifted]);
+
   // Le texte a changé sans passer par cet éditeur (annuler, rétablir) : il se remet à jour.
   // Pendant la frappe, les deux sont égaux et rien ne se passe.
   useEffect(() => {
@@ -344,7 +357,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [pendingFocus]);
 
   return (
-    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
+    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${lifted ? " is-lifted" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}
@@ -493,7 +506,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       {/* Texte long : replié au-delà de CARD_BODY_MAX, « Plus de détails » le déplie. Pendant l'écriture,
           il reste déplié. Un état d'affichage, rien n'est enregistré. */}
       {novelScene ? (
-        <div className="card-body is-scene nodrag nowheel nopan">
+        <div className={`card-body is-scene nodrag nowheel nopan`}>
           <SceneCardBody card={data} />
         </div>
       ) : (

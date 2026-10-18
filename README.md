@@ -63,7 +63,7 @@ MondoWrite est en cours de développement (version 1.0.2). **Guide de l’utilis
 
 ### Le canevas
 
-- **Cartes libres :** double-clic ou clic droit sur le canevas, appui long au doigt, bouton « Nouvelle carte » ou touche N, et vous écrivez directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
+- **Cartes libres :** double-clic ou clic droit sur le canevas, bouton « Nouvelle carte » ou touche N, et vous écrivez directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
 - **Dix types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question, Image, Lien, Document. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
 - **Coller, comme dans Milanote :** collez ou déposez un lien ou une image sur le canevas : une seule carte **Lien** ou **Image** naît là où vous êtes (un texte collé devient une Idée, une Scène s'il commence par un en-tête comme « INT. PHARE - NUIT », et un intertitre `# …` lui donne son titre). L'adresse d'une image, ou une image glissée depuis une page web, devient une carte Image. Plusieurs fichiers déposés d'un coup font une carte chacun, et un fichier `.md` ou `.txt` devient la carte qu'il annonce (titre, type et fiche d'une carte MondoWrite ou d'une note Obsidian). Collez une adresse dans une carte encore vide : c'est elle qui devient la carte Lien, sans en créer une deuxième. « Organiser le canevas » les range dans les cadres Images et Liens, et la Bible a une rubrique pour chacun. Pour un lien, MondoWrite lit la page : titre, auteur, date de publication et image du site arrivent d'eux-mêmes. Le même lien collé deux fois ne crée qu'une carte. Un lien garde le jour où vous l'avez consulté ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
 - **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
@@ -210,7 +210,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 
 - **Choisir un projet :** à chaque lancement, l'accueil liste vos projets. Depuis un projet, le bouton « Projets » enregistre et y revient.
 - **Nouveau projet :** un titre de travail, roman ou scénario, et sur ordinateur le dossier où l'enregistrer. « Essayer avec un exemple » crée un projet complet, « Le Petit Chaperon rouge » de Perrault illustré par Gustave Doré (personnages, lieux, plan en trois actes, chapitres et conte écrit dans le manuscrit), et ouvre une visite guidée en six étapes (elle reste dans les Réglages).
-- **Nouvelle carte :** double-clic ou clic droit sur le canevas, touche N, appui long au doigt, ou bouton « Nouvelle carte ». On écrit directement.
+- **Nouvelle carte :** double-clic ou clic droit sur le canevas, touche N, ou bouton « Nouvelle carte ». On écrit directement. Un appui long sur une carte (doigt, stylet ou souris) la soulève : elle est sélectionnée, avec une ombre portée, pour être déplacée.
 - **Changer le type :** taper `/` en début de ligne, ou toucher l'étiquette du type (« IDÉE »).
 - **Relier :** tirer un fil depuis un point au bord d'une carte vers une autre, puis nommer le lien.
 - **Réglages** (icône en haut à droite) : type de projet, corbeille, langue de l'interface, apparence, et branchement d'une IA.

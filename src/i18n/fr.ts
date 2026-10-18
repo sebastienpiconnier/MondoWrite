@@ -214,7 +214,7 @@ export const fr = {
     undoHint: "Annuler (Ctrl ou Cmd + Z)",
     redoHint: "Rétablir (Ctrl ou Cmd + Maj + Z)",
     hintMouse: "Double-clic ou clic droit pour écrire",
-    hintTouch: "Appui long pour écrire",
+    hintTouch: "Appui long sur une carte pour la déplacer",
     hintLink: "Tire un fil depuis un bord",
     hintTransform: "ou l’étiquette pour transformer",
     labelPlaceholder: "Nature du lien (ex. soupçonne)",
@@ -1507,7 +1507,7 @@ export const fr = {
     next: "Suivant",
     done: "À toi d’écrire",
     steps: {
-      cards: { title: "Pose tes idées en vrac", body: "Double-clic, clic droit ou appui long sur le canevas : une carte naît. Tape / au début d’une ligne pour en faire un personnage, un lieu, une scène… Tire un fil d’une carte à l’autre et nomme-le (« sœur de », « se passe à »)." },
+      cards: { title: "Pose tes idées en vrac", body: "Double-clic, clic droit ou bouton « Nouvelle carte » : une carte naît. Un appui long sur une carte la soulève pour la déplacer. Tape / au début d’une ligne pour en faire un personnage, un lieu, une scène… Tire un fil d’une carte à l’autre et nomme-le (« sœur de », « se passe à »)." },
       sources: { title: "Garde tes sources à portée", body: "Colle ou dépose un lien, un extrait ou une image sur le canevas : une seule carte naît là où tu es : un Lien avec le titre et l’image du site, une Image, ou une Idée pour un texte. Coller une adresse dans une carte vide en fait la carte Lien. La flèche de « Nouvelle carte » propose tous les types de carte, PDF et photos compris. Quand tout déborde, « Organiser » range les cartes en cadres par type, par case du plan et par chapitre ; le cadenas d’un cadre le protège du rangement." },
       bible: { title: "La Bible se construit seule", body: "Chaque carte typée y a sa fiche, sans rien recopier. Commence par la couverture du projet (tagline, logline, genre), puis creuse tes personnages : ce qu’ils veulent, ce qui leur manque, leur blessure. L’assistant pose des questions, il ne répond jamais à ta place." },
       plan: { title: "Donne une forme au récit", body: "Choisis un gabarit (trois actes, Save the Cat, voyage du héros) et range tes scènes dans ses cases. La chronologie montre qui et quoi apparaît dans chaque scène." },
