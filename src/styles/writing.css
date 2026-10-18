@@ -41,12 +41,12 @@
 .manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
 .manuscript.hide-scenes .ms-scenes, .manuscript.hide-side .sp-side, .manuscript.hide-meta .ms-meta { display: none; }
 /* Poignées : un onglet sur le bord de la page pour replier ou rouvrir un volet (la barre de la scène en haut). */
-.edge-handle { position: absolute; z-index: 14; display: grid; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); background: var(--ground); color: var(--muted); cursor: pointer; opacity: 0.6; }
+.edge-handle { position: absolute; z-index: 14; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); background: var(--ground); color: var(--muted); cursor: pointer; opacity: 1; }
 .edge-handle svg { transition: transform 0.15s; }
-.edge-handle.is-left, .edge-handle.is-right { top: 50%; transform: translateY(-50%); width: 16px; height: 56px; }
-.edge-handle.is-left { left: 0; border-left: 0; border-radius: 0 12px 12px 0; }
-.edge-handle.is-right { right: 0; border-right: 0; border-radius: 12px 0 0 12px; }
-.edge-handle.is-top { top: 100%; left: 50%; transform: translateX(-50%); width: 56px; height: 16px; border-top: 0; border-radius: 0 0 10px 10px; background: color-mix(in srgb, var(--surface) 92%, transparent); }
+.edge-handle.is-left, .edge-handle.is-right { top: 50%; transform: translateY(-50%); width: 20px; height: 64px; }
+.edge-handle.is-left { left: 0; border-left: 0; border-radius: 0 12px 12px 0; box-shadow: 3px 1px 8px rgba(20, 24, 40, 0.18); }
+.edge-handle.is-right { right: 0; border-right: 0; border-radius: 12px 0 0 12px; box-shadow: -3px 1px 8px rgba(20, 24, 40, 0.18); }
+.edge-handle.is-top { top: 100%; left: 50%; transform: translateX(-50%); width: 60px; height: 18px; border-top: 0; border-radius: 0 0 10px 10px; background: var(--surface); box-shadow: 0 3px 8px rgba(20, 24, 40, 0.18); }
 .edge-handle.is-top svg, .edge-handle.is-left svg, .edge-handle.is-right svg { width: 12px; height: 12px; }
 .edge-handle.is-left svg { transform: rotate(180deg); }
 .edge-handle.is-left.is-open svg { transform: none; }
