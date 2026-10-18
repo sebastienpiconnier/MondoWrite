@@ -59,10 +59,13 @@
 @media (pointer: coarse) { .edge-handle.is-left, .edge-handle.is-right { width: 24px; height: 88px; } .edge-handle.is-top { width: 88px; height: 22px; } }
 .manuscript.is-focus .edge-handle { display: none; }
 /* La barre de la scène reste en haut quand on défile : mode focus, remplacer, scène suivante sont toujours à portée. */
-.ms-meta-wrap { position: sticky; top: 0; z-index: 6; margin-top: -6px; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; }
+.ms-meta-wrap { position: sticky; top: 0; z-index: 6; margin: 0 0 8px; animation: ms-meta-in 0.24s ease-out; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; }
 .ms-meta-anchor { position: relative; }
-.ms-meta { padding: 6px 8px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
-.manuscript:not(.hide-meta) .ms-main { padding-top: 40px; }
+.ms-meta { padding: 6px 8px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
+/* La barre de la scène est collée au menu du haut et en descend comme un volet. */
+.manuscript:not(.hide-meta) .ms-main { padding-top: 0; }
+@keyframes ms-meta-in { from { transform: translateY(-100%); } }
+@media (prefers-reduced-motion: reduce) { .ms-meta-wrap { animation: none; } }
 /* Les volets se détachent de la page par une ombre sur leur pourtour. */
 .manuscript > .ms-scenes, .manuscript > .sp-side { position: relative; z-index: 3; }
 .manuscript > .ms-scenes { box-shadow: 3px 0 14px -4px rgba(20, 24, 40, 0.3); }
