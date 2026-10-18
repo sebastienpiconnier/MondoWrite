@@ -173,6 +173,7 @@ export const fr = {
     expand: "Agrandir la carte",
     actions: "Plus d’actions",
     filterHere: "Filtrer sur cette carte",
+    closeExpanded: "Fermer la carte",
     expandedTitle: "Carte agrandie",
     moreDetails: "Plus de détails",
     addImage: "Ajouter une image",

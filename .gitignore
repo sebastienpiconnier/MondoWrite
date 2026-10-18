@@ -8,3 +8,4 @@ src-tauri/gen
 # Les PDF restent versionnés : MondoWrite 1.0.0 les ouvre à cette adresse sur GitHub.
 docs/guide/.site/
 docs/guide/.build-*.html
+_to_delete/

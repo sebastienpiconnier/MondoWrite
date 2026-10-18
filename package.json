@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "tauri": "tauri",
+    "ios:prepare": "sh scripts/ios-prepare.sh",
     "coverage": "vitest run --coverage",
     "guide:shots": "node scripts/guide/shots.mjs fr && node scripts/guide/shots.mjs en",
     "guide": "node scripts/guide/build.mjs fr && node scripts/guide/build.mjs en",

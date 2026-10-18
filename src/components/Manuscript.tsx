@@ -170,10 +170,17 @@ function SceneEditor({
         return;
       }
       // Machine à écrire : la ligne du curseur se tient aux deux cinquièmes de la hauteur.
+      // Sur iPad en portrait (et téléphone), ce n'est pas .ms-main qui défile mais un parent, voire la fenêtre :
+      // on cherche le premier ancêtre réellement défilant, à défaut la fenêtre elle-même.
       if (writing.typewriter) {
-        const box = main.getBoundingClientRect();
-        main.scrollTop += caret.top - (box.top + box.height * 0.4);
-        caret = view.coordsAtPos(view.state.selection.head);
+        const scroller = scrollParent(main);
+        const box = scroller ? scroller.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+        const delta = caret.top - (box.top + box.height * 0.4);
+        if (Math.abs(delta) > 1) {
+          if (scroller) scroller.scrollTop += delta;
+          else window.scrollBy(0, delta);
+          caret = view.coordsAtPos(view.state.selection.head);
+        }
       }
       if (writing.highlight !== "line") return setVeil(null);
       const top = page.getBoundingClientRect().top;
@@ -202,6 +209,15 @@ function SceneEditor({
       )}
     </>
   );
+}
+
+/** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let node: HTMLElement | null = el; node && node !== document.body; node = node.parentElement) {
+    const overflow = getComputedStyle(node).overflowY;
+    if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
+  }
+  return null;
 }
 
 export function Manuscript() {

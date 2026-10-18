@@ -173,6 +173,7 @@ export const en: Messages = {
     expand: "Expand card",
     actions: "More actions",
     filterHere: "Filter on this card",
+    closeExpanded: "Close card",
     expandedTitle: "Expanded card",
     addImage: "Add an image",
     openSheet: "Open its sheet in the Bible",

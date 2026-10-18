@@ -280,7 +280,7 @@ npm run tauri dev      # app desktop
 npm run dev            # dans le navigateur (http://localhost:1420), sans accès disque
 ```
 
-**Mobile (sur Mac) :** `npm run tauri ios init` puis `npm run tauri ios dev` (Xcode requis), ou `android init` / `android dev` (Android Studio et NDK requis). Sur mobile, les projets sont rangés dans l'espace privé de l'app.
+**Mobile (sur Mac) :** `npm run tauri ios init`, `npm run ios:prepare` (icônes) puis `npm run tauri ios dev` (Xcode requis ; pas à pas, pièges et TestFlight dans [docs/ios.md](docs/ios.md)), ou `android init` / `android dev` (Android Studio et NDK requis). Sur mobile, les projets sont rangés dans l'espace privé de l'app.
 
 ### Vérifier
 

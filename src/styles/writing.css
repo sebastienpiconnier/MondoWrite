@@ -217,9 +217,12 @@
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Fenêtre moyenne : les vues passent sur une seconde ligne, sinon les boutons de droite débordent. */
-@media (max-width: 1100px) {
+@media (max-width: 1100px), (max-width: 1280px) and (pointer: coarse) {
   .topbar { display: flex; flex-wrap: wrap; justify-content: space-between; }
   .views { order: 3; width: 100%; justify-content: center; margin: 0; }
+  /* Le titre du projet garde sa place (il était rogné par les vues) et se tronque seulement s'il est très long. */
+  .topbar > .brand { flex: 1 1 auto; min-width: 0; }
+  .brand-project { flex: 0 1 auto; max-width: min(32ch, 40vw); }
 }
 /* iPad en paysage (1101 à 1280 px) : sans le slogan, le titre du projet garde sa place entre le logo et les vues. */
 @media (min-width: 1101px) and (max-width: 1280px) { .brand-tagline { display: none; } }
@@ -369,7 +372,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .app-dialog.is-photos { width: min(920px, calc(100vw - 24px)); }
 /* Carte agrandie : la même carte, avec la place d'écrire. */
 .app-dialog.is-card { width: min(860px, calc(100vw - 24px)); }
-.expanded-card { display: flex; flex-direction: column; gap: 12px; }
+.expanded-card { position: relative; display: flex; flex-direction: column; gap: 12px; }
+.expanded-close { position: sticky; top: 0; z-index: 3; align-self: flex-end; width: 44px; height: 44px; margin: -8px -10px -32px 0; display: grid; place-items: center; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-card); cursor: pointer; }
+@media (any-hover: hover) { .expanded-close:hover { background: var(--hover); } }
+.expanded-type { padding-right: 52px; }
 .expanded-type { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--type); }
 .expanded-title { width: 100%; field-sizing: content; resize: none; padding: 4px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font: 700 26px/1.25 var(--font-display); }
 .expanded-title:focus-visible { outline: none; border-bottom-color: var(--accent); }

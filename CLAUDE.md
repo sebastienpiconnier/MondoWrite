@@ -116,7 +116,7 @@ npm run build        # tsc --noEmit + vite build (à lancer avant chaque commit)
 npm test             # tests Vitest
 npm run coverage     # tests + couverture (seuil 90 % sur src/screenplay/)
 npm run tauri build  # installeur pour le système courant
-npm run tauri ios init && npm run tauri ios dev          # iOS (sur Mac, avec Xcode)
+npm run tauri ios init && npm run ios:prepare && npm run tauri ios dev   # iOS (sur Mac, avec Xcode) ; voir docs/ios.md
 npm run tauri android init && npm run tauri android dev  # Android (Android Studio + NDK)
 ```
 

@@ -281,7 +281,7 @@ npm run tauri dev      # desktop app
 npm run dev            # in the browser (http://localhost:1420), no disk access
 ```
 
-**Mobile (on a Mac):** `npm run tauri ios init` then `npm run tauri ios dev` (Xcode required), or `android init` / `android dev` (Android Studio and NDK required). On mobile, projects live in the app’s private storage.
+**Mobile (on a Mac):** `npm run tauri ios init`, `npm run ios:prepare` (icons) then `npm run tauri ios dev` (Xcode required; step by step, pitfalls and TestFlight in [docs/ios.md](docs/ios.md), in French), or `android init` / `android dev` (Android Studio and NDK required). On mobile, projects live in the app’s private storage.
 
 ### Check
 
