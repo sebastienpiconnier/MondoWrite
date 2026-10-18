@@ -25,9 +25,6 @@
   /* Canevas : « + » rond, outils en une rangée défilante. */
   .canvas-dock { left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); bottom: 10px; max-width: none; flex-wrap: nowrap; align-items: flex-end; }
   .add-card { flex: none; }
-  .add-card-text-main, .add-card-more { display: none; }
-  .add-card-main { width: 56px; height: 56px; min-height: 56px; padding: 0; justify-content: center; border-radius: 50%; }
-  .add-card-main svg { width: 26px; height: 26px; }
   .history-buttons { flex: 1; min-width: 0; justify-content: flex-end; gap: 4px; }
   .history-buttons .icon-button, .history-buttons .icon-button.has-label { width: 42px; height: 42px; padding: 0; justify-content: center; }
   .history-buttons .icon-button svg { flex: none; }

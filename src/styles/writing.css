@@ -41,23 +41,25 @@
 .manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
 .manuscript.hide-scenes .ms-scenes, .manuscript.hide-side .sp-side, .manuscript.hide-meta .ms-meta { display: none; }
 /* Poignées : un onglet sur le bord de la page pour replier ou rouvrir un volet (la barre de la scène en haut). */
-.edge-handle { position: absolute; z-index: 14; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); box-shadow: var(--shadow-card); cursor: pointer; opacity: 0.85; }
+.edge-handle { position: absolute; z-index: 14; display: grid; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); background: var(--ground); color: var(--muted); cursor: pointer; opacity: 0.6; }
 .edge-handle svg { transition: transform 0.15s; }
-.edge-handle.is-left, .edge-handle.is-right { top: 50%; transform: translateY(-50%); width: 24px; height: 76px; }
+.edge-handle.is-left, .edge-handle.is-right { top: 50%; transform: translateY(-50%); width: 16px; height: 56px; }
 .edge-handle.is-left { left: 0; border-left: 0; border-radius: 0 12px 12px 0; }
 .edge-handle.is-right { right: 0; border-right: 0; border-radius: 12px 0 0 12px; }
-.edge-handle.is-top { top: 0; left: 50%; transform: translateX(-50%); width: 76px; height: 22px; border-top: 0; border-radius: 0 0 12px 12px; }
+.edge-handle.is-top { top: 100%; left: 50%; transform: translateX(-50%); width: 56px; height: 16px; border-top: 0; border-radius: 0 0 10px 10px; background: color-mix(in srgb, var(--surface) 92%, transparent); }
+.edge-handle.is-top svg, .edge-handle.is-left svg, .edge-handle.is-right svg { width: 12px; height: 12px; }
 .edge-handle.is-left svg { transform: rotate(180deg); }
 .edge-handle.is-left.is-open svg { transform: none; }
 .edge-handle.is-right svg { transform: none; }
 .edge-handle.is-right.is-open svg { transform: rotate(180deg); }
 .edge-handle.is-top svg { transform: rotate(-90deg); }
 .edge-handle.is-top.is-open svg { transform: rotate(90deg); }
-@media (any-hover: hover) { .edge-handle:hover { opacity: 1; color: var(--ink); } }
-@media (pointer: coarse) { .edge-handle.is-left, .edge-handle.is-right { width: 30px; height: 96px; } .edge-handle.is-top { width: 96px; height: 28px; } }
+@media (any-hover: hover) { .edge-handle:hover { opacity: 1; color: var(--ink-2); } }
+@media (pointer: coarse) { .edge-handle.is-left, .edge-handle.is-right { width: 24px; height: 88px; } .edge-handle.is-top { width: 88px; height: 22px; } }
 .manuscript.is-focus .edge-handle { display: none; }
 /* La barre de la scène reste en haut quand on défile : mode focus, remplacer, scène suivante sont toujours à portée. */
-.ms-meta { position: sticky; top: 0; z-index: 6; padding: 6px 8px; margin-top: -6px; border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
+.ms-meta-wrap { position: sticky; top: 0; z-index: 6; margin-top: -6px; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; }
+.ms-meta { padding: 6px 8px; border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
 .manuscript:not(.hide-meta) .ms-main { padding-top: 40px; }
 .ms-main { overflow: auto; padding: 32px max(24px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(24px, env(safe-area-inset-left)); container: ms / inline-size; }
 .ms-sheet { max-width: min(100%, 900px); margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
@@ -112,7 +114,7 @@
 @media (any-hover: hover) { .ms-title:hover { border-color: var(--line); } }
 .ms-title:focus-visible { border-color: var(--line-2); }
 .ms-title::placeholder { color: var(--placeholder); }
-.ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; font-size: 13px; color: var(--ink-2); }
+.ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: 100%; font-size: 13px; color: var(--ink-2); }
 .ms-meta .icon-button { width: 36px; height: 36px; }
 .ms-meta .icon-button:disabled { opacity: 0.35; cursor: default; }
 .ms-editor, .ms-editor:focus-visible { min-height: 50vh; outline: none; font: 19px/1.7 var(--font-text); color: var(--ink); cursor: text; }
