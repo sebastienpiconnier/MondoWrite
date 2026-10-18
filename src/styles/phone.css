@@ -51,13 +51,11 @@
   .bible-frame > .edge-handle { background: var(--surface); }
   .bible-frame:not(.hide-toc) > .edge-handle { left: calc(min(320px, 85vw) - 1px); z-index: 10; }
 
-  /* Mode focus : un petit bouton de réglages et une croix, les options s'ouvrent à la demande. */
-  .ms-focus-bar { top: max(8px, env(safe-area-inset-top)); left: auto; right: 10px; transform: none; flex-wrap: nowrap; gap: 6px; padding: 4px; opacity: 0.85; }
-  .ms-focus-bar .focus-toggle { display: grid; place-items: center; width: 44px; padding: 0; }
-  .ms-focus-bar .focus-exit { width: 44px; padding: 0; display: grid; place-items: center; }
+  /* Mode focus : seule la croix reste (réglages dans « ⋯ > Réglages »), sous l'encoche ; la page descend sous elle. */
+  .ms-focus-bar { top: calc(env(safe-area-inset-top) + 6px); left: auto; right: 10px; transform: none; flex-wrap: nowrap; gap: 0; padding: 3px; border-radius: 999px; opacity: 0.8; }
+  .ms-focus-bar .focus-options, .ms-focus-bar .focus-toggle { display: none; }
+  .ms-focus-bar .focus-exit { width: 40px; min-height: 40px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; }
   .ms-focus-bar .focus-exit-text { display: none; }
   .ms-focus-bar .focus-exit-x { display: block; }
-  .ms-focus-bar .focus-options { display: none; position: absolute; top: calc(100% + 6px); right: 0; width: min(280px, calc(100vw - 20px)); flex-direction: column; align-items: stretch; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); }
-  .ms-focus-bar.is-open .focus-options { display: flex; }
-  .ms-focus-bar .focus-options label { justify-content: space-between; }
+  .manuscript.is-focus:not(.is-typewriter) .ms-main { padding-top: calc(env(safe-area-inset-top) + 56px); }
 }

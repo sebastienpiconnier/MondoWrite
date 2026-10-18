@@ -273,8 +273,6 @@ export function Manuscript() {
   const deleteCard = useCosmos((s) => s.deleteCard);
   const b = t.book;
   const focusMode = useCosmos((s) => s.focusMode);
-  // Téléphone : les réglages du mode focus sont repliés derrière un bouton, pour laisser la place au texte.
-  const [focusMenu, setFocusMenu] = useState(false);
   const setFocusMode = useCosmos((s) => s.setFocusMode);
   const writing = useSettings((s) => s.writing);
   const setWriting = useSettings((s) => s.setWriting);
@@ -471,14 +469,7 @@ export function Manuscript() {
   return (
     <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
       {focusMode && (
-        <div className={`ms-focus-bar${focusMenu ? " is-open" : ""}`} role="toolbar" aria-label={t.focus.aria}>
-          <button type="button" className="focus-toggle" aria-expanded={focusMenu} aria-label={t.focus.options} title={t.focus.options} onClick={() => setFocusMenu((open) => !open)}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
-              <circle cx="16" cy="7" r="2" />
-              <circle cx="8" cy="17" r="2" />
-            </svg>
-          </button>
+        <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
           <div className="focus-options">
             <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
               {t.focus.typewriter}
@@ -494,10 +485,7 @@ export function Manuscript() {
               </select>
             </label>
           </div>
-          <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => {
-            setFocusMenu(false);
-            setFocusMode(false);
-          }}>
+          <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => setFocusMode(false)}>
             <span className="focus-exit-text">{t.focus.exit}</span>
             <svg className="focus-exit-x" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />

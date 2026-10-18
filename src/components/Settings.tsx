@@ -8,6 +8,7 @@ import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, type ThemePref } from "../settings";
+import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
@@ -61,7 +62,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -220,6 +221,19 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          {/* Mode focus : réglé ici aussi, car sur téléphone la barre du mode focus ne garde que la sortie. */}
+          <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
+          <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
+            {FOCUS_HIGHLIGHTS.map((h) => (
+              <option key={h} value={h}>
+                {t.focus.highlights[h]}
+              </option>
+            ))}
+          </select>
+          <label className="settings-check" htmlFor={ids.focusTw}>
+            <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
+            {t.settings.focusTypewriter}
+          </label>
           {/* Typographie à la frappe (manuscrit, cartes, Bible) : selon la langue, ou choisie, ou aucune. */}
           <label htmlFor={ids.typography}>{t.settings.typography}</label>
           <select
