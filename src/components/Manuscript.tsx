@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, Extension, getHTMLFromFragment, useEditor } from "@tiptap/react";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
-import { FocusWriting, focusKey, centerCaret } from "./focusWriting";
+import { FocusWriting, focusKey } from "./focusWriting";
 import { FOCUS_HIGHLIGHTS } from "../focusText";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCosmos } from "../store";
@@ -124,10 +124,7 @@ function SceneEditor({
       BookKeys.configure({ handlers }),
       DropCap,
       // Mode focus : la phrase ou le paragraphe en cours en pleine encre, le reste estompé.
-      FocusWriting.configure({
-        mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off"),
-        typewriter: () => useCosmos.getState().focusMode && useSettings.getState().writing.typewriter,
-      }),
+      FocusWriting.configure({ mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off") }),
     ],
     // Scène née d'une coupure : on continue d'écrire au début, sans quitter le clavier.
     autofocus: focusStart ? "start" : false,
@@ -166,39 +163,37 @@ function SceneEditor({
       const page = view.dom.closest<HTMLElement>(".ms-page");
       const main = view.dom.closest<HTMLElement>(".ms-main");
       if (!page || !main) return;
-      let caret: { top: number; bottom: number } | null;
+      let caret: { top: number; bottom: number };
       try {
         caret = view.coordsAtPos(view.state.selection.head);
       } catch {
         return;
       }
       // Machine à écrire : la ligne du curseur se tient aux deux cinquièmes de la hauteur.
-      if (writing.typewriter) caret = centerCaret(view) ?? caret;
+      // Sur iPad en portrait (et téléphone), ce n'est pas .ms-main qui défile mais un parent, voire la fenêtre :
+      // on cherche le premier ancêtre réellement défilant, à défaut la fenêtre elle-même.
+      if (writing.typewriter) {
+        const scroller = scrollParent(main);
+        const box = scroller ? scroller.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+        const delta = caret.top - (box.top + box.height * 0.4);
+        if (Math.abs(delta) > 1) {
+          if (scroller) scroller.scrollTop += delta;
+          else window.scrollBy(0, delta);
+          caret = view.coordsAtPos(view.state.selection.head);
+        }
+      }
       if (writing.highlight !== "line") return setVeil(null);
       const top = page.getBoundingClientRect().top;
       setVeil({ top: caret.top - top - 2, bottom: caret.bottom - top + 2 });
     };
-    // La mise en page des pages (et le clavier virtuel) bougent un instant après la frappe : on recale aussi
-    // à l'image suivante et un peu plus tard, sinon la ligne reste là où elle était avant ce décalage.
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const later = () => {
-      follow();
-      requestAnimationFrame(follow);
-      clearTimeout(timer);
-      timer = setTimeout(follow, 160);
-    };
     follow();
-    editor.on("selectionUpdate", later);
-    editor.on("update", later);
-    editor.on("focus", later);
-    const viewport = window.visualViewport;
-    viewport?.addEventListener("resize", later);
+    editor.on("selectionUpdate", follow);
+    editor.on("update", follow);
+    editor.on("focus", follow);
     return () => {
-      clearTimeout(timer);
-      editor.off("selectionUpdate", later);
-      editor.off("update", later);
-      editor.off("focus", later);
-      viewport?.removeEventListener("resize", later);
+      editor.off("selectionUpdate", follow);
+      editor.off("update", follow);
+      editor.off("focus", follow);
     };
   }, [editor, focusMode, writing]);
 
@@ -216,9 +211,41 @@ function SceneEditor({
   );
 }
 
+/** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let node: HTMLElement | null = el; node && node !== document.body; node = node.parentElement) {
+    const overflow = getComputedStyle(node).overflowY;
+    if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
+  }
+  return null;
+}
+
+const PANELS_KEY = "mondowrite.manuscript.panels";
+function readPanels(): { scenes: boolean; side: boolean } {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PANELS_KEY) ?? "null");
+    if (raw && typeof raw === "object") return { scenes: raw.scenes !== false, side: raw.side !== false };
+  } catch {
+    /* ignoré */
+  }
+  return { scenes: true, side: true };
+}
+
 export function Manuscript() {
   const t = useT();
   const m = t.manuscript;
+  // Volets escamotables (plan à gauche, infos à droite) : on garde le choix d'une fois sur l'autre.
+  const [panels, setPanels] = useState(readPanels);
+  const togglePanel = (key: "scenes" | "side") =>
+    setPanels((p) => {
+      const next = { ...p, [key]: !p[key] };
+      try {
+        localStorage.setItem(PANELS_KEY, JSON.stringify(next));
+      } catch {
+        /* stockage indisponible : le choix vaut pour la session */
+      }
+      return next;
+    });
   const lang = useSettings((s) => s.lang);
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
@@ -436,7 +463,7 @@ export function Manuscript() {
   const sceneWords = countWords(manuscript[current]);
 
   return (
-    <div className={`manuscript${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
       {focusMode && (
         <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
           <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
@@ -634,6 +661,12 @@ export function Manuscript() {
         <div className="ms-sheet">
           {/* Une barre discrète : les compteurs sont dans les colonnes, la page ressemble à un livre. */}
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
+            <button type="button" className="ghost-button ms-panel-toggle" aria-pressed={panels.scenes} title={panels.scenes ? m.panelHide : m.panelShow} onClick={() => togglePanel("scenes")}>
+              {m.panelScenes}
+            </button>
+            <button type="button" className="ghost-button ms-panel-toggle" aria-pressed={panels.side} title={panels.side ? m.panelHide : m.panelShow} onClick={() => togglePanel("side")}>
+              {m.panelSide}
+            </button>
             <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
               <span aria-hidden="true">←</span>
             </button>
@@ -697,7 +730,7 @@ export function Manuscript() {
               {words(sceneWords)}
             </span>
           </div>
-          {writing.continuous && !focusMode ? (
+          {writing.continuous ? (
             <ContinuousBook order={order} cards={cards} current={current} onCurrent={setChosen} />
           ) : (
           <div

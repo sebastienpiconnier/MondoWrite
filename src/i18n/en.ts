@@ -706,6 +706,10 @@ export const en: Messages = {
 
   manuscript: {
     scenesAria: "Manuscript scenes, in outline order",
+    panelScenes: "Outline",
+    panelSide: "Info",
+    panelHide: "Collapse panel",
+    panelShow: "Open panel",
     scenesTitle: "Scenes",
     wordsOne: "{n} word",
     wordsMany: "{n} words",

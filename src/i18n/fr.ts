@@ -683,6 +683,10 @@ export const fr = {
 
   manuscript: {
     scenesAria: "Scènes du manuscrit, dans l’ordre du plan",
+    panelScenes: "Plan",
+    panelSide: "Infos",
+    panelHide: "Replier le volet",
+    panelShow: "Ouvrir le volet",
     scenesTitle: "Scènes",
     wordsOne: "{n} mot",
     wordsMany: "{n} mots",

@@ -15,7 +15,8 @@ import {
   type Edge,
 } from "@xyflow/react";
 import { heldCardIds, useCosmos } from "../store";
-import { filterActive, hiddenCards } from "../canvasFilter";
+import { filterActive, hiddenCards, hiddenFrames } from "../canvasFilter";
+import { boxes, frameBox } from "../projectState";
 import { CanvasFilterMenu } from "./CanvasFilterMenu";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
@@ -90,11 +91,26 @@ export function Toile() {
   const filter = useCosmos((s) => s.filter);
   const spotlightId = useCosmos((s) => s.spotlightId);
   const hidden = useMemo(() => hiddenCards(nodes.map((n) => n.data), edges, filter), [nodes, edges, filter]);
+  // Cadres vidés par le filtre : ils disparaissent aussi.
+  const hiddenFrameIds = useMemo(() => {
+    if (!filterActive(filter)) return new Set<string>();
+    const cardBoxes = boxes(nodes);
+    return hiddenFrames(
+      frames.map((f) => ({ id: f.id, box: frameBox(f) })),
+      nodes.map((n, i) => ({ id: n.id, box: cardBoxes[i] })),
+      hidden,
+      true,
+    );
+  }, [frames, nodes, hidden, filter]);
+  const shownFrames = useMemo(
+    () => (hiddenFrameIds.size === 0 ? frames : frames.map((f) => (hiddenFrameIds.has(f.id) ? { ...f, hidden: true } : f))),
+    [frames, hiddenFrameIds],
+  );
   const allNodes = useMemo(() => {
     const held = heldCardIds(nodes, frames);
-    if (held.size === 0 && hidden.size === 0 && !spotlightId) return [...frames, ...nodes];
+    if (held.size === 0 && hidden.size === 0 && !spotlightId) return [...shownFrames, ...nodes];
     return [
-      ...frames,
+      ...shownFrames,
       ...nodes.map((n) => {
         const lock = held.has(n.id);
         const off = hidden.has(n.id);
@@ -102,7 +118,7 @@ export function Toile() {
         return lock || off || lit ? { ...n, ...(lock ? { draggable: false } : {}), ...(off ? { hidden: true } : {}), ...(lit ? { className: "is-spotlit" } : {}) } : n;
       }),
     ];
-  }, [frames, nodes, hidden, spotlightId]);
+  }, [frames, shownFrames, nodes, hidden, spotlightId]);
   const shownEdges = useMemo(
     () => (hidden.size === 0 ? edges : edges.map((e) => (hidden.has(e.source) || hidden.has(e.target) ? { ...e, hidden: true } : e))),
     [edges, hidden],

@@ -32,6 +32,15 @@
 
 /* ---------- Manuscrit d'un roman : une scène à la fois ---------- */
 .manuscript { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) minmax(200px, 300px); }
+.manuscript.hide-scenes { grid-template-columns: minmax(0, 1fr) minmax(200px, 300px); }
+.manuscript.hide-side { grid-template-columns: minmax(190px, 260px) minmax(0, 1fr); }
+.manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); }
+.manuscript.hide-scenes .ms-scenes, .manuscript.hide-side .sp-side { display: none; }
+.ms-panel-toggle { min-height: 36px; opacity: 0.7; }
+.ms-panel-toggle[aria-pressed="true"] { opacity: 1; border-color: var(--accent); }
+@media (pointer: coarse) { .ms-panel-toggle { min-height: 44px; } }
+/* La barre du manuscrit reste en haut quand on défile : mode focus, remplacer, volets sont toujours à portée. */
+.ms-meta { position: sticky; top: 0; z-index: 6; padding: 6px 8px; margin-top: -6px; border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
 .ms-main { overflow: auto; padding: 32px max(24px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(24px, env(safe-area-inset-left)); container: ms / inline-size; }
 .ms-sheet { max-width: min(100%, 900px); margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 /* La scène mise en page comme un livre : format 2:3, marges, alinéas, texte justifié.
