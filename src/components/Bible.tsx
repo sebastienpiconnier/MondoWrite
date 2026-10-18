@@ -167,7 +167,7 @@ export function Bible() {
   const rootRef = useRef<HTMLDivElement>(null);
   // Téléphone : le sommaire est un tiroir, il se referme dès qu'on a choisi une rubrique.
   const closeTocOnPhone = () => {
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches) setTocOpen(false);
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches) setTocOpen(false);
   };
   const goTo = (type: CardType) => {
     closeTocOnPhone();

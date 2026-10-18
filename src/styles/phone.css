@@ -45,12 +45,6 @@
   /* Plan : pas de chronologie sur téléphone (le tableau déborde de l'écran). */
   .plan-timeline-tab { display: none; }
 
-  /* Bible : le sommaire est un tiroir qui reste en place ; un choix de rubrique le referme (voir Bible.tsx). */
-  .bible-frame { transform: translateZ(0); }
-  .bible-toc { position: fixed; top: 0; bottom: 0; left: 0; z-index: 9; width: min(320px, 85vw); max-width: none; margin: 0; overflow: auto; border-radius: 0 16px 16px 0; box-shadow: var(--shadow-pop); padding-bottom: 24px; }
-  .bible-frame > .edge-handle { background: var(--surface); }
-  .bible-frame:not(.hide-toc) > .edge-handle { left: calc(min(320px, 85vw) - 1px); z-index: 10; }
-
   /* Mode focus : seule la croix reste (réglages dans « ⋯ > Réglages »), sous l'encoche ; la page descend sous elle. */
   .ms-focus-bar { top: calc(env(safe-area-inset-top) + 6px); left: auto; right: 10px; transform: none; flex-wrap: nowrap; gap: 0; padding: 3px; border-radius: 999px; opacity: 0.8; }
   .ms-focus-bar .focus-options, .ms-focus-bar .focus-toggle { display: none; }
@@ -68,4 +62,13 @@
   /* Autant d'onglets que de vues (4 pour un roman, 5 pour un scénario) sur la largeur de l'écran. */
   .app.has-tabbar .views { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
   .app.has-tabbar .views button { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Sommaire de la Bible : tiroir escamotable sur tablette et téléphone, comme les volets du Manuscrit. */
+@media (max-width: 900px) {
+  /* Bible : le sommaire est un tiroir qui reste en place ; un choix de rubrique le referme (voir Bible.tsx). */
+  .bible-frame { transform: translateZ(0); }
+  .bible-toc { position: fixed; top: 0; bottom: 0; left: 0; z-index: 9; width: min(320px, 85vw); max-width: none; margin: 0; overflow: auto; border-radius: 0 16px 16px 0; box-shadow: var(--shadow-pop); padding-bottom: 24px; }
+  .bible-frame > .edge-handle { background: var(--surface); }
+  .bible-frame:not(.hide-toc) > .edge-handle { left: calc(min(320px, 85vw) - 1px); z-index: 10; }
 }

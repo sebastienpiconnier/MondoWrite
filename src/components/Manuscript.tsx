@@ -20,7 +20,6 @@ import { EditorContent, Extension, getHTMLFromFragment, useEditor } from "@tipta
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
-import { FOCUS_HIGHLIGHTS } from "../focusText";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -474,16 +473,6 @@ export function Manuscript() {
             <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
               {t.focus.typewriter}
             </button>
-            <label>
-              <span>{t.focus.highlight}</span>
-              <select value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
-                {FOCUS_HIGHLIGHTS.map((h) => (
-                  <option key={h} value={h}>
-                    {t.focus.highlights[h]}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
           <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => setFocusMode(false)}>
             <span className="focus-exit-text">{t.focus.exit}</span>
