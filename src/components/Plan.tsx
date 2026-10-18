@@ -266,7 +266,7 @@ export function Plan() {
                 {sq[m]}
               </button>
             ))}
-            <button type="button" aria-pressed={timeline} onClick={() => setTimeline(true)}>
+            <button type="button" className="plan-timeline-tab" aria-pressed={timeline} onClick={() => setTimeline(true)}>
               {p.timeline}
             </button>
           </div>

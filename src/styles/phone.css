@@ -41,4 +41,23 @@
   .ms-meta > * { flex: none; }
   .ms-meta .ms-title { flex: 0 0 170px; min-width: 120px; }
   .ms-meta .ms-panel-toggle, .ms-meta .ghost-button { min-height: 44px; }
+
+  /* Plan : pas de chronologie sur téléphone (le tableau déborde de l'écran). */
+  .plan-timeline-tab { display: none; }
+
+  /* Bible : le sommaire est un tiroir qui reste en place ; un choix de rubrique le referme (voir Bible.tsx). */
+  .bible-frame { transform: translateZ(0); }
+  .bible-toc { position: fixed; top: 0; bottom: 0; left: 0; z-index: 9; width: min(320px, 85vw); max-width: none; margin: 0; overflow: auto; border-radius: 0 16px 16px 0; box-shadow: var(--shadow-pop); padding-bottom: 24px; }
+  .bible-frame > .edge-handle { background: var(--surface); }
+  .bible-frame:not(.hide-toc) > .edge-handle { left: calc(min(320px, 85vw) - 1px); z-index: 10; }
+
+  /* Mode focus : un petit bouton de réglages et une croix, les options s'ouvrent à la demande. */
+  .ms-focus-bar { top: max(8px, env(safe-area-inset-top)); left: auto; right: 10px; transform: none; flex-wrap: nowrap; gap: 6px; padding: 4px; opacity: 0.85; }
+  .ms-focus-bar .focus-toggle { display: grid; place-items: center; width: 44px; padding: 0; }
+  .ms-focus-bar .focus-exit { width: 44px; padding: 0; display: grid; place-items: center; }
+  .ms-focus-bar .focus-exit-text { display: none; }
+  .ms-focus-bar .focus-exit-x { display: block; }
+  .ms-focus-bar .focus-options { display: none; position: absolute; top: calc(100% + 6px); right: 0; width: min(280px, calc(100vw - 20px)); flex-direction: column; align-items: stretch; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); }
+  .ms-focus-bar.is-open .focus-options { display: flex; }
+  .ms-focus-bar .focus-options label { justify-content: space-between; }
 }

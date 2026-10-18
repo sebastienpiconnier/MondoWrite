@@ -1341,6 +1341,7 @@ export const fr = {
     aria: "Mode focus",
     exit: "Quitter (Échap)",
     typewriter: "Machine à écrire",
+    options: "Réglages du mode focus",
     highlight: "Mettre en valeur",
     highlights: { off: "Tout le texte", sentence: "La phrase", line: "La ligne", paragraph: "Le paragraphe" },
   },

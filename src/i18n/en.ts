@@ -1325,6 +1325,7 @@ export const en: Messages = {
     aria: "Focus mode",
     exit: "Exit (Esc)",
     typewriter: "Typewriter",
+    options: "Focus mode settings",
     highlight: "Highlight",
     highlights: { off: "All the text", sentence: "The sentence", line: "The line", paragraph: "The paragraph" },
   },

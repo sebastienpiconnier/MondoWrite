@@ -165,7 +165,12 @@ export function Bible() {
 
   // Une rubrique du sommaire : on défile jusqu'à elle (toutes sont sur la même page).
   const rootRef = useRef<HTMLDivElement>(null);
+  // Téléphone : le sommaire est un tiroir, il se referme dès qu'on a choisi une rubrique.
+  const closeTocOnPhone = () => {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches) setTocOpen(false);
+  };
   const goTo = (type: CardType) => {
+    closeTocOnPhone();
     setCurrent(type);
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-group="${type}"]`)?.scrollIntoView({ block: "start" }));
   };
@@ -365,7 +370,10 @@ export function Bible() {
         ) : (
         <ul>
           <li>
-            <button type="button" className={`toc-cover${onCover ? " is-current" : ""}`} aria-current={onCover ? "true" : undefined} onClick={() => setCurrent("projet")}>
+            <button type="button" className={`toc-cover${onCover ? " is-current" : ""}`} aria-current={onCover ? "true" : undefined} onClick={() => {
+              closeTocOnPhone();
+              setCurrent("projet");
+            }}>
               <span className="toc-label">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />

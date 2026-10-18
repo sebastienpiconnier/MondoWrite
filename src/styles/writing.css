@@ -299,6 +299,8 @@
 @media (any-hover: hover) { .ms-focus-bar:hover { opacity: 1; } }
 .ms-focus-bar button, .ms-focus-bar select { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
 .ms-focus-bar button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: transparent; }
+.ms-focus-bar .focus-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ms-focus-bar .focus-toggle, .ms-focus-bar .focus-exit-x { display: none; }
 .ms-focus-bar label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
 /* Mise en valeur : le texte s'estompe, la phrase ou le paragraphe en cours garde sa pleine encre. */
 .ms-page.is-dimmed .ms-editor { color: var(--page-ink-dim); transition: color 0.2s; }
