@@ -69,3 +69,5 @@ Prérequis : compte Apple Developer Program (payant), app créée dans App Store
 
 Pour automatiser plus tard : une tâche GitHub Actions sur runner macOS (clé d'API App Store Connect en secret,
 profils gérés par `fastlane match` ou signature automatique), sur le modèle de `release.yml`.
+
+> Installation sans câble et TestFlight : voir [ios-testflight.md](ios-testflight.md) (workflow GitHub « iOS vers TestFlight »).

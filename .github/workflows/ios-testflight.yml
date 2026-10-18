@@ -1,0 +1,67 @@
+# Fabrique l'app iPhone/iPad et l'envoie à TestFlight (onglet Actions, « Run workflow »).
+# Identifiant de l'app : app.cosmos.ecriture (inchangé : c'est aussi celui du Mac, du PC et de Linux).
+# Préparation (une fois) : docs/ios-testflight.md. Les secrets IOS_* sont propres à l'iPhone/iPad ;
+# les APPLE_API_* sont ceux déjà utilisés pour la notarisation du Mac.
+name: iOS vers TestFlight
+
+on:
+  workflow_dispatch:
+
+jobs:
+  testflight:
+    runs-on: macos-latest
+    env:
+      APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_DEVELOPMENT_TEAM }}
+      IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      # Le projet Xcode (src-tauri/gen/apple) n'est pas dans le dépôt : on le génère, puis on y remet les icônes.
+      - name: Projet Xcode
+        run: |
+          npm run tauri ios init
+          npm run ios:prepare
+
+      - name: Certificat et profil de distribution
+        run: |
+          security create-keychain -p ci "$RUNNER_TEMP/ios.keychain"
+          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/ios.keychain"
+          security unlock-keychain -p ci "$RUNNER_TEMP/ios.keychain"
+          printf '%s' "$IOS_CERTIFICATE" | tr -d '\r\n ' | base64 --decode > "$RUNNER_TEMP/ios.p12"
+          security import "$RUNNER_TEMP/ios.p12" -k "$RUNNER_TEMP/ios.keychain" -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k ci "$RUNNER_TEMP/ios.keychain"
+          security list-keychains -d user -s "$RUNNER_TEMP/ios.keychain" login.keychain
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          printf '%s' "$IOS_MOBILE_PROVISION" | tr -d '\r\n ' | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/mondowrite.mobileprovision"
+
+      # Le numéro de build doit grimper à chaque envoi : on prend celui de l'exécution.
+      - name: Fabriquer l'.ipa
+        run: npm run tauri ios build -- --export-method app-store-connect --build-number ${{ github.run_number }}
+
+      - name: Envoyer à TestFlight
+        run: |
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$APPLE_API_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8"
+          ipa=$(find src-tauri/gen/apple/build -name '*.ipa' | head -n 1)
+          echo "Envoi de $ipa"
+          xcrun altool --upload-app --type ios --file "$ipa" --apiKey "$APPLE_API_KEY" --apiIssuer "$APPLE_API_ISSUER"
