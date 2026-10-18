@@ -98,7 +98,7 @@ export function Bible() {
     } catch {
       /* ignoré */
     }
-    return typeof window === "undefined" || !window.matchMedia("(max-width: 720px)").matches;
+    return typeof window === "undefined" || !window.matchMedia("(max-width: 900px)").matches;
   });
   const toggleToc = () =>
     setTocOpen((open) => {

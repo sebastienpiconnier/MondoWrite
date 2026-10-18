@@ -231,7 +231,7 @@ function readPanels(): Panels {
     /* ignoré */
   }
   // Téléphone : la page d'abord ; le plan et les infos s'ouvrent avec leurs boutons.
-  const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
+  const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
   return { scenes: !phone, side: !phone, meta: true };
 }
 
@@ -664,11 +664,13 @@ export function Manuscript() {
       {/* Poignées sur les bords : plan à gauche, infos à droite, barre de la scène en haut. */}
       <EdgeHandle side="left" open={panels.scenes} label={m.panelScenes} onClick={() => togglePanel("scenes")} />
       <EdgeHandle side="right" open={panels.side} label={m.panelSide} onClick={() => togglePanel("side")} />
-      <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />
 
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
           {/* Une barre discrète : les compteurs sont dans les colonnes, la page ressemble à un livre. */}
+          <div className="ms-meta-wrap">
+          <div className="ms-meta-anchor">
+          <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
               <span aria-hidden="true">←</span>
@@ -732,6 +734,8 @@ export function Manuscript() {
             <span className="sr-only" aria-live="polite">
               {words(sceneWords)}
             </span>
+          </div>
+          </div>
           </div>
           {writing.continuous ? (
             <ContinuousBook order={order} cards={cards} current={current} onCurrent={setChosen} />
