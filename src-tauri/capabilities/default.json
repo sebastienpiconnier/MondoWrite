@@ -18,6 +18,7 @@
     "fs:allow-read-dir",
     "fs:allow-mkdir",
     "fs:allow-remove",
+    "fs:allow-rename",
     {
       "identifier": "fs:scope",
       "allow": [

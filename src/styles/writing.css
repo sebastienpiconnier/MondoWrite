@@ -31,7 +31,45 @@
 .chip.is-plain { background: var(--ground); color: var(--ink-2); }
 
 /* ---------- Manuscrit d'un roman : une scène à la fois ---------- */
-.manuscript { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) minmax(200px, 300px); }
+.manuscript { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) minmax(200px, 300px); grid-template-areas: "scenes main side"; }
+.manuscript > .ms-scenes { grid-area: scenes; display: block; } /* écrase « .sp-scenes { display: none } » du scénario sous 1000 px */
+.manuscript > .ms-main { grid-area: main; }
+.manuscript > .sp-side { grid-area: side; }
+.manuscript > .edge-handle { grid-area: main; }
+.manuscript.hide-scenes { grid-template-columns: minmax(0, 1fr) minmax(200px, 300px); grid-template-areas: "main side"; }
+.manuscript.hide-side { grid-template-columns: minmax(190px, 260px) minmax(0, 1fr); grid-template-areas: "scenes main"; }
+.manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
+.manuscript.hide-scenes .ms-scenes, .manuscript.hide-side .sp-side, .manuscript.hide-meta .ms-meta { display: none; }
+/* Poignées : un onglet sur le bord de la page pour replier ou rouvrir un volet (la barre de la scène en haut). */
+.edge-handle { position: absolute; z-index: 14; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); background: var(--ground); color: var(--muted); cursor: pointer; opacity: 1; }
+.edge-handle svg { transition: transform 0.15s; }
+.edge-handle.is-left, .edge-handle.is-right { top: 50%; transform: translateY(-50%); width: 20px; height: 64px; }
+.edge-handle.is-left { left: -1px; border-left: 0; border-radius: 0 12px 12px 0; box-shadow: 3px 0 9px -2px rgba(20, 24, 40, 0.4), 0 -3px 8px -3px rgba(20, 24, 40, 0.3), 0 3px 8px -3px rgba(20, 24, 40, 0.3); clip-path: inset(-14px -14px -14px 0); }
+.edge-handle.is-right { right: -1px; border-right: 0; border-radius: 12px 0 0 12px; box-shadow: -3px 0 9px -2px rgba(20, 24, 40, 0.4), 0 -3px 8px -3px rgba(20, 24, 40, 0.3), 0 3px 8px -3px rgba(20, 24, 40, 0.3); clip-path: inset(-14px 0 -14px -14px); }
+.edge-handle.is-top { top: -1px; left: 50%; transform: translateX(-50%); width: 60px; height: 19px; border-top: 0; border-radius: 0 0 10px 10px; background: var(--surface); box-shadow: 0 4px 9px -2px rgba(20, 24, 40, 0.4), 3px 0 8px -3px rgba(20, 24, 40, 0.3), -3px 0 8px -3px rgba(20, 24, 40, 0.3); clip-path: inset(0 -14px -14px -14px); }
+.ms-meta-anchor > .edge-handle.is-top { top: calc(100% - 1px); }
+.edge-handle.is-top svg, .edge-handle.is-left svg, .edge-handle.is-right svg { width: 12px; height: 12px; }
+.edge-handle.is-left svg { transform: rotate(180deg); }
+.edge-handle.is-left.is-open svg { transform: none; }
+.edge-handle.is-right svg { transform: none; }
+.edge-handle.is-right.is-open svg { transform: rotate(180deg); }
+.edge-handle.is-top svg { transform: rotate(-90deg); }
+.edge-handle.is-top.is-open svg { transform: rotate(90deg); }
+@media (any-hover: hover) { .edge-handle:hover { opacity: 1; color: var(--ink-2); } }
+@media (pointer: coarse) { .edge-handle.is-left, .edge-handle.is-right { width: 24px; height: 88px; } .edge-handle.is-top { width: 88px; height: 22px; } }
+.manuscript.is-focus .edge-handle { display: none; }
+/* La barre de la scène reste en haut quand on défile : mode focus, remplacer, scène suivante sont toujours à portée. */
+.ms-meta-wrap { position: sticky; top: 0; z-index: 6; margin: 0 0 8px; animation: ms-meta-in 0.24s ease-out; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; }
+.ms-meta-anchor { position: relative; }
+.ms-meta { padding: 6px 8px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
+/* La barre de la scène est collée au menu du haut et en descend comme un volet. */
+.manuscript:not(.hide-meta) .ms-main { padding-top: 0; }
+@keyframes ms-meta-in { from { transform: translateY(-100%); } }
+@media (prefers-reduced-motion: reduce) { .ms-meta-wrap { animation: none; } }
+/* Les volets se détachent de la page par une ombre sur leur pourtour. */
+.manuscript > .ms-scenes, .manuscript > .sp-side { position: relative; z-index: 3; }
+.manuscript > .ms-scenes { box-shadow: 3px 0 14px -4px rgba(20, 24, 40, 0.3); }
+.manuscript > .sp-side { box-shadow: -3px 0 14px -4px rgba(20, 24, 40, 0.3); }
 .ms-main { overflow: auto; padding: 32px max(24px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(24px, env(safe-area-inset-left)); container: ms / inline-size; }
 .ms-sheet { max-width: min(100%, 900px); margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 /* La scène mise en page comme un livre : format 2:3, marges, alinéas, texte justifié.
@@ -85,7 +123,7 @@
 @media (any-hover: hover) { .ms-title:hover { border-color: var(--line); } }
 .ms-title:focus-visible { border-color: var(--line-2); }
 .ms-title::placeholder { color: var(--placeholder); }
-.ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; font-size: 13px; color: var(--ink-2); }
+.ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: 100%; font-size: 13px; color: var(--ink-2); }
 .ms-meta .icon-button { width: 36px; height: 36px; }
 .ms-meta .icon-button:disabled { opacity: 0.35; cursor: default; }
 .ms-editor, .ms-editor:focus-visible { min-height: 50vh; outline: none; font: 19px/1.7 var(--font-text); color: var(--ink); cursor: text; }
@@ -110,10 +148,14 @@
 .ms-empty input { min-height: 44px; min-width: min(280px, 100%); padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
 .ms-empty input::placeholder { color: var(--placeholder); }
 @media (max-width: 900px) {
-  .manuscript { display: block; overflow: auto; }
-  .manuscript .sp-scenes, .manuscript .sp-side { overflow: visible; border: 0; }
-  .manuscript .sp-scenes { max-height: 30vh; overflow: auto; border-bottom: 1px solid var(--line); }
-  .ms-main { overflow: visible; padding: 20px max(16px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(16px, env(safe-area-inset-left)); }
+  /* Petit écran : le plan et les infos sont des tiroirs posés sur la page (poignées sur les bords). */
+  .manuscript, .manuscript.hide-scenes, .manuscript.hide-side, .manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
+  .manuscript > .ms-scenes, .manuscript > .sp-side { grid-area: main; position: absolute; top: 0; bottom: 0; z-index: 12; width: min(320px, 85vw); overflow: auto; background: var(--surface); box-shadow: var(--shadow-pop); border: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .manuscript > .ms-scenes { left: 0; }
+  .manuscript > .sp-side { right: 0; }
+  .manuscript:not(.hide-scenes) > .edge-handle.is-left { left: calc(min(320px, 85vw) - 1px); }
+  .manuscript:not(.hide-side) > .edge-handle.is-right { right: calc(min(320px, 85vw) - 1px); }
+  .ms-main { padding: 20px max(16px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(16px, env(safe-area-inset-left)); }
   .ms-editor, .ms-editor:focus-visible { min-height: 40vh; font-size: 18px; }
 }
 @media (pointer: coarse) {
@@ -249,7 +291,7 @@
 .plan-chapter-title.bible-title { flex: 1; min-height: 36px; font: 500 16px var(--font-display); margin-left: 0; }
 
 /* ---------- Mode focus du manuscrit ---------- */
-.manuscript.is-focus { grid-template-columns: minmax(0, 1fr); }
+.manuscript.is-focus { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
 .manuscript.is-focus .ms-scenes, .manuscript.is-focus .sp-side, .manuscript.is-focus .ms-meta, .manuscript.is-focus .ms-hint { display: none; }
 .manuscript.is-typewriter .ms-main { padding-top: 40vh; padding-bottom: 60vh; }
 .ms-focus-bar { position: fixed; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); opacity: 0.35; transition: opacity 0.2s; }
@@ -369,7 +411,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .app-dialog.is-photos { width: min(920px, calc(100vw - 24px)); }
 /* Carte agrandie : la même carte, avec la place d'écrire. */
 .app-dialog.is-card { width: min(860px, calc(100vw - 24px)); }
-.expanded-card { display: flex; flex-direction: column; gap: 12px; }
+.expanded-card { position: relative; display: flex; flex-direction: column; gap: 12px; }
+.expanded-close { position: sticky; top: 0; z-index: 3; align-self: flex-end; width: 44px; height: 44px; margin: -8px -10px -32px 0; display: grid; place-items: center; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-card); cursor: pointer; }
+@media (any-hover: hover) { .expanded-close:hover { background: var(--hover); } }
+.expanded-type { padding-right: 52px; }
 .expanded-type { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--type); }
 .expanded-title { width: 100%; field-sizing: content; resize: none; padding: 4px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font: 700 26px/1.25 var(--font-display); }
 .expanded-title:focus-visible { outline: none; border-bottom-color: var(--accent); }

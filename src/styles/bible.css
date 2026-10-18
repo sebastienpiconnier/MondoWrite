@@ -2,6 +2,9 @@
    Couleurs : uniquement les jetons de src/styles.css (clair et sombre). */
 
 /* ---------- Bible ---------- */
+.bible-frame { position: absolute; inset: 0; }
+.bible-frame.hide-toc .bible-toc { display: none; }
+.bible-frame > .edge-handle { z-index: 8; }
 .bible { position: absolute; inset: 0; overflow: auto; display: flex; flex-wrap: wrap; gap: 24px; padding: 24px max(24px, env(safe-area-inset-right)) calc(max(24px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)) max(24px, env(safe-area-inset-left)); align-items: flex-start; }
 .bible-toc { flex: 1 1 220px; max-width: 260px; background: var(--surface); border-radius: 16px; padding: 18px; position: sticky; top: 0; }
 .bible-toc ul { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }

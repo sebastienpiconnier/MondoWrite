@@ -1,6 +1,9 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
+// Défini par `tauri ios dev` / `tauri android dev` pour un appareil réel.
+const host = process.env.TAURI_DEV_HOST;
+
 // Configuration compatible avec Tauri : port fixe, pas d'écran effacé.
 export default defineConfig({
   plugins: [react()],
@@ -8,6 +11,10 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    host: host || false,
+    hmr: host
+      ? { protocol: "ws", host, port: 1421 }
+      : undefined,
     // Ne pas surveiller la partie Rust : ses fichiers de compilation sont verrouillés
     // pendant le build (erreurs EBUSY sous Windows) et Tauri gère lui-même ce dossier.
     watch: { ignored: ["**/src-tauri/**"] },

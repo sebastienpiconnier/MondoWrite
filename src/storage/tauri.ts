@@ -5,8 +5,8 @@
 // Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { exists, mkdir, readDir, readFile, readTextFile, remove, watch, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { appDataDir, join } from "@tauri-apps/api/path";
+import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { appDataDir, documentDir, join } from "@tauri-apps/api/path";
 import type { Storage } from "./index";
 import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, isConflictCopy, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
@@ -25,9 +25,31 @@ let current: string | null = null;
 
 const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
+/** Mobile : les projets vivent dans Documents/projets, visible dans l'app Fichiers (partage de fichiers iOS). */
+async function mobileRoot() {
+  return join(await documentDir(), MOBILE_DIR);
+}
+
+/** Anciennes versions : les projets étaient dans le dossier privé de l'app (invisible). On les déplace une fois. */
+async function migratePrivateProjects() {
+  try {
+    const old = await join(await appDataDir(), MOBILE_DIR);
+    if (!(await exists(old))) return;
+    const root = await mobileRoot();
+    await mkdir(root, { recursive: true });
+    for (const entry of await readDir(old)) {
+      if (!entry.isDirectory) continue;
+      const target = await join(root, entry.name);
+      if (!(await exists(target))) await rename(await join(old, entry.name), target);
+    }
+  } catch {
+    // Impossible de déplacer : les projets restent à leur place d'origine.
+  }
+}
+
 async function projectFolder(): Promise<string | null> {
   if (!current) return null;
-  return mobile ? join(await appDataDir(), MOBILE_DIR, current) : current;
+  return mobile ? join(await mobileRoot(), current) : current;
 }
 
 function adoptLegacyFolder() {
@@ -88,6 +110,7 @@ export const tauriStorage: Storage = {
 
   kind: "tauri",
   canPickFolder: !mobile,
+  canImportZip: mobile,
   location: () => (mobile || !current ? null : baseName(current)),
 
   async pickFolder() {
@@ -111,7 +134,8 @@ export const tauriStorage: Storage = {
     }
     // Mobile : la liste mémorisée, complétée par les dossiers présents (réinstallation, ancien projet unique).
     const list = readRecents();
-    const dir = await join(await appDataDir(), MOBILE_DIR);
+    await migratePrivateProjects();
+    const dir = await mobileRoot();
     if (await exists(dir)) {
       for (const entry of await readDir(dir)) {
         if (entry.isDirectory && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0 });
@@ -231,7 +255,7 @@ export const tauriStorage: Storage = {
 
   async watch(onChange) {
     const dir = await projectFolder();
-    // Sur mobile, le dossier est privé : aucun autre logiciel n'y écrit.
+    // Sur mobile, le dossier est dans Documents : pas de surveillance des changements externes.
     if (!dir || mobile) return () => {};
     // Délai anti-rebond : un enregistrement (ou une synchronisation OneDrive) écrit plusieurs fichiers d'affilée.
     return watch(

@@ -6,6 +6,7 @@ export const en: Messages = {
   meta: { name: "English" },
 
   app: {
+    moreOptions: "More options",
     tagline: "From chaos to an ordered world",
     loading: "Opening project…",
     openFailed: "Your project folder couldn’t be opened. Choose it again with “Open folder”: your files have not been changed.",
@@ -65,6 +66,8 @@ export const en: Messages = {
     empty: "No project yet. Create the first one, or try with an example.",
     openedOn: "opened {date}",
     openFolder: "Open folder…",
+    importZip: "Import a project (.zip)…",
+    importZipHint: "First export the project as a .zip on the other machine (Export, Export a copy), put it in OneDrive, Dropbox, iCloud Drive or Drive, then pick it here. Images are not included in the .zip.",
     unlist: "Remove “{title}” from the list",
     unlistHint: "Removes the project from this list. Its files are not deleted.",
     notAProject: "This folder doesn’t contain a MondoWrite project. To start one, use “New project”.",
@@ -173,6 +176,7 @@ export const en: Messages = {
     expand: "Expand card",
     actions: "More actions",
     filterHere: "Filter on this card",
+    closeExpanded: "Close card",
     expandedTitle: "Expanded card",
     addImage: "Add an image",
     openSheet: "Open its sheet in the Bible",
@@ -212,7 +216,7 @@ export const en: Messages = {
     undoHint: "Undo (Ctrl or Cmd + Z)",
     redoHint: "Redo (Ctrl or Cmd + Shift + Z)",
     hintMouse: "Double-click or right-click to write",
-    hintTouch: "Long-press to write",
+    hintTouch: "Long-press a card to move it",
     hintLink: "Drag a thread from an edge",
     hintTransform: "or the label to transform",
     labelPlaceholder: "Kind of link (e.g. suspects)",
@@ -705,6 +709,11 @@ export const en: Messages = {
 
   manuscript: {
     scenesAria: "Manuscript scenes, in outline order",
+    panelScenes: "Outline",
+    panelSide: "Info",
+    panelMeta: "Scene bar",
+    panelHide: "Collapse panel",
+    panelShow: "Open panel",
     scenesTitle: "Scenes",
     wordsOne: "{n} word",
     wordsMany: "{n} words",
@@ -1481,7 +1490,7 @@ export const en: Messages = {
     next: "Next",
     done: "Your turn to write",
     steps: {
-      cards: { title: "Drop your ideas anywhere", body: "Double-click, right-click or long-press the canvas: a card is born. Type / at the start of a line to turn it into a character, a place, a scene… Draw a thread from one card to another and name it (“sister of”, “takes place in”)." },
+      cards: { title: "Drop your ideas anywhere", body: "Double-click, right-click or use the “New card” button: a card is born. Long-press a card to lift it and move it. Type / at the start of a line to turn it into a character, a place, a scene… Draw a thread from one card to another and name it (“sister of”, “takes place in”)." },
       sources: { title: "Keep your sources close", body: "Paste or drop a link, an excerpt or an image on the canvas: a single card is born where you are: a Link with the site’s title and picture, an Image, or an Idea for a text. Pasting an address into an empty card turns it into the Link card. The arrow on “New card” offers every card type, PDFs and photos included. When it all overflows, “Organize” sorts the cards into frames by type, by outline beat and by chapter; a frame’s padlock keeps it out of the sorting." },
       bible: { title: "The Bible builds itself", body: "Every typed card gets its sheet, nothing is copied. Start with the project cover (tagline, logline, genre), then dig into your characters: what they want, what they lack, their wound. The assistant asks questions, it never answers for you." },
       plan: { title: "Give the story a shape", body: "Pick a template (three acts, Save the Cat, hero’s journey) and place your scenes in its beats. The timeline shows who and what appears in each scene." },

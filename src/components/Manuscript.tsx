@@ -24,6 +24,7 @@ import { FOCUS_HIGHLIGHTS } from "../focusText";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
+import { EdgeHandle } from "./EdgeHandle";
 import { fmt, getT, useT } from "../i18n";
 import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
@@ -170,10 +171,17 @@ function SceneEditor({
         return;
       }
       // Machine à écrire : la ligne du curseur se tient aux deux cinquièmes de la hauteur.
+      // Sur iPad en portrait (et téléphone), ce n'est pas .ms-main qui défile mais un parent, voire la fenêtre :
+      // on cherche le premier ancêtre réellement défilant, à défaut la fenêtre elle-même.
       if (writing.typewriter) {
-        const box = main.getBoundingClientRect();
-        main.scrollTop += caret.top - (box.top + box.height * 0.4);
-        caret = view.coordsAtPos(view.state.selection.head);
+        const scroller = scrollParent(main);
+        const box = scroller ? scroller.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+        const delta = caret.top - (box.top + box.height * 0.4);
+        if (Math.abs(delta) > 1) {
+          if (scroller) scroller.scrollTop += delta;
+          else window.scrollBy(0, delta);
+          caret = view.coordsAtPos(view.state.selection.head);
+        }
       }
       if (writing.highlight !== "line") return setVeil(null);
       const top = page.getBoundingClientRect().top;
@@ -204,9 +212,44 @@ function SceneEditor({
   );
 }
 
+/** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let node: HTMLElement | null = el; node && node !== document.body; node = node.parentElement) {
+    const overflow = getComputedStyle(node).overflowY;
+    if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
+  }
+  return null;
+}
+
+const PANELS_KEY = "mondowrite.manuscript.panels";
+type Panels = { scenes: boolean; side: boolean; meta: boolean };
+function readPanels(): Panels {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PANELS_KEY) ?? "null");
+    if (raw && typeof raw === "object") return { scenes: raw.scenes !== false, side: raw.side !== false, meta: raw.meta !== false };
+  } catch {
+    /* ignoré */
+  }
+  // Téléphone : la page d'abord ; le plan et les infos s'ouvrent avec leurs boutons.
+  const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
+  return { scenes: !phone, side: !phone, meta: true };
+}
+
 export function Manuscript() {
   const t = useT();
   const m = t.manuscript;
+  // Volets escamotables (plan à gauche, infos à droite) : on garde le choix d'une fois sur l'autre.
+  const [panels, setPanels] = useState(readPanels);
+  const togglePanel = (key: keyof Panels) =>
+    setPanels((p) => {
+      const next = { ...p, [key]: !p[key] };
+      try {
+        localStorage.setItem(PANELS_KEY, JSON.stringify(next));
+      } catch {
+        /* stockage indisponible : le choix vaut pour la session */
+      }
+      return next;
+    });
   const lang = useSettings((s) => s.lang);
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
@@ -424,7 +467,7 @@ export function Manuscript() {
   const sceneWords = countWords(manuscript[current]);
 
   return (
-    <div className={`manuscript${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
       {focusMode && (
         <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
           <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
@@ -618,9 +661,17 @@ export function Manuscript() {
         <Orphans ids={orphans} manuscript={manuscript} onRestore={restoreScene} />
       </nav>
 
+      {/* Poignées sur les bords : plan à gauche, infos à droite, barre de la scène en haut. */}
+      <EdgeHandle side="left" open={panels.scenes} label={m.panelScenes} onClick={() => togglePanel("scenes")} />
+      <EdgeHandle side="right" open={panels.side} label={m.panelSide} onClick={() => togglePanel("side")} />
+
+      {!panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
           {/* Une barre discrète : les compteurs sont dans les colonnes, la page ressemble à un livre. */}
+          <div className="ms-meta-wrap">
+          <div className="ms-meta-anchor">
+          {panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
               <span aria-hidden="true">←</span>
@@ -684,6 +735,8 @@ export function Manuscript() {
             <span className="sr-only" aria-live="polite">
               {words(sceneWords)}
             </span>
+          </div>
+          </div>
           </div>
           {writing.continuous ? (
             <ContinuousBook order={order} cards={cards} current={current} onCurrent={setChosen} />

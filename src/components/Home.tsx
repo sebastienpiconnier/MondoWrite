@@ -19,7 +19,7 @@ export function Home() {
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
-  const { openProject, openFolder, createProject, tryExample, unlistProject, importFile } = useCosmos.getState();
+  const { openProject, openFolder, createProject, tryExample, unlistProject, importFile, importProjectZip } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
@@ -114,6 +114,11 @@ export function Home() {
             {storage.canPickFolder && (
               <button type="button" className="ghost-button" disabled={busy} onClick={() => run(openFolder)}>
                 {h.openFolder}
+              </button>
+            )}
+            {storage.canImportZip && (
+              <button type="button" className="ghost-button" disabled={busy} title={h.importZipHint} onClick={() => run(importProjectZip)}>
+                {h.importZip}
               </button>
             )}
             <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importFile)}>

@@ -1,4 +1,4 @@
-// La toile : on crée une carte n'importe où (double-clic à la souris, appui long
+// La toile : on crée une carte n'importe où (double-clic à la souris, bouton « Nouvelle carte »
 // au doigt, ou bouton « + »), on tire un fil d'un point de connexion vers une autre
 // carte, on double-clique (ou touche, sur écran tactile) un fil pour l'étiqueter.
 
@@ -15,7 +15,8 @@ import {
   type Edge,
 } from "@xyflow/react";
 import { heldCardIds, useCosmos } from "../store";
-import { filterActive, hiddenCards } from "../canvasFilter";
+import { filterActive, hiddenCards, hiddenFrames } from "../canvasFilter";
+import { boxes, frameBox } from "../projectState";
 import { CanvasFilterMenu } from "./CanvasFilterMenu";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
@@ -25,6 +26,7 @@ import type { CardData, CardType } from "../types";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { isTouch } from "../platform";
+import { useLifted } from "../lifted";
 import { documentExtension, imageExtension } from "../media";
 import { TEXT_FILE_RE, clipFromText } from "../clip";
 
@@ -89,11 +91,26 @@ export function Toile() {
   const filter = useCosmos((s) => s.filter);
   const spotlightId = useCosmos((s) => s.spotlightId);
   const hidden = useMemo(() => hiddenCards(nodes.map((n) => n.data), edges, filter), [nodes, edges, filter]);
+  // Cadres vidés par le filtre : ils disparaissent aussi.
+  const hiddenFrameIds = useMemo(() => {
+    if (!filterActive(filter)) return new Set<string>();
+    const cardBoxes = boxes(nodes);
+    return hiddenFrames(
+      frames.map((f) => ({ id: f.id, box: frameBox(f) })),
+      nodes.map((n, i) => ({ id: n.id, box: cardBoxes[i] })),
+      hidden,
+      true,
+    );
+  }, [frames, nodes, hidden, filter]);
+  const shownFrames = useMemo(
+    () => (hiddenFrameIds.size === 0 ? frames : frames.map((f) => (hiddenFrameIds.has(f.id) ? { ...f, hidden: true } : f))),
+    [frames, hiddenFrameIds],
+  );
   const allNodes = useMemo(() => {
     const held = heldCardIds(nodes, frames);
-    if (held.size === 0 && hidden.size === 0 && !spotlightId) return [...frames, ...nodes];
+    if (held.size === 0 && hidden.size === 0 && !spotlightId) return [...shownFrames, ...nodes];
     return [
-      ...frames,
+      ...shownFrames,
       ...nodes.map((n) => {
         const lock = held.has(n.id);
         const off = hidden.has(n.id);
@@ -101,14 +118,14 @@ export function Toile() {
         return lock || off || lit ? { ...n, ...(lock ? { draggable: false } : {}), ...(off ? { hidden: true } : {}), ...(lit ? { className: "is-spotlit" } : {}) } : n;
       }),
     ];
-  }, [frames, nodes, hidden, spotlightId]);
+  }, [frames, shownFrames, nodes, hidden, spotlightId]);
   const shownEdges = useMemo(
     () => (hidden.size === 0 ? edges : edges.map((e) => (hidden.has(e.source) || hidden.has(e.target) ? { ...e, hidden: true } : e))),
     [edges, hidden],
   );
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
-  const { screenToFlowPosition, fitView } = useReactFlow();
+  const { screenToFlowPosition, fitView, getViewport } = useReactFlow();
   const wrapper = useRef<HTMLDivElement>(null);
   const [labelEditor, setLabelEditor] = useState<LabelEditor | null>(null);
   const edgeCountBeforeConnect = useRef(0);
@@ -303,39 +320,77 @@ export function Toile() {
     return () => window.removeEventListener("paste", onPaste);
   }, []);
 
-  // Appui long sur la toile (écran tactile ou stylet) : nouvelle carte à cet endroit.
-  // Au relâchement, le navigateur émule mousedown/click sous le doigt, c'est-à-dire
-  // sur la carte qu'on vient de créer : on avale ces événements pendant un court instant,
-  // sinon ils déplaceraient le focus (ou ouvriraient le menu du type).
-  const createAtRef = useRef(createAt);
-  createAtRef.current = createAt;
-  // En mode Sélection, l'appui long trace le rectangle au lieu de créer une carte.
-  const selectingRef = useRef(selecting);
-  selectingRef.current = selecting;
+  // Appui long sur une carte (doigt, stylet ou souris) : elle est sélectionnée et « soulevée » (ombre portée)
+  // pour être déplacée ; on peut enchaîner en la faisant glisser sans lever le doigt. L'appui long ne crée
+  // plus de carte sur la toile : trop de cartes naissaient par erreur (création : double-clic, clic droit,
+  // bouton « Nouvelle carte » ou touche N). Au relâchement, le navigateur émule mousedown/click sous le doigt :
+  // on les avale un court instant, sinon ils ouvriraient un menu ou changeraient la sélection.
   useEffect(() => {
     const el = wrapper.current;
     if (!el) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let start: { x: number; y: number } | null = null;
+    let start: { x: number; y: number; id: string } | null = null;
     let fired = false;
     let swallowUntil = 0;
+    // Carte soulevée en cours de déplacement (nous la déplaçons nous-mêmes : le texte de la carte est « nodrag »).
+    let moving: { id: string; x: number; y: number } | null = null;
+    const endMove = () => {
+      if (!moving) return;
+      const c = useCosmos.getState().nodes.find((n) => n.id === moving!.id);
+      if (c) useCosmos.getState().onNodesChange([{ type: "position", id: c.id, position: c.position, dragging: false }]);
+      moving = null;
+    };
     const cancel = () => {
       clearTimeout(timer);
       start = null;
     };
     const down = (e: PointerEvent) => {
       fired = false;
-      if (e.pointerType === "mouse" || !e.isPrimary || !isPane(e.target) || selectingRef.current) return;
-      start = { x: e.clientX, y: e.clientY };
+      endMove();
+      if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
+      const target = e.target instanceof Element ? e.target : null;
+      const node = target?.closest<HTMLElement>(".react-flow__node-card");
+      // Ni les boutons ni les poignées ; un texte que l'on est en train d'écrire garde son appui long (loupe, sélection).
+      if (!node || target?.closest("input, select, button, a, .react-flow__handle, .card-resize")) return;
+      // Carte déjà soulevée : on la déplace tout de suite, depuis n'importe quel point (texte compris).
+      if (useLifted.getState().id === node.getAttribute("data-id") && node.classList.contains("selected")) {
+        moving = { id: node.getAttribute("data-id")!, x: e.clientX, y: e.clientY };
+        e.preventDefault();
+        return;
+      }
+      const field = target?.closest("textarea, [contenteditable='true']");
+      if (field && (field === document.activeElement || field.contains(document.activeElement))) return;
+      const id = node.getAttribute("data-id");
+      if (!id) return;
+      start = { x: e.clientX, y: e.clientY, id };
       timer = setTimeout(() => {
         if (!start) return;
         fired = true;
         navigator.vibrate?.(10);
-        createAtRef.current(start.x, start.y);
+        const store = useCosmos.getState();
+        useCosmos.setState({
+          nodes: store.nodes.map((n) => (n.selected === (n.id === start!.id) ? n : { ...n, selected: n.id === start!.id })),
+          frames: store.frames.map((f) => (f.selected ? { ...f, selected: false } : f)),
+        });
+        useLifted.getState().set(start.id);
+        moving = { id: start.id, x: start.x, y: start.y };
         start = null;
       }, LONG_PRESS_MS);
     };
     const move = (e: PointerEvent) => {
+      if (moving) {
+        const zoom = getViewport().zoom || 1;
+        const dx = (e.clientX - moving.x) / zoom;
+        const dy = (e.clientY - moving.y) / zoom;
+        moving.x = e.clientX;
+        moving.y = e.clientY;
+        const c = useCosmos.getState().nodes.find((n) => n.id === moving!.id);
+        if (c && (dx || dy)) {
+          useCosmos.getState().onNodesChange([{ type: "position", id: c.id, position: { x: c.position.x + dx, y: c.position.y + dy }, dragging: true }]);
+        }
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
       if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > LONG_PRESS_TOLERANCE) cancel();
     };
     const touchEnd = (e: TouchEvent) => {
@@ -356,15 +411,25 @@ export function Toile() {
     // Phase de capture : la toile (d3-zoom) stoppe la propagation des événements tactiles.
     el.addEventListener("pointerdown", down, true);
     el.addEventListener("pointermove", move, true);
-    el.addEventListener("pointerup", cancel, true);
-    el.addEventListener("pointercancel", cancel, true);
+    const up = () => {
+      cancel();
+      endMove();
+    };
+    // Pas de focus ni de sélection de texte pendant qu'on déplace la carte.
+    const noFocus = (e: Event) => {
+      if (moving) e.preventDefault();
+    };
+    el.addEventListener("mousedown", noFocus, true);
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", up, true);
     el.addEventListener("touchend", touchEnd, { capture: true, passive: false });
     return () => {
       cancel();
       el.removeEventListener("pointerdown", down, true);
       el.removeEventListener("pointermove", move, true);
-      el.removeEventListener("pointerup", cancel, true);
-      el.removeEventListener("pointercancel", cancel, true);
+      el.removeEventListener("mousedown", noFocus, true);
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", up, true);
       el.removeEventListener("touchend", touchEnd, true);
       ghostEvents.forEach((t) => window.removeEventListener(t, swallow, true));
     };
@@ -383,7 +448,11 @@ export function Toile() {
     .filter(Boolean)
     .join(" · ");
 
+  // Au doigt (iPad), toucher « Délier » retire le focus du champ avant le clic : le blur refermait l'éditeur et
+  // le bouton disparaissait avant de recevoir son clic. On note l'appui et le blur l'attend.
+  const unlinkPressed = useRef(false);
   const commitLabel = () => {
+    if (unlinkPressed.current) return;
     if (labelEditor) renameLink(labelEditor.edgeId, labelEditor.value.trim());
     setLabelEditor(null);
   };
@@ -459,6 +528,8 @@ export function Toile() {
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
         defaultEdgeOptions={{
           type: "floating",
+          // Zone de toucher plus large autour du fil (20 px par défaut) : à l'index, le fil est trop fin.
+          interactionWidth: 32,
           // Variables CSS : les fils suivent le mode clair/sombre.
           style: { stroke: "var(--edge)", strokeWidth: 1.6 },
           labelBgPadding: [8, 4],
@@ -499,8 +570,13 @@ export function Toile() {
             className="label-unlink"
             aria-label={t.toile.unlink}
             title={t.toile.unlink}
-            onPointerDown={(e) => e.preventDefault()}
+            onPointerDown={() => {
+              unlinkPressed.current = true;
+              setTimeout(() => (unlinkPressed.current = false), 1000);
+            }}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
+              unlinkPressed.current = false;
               useCosmos.getState().removeLink(labelEditor.edgeId);
               setLabelEditor(null);
             }}

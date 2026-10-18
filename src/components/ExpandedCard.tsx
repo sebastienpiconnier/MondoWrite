@@ -23,6 +23,12 @@ export function ExpandedCard({ card }: { card: CardData }) {
 
   return (
     <div className="expanded-card" style={{ ["--type" as string]: typeColor(card.type) }}>
+      {/* Bouton de fermeture visible : au doigt, Échap n'existe pas et le fond peut être hors d'atteinte. */}
+      <button type="button" className="expanded-close" aria-label={t.card.closeExpanded} title={t.card.closeExpanded} onClick={() => useCosmos.getState().setDialog(null)}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
       <p className="expanded-type">
         <span className="card-dot" aria-hidden="true" />
         {types[card.type].label}

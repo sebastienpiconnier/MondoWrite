@@ -63,7 +63,7 @@ MondoWrite is under active development (version 1.0.2). **Illustrated user guide
 
 ### The canvas
 
-- **Free-form cards:** double-click or right-click the canvas, long-press with a finger, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
+- **Free-form cards:** double-click or right-click the canvas, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
 - **Ten card types:** Idea, Character, Place, Scene, Plot, Theme, Question, Image, Link, Document. Change the type by typing `/` at the start of a line or by tapping the type label.
 - **Pasting, as in Milanote:** paste or drop a link or an image onto the canvas: a single **Link** or **Image** card is born where you are (a pasted text becomes an Idea, a Scene if it starts with a heading such as “INT. LIGHTHOUSE - NIGHT”, and a `# …` heading gives it its title). An image address, or an image dragged from a web page, becomes an Image card. Several files dropped at once make one card each, and a `.md` or `.txt` file becomes the card it describes (title, type and sheet of a MondoWrite card or an Obsidian note). Paste an address into a card that is still empty: that card becomes the Link card, without making a second one. “Organize the canvas” sorts them into Images and Links frames, and the Bible has a section for each. For a link, MondoWrite reads the page: title, author, publication date and the site’s image come in on their own. Pasting the same link twice makes only one card. A link keeps the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
 - **Folded cards:** a card with a long text folds up, “More details” opens it.
@@ -209,7 +209,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 
 - **Choose a project:** on every launch, the home screen lists your projects. From a project, the “Projects” button saves and goes back there.
 - **New project:** a working title, novel or screenplay, and on a computer the folder to save it in. “Try with an example” creates a full project, Perrault’s “Little Red Riding Hood” illustrated by Gustave Doré (characters, places, a three-act outline, chapters and the tale written in the manuscript), and opens a six-step guided tour (it stays in Settings).
-- **New card:** double-click or right-click the canvas, press `N`, long-press with a finger, or use the “New card” button. Then just write.
+- **New card:** double-click or right-click the canvas, press `N`, or use the “New card” button. Then just write. A long press on a card (finger, pen or mouse) lifts it: it is selected, with a drop shadow, ready to be moved.
 - **Change the type:** type `/` at the start of a line, or tap the type label (“IDEA”).
 - **Connect:** drag a thread from a point on a card’s edge to another card, then name the link.
 - **Settings** (icon at the top right): project type, trash, interface language, appearance, and AI service.
@@ -281,7 +281,7 @@ npm run tauri dev      # desktop app
 npm run dev            # in the browser (http://localhost:1420), no disk access
 ```
 
-**Mobile (on a Mac):** `npm run tauri ios init` then `npm run tauri ios dev` (Xcode required), or `android init` / `android dev` (Android Studio and NDK required). On mobile, projects live in the app’s private storage.
+**Mobile (on a Mac):** `npm run tauri ios init`, `npm run ios:prepare` (icons) then `npm run tauri ios dev` (Xcode required; step by step, pitfalls and TestFlight in [docs/ios.md](docs/ios.md), in French), or `android init` / `android dev` (Android Studio and NDK required). On mobile, projects live in the app’s private storage.
 
 ### Check
 

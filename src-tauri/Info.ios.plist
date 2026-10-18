@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Fusionné par Tauri dans l'Info.plist de l'app iPhone/iPad : le dossier Documents de l'app (les projets)
+     apparaît dans l'app Fichiers, sous « Sur mon iPad > MondoWrite ». -->
+<plist version="1.0">
+<dict>
+  <key>UIFileSharingEnabled</key>
+  <true/>
+  <key>LSSupportsOpeningDocumentsInPlace</key>
+  <true/>
+</dict>
+</plist>

@@ -91,6 +91,11 @@
   border: 2px solid transparent; transition: border-color 0.15s;
 }
 .card.is-selected { border-color: var(--accent); box-shadow: var(--shadow-card), 0 0 0 3px var(--accent-soft); }
+/* Soulevée par un appui long : une ombre portée derrière la carte (et un halo d'accent, visible aussi en mode sombre). */
+.card { -webkit-touch-callout: none; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.card.is-lifted, .card.is-lifted * { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+.card.is-lifted { transform: scale(1.015); box-shadow: 0 22px 38px -10px rgba(0, 0, 0, 0.5), 0 8px 16px -8px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--accent-soft), 0 0 30px 4px var(--accent-soft); }
+.card-handle { -webkit-user-select: none; user-select: none; }
 /* Liseré du type, à gauche, à l'intérieur de la bordure : la sélection (bordure et halo d'accent) reste entière. */
 .card::before {
   content: ""; position: absolute; z-index: 1; left: 0; top: 0; bottom: 0; width: 4px;
@@ -279,8 +284,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
   display: inline-flex; align-items: stretch; border-radius: 999px; background: var(--strong-bg); box-shadow: var(--shadow-pop);
 }
 .add-card > button { border: 0; background: transparent; color: var(--strong-fg); cursor: pointer; min-height: 48px; }
-.add-card-main { display: inline-flex; align-items: center; gap: 8px; padding: 0 14px 0 14px; border-radius: 999px 0 0 999px; font-size: 15px; font-weight: 600; }
-.add-card-more { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding: 0 12px 0 10px; border-left: 1px solid color-mix(in srgb, var(--strong-fg) 30%, transparent) !important; border-radius: 0 999px 999px 0; }
+.add-card-main { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; min-height: 56px; padding: 0; border-radius: 50%; box-shadow: var(--shadow-card); }
 .add-card > button[aria-expanded="true"] { background: var(--strong-hover); }
 @media (any-hover: hover) { .add-card > button:hover { background: var(--strong-hover); } }
 .add-card-menu {

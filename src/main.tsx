@@ -17,6 +17,7 @@ import "./styles/canvas.css";
 import "./styles/bible.css";
 import "./styles/screenplay.css";
 import "./styles/writing.css";
+import "./styles/phone.css";
 import { App } from "./App";
 import { initSettings } from "./settings";
 import { initAppMenu } from "./appMenu";

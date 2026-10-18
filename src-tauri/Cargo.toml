@@ -35,3 +35,6 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 # Surveillance du dossier du projet (modifications faites dans un autre logiciel), ordinateur seulement.
 tauri-plugin-fs = { version = "2", features = ["watch"] }
+
+[patch.crates-io]
+num_threads = { path = "vendor/num_threads" }

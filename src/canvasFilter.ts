@@ -49,3 +49,39 @@ export function hiddenCards(cards: Pick<CardData, "id" | "type" | "html">[], edg
   if (f.card) hidden.delete(f.card);
   return hidden;
 }
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Cadres masqués par le filtre : un cadre qui ne contient plus aucune carte visible (centre dedans) ni aucun
+ * cadre visible disparaît avec elles, sinon il reste vide et distrait. Hors filtre, rien n'est masqué.
+ */
+export function hiddenFrames(
+  frames: { id: string; box: Rect }[],
+  cards: { id: string; box: Rect }[],
+  hidden: Set<string>,
+  active: boolean,
+): Set<string> {
+  const off = new Set<string>();
+  if (!active) return off;
+  const inside = (b: Rect, c: Rect) => {
+    const cx = c.x + c.width / 2;
+    const cy = c.y + c.height / 2;
+    return cx >= b.x && cx <= b.x + b.width && cy >= b.y && cy <= b.y + b.height;
+  };
+  const shown = new Set<string>();
+  for (const f of frames) if (cards.some((c) => !hidden.has(c.id) && inside(f.box, c.box))) shown.add(f.id);
+  // Un cadre qui en contient un autre resté visible (un chapitre dans une case du gabarit) reste visible aussi.
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const f of frames) {
+      if (shown.has(f.id)) continue;
+      if (frames.some((g) => g.id !== f.id && shown.has(g.id) && inside(f.box, g.box))) {
+        shown.add(f.id);
+        changed = true;
+      }
+    }
+  }
+  for (const f of frames) if (!shown.has(f.id)) off.add(f.id);
+  return off;
+}

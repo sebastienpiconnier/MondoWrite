@@ -195,8 +195,8 @@ button { font: inherit; color: inherit; }
 .brand { min-width: 0; }
 /* Titre du projet : un champ qui ressemble à du texte, modifiable sur place. */
 .brand-project {
-  min-width: 8ch; max-width: 32ch; min-height: 32px; margin-left: 2px; padding: 0 8px; field-sizing: content;
-  border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: inherit; font-size: 14px;
+  min-width: 8ch; max-width: min(30ch, 34vw); min-height: 26px; margin: 2px 0 0 -8px; padding: 0 8px; field-sizing: content;
+  border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: inherit; font-size: 13px;
   text-overflow: ellipsis;
 }
 @media (any-hover: hover) { .brand-project:hover { border-color: var(--line); } }

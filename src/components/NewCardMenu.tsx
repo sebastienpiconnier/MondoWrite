@@ -58,18 +58,13 @@ export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }
 
   return (
     <div className="add-card" ref={rootRef}>
-      <button type="button" className="add-card-main" title={t.addCardHint} aria-keyshortcuts="N" onClick={() => onCreate("idee")}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        {t.addCard}
-      </button>
       <button
         ref={toggleRef}
         type="button"
-        className="add-card-more"
-        aria-label={t.addCardMore}
-        title={t.addCardMore}
+        className="add-card-main"
+        aria-label={t.addCard}
+        title={t.addCard}
+        aria-keyshortcuts="N"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
@@ -81,8 +76,8 @@ export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }
           }
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d={open ? "M6 9l6 6 6-6" : "M6 15l6-6 6 6"} />
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
         </svg>
       </button>
       {open && (
