@@ -33,7 +33,7 @@ function load(): FileMap {
 export const browserStorage: Storage = {
   kind: "browser",
   canPickFolder: false,
-  canImportFolder: false,
+  canImportZip: false,
   location: () => null,
   pickFolder: async () => true,
   forget: () => {},

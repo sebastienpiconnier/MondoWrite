@@ -8,7 +8,7 @@ import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
 import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
-import { SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
+import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
@@ -285,6 +285,8 @@ interface CosmosState {
   /** Un fichier Fountain existant devient un nouveau projet scénario, avec ses cartes. */
   /** Accueil : un manuscrit (.docx, .md, .txt) ou un scénario (.fountain, .fdx) devient un nouveau projet. */
   importFile: () => Promise<void>;
+  /** Mobile : ouvre un projet exporté en .zip (« Exporter une copie ») depuis Fichiers, en le copiant dans l'app. */
+  importProjectZip: () => Promise<void>;
   /** L'import n'a pas eu lieu : dossier déjà occupé par un projet, ou fichier sans scénario. */
   importNotice: "taken" | "empty" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
@@ -1454,6 +1456,37 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     importNotice: null,
+    importProjectZip: async () => {
+      set({ importNotice: null, homeNotice: false, openFailed: false });
+      try {
+        const picked = await storage.pickFile("ZIP", ["zip"]);
+        if (!picked) return;
+        const { unzipSync, strFromU8 } = await import("fflate");
+        const entries = Object.entries(unzipSync(picked.data)).filter(([path]) => !path.endsWith("/") && !path.split("/").some((part) => part.startsWith(".") || part === "__MACOSX"));
+        // Un dossier zippé depuis le Finder ou l'Explorateur contient un dossier racine : on l'enlève.
+        const roots = new Set(entries.map(([path]) => path.split("/")[0]));
+        const prefix = roots.size === 1 && entries.every(([path]) => path.includes("/")) ? `${[...roots][0]}/` : "";
+        const files: FileMap = {};
+        for (const [path, data] of entries) {
+          const name = path.slice(prefix.length);
+          if (name.startsWith(`${MEDIA_DIR}/`)) await storage.writeMedia(name.slice(MEDIA_DIR.length + 1), data);
+          else files[name] = strFromU8(data);
+        }
+        if (!deserialize(files)) {
+          set({ homeNotice: true });
+          return;
+        }
+        if (!(await storage.create())) return;
+        await storage.write(files, []);
+        const written = await storage.readAll();
+        if (!written || !openFiles(written)) set({ homeNotice: true });
+      } catch (err) {
+        console.error(err);
+        storage.forget();
+        set({ openFailed: true });
+      }
+    },
+
     importFile: async () => {
       set({ importNotice: null, homeNotice: false, openFailed: false });
       const t = getT();
