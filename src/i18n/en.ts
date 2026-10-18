@@ -709,6 +709,7 @@ export const en: Messages = {
     scenesAria: "Manuscript scenes, in outline order",
     panelScenes: "Outline",
     panelSide: "Info",
+    panelMeta: "Scene bar",
     panelHide: "Collapse panel",
     panelShow: "Open panel",
     scenesTitle: "Scenes",

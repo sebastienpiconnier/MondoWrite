@@ -31,16 +31,34 @@
 .chip.is-plain { background: var(--ground); color: var(--ink-2); }
 
 /* ---------- Manuscrit d'un roman : une scène à la fois ---------- */
-.manuscript { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) minmax(200px, 300px); }
-.manuscript.hide-scenes { grid-template-columns: minmax(0, 1fr) minmax(200px, 300px); }
-.manuscript.hide-side { grid-template-columns: minmax(190px, 260px) minmax(0, 1fr); }
-.manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); }
-.manuscript.hide-scenes .ms-scenes, .manuscript.hide-side .sp-side { display: none; }
-.ms-panel-toggle { min-height: 36px; opacity: 0.7; }
-.ms-panel-toggle[aria-pressed="true"] { opacity: 1; border-color: var(--accent); }
-@media (pointer: coarse) { .ms-panel-toggle { min-height: 44px; } }
-/* La barre du manuscrit reste en haut quand on défile : mode focus, remplacer, volets sont toujours à portée. */
+.manuscript { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) minmax(200px, 300px); grid-template-areas: "scenes main side"; }
+.manuscript > .ms-scenes { grid-area: scenes; display: block; } /* écrase « .sp-scenes { display: none } » du scénario sous 1000 px */
+.manuscript > .ms-main { grid-area: main; }
+.manuscript > .sp-side { grid-area: side; }
+.manuscript > .edge-handle { grid-area: main; }
+.manuscript.hide-scenes { grid-template-columns: minmax(0, 1fr) minmax(200px, 300px); grid-template-areas: "main side"; }
+.manuscript.hide-side { grid-template-columns: minmax(190px, 260px) minmax(0, 1fr); grid-template-areas: "scenes main"; }
+.manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
+.manuscript.hide-scenes .ms-scenes, .manuscript.hide-side .sp-side, .manuscript.hide-meta .ms-meta { display: none; }
+/* Poignées : un onglet sur le bord de la page pour replier ou rouvrir un volet (la barre de la scène en haut). */
+.edge-handle { position: absolute; z-index: 14; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); box-shadow: var(--shadow-card); cursor: pointer; opacity: 0.85; }
+.edge-handle svg { transition: transform 0.15s; }
+.edge-handle.is-left, .edge-handle.is-right { top: 50%; transform: translateY(-50%); width: 24px; height: 76px; }
+.edge-handle.is-left { left: 0; border-left: 0; border-radius: 0 12px 12px 0; }
+.edge-handle.is-right { right: 0; border-right: 0; border-radius: 12px 0 0 12px; }
+.edge-handle.is-top { top: 0; left: 50%; transform: translateX(-50%); width: 76px; height: 22px; border-top: 0; border-radius: 0 0 12px 12px; }
+.edge-handle.is-left svg { transform: rotate(180deg); }
+.edge-handle.is-left.is-open svg { transform: none; }
+.edge-handle.is-right svg { transform: none; }
+.edge-handle.is-right.is-open svg { transform: rotate(180deg); }
+.edge-handle.is-top svg { transform: rotate(-90deg); }
+.edge-handle.is-top.is-open svg { transform: rotate(90deg); }
+@media (any-hover: hover) { .edge-handle:hover { opacity: 1; color: var(--ink); } }
+@media (pointer: coarse) { .edge-handle.is-left, .edge-handle.is-right { width: 30px; height: 96px; } .edge-handle.is-top { width: 96px; height: 28px; } }
+.manuscript.is-focus .edge-handle { display: none; }
+/* La barre de la scène reste en haut quand on défile : mode focus, remplacer, scène suivante sont toujours à portée. */
 .ms-meta { position: sticky; top: 0; z-index: 6; padding: 6px 8px; margin-top: -6px; border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
+.manuscript:not(.hide-meta) .ms-main { padding-top: 40px; }
 .ms-main { overflow: auto; padding: 32px max(24px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(24px, env(safe-area-inset-left)); container: ms / inline-size; }
 .ms-sheet { max-width: min(100%, 900px); margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 /* La scène mise en page comme un livre : format 2:3, marges, alinéas, texte justifié.
@@ -119,10 +137,14 @@
 .ms-empty input { min-height: 44px; min-width: min(280px, 100%); padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
 .ms-empty input::placeholder { color: var(--placeholder); }
 @media (max-width: 900px) {
-  .manuscript { display: block; overflow: auto; }
-  .manuscript .sp-scenes, .manuscript .sp-side { overflow: visible; border: 0; }
-  .manuscript .sp-scenes { max-height: 30vh; overflow: auto; border-bottom: 1px solid var(--line); }
-  .ms-main { overflow: visible; padding: 20px max(16px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(16px, env(safe-area-inset-left)); }
+  /* Petit écran : le plan et les infos sont des tiroirs posés sur la page (poignées sur les bords). */
+  .manuscript, .manuscript.hide-scenes, .manuscript.hide-side, .manuscript.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
+  .manuscript > .ms-scenes, .manuscript > .sp-side { grid-area: main; position: absolute; top: 0; bottom: 0; z-index: 12; width: min(320px, 85vw); overflow: auto; background: var(--surface); box-shadow: var(--shadow-pop); border: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .manuscript > .ms-scenes { left: 0; }
+  .manuscript > .sp-side { right: 0; }
+  .manuscript:not(.hide-scenes) > .edge-handle.is-left { left: min(320px, 85vw); }
+  .manuscript:not(.hide-side) > .edge-handle.is-right { right: min(320px, 85vw); }
+  .ms-main { padding: 20px max(16px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(16px, env(safe-area-inset-left)); }
   .ms-editor, .ms-editor:focus-visible { min-height: 40vh; font-size: 18px; }
 }
 @media (pointer: coarse) {
@@ -258,7 +280,7 @@
 .plan-chapter-title.bible-title { flex: 1; min-height: 36px; font: 500 16px var(--font-display); margin-left: 0; }
 
 /* ---------- Mode focus du manuscrit ---------- */
-.manuscript.is-focus { grid-template-columns: minmax(0, 1fr); }
+.manuscript.is-focus { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
 .manuscript.is-focus .ms-scenes, .manuscript.is-focus .sp-side, .manuscript.is-focus .ms-meta, .manuscript.is-focus .ms-hint { display: none; }
 .manuscript.is-typewriter .ms-main { padding-top: 40vh; padding-bottom: 60vh; }
 .ms-focus-bar { position: fixed; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); opacity: 0.35; transition: opacity 0.2s; }

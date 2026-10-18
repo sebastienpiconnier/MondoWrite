@@ -686,6 +686,7 @@ export const fr = {
     scenesAria: "Scènes du manuscrit, dans l’ordre du plan",
     panelScenes: "Plan",
     panelSide: "Infos",
+    panelMeta: "Barre de la scène",
     panelHide: "Replier le volet",
     panelShow: "Ouvrir le volet",
     scenesTitle: "Scènes",

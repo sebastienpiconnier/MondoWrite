@@ -27,6 +27,7 @@ import { CharacterMotor } from "./CharacterMotor";
 import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
+import { EdgeHandle } from "./EdgeHandle";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
 function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
@@ -76,6 +77,8 @@ function Portrait({ name, alt }: { name: string | undefined; alt: string }) {
   return url ? <img className="bible-portrait" src={url} alt={alt} /> : null;
 }
 
+const TOC_KEY = "mondowrite.bible.toc";
+
 export function Bible() {
   const { t, types, kind } = useVocab();
   const screenplay = useCosmos((s) => s.screenplay);
@@ -87,6 +90,25 @@ export function Bible() {
   const addTitledCard = useCosmos((s) => s.addTitledCard);
   const target = useCosmos((s) => s.bibleTarget);
   const clearTarget = useCosmos((s) => s.clearBibleTarget);
+  // Sommaire repliable par sa poignée ; fermé d'office sur téléphone, où il prenait la moitié de l'écran.
+  const [tocOpen, setTocOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(TOC_KEY);
+      if (saved !== null) return saved !== "0";
+    } catch {
+      /* ignoré */
+    }
+    return typeof window === "undefined" || !window.matchMedia("(max-width: 720px)").matches;
+  });
+  const toggleToc = () =>
+    setTocOpen((open) => {
+      try {
+        localStorage.setItem(TOC_KEY, open ? "0" : "1");
+      } catch {
+        /* le choix vaut pour la session */
+      }
+      return !open;
+    });
   // Fiche ouverte depuis le canevas (« 3 questions à compléter ») : assistant ouvert sur elle.
   const [assisted, setAssisted] = useState<string | null>(null);
 
@@ -312,6 +334,8 @@ export function Bible() {
   }
 
   return (
+    <div className={`bible-frame${tocOpen ? "" : " hide-toc"}`}>
+    <EdgeHandle side="left" open={tocOpen} label={t.bible.tocTitle} onClick={toggleToc} />
     <div className="bible" ref={rootRef} onScroll={onScroll}>
       <nav className="bible-toc" aria-label={t.bible.tocAria}>
         <div className="eyebrow">{t.bible.tocTitle}</div>
@@ -430,6 +454,7 @@ export function Bible() {
           ))}
         </section>
       )}
+    </div>
     </div>
   );
 }

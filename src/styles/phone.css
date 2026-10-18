@@ -29,7 +29,9 @@
   .add-card-main { width: 56px; height: 56px; min-height: 56px; padding: 0; justify-content: center; border-radius: 50%; }
   .add-card-main svg { width: 26px; height: 26px; }
   .history-buttons { flex: 1; min-width: 0; justify-content: flex-end; gap: 4px; }
-  .history-buttons .icon-button { width: 42px; height: 42px; }
+  .history-buttons .icon-button, .history-buttons .icon-button.has-label { width: 42px; height: 42px; padding: 0; justify-content: center; }
+  .history-buttons .icon-button svg { flex: none; }
+  .react-flow__attribution { display: none; }
   .react-flow__controls { display: none; } /* le pincement zoome */
   /* Types de carte : une feuille pleine largeur au-dessus de la barre d'outils, deux colonnes. */
   .add-card-menu { position: fixed; left: 8px; right: 8px; bottom: calc(60px + env(safe-area-inset-bottom) + 76px); max-width: none; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 10px; border-radius: 18px; }

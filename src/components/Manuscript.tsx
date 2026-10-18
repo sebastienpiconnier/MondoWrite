@@ -24,6 +24,7 @@ import { FOCUS_HIGHLIGHTS } from "../focusText";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
+import { EdgeHandle } from "./EdgeHandle";
 import { fmt, getT, useT } from "../i18n";
 import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
@@ -221,16 +222,17 @@ function scrollParent(el: HTMLElement): HTMLElement | null {
 }
 
 const PANELS_KEY = "mondowrite.manuscript.panels";
-function readPanels(): { scenes: boolean; side: boolean } {
+type Panels = { scenes: boolean; side: boolean; meta: boolean };
+function readPanels(): Panels {
   try {
     const raw = JSON.parse(localStorage.getItem(PANELS_KEY) ?? "null");
-    if (raw && typeof raw === "object") return { scenes: raw.scenes !== false, side: raw.side !== false };
+    if (raw && typeof raw === "object") return { scenes: raw.scenes !== false, side: raw.side !== false, meta: raw.meta !== false };
   } catch {
     /* ignoré */
   }
   // Téléphone : la page d'abord ; le plan et les infos s'ouvrent avec leurs boutons.
   const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
-  return { scenes: !phone, side: !phone };
+  return { scenes: !phone, side: !phone, meta: true };
 }
 
 export function Manuscript() {
@@ -238,7 +240,7 @@ export function Manuscript() {
   const m = t.manuscript;
   // Volets escamotables (plan à gauche, infos à droite) : on garde le choix d'une fois sur l'autre.
   const [panels, setPanels] = useState(readPanels);
-  const togglePanel = (key: "scenes" | "side") =>
+  const togglePanel = (key: keyof Panels) =>
     setPanels((p) => {
       const next = { ...p, [key]: !p[key] };
       try {
@@ -465,7 +467,7 @@ export function Manuscript() {
   const sceneWords = countWords(manuscript[current]);
 
   return (
-    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
       {focusMode && (
         <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
           <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
@@ -659,16 +661,15 @@ export function Manuscript() {
         <Orphans ids={orphans} manuscript={manuscript} onRestore={restoreScene} />
       </nav>
 
+      {/* Poignées sur les bords : plan à gauche, infos à droite, barre de la scène en haut. */}
+      <EdgeHandle side="left" open={panels.scenes} label={m.panelScenes} onClick={() => togglePanel("scenes")} />
+      <EdgeHandle side="right" open={panels.side} label={m.panelSide} onClick={() => togglePanel("side")} />
+      <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />
+
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
           {/* Une barre discrète : les compteurs sont dans les colonnes, la page ressemble à un livre. */}
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
-            <button type="button" className="ghost-button ms-panel-toggle" aria-pressed={panels.scenes} title={panels.scenes ? m.panelHide : m.panelShow} onClick={() => togglePanel("scenes")}>
-              {m.panelScenes}
-            </button>
-            <button type="button" className="ghost-button ms-panel-toggle" aria-pressed={panels.side} title={panels.side ? m.panelHide : m.panelShow} onClick={() => togglePanel("side")}>
-              {m.panelSide}
-            </button>
             <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
               <span aria-hidden="true">←</span>
             </button>
