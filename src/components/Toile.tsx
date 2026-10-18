@@ -383,7 +383,11 @@ export function Toile() {
     .filter(Boolean)
     .join(" · ");
 
+  // Au doigt (iPad), toucher « Délier » retire le focus du champ avant le clic : le blur refermait l'éditeur et
+  // le bouton disparaissait avant de recevoir son clic. On note l'appui et le blur l'attend.
+  const unlinkPressed = useRef(false);
   const commitLabel = () => {
+    if (unlinkPressed.current) return;
     if (labelEditor) renameLink(labelEditor.edgeId, labelEditor.value.trim());
     setLabelEditor(null);
   };
@@ -459,6 +463,8 @@ export function Toile() {
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
         defaultEdgeOptions={{
           type: "floating",
+          // Zone de toucher plus large autour du fil (20 px par défaut) : à l'index, le fil est trop fin.
+          interactionWidth: 32,
           // Variables CSS : les fils suivent le mode clair/sombre.
           style: { stroke: "var(--edge)", strokeWidth: 1.6 },
           labelBgPadding: [8, 4],
@@ -499,8 +505,13 @@ export function Toile() {
             className="label-unlink"
             aria-label={t.toile.unlink}
             title={t.toile.unlink}
-            onPointerDown={(e) => e.preventDefault()}
+            onPointerDown={() => {
+              unlinkPressed.current = true;
+              setTimeout(() => (unlinkPressed.current = false), 1000);
+            }}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
+              unlinkPressed.current = false;
               useCosmos.getState().removeLink(labelEditor.edgeId);
               setLabelEditor(null);
             }}

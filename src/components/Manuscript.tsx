@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, Extension, getHTMLFromFragment, useEditor } from "@tiptap/react";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
-import { FocusWriting, focusKey } from "./focusWriting";
+import { FocusWriting, focusKey, centerCaret } from "./focusWriting";
 import { FOCUS_HIGHLIGHTS } from "../focusText";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCosmos } from "../store";
@@ -124,7 +124,10 @@ function SceneEditor({
       BookKeys.configure({ handlers }),
       DropCap,
       // Mode focus : la phrase ou le paragraphe en cours en pleine encre, le reste estompé.
-      FocusWriting.configure({ mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off") }),
+      FocusWriting.configure({
+        mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off"),
+        typewriter: () => useCosmos.getState().focusMode && useSettings.getState().writing.typewriter,
+      }),
     ],
     // Scène née d'une coupure : on continue d'écrire au début, sans quitter le clavier.
     autofocus: focusStart ? "start" : false,
@@ -163,37 +166,39 @@ function SceneEditor({
       const page = view.dom.closest<HTMLElement>(".ms-page");
       const main = view.dom.closest<HTMLElement>(".ms-main");
       if (!page || !main) return;
-      let caret: { top: number; bottom: number };
+      let caret: { top: number; bottom: number } | null;
       try {
         caret = view.coordsAtPos(view.state.selection.head);
       } catch {
         return;
       }
       // Machine à écrire : la ligne du curseur se tient aux deux cinquièmes de la hauteur.
-      // Sur iPad en portrait (et téléphone), ce n'est pas .ms-main qui défile mais un parent, voire la fenêtre :
-      // on cherche le premier ancêtre réellement défilant, à défaut la fenêtre elle-même.
-      if (writing.typewriter) {
-        const scroller = scrollParent(main);
-        const box = scroller ? scroller.getBoundingClientRect() : { top: 0, height: window.innerHeight };
-        const delta = caret.top - (box.top + box.height * 0.4);
-        if (Math.abs(delta) > 1) {
-          if (scroller) scroller.scrollTop += delta;
-          else window.scrollBy(0, delta);
-          caret = view.coordsAtPos(view.state.selection.head);
-        }
-      }
+      if (writing.typewriter) caret = centerCaret(view) ?? caret;
       if (writing.highlight !== "line") return setVeil(null);
       const top = page.getBoundingClientRect().top;
       setVeil({ top: caret.top - top - 2, bottom: caret.bottom - top + 2 });
     };
+    // La mise en page des pages (et le clavier virtuel) bougent un instant après la frappe : on recale aussi
+    // à l'image suivante et un peu plus tard, sinon la ligne reste là où elle était avant ce décalage.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const later = () => {
+      follow();
+      requestAnimationFrame(follow);
+      clearTimeout(timer);
+      timer = setTimeout(follow, 160);
+    };
     follow();
-    editor.on("selectionUpdate", follow);
-    editor.on("update", follow);
-    editor.on("focus", follow);
+    editor.on("selectionUpdate", later);
+    editor.on("update", later);
+    editor.on("focus", later);
+    const viewport = window.visualViewport;
+    viewport?.addEventListener("resize", later);
     return () => {
-      editor.off("selectionUpdate", follow);
-      editor.off("update", follow);
-      editor.off("focus", follow);
+      clearTimeout(timer);
+      editor.off("selectionUpdate", later);
+      editor.off("update", later);
+      editor.off("focus", later);
+      viewport?.removeEventListener("resize", later);
     };
   }, [editor, focusMode, writing]);
 
@@ -209,15 +214,6 @@ function SceneEditor({
       )}
     </>
   );
-}
-
-/** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
-function scrollParent(el: HTMLElement): HTMLElement | null {
-  for (let node: HTMLElement | null = el; node && node !== document.body; node = node.parentElement) {
-    const overflow = getComputedStyle(node).overflowY;
-    if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
-  }
-  return null;
 }
 
 export function Manuscript() {
@@ -701,7 +697,7 @@ export function Manuscript() {
               {words(sceneWords)}
             </span>
           </div>
-          {writing.continuous ? (
+          {writing.continuous && !focusMode ? (
             <ContinuousBook order={order} cards={cards} current={current} onCurrent={setChosen} />
           ) : (
           <div

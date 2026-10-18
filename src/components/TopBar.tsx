@@ -24,26 +24,25 @@ export function TopBar() {
     <header className="topbar">
       <div className="brand">
         <BrandMark size={34} />
-        {/* Le nom et le slogan du projet (celui du README) : « du chaos au monde ordonné ». */}
+        {/* Le nom, et dessous le titre du projet (modifiable sur place) : la colonne reste étroite, les vues
+            gardent leur place au centre, même sur un iPad en paysage. */}
         <span className="brand-text">
           <Wordmark className="brand-name" />
-          <span className="brand-tagline">{t.app.tagline}</span>
+          <input
+            className="brand-project"
+            type="text"
+            value={title}
+            size={Math.max(8, title.length)}
+            placeholder={t.home.untitled}
+            aria-label={t.app.projectTitle}
+            title={t.app.projectTitle}
+            autoComplete="off"
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+            }}
+          />
         </span>
-        {/* Le titre se change ici, directement. */}
-        <input
-          className="brand-project"
-          type="text"
-          value={title}
-          size={Math.max(8, title.length)}
-          placeholder={t.home.untitled}
-          aria-label={t.app.projectTitle}
-          title={t.app.projectTitle}
-          autoComplete="off"
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
-          }}
-        />
       </div>
 
       <nav className="views" aria-label={t.views.aria}>
