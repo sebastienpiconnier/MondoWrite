@@ -13,6 +13,11 @@ import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider }
 
 export type ThemePref = "system" | "light" | "dark";
 export type Theme = "light" | "dark";
+/** Palettes de couleurs de l'interface (définies dans styles/palettes.css). Encre est la palette par défaut. */
+export const PALETTES = ["encre", "indigo", "papier", "foret", "aube", "sepia", "orange", "contraste"] as const;
+export type Palette = (typeof PALETTES)[number];
+export const DEFAULT_PALETTE: Palette = "encre";
+export const isPalette = (v: unknown): v is Palette => (PALETTES as readonly unknown[]).includes(v);
 /** Présentation du séquencier : en liste ou en fiches. */
 export type SequencerMode = "outline" | "cards";
 
@@ -75,6 +80,8 @@ interface SettingsState {
   theme: Theme;
   setLang: (lang: Lang) => void;
   setThemePref: (pref: ThemePref) => void;
+  palette: Palette;
+  setPalette: (palette: Palette) => void;
   sequencerMode: SequencerMode;
   setSequencerMode: (mode: SequencerMode) => void;
   /** Profil de l'auteur (nom, nom de plume, coordonnées), repris par les nouveaux projets. */
@@ -127,7 +134,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -149,6 +156,8 @@ export const useSettings = create<SettingsState>((set) => ({
   theme: resolve(initialPref),
   setLang: (lang) => set({ lang }),
   setThemePref: (themePref) => set({ themePref, theme: resolve(themePref) }),
+  palette: isPalette(saved.palette) ? saved.palette : DEFAULT_PALETTE,
+  setPalette: (palette) => set({ palette }),
   sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   profile: initialProfile,
@@ -176,13 +185,14 @@ export const useSettings = create<SettingsState>((set) => ({
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, sequencerMode, profile, ai, bibleSections, writing, photos, updates }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, profile, ai, bibleSections, writing, photos, updates }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
+    root.dataset.palette = palette;
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, sequencerMode, profile, ai, bibleSections, writing, photos, updates }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, profile, ai, bibleSections, writing, photos, updates }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

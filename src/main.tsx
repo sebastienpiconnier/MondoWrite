@@ -13,6 +13,7 @@ import "@fontsource/courier-prime/400.css"; // en-têtes de scène (scénario)
 import "@fontsource/courier-prime/700.css";
 import "@xyflow/react/dist/style.css";
 import "./styles.css";
+import "./styles/palettes.css";
 import "./styles/canvas.css";
 import "./styles/bible.css";
 import "./styles/screenplay.css";

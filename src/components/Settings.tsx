@@ -7,7 +7,7 @@ import { UpdateSettings } from "./Updates";
 import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
-import { useSettings, type ThemePref } from "../settings";
+import { useSettings, PALETTES, type Palette, type ThemePref } from "../settings";
 import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
@@ -24,7 +24,7 @@ const OTHER_MODEL = "\u0000other";
 export function Settings({ project = true }: { project?: boolean }) {
   const trashCount = useCosmos((s) => s.trash.length);
   const t = useT();
-  const { lang, themePref, setLang, setThemePref, author, ai, setAi, photos, writing, setWriting } = useSettings();
+  const { lang, themePref, palette, setPalette, setLang, setThemePref, author, ai, setAi, photos, writing, setWriting } = useSettings();
   const [models, setModels] = useState<string[]>([]);
   // Modèle saisi à la main (absent de la liste du service).
   const [typing, setTyping] = useState(false);
@@ -62,7 +62,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -218,6 +218,14 @@ export function Settings({ project = true }: { project?: boolean }) {
             {themes.map((th) => (
               <option key={th.value} value={th.value}>
                 {th.label}
+              </option>
+            ))}
+          </select>
+          <label htmlFor={ids.palette}>{t.settings.palette}</label>
+          <select id={ids.palette} value={palette} onChange={(e) => setPalette(e.target.value as Palette)}>
+            {PALETTES.map((id) => (
+              <option key={id} value={id}>
+                {t.settings.palettes[id]}
               </option>
             ))}
           </select>

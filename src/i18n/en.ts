@@ -148,6 +148,8 @@ export const en: Messages = {
     themeSystem: "Match system",
     themeLight: "Light",
     themeDark: "Dark",
+    palette: "Colors",
+    palettes: { encre: "Ink (default)", indigo: "Indigo", papier: "Paper", foret: "Forest", aube: "Dawn", sepia: "Sepia", orange: "Orange", contraste: "High contrast" },
     author: "Author name",
     authorHint: "It comes from your author profile, which you edit on the projects page (“Projects” button).",
     authorNone: "No name yet: fill in your profile on the projects page.",

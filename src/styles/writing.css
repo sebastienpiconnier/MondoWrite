@@ -129,7 +129,7 @@
 .ms-editor p { margin: 0 0 0.9em; }
 .ms-editor h2, .ms-editor h3 { font-family: var(--font-display); font-weight: 600; margin: 1.2em 0 0.4em; }
 .ms-words { margin-left: auto; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
-.ms-scenes button { display: flex; align-items: baseline; gap: 8px; }
+.ms-scenes button { display: flex; align-items: center; gap: 8px; }
 .ms-scenes .ms-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .ms-total { margin: 0; font-size: 13px; color: var(--ink-2); }
 .ms-drag-hint { margin: 2px 0 8px; font-size: 12px; color: var(--muted); }

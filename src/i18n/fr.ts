@@ -149,6 +149,8 @@ export const fr = {
     themeSystem: "Comme le système",
     themeLight: "Claire",
     themeDark: "Sombre",
+    palette: "Couleurs",
+    palettes: { encre: "Encre (par défaut)", indigo: "Indigo", papier: "Papier", foret: "Forêt", aube: "Aube", sepia: "Sépia", orange: "Orange", contraste: "Contraste élevé" },
     author: "Nom d’auteur",
     authorHint: "Il vient de ton profil d’auteur, à modifier sur la page des projets (bouton « Projets »).",
     authorNone: "Pas encore de nom : remplis ton profil sur la page des projets.",
