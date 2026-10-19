@@ -366,3 +366,6 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .react-flow__panel.bottom { margin-bottom: max(15px, env(safe-area-inset-bottom)); }
 .react-flow__panel.left { margin-left: max(15px, env(safe-area-inset-left)); }
 .react-flow__panel.right { margin-right: max(15px, env(safe-area-inset-right)); }
+
+/* Les boutons de zoom montent au-dessus du lien « React Flow » (attribution, en bas à droite). */
+.react-flow__controls { margin-bottom: 30px; }

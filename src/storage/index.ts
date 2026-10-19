@@ -84,11 +84,20 @@ export interface Storage {
    * `label` décrit le format dans le dialogue. Renvoie false si l'auteur annule.
    */
   saveAs(file: SavedFile, label: string): Promise<boolean>;
+  /** Verrous du projet sélectionné (un petit fichier par appareil, dans verrous/) : app de bureau et mobile. */
+  locks?: LockStore;
   /** Copies Markdown du dossier projet (markdown/) : absent dans le navigateur, où il n'y a pas de dossier à lire. */
   copies?: CopyStore;
 }
 
 /** Fichiers de markdown/ du projet sélectionné. Chemins relatifs à markdown/ (« bible.md », « versions/2026-10-11/bible.md »). */
+export interface LockStore {
+  /** Contenu de chaque fichier de verrou, par chemin. */
+  read(): Promise<FileMap>;
+  write(path: string, text: string): Promise<void>;
+  remove(path: string): Promise<void>;
+}
+
 export interface CopyStore {
   /** Projet sélectionné (pour savoir quand les copies connues ne valent plus). */
   key(): string | null;

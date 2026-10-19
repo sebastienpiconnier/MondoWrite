@@ -6,6 +6,9 @@ export const en: Messages = {
   meta: { name: "English" },
 
   app: {
+    lockedBy: "This project is open on {device}. It is read-only: your changes are not saved.",
+    takeOver: "Take over here",
+    takeOverHint: "Reloads the project from disk. Anything changed in read-only mode is lost.",
     moreOptions: "More options",
     tagline: "From chaos to an ordered world",
     loading: "Opening project…",

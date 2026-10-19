@@ -14,7 +14,7 @@ import { Tour } from "./components/Tour";
 import { Dialogs } from "./components/Dialogs";
 import { TrashNotice } from "./components/TrashList";
 import { UpdateNotice, useLaunchUpdateCheck } from "./components/Updates";
-import { useT } from "./i18n";
+import { fmt, useT } from "./i18n";
 import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
 import { ConflictNotice } from "./components/ConflictNotice";
@@ -33,6 +33,8 @@ export function App() {
   const closeProject = useCosmos((s) => s.closeProject);
   const start = useCosmos((s) => s.start);
   const save = useCosmos((s) => s.save);
+  const lockedBy = useCosmos((s) => s.lockedBy);
+  const takeOver = useCosmos((s) => s.takeOver);
   // App de bureau : une nouvelle version est cherchée peu après le lancement (une fois par jour au plus).
   useLaunchUpdateCheck();
 
@@ -178,6 +180,16 @@ export function App() {
               </button>
               <button type="button" className="ghost-button" onClick={() => closeProject(true)}>
                 {t.app.leaveUnsaved}
+              </button>
+            </span>
+          </div>
+        )}
+        {lockedBy && (
+          <div className="app-alert" role="alert">
+            <span>{fmt(t.app.lockedBy, { device: lockedBy })}</span>
+            <span className="app-alert-actions">
+              <button type="button" className="ghost-button" title={t.app.takeOverHint} onClick={() => void takeOver()}>
+                {t.app.takeOver}
               </button>
             </span>
           </div>

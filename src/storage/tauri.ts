@@ -13,6 +13,7 @@ import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
 import { MISSING_FOLDER } from "../saveErrors";
+import { LOCK_DIR } from "../lock";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
@@ -72,6 +73,31 @@ async function copyPath(name: string): Promise<string | null> {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const tauriStorage: Storage = {
+  locks: {
+    async read() {
+      const dir = await projectFolder();
+      const out: FileMap = {};
+      if (!dir) return out;
+      const folder = await join(dir, LOCK_DIR);
+      if (!(await exists(folder))) return out;
+      for (const entry of await readDir(folder)) {
+        if (entry.isFile && entry.name.endsWith(".json")) out[entry.name] = await readTextFile(await join(folder, entry.name));
+      }
+      return out;
+    },
+    async write(path, text) {
+      const dir = await projectFolder();
+      if (!dir || !(await exists(dir))) return;
+      await mkdir(await join(dir, LOCK_DIR), { recursive: true });
+      await writeTextFile(await join(dir, ...path.split("/")), text);
+    },
+    async remove(path) {
+      const dir = await projectFolder();
+      if (!dir) return;
+      const full = await join(dir, ...path.split("/"));
+      if (await exists(full)) await remove(full);
+    },
+  },
   copies: {
     key: () => current,
     async read(names) {
@@ -261,9 +287,9 @@ export const tauriStorage: Storage = {
     return watch(
       dir,
       (event) => {
-        // markdown/ (copies réécrites à chaque enregistrement) et medias/ ne sont jamais relus.
+        // markdown/ (copies réécrites à chaque enregistrement), medias/ et verrous/ (battement) ne sont jamais relus.
         const paths = event.paths ?? [];
-        const relevant = paths.length === 0 || paths.some((p) => !/[\\/](markdown|medias)([\\/]|$)/.test(p.slice(dir.length)));
+        const relevant = paths.length === 0 || paths.some((p) => !/[\\/](markdown|medias|verrous)([\\/]|$)/.test(p.slice(dir.length)));
         if (relevant) onChange();
       },
       { recursive: true, delayMs: 600 },

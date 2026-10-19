@@ -7,6 +7,9 @@ export const fr = {
   meta: { name: "Français" },
 
   app: {
+    lockedBy: "Ce projet est ouvert sur {device}. Il est en lecture seule : tes modifications ne sont pas enregistrées.",
+    takeOver: "Reprendre la main ici",
+    takeOverHint: "Relit le projet depuis le disque. Ce qui a été modifié en lecture seule est perdu.",
     moreOptions: "Plus d’options",
     tagline: "Du chaos au monde ordonné",
     loading: "Ouverture du projet…",

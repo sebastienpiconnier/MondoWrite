@@ -43,6 +43,7 @@ import { appendScene, headingTitles, releaseCard, renameHeading } from "./screen
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
+import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
@@ -280,6 +281,10 @@ interface CosmosState {
   homeNotice: boolean;
   /** Au lancement : liste les projets et affiche l'accueil. */
   start: () => Promise<void>;
+  /** Autre appareil qui a ouvert ce projet : lecture seule, rien n'est enregistré. */
+  lockedBy: string | null;
+  /** Reprend la main : relit le projet sur le disque et pose le verrou (les changements faits en lecture seule sont perdus). */
+  takeOver: () => Promise<void>;
   openProject: (id: string) => Promise<void>;
   createProject: (options: { title: string; kind: ProjectKind }) => Promise<void>;
   /** Un fichier Fountain existant devient un nouveau projet scénario, avec ses cartes. */
@@ -1423,6 +1428,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const files = await storage.readAll();
         // Dossier vidé ou déplacé depuis la dernière fois : on reste à l'accueil, avec un message.
         if (!files || !openFiles(files)) set({ homeNotice: true });
+        else {
+          // Déjà ouvert sur un autre appareil : lecture seule, avec un bandeau pour reprendre la main.
+          const other = await otherHolder();
+          if (other) set({ lockedBy: other });
+          else {
+            set({ lockedBy: null });
+            await claimLock();
+          }
+        }
       } catch (err) {
         console.error(err);
         storage.forget();
@@ -1435,6 +1449,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // L'emplacement choisi contient déjà un projet : on l'ouvre, on ne l'écrase pas.
       const existing = await storage.readAll().catch(() => null);
       if (existing && openFiles(existing)) return;
+      void claimLock();
       const { state } = openProject({ meta: { version: 1, title, kind, layout: [], links: [] }, cards: [], screenplay: null });
       set({
         ...state,
@@ -1563,8 +1578,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
         // Toujours en échec : le projet reste à l'écran, un message propose de réessayer ou de quitter quand même.
         if (get().status === "erreur") return;
       }
+      await releaseLock(get().lockedBy === null);
       await refreshProjects();
-      set({ screen: "home", focusMode: false });
+      set({ screen: "home", focusMode: false, lockedBy: null });
+    },
+
+    lockedBy: null,
+    takeOver: async () => {
+      try {
+        const files = await storage.readAll();
+        if (files) openFiles(files);
+      } catch (err) {
+        console.error(err);
+        return;
+      }
+      set({ lockedBy: null });
+      await claimLock();
     },
 
     unlistProject: async (id) => {
@@ -1952,6 +1981,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     save: async () => {
+      // Projet ouvert sur un autre appareil : on ne touche à rien sur le disque.
+      if (get().lockedBy) return;
       if (storage.canPickFolder && !storage.location()) {
         if (!(await storage.pickFolder())) return;
         // Le dossier choisi contient déjà un projet : on l'ouvre, on ne l'écrase jamais
