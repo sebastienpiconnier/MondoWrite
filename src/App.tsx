@@ -12,6 +12,7 @@ import { Manuscript } from "./components/Manuscript";
 import { Home } from "./components/Home";
 import { Tour } from "./components/Tour";
 import { Dialogs } from "./components/Dialogs";
+import { ConfirmChapter } from "./components/ConfirmChapter";
 import { TrashNotice } from "./components/TrashList";
 import { UpdateNotice, useLaunchUpdateCheck } from "./components/Updates";
 import { fmt, useT } from "./i18n";
@@ -63,7 +64,11 @@ export function App() {
       })
       .catch((err) => console.error(err));
     window.addEventListener("focus", sync);
+    // iPhone/iPad : au retour dans l'app (focus n'est pas toujours émis), relecture des changements venus d'iCloud.
+    const visible = () => document.visibilityState === "visible" && sync();
+    document.addEventListener("visibilitychange", visible);
     return () => {
+      document.removeEventListener("visibilitychange", visible);
       cancelled = true;
       stop?.();
       window.removeEventListener("focus", sync);
@@ -155,6 +160,7 @@ export function App() {
         <Home />
         <UpdateNotice />
         <Dialogs />
+      <ConfirmChapter />
       </>
     );
 
@@ -208,6 +214,7 @@ export function App() {
       {/* Le mode focus n'est pas dérangé : le bandeau attend qu'on en sorte. */}
       {!focusMode && <UpdateNotice />}
       <Dialogs />
+      <ConfirmChapter />
     </ReactFlowProvider>
   );
 }

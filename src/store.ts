@@ -217,6 +217,10 @@ interface CosmosState {
   /** Cartes qui viennent de partir à la corbeille (message « Annuler · Voir la corbeille »). */
   trashNotice: { count: number; title: string; at: number } | null;
   clearTrashNotice: () => void;
+  /** Chapitre dont l'auteur demande la suppression : une fenêtre demande confirmation (rien n'est changé avant). */
+  confirmChapter: string | null;
+  askDeleteChapter: (id: string) => void;
+  clearConfirmChapter: () => void;
   /** Remet une carte de la corbeille à sa place, avec ses fils et sa scène du scénario. */
   restoreFromTrash: (id: string) => void;
   /** Séquencier : met à la corbeille la scène du scénario qui commence à l'élément `start` (avec sa carte). */
@@ -1134,6 +1138,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     trash: [],
     trashNotice: null,
     clearTrashNotice: () => set({ trashNotice: null }),
+    confirmChapter: null,
+    askDeleteChapter: (id) => {
+      if (get().plan.chapters?.some((c) => c.id === id)) set({ confirmChapter: id });
+    },
+    clearConfirmChapter: () => set({ confirmChapter: null }),
     restoreFromTrash: (id) => {
       const entry = get().trash.find((c) => c.id === id);
       if (!entry || get().nodes.some((n) => n.id === id)) return;

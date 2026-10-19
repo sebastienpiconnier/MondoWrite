@@ -1446,6 +1446,11 @@ export const en: Messages = {
     titlePlaceholder: "Chapter title (optional)",
     titleAria: "Title: {name}",
     remove: "Delete “{name}” (its scenes stay)",
+    confirmTitle: "Delete this chapter?",
+    confirmText: "The chapter “{name}” is removed from the book. Its {n} scenes are kept: they join the previous chapter. You can undo with Ctrl or Cmd + Z.",
+    confirmTextOne: "The chapter “{name}” is removed from the book. Its scene is kept: it joins the previous chapter. You can undo with Ctrl or Cmd + Z.",
+    confirmYes: "Delete chapter",
+    confirmNo: "Keep chapter",
     next: "then",
   },
 

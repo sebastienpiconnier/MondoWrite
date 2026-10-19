@@ -80,7 +80,7 @@ export const SceneMark = Node.create({
           remove.textContent = "×";
           remove.setAttribute("aria-label", t.book.removeChapter);
           remove.title = t.book.removeChapter;
-          remove.addEventListener("click", () => useCosmos.getState().deletePlanChapter(chapterId));
+          remove.addEventListener("click", () => useCosmos.getState().askDeleteChapter(chapterId));
           head.append(label, input, remove);
           dom.append(head);
           // Titre renommé ailleurs (plan) : le champ suit, sauf quand on y écrit.

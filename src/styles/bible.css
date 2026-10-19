@@ -12,7 +12,10 @@
 @media (min-width: 901px) {
   .bible-frame { transform: translateZ(0); --toc-w: 260px; }
   .bible-frame:not(.hide-toc) .bible { padding-left: calc(var(--toc-w) + 24px); }
-  .bible-frame .bible-toc { position: fixed; top: 0; bottom: 0; left: 0; z-index: 7; width: var(--toc-w); max-width: none; flex: none; margin: 0; overflow: auto; border-radius: 0; box-shadow: 3px 0 14px -4px rgba(20, 24, 40, 0.3); padding-bottom: 24px; }
+  .bible-frame .bible-toc { position: fixed; top: 0; bottom: 0; left: 0; z-index: 7; width: var(--toc-w); max-width: none; flex: none; margin: 0; overflow: auto; border-radius: 0; box-shadow: 3px 0 14px -4px rgba(20, 24, 40, 0.3); padding: 20px 14px 24px; background: transparent; border-right: 1px solid var(--line); }
+  /* Mêmes couleurs que le volet des scènes du Manuscrit : fond de l'app, rubrique en cours en teinte d'accent. */
+  .bible-frame .bible-toc button.is-current { background: var(--accent-soft); color: var(--accent-ink); }
+  @media (any-hover: hover) { .bible-frame .bible-toc button:hover { background: var(--hover); } }
   .bible-frame:not(.hide-toc) > .edge-handle.is-left { left: calc(var(--toc-w) - 1px); }
 }
 .bible-toc ul { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }

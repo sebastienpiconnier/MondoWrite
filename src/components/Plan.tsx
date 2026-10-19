@@ -43,7 +43,7 @@ export function Plan() {
   const startChapterAt = useCosmos((s) => s.startChapterAt);
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
   const renamePlanChapter = useCosmos((s) => s.renamePlanChapter);
-  const deletePlanChapter = useCosmos((s) => s.deletePlanChapter);
+  const askDeleteChapter = useCosmos((s) => s.askDeleteChapter);
   const organizeCanvas = useCosmos((s) => s.organizeCanvas);
   const c = t.chapters;
 
@@ -313,7 +313,7 @@ export function Plan() {
                       onChange={(e) => renamePlanChapter(ch.id, e.target.value)}
                     />
                     <span className="plan-count">{group.ids.length}</span>
-                    <button type="button" className="icon-button" aria-label={fmt(c.remove, { name })} title={fmt(c.remove, { name })} onClick={() => deletePlanChapter(ch.id)}>
+                    <button type="button" className="icon-button" aria-label={fmt(c.remove, { name })} title={fmt(c.remove, { name })} onClick={() => askDeleteChapter(ch.id)}>
                       <span aria-hidden="true">×</span>
                     </button>
                   </div>

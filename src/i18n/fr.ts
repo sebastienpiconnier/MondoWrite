@@ -1469,6 +1469,11 @@ export const fr = {
     titlePlaceholder: "Titre du chapitre (facultatif)",
     titleAria: "Titre : {name}",
     remove: "Supprimer « {name} » (ses scènes restent)",
+    confirmTitle: "Supprimer ce chapitre ?",
+    confirmText: "Le chapitre « {name} » disparaît du livre. Ses {n} scènes sont conservées : elles rejoignent le chapitre précédent. Vous pourrez annuler avec Ctrl ou Cmd + Z.",
+    confirmTextOne: "Le chapitre « {name} » disparaît du livre. Sa scène est conservée : elle rejoint le chapitre précédent. Vous pourrez annuler avec Ctrl ou Cmd + Z.",
+    confirmYes: "Supprimer le chapitre",
+    confirmNo: "Garder le chapitre",
     next: "puis",
   },
 

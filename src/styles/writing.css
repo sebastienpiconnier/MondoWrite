@@ -90,7 +90,7 @@
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. */
 /* La bande déborde de la page : elle recouvre l'ombre des bords, qui sinon filait en deux barres verticales entre les pages. */
 .ms-main { overflow-x: hidden; }
-.ms-page .sp-pagebreak-gap { left: calc(-4em - 60px); right: calc(-4em - 60px); border-inline: 0; }
+.ms-page .sp-pagebreak-gap { left: calc(-4em - 60px); right: calc(-4em - 60px); border-block: 0; }
 .ms-page .sp-pagebreak-number { right: 0; font-size: 0.85em; color: var(--ink-2); }
 /* Livre : le numéro est dans la page, centré en bas. */
 .ms-page .sp-pagebreak-number.is-bottom { left: 0; right: 0; text-align: center; line-height: 1; color: var(--page-ink); opacity: 0.6; }
@@ -494,6 +494,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 
 /* Rechercher et remplacer */
 .app-dialog.is-replace { width: min(520px, calc(100vw - 32px)); }
+.app-dialog.is-confirm { width: min(460px, calc(100vw - 32px)); }
+.app-dialog.is-confirm h2 { font-size: 19px; }
+.confirm-text { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.app-dialog .assistant-actions button.is-danger { border-color: transparent; background: var(--danger); color: var(--surface); font-weight: 600; }
 .replace-panel { display: flex; flex-direction: column; gap: 12px; }
 .replace-panel h2 { margin: 0; }
 .replace-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
