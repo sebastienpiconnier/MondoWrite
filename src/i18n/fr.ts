@@ -668,13 +668,6 @@ export const fr = {
   },
 
 
-  // Lecture continue du manuscrit : tout le livre qui défile.
-  continuous: {
-    aria: "Tout le livre, en lecture continue",
-    on: "Lecture continue",
-    off: "Une scène par page",
-    hint: "Faire défiler tout le livre ; un clic sur un passage le rend modifiable",
-  },
 
   // Texte d'une scène de roman vu depuis sa carte (canevas, Bible, carte agrandie).
   draft: {
@@ -704,6 +697,7 @@ export const fr = {
     sceneTitle: "Titre de la scène",
     placeholder: "Écris la scène…",
     editorAria: "Texte de la scène « {title} »",
+    bookAria: "Texte du manuscrit",
     previous: "Scène précédente",
     next: "Scène suivante",
     position: "Scène {n} sur {total}",

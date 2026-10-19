@@ -56,8 +56,6 @@ export interface WritingSettings {
   highlight: FocusHighlight;
   /** Typographie automatique à la frappe : selon la langue de l'interface, française, anglaise, ou aucune. */
   typography: TypographySetting;
-  /** Vue Manuscrit : tout le livre en lecture continue plutôt qu'une scène par page. */
-  continuous: boolean;
 }
 
 function readWriting(raw: unknown): WritingSettings {
@@ -66,7 +64,6 @@ function readWriting(raw: unknown): WritingSettings {
     typewriter: w.typewriter === true,
     highlight: isFocusHighlight(w.highlight) ? w.highlight : "off",
     typography: isTypographySetting(w.typography) ? w.typography : "auto",
-    continuous: w.continuous === true,
   };
 }
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);

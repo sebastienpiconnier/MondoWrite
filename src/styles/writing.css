@@ -86,13 +86,8 @@
    son texte descend plus bas (page de titre, dédicace, mentions légales…). */
 .ms-page .ms-editor, .ms-page .ms-editor:focus-visible { --ms-top: 5; min-height: calc((var(--ms-height) - var(--ms-top)) * 1em); padding: calc(var(--ms-top) * 1em) 4em 0; font: inherit; color: inherit; }
 .ms-page .ms-editor p { margin: 0; text-indent: 1.5em; text-align: justify; hyphens: auto; }
-.ms-page .ms-editor > p:first-child, .ms-page .ms-editor h2 + p, .ms-page .ms-editor h3 + p { text-indent: 0; }
 .ms-page .ms-editor h2, .ms-page .ms-editor h3 { margin: 0; padding: 0.8em 0 0.8em; text-align: center; font-size: 1em; line-height: 1.6; letter-spacing: 0.08em; }
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. */
-.ms-page.opens-chapter .ms-editor > p.has-dropcap:first-child::first-letter { float: left; margin: 0.08em 0.08em 0 0; font: 600 3.3em/0.85 var(--font-display); color: var(--accent-ink); }
-/* Le premier paragraphe contient sa lettrine : un paragraphe court ne laisse pas la suite coincée à côté d'elle.
-   La classe vient de dropCap.ts : pas de lettrine dans le paragraphe où l'on écrit (WebKit y perdait le curseur). */
-.ms-page.opens-chapter .ms-editor > p.has-dropcap:first-child { display: flow-root; }
 .ms-page .sp-pagebreak-gap { left: -4em; right: -4em; }
 .ms-page .sp-pagebreak-number { right: 0; font-size: 0.85em; color: var(--ink-2); }
 .ms-chapter-heading { margin: 8px 0 0; font: 600 13px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
@@ -129,7 +124,6 @@
 .ms-editor, .ms-editor:focus-visible { min-height: 50vh; outline: none; font: 19px/1.7 var(--font-text); color: var(--ink); cursor: text; }
 .ms-editor p { margin: 0 0 0.9em; }
 .ms-editor h2, .ms-editor h3 { font-family: var(--font-display); font-weight: 600; margin: 1.2em 0 0.4em; }
-.ms-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
 .ms-words { margin-left: auto; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 .ms-scenes button { display: flex; align-items: baseline; gap: 8px; }
 .ms-scenes .ms-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
@@ -310,8 +304,6 @@
 @media (pointer: coarse) { .ms-focus-bar { opacity: 1; } .ms-focus-bar button, .ms-focus-bar select { min-height: 44px; } }
 
 /* ---------- Pages du livre et chapitrage dans le manuscrit ---------- */
-/* Ouverture d'un chapitre : numéro et titre centrés dans la marge du haut de la page (en em, à l'échelle de la page). */
-.ms-chapter-edit { position: absolute; top: 0.9em; left: 4em; right: 4em; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.1em; }
 .ms-page .ms-chapter-heading { margin: 0; font-size: 0.62em; }
 .ms-chapter-input { width: 100%; min-height: 1.8em; padding: 0 0.4em; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--page-ink); font: 500 1.2em/1.4 var(--font-display); text-align: center; }
 .ms-chapter-remove { position: absolute; top: 0; right: -3.4em; width: 36px; height: 36px; border-color: transparent; background: transparent; color: var(--ink-2); }
@@ -324,21 +316,7 @@
 .ms-add-page select { width: 100%; min-height: 44px; }
 .ms-start-chapter { width: auto; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); font-size: 13px; }
 .ms-hint { margin: 4px 0 0; text-align: center; font-size: 12px; color: var(--ink-2); }
-/* Scène qui suit une autre dans le même chapitre : le séparateur du livre, en tête de page. */
-/* Dans la marge du haut, sans rien déplacer : les coupures de page restent justes. */
 .ms-page { position: relative; }
-.ms-page.follows-scene::before { content: "*  *  *"; position: absolute; top: 2.4em; left: 0; right: 0; text-align: center; letter-spacing: 0.2em; color: var(--ink-2); pointer-events: none; }
-/* Pages hors récit : composées à part. */
-.ms-page.is-quiet .ms-editor p { text-indent: 0; text-align: center; }
-/* Le texte indicatif se place comme le texte de la page (centré, ou à droite pour une épigraphe). */
-.ms-page.is-quiet .ms-editor p.is-editor-empty:first-child::before { float: none; display: block; width: 100%; text-align: inherit; }
-.ms-page[data-page="titre"] .ms-editor { --ms-top: 14; }
-.ms-page[data-page="titre"] .ms-editor h2 { font-size: 2em; letter-spacing: 0.02em; line-height: 1.3; padding-bottom: 1.5em; }
-.ms-page[data-page="dedicace"] .ms-editor, .ms-page[data-page="epigraphe"] .ms-editor { --ms-top: 16; font-style: italic; }
-.ms-page[data-page="epigraphe"] .ms-editor p { text-align: right; }
-/* Petits caractères sur les paragraphes, pas sur l'éditeur : ses « em » mesurent la page. */
-.ms-page[data-page="copyright"] .ms-editor { --ms-top: 34; }
-.ms-page[data-page="copyright"] .ms-editor > :not(.sp-pagebreak) { font-size: 0.8em; }
 
 /* ---------- Raccourcis clavier et À propos ---------- */
 .settings-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
@@ -484,7 +462,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Scène vide : son synopsis en filigrane (texte indicatif sur plusieurs lignes, la scène grandit avec lui). */
 .draft-editor p.is-editor-empty:first-child { display: flow-root; }
 .draft-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; width: 100%; margin-right: -100%; font-style: italic; pointer-events: none; }
-.ms-editor p.is-editor-empty:first-child::before { font-style: italic; }
 
 /* Scène d'un scénario dans la carte agrandie : la barre des éléments, puis la feuille, sans les grandes
    marges de la page (la place est comptée) ; retraits du format standard gardés. */
@@ -521,30 +498,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .replace-context mark { background: var(--accent-soft); color: var(--ink); border-radius: 3px; padding: 0 2px; }
 .replace-more { margin: 0; font-size: 13px; color: var(--ink-2); }
 
-/* Lecture continue : une longue feuille, le livre d'un seul tenant. Mêmes réglages de texte que la page. */
-.ms-continuous {
-  align-self: center; width: min(40em, 100%); margin-top: 8px; padding: 3em 4em 6em;
-  background: var(--page); color: var(--page-ink); box-shadow: var(--shadow-card);
-  font: 17px/1.6 var(--font-text); font-size: clamp(14px, calc((100cqw - 8px) / 40), 20px);
-}
-.ms-continuous-scene { scroll-margin-top: 16px; }
-.ms-continuous-chapter { padding: 3em 0 1.6em; text-align: center; }
-.ms-continuous-chapter span { display: block; font: 600 0.75em var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-ink); }
-.ms-continuous-chapter h2 { margin: 0.3em 0 0; font: 600 1.4em/1.3 var(--font-display); }
-.ms-continuous-scene:first-child .ms-continuous-chapter { padding-top: 0; }
-.ms-continuous-page { margin: 2.5em 0 1em; text-align: center; font: 600 0.8em var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
-.ms-continuous-break { margin: 1em 0; text-align: center; color: var(--ink-2); }
-.ms-continuous-text, .ms-continuous-editor { border-radius: 6px; outline-offset: 4px; cursor: text; }
-@media (any-hover: hover) { .ms-continuous-text:hover { background: var(--hover); } }
-.ms-continuous-text:focus-visible, .ms-continuous-editor:focus-visible { outline: 2px solid var(--accent); }
-.ms-continuous-editor { outline: none; box-shadow: 0 0 0 1px var(--line-2); }
-.ms-continuous-text p, .ms-continuous-editor p { margin: 0; text-indent: 1.5em; text-align: justify; hyphens: auto; }
-.ms-continuous-text > p:first-child, .ms-continuous-editor > p:first-child { text-indent: 0; }
-.ms-continuous-text.is-empty { color: var(--placeholder); font-style: italic; }
-.ms-continuous-scene.is-page .ms-continuous-text p { text-align: center; text-indent: 0; }
-.ms-continuous-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; font-style: italic; pointer-events: none; }
-@media (max-width: 640px) { .ms-continuous { padding: 2em 1.2em 4em; } }
-
 /* Statut d'une scène : pastille et menu déroulant (brouillon, à revoir, terminée). */
 .status-dot { display: inline-block; flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--status-draft); background: transparent; vertical-align: middle; }
 .status-dot.is-brouillon, .status-picker.is-brouillon .status-dot { border-color: var(--status-draft); background: var(--status-draft); }
@@ -579,3 +532,38 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .paperback-options label { min-height: 36px; }
 .paperback-warning { color: var(--danger); font-weight: 600; }
 .paperback-panel .replace-actions { flex-wrap: wrap; }
+
+
+/* ---------- Le livre en pages (un seul éditeur pour tout le manuscrit) ---------- */
+.ms-page .ms-editor .scene-first, .ms-page .ms-editor h2 + p, .ms-page .ms-editor h3 + p { text-indent: 0; }
+/* Repère de scène : invisible, ou « * * * » entre deux scènes, ou ouverture d'un chapitre (numéro et titre). */
+.ms-editor .scene-mark { display: block; user-select: none; scroll-margin-top: 5.5rem; }
+.ms-editor .scene-mark:empty { height: 0; }
+.ms-editor .scene-break { padding: 0.8em 0; text-align: center; letter-spacing: 0.2em; line-height: 1.6; color: var(--ink-2); }
+.ms-chapter-flow { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.1em; padding: 0.3em 0 1.8em; }
+.ms-page .ms-chapter-flow .ms-chapter-heading { margin: 0; font-size: 0.62em; }
+.ms-chapter-flow .ms-chapter-input { width: 100%; }
+/* Pages hors récit : la première page commence plus bas (titre, dédicace, mentions légales), composée à part. */
+.ms-editor .scene-mark[data-page="titre"] { height: 9em; }
+.ms-editor .scene-mark[data-page="dedicace"], .ms-editor .scene-mark[data-page="epigraphe"] { height: 11em; }
+.ms-editor .scene-mark[data-page="copyright"] { height: 29em; }
+.ms-page .ms-editor .pg.is-quiet { text-indent: 0; text-align: center; }
+.ms-page .ms-editor h2.pg-titre { font-size: 2em; letter-spacing: 0.02em; line-height: 1.3; padding-bottom: 1.5em; }
+.ms-page .ms-editor .pg-dedicace, .ms-page .ms-editor .pg-epigraphe { font-style: italic; }
+.ms-page .ms-editor .pg-epigraphe { text-align: right; }
+.ms-page .ms-editor .pg-copyright { font-size: 0.8em; }
+/* Ouverture d'un chapitre : une lettrine, comme dans NEO. Pas dans le paragraphe où l'on écrit (WebKit y perdait le curseur). */
+.ms-page .ms-editor p.has-dropcap { display: flow-root; }
+.ms-page .ms-editor p.has-dropcap::first-letter { float: left; margin: 0.08em 0.08em 0 0; font: 600 3.3em/0.85 var(--font-display); color: var(--accent-ink); }
+/* Texte indicatif d'une scène encore vide. */
+.ms-editor p.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; font-style: italic; }
+.ms-editor .pg.is-quiet.is-empty::before { float: none; display: block; width: 100%; text-align: inherit; }
+
+/* Mode focus : plus de page, seulement le texte (machine à écrire et mise en valeur). */
+.manuscript.is-focus .ms-page { background: none; box-shadow: none; color: var(--ink); margin-top: 0; }
+.manuscript.is-focus .ms-page .ms-editor, .manuscript.is-focus .ms-page .ms-editor:focus-visible { padding: 0 1em; min-height: 0; }
+.manuscript.is-focus .ms-editor .scene-break { display: none; }
+.manuscript.is-focus .ms-chapter-flow .ms-chapter-input { pointer-events: none; border-color: transparent; }
+.manuscript.is-focus .ms-page.is-dimmed .ms-editor { color: color-mix(in srgb, var(--ink) 34%, transparent); }
+.manuscript.is-focus .ms-page.is-dimmed .ms-editor .is-focus-on { color: var(--ink); }
+.manuscript.is-focus .ms-veil { background: var(--ground); }

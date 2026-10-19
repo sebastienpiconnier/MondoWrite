@@ -691,13 +691,6 @@ export const en: Messages = {
   },
 
 
-  // Continuous reading of the manuscript: the whole book scrolling.
-  continuous: {
-    aria: "The whole book, continuous reading",
-    on: "Continuous reading",
-    off: "One scene per page",
-    hint: "Scroll through the whole book; click a passage to edit it",
-  },
 
   // A novel scene's text seen from its card (canvas, Bible, expanded card).
   draft: {
@@ -727,6 +720,7 @@ export const en: Messages = {
     sceneTitle: "Scene title",
     placeholder: "Write the scene…",
     editorAria: "Text of the scene “{title}”",
+    bookAria: "Manuscript text",
     previous: "Previous scene",
     next: "Next scene",
     position: "Scene {n} of {total}",

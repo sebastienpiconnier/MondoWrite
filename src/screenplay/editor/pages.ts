@@ -6,6 +6,7 @@
 import { Extension } from "@tiptap/react";
 import { Plugin, PluginKey, Selection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import type { Node as PMNode } from "@tiptap/pm/model";
 
 export interface PageItem {
   /** Hauteur de l'élément, en lignes. */
@@ -14,6 +15,8 @@ export interface PageItem {
   margin: number;
   /** Lignes à garder après lui sur la même page (en-tête de scène, personnage). */
   keep: number;
+  /** Vrai : l'élément ouvre toujours une nouvelle page (début de chapitre, page de titre…). */
+  before?: boolean;
 }
 
 export interface PageBreak {
@@ -38,7 +41,7 @@ export function layoutPages(items: PageItem[], lines: number, offset = 0): { bre
   items.forEach((item, index) => {
     const margin = used === start ? 0 : item.margin;
     // Tolérance d'un dixième de ligne : les hauteurs mesurées à l'écran ne tombent pas toujours juste.
-    if (used > start && used + margin + item.height + item.keep > lines + 0.1) {
+    if (used > start && (item.before || used + margin + item.height + item.keep > lines + 0.1)) {
       breaks.push({ index, rest: Math.max(0, lines - used), page: ++page });
       start = 0;
       used = item.height;
@@ -57,13 +60,13 @@ export interface PagesOptions {
   /** Faux sur un écran trop étroit pour une vraie page : la feuille redevient continue. */
   enabled: (editorDom: HTMLElement) => boolean;
   /** Marge au-dessus d'un élément et lignes à garder après lui, selon son type (scénario par défaut). */
-  item?: (type: string) => { margin: number; keep: number };
+  item?: (type: string, node: PMNode) => { margin: number; keep: number; before?: boolean };
   /** Numéro de la première page (le manuscrit continue la numérotation des scènes précédentes). */
   firstPage?: () => number;
   /** Texte du numéro de page (scénario : « 2. »). */
   label?: (page: number) => string;
-  /** Appelé après chaque découpage, avec le nombre de pages. */
-  onLayout?: (pages: number) => void;
+  /** Appelé après chaque découpage : le nombre de pages et la position (dans le document) de l'élément qui ouvre chacune des suivantes. */
+  onLayout?: (pages: number, breaks: number[]) => void;
 }
 
 /** Règles du scénario : pas de marge avant une réplique, en-tête et personnage jamais seuls en bas de page. */
@@ -151,19 +154,21 @@ export const Pages = Extension.create<PagesOptions>({
             const decorations: Decoration[] = [];
             let next = `p${first};`;
             let pages = 0;
+            let breakAt: number[] = [];
 
             if (line > 0 && options.enabled(view.dom as HTMLElement)) {
               const items: PageItem[] = [];
               const positions: number[] = [];
               doc.forEach((node, offset) => {
                 const dom = view.nodeDOM(offset);
-                items.push({ height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1, ...itemOf(node.type.name) });
+                items.push({ height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1, ...itemOf(node.type.name, node) });
                 positions.push(offset);
               });
               // Marge haute plus grande que celle de la page (page de titre, dédicace…) : la première page commence plus bas.
               const top = parseFloat(getComputedStyle(view.dom).paddingTop) / line;
               const layout = layoutPages(items, lines, Number.isFinite(top) ? top - marginTop : 0);
               pages = layout.pages;
+              breakAt = layout.breaks.map((b) => positions[b.index]);
               const bottom = pageLines - marginTop - lines; // marge basse
               for (const b of layout.breaks) {
                 // L'élément garde sa marge du dessus (CSS) : on la retire de l'espace ajouté.
@@ -182,7 +187,7 @@ export const Pages = Extension.create<PagesOptions>({
               next += `end:${tail.toFixed(2)}`;
             }
 
-            options.onLayout?.(pages);
+            options.onLayout?.(pages, breakAt);
             if (next === signature) return;
             signature = next;
             view.dispatch(view.state.tr.setMeta(pagesKey, decorations).setMeta("addToHistory", false));
