@@ -711,6 +711,7 @@ export const fr = {
     orphans: "Textes sans carte",
     orphansHint: "La carte de ces scènes a été supprimée. Leur texte est toujours dans le projet.",
     restore: "Recréer la carte",
+    sceneHint: "Glissez une scène pour la déplacer",
     sceneDrag: "Glisse la scène pour la déplacer (Alt + ↑ ↓ au clavier)",
     sceneMoved: "Scène « {title} » déplacée.",
   },
@@ -1179,6 +1180,8 @@ export const fr = {
     newChapter: "Nouveau chapitre.",
     undoBreak: "Annuler",
     breakUndone: "Coupure annulée.",
+    joined: "Scènes fusionnées.",
+    joinUndone: "Fusion annulée.",
   },
 
   // Corbeille : les cartes supprimées attendent ici, restaurables.

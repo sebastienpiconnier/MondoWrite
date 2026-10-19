@@ -228,10 +228,25 @@ export function Manuscript() {
       // Une scène qui ouvre un chapitre ne se fond pas dans la précédente (sauf vide : c'est l'annulation d'une coupure).
       const opens = chapterOf(plan, from)?.id !== chapterOf(plan, into)?.id;
       if (opens && plainText(useCosmos.getState().manuscript[from] ?? "") !== "") return false;
+      const before = { from: useCosmos.getState().manuscript[from] ?? "", into: useCosmos.getState().manuscript[into] ?? "" };
       useCosmos.getState().joinScenes(from, into);
       setFresh(null);
       setChosen(into);
       bookApi.current?.focusScene(into, offset, true);
+      setSaid(b.joined);
+      // Annuler : la fiche revient de la corbeille et chaque scène retrouve son texte d'avant.
+      setNotice({
+        text: b.joined,
+        undo: () => {
+          const store = useCosmos.getState();
+          store.undo();
+          store.setManuscriptText(into, before.into);
+          store.setManuscriptText(from, before.from);
+          setChosen(from);
+          bookApi.current?.focusScene(from, 0);
+          setSaid(b.joinUndone);
+        },
+      });
       return true;
     },
   };
@@ -294,6 +309,7 @@ export function Manuscript() {
       <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
+        <p className="ms-drag-hint">{m.sceneHint}</p>
         {groupByChapter(plan, order).map((group) => (
           <div
             key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`}
@@ -404,7 +420,7 @@ export function Manuscript() {
                   >
                     <button
                       type="button"
-                      className={id === current ? "is-current" : ""}
+                      className={`${id === current ? "is-current" : ""}${movable ? " is-movable" : ""}`}
                       aria-current={id === current ? "true" : undefined}
                       aria-keyshortcuts={movable ? "Alt+ArrowUp Alt+ArrowDown" : undefined}
                       title={movable ? m.sceneDrag : undefined}
@@ -418,6 +434,7 @@ export function Manuscript() {
                       }}
                       data-scene={id}
                     >
+                      {movable && <span className="ms-grip" aria-hidden="true" />}
                       <span className="ms-name">
                         {pageLabel(id) ? (
                           <em>{c?.title.trim() && c.title.trim() !== pageLabel(id) ? `${pageLabel(id)} · ${c.title.trim()}` : pageLabel(id)}</em>

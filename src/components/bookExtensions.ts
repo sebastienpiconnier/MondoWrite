@@ -5,6 +5,7 @@
 import { Extension, Node, getHTMLFromFragment } from "@tiptap/react";
 import { Fragment, Slice, type Node as PMNode } from "@tiptap/pm/model";
 import { Mapping } from "@tiptap/pm/transform";
+import { redoDepth, undoDepth } from "@tiptap/pm/history";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { useCosmos } from "../store";
@@ -219,6 +220,28 @@ export const BookStructure = Extension.create({
         },
       }),
     ];
+  },
+});
+
+/**
+ * Annuler / rétablir : l'historique du texte répond d'abord. Quand il est vide (le livre vient d'être redessiné
+ * après un chapitre supprimé, une scène coupée…), c'est l'historique du projet qui répond.
+ */
+export const BookUndo = Extension.create({
+  name: "bookUndo",
+  priority: 1000,
+  addKeyboardShortcuts() {
+    const undo = () => {
+      if (undoDepth(this.editor.state) > 0) return false;
+      useCosmos.getState().undo();
+      return true;
+    };
+    const redo = () => {
+      if (redoDepth(this.editor.state) > 0) return false;
+      useCosmos.getState().redo();
+      return true;
+    };
+    return { "Mod-z": undo, "Mod-Shift-z": redo, "Mod-y": redo };
   },
 });
 

@@ -10,7 +10,7 @@ import { EditorState, Selection } from "@tiptap/pm/state";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
-import { BookKeys, BookStructure, SceneMark, type BookHandlers } from "./bookExtensions";
+import { BookKeys, BookUndo, BookStructure, SceneMark, type BookHandlers } from "./bookExtensions";
 import { Pages } from "../screenplay/editor/pages";
 import { SCENE_MARK, bookBlocks, changedRange, composeBook, sceneAt, sceneGroups, structureSignature } from "../bookDoc";
 import { isBlank } from "../manuscript";
@@ -148,11 +148,13 @@ export function BookEditor({
             : { margin: 0, keep: type === "heading" ? 3 : 0 },
         firstPage: () => 1,
         label: (page) => String(page),
+        numberAt: "bottom",
         onLayout: (pages, breaks) => {
           layout.current = { pages, breaks };
           reportPlace();
         },
       }),
+      BookUndo,
       BookKeys.configure({ handlers: () => handlers.current }),
       // Mode focus : la phrase ou le paragraphe en cours en pleine encre, le reste estompé.
       FocusWriting.configure({ mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off") }),
@@ -188,6 +190,10 @@ export function BookEditor({
     const { state, view } = ed;
     let target = pending.current;
     pending.current = null;
+    // Redessin sans destination (chapitre supprimé, ordre changé…) : le livre reste où il est, il ne saute pas au début.
+    const keepScroll = !target;
+    const scroller = keepScroll ? scrollParent(view.dom) : null;
+    const scrollTop = scroller ? scroller.scrollTop : window.scrollY;
     if (!target) {
       const g = sceneAt(sceneGroups(state.doc), state.selection.head);
       if (g) target = { id: g.id, offset: state.selection.head - g.markerPos };
@@ -201,7 +207,21 @@ export function BookEditor({
     if (g && target) selection = Selection.near(doc.resolve(target.offset < 0 ? g.end - 1 : Math.min(g.markerPos + Math.max(target.offset, 2), doc.content.size)), target.offset < 0 ? -1 : 1);
     // Un état neuf : l'historique d'annulation repart de zéro (il ne sait pas défaire une scène coupée).
     view.updateState(EditorState.create({ doc, plugins: state.plugins, selection }));
-    if (g) view.dom.querySelector(`[data-scene-id="${CSS.escape(g.id)}"]`)?.scrollIntoView({ block: "center" });
+    // Les sauts de page sont recalculés juste après le redessin : la hauteur du livre change et, sur un long
+    // livre, la vue reculait de plusieurs chapitres. On replace donc la vue maintenant, puis après la mise en page.
+    const place = () => {
+      if (ed.isDestroyed) return;
+      if (keepScroll) {
+        if (scroller) scroller.scrollTop = scrollTop;
+        else window.scrollTo(0, scrollTop);
+      } else if (g) view.dom.querySelector(`[data-scene-id="${CSS.escape(g.id)}"]`)?.scrollIntoView({ block: "center" });
+    };
+    place();
+    requestAnimationFrame(() => {
+      place();
+      requestAnimationFrame(place);
+    });
+    window.setTimeout(place, 200);
   };
 
   // Structure changée (ordre, chapitres, pages hors récit) : on redessine.

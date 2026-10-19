@@ -190,11 +190,13 @@ export function Plan() {
           {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
           <SceneStatusPicker card={card} />
         </div>
+        <div className="plan-actions">
         {beat !== null && (
           <label className="plan-to">
             <span className="sr-only">{fmt(c.chooseFor, { title })}</span>
             <span aria-hidden="true">{c.short}</span>
             <select
+              title={fmt(c.chooseFor, { title })}
               value={chapterOf(plan, id)?.id ?? NO_CHAPTER}
               onChange={(e) => {
                 const value = e.target.value;
@@ -216,7 +218,7 @@ export function Plan() {
           <label className="plan-to">
             <span className="sr-only">{fmt(p.moveTo, { title })}</span>
             <span aria-hidden="true">{p.moveToShort}</span>
-            <select value={beat ?? UNPLACED} onChange={(e) => place(id, e.target.value === UNPLACED ? null : e.target.value)}>
+            <select title={fmt(p.moveTo, { title })} value={beat ?? UNPLACED} onChange={(e) => place(id, e.target.value === UNPLACED ? null : e.target.value)}>
               <option value={UNPLACED}>{p.unplaced}</option>
               {arranged.beats.map((b) => (
                 <option key={b.key} value={b.key}>
@@ -232,6 +234,7 @@ export function Plan() {
         <button type="button" className="icon-button sq-trash" aria-label={fmt(t.trash.removeAria, { title })} title={fmt(t.trash.removeAria, { title })} onClick={() => useCosmos.getState().deleteCard(id)}>
           <TrashIcon />
         </button>
+        </div>
       </li>
     );
   };

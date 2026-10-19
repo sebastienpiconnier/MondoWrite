@@ -37,9 +37,14 @@ const MIME: Record<ExportFormat, string> = {
   fdx: "application/xml",
 };
 
-/** Nom de fichier valable sur tous les systèmes (ni chemin, ni caractère interdit sous Windows). */
+/** Nom de fichier valable sur tous les systèmes (ni chemin, ni caractère interdit sous Windows) ; une virgule devient un tiret. */
 export function fileName(title: string, fallback: string): string {
-  const safe = title.replace(/[\\/:*?"<>|\u0000-\u001f]/g, " ").replace(/\s+/g, " ").replace(/^[. ]+|[. ]+$/g, "");
+  const safe = title
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, " ")
+    .replace(/\s*[,，、]\s*/g, " - ")
+    .replace(/\s+/g, " ")
+    .replace(/(\s-){2,}/g, " -")
+    .replace(/^[-. ]+|[-. ]+$/g, "");
   return safe || fallback;
 }
 

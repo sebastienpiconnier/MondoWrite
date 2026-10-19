@@ -88,8 +88,12 @@
 .ms-page .ms-editor p { margin: 0; text-indent: 1.5em; text-align: justify; hyphens: auto; }
 .ms-page .ms-editor h2, .ms-page .ms-editor h3 { margin: 0; padding: 0.8em 0 0.8em; text-align: center; font-size: 1em; line-height: 1.6; letter-spacing: 0.08em; }
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. */
-.ms-page .sp-pagebreak-gap { left: -4em; right: -4em; }
+/* La bande déborde de la page : elle recouvre l'ombre des bords, qui sinon filait en deux barres verticales entre les pages. */
+.ms-main { overflow-x: hidden; }
+.ms-page .sp-pagebreak-gap { left: calc(-4em - 60px); right: calc(-4em - 60px); border-inline: 0; }
 .ms-page .sp-pagebreak-number { right: 0; font-size: 0.85em; color: var(--ink-2); }
+/* Livre : le numéro est dans la page, centré en bas. */
+.ms-page .sp-pagebreak-number.is-bottom { left: 0; right: 0; text-align: center; line-height: 1; color: var(--page-ink); opacity: 0.6; }
 .ms-chapter-heading { margin: 8px 0 0; font: 600 13px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
 .ms-chapter { margin-top: 10px; }
 .ms-chapter-title { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 2px; font: 600 12px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
@@ -128,6 +132,13 @@
 .ms-scenes button { display: flex; align-items: baseline; gap: 8px; }
 .ms-scenes .ms-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .ms-total { margin: 0; font-size: 13px; color: var(--ink-2); }
+.ms-drag-hint { margin: 2px 0 8px; font-size: 12px; color: var(--muted); }
+/* Poignée de glisser : six points, visibles au survol et sur la scène en cours. */
+.ms-grip { flex: none; align-self: center; width: 8px; height: 14px; margin-right: -2px; opacity: 0.35; cursor: grab; background: radial-gradient(circle, currentColor 1.1px, transparent 1.3px) 0 0 / 4px 5px; }
+.ms-scenes button.is-current .ms-grip { opacity: 0.7; }
+@media (any-hover: hover) { .ms-scenes li:hover .ms-grip { opacity: 0.8; } }
+/* Souris : on glisse, donc plus de flèches sous la scène en cours (elles restent au doigt, où le glisser est moins sûr). */
+@media (any-hover: hover) and (pointer: fine) { .ms-scenes .sp-scene-moves { display: none; } }
 .ms-notes { font: 14px/1.5 var(--font-text); color: var(--ink); overflow-wrap: anywhere; }
 .ms-notes p { margin: 0 0 6px; }
 .ms-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -190,19 +201,27 @@
 .plan-beat-hint, .plan-beat-empty { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
 .plan-count { margin-left: 8px; font: 13px var(--font-ui); color: var(--ink-2); }
 .plan-scene { flex-wrap: wrap; }
-.plan-scene .sq-body { flex-basis: 160px; }
-.plan-scene .bible-title { min-height: 44px; font-weight: 600; font-size: 15px; }
+.plan-scene .sq-body { flex: 1 1 240px; min-width: 0; }
+.plan-scene .bible-title { min-height: 36px; font-weight: 600; font-size: 15px; }
 .plan-scene .icon-button { width: 44px; height: 44px; flex-shrink: 0; }
 .plan-to { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
 /* Plan en fiches : mêmes fiches que le séquencier, à l'intérieur de chaque case. */
 .sq-list.is-cards .plan-scene { flex-wrap: nowrap; min-height: 150px; }
 .sq-list.is-cards .plan-scene .sq-body { flex-basis: auto; }
-.sq-list.is-cards .plan-scene > .icon-button { order: 4; align-self: flex-end; margin-top: -52px; }
-.sq-list.is-cards .plan-to { order: 2; margin-top: auto; flex-wrap: wrap; }
+.sq-list.is-cards .plan-actions { order: 2; margin-top: auto; justify-content: flex-start; flex-wrap: nowrap; }
 /* Sections du séquencier : libellé et longueur des scènes qu'elles contiennent. */
 .sq-section { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .sq-section-length { font: 13px var(--font-ui); color: var(--ink-2); }
 .sq-scene .plan-to { flex-shrink: 0; }
+/* Actions d'une scène du Plan : chapitre, étape, voir la fiche, corbeille, sur une seule ligne compacte. */
+.plan-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.plan-actions .plan-to { flex: 0 1 auto; min-width: 0; gap: 4px; }
+.plan-actions .plan-to > span[aria-hidden] { display: none; }
+.plan-actions .plan-to select { min-height: 32px; width: 100%; max-width: 140px; min-width: 0; padding: 0 6px; font-size: 13px; text-overflow: ellipsis; }
+.plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 32px; height: 32px; }
+.sq-list.is-cards .plan-actions .plan-to { flex: 1 1 0; }
+.sq-list.is-cards .plan-actions .plan-to select { max-width: none; }
+@media (pointer: coarse) { .plan-actions .plan-to select { min-height: 44px; } .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 44px; height: 44px; } }
 .plan-add { display: flex; gap: 8px; }
 .plan-add input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px dashed var(--line-2); border-radius: 10px; background: transparent; color: var(--ink); font: inherit; }
 .plan-add input::placeholder { color: var(--placeholder); }

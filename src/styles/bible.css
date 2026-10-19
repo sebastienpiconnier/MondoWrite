@@ -7,6 +7,14 @@
 .bible-frame > .edge-handle { z-index: 8; }
 .bible { position: absolute; inset: 0; overflow: auto; display: flex; flex-wrap: wrap; gap: 24px; padding: 24px max(24px, env(safe-area-inset-right)) calc(max(24px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)) max(24px, env(safe-area-inset-left)); align-items: flex-start; }
 .bible-toc { flex: 1 1 220px; max-width: 260px; background: var(--surface); border-radius: 16px; padding: 18px; position: sticky; top: 0; }
+/* Ordinateur : le sommaire est un volet pleine hauteur collé au bord gauche, comme celui du Manuscrit,
+   et la poignée est solidaire de son bord (la fenêtre de la Bible sert de repère au « fixed »). */
+@media (min-width: 901px) {
+  .bible-frame { transform: translateZ(0); --toc-w: 260px; }
+  .bible-frame:not(.hide-toc) .bible { padding-left: calc(var(--toc-w) + 24px); }
+  .bible-frame .bible-toc { position: fixed; top: 0; bottom: 0; left: 0; z-index: 7; width: var(--toc-w); max-width: none; flex: none; margin: 0; overflow: auto; border-radius: 0; box-shadow: 3px 0 14px -4px rgba(20, 24, 40, 0.3); padding-bottom: 24px; }
+  .bible-frame:not(.hide-toc) > .edge-handle.is-left { left: calc(var(--toc-w) - 1px); }
+}
 .bible-toc ul { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .bible-toc button { width: 100%; min-height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; text-align: left; font-size: 15px; }
 @media (any-hover: hover) { .bible-toc button:hover { background: var(--ground); } }

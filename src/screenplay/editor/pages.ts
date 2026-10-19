@@ -65,6 +65,8 @@ export interface PagesOptions {
   firstPage?: () => number;
   /** Texte du numéro de page (scénario : « 2. »). */
   label?: (page: number) => string;
+  /** Place du numéro : en haut à droite de chaque page (scénario, par défaut) ou centré en bas (livre). */
+  numberAt?: "top" | "bottom";
   /** Appelé après chaque découpage : le nombre de pages et la position (dans le document) de l'élément qui ouvre chacune des suivantes. */
   onLayout?: (pages: number, breaks: number[]) => void;
 }
@@ -82,7 +84,12 @@ const TIGHT = new Set(["parenthetical", "dialogue"]);
 
 export const pagesKey = new PluginKey<DecorationSet>("screenplayPages");
 
-function spacer(height: number, gapTop: number | null, label: string): () => HTMLElement {
+/**
+ * Espace entre deux pages. `gapTop` : début de la bande entre les pages (null : fin du document, pas de bande).
+ * `top` : place du numéro dans l'espace (en em) ; `bottom` : numéro centré en bas de la page qu'on quitte (livre),
+ * sinon en haut à droite de la page qui commence (scénario).
+ */
+function spacer(height: number, gapTop: number | null, label: string, top: number, bottom = false): () => HTMLElement {
   return () => {
     const el = document.createElement("div");
     el.className = "sp-pagebreak";
@@ -94,12 +101,14 @@ function spacer(height: number, gapTop: number | null, label: string): () => HTM
       gap.className = "sp-pagebreak-gap";
       gap.style.top = `${gapTop}em`;
       gap.style.height = `${GAP}em`;
+      el.append(gap);
+    }
+    if (label) {
       const number = document.createElement("span");
-      number.className = "sp-pagebreak-number";
-      // Comme sur le PDF : en haut à droite, à un demi-pouce (3 lignes) du bord de la page.
-      number.style.top = `${gapTop + GAP + 2.5}em`;
+      number.className = bottom ? "sp-pagebreak-number is-bottom" : "sp-pagebreak-number";
+      number.style.top = `${top}em`;
       number.textContent = label;
-      el.append(gap, number);
+      el.append(number);
     }
     return el;
   };
@@ -170,11 +179,14 @@ export const Pages = Extension.create<PagesOptions>({
               pages = layout.pages;
               breakAt = layout.breaks.map((b) => positions[b.index]);
               const bottom = pageLines - marginTop - lines; // marge basse
+              const atBottom = options.numberAt === "bottom";
+              // Numéro centré en bas : au milieu de la marge basse de la page qu'on quitte.
+              const bottomTop = (rest: number) => rest + bottom / 2 - 0.45;
               for (const b of layout.breaks) {
                 // L'élément garde sa marge du dessus (CSS) : on la retire de l'espace ajouté.
                 const height = b.rest + bottom + GAP + marginTop - items[b.index].margin;
                 decorations.push(
-                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, label(b.page + first)), {
+                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, label(atBottom ? b.page - 1 + first : b.page + first), atBottom ? bottomTop(b.rest) : b.rest + bottom + GAP + 2.5, atBottom), {
                     side: -1,
                     key: `page-${b.page + first}-${height.toFixed(2)}`,
                   }),
@@ -183,7 +195,11 @@ export const Pages = Extension.create<PagesOptions>({
               }
               // La dernière page va jusqu'en bas, marge comprise.
               const tail = layout.tail + bottom;
-              decorations.push(Decoration.widget(doc.content.size, spacer(tail, null, ""), { side: 1, key: `tail-${tail.toFixed(2)}` }));
+              // Livre : la dernière page porte aussi son numéro, en bas.
+              const lastLabel = atBottom ? label(pages + first) : "";
+              decorations.push(
+                Decoration.widget(doc.content.size, spacer(tail, null, lastLabel, bottomTop(layout.tail), true), { side: 1, key: `tail-${tail.toFixed(2)}-${lastLabel}` }),
+              );
               next += `end:${tail.toFixed(2)}`;
             }
 

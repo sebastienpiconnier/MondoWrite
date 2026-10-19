@@ -1277,6 +1277,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!isBlank(moved)) next[intoId] = isBlank(manuscript[intoId]) ? moved : `${manuscript[intoId]}${moved}`;
       set({ manuscript: next });
       get().deleteCard(fromId);
+      // Une fusion n'est pas une suppression : pas de message « à la corbeille » (la fiche y reste, au cas où).
+      set({ trashNotice: null });
     },
     startChapterAt: (sceneId) => {
       const id = newId();
