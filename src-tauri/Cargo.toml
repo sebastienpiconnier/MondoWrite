@@ -36,5 +36,12 @@ tauri-plugin-process = "2"
 # Surveillance du dossier du projet (modifications faites dans un autre logiciel), ordinateur seulement.
 tauri-plugin-fs = { version = "2", features = ["watch"] }
 
+# Dossier cloud (iPhone et iPad) : sélecteur de dossiers de l'app Fichiers (OneDrive, Dropbox, Drive…) et signet d'accès durable.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSData", "NSError", "NSObject", "NSString", "NSURL"] }
+objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "block2", "objc2-uniform-type-identifiers", "UIApplication", "UIDocumentPickerViewController", "UIResponder", "UIViewController", "UIWindow"] }
+objc2-uniform-type-identifiers = { version = "0.3", default-features = false, features = ["std", "UTType"] }
+
 [patch.crates-io]
 num_threads = { path = "vendor/num_threads" }

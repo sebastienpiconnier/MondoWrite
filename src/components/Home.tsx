@@ -19,7 +19,7 @@ export function Home() {
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
-  const { openProject, openFolder, createProject, tryExample, unlistProject, importFile, importProjectZip } = useCosmos.getState();
+  const { openProject, openFolder, createProject, tryExample, unlistProject, importFile, importProjectZip, chooseCloudFolder, leaveCloudFolder } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
@@ -110,10 +110,21 @@ export function Home() {
               ))}
             </ul>
           )}
+          {storage.cloud?.name() && <p className="settings-hint">{fmt(h.cloudActive, { name: storage.cloud.name() ?? "" })}</p>}
           <div className="home-buttons">
             {storage.canPickFolder && (
               <button type="button" className="ghost-button" disabled={busy} onClick={() => run(openFolder)}>
                 {h.openFolder}
+              </button>
+            )}
+            {storage.cloud && (
+              <button type="button" className="ghost-button" disabled={busy} title={h.cloudHint} onClick={() => run(chooseCloudFolder)}>
+                {storage.cloud.name() ? h.cloudChange : h.cloudChoose}
+              </button>
+            )}
+            {storage.cloud?.name() && (
+              <button type="button" className="ghost-button" disabled={busy} onClick={() => run(leaveCloudFolder)}>
+                {h.cloudLeave}
               </button>
             )}
             {storage.canImportZip && (

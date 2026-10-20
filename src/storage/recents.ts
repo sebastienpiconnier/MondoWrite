@@ -12,6 +12,8 @@ export interface ProjectEntry {
   kind?: ProjectKind;
   /** Dernière ouverture (millisecondes), 0 si le projet n'a jamais été ouvert ici. */
   openedAt: number;
+  /** Mobile : projet du dossier cloud choisi (OneDrive, Dropbox…), pas de l'espace de l'app. */
+  cloud?: boolean;
 }
 
 const KEY = "cosmos:projets";

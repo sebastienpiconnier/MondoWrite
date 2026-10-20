@@ -302,6 +302,10 @@ interface CosmosState {
   importFile: () => Promise<void>;
   /** Mobile : ouvre un projet exporté en .zip (« Exporter une copie ») depuis Fichiers, en le copiant dans l'app. */
   importProjectZip: () => Promise<void>;
+  /** Mobile : l'auteur choisit dans Fichiers le dossier cloud (OneDrive, Dropbox…) qui contient ses projets. */
+  chooseCloudFolder: () => Promise<void>;
+  /** Mobile : revient à l'espace de l'app (le dossier cloud n'est pas touché). */
+  leaveCloudFolder: () => Promise<void>;
   /** L'import n'a pas eu lieu : dossier déjà occupé par un projet, ou fichier sans scénario. */
   importNotice: "taken" | "empty" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
@@ -1503,6 +1507,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     importNotice: null,
+    chooseCloudFolder: async () => {
+      set({ importNotice: null, homeNotice: false, openFailed: false });
+      if (await storage.cloud?.pick()) await refreshProjects();
+    },
+    leaveCloudFolder: async () => {
+      storage.cloud?.clear();
+      await refreshProjects();
+    },
     importProjectZip: async () => {
       set({ importNotice: null, homeNotice: false, openFailed: false });
       try {

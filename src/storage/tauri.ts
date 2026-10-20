@@ -14,6 +14,7 @@ import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
 import { MISSING_FOLDER } from "../saveErrors";
 import { LOCK_DIR } from "../lock";
+import { invoke } from "@tauri-apps/api/core";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
@@ -26,14 +27,58 @@ let current: string | null = null;
 
 const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
-/** Mobile : les projets vivent dans Documents/projets, visible dans l'app Fichiers (partage de fichiers iOS). */
+/**
+ * Dossier cloud (iPhone et iPad) : l'auteur choisit dans l'app Fichiers un dossier de OneDrive, Dropbox, Drive ou iCloud Drive.
+ * On garde son nom et un signet (accès durable accordé par iOS) ; ses sous-dossiers sont les projets.
+ */
+const CLOUD_KEY = "cosmos:dossier-cloud";
+/** Identifiant du projet quand le dossier cloud choisi est lui-même un projet (il contient cosmos.json). */
+const CLOUD_SELF = "@dossier";
+interface CloudFolder {
+  path: string;
+  bookmark: string;
+}
+let cloudCache: { path: string; name: string } | null | undefined;
+
+function savedCloud(): { name: string; bookmark: string } | null {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CLOUD_KEY) ?? "null") as { name?: unknown; bookmark?: unknown } | null;
+    return raw && typeof raw.name === "string" && typeof raw.bookmark === "string" ? { name: raw.name, bookmark: raw.bookmark } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Chemin du dossier cloud choisi (accès rouvert par son signet), ou null s'il n'y en a pas ou s'il n'est plus accessible. */
+async function cloudRoot(): Promise<string | null> {
+  if (!mobile) return null;
+  if (cloudCache === undefined) {
+    const saved = savedCloud();
+    cloudCache = null;
+    if (saved) {
+      try {
+        const folder = await invoke<CloudFolder | null>("cloud_restore", { bookmark: saved.bookmark });
+        if (folder) {
+          cloudCache = { path: folder.path, name: saved.name };
+          localStorage.setItem(CLOUD_KEY, JSON.stringify({ name: saved.name, bookmark: folder.bookmark }));
+        }
+      } catch {
+        cloudCache = null;
+      }
+    }
+  }
+  return cloudCache?.path ?? null;
+}
+
+/** Mobile : les projets vivent dans le dossier cloud choisi ou, sans lui, dans Documents/projets (visible dans l'app Fichiers). */
 async function mobileRoot() {
-  return join(await documentDir(), MOBILE_DIR);
+  return (await cloudRoot()) ?? join(await documentDir(), MOBILE_DIR);
 }
 
 /** Anciennes versions : les projets étaient dans le dossier privé de l'app (invisible). On les déplace une fois. */
 async function migratePrivateProjects() {
   try {
+    if (await cloudRoot()) return;
     const old = await join(await appDataDir(), MOBILE_DIR);
     if (!(await exists(old))) return;
     const root = await mobileRoot();
@@ -50,7 +95,8 @@ async function migratePrivateProjects() {
 
 async function projectFolder(): Promise<string | null> {
   if (!current) return null;
-  return mobile ? join(await mobileRoot(), current) : current;
+  if (!mobile) return current;
+  return current === CLOUD_SELF ? mobileRoot() : join(await mobileRoot(), current);
 }
 
 function adoptLegacyFolder() {
@@ -137,6 +183,34 @@ export const tauriStorage: Storage = {
   kind: "tauri",
   canPickFolder: !mobile,
   canImportZip: mobile,
+  cloud: mobile
+    ? {
+        name: () => cloudCache?.name ?? savedCloud()?.name ?? null,
+        async pick() {
+          let folder: CloudFolder | null = null;
+          try {
+            folder = await invoke<CloudFolder | null>("cloud_pick_folder");
+          } catch (err) {
+            console.error(err);
+          }
+          if (!folder) return false;
+          const name = baseName(folder.path);
+          localStorage.setItem(CLOUD_KEY, JSON.stringify({ name, bookmark: folder.bookmark }));
+          cloudCache = { path: folder.path, name };
+          current = null;
+          return true;
+        },
+        clear() {
+          try {
+            localStorage.removeItem(CLOUD_KEY);
+          } catch {
+            /* rien à effacer */
+          }
+          cloudCache = null;
+          current = null;
+        },
+      }
+    : undefined,
   location: () => (mobile || !current ? null : baseName(current)),
 
   async pickFolder() {
@@ -162,9 +236,19 @@ export const tauriStorage: Storage = {
     const list = readRecents();
     await migratePrivateProjects();
     const dir = await mobileRoot();
+    // Dossier cloud choisi : seuls ses projets comptent, pas les anciens projets de l'app.
+    const cloud = await cloudRoot();
+    if (cloud) {
+      list.splice(0, list.length, ...list.filter((e) => e.id === CLOUD_SELF || (e.cloud ?? false)));
+      if (await exists(await join(dir, META_FILE))) {
+        if (!list.some((e) => e.id === CLOUD_SELF)) list.push({ id: CLOUD_SELF, name: cloudCache?.name ?? CLOUD_SELF, openedAt: 0, cloud: true });
+      }
+    } else {
+      list.splice(0, list.length, ...list.filter((e) => e.id !== CLOUD_SELF && !e.cloud));
+    }
     if (await exists(dir)) {
       for (const entry of await readDir(dir)) {
-        if (entry.isDirectory && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0 });
+        if (entry.isDirectory && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0, ...(cloud ? { cloud: true } : {}) });
       }
     }
     return byRecency(list);
@@ -179,7 +263,7 @@ export const tauriStorage: Storage = {
   },
   remember(info) {
     if (!current) return;
-    touchRecent({ id: current, name: mobile ? info.title || current : baseName(current), ...info, openedAt: Date.now() });
+    touchRecent({ id: current, name: mobile ? info.title || current : baseName(current), ...info, openedAt: Date.now(), ...(mobile && cloudCache ? { cloud: true } : {}) });
   },
   unlist: dropRecent,
   async pickTextFile(label, extensions) {
@@ -281,8 +365,16 @@ export const tauriStorage: Storage = {
 
   async watch(onChange) {
     const dir = await projectFolder();
-    // Sur mobile, le dossier est dans Documents : pas de surveillance des changements externes.
-    if (!dir || mobile) return () => {};
+    if (!dir) return () => {};
+    // Mobile : pas de surveillance du système de fichiers ; avec un dossier cloud, on relit régulièrement
+    // ce qui est venu d'un autre appareil (le même rafraîchissement a lieu au retour dans l'app).
+    if (mobile) {
+      if (!(await cloudRoot())) return () => {};
+      const timer = setInterval(() => {
+        if (document.visibilityState === "visible") onChange();
+      }, 20000);
+      return () => clearInterval(timer);
+    }
     // Délai anti-rebond : un enregistrement (ou une synchronisation OneDrive) écrit plusieurs fichiers d'affilée.
     return watch(
       dir,
