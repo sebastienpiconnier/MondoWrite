@@ -351,7 +351,7 @@
 <figure class="small"><img src="images/fr/manuscrit-colonne.jpg"><figcaption>La colonne des scènes.</figcaption></figure>
 
 <h3>La page</h3>
-<p>Au-dessus de la page, une barre discrète : les flèches de scène, le titre de la scène, son type de page, son statut, et les boutons <span class="ui">Mode focus</span>, <span class="ui">Lecture continue</span>, <span class="ui">Remplacer</span> et la corbeille. Le numéro et le titre du chapitre sont dans la marge du haut ; la première lettre d’un chapitre devient une lettrine quand tu n’écris pas dans ce paragraphe. Le synopsis de la scène apparaît en filigrane dans une scène encore vide, comme une note de plan.</p>
+<p>Au-dessus de la page, une barre discrète : les flèches de scène, le titre de la scène, son type de page, son statut, et les boutons <span class="ui">Chutier</span>, <span class="ui">Orthographe</span>, <span class="ui">Mode focus</span>, <span class="ui">Lecture continue</span>, <span class="ui">Remplacer</span> et la corbeille. Le numéro et le titre du chapitre sont dans la marge du haut ; la première lettre d’un chapitre devient une lettrine quand tu n’écris pas dans ce paragraphe. Le synopsis de la scène apparaît en filigrane dans une scène encore vide, comme une note de plan.</p>
 
 <h3>Couper une scène, ouvrir un chapitre</h3>
 <p>Tu peux découper le récit sans quitter le clavier :</p>
@@ -373,12 +373,25 @@
 <p>Dessous, <span class="ui">Dans cette scène</span> liste les personnages et les lieux cités dans le texte (un clic montre leur carte), puis le <span class="ui">Synopsis</span> de la scène, modifiable sur place.</p>
 <figure class="small"><img src="images/fr/manuscrit-stats.jpg"><figcaption>Statistiques, objectifs, « Dans cette scène » et synopsis.</figcaption></figure>
 
+<h3>Créer une fiche en écrivant : /Nom</h3>
+<p>Pour créer un personnage ou un lieu sans quitter ta phrase, tape <kbd>/</kbd> suivi du nom, n’importe où dans le texte (après un espace, une parenthèse ou un guillemet) : « /Phare des vœux pieux » accepte les noms de plusieurs mots. Le menu propose <span class="ui">Personnage</span> ou <span class="ui">Lieu</span> ; la fiche est créée en arrière-plan, le nom reste du texte ordinaire (aucun lien n’est laissé dans le manuscrit) et tu continues ta saisie. Tu complèteras la fiche plus tard dans la Bible.</p>
+<p>Autre façon : sélectionne un nom déjà écrit et tape <kbd>/</kbd>, ou touche l’un des deux boutons <span class="ui">Personnage</span> et <span class="ui">Lieu</span> de la petite barre qui apparaît sur la sélection.</p>
+
+<h3>Le chutier</h3>
+<p>Un passage dont tu n’es pas sûr n’a pas à être supprimé. Sélectionne-le et appuie sur <kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>K</kbd> (ou touche le bouton du chutier dans la barre de sélection, au doigt) : il quitte le texte et rejoint le <span class="ui">Chutier</span>, dans la colonne de droite, avec la scène d’où il vient. <span class="ui">Remettre à sa place</span> le replace exactement là où il était ; si le texte a changé entre-temps, il revient à l’endroit le plus proche, et à la fin de la scène en cours si la scène d’origine n’existe plus. Le chutier est gardé dans le projet. Un passage doit se trouver dans une seule scène.</p>
+
+<h3>Les volets</h3>
+<p>La colonne des scènes et la colonne de droite se replient : une poignée sur le bord de la page les ouvre et les ferme, et MondoWrite retient ton choix. Sur un écran étroit (iPad en hauteur, iPhone), elles deviennent des tiroirs qui se superposent à la page, fermés par défaut sur téléphone.</p>
+
+<h3>Le correcteur orthographique</h3>
+<p>Le bouton <span class="ui">Orthographe</span> (<kbd>Ctrl</kbd> <kbd>;</kbd>) active ou coupe le correcteur du système. Il est coupé pendant l’écriture, pour ne pas souligner ton texte en rouge, et se met en marche à la demande, au moment de te relire.</p>
+
 <h3>Lecture continue</h3>
 <p><span class="ui">Lecture continue</span> fait défiler tout le livre d’un seul tenant, chapitre après chapitre, avec les séparateurs entre les scènes. Un clic sur un passage le rend modifiable sur place, curseur là où tu as cliqué. <span class="ui">Une scène par page</span> revient à l’affichage habituel.</p>
 <figure><img src="images/fr/lecture-continue.jpg"><figcaption>La lecture continue.</figcaption></figure>
 
 <h3>Le mode focus</h3>
-<p><span class="ui">Mode focus</span> (<kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>F</kbd>) ne garde que la page à l’écran. En haut, deux réglages : <span class="ui">Machine à écrire</span> garde la ligne en cours au milieu de l’écran, et <span class="ui">Mettre en valeur</span> estompe tout sauf la phrase, la ligne ou le paragraphe en cours. <kbd>Échap</kbd> en sort.</p>
+<p><span class="ui">Mode focus</span> (<kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>F</kbd>) ne garde que la page à l’écran. En haut, deux réglages : <span class="ui">Machine à écrire</span> garde la ligne en cours au milieu de l’écran, et <span class="ui">Mettre en valeur</span> estompe tout sauf la phrase, la ligne ou le paragraphe en cours. <kbd>Échap</kbd> en sort. Le Scénario a le même mode focus, avec les mêmes réglages.</p>
 <figure><img src="images/fr/mode-focus.jpg"><figcaption>Le mode focus.</figcaption></figure>
 
 <h3>Typographie à la frappe</h3>
@@ -420,12 +433,16 @@
 <p>Une scène ou un personnage écrits dans le scénario reçoivent leur carte sur le canevas (avec la carte du décor et le fil « se passe à »), sans rien recopier.</p>
 
 <h3>La colonne des scènes et « Dans cette scène »</h3>
-<p>À gauche, la liste des scènes avec leur synopsis et leur page ; un clic y mène. Elles se réordonnent en les glissant, avec leurs flèches ou <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. <span class="ui">+ Synopsis</span> ajoute un synopsis à la scène (une ligne Fountain <code>= …</code>, ignorée à l’impression). À droite, <span class="ui">Dans cette scène</span> montre la carte de la scène, son décor (avec le nombre de scènes qui s’y passent) et les personnages qui parlent, avec leur nombre de répliques.</p>
+<p>À gauche, la liste des scènes avec leur synopsis et leur page ; un clic y mène. Elles se réordonnent en les glissant par leur poignée (⋮⋮ à gauche de chaque scène), avec leurs flèches ou <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. <span class="ui">+ Synopsis</span> ajoute un synopsis à la scène (une ligne Fountain <code>= …</code>, ignorée à l’impression). À droite, <span class="ui">Dans cette scène</span> montre la carte de la scène, son décor (avec le nombre de scènes qui s’y passent) et les personnages qui parlent, avec leur nombre de répliques. Les deux colonnes se replient avec les poignées des bords de la feuille, comme dans le Manuscrit (et deviennent des tiroirs sur un écran étroit).</p>
 
 <h3>Page de titre et options</h3>
 <p>En haut de la feuille, la page de titre se remplit sur place : titre, mention (« Écrit par »), auteur, source, contact, date de la version. Le nom de ton profil y est mis pour chaque nouveau scénario.</p>
-<p>Dans la barre, <span class="ui">Numéros</span> numérote les scènes et <span class="ui">Souligner</span> souligne les en-têtes, à l’écran, dans le PDF et dans l’export Final Draft. <span class="ui">Mode focus</span> et <span class="ui">Remplacer</span> fonctionnent comme dans le Manuscrit. Le format de page (US Letter ou A4) se règle dans <span class="ui">Réglages</span> › <span class="ui">Ce projet</span>.</p>
+<p>La numérotation des scènes et le soulignement des en-têtes (à l’écran, dans le PDF et dans l’export Final Draft), ainsi que le format de page (US Letter ou A4), se règlent dans <span class="ui">Réglages</span> › <span class="ui">Ce projet</span>. Dans la barre, <span class="ui">Chutier</span>, <span class="ui">Orthographe</span>, <span class="ui">Mode focus</span> et <span class="ui">Remplacer</span> fonctionnent comme dans le Manuscrit.</p>
 <figure><img src="images/fr/scenario-page-titre.jpg"><figcaption>La page de titre du scénario.</figcaption></figure>
+
+<h3>Statistiques, chutier et mode focus</h3>
+<p>La colonne de droite commence par les <strong>statistiques</strong> du scénario : mots, pages (mesurées sur la mise en page cinéma), durée à l’écran, scènes écrites, et l’objectif du jour et du projet. Les mots écrits au scénario comptent dans la progression du jour et les jours d’affilée, comme au Manuscrit. Dessous, <span class="ui">Dans cette scène</span>, puis le <span class="ui">Chutier</span> : sélectionne un passage et appuie sur <kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>K</kbd> pour le mettre de côté, <span class="ui">Remettre à sa place</span> le ramène. <span class="ui">Orthographe</span> (<kbd>Ctrl</kbd> <kbd>;</kbd>) allume le correcteur à la demande.</p>
+<p>Le <span class="ui">Mode focus</span> ne garde que le texte, sans coupures de page : <span class="ui">Machine à écrire</span> garde la ligne en cours à la même hauteur, et la mise en valeur choisie dans les Réglages (la phrase, la ligne ou le paragraphe) estompe le reste. <kbd>Échap</kbd> en sort.</p>
 
 <h3>Le séquencier</h3>
 <p>Le séquencier liste les scènes dans l’ordre du scénario, avec leur synopsis, leurs personnages, leur longueur et leur statut. Glisse une scène ou utilise ses flèches pour changer l’ordre du scénario lui-même.</p>
@@ -614,6 +631,9 @@
 <table>
   <tr><td class="keys"><kbd>Entrée</kbd> <kbd>Entrée</kbd></td><td>Couper la scène (sur une ligne vide)</td></tr>
   <tr><td class="keys"><kbd>Entrée</kbd> <kbd>Entrée</kbd> <kbd>Entrée</kbd></td><td>Nouveau chapitre</td></tr>
+  <tr><td class="keys"><kbd>/</kbd> + nom</td><td>Créer une fiche personnage ou lieu (ou sélectionner un nom puis <kbd>/</kbd>)</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>K</kbd></td><td>Mettre le passage sélectionné au chutier</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>;</kbd></td><td>Correcteur orthographique (marche / arrêt)</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>F</kbd> · <kbd>Échap</kbd></td><td>Mode focus · En sortir</td></tr>
   <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Déplacer la scène (colonne des scènes)</td></tr>
 </table>
@@ -621,7 +641,9 @@
 <table>
   <tr><td class="keys"><kbd>Tab</kbd> · <kbd>Maj</kbd> <kbd>Tab</kbd></td><td>Changer d’élément</td></tr>
   <tr><td class="keys"><kbd>Entrée</kbd></td><td>Élément suivant</td></tr>
-  <tr><td class="keys"><kbd>Échap</kbd></td><td>Barre des éléments</td></tr>
+  <tr><td class="keys"><kbd>Échap</kbd></td><td>Barre des éléments (ou sortie du mode focus)</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>K</kbd></td><td>Mettre le passage sélectionné au chutier</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>;</kbd></td><td>Correcteur orthographique (marche / arrêt)</td></tr>
   <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Déplacer la scène (colonne des scènes)</td></tr>
 </table>
 
