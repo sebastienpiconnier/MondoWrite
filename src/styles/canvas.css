@@ -322,17 +322,26 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
   .slash-item { padding: 13px 10px; font-size: 15px; }
   .views button { min-height: 44px; }
   .react-flow__controls-button { width: 40px; height: 40px; }
-  /* Barre d'éléments : sur une ligne, au-dessus du clavier virtuel (--sp-keyboard vient de visualViewport). */
-  .sp-bar {
-    position: fixed; top: auto; left: 0; right: 0; bottom: var(--sp-keyboard, 0px); z-index: 30;
-    flex-wrap: nowrap; overflow-x: auto; max-width: none; margin: 0; border-radius: 0; border-top: 1px solid var(--line);
-    padding: 6px max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-  }
+  /* Barre d'éléments : en haut de la feuille comme sur ordinateur (cibles de 44 px) ; seul le téléphone la pose en bas, voir plus bas. */
   .sp-bar button { min-height: 44px; padding: 0 14px; }
   .sq-moves button { width: 44px; height: 44px; }
   .sq-modes button { min-height: 44px; }
   .synopsis-show { min-height: 36px; }
   .sq-scene { cursor: default; }
+  /* Tablette : les types d'éléments centrés sur une ligne, puis Chutier, Orthographe, Mode focus et Remplacer sur la suivante.
+     L'aide au clavier devient le saut de ligne (pleine largeur, sans hauteur). */
+  .sp-bar { justify-content: center; }
+  .sp-bar-hint { display: block; flex: 0 0 100%; height: 0; padding: 0; overflow: hidden; font-size: 0; line-height: 0; }
+  .sp-bar .sp-bar-hint + .sp-option { margin-left: 0; }
+}
+/* Téléphone : la barre d'éléments sur une ligne, au-dessus du clavier virtuel (--sp-keyboard vient de visualViewport). */
+@media (pointer: coarse) and (max-width: 720px) {
+  .sp-bar {
+    position: fixed; top: auto; left: 0; right: 0; bottom: var(--sp-keyboard, 0px); z-index: 30;
+    flex-wrap: nowrap; overflow-x: auto; max-width: none; margin: 0; border-radius: 0; border-top: 1px solid var(--line);
+    padding: 6px max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    justify-content: flex-start;
+  }
   .sp-bar-hint { display: none; }
   .sp-side { padding-bottom: 84px; }
 }

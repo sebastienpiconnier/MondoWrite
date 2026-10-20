@@ -247,6 +247,16 @@ export const BookUndo = Extension.create({
   },
 });
 
+/** Une ligne « vide » : rien, ou seulement des espaces et des sauts de ligne (textes importés ou anciens projets). */
+export function isBlankLine(node: PMNode): boolean {
+  if (node.content.size === 0) return true;
+  let blank = true;
+  node.forEach((child) => {
+    if (child.isText ? child.text!.trim() !== "" : child.type.name !== "hardBreak") blank = false;
+  });
+  return blank;
+}
+
 /** Entrée, Retour arrière et Suppr du chapitrage (la logique du plan vit dans Manuscript, passée par une fonction). */
 export const BookKeys = Extension.create<{ handlers: () => BookHandlers | null }>({
   name: "cosmosBookKeys",
@@ -265,7 +275,7 @@ export const BookKeys = Extension.create<{ handlers: () => BookHandlers | null }
         const h = handlers();
         const { state } = this.editor;
         const { $from, empty } = state.selection;
-        if (!h || !empty || $from.depth !== 1 || $from.parent.type.name !== "paragraph" || $from.parent.content.size > 0) return false;
+        if (!h || !empty || $from.depth !== 1 || $from.parent.type.name !== "paragraph" || !isBlankLine($from.parent)) return false;
         const groups = sceneGroups(state.doc);
         const g = sceneAt(groups, $from.pos);
         if (!g) return false;

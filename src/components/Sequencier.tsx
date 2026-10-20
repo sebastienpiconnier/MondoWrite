@@ -18,6 +18,7 @@ import { matchesCharacter } from "../screenplay/editor/autocomplete";
 import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
+import { Timeline } from "./Timeline";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, isScreenplayTemplate, moveToSection, sectionLabel } from "../screenplay/template";
 
 const MODES: SequencerMode[] = ["outline", "cards"];
@@ -46,6 +47,8 @@ export function Sequencier() {
   };
   const [over, setOver] = useState<number | null>(null);
   const [announce, setAnnounce] = useState("");
+  // Chronologie : même tableau que dans le Plan d'un roman (une colonne par scène, une ligne par intrigue, personnage ou lieu).
+  const [timeline, setTimeline] = useState(false);
   // Après un déplacement au clavier, le focus suit la scène.
   const listRef = useRef<HTMLOListElement>(null);
   const refocus = useRef<{ index: number; way: "up" | "down" } | null>(null);
@@ -103,18 +106,30 @@ export function Sequencier() {
 
   const scenes = list.filter((b) => b.kind === "scene").length;
   const cards = mode === "cards";
+  const sceneCards = useMemo(() => list.filter((b) => b.kind === "scene" && b.cardId).map((b) => b.cardId as string), [list]);
 
   return (
     <div className="sequencer">
-      <div className={`sq-inner${cards ? " is-cards" : ""}`}>
+      <div className={`sq-inner${cards || timeline ? " is-cards" : ""}`}>
         <header className="sq-head">
           <h1>{sq.title}</h1>
           <div className="sq-modes" role="group" aria-label={sq.modeAria}>
             {MODES.map((m) => (
-              <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>
+              <button
+                key={m}
+                type="button"
+                aria-pressed={!timeline && mode === m}
+                onClick={() => {
+                  setMode(m);
+                  setTimeline(false);
+                }}
+              >
                 {sq[m]}
               </button>
             ))}
+            <button type="button" className="plan-timeline-tab" aria-pressed={timeline} onClick={() => setTimeline(true)}>
+              {t.plan.timeline}
+            </button>
           </div>
           <label className="plan-template">
             {t.plan.template}
@@ -134,6 +149,10 @@ export function Sequencier() {
             </p>
           )}
         </header>
+        {timeline ? (
+          <Timeline order={sceneCards} />
+        ) : (
+          <>
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
         {template && <p className="plan-about">{t.plan.templateAbout[template]}</p>}
         {template && <p className="sp-empty">{sq.templateHint}</p>}
@@ -288,6 +307,8 @@ export function Sequencier() {
             );
           })}
         </ol>
+          </>
+        )}
         <div className="sr-only" aria-live="polite">
           {announce}
         </div>
