@@ -1,21 +1,21 @@
 // Stockage sur disque via Tauri.
 // - Ordinateur : chaque projet est un dossier choisi par l'auteur (la liste des projets ouverts est mémorisée).
-// - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, chaque projet a son dossier
-//   dans l'espace privé de l'app ($APPDATA/projets/). La synchronisation entre appareils viendra plus tard.
+// - Mobile : iOS et Android n'offrent pas de vrai sélecteur de dossier, chaque projet a son dossier dans
+//   projets/ : le conteneur iCloud de l'app sur iPhone et iPad (synchronisé avec le Mac), sinon Documents.
 // Dans les deux cas : cosmos.json + cartes/*.md (+ scenario.fountain), exactement le même format.
 
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, documentDir, join } from "@tauri-apps/api/path";
+import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
 import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, isConflictCopy, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
 import { MISSING_FOLDER } from "../saveErrors";
-import { LOCK_DIR } from "../lock";
-import { invoke } from "@tauri-apps/api/core";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
+import { LOCK_DIR } from "../lock";
 
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
@@ -26,6 +26,35 @@ const mobile = isMobileOS();
 let current: string | null = null;
 
 const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+
+/** iCloud Drive (iPhone et iPad) : le choix de l'auteur, activé par défaut dès que le conteneur iCloud existe. */
+const ICLOUD_KEY = "cosmos:icloud";
+let icloudDocs: string | null | undefined;
+
+/** Dossier Documents du conteneur iCloud de l'app, ou null (hors iOS, session iCloud absente, droit non accordé). */
+async function icloudDir(): Promise<string | null> {
+  if (!mobile) return null;
+  if (icloudDocs === undefined) {
+    try {
+      icloudDocs = await invoke<string | null>("icloud_container");
+    } catch {
+      icloudDocs = null;
+    }
+  }
+  return icloudDocs;
+}
+
+function icloudWanted() {
+  try {
+    return localStorage.getItem(ICLOUD_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+async function activeIcloud() {
+  return icloudWanted() ? icloudDir() : null;
+}
 
 /**
  * Dossier cloud (iPhone et iPad) : l'auteur choisit dans l'app Fichiers un dossier de OneDrive, Dropbox, Drive ou iCloud Drive.
@@ -70,23 +99,45 @@ async function cloudRoot(): Promise<string | null> {
   return cloudCache?.path ?? null;
 }
 
-/** Mobile : les projets vivent dans le dossier cloud choisi ou, sans lui, dans Documents/projets (visible dans l'app Fichiers). */
+/**
+ * Mobile : les projets vivent dans le conteneur iCloud de l'app (synchronisés, visibles dans Fichiers sous
+ * iCloud Drive > MondoWrite) ou, sans iCloud, dans Documents/projets (Fichiers, « Sur mon iPad »).
+ */
 async function mobileRoot() {
-  return (await cloudRoot()) ?? join(await documentDir(), MOBILE_DIR);
+  const chosen = await cloudRoot();
+  if (chosen) return chosen;
+  const cloud = await activeIcloud();
+  return join(cloud ?? (await documentDir()), MOBILE_DIR);
 }
 
-/** Anciennes versions : les projets étaient dans le dossier privé de l'app (invisible). On les déplace une fois. */
+/** Les fichiers iCloud pas encore téléchargés sont des repères « .nom.icloud » : on demande leur téléchargement. */
+async function ensureDownloaded(dir: string) {
+  if ((await cloudRoot()) || !(await activeIcloud())) return;
+  try {
+    for (let i = 0; i < 12; i++) {
+      const pending = await invoke<number>("icloud_download", { dir });
+      if (!pending) return;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  } catch {
+    // Le téléchargement continue en arrière-plan : on lit ce qui est déjà là.
+  }
+}
+
+/** Anciens emplacements (espace privé, Documents quand iCloud est actif) : on déplace les projets vers le dossier actuel. */
 async function migratePrivateProjects() {
   try {
     if (await cloudRoot()) return;
-    const old = await join(await appDataDir(), MOBILE_DIR);
-    if (!(await exists(old))) return;
     const root = await mobileRoot();
-    await mkdir(root, { recursive: true });
-    for (const entry of await readDir(old)) {
-      if (!entry.isDirectory) continue;
-      const target = await join(root, entry.name);
-      if (!(await exists(target))) await rename(await join(old, entry.name), target);
+    const sources = [await join(await appDataDir(), MOBILE_DIR), await join(await documentDir(), MOBILE_DIR)];
+    for (const old of sources) {
+      if (old === root || !(await exists(old))) continue;
+      await mkdir(root, { recursive: true });
+      for (const entry of await readDir(old)) {
+        if (!entry.isDirectory) continue;
+        const target = await join(root, entry.name);
+        if (!(await exists(target))) await rename(await join(old, entry.name), target);
+      }
     }
   } catch {
     // Impossible de déplacer : les projets restent à leur place d'origine.
@@ -181,6 +232,20 @@ export const tauriStorage: Storage = {
   },
 
   kind: "tauri",
+  icloud: mobile
+    ? {
+        available: async () => (await icloudDir()) !== null,
+        enabled: () => icloudWanted(),
+        async set(on) {
+          try {
+            localStorage.setItem(ICLOUD_KEY, on ? "1" : "0");
+          } catch {
+            /* le choix vaut pour la session */
+          }
+          if (on) await migratePrivateProjects();
+        },
+      }
+    : undefined,
   canPickFolder: !mobile,
   canImportZip: mobile,
   cloud: mobile
@@ -314,6 +379,7 @@ export const tauriStorage: Storage = {
   async readAll() {
     const dir = await projectFolder();
     if (!dir) return null;
+    await ensureDownloaded(dir);
     const metaPath = await join(dir, META_FILE);
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
@@ -366,10 +432,9 @@ export const tauriStorage: Storage = {
   async watch(onChange) {
     const dir = await projectFolder();
     if (!dir) return () => {};
-    // Mobile : pas de surveillance du système de fichiers ; avec un dossier cloud, on relit régulièrement
-    // ce qui est venu d'un autre appareil (le même rafraîchissement a lieu au retour dans l'app).
+    // Mobile : pas de surveillance du système de fichiers ; avec iCloud, on relit régulièrement les changements venus d'un autre appareil.
     if (mobile) {
-      if (!(await cloudRoot())) return () => {};
+      if (!(await cloudRoot()) && !(await activeIcloud())) return () => {};
       const timer = setInterval(() => {
         if (document.visibilityState === "visible") onChange();
       }, 20000);

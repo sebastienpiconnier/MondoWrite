@@ -30,6 +30,8 @@ export interface Storage {
   canPickFolder: boolean;
   /** Mobile : pas de choix de dossier possible, on importe un projet exporté en .zip (Fichiers : iCloud Drive, OneDrive, Dropbox…). */
   canImportZip: boolean;
+  /** iPhone et iPad : synchronisation des projets par iCloud Drive (absent ailleurs). */
+  icloud?: { available(): Promise<boolean>; enabled(): boolean; set(on: boolean): Promise<void> };
   /**
    * iPhone et iPad : dossier cloud choisi dans l'app Fichiers (OneDrive, Dropbox, Drive, iCloud Drive). Ses sous-dossiers
    * sont les projets, synchronisés par le service avec les autres appareils. Absent ailleurs.

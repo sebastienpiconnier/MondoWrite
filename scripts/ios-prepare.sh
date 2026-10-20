@@ -10,3 +10,5 @@ if [ ! -d "$dest" ]; then
 fi
 cp src-tauri/icons/ios/*.png "$dest/"
 echo "Icônes MondoWrite copiées dans $dest"
+cp src-tauri/ios/cosmos_iOS.entitlements src-tauri/gen/apple/cosmos_iOS/cosmos_iOS.entitlements
+echo "Droits iCloud copiés dans src-tauri/gen/apple/cosmos_iOS"
