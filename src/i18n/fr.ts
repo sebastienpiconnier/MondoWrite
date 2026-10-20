@@ -1196,6 +1196,7 @@ export const fr = {
     chutier: {
       title: "Chutier",
       hint: "Sélectionnez un passage et appuyez sur Ctrl ou Cmd + Maj + K : il quitte le texte sans être perdu. Il reste ici et peut revenir exactement à sa place.",
+      hintTouch: "Sélectionnez un passage et touchez le bouton du chutier dans la barre qui apparaît : il quitte le texte sans être perdu. Il reste ici et peut revenir exactement à sa place.",
       sent: "Passage mis au chutier",
       nothing: "Sélectionnez d’abord un passage à mettre au chutier.",
       oneScene: "Le passage doit se trouver dans une seule scène.",

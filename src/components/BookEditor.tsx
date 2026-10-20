@@ -19,7 +19,7 @@ import { isBlank } from "../manuscript";
 import { isPageKind } from "../book";
 import { useCosmos } from "../store";
 import { SuggestionMenu } from "./SuggestionMenu";
-import { CREATE_TYPES, createQuery, selectedName } from "./createCard";
+import { CREATE_TYPES, createQuery, menuPlace, selectedName } from "./createCard";
 import { typeColor, type CardType } from "../types";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
@@ -59,7 +59,8 @@ interface CreateState {
   to: number;
   name: string;
   left: number;
-  top: number;
+  top?: number;
+  bottom?: number;
   /** Nom déjà écrit et sélectionné : le texte reste tel quel. */
   selected?: boolean;
 }
@@ -205,10 +206,8 @@ export function BookEditor({
           const { from, to } = ed.state.selection;
           const name = selectedName(ed.state, cardsRef.current);
           if (!name) return false;
-          const box = ed.view.coordsAtPos(to);
-          const up = box.bottom > window.innerHeight - 190;
           setCreateActive(0);
-          setCreate({ from, to, name, selected: true, left: Math.min(box.left, window.innerWidth - 240), top: up ? box.bottom - 190 : box.bottom + 6 });
+          setCreate({ from, to, name, selected: true, ...menuPlace(ed.view, to) });
           event.preventDefault();
           return true;
         }
@@ -286,15 +285,8 @@ export function BookEditor({
         setCreate(null);
         return;
       }
-      let box = { left: 0, bottom: 0 };
-      try {
-        box = editor.view.coordsAtPos($from.pos);
-      } catch {
-        /* position hors écran */
-      }
-      const up = box.bottom > window.innerHeight - 190;
       if (!createRef.current.state) setCreateActive(0);
-      setCreate({ from, to: $from.pos, name: found.name, left: Math.min(box.left, window.innerWidth - 240), top: up ? box.bottom - 190 : box.bottom + 6 });
+      setCreate({ from, to: $from.pos, name: found.name, ...menuPlace(editor.view, $from.pos) });
     };
     editor.on("update", detect);
     editor.on("selectionUpdate", detect);
@@ -502,7 +494,7 @@ export function BookEditor({
         <SuggestionMenu
           title={t.manuscript.createTitle}
           className="book-create"
-          style={{ position: "fixed", left: create.left, top: create.top }}
+          style={{ position: "fixed", left: create.left, top: create.top ?? "auto", bottom: create.bottom ?? "auto" }}
           items={CREATE_TYPES.map((type) => ({ key: type, label: `« ${create.name.trim()} »`, hint: types[type].label, color: typeColor(type) }))}
           active={createActive}
           onPick={pickCreate}

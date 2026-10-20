@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
+import { isTouch } from "../platform";
 import type { Passage } from "../chutier";
 import type { CardData } from "../types";
 
@@ -27,7 +28,7 @@ export function Chutier({ passages, cards, onPutBack }: { passages: Passage[]; c
         {c.title}
         {passages.length > 0 ? <span className="ms-chutier-count"> ({passages.length})</span> : null}
       </h2>
-      {passages.length === 0 ? <p className="sp-empty">{c.hint}</p> : null}
+      {passages.length === 0 ? <p className="sp-empty">{isTouch() ? c.hintTouch : c.hint}</p> : null}
       <ul className="ms-chutier-list">
         {[...passages].reverse().map((p) => {
           const scene = cards.find((x) => x.id === p.scene);

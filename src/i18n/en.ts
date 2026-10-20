@@ -1213,6 +1213,7 @@ export const en: Messages = {
     chutier: {
       title: "Chutier",
       hint: "Select a passage and press Ctrl or Cmd + Shift + K: it leaves the text without being lost. It stays here and can go back exactly where it was.",
+      hintTouch: "Select a passage and tap the Chutier button in the bar that appears: it leaves the text without being lost. It stays here and can go back exactly where it was.",
       sent: "Passage sent to the Chutier",
       nothing: "Select a passage first.",
       oneScene: "The passage must be within a single scene.",

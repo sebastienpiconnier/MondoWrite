@@ -241,6 +241,12 @@
 @media (any-hover: hover) { .format-bar button:hover { background: var(--ground); } }
 .format-bar button.is-active { background: var(--accent-soft); color: var(--accent-ink); }
 .format-bar .format-italic span { font-style: italic; }
+/* Au doigt : des cibles de 44 px, et un menu de création assez large pour un nom de plusieurs mots. */
+.slash-menu.book-create { width: 300px; }
+@media (pointer: coarse) {
+  .format-bar button { min-width: 44px; height: 44px; }
+  .slash-menu.book-create .slash-item { min-height: 44px; }
+}
 .format-bar .format-strike span { text-decoration: line-through; }
 /* À reprendre : le passage surligné, dans le texte. */
 mark { background: var(--revisit); color: inherit; border-radius: 2px; padding: 0 1px; }
