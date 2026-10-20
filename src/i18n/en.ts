@@ -1523,6 +1523,7 @@ export const en: Messages = {
     dailyGoal: "Daily goal",
     bookGoal: "Book goal",
     goalPlaceholder: "Words",
+    estimateScreenplay: "Pages measured on the screenplay layout: one page is about one minute on screen.",
     estimate: "Pages estimated at {n} words per page, like a printed novel.",
   },
 

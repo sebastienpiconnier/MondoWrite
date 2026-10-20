@@ -4,7 +4,20 @@
 /* ---------- Scénario : liste des scènes, feuille, panneau « Dans cette scène » ---------- */
 /* La feuille passe d'abord : la colonne du milieu prend la largeur d'une page (850px) tant qu'il reste
    de quoi loger les deux panneaux à leur largeur minimale ; ce sont eux qui se resserrent. */
-.screenplay { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(min(850px, calc(100% - 390px)), 1fr) minmax(200px, 300px); }
+.screenplay { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(min(850px, calc(100% - 390px)), 1fr) minmax(200px, 300px); grid-template-areas: "scenes center side"; }
+.screenplay > .sp-scenes { grid-area: scenes; }
+.screenplay > .sp-center { grid-area: center; }
+.screenplay > .sp-side { grid-area: side; }
+.screenplay > .edge-handle { grid-area: center; }
+/* Volets escamotables : poignées sur les bords, comme dans le manuscrit. */
+.screenplay.hide-scenes { grid-template-columns: minmax(min(850px, calc(100% - 200px)), 1fr) minmax(200px, 300px); grid-template-areas: "center side"; }
+.screenplay.hide-side { grid-template-columns: minmax(190px, 260px) minmax(min(850px, calc(100% - 190px)), 1fr); grid-template-areas: "scenes center"; }
+.screenplay.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "center"; }
+.screenplay.hide-scenes .sp-scenes, .screenplay.hide-side .sp-side { display: none; }
+/* Les volets se détachent de la feuille par une ombre sur leur pourtour. */
+.screenplay > .sp-scenes, .screenplay > .sp-side { position: relative; z-index: 3; }
+.screenplay > .sp-scenes { box-shadow: 3px 0 14px -4px rgba(20, 24, 40, 0.3); }
+.screenplay > .sp-side { box-shadow: -3px 0 14px -4px rgba(20, 24, 40, 0.3); }
 .sp-scenes, .sp-side { overflow: auto; padding: 20px 14px; display: flex; flex-direction: column; gap: 10px; }
 .sp-scenes { border-right: 1px solid var(--line); }
 .sp-side { border-left: 1px solid var(--line); }
@@ -27,7 +40,6 @@
 @media (pointer: coarse) { .sp-scene-moves .icon-button { width: 44px; height: 44px; } }
 .sp-towrite-title { margin-top: 12px; }
 .sp-towrite { flex-shrink: 0; font-size: 12px; font-style: italic; color: var(--ink-2); }
-.sp-scene-select { display: none; }
 
 .sp-center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .sp-bar {
@@ -42,10 +54,16 @@
 /* Options du scénario (numéros, soulignement) : à droite de la barre, avant le mode focus. */
 .sp-option { border: 1px solid var(--line) !important; }
 .sp-bar-hint + .sp-option { margin-left: auto; }
-.sp-option.is-underline { text-decoration: underline; text-underline-offset: 0.2em; }
-/* Mode focus : seule la feuille reste, avec la barre d'éléments. */
-.screenplay.is-focus { grid-template-columns: minmax(0, 1fr); }
-.screenplay.is-focus .sp-scenes, .screenplay.is-focus .sp-side, .screenplay.is-focus .sp-scene-select, .screenplay.is-focus .sp-bar-hint { display: none; }
+/* Mode focus, comme dans le manuscrit : seule la feuille reste, avec la barre flottante (machine à écrire, quitter).
+   La phrase ou le paragraphe en cours reste en pleine encre, le reste s'estompe ; en mode « ligne », un voile couvre le reste. */
+.screenplay.is-focus, .screenplay.is-focus.hide-scenes, .screenplay.is-focus.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "center"; }
+.screenplay.is-focus .sp-scenes, .screenplay.is-focus .sp-side, .screenplay.is-focus .sp-bar-hint, .screenplay.is-focus .edge-handle { display: none; }
+@media (min-width: 721px) { .screenplay.is-focus .sp-bar { display: none; } }
+.screenplay.is-typewriter .sp-scroll { padding-top: 40vh; padding-bottom: 60vh; }
+.screenplay.is-focus .sp-page { background: none; box-shadow: none; color: var(--ink); }
+.screenplay.is-focus .sp-page.is-dimmed .sp-editor { color: color-mix(in srgb, var(--ink) 34%, transparent); }
+.screenplay.is-focus .sp-page.is-dimmed .sp-editor .is-focus-on { color: var(--ink); }
+.screenplay.is-focus .ms-veil { background: var(--ground); }
 .sp-bar-hint kbd { padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 4px; font: inherit; }
 
 /* La feuille : Courier 12 points, 10 caractères par pouce. 1ch = un caractère, donc

@@ -1548,6 +1548,7 @@ export const fr = {
     dailyGoal: "Objectif du jour",
     bookGoal: "Objectif du livre",
     goalPlaceholder: "Mots",
+    estimateScreenplay: "Pages mesurées sur la mise en page cinéma : une page vaut environ une minute à l’écran.",
     estimate: "Pages estimées à {n} mots par page, comme un roman imprimé.",
   },
 

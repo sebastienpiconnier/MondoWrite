@@ -263,18 +263,14 @@
 
 .sq-section { margin-top: 10px; padding: 4px; font-family: var(--font-display); font-weight: 500; font-size: 18px; border-radius: 8px; }
 
-@media (max-width: 1000px) {
-  /* Une seule colonne qui défile : scènes en liste déroulante, feuille, puis « Dans cette scène ». */
-  .screenplay { display: flex; flex-direction: column; overflow: auto; }
-  .sp-scenes { display: none; }
-  .sp-scene-select {
-    display: block; margin: 12px 16px 0; min-height: 44px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px;
-    background: var(--surface); color: var(--ink); font: 700 13px var(--font-script); max-width: calc(100% - 32px);
-  }
-  .sp-center { min-height: auto; }
-  .sp-bar { position: sticky; top: 8px; z-index: 5; box-shadow: var(--shadow-card); }
-  .sp-scroll { flex: none; overflow: visible; padding-bottom: 24px; }
-  .sp-side { overflow: visible; border-left: 0; border-top: 1px solid var(--line); }
+@media (max-width: 900px) {
+  /* Petit écran : les scènes et les infos du scénario sont des tiroirs posés sur la feuille (poignées sur les bords). */
+  .screenplay, .screenplay.hide-scenes, .screenplay.hide-side, .screenplay.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "center"; }
+  .screenplay > .sp-scenes, .screenplay > .sp-side { grid-area: center; position: absolute; top: 0; bottom: 0; z-index: 12; width: min(320px, 85vw); overflow: auto; background: var(--surface); box-shadow: var(--shadow-pop); border: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .screenplay > .sp-scenes { left: 0; }
+  .screenplay > .sp-side { right: 0; }
+  .screenplay:not(.hide-scenes) > .edge-handle.is-left { left: calc(min(320px, 85vw) - 1px); }
+  .screenplay:not(.hide-side) > .edge-handle.is-right { right: calc(min(320px, 85vw) - 1px); }
 }
 
 /* ---------- Vues vides ---------- */

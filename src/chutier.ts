@@ -32,13 +32,16 @@ const LEAF = "￼";
 const start = (doc: PMNode, g: SceneGroup) => g.markerPos + (doc.nodeAt(g.markerPos)?.nodeSize ?? 1);
 const textIn = (doc: PMNode, from: number, to: number) => doc.textBetween(from, to, SEP, LEAF);
 
+/** Où commencent et finissent les scènes du document (par défaut celles du livre ; le scénario fournit les siennes). */
+export type GroupsOf = (doc: PMNode) => SceneGroup[];
+
 export type Taken = { tr: Transaction; passage: Passage } | { error: "empty" | "scene" };
 
 /** Retire la sélection du texte et la met de côté. Une sélection vide, ou à cheval sur deux scènes, est refusée. */
-export function takePassage(state: EditorState, id: string, date: string): Taken {
+export function takePassage(state: EditorState, id: string, date: string, groupsOf: GroupsOf = sceneGroups): Taken {
   const { from, to } = state.selection;
   if (from === to) return { error: "empty" };
-  const groups = sceneGroups(state.doc);
+  const groups = groupsOf(state.doc);
   const g = sceneAt(groups, from);
   if (!g || g !== sceneAt(groups, to - 1) || from < start(state.doc, g)) return { error: "scene" };
   const text = textIn(state.doc, from, to);
@@ -46,7 +49,7 @@ export function takePassage(state: EditorState, id: string, date: string): Taken
   const slice = state.doc.slice(from, to).toJSON();
   const tr = state.tr.delete(from, to);
   // Le contexte se lit dans le texte d'après : c'est dans celui-ci qu'on cherchera l'endroit au retour.
-  const after = sceneGroups(tr.doc).find((x) => x.id === g.id);
+  const after = groupsOf(tr.doc).find((x) => x.id === g.id);
   if (!after) return { error: "scene" };
   const s = start(tr.doc, after);
   const whole = textIn(tr.doc, s, after.end);
@@ -96,9 +99,9 @@ export type Placed = { tr: Transaction; from: number; to: number; where: "exact"
  * Remet un passage dans le texte. Si sa scène n'existe plus, il va à la fin de `fallback` (la scène en cours),
  * et rend null si même celle-ci manque.
  */
-export function placePassage(state: EditorState, p: Passage, fallback: string | null): Placed | null {
+export function placePassage(state: EditorState, p: Passage, fallback: string | null, groupsOf: GroupsOf = sceneGroups): Placed | null {
   const { doc } = state;
-  const groups = sceneGroups(doc);
+  const groups = groupsOf(doc);
   let g = groups.find((x) => x.id === p.scene);
   let where: Placed["where"] = "exact";
   let offset = 0;

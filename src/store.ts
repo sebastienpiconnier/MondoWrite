@@ -14,6 +14,7 @@ import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canva
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
 import type { Screenplay, ScreenplayElement } from "./screenplay/model";
 import { listScenes, setSceneSynopsis } from "./screenplay/scenes";
+import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { visibleSections } from "./bibleSections";
@@ -1400,7 +1401,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (undoable) record();
       else forgetHistory();
       const before = get().screenplay;
-      set({ screenplay, nodes: titlesFromHeadings(get().nodes, screenplay) });
+      // Mots écrits aujourd'hui : comme pour le manuscrit, le total du jour suit la différence de mots du scénario.
+      const day = dayKey(new Date());
+      const { progress } = get();
+      const totalAfter = screenplayWords(screenplay);
+      const totalBefore = progress[day]?.end ?? (before ? screenplayWords(before) : totalAfter);
+      set({ screenplay, nodes: titlesFromHeadings(get().nodes, screenplay), progress: recordProgress(progress, day, totalBefore, totalAfter) });
       // Scènes déplacées (séquencier, liste des scènes) : le canevas suit l'ordre du fichier.
       const order = (sp: Screenplay | null) => (sp ? listScenes(sp.elements).map((s) => s.cardId ?? "").join(" ") : "");
       if (undoable && before && order(before) !== order(screenplay)) followStory();

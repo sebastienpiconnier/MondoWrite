@@ -1,5 +1,7 @@
 // Extensions TipTap de l'éditeur de scénario, assemblées.
 
+import { FocusWriting } from "../../components/focusWriting";
+import type { FocusHighlight } from "../../focusText";
 import type { Extensions } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -30,6 +32,8 @@ export interface ScreenplayEditorOptions {
   onEscape: () => void;
   /** Aspect « pages » : géométrie de la page courante, et écran assez large ou non. */
   pages?: PagesOptions;
+  /** Mode focus : mise en valeur de la phrase ou du paragraphe, machine à écrire (mêmes réglages que le manuscrit). */
+  focus?: { mode: () => FocusHighlight; typewriter: () => boolean };
 }
 
 export function screenplayExtensions(options: ScreenplayEditorOptions): Extensions {
@@ -71,5 +75,6 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     ScreenplayKeymap.configure({ onEscape: options.onEscape }),
     Autodetect.configure({ locale: options.locale }),
     ...(options.pages ? [Pages.configure(options.pages)] : []),
+    ...(options.focus ? [FocusWriting.configure(options.focus)] : []),
   ];
 }

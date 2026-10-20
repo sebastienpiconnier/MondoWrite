@@ -3,6 +3,17 @@
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
 import { StatusDot } from "./SceneStatusPicker";
+import { EdgeHandle } from "./EdgeHandle";
+import { StatsBox } from "./StatsBox";
+import { Chutier } from "./Chutier";
+import { usePanels } from "./usePanels";
+import { useFocusFollow } from "./useFocusFollow";
+import { nanoid } from "nanoid";
+import { placePassage, takePassage, type Passage } from "../chutier";
+import { screenplayGroups } from "../screenplay/groups";
+import { screenplayWords, sceneWords as wordsOfScene } from "../screenplay/words";
+import { sceneStatus } from "../character";
+import type { ManuscriptStats } from "../stats";
 import { blocks, moveBlock } from "../screenplay/sequence";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
@@ -61,11 +72,21 @@ export function ScreenplayView() {
   const setView = useCosmos((s) => s.setView);
   const paper = useCosmos((s) => s.paper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
-  const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
-  const setUnderlineHeadings = useCosmos((s) => s.setUnderlineHeadings);
   const focusMode = useCosmos((s) => s.focusMode);
   const setFocusMode = useCosmos((s) => s.setFocusMode);
+  const writing = useSettings((s) => s.writing);
+  const setWriting = useSettings((s) => s.setWriting);
+  const chutier = useCosmos((s) => s.chutier);
+  // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
+  const [panels, togglePanel] = usePanels();
+  const [spell, setSpell] = useState(false);
+  const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 10000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   // À l'ouverture d'un scénario déjà commencé, on arrive sur le texte : la page de titre est juste au-dessus.
   useEffect(() => {
@@ -84,7 +105,7 @@ export function ScreenplayView() {
   // Mode focus : Cmd/Ctrl+Maj+F le bascule ; quitter la vue le termine.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "f") {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
         e.preventDefault();
         setFocusMode(!useCosmos.getState().focusMode);
       }
@@ -202,15 +223,24 @@ export function ScreenplayView() {
             const l = LAYOUTS[useCosmos.getState().paper];
             return { lines: l.linesPerPage, pageLines: l.pageLines, marginTop: l.margin.top * 6 };
           },
-          enabled: (dom) => (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
+          // Pas de pages en mode focus (comme dans le manuscrit) : le texte seul, sans coupures de page.
+          enabled: (dom) => !useCosmos.getState().focusMode && (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
         },
-        onEscape: () =>
+        // Mode focus : Échap le quitte, comme dans le manuscrit. Sinon il rend la main à la barre d'éléments.
+        onEscape: () => {
+          if (useCosmos.getState().focusMode) return setFocusMode(false);
           (
             barRef.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]') ??
             barRef.current?.querySelector<HTMLButtonElement>("button")
-          )?.focus(),
+          )?.focus();
+        },
+        // Mise en valeur et machine à écrire : les réglages d'écriture, comme dans le manuscrit.
+        focus: {
+          mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off"),
+          typewriter: () => useCosmos.getState().focusMode && useSettings.getState().writing.typewriter,
+        },
       }),
-    [],
+    [setFocusMode],
   );
 
   const editor = useEditor({
@@ -218,7 +248,7 @@ export function ScreenplayView() {
     content: screenplay ? toDoc(screenplay) : undefined,
     immediatelyRender: true,
     editorProps: {
-      attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": getT().screenplay.editorAria },
+      attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": getT().screenplay.editorAria, spellcheck: String(spell) },
       // Menu de complétion ouvert : flèches, Entrée et Échap sont pour lui (avant le clavier de l'éditeur).
       handleKeyDown: (_view, event) => {
         const open = menuRef.current;
@@ -292,11 +322,15 @@ export function ScreenplayView() {
     editor.setOptions({
       editorProps: {
         ...editor.options.editorProps,
-        attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": sp.editorAria },
+        attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": sp.editorAria, spellcheck: String(spell) },
       },
     });
+    editor.view.dom.setAttribute("spellcheck", String(spell));
     editor.view.dispatch(editor.state.tr.setMeta("cosmos:lang", lang));
-  }, [lang, editor, sp.editorAria]);
+  }, [lang, editor, sp.editorAria, spell]);
+
+  // Mode focus : machine à écrire, voile de la ligne (mêmes réglages et même comportement que le manuscrit).
+  const veil = useFocusFollow(editor, focusMode, writing.typewriter, writing.highlight);
 
   // Écran tactile : la barre d'éléments se pose juste au-dessus du clavier virtuel.
   const rootRef = useRef<HTMLDivElement>(null);
@@ -332,6 +366,24 @@ export function ScreenplayView() {
     [screenplay, sceneCards],
   );
   const scene = sceneAt(scenes, current.index);
+  // Statistiques du volet de droite : mots, pages (mise en page cinéma), scènes écrites.
+  const stats = useMemo<ManuscriptStats>(() => {
+    const words = screenplayWords(screenplay);
+    const pages = pagination?.pages ?? 0;
+    const body = scenes.map((s, k) => (screenplay ? wordsOfScene(screenplay, s.index + 1, scenes[k + 1]?.index) : 0));
+    const written = body.filter((n) => n > 0).length;
+    return {
+      words,
+      pages,
+      minutes: minutesFor(pages),
+      scenes: scenes.length,
+      written,
+      average: written > 0 ? Math.round(words / written) : 0,
+      perScene: new Map(),
+    };
+  }, [screenplay, scenes, pagination]);
+  const nextScene = scene ? scenes[scenes.indexOf(scene) + 1] : undefined;
+  const sceneWordCount = screenplay && scene ? wordsOfScene(screenplay, scene.index, nextScene?.index) : 0;
   // Statut des scènes (pastille dans la liste) : lu dans la fiche de leur carte.
   const statusCards = useMemo(() => new Map(nodes.filter((n) => n.data.type === "scene").map((n) => [n.id, n.data])), [nodes]);
   // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée ; la frappe en attente part d'abord.
@@ -346,6 +398,72 @@ export function ScreenplayView() {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         openReplaceRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /** La scène où se trouve le curseur (pour remettre un passage quand sa scène n'existe plus). */
+  const currentGroup = (ed: Editor) => {
+    const head = ed.state.selection.head;
+    let found: string | null = null;
+    for (const g of screenplayGroups(ed.state.doc)) {
+      if (g.markerPos <= head) found = g.id;
+      else break;
+    }
+    return found;
+  };
+  const b = t.book;
+  /** Remet un passage du chutier dans le texte, à sa place d'origine si on la retrouve. */
+  const putBack = (p: Passage) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return;
+    const placed = placePassage(ed.state, p, currentGroup(ed), screenplayGroups);
+    if (!placed) return;
+    const size = placed.tr.doc.content.size;
+    try {
+      // Le passage remis est sélectionné : on voit tout de suite où il est revenu.
+      placed.tr.setSelection(TextSelection.create(placed.tr.doc, Math.min(placed.from, size), Math.min(placed.to, size)));
+    } catch {
+      /* positions hors d'un texte : le curseur reste où il est */
+    }
+    ed.view.dispatch(placed.tr.scrollIntoView());
+    ed.view.focus();
+    useCosmos.getState().removePassage(p.id);
+    const text = placed.where === "exact" ? b.chutier.back : placed.where === "near" ? b.chutier.backNear : b.chutier.backElsewhere;
+    setAnnounce(text);
+    setNotice(placed.where === "exact" ? null : { text });
+  };
+  /** Retire le passage sélectionné du scénario et le met au chutier. */
+  const sendToChutier = () => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return;
+    const out = takePassage(ed.state, nanoid(), new Date().toISOString(), screenplayGroups);
+    if ("error" in out) {
+      const text = out.error === "scene" ? b.chutier.oneScene : b.chutier.nothing;
+      setAnnounce(text);
+      setNotice({ text });
+      return;
+    }
+    ed.view.dispatch(out.tr.scrollIntoView());
+    ed.view.focus();
+    useCosmos.getState().addPassage(out.passage);
+    setAnnounce(b.chutier.sent);
+    setNotice({ text: b.chutier.sent, undo: () => putBack(out.passage) });
+  };
+  const sendRef = useRef(sendToChutier);
+  sendRef.current = sendToChutier;
+  // Raccourcis : Cmd/Ctrl + Maj + K (chutier) et Cmd/Ctrl + ; (correcteur), quand le curseur est dans le texte.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || !editorRef.current?.isFocused) return;
+      if (e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        sendRef.current();
+      } else if (!e.shiftKey && e.key === ";") {
+        e.preventDefault();
+        setSpell((on) => !on);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -495,8 +613,26 @@ export function ScreenplayView() {
   ) as CSSProperties;
 
   return (
-    <div className={`screenplay${focusMode ? " is-focus" : ""}`} ref={rootRef}>
-      <nav className="sp-scenes" aria-label={sp.scenesAria}>
+    <div
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}
+      ref={rootRef}
+    >
+      {focusMode && (
+        <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
+          <div className="focus-options">
+            <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
+              {t.focus.typewriter}
+            </button>
+          </div>
+          <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => setFocusMode(false)}>
+            <span className="focus-exit-text">{t.focus.exit}</span>
+            <svg className="focus-exit-x" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+      )}
+      <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
         <div className="eyebrow">{sp.scenesTitle}</div>
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
         <ol className="sp-scene-list">
@@ -548,7 +684,8 @@ export function ScreenplayView() {
                   moveScene(s.index, other.index, true);
                 }}
               >
-                <span className={`is-slugline${s.text ? "" : " is-untitled"}`}>
+                <span className="ms-grip" aria-hidden="true" />
+                <span className={`is-slugline ms-name${s.text ? "" : " is-untitled"}`}>
                   {s.number}. {s.text || sp.untitledScene}
                 </span>
                 {statusCards.get(s.cardId ?? "") && <StatusDot card={statusCards.get(s.cardId!)!} />}
@@ -605,23 +742,6 @@ export function ScreenplayView() {
       </nav>
 
       <div className="sp-center">
-        {/* Petits écrans : la liste des scènes devient une liste déroulante. */}
-        {scenes.length > 0 && (
-          <select
-            className="sp-scene-select"
-            aria-label={sp.goToScene}
-            value={scene ? String(scene.index) : ""}
-            onChange={(e) => e.target.value !== "" && goTo(Number(e.target.value))}
-          >
-            {!scene && <option value="">{sp.goToScene}</option>}
-            {scenes.map((s) => (
-              <option key={s.index} value={s.index}>
-                {s.number}. {s.text || sp.untitledScene}
-              </option>
-            ))}
-          </select>
-        )}
-
         <div className="sp-bar" role="toolbar" aria-label={sp.barAria} ref={barRef}>
           {EDITABLE_TYPES.map((type) => (
             <button
@@ -642,26 +762,26 @@ export function ScreenplayView() {
             <kbd>{sp.keyTab}</kbd> {sp.hintTab} · <kbd>{sp.keyEnter}</kbd> {sp.hintEnter} · <kbd>{sp.keyEscape}</kbd>{" "}
             {sp.hintEscape}
           </span>
-          {/* Mise en forme du scénario (réglages du projet, comme dans les Réglages). */}
+          {/* Numéros de scène et soulignement : dans les Réglages. */}
           <button
             type="button"
             className="sp-option"
-            aria-pressed={sceneNumbers}
-            title={sp.numbersToggleHint}
+            title={t.format.chutier}
+            aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
             onPointerDown={(e) => e.preventDefault()}
-            onClick={() => setSceneNumbers(!sceneNumbers)}
+            onClick={sendToChutier}
           >
-            {sp.numbersToggle}
+            {t.book.chutier.title}
           </button>
           <button
             type="button"
-            className="sp-option is-underline"
-            aria-pressed={underlineHeadings}
-            title={sp.underlineToggleHint}
+            className="sp-option"
+            aria-pressed={spell}
+            title={t.book.spellHint}
             onPointerDown={(e) => e.preventDefault()}
-            onClick={() => setUnderlineHeadings(!underlineHeadings)}
+            onClick={() => setSpell((on) => !on)}
           >
-            {sp.underlineToggle}
+            {t.book.spell}
           </button>
           <button
             type="button"
@@ -687,8 +807,22 @@ export function ScreenplayView() {
 
         <div className="sp-scroll">
           {!focusMode && <TitlePage paper={paper} onChange={setTitleField} />}
-          <div className="sp-page" data-paper={paper} data-numbers={sceneNumbers ? "" : undefined} data-underline={underlineHeadings ? "" : undefined} style={labels} lang={lang} ref={pageRef}>
+          <div
+            className={`sp-page${focusMode && (writing.highlight === "sentence" || writing.highlight === "paragraph") ? " is-dimmed" : ""}`}
+            data-paper={paper}
+            data-numbers={sceneNumbers ? "" : undefined}
+            data-underline={underlineHeadings ? "" : undefined}
+            style={labels}
+            lang={lang}
+            ref={pageRef}
+          >
             <EditorContent editor={editor} />
+            {veil && (
+              <>
+                <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />
+                <div className="ms-veil" aria-hidden="true" style={{ top: veil.bottom, bottom: 0 }} />
+              </>
+            )}
             {menu && (
               <SuggestionMenu
                 title={sp.suggest.title}
@@ -701,6 +835,23 @@ export function ScreenplayView() {
             )}
           </div>
         </div>
+        {notice && (
+          <div className="ms-notice sp-notice" role="status">
+            <span>{notice.text}</span>
+            {notice.undo ? (
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => {
+                  notice.undo?.();
+                  setNotice(null);
+                }}
+              >
+                {t.book.undoBreak}
+              </button>
+            ) : null}
+          </div>
+        )}
         {/* Pied de page : position dans le scénario et durée estimée. */}
         {pagination && pagination.pages > 0 && (
           <p className="sp-footer" role="status">
@@ -711,7 +862,19 @@ export function ScreenplayView() {
         )}
       </div>
 
+      {/* Poignées sur les bords : scènes à gauche, infos à droite. */}
+      <EdgeHandle side="left" open={panels.scenes} label={t.manuscript.panelScenes} onClick={() => togglePanel("scenes")} />
+      <EdgeHandle side="right" open={panels.side} label={t.manuscript.panelSide} onClick={() => togglePanel("side")} />
+
       <aside className="sp-side" aria-label={sp.inSceneTitle}>
+        <StatsBox
+          stats={stats}
+          done={scenes.filter((s) => (statusCards.get(s.cardId ?? "") ? sceneStatus(statusCards.get(s.cardId!)!) === "fini" : false)).length}
+          chapters={0}
+          sceneWords={sceneWordCount}
+          place={null}
+          note={t.stats.estimateScreenplay}
+        />
         <div className="eyebrow">{sp.inSceneTitle}</div>
         {!scene ? (
           <p className="sp-empty">{sp.noScene}</p>
@@ -773,6 +936,7 @@ export function ScreenplayView() {
             </section>
           </>
         )}
+        <Chutier passages={chutier} cards={nodes.map((n) => n.data)} onPutBack={putBack} />
       </aside>
     </div>
   );
