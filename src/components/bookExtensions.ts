@@ -275,7 +275,13 @@ export const BookKeys = Extension.create<{ handlers: () => BookHandlers | null }
         const h = handlers();
         const { state } = this.editor;
         const { $from, empty } = state.selection;
-        if (!h || !empty || $from.depth !== 1 || $from.parent.type.name !== "paragraph" || !isBlankLine($from.parent)) return false;
+        if (!h || !empty || $from.depth !== 1 || $from.parent.type.name !== "paragraph") return false;
+        // Scène qui vient de naître avec du texte à sa suite : une Entrée de plus, curseur au tout début, ouvre le chapitre.
+        if (!isBlankLine($from.parent)) {
+          if ($from.parentOffset !== 0) return false;
+          const first = sceneAt(sceneGroups(state.doc), $from.pos);
+          return !!first && $from.index(0) === first.first && h.onChapterBreak(first.id);
+        }
         const groups = sceneGroups(state.doc);
         const g = sceneAt(groups, $from.pos);
         if (!g) return false;
