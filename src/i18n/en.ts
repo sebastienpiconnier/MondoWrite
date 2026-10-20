@@ -31,6 +31,7 @@ export const en: Messages = {
     hint: "Hide card types (nothing is deleted)",
     title: "Types shown",
     showAll: "Show all",
+    hideAll: "Hide all",
     typesOne: "Filter on: one type hidden",
     typesMany: "Filter on: {n} types hidden",
     card: "Filter on: “{title}” and its neighbours",

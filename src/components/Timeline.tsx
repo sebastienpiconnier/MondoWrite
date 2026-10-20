@@ -53,17 +53,19 @@ export function Timeline({ order }: { order: string[] }) {
             <tbody key={group.type}>
               <tr className="tl-group">
                 <th scope="colgroup" colSpan={order.length + 1}>
-                  {group.type === "theme" ? p.timelineThemes : types[group.type].section}
+                  <span className="tl-group-label">{group.type === "theme" ? p.timelineThemes : types[group.type].section}</span>
                 </th>
               </tr>
               {group.rows.map((row) => (
                 <tr key={row.card.id}>
                   <th scope="row">
-                    <button type="button" className="tl-card" title={fmt(p.show, { title: row.card.title })} onClick={() => revealCard(row.card.id)}>
-                      <span className="card-dot" style={{ background: typeColor(group.type) }} />
-                      {row.card.title}
-                    </button>
-                    <span className="tl-count">{row.count}</span>
+                    <div className="tl-rowhead">
+                      <button type="button" className="tl-card" title={fmt(p.show, { title: row.card.title })} onClick={() => revealCard(row.card.id)}>
+                        <span className="card-dot" style={{ background: typeColor(group.type) }} />
+                        {row.card.title}
+                      </button>
+                      <span className="tl-count">{row.count}</span>
+                    </div>
                   </th>
                   {row.cells.map((cell, i) => {
                     const names = { card: row.card.title, scene: titleOf(order[i]) };

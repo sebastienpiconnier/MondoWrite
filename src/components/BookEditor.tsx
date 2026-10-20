@@ -255,7 +255,15 @@ export function BookEditor({
     setCreate(null);
     if (c.selected) ed.chain().focus().setTextSelection(c.to).run();
     else ed.chain().focus().insertContentAt({ from: c.from, to: c.to }, { type: "text", text: c.name.trim() }).run();
+    spaceAfter(ed);
     useCosmos.getState().addTitledCard(type, c.name.trim());
+  };
+  /** Une espace après le nom pour continuer la phrase, sauf si le texte qui suit en commence déjà une ou une ponctuation. */
+  const spaceAfter = (ed: NonNullable<typeof editorRef.current>) => {
+    const { state } = ed;
+    const pos = state.selection.to;
+    const next = pos < state.doc.content.size ? state.doc.textBetween(pos, Math.min(pos + 1, state.doc.content.size), "\n", "\n") : "";
+    if (!next || /[\p{L}\p{N}]/u.test(next)) ed.chain().insertContentAt(pos, " ").run();
   };
   /** Bouton de la barre de mise en forme : crée la fiche du nom sélectionné, le texte ne bouge pas. */
   const createFromSelection = (type: CardType) => {
@@ -265,6 +273,7 @@ export function BookEditor({
     if (!name) return;
     useCosmos.getState().addTitledCard(type, name);
     ed.chain().focus().setTextSelection(ed.state.selection.to).run();
+    spaceAfter(ed);
   };
   const pickCreateRef = useRef(pickCreate);
   pickCreateRef.current = pickCreate;

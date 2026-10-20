@@ -177,11 +177,14 @@
 .tl-table thead th button { display: flex; flex-direction: column; gap: 2px; width: 96px; min-height: 44px; padding: 8px 6px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .tl-number { font-weight: 700; color: var(--ink-2); }
 .tl-scene { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; overflow-wrap: anywhere; }
-.tl-table tbody th[scope="row"] { display: flex; align-items: center; gap: 8px; min-width: 180px; max-width: 240px; min-height: 44px; padding: 0 10px; border-right: 1px solid var(--line); font-weight: 500; text-align: left; }
+/* Colonne des cartes figée à gauche : la cellule reste une vraie cellule de tableau (le flex est dans .tl-rowhead), sinon Safari ne la fige pas. */
+.tl-table tbody th[scope="row"] { width: 200px; min-width: 200px; max-width: 200px; border-right: 1px solid var(--line); font-weight: 500; text-align: left; }
+.tl-rowhead { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; }
 .tl-card { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 @media (any-hover: hover) { .tl-card:hover, .tl-table thead th button:hover .tl-scene { text-decoration: underline; } }
 .tl-count { font-size: 12px; color: var(--ink-2); }
-.tl-group th { position: sticky; left: 0; padding: 10px 10px 6px; background: var(--ground); font: 600 11px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); text-align: left; }
+.tl-group-label { position: sticky; left: 10px; display: inline-block; }
+.tl-group th { padding: 10px 10px 6px; background: var(--ground); font: 600 11px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); text-align: left; }
 .tl-cell { display: grid; place-items: center; width: 100%; min-width: 96px; height: 44px; border: 0; background: transparent; cursor: pointer; }
 @media (any-hover: hover) { .tl-cell:hover { background: var(--hover); } }
 .tl-mark { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid transparent; vertical-align: -3px; }
@@ -594,7 +597,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Mode focus : plus de page, seulement le texte (machine à écrire et mise en valeur). */
 .manuscript.is-focus .ms-page { background: none; box-shadow: none; color: var(--ink); margin-top: 0; }
 .manuscript.is-focus .ms-page .ms-editor, .manuscript.is-focus .ms-page .ms-editor:focus-visible { padding: 0 1em; min-height: 0; }
-.manuscript.is-focus .ms-editor .scene-break { display: none; }
 .manuscript.is-focus .ms-chapter-flow .ms-chapter-input { pointer-events: none; border-color: transparent; }
 .manuscript.is-focus .ms-page.is-dimmed .ms-editor { color: color-mix(in srgb, var(--ink) 34%, transparent); }
 .manuscript.is-focus .ms-page.is-dimmed .ms-editor .is-focus-on { color: var(--ink); }

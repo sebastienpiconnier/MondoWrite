@@ -75,9 +75,14 @@ export function CanvasFilterMenu() {
               </label>
             );
           })}
-          <button type="button" className="ghost-button" disabled={!active} onClick={clearFilter}>
-            {t.showAll}
-          </button>
+          <div className="canvas-filter-actions">
+            <button type="button" className="ghost-button" disabled={!active} onClick={clearFilter}>
+              {t.showAll}
+            </button>
+            <button type="button" className="ghost-button" disabled={CARD_TYPES.every((x) => filter.types.includes(x))} onClick={() => setFilterTypes([...CARD_TYPES])}>
+              {t.hideAll}
+            </button>
+          </div>
         </div>
       )}
     </div>

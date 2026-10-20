@@ -4,7 +4,7 @@
 /* ---------- Scénario : liste des scènes, feuille, panneau « Dans cette scène » ---------- */
 /* La feuille passe d'abord : la colonne du milieu prend la largeur d'une page (850px) tant qu'il reste
    de quoi loger les deux panneaux à leur largeur minimale ; ce sont eux qui se resserrent. */
-.screenplay { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(190px, 260px) minmax(min(850px, calc(100% - 390px)), 1fr) minmax(200px, 300px); grid-template-areas: "scenes center side"; }
+.screenplay { position: absolute; inset: 0; overflow: hidden; display: grid; grid-template-columns: minmax(190px, 260px) minmax(min(850px, calc(100% - 390px)), 1fr) minmax(200px, 300px); grid-template-areas: "scenes center side"; }
 .screenplay > .sp-scenes { grid-area: scenes; }
 .screenplay > .sp-center { grid-area: center; }
 .screenplay > .sp-side { grid-area: side; }
@@ -66,9 +66,8 @@
 .screenplay.is-focus .ms-veil { background: var(--ground); }
 /* Pas de pied de page en focus (les pages ne sont pas affichées), une seule barre de défilement (celle de la feuille),
    et un interligne plus aéré pour que le voile et la mise en valeur ne laissent pas voir la ligne voisine. */
-.screenplay.is-focus { overflow: hidden; }
 .screenplay.is-focus > .sp-center { min-height: 0; overflow: hidden; }
-.screenplay.is-focus .sp-footer { display: none; }
+.screenplay .sp-scroll { overflow-x: hidden; }
 .screenplay.is-focus .sp-editor { line-height: 1.5; }
 .sp-bar-hint kbd { padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 4px; font: inherit; }
 

@@ -32,6 +32,7 @@ export const fr = {
     hint: "Masquer des types de cartes (rien n’est supprimé)",
     title: "Types affichés",
     showAll: "Tout afficher",
+    hideAll: "Tout masquer",
     typesOne: "Filtre actif : un type masqué",
     typesMany: "Filtre actif : {n} types masqués",
     card: "Filtre actif : « {title} » et ses voisines",

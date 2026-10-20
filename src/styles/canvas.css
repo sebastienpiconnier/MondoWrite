@@ -201,6 +201,7 @@
 .canvas-filter-item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: 8px; color: var(--ink); font-size: 14px; cursor: pointer; }
 @media (any-hover: hover) { .canvas-filter-item:hover { background: var(--ground); } }
 .canvas-filter-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.canvas-filter-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .canvas-filter-panel .ghost-button { margin-top: 6px; min-height: 40px; }
 .card-port { width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--accent); opacity: 0; transition: opacity 0.15s; z-index: 3; }
 .card.is-selected .card-port, .react-flow__node.connecting .card-port { opacity: 1; }
