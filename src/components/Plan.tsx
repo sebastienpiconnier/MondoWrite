@@ -185,10 +185,13 @@ export function Plan() {
             aria-label={p.sceneTitle}
             onChange={(e) => updateCard(id, { title: e.target.value })}
           />
-          {/* Ce qui se passe dans la scène, en une phrase (champ `synopsis` de sa fiche). Faute de synopsis, ses notes. */}
-          <SynopsisField value={card.fiche?.synopsis ?? ""} scene={title} onSave={(value) => useCosmos.getState().setFiche(id, "synopsis", value)} />
-          {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
-          <SceneStatusPicker card={card} />
+          {/* Ce qui se passe dans la scène, en une phrase (champ `synopsis` de sa fiche). Faute de synopsis, ses notes.
+              En liste, cette ligne prend toute la largeur de la fiche, sous le titre (le statut reste à sa droite). */}
+          <div className="plan-detail">
+            <SynopsisField value={card.fiche?.synopsis ?? ""} scene={title} onSave={(value) => useCosmos.getState().setFiche(id, "synopsis", value)} />
+            {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
+            <SceneStatusPicker card={card} />
+          </div>
         </div>
         <div className="plan-actions">
         {beat !== null && (

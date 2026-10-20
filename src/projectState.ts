@@ -18,6 +18,7 @@ import { addQuestion, legacyParkedCards } from "./character";
 import { isEmptyPlan, prunePlan, readPlan, type Plan } from "./plan";
 import { storyScenes } from "./book";
 import { isEmptyPitch, readPitch, type Pitch } from "./pitch";
+import { readChutier, type Passage } from "./chutier";
 import { cleanPrint, printToMeta, type PrintOptions } from "./export/printOptions";
 import { writeTitleField } from "./screenplay/titlePage";
 import { headingTitles, initialScreenplay, type SceneCard } from "./screenplay/link";
@@ -87,11 +88,11 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), print: cleanPrint(p.meta.print), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "print", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -276,6 +277,7 @@ export function toProject(
       ...(s.goals.daily || s.goals.total ? { goals: s.goals } : {}),
       ...(Object.keys(s.progress).length > 0 ? { progress: s.progress } : {}),
       ...(isEmptyPitch(s.pitch) ? {} : { pitch: s.pitch }),
+      ...(s.chutier.length > 0 ? { chutier: s.chutier } : {}),
       ...(printToMeta(s.print) ? { print: printToMeta(s.print) } : {}),
     },
     cards: s.nodes.map((n) => n.data),
@@ -305,6 +307,7 @@ export interface ProjectSlice {
   goals: Goals;
   progress: Progress;
   pitch: Pitch;
+  chutier: Passage[];
   print: PrintOptions;
   metaKeep: Record<string, unknown>;
   trash: TrashedCard[];

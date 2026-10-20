@@ -24,8 +24,22 @@ import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
 import { countWords, detectCards, orphanTexts } from "../manuscript";
+import { Chutier } from "./Chutier";
+import type { Passage } from "../chutier";
 import { plainText } from "../search";
 import { dayKey, manuscriptStats, pagesFor, streak, wordsOn, WORDS_PER_PAGE } from "../stats";
+
+const COUNTER_KEY = "mondowrite.manuscript.counter";
+type CounterScope = "scene" | "chapter" | "book";
+function readCounter(): CounterScope {
+  try {
+    const raw = localStorage.getItem(COUNTER_KEY);
+    if (raw === "scene" || raw === "chapter" || raw === "book") return raw;
+  } catch {
+    /* ignoré */
+  }
+  return "scene";
+}
 
 const PANELS_KEY = "mondowrite.manuscript.panels";
 type Panels = { scenes: boolean; side: boolean; meta: boolean };
@@ -100,7 +114,11 @@ export function Manuscript() {
   const [fresh, setFresh] = useState<{ id: string; from: string } | null>(null);
   const [said, setSaid] = useState("");
   // Coupure qu'on vient de faire (scène ou chapitre) : annoncée à l'écran, avec « Annuler ».
-  const [notice, setNotice] = useState<{ text: string; undo: () => void } | null>(null);
+  const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
+  // Compteur de mots de la barre : scène, chapitre ou livre, au clic. Correcteur orthographique : à la demande.
+  const [counter, setCounter] = useState(readCounter);
+  const [spell, setSpell] = useState(false);
+  const chutier = useCosmos((s) => s.chutier);
   useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(null), 10000);
@@ -126,6 +144,18 @@ export function Manuscript() {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         useCosmos.getState().openReplace({ sceneId: currentRef.current });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Correcteur orthographique à la demande : Cmd/Ctrl + ; le met ou le retire.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key === ";") {
+        e.preventDefault();
+        setSpell((on) => !on);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -186,6 +216,15 @@ export function Manuscript() {
   }
 
   const pageKind: PageKind | null = isPageKind(card.page) ? card.page : null;
+  /** Remet un passage du chutier dans le texte, à sa place d'origine si on la retrouve. */
+  const putBack = (p: Passage) => {
+    const where = bookApi.current?.putBack(p, currentRef.current);
+    if (!where) return;
+    useCosmos.getState().removePassage(p.id);
+    const text = where === "exact" ? b.chutier.back : where === "near" ? b.chutier.backNear : b.chutier.backElsewhere;
+    setSaid(text);
+    setNotice(where === "exact" ? null : { text });
+  };
   handlers.current = {
     onSceneBreak: (id, rest) => {
       const next = splitScene(id, rest);
@@ -220,6 +259,19 @@ export function Manuscript() {
           },
         });
       return true;
+    },
+    onChutier: () => {
+      const out = bookApi.current?.sendToChutier();
+      if (!out) return;
+      if ("error" in out) {
+        const text = out.error === "scene" ? b.chutier.oneScene : b.chutier.nothing;
+        setSaid(text);
+        setNotice({ text });
+        return;
+      }
+      useCosmos.getState().addPassage(out.passage);
+      setSaid(b.chutier.sent);
+      setNotice({ text: b.chutier.sent, undo: () => putBack(out.passage) });
     },
     onJoin: (from, into, offset) => {
       const a = cards.find((c) => c.id === from);
@@ -288,6 +340,16 @@ export function Manuscript() {
   // La scène ouvre son chapitre : le titre du chapitre s'affiche au-dessus, comme dans un livre.
   const opensChapter = !pageKind && !!chapter && (at === 0 || chapterOf(plan, order[at - 1])?.id !== chapter.id);
   const sceneWords = countWords(manuscript[current]);
+  // Ce que compte le compteur : la scène, son chapitre (si elle en a un) ou tout le livre.
+  const scopes: CounterScope[] = chapter ? ["scene", "chapter", "book"] : ["scene", "book"];
+  const countScope: CounterScope = scopes.includes(counter) ? counter : "scene";
+  const nextScope = scopes[(scopes.indexOf(countScope) + 1) % scopes.length];
+  const counted =
+    countScope === "book"
+      ? stats.words
+      : countScope === "chapter" && chapter
+        ? order.reduce((sum, id) => sum + (chapterOf(plan, id)?.id === chapter.id ? (stats.perScene.get(id) ?? 0) : 0), 0)
+        : sceneWords;
 
   return (
     <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
@@ -526,6 +588,9 @@ export function Manuscript() {
             <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
               {t.focus.enter}
             </button>
+            <button type="button" className="ghost-button ms-start-chapter" aria-pressed={spell} title={b.spellHint} onClick={() => setSpell((on) => !on)}>
+              {b.spell}
+            </button>
             <button type="button" className="ghost-button ms-start-chapter" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onClick={() => useCosmos.getState().openReplace({ sceneId: current })}>
               {t.replace.button}
             </button>
@@ -543,9 +608,23 @@ export function Manuscript() {
             >
               <TrashIcon />
             </button>
-            <span className="sr-only" aria-live="polite">
-              {words(sceneWords)}
-            </span>
+            {/* Un clic change ce que le compteur compte : la scène, son chapitre, tout le livre. */}
+            <button
+              type="button"
+              className="ghost-button ms-counter"
+              aria-live="polite"
+              title={fmt(b.counter.title, { scope: b.counter.of[countScope], next: b.counter.to[nextScope] })}
+              onClick={() => {
+                setCounter(nextScope);
+                try {
+                  localStorage.setItem(COUNTER_KEY, nextScope);
+                } catch {
+                  /* le choix vaut pour la session */
+                }
+              }}
+            >
+              {words(counted)} · {b.counter[countScope]}
+            </button>
           </div>
           </div>
           </div>
@@ -554,21 +633,23 @@ export function Manuscript() {
             className={`ms-page${focusMode && (writing.highlight === "sentence" || writing.highlight === "paragraph") ? " is-dimmed" : ""}`}
             style={{ ["--ms-width" as string]: PAGE.width, ["--ms-height" as string]: PAGE.height }}
           >
-            <BookEditor order={order} cards={cards} plan={plan} current={current} onCurrent={setChosen} handlers={handlers} api={bookApi} onPlace={setPlace} />
+            <BookEditor order={order} cards={cards} plan={plan} current={current} onCurrent={setChosen} handlers={handlers} api={bookApi} onPlace={setPlace} spell={spell} />
           </div>
           {notice && (
             <div className="ms-notice" role="status">
               <span>{notice.text}</span>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => {
-                  notice.undo();
-                  setNotice(null);
-                }}
-              >
-                {b.undoBreak}
-              </button>
+              {notice.undo ? (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => {
+                    notice.undo?.();
+                    setNotice(null);
+                  }}
+                >
+                  {b.undoBreak}
+                </button>
+              ) : null}
             </div>
           )}
           {!pageKind && <p className="ms-hint">{b.enterHint}</p>}
@@ -609,6 +690,7 @@ export function Manuscript() {
             {fmt(m.show, { title })}
           </button>
         </section>
+        <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
       </aside>
     </div>
   );

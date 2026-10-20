@@ -229,6 +229,17 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          {/* Le nom d'auteur vient du profil, qui se remplit sur la page des projets. */}
+          <div className="settings-label" id={ids.author}>{t.settings.author}</div>
+          <p className="settings-value" aria-labelledby={ids.author}>{author || t.settings.authorNone}</p>
+          <p className="settings-hint">{t.settings.authorHint}</p>
+          {/* Mises à jour : app de bureau seulement (rien dans le navigateur ni sur mobile). */}
+          <UpdateSettings checkboxId={ids.updates} />
+          </section>
+
+          <section className="settings-col">
+          {/* Écriture : mode focus et typographie ; puis les clés de photos libres. */}
+          <div className="eyebrow">{t.settings.writingSection}</div>
           {/* Mode focus : réglé ici aussi, car sur téléphone la barre du mode focus ne garde que la sortie. */}
           <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
           <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
@@ -257,10 +268,6 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </select>
           <p className="settings-hint" id={ids.typographyHint}>{t.settings.typographyHint}</p>
-          {/* Le nom d'auteur vient du profil, qui se remplit sur la page des projets. */}
-          <div className="settings-label" id={ids.author}>{t.settings.author}</div>
-          <p className="settings-value" aria-labelledby={ids.author}>{author || t.settings.authorNone}</p>
-          <p className="settings-hint">{t.settings.authorHint}</p>
           {/* Photos libres : Openverse sans clé ; Pixabay et Unsplash avec la clé de l'auteur, sur cet appareil seulement. */}
           <div className="eyebrow settings-sep">{t.photos.settingsSection}</div>
           {(["pixabay", "unsplash"] as const).map((source) => (
@@ -280,8 +287,6 @@ export function Settings({ project = true }: { project?: boolean }) {
           <p className="settings-hint" id={ids.photosHint}>
             {t.photos.settingsHint}
           </p>
-          {/* Mises à jour : app de bureau seulement (rien dans le navigateur ni sur mobile). */}
-          <UpdateSettings checkboxId={ids.updates} />
           </section>
 
           <section className="settings-col">

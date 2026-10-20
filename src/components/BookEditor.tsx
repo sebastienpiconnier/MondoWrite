@@ -6,7 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, createDocument, getHTMLFromFragment, useEditor, type Editor } from "@tiptap/react";
 import { Fragment, type Node as PMNode } from "@tiptap/pm/model";
 import Placeholder from "@tiptap/extension-placeholder";
-import { EditorState, Selection } from "@tiptap/pm/state";
+import { EditorState, Selection, TextSelection } from "@tiptap/pm/state";
+import { nanoid } from "nanoid";
+import { placePassage, takePassage, type Passage } from "../chutier";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
@@ -16,6 +18,10 @@ import { SCENE_MARK, bookBlocks, changedRange, composeBook, sceneAt, sceneGroups
 import { isBlank } from "../manuscript";
 import { isPageKind } from "../book";
 import { useCosmos } from "../store";
+import { SuggestionMenu } from "./SuggestionMenu";
+import { canCreateMention } from "../mentions";
+import { typeColor, type CardType } from "../types";
+import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { getT, useT } from "../i18n";
 import type { CardData } from "../types";
@@ -32,6 +38,10 @@ export interface BookApi {
   scrollToScene: (id: string) => void;
   /** Place le curseur au début du texte d'une scène, au prochain redessin si la structure change. */
   focusScene: (id: string, offset?: number, later?: boolean) => void;
+  /** Retire la sélection du texte pour la mettre au chutier (le passage, ou la raison du refus). */
+  sendToChutier: () => { passage: Passage } | { error: "empty" | "scene" };
+  /** Remet un passage à sa place (à défaut de sa scène, à la fin de `fallback`). Rend où il est allé, ou null. */
+  putBack: (passage: Passage, fallback: string | null) => "exact" | "near" | "elsewhere" | null;
 }
 
 /** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
@@ -41,6 +51,24 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
     if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
   }
   return null;
+}
+
+/** Création d'une fiche depuis le texte : « /Nom » n'importe où dans une phrase, ou un nom sélectionné puis « / ». */
+interface CreateState {
+  from: number;
+  to: number;
+  name: string;
+  left: number;
+  top: number;
+  /** Nom déjà écrit et sélectionné : le texte reste tel quel. */
+  selected?: boolean;
+}
+const CREATE_TYPES: CardType[] = ["personnage", "lieu"];
+
+/** Ce qui se tape avant le curseur et demande une fiche (« /Nom » après un espace ou en début de ligne), sinon null. */
+function createQuery(before: string, cards: CardData[]): { name: string; length: number } | null {
+  const m = /(?:^|[\s(«“"'’])\/([^\s/]{1,30})$/.exec(before);
+  return m && canCreateMention(cards, m[1]) ? { name: m[1], length: m[1].length + 1 } : null;
 }
 
 const norm = (html: string | undefined) => (isBlank(html) ? "" : (html ?? ""));
@@ -54,6 +82,7 @@ export function BookEditor({
   handlers,
   api,
   onPlace,
+  spell,
 }: {
   order: string[];
   cards: CardData[];
@@ -64,8 +93,11 @@ export function BookEditor({
   api: { current: BookApi | null };
   /** Pages occupées par la scène en cours (null : pas de mise en pages, écran étroit ou mode focus). */
   onPlace: (place: { first: number; last: number } | null) => void;
+  /** Correcteur orthographique du navigateur : coupé pendant l'écriture, activé à la demande. */
+  spell: boolean;
 }) {
   const t = useT();
+  const { types } = useVocab();
   const lang = useSettings((s) => s.lang);
   const manuscript = useCosmos((s) => s.manuscript);
   const focusMode = useCosmos((s) => s.focusMode);
@@ -101,6 +133,12 @@ export function BookEditor({
   const layout = useRef<{ pages: number; breaks: number[] }>({ pages: 0, breaks: [] });
   const lastGo = useRef(0);
   const editorRef = useRef<Editor | null>(null);
+  // Menu « Créer une fiche » : le clavier est géré ici, le focus ne quitte pas le texte.
+  const [create, setCreate] = useState<CreateState | null>(null);
+  const [createActive, setCreateActive] = useState(0);
+  const createRef = useRef<{ state: CreateState | null; active: number; dismissed: number }>({ state: null, active: 0, dismissed: -1 });
+  createRef.current.state = create;
+  createRef.current.active = createActive;
 
   const placeOf = (ed: Editor) => {
     const { pages, breaks } = layout.current;
@@ -161,7 +199,37 @@ export function BookEditor({
     ],
     content: initial.current,
     immediatelyRender: true,
-    editorProps: { attributes: { class: "ms-editor", "aria-label": getT().manuscript.bookAria } },
+    editorProps: {
+      attributes: { class: "ms-editor", "aria-label": getT().manuscript.bookAria, spellcheck: String(spell) },
+      handleKeyDown: (_view, event) => {
+        const c = createRef.current;
+        if (!c.state) {
+          // Un nom sélectionné puis « / » : le menu s'ouvre, le texte ne bouge pas.
+          const ed = editorRef.current;
+          if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || !ed || ed.isDestroyed) return false;
+          const { from, to, empty, $from, $to } = ed.state.selection;
+          const name = empty ? "" : ed.state.doc.textBetween(from, to, " ", "\ufffc").trim();
+          if (!name || name.length > 40 || !$from.sameParent($to) || !canCreateMention(cardsRef.current, name)) return false;
+          const box = ed.view.coordsAtPos(to);
+          const up = box.bottom > window.innerHeight - 190;
+          setCreateActive(0);
+          setCreate({ from, to, name, selected: true, left: Math.min(box.left, window.innerWidth - 240), top: up ? box.bottom - 190 : box.bottom + 6 });
+          event.preventDefault();
+          return true;
+        }
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          const n = CREATE_TYPES.length;
+          setCreateActive((c.active + (event.key === "ArrowDown" ? 1 : n - 1)) % n);
+        } else if (event.key === "Enter" || event.key === "Tab") {
+          pickCreateRef.current(c.active);
+        } else if (event.key === "Escape") {
+          c.dismissed = c.state.from;
+          setCreate(null);
+        } else return false;
+        event.preventDefault();
+        return true;
+      },
+    },
     // On range le texte dans la ou les scènes touchées, pas dans tout le livre.
     onUpdate: ({ editor: ed, transaction }) => {
       const range = changedRange(transaction);
@@ -182,6 +250,55 @@ export function BookEditor({
     },
   });
   editorRef.current = editor;
+
+  /** Remplace « /Nom » par le nom seul (ou garde le nom sélectionné), crée la fiche en arrière-plan : on continue d'écrire, aucun lien ne reste. */
+  const pickCreate = (index: number) => {
+    const c = createRef.current.state;
+    const ed = editorRef.current;
+    if (!c || !ed || ed.isDestroyed) return;
+    const type = CREATE_TYPES[index];
+    if (!type) return;
+    setCreate(null);
+    if (c.selected) ed.chain().focus().setTextSelection(c.to).run();
+    else ed.chain().focus().insertContentAt({ from: c.from, to: c.to }, { type: "text", text: c.name.trim() }).run();
+    useCosmos.getState().addTitledCard(type, c.name.trim());
+  };
+  const pickCreateRef = useRef(pickCreate);
+  pickCreateRef.current = pickCreate;
+
+  // Détection du « / » à chaque déplacement du curseur ou frappe.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const detect = () => {
+      const sel = editor.state.selection;
+      const open = createRef.current.state;
+      // Menu ouvert sur un nom sélectionné : il reste tant que la sélection ne bouge pas.
+      if (open?.selected && sel.from === open.from && sel.to === open.to) return;
+      const { $from, empty } = sel;
+      const found = empty && $from.parent.isTextblock ? createQuery($from.parent.textBetween(0, $from.parentOffset, undefined, "\ufffc"), cardsRef.current) : null;
+      const from = found ? $from.pos - found.length : -1;
+      if (!found || from === createRef.current.dismissed) {
+        if (!found) createRef.current.dismissed = -1;
+        setCreate(null);
+        return;
+      }
+      let box = { left: 0, bottom: 0 };
+      try {
+        box = editor.view.coordsAtPos($from.pos);
+      } catch {
+        /* position hors écran */
+      }
+      const up = box.bottom > window.innerHeight - 190;
+      if (!createRef.current.state) setCreateActive(0);
+      setCreate({ from, to: $from.pos, name: found.name, left: Math.min(box.left, window.innerWidth - 240), top: up ? box.bottom - 190 : box.bottom + 6 });
+    };
+    editor.on("update", detect);
+    editor.on("selectionUpdate", detect);
+    return () => {
+      editor.off("update", detect);
+      editor.off("selectionUpdate", detect);
+    };
+  }, [editor]);
 
   /** Redessine le livre depuis les cartes : structure changée (scène coupée, chapitre ouvert…) ou texte modifié ailleurs. */
   const rebuild = () => {
@@ -257,6 +374,31 @@ export function BookEditor({
           ed.chain().setTextSelection(offset < 0 ? g.end - 1 : Math.min(g.markerPos + offset, ed.state.doc.content.size)).focus().run();
         }
       },
+      sendToChutier: () => {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed) return { error: "empty" as const };
+        const out = takePassage(ed.state, nanoid(), new Date().toISOString());
+        if ("error" in out) return out;
+        ed.view.dispatch(out.tr.scrollIntoView());
+        ed.view.focus();
+        return { passage: out.passage };
+      },
+      putBack: (passage, fallback) => {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed) return null;
+        const placed = placePassage(ed.state, passage, fallback);
+        if (!placed) return null;
+        const size = placed.tr.doc.content.size;
+        try {
+          // Le passage remis est sélectionné : on voit tout de suite où il est revenu.
+          placed.tr.setSelection(TextSelection.create(placed.tr.doc, Math.min(placed.from, size), Math.min(placed.to, size)));
+        } catch {
+          /* positions hors d'un texte : le curseur reste où il est */
+        }
+        ed.view.dispatch(placed.tr.scrollIntoView());
+        ed.view.focus();
+        return placed.where;
+      },
     };
     return () => {
       api.current = null;
@@ -290,12 +432,13 @@ export function BookEditor({
     };
   }, [editor]);
 
-  // Langue changée : le texte indicatif et les repères se redessinent.
+  // Langue changée : le texte indicatif et les repères se redessinent. Le correcteur suit son réglage.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-    editor.setOptions({ editorProps: { ...editor.options.editorProps, attributes: { class: "ms-editor", "aria-label": t.manuscript.bookAria } } });
+    editor.setOptions({ editorProps: { ...editor.options.editorProps, attributes: { class: "ms-editor", "aria-label": t.manuscript.bookAria, spellcheck: String(spell) } } });
+    editor.view.dom.setAttribute("spellcheck", String(spell));
     editor.view.dispatch(editor.state.tr.setMeta("cosmos:lang", lang));
-  }, [lang, t, editor]);
+  }, [lang, t, editor, spell]);
 
   // Pages occupées par la scène en cours : à jour quand elle change.
   useEffect(() => {
@@ -351,7 +494,17 @@ export function BookEditor({
   return (
     <>
       <EditorContent editor={editor} />
-      {editor && <FormatBar editor={editor} revisit />}
+      {create && (
+        <SuggestionMenu
+          title={t.manuscript.createTitle}
+          className="book-create"
+          style={{ position: "fixed", left: create.left, top: create.top }}
+          items={CREATE_TYPES.map((type) => ({ key: type, label: `« ${create.name.trim()} »`, hint: types[type].label, color: typeColor(type) }))}
+          active={createActive}
+          onPick={pickCreate}
+        />
+      )}
+      {editor && <FormatBar editor={editor} revisit onChutier={() => handlers.current?.onChutier()} />}
       {veil && (
         <>
           <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />

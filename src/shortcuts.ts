@@ -45,6 +45,8 @@ export const SHORTCUT_GROUPS = {
     ["chapterBreak", ["Entrée", "Entrée", "Entrée"]],
     ["focus", ["Mod", "Shift", "F"]],
     ["exitFocus", ["Échap"]],
+    ["chutier", ["Mod", "Shift", "K"]],
+    ["spell", ["Mod", ";"]],
     ["moveScene", ["Alt", "↑ ↓"]],
   ],
   screenplay: [

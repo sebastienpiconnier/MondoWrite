@@ -30,6 +30,7 @@ import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene,
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
+import type { Passage } from "./chutier";
 import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
@@ -203,6 +204,10 @@ interface CosmosState {
   setGoals: (goals: Goals) => void;
   /** Couverture du projet (tête de la Bible) : tagline, logline, pastilles… Voir pitch.ts. */
   pitch: Pitch;
+  /** Passages retirés du manuscrit, gardés au chutier (voir chutier.ts). */
+  chutier: Passage[];
+  addPassage: (passage: Passage) => void;
+  removePassage: (id: string) => void;
   /** Clés de cosmos.json écrites par une version plus récente et inconnues ici : réécrites telles quelles. */
   metaKeep: Record<string, unknown>;
   setPitch: (key: PitchField, value: string) => void;
@@ -1120,6 +1125,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     progress: {},
     pitch: {},
+    chutier: [],
+    addPassage: (passage) => {
+      set({ chutier: [...get().chutier, passage] });
+      touch();
+    },
+    removePassage: (id) => {
+      if (!get().chutier.some((p) => p.id === id)) return;
+      set({ chutier: get().chutier.filter((p) => p.id !== id) });
+      touch();
+    },
     metaKeep: {},
     setPitch: (key, value) => {
       const next = setPitchField(get().pitch, key, value);

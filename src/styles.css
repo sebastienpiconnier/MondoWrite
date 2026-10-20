@@ -230,11 +230,11 @@ button { font: inherit; color: inherit; }
 /* Réglages */
 .settings { position: relative; }
 .settings-panel {
-  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: min(600px, calc(100vw - 24px));
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px; padding: 16px 18px;
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: min(870px, calc(100vw - 24px));
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px 24px; padding: 16px 18px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop);
 }
-.settings-panel.has-project { width: min(880px, calc(100vw - 24px)); }
+.settings-panel.has-project { width: min(1140px, calc(100vw - 24px)); }
 .settings-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .settings-links { grid-column: 1 / -1; }
 .settings-panel label, .settings-label { font-size: 13px; font-weight: 600; margin-top: 6px; }

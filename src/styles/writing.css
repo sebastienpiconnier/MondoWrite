@@ -221,6 +221,19 @@
 .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 32px; height: 32px; }
 .sq-list.is-cards .plan-actions .plan-to { flex: 1 1 0; }
 .sq-list.is-cards .plan-actions .plan-to select { max-width: none; }
+/* Plan en liste, fenêtre large : titre et actions sur une ligne, synopsis (et statut) en dessous sur toute la largeur de la fiche. */
+@media (min-width: 700px) {
+  .sq-list:not(.is-cards) .plan-scene { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding-block: 8px; }
+  .sq-list:not(.is-cards) .plan-scene .sq-body { display: contents; }
+  .sq-list:not(.is-cards) .plan-scene .sq-moves { grid-column: 1; grid-row: 1; }
+  .sq-list:not(.is-cards) .plan-scene .bible-title { grid-column: 2; grid-row: 1; min-width: 0; }
+  .sq-list:not(.is-cards) .plan-scene .plan-actions { grid-column: 3; grid-row: 1; flex-wrap: nowrap; }
+  .sq-list:not(.is-cards) .plan-scene .plan-detail { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: flex-start; gap: 4px 12px; min-width: 0; }
+  .sq-list:not(.is-cards) .plan-detail .synopsis-show:not(.is-empty), .sq-list:not(.is-cards) .plan-detail .synopsis-edit, .sq-list:not(.is-cards) .plan-detail .sq-desc { flex: 1 1 0; width: auto; min-width: 0; }
+  .sq-list:not(.is-cards) .plan-detail .sq-desc { margin: 2px 0 0; }
+  .sq-list:not(.is-cards) .plan-detail > :last-child { flex: none; margin-left: auto; }
+}
+@media (min-width: 700px) and (pointer: fine) { .sq-list:not(.is-cards) .plan-scene .sq-moves .icon-button { width: 32px; height: 32px; } }
 @media (pointer: coarse) { .plan-actions .plan-to select { min-height: 44px; } .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 44px; height: 44px; } }
 .plan-add { display: flex; gap: 8px; }
 .plan-add input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px dashed var(--line-2); border-radius: 10px; background: transparent; color: var(--ink); font: inherit; }
@@ -590,3 +603,17 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .manuscript.is-focus .ms-page.is-dimmed .ms-editor { color: color-mix(in srgb, var(--ink) 34%, transparent); }
 .manuscript.is-focus .ms-page.is-dimmed .ms-editor .is-focus-on { color: var(--ink); }
 .manuscript.is-focus .ms-veil { background: var(--ground); }
+
+/* Chutier : passages mis de côté (volet de droite), compteur de mots et correcteur dans la barre de la scène. */
+.ms-chutier-count { font: 13px var(--font-ui); color: var(--ink-2); }
+.ms-chutier-list { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; }
+.ms-chutier-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; border-top: 1px solid var(--line); }
+.ms-chutier-text { margin: 0; font: 14px/1.45 var(--font-text); color: var(--ink); overflow-wrap: anywhere; }
+.ms-chutier-meta { margin: 0; font-size: 12px; color: var(--muted); }
+.ms-chutier-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ms-chutier-actions button { min-height: 32px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.ms-chutier-actions button.is-danger { border-color: var(--danger); color: var(--danger); font-weight: 600; }
+@media (any-hover: hover) { .ms-chutier-actions button:hover { background: var(--hover); } }
+@media (pointer: coarse) { .ms-chutier-actions button { min-height: 44px; } }
+.ms-counter { margin-left: auto; font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.ms-meta .ghost-button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); border-color: transparent; }

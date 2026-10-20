@@ -21,6 +21,8 @@ export interface BookHandlers {
   onChapterBreak: (id: string) => boolean;
   /** Retour arrière au début d'une scène (ou Suppr à la fin de la précédente) : la scène `from` rejoint `into`. `offset` : où remettre le curseur, à partir du repère de `into`. */
   onJoin: (from: string, into: string, offset: number) => boolean;
+  /** Cmd/Ctrl + Maj + K : le passage sélectionné part au chutier. */
+  onChutier: () => void;
 }
 
 /** Repère qui ouvre chaque scène : invisible, ou « * * * », ou ouverture de chapitre (numéro, titre modifiable). */
@@ -253,6 +255,12 @@ export const BookKeys = Extension.create<{ handlers: () => BookHandlers | null }
   addKeyboardShortcuts() {
     const handlers = () => this.options.handlers();
     return {
+      "Mod-Shift-k": () => {
+        const h = handlers();
+        if (!h) return false;
+        h.onChutier();
+        return true;
+      },
       Enter: () => {
         const h = handlers();
         const { state } = this.editor;

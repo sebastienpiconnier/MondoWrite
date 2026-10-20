@@ -116,6 +116,8 @@ export interface ProjectMeta {
   progress?: Progress;
   /** Couverture du projet (tagline, logline, résumé, pastilles…), voir pitch.ts. Absent : rien de rempli. */
   pitch?: Pitch;
+  /** Passages retirés du manuscrit et gardés au chutier, voir chutier.ts. Absent : aucun. */
+  chutier?: unknown[];
   /** Réglages du livre broché (format, papier, ISBN, pages de fin), voir export/printOptions.ts. Absent : valeurs par défaut. */
   print?: PrintOptions;
   viewport?: { x: number; y: number; zoom: number };

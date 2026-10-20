@@ -15,7 +15,7 @@ interface Action {
   run: () => void;
 }
 
-export function FormatBar({ editor, revisit = true }: { editor: Editor; revisit?: boolean }) {
+export function FormatBar({ editor, revisit = true, onChutier }: { editor: Editor; revisit?: boolean; /** Manuscrit : met le passage sélectionné au chutier. */ onChutier?: () => void }) {
   const f = useT().format;
   const chain = () => editor.chain().focus();
   // Abonnement à la sélection : les boutons actifs suivent le curseur.
@@ -43,6 +43,7 @@ export function FormatBar({ editor, revisit = true }: { editor: Editor; revisit?
     ...(revisit
       ? [{ key: "revisit", label: f.revisit, glyph: "!", active: on.revisit, run: () => chain().toggleHighlight().run() }]
       : []),
+    ...(onChutier ? [{ key: "chutier", label: f.chutier, glyph: "⤓", active: false, run: onChutier }] : []),
   ];
   return (
     <BubbleMenu editor={editor} className="format-bar nodrag nopan" options={{ placement: "top" }}>
