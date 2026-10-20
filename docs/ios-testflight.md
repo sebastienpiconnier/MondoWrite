@@ -25,6 +25,17 @@ Pour une installation fixe (sans serveur de développement sur le Mac), utiliser
 4. **Fiche de l'app** : App Store Connect, Apps, « + » Nouvelle app, plateforme iOS, nom MondoWrite, identifiant `app.cosmos.ecriture`.
 5. **Clé API** : celle déjà utilisée pour la notarisation du Mac convient (APPLE_API_KEY, APPLE_API_ISSUER, APPLE_API_PRIVATE_KEY). Rôle « App Manager » ou « Admin ».
 
+### iCloud (synchronisation des projets)
+
+L'app utilise le conteneur iCloud `iCloud.app.cosmos.ecriture` (droits dans `src-tauri/ios/cosmos_iOS.entitlements`, copiés par `npm run ios:prepare`).
+À faire **avant** de créer le profil de l'étape 3 :
+
+1. Identifiers, `app.cosmos.ecriture`, Capabilities : cocher **iCloud** (option « Include CloudKit support » inutile), puis Configure et ajouter le conteneur `iCloud.app.cosmos.ecriture` (le créer dans Identifiers, iCloud Containers, s'il n'existe pas).
+2. Créer (ou régénérer) le profil App Store Connect **après** cette modification : un profil ancien ne contient pas le droit iCloud et la build est refusée.
+
+Sur le Mac, le même conteneur apparaît dans `~/Library/Mobile Documents/iCloud~app~cosmos~ecriture/Documents` (iCloud Drive, MondoWrite) :
+le sélecteur de dossier de l'app le propose en premier.
+
 ### Secrets GitHub à ajouter (Settings, Secrets and variables, Actions)
 
 | Secret | Contenu |
