@@ -6,7 +6,7 @@
 
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { appDataDir, documentDir, join } from "@tauri-apps/api/path";
+import { appDataDir, documentDir, homeDir, join } from "@tauri-apps/api/path";
 import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
 import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, isConflictCopy, type FileMap } from "./paths";
@@ -167,6 +167,23 @@ async function copyPath(name: string): Promise<string | null> {
   return dir ? join(dir, COPIES_DIR, ...name.split("/")) : null;
 }
 
+/**
+ * Mac : le conteneur iCloud de l'app (le même que sur iPhone et iPad) est proposé en premier dans le sélecteur de dossier,
+ * puis un dossier Dropbox. Un projet placé là se synchronise avec les autres appareils. Sans l'un ni l'autre : le choix du système.
+ */
+async function syncFolderHint(): Promise<string | undefined> {
+  try {
+    const home = await homeDir();
+    for (const rel of ["Library/Mobile Documents/iCloud~app~cosmos~ecriture/Documents", "Library/CloudStorage/Dropbox", "Dropbox"]) {
+      const path = await join(home, ...rel.split("/"));
+      if (await exists(path)) return path;
+    }
+  } catch {
+    /* pas de dossier proposé */
+  }
+  return undefined;
+}
+
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const tauriStorage: Storage = {
@@ -247,7 +264,7 @@ export const tauriStorage: Storage = {
       }
     : undefined,
   canPickFolder: !mobile,
-  canImportZip: mobile,
+  canImportZip: true,
   cloud: mobile
     ? {
         name: () => cloudCache?.name ?? savedCloud()?.name ?? null,
@@ -282,7 +299,7 @@ export const tauriStorage: Storage = {
     if (mobile) return true;
     // recursive : sans lui, Tauri n'autorise que les fichiers placés directement dans le dossier,
     // et l'écriture des cartes (sous-dossier cartes/) est refusée hors du dossier personnel.
-    const chosen = await open({ directory: true, recursive: true, title: getT().dialog.pickFolder });
+    const chosen = await open({ directory: true, recursive: true, title: getT().dialog.pickFolder, defaultPath: await syncFolderHint() });
     if (typeof chosen !== "string") return false;
     current = chosen;
     return true;

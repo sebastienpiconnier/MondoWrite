@@ -179,6 +179,7 @@ export function ExportMenu() {
           ],
         },
     { title: x.bible, items: BIBLE_FORMATS.map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
+    { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
     { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, label: canvasLabels[f], build: canvasFile(f) })) },
   ] as { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] }[];
   const failed = message === t.failed || message === x.emptyManuscript || message === x.emptyCanvas;

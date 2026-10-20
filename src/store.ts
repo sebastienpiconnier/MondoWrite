@@ -385,6 +385,8 @@ interface CosmosState {
   relocateProject: () => Promise<void>;
   /** Dernier recours : tout le projet (textes et réglages) dans un .zip, là où l'auteur le choisit. */
   exportProjectCopy: () => Promise<boolean>;
+  /** Tout le projet (textes, réglages, images et PDF) dans un .zip, à ouvrir sur un autre ordinateur par « Importer un projet ». */
+  projectZip: () => Promise<{ name: string; extension: string; mime: string; data: Uint8Array } | null>;
   /** L'auteur choisit : sa version (elle remplace celle du disque) ou celle du disque (reprise dans l'app). */
   resolveConflict: (path: string, keep: "mine" | "disk") => Promise<void>;
   /**
@@ -1526,9 +1528,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const roots = new Set(entries.map(([path]) => path.split("/")[0]));
         const prefix = roots.size === 1 && entries.every(([path]) => path.includes("/")) ? `${[...roots][0]}/` : "";
         const files: FileMap = {};
+        const medias: [string, Uint8Array][] = [];
         for (const [path, data] of entries) {
           const name = path.slice(prefix.length);
-          if (name.startsWith(`${MEDIA_DIR}/`)) await storage.writeMedia(name.slice(MEDIA_DIR.length + 1), data);
+          if (name.startsWith(`${MEDIA_DIR}/`)) medias.push([name.slice(MEDIA_DIR.length + 1), data]);
           else files[name] = strFromU8(data);
         }
         if (!deserialize(files)) {
@@ -1536,7 +1539,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
           return;
         }
         if (!(await storage.create())) return;
+        // Ordinateur : le dossier choisi contient déjà un projet, on ne l'écrase jamais.
+        if (await storage.readAll().catch(() => null)) {
+          storage.forget();
+          set({ importNotice: "taken" });
+          return;
+        }
         await storage.write(files, []);
+        for (const [name, data] of medias) await storage.writeMedia(name, data);
         const written = await storage.readAll();
         if (!written || !openFiles(written)) set({ homeNotice: true });
       } catch (err) {
@@ -2104,12 +2114,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ lastFiles: existing ? known : {}, status: "modifie" });
       await get().save();
     },
+    projectZip: async () => {
+      const { zip } = await import("./export/zip");
+      const entries: { path: string; data: string | Uint8Array }[] = Object.entries(currentFiles()).map(([path, data]) => ({ path, data }));
+      // Images, galeries et PDF des cartes : les fichiers de medias/ voyagent avec le projet.
+      const names = new Set<string>();
+      for (const node of get().nodes) {
+        const d = node.data as { image?: string; fichier?: string; images?: string[] };
+        for (const name of [d.image, d.fichier, ...(d.images ?? [])]) if (name) names.add(name);
+      }
+      for (const name of names) {
+        const bytes = await storage.readMedia(name).catch(() => null);
+        if (bytes) entries.push({ path: `${MEDIA_DIR}/${name}`, data: bytes });
+      }
+      return { name: `${fileName(get().title, "mondowrite")}.zip`, extension: "zip", mime: "application/zip", data: zip(entries) };
+    },
     exportProjectCopy: async () => {
       try {
-        const { zip } = await import("./export/zip");
-        const entries = Object.entries(currentFiles()).map(([path, data]) => ({ path, data }));
-        const data = zip(entries);
-        return await storage.saveAs({ name: `${fileName(get().title, "mondowrite")}.zip`, extension: "zip", mime: "application/zip", data }, "ZIP");
+        const file = await get().projectZip();
+        return file ? await storage.saveAs(file, "ZIP") : false;
       } catch (err) {
         console.error(err);
         return false;
