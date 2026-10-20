@@ -94,8 +94,8 @@ export function mentionCandidates(cards: CardData[], query: string, selfId: stri
 }
 
 /** Peut-on proposer de créer une carte de ce nom ? Un nom court, que personne ne porte déjà. */
-export function canCreateMention(cards: CardData[], query: string): boolean {
+export function canCreateMention(cards: CardData[], query: string, maxWords = 4): boolean {
   const q = fold(query);
-  if (!q || /\s$/.test(query) || q.split(/\s+/).length > 4) return false;
+  if (!q || /\s$/.test(query) || q.split(/\s+/).length > maxWords) return false;
   return !cards.some((c) => fold(c.title) === q);
 }

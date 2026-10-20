@@ -19,7 +19,7 @@ import { isBlank } from "../manuscript";
 import { isPageKind } from "../book";
 import { useCosmos } from "../store";
 import { SuggestionMenu } from "./SuggestionMenu";
-import { canCreateMention } from "../mentions";
+import { CREATE_TYPES, createQuery, selectedName } from "./createCard";
 import { typeColor, type CardType } from "../types";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
@@ -62,13 +62,6 @@ interface CreateState {
   top: number;
   /** Nom déjà écrit et sélectionné : le texte reste tel quel. */
   selected?: boolean;
-}
-const CREATE_TYPES: CardType[] = ["personnage", "lieu"];
-
-/** Ce qui se tape avant le curseur et demande une fiche (« /Nom » après un espace ou en début de ligne), sinon null. */
-function createQuery(before: string, cards: CardData[]): { name: string; length: number } | null {
-  const m = /(?:^|[\s(«“"'’])\/([^\s/]{1,30})$/.exec(before);
-  return m && canCreateMention(cards, m[1]) ? { name: m[1], length: m[1].length + 1 } : null;
 }
 
 const norm = (html: string | undefined) => (isBlank(html) ? "" : (html ?? ""));
@@ -207,9 +200,11 @@ export function BookEditor({
           // Un nom sélectionné puis « / » : le menu s'ouvre, le texte ne bouge pas.
           const ed = editorRef.current;
           if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || !ed || ed.isDestroyed) return false;
-          const { from, to, empty, $from, $to } = ed.state.selection;
-          const name = empty ? "" : ed.state.doc.textBetween(from, to, " ", "\ufffc").trim();
-          if (!name || name.length > 40 || !$from.sameParent($to) || !canCreateMention(cardsRef.current, name)) return false;
+          // La sélection de ProseMirror peut retarder sur celle du navigateur : on la relit avant de décider.
+          (ed.view as unknown as { domObserver?: { flush?: () => void } }).domObserver?.flush?.();
+          const { from, to } = ed.state.selection;
+          const name = selectedName(ed.state, cardsRef.current);
+          if (!name) return false;
           const box = ed.view.coordsAtPos(to);
           const up = box.bottom > window.innerHeight - 190;
           setCreateActive(0);
@@ -262,6 +257,15 @@ export function BookEditor({
     if (c.selected) ed.chain().focus().setTextSelection(c.to).run();
     else ed.chain().focus().insertContentAt({ from: c.from, to: c.to }, { type: "text", text: c.name.trim() }).run();
     useCosmos.getState().addTitledCard(type, c.name.trim());
+  };
+  /** Bouton de la barre de mise en forme : crée la fiche du nom sélectionné, le texte ne bouge pas. */
+  const createFromSelection = (type: CardType) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return;
+    const name = selectedName(ed.state, cardsRef.current);
+    if (!name) return;
+    useCosmos.getState().addTitledCard(type, name);
+    ed.chain().focus().setTextSelection(ed.state.selection.to).run();
   };
   const pickCreateRef = useRef(pickCreate);
   pickCreateRef.current = pickCreate;
@@ -504,7 +508,7 @@ export function BookEditor({
           onPick={pickCreate}
         />
       )}
-      {editor && <FormatBar editor={editor} revisit onChutier={() => handlers.current?.onChutier()} />}
+      {editor && <FormatBar editor={editor} revisit onChutier={() => handlers.current?.onChutier()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
       {veil && (
         <>
           <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />

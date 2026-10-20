@@ -1387,6 +1387,8 @@ export const en: Messages = {
     quote: "Quote (Ctrl or Cmd + Shift + B)",
     revisit: "To revisit (Ctrl or Cmd + Shift + X)",
     chutier: "Send to the Chutier (Ctrl or Cmd + Shift + K)",
+    createCharacter: "Create a character card with this name (or type /)",
+    createPlace: "Create a place card with this name (or type /)",
     boldGlyph: "B",
     italicGlyph: "I",
     strikeGlyph: "S",

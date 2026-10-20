@@ -2,6 +2,8 @@
 // listes, case à cocher, citation et « à reprendre ». Le chemin souris et doigt des raccourcis clavier
 // (Cmd/Ctrl+B, +I…) : sur un écran tactile, sélectionner un mot suffit à la faire paraître.
 
+import type { ReactNode } from "react";
+import type { EditorState } from "@tiptap/pm/state";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { useT } from "../i18n";
@@ -10,12 +12,37 @@ interface Action {
   key: string;
   label: string;
   /** Texte du bouton (une lettre ou un symbole, mis en forme comme son effet). */
-  glyph: string;
+  glyph: ReactNode;
   active: boolean;
   run: () => void;
 }
 
-export function FormatBar({ editor, revisit = true, onChutier }: { editor: Editor; revisit?: boolean; /** Manuscrit : met le passage sélectionné au chutier. */ onChutier?: () => void }) {
+/** Pictogrammes des boutons « Créer un personnage » et « Créer un lieu ». */
+const PERSON = (
+  <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor">
+    <circle cx="8" cy="5" r="3" />
+    <path d="M2.5 14c0-3 2.4-5 5.5-5s5.5 2 5.5 5z" />
+  </svg>
+);
+const PLACE = (
+  <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor">
+    <path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.2 4.5 8.5 4.5 8.5s4.5-5.3 4.5-8.5A4.5 4.5 0 0 0 8 1.5zm0 6.2a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4z" />
+  </svg>
+);
+
+export function FormatBar({
+  editor,
+  revisit = true,
+  onChutier,
+  onCreate,
+}: {
+  editor: Editor;
+  revisit?: boolean;
+  /** Manuscrit : met le passage sélectionné au chutier. */
+  onChutier?: () => void;
+  /** Manuscrit : crée une fiche personnage ou lieu du nom sélectionné (`name` rend "" si ce n'est pas un nom possible). */
+  onCreate?: { name: (state: EditorState) => string; run: (type: "personnage" | "lieu") => void };
+}) {
   const f = useT().format;
   const chain = () => editor.chain().focus();
   // Abonnement à la sélection : les boutons actifs suivent le curseur.
@@ -30,6 +57,7 @@ export function FormatBar({ editor, revisit = true, onChutier }: { editor: Edito
       task: e.isActive("taskList"),
       quote: e.isActive("blockquote"),
       revisit: e.isActive("highlight"),
+      nameable: onCreate ? onCreate.name(e.state) !== "" : false,
     }),
   });
   const actions: Action[] = [
@@ -42,6 +70,12 @@ export function FormatBar({ editor, revisit = true, onChutier }: { editor: Edito
     { key: "quote", label: f.quote, glyph: "“", active: on.quote, run: () => chain().toggleBlockquote().run() },
     ...(revisit
       ? [{ key: "revisit", label: f.revisit, glyph: "!", active: on.revisit, run: () => chain().toggleHighlight().run() }]
+      : []),
+    ...(onCreate && on.nameable
+      ? [
+          { key: "create-personnage", label: f.createCharacter, glyph: PERSON, active: false, run: () => onCreate.run("personnage") },
+          { key: "create-lieu", label: f.createPlace, glyph: PLACE, active: false, run: () => onCreate.run("lieu") },
+        ]
       : []),
     ...(onChutier ? [{ key: "chutier", label: f.chutier, glyph: "⤓", active: false, run: onChutier }] : []),
   ];

@@ -1405,6 +1405,8 @@ export const fr = {
     quote: "Citation (Ctrl ou Cmd + Maj + B)",
     revisit: "À reprendre (Ctrl ou Cmd + Maj + X)",
     chutier: "Mettre au chutier (Ctrl ou Cmd + Maj + K)",
+    createCharacter: "Créer une fiche personnage avec ce nom (ou taper /)",
+    createPlace: "Créer une fiche lieu avec ce nom (ou taper /)",
     boldGlyph: "G",
     italicGlyph: "I",
     strikeGlyph: "S",
