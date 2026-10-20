@@ -27,7 +27,7 @@ export function useFocusFollow(editor: Editor | null, focusMode: boolean, typewr
       if (!caret) return;
       if (highlight !== "line") return setVeil(null);
       const top = page.getBoundingClientRect().top;
-      setVeil({ top: caret.top - top - 2, bottom: caret.bottom - top + 2 });
+      setVeil({ top: caret.top - top, bottom: caret.bottom - top });
     };
     follow();
     editor.on("selectionUpdate", follow);

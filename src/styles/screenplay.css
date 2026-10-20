@@ -64,6 +64,12 @@
 .screenplay.is-focus .sp-page.is-dimmed .sp-editor { color: color-mix(in srgb, var(--ink) 34%, transparent); }
 .screenplay.is-focus .sp-page.is-dimmed .sp-editor .is-focus-on { color: var(--ink); }
 .screenplay.is-focus .ms-veil { background: var(--ground); }
+/* Pas de pied de page en focus (les pages ne sont pas affichées), une seule barre de défilement (celle de la feuille),
+   et un interligne plus aéré pour que le voile et la mise en valeur ne laissent pas voir la ligne voisine. */
+.screenplay.is-focus { overflow: hidden; }
+.screenplay.is-focus > .sp-center { min-height: 0; overflow: hidden; }
+.screenplay.is-focus .sp-footer { display: none; }
+.screenplay.is-focus .sp-editor { line-height: 1.5; }
 .sp-bar-hint kbd { padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 4px; font: inherit; }
 
 /* La feuille : Courier 12 points, 10 caractères par pouce. 1ch = un caractère, donc
