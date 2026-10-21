@@ -553,6 +553,16 @@
 <h3>Markdown copies and versions</h3>
 <p>After each save, the desktop app writes into <code>markdown/</code> the manuscript, the bible and the canvas in Markdown, with links between entries. A dated copy is kept every day in <code>markdown/versions/</code>: thirty days, then one per month. These copies are never read back: always write in the app. The <span class="ui">Markdown copies in the project folder</span> setting (<span class="ui">Settings</span> › <span class="ui">This project</span>) turns them off.</p>
 
+<h3>Syncing between devices</h3>
+<p>Three ways, depending on your devices. In every case a project stays an ordinary folder: the sync service copies it, and MondoWrite reloads the changes.</p>
+<ul>
+  <li><strong>iCloud Drive (iPhone, iPad, Mac).</strong> On iPhone and iPad, projects are kept in the MondoWrite folder of iCloud Drive (<span class="ui">Settings</span> › <span class="ui">Sync projects with iCloud Drive</span>, on by default). On the Mac, <span class="ui">Open folder…</span> suggests that folder first: open the same project there.</li>
+  <li><strong>A cloud folder (iPhone, iPad, PC, Mac).</strong> On the projects page, <span class="ui">Choose a cloud folder…</span> remembers a folder in Dropbox, iCloud Drive or OneDrive. New projects are created in a subfolder named after their title, and the projects it holds show up in the list. On iPhone and iPad the picker is the Files app; iOS greys out OneDrive for folders, so use Dropbox or iCloud Drive.</li>
+  <li><strong>A .zip file.</strong> <span class="ui">Export</span> › <span class="ui">Full project (.zip)</span> takes everything (text, settings, images and PDFs). <span class="ui">Import a project (.zip)…</span> puts it in an empty folder and never overwrites a project. Handy for a one-off hand-over, from a PC to a Mac for instance.</li>
+</ul>
+<p>On iPhone and iPad the app reloads the open project every 20 seconds and when you come back to it.</p>
+<div class="note" data-label="Avoid"><p>Don’t write on two devices at the same time: syncing sometimes takes a few seconds. If the same file changed on both sides, the app keeps both versions and lets you choose.</p></div>
+
 <h3>Editing outside MondoWrite</h3>
 <p>You can edit a project file with other software, or from another computer through a synced folder. The app notices and picks up the new version. If the same file changed on both sides, neither is overwritten: the version on disk is kept, yours is saved next to it (“… (MondoWrite).md”), and a banner lets you choose: <span class="ui">Keep mine</span> or <span class="ui">Keep the disk version</span>.</p>
 
