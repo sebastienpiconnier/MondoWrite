@@ -319,6 +319,8 @@ interface CosmosState {
   closeProject: (force?: boolean) => Promise<void>;
   /** Retire un projet de la liste de l'accueil, sans toucher à ses fichiers. */
   unlistProject: (id: string) => Promise<void>;
+  /** Mobile : supprime un projet (son dossier), après confirmation à l'accueil. */
+  deleteProject: (id: string) => Promise<void>;
   /** Le dossier du projet n'a pas pu être ouvert : un message, à l'accueil, invite à le choisir à nouveau. */
   openFailed: boolean;
   dismissOpenFailed: () => void;
@@ -1659,6 +1661,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
     unlistProject: async (id) => {
       storage.unlist(id);
+      await refreshProjects();
+    },
+    deleteProject: async (id) => {
+      try {
+        await storage.deleteProject?.(id);
+      } catch (err) {
+        console.error(err);
+      }
       await refreshProjects();
     },
     openFailed: false,

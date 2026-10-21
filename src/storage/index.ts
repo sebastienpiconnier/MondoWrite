@@ -55,6 +55,8 @@ export interface Storage {
   remember(info: { title: string; kind: ProjectKind }): void;
   /** Retire un projet de la liste, sans toucher à ses fichiers. */
   unlist(id: string): void;
+  /** Mobile : efface pour de bon le dossier d'un projet (et, dans iCloud, sur tous les appareils), puis le retire de la liste. */
+  deleteProject?(id: string): Promise<void>;
   /**
    * Import : l'auteur choisit un fichier texte, qui est lu sans être modifié.
    * `label` décrit le format dans le dialogue. Renvoie null si l'auteur annule.

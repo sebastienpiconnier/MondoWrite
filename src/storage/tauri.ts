@@ -464,7 +464,14 @@ export const tauriStorage: Storage = {
         if (entry.isDirectory && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0, ...(cloud ? { cloud: true } : {}) });
       }
     }
-    return byRecency(list);
+    // Un projet mémorisé dont le dossier a disparu (supprimé sur un autre appareil, ancien emplacement) quitte la liste.
+    const present: typeof list = [];
+    for (const e of list) {
+      const path = e.id === CLOUD_SELF ? dir : await join(dir, e.id);
+      if (await exists(path).catch(() => true)) present.push(e);
+      else dropRecent(e.id);
+    }
+    return byRecency(present);
   },
   select(id) {
     current = id;
@@ -499,6 +506,16 @@ export const tauriStorage: Storage = {
     touchRecent({ id: current, name: mobile ? info.title || current : baseName(current), ...info, openedAt: Date.now(), ...(mobile && cloudCache ? { cloud: true } : {}) });
   },
   unlist: dropRecent,
+  deleteProject: mobile
+    ? async (id) => {
+        // Le dossier cloud choisi lui-même n'est jamais effacé : on le quitte depuis l'accueil.
+        if (id === CLOUD_SELF || id.includes("/") || id.includes("\\") || id.startsWith(".")) return;
+        const path = await join(await mobileRoot(), id);
+        if (await exists(path)) await remove(path, { recursive: true });
+        dropRecent(id);
+        if (current === id) current = null;
+      }
+    : undefined,
   async pickTextFile(label, extensions) {
     // Le fichier choisi dans le dialogue du système est autorisé en lecture par Tauri.
     const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions }] });

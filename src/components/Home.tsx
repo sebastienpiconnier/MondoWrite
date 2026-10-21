@@ -19,11 +19,13 @@ export function Home() {
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
-  const { openProject, openFolder, createProject, tryExample, unlistProject, importFile, importProjectZip, chooseCloudFolder, leaveCloudFolder } = useCosmos.getState();
+  const { openProject, openFolder, createProject, tryExample, unlistProject, deleteProject, importFile, importProjectZip, chooseCloudFolder, leaveCloudFolder } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
   const [busy, setBusy] = useState(false);
+  /** Mobile : projet dont la suppression attend une confirmation (deux gestes, jamais un seul toucher). */
+  const [asking, setAsking] = useState<string | null>(null);
   const ids = { title: useId(), recent: useId(), fresh: useId() };
   const date = new Intl.DateTimeFormat(lang, { dateStyle: "medium" });
 
@@ -105,6 +107,24 @@ export function Home() {
                     >
                       <span aria-hidden="true">×</span>
                     </button>
+                  )}
+                  {storage.deleteProject && p.id !== "@dossier" && asking !== p.id && (
+                    <button type="button" className="icon-button" disabled={busy} aria-label={fmt(h.remove, { title: nameOf(p) })} title={fmt(h.remove, { title: nameOf(p) })} onClick={() => setAsking(p.id)}>
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  )}
+                  {asking === p.id && (
+                    <div className="home-confirm" role="alert">
+                      <p>{fmt(h.removeAsk, { title: nameOf(p) })}</p>
+                      <div className="home-buttons">
+                        <button type="button" className="ghost-button is-danger" disabled={busy} onClick={() => run(async () => { setAsking(null); await deleteProject(p.id); })}>
+                          {h.removeYes}
+                        </button>
+                        <button type="button" className="ghost-button" onClick={() => setAsking(null)}>
+                          {h.removeNo}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </li>
               ))}
