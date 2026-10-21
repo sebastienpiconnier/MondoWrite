@@ -14,7 +14,57 @@ permissions:
   contents: write
 
 jobs:
+  # Brouillon de la Release, créé une fois avant les quatre fabrications (ou repris s'il existe déjà).
+  # Brouillon à relire puis publier à la main. Pas de préversion : seule une version publiée normale
+  # est « la dernière », celle que l'app trouve (latest.json, API de GitHub).
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Brouillon de la Release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          # Lancé à la main : v + la version de l'app (jamais « main »).
+          if [ -z "$RELEASE_TAG" ]; then RELEASE_TAG="v$(node -p 'require("./package.json").version')"; fi
+          cat > "$RUNNER_TEMP/body.md" <<'BODY'
+          MondoWrite pour macOS (Apple Silicon et Intel), Windows et Linux. *English below.*
+
+          **Installer**
+          - macOS : ouvre le .dmg (aarch64 pour un Mac Apple Silicon, x64 pour un Mac Intel) et glisse MondoWrite dans Applications. L'app est signée et vérifiée par Apple.
+          - Windows : lance le .exe (ou le .msi). Si SmartScreen s'affiche (version récente encore peu téléchargée), « Informations complémentaires » puis « Exécuter quand même ».
+          - Linux : AppImage, .deb ou .rpm.
+
+          Mises à jour : MondoWrite te prévient d'une nouvelle version (Réglages, « Mises à jour ») et l'installe d'un clic. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
+
+          [Politique de signature du code](https://github.com/sebastienpiconnier/MondoWrite/blob/main/CODE_SIGNING.md)
+
+          ---
+
+          MondoWrite for macOS (Apple Silicon and Intel), Windows and Linux.
+
+          **Install**
+          - macOS: open the .dmg (aarch64 for an Apple Silicon Mac, x64 for an Intel Mac) and drag MondoWrite to Applications. The app is signed and verified by Apple.
+          - Windows: run the .exe (or the .msi). If SmartScreen appears (a recent version not yet downloaded much), click “More info”, then “Run anyway”.
+          - Linux: AppImage, .deb or .rpm.
+
+          Updates: MondoWrite tells you when a new version is out (Settings, “Updates”) and installs it in one click. Your projects remain folders of Markdown files, readable outside the app.
+
+          [Code signing policy](https://github.com/sebastienpiconnier/MondoWrite/blob/main/CODE_SIGNING.md#english)
+          BODY
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=30" --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id" | head -n 1)
+          if [ -z "$id" ]; then
+            id=$(gh api "repos/$GITHUB_REPOSITORY/releases" -f tag_name="$RELEASE_TAG" -f target_commitish="$GITHUB_SHA" \
+              -f name="MondoWrite $RELEASE_TAG" -F body=@"$RUNNER_TEMP/body.md" -F draft=true -F prerelease=false --jq .id)
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: release
     strategy:
       fail-fast: false
       matrix:
@@ -128,35 +178,10 @@ jobs:
         with:
           # Lancé par une étiquette : celle-ci. Lancé à la main : v + la version de l'app (jamais « main »).
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: "MondoWrite ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
-          releaseBody: |
-            MondoWrite pour macOS (Apple Silicon et Intel), Windows et Linux. *English below.*
-
-            **Installer**
-            - macOS : ouvre le .dmg (aarch64 pour un Mac Apple Silicon, x64 pour un Mac Intel) et glisse MondoWrite dans Applications. L'app est signée et vérifiée par Apple.
-            - Windows : lance le .exe (ou le .msi). Si SmartScreen s'affiche (version récente encore peu téléchargée), « Informations complémentaires » puis « Exécuter quand même ».
-            - Linux : AppImage, .deb ou .rpm.
-
-            Mises à jour : MondoWrite te prévient d'une nouvelle version (Réglages, « Mises à jour ») et l'installe d'un clic. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
-
-            [Politique de signature du code](https://github.com/sebastienpiconnier/MondoWrite/blob/main/CODE_SIGNING.md)
-
-            ---
-
-            MondoWrite for macOS (Apple Silicon and Intel), Windows and Linux.
-
-            **Install**
-            - macOS: open the .dmg (aarch64 for an Apple Silicon Mac, x64 for an Intel Mac) and drag MondoWrite to Applications. The app is signed and verified by Apple.
-            - Windows: run the .exe (or the .msi). If SmartScreen appears (a recent version not yet downloaded much), click “More info”, then “Run anyway”.
-            - Linux: AppImage, .deb or .rpm.
-
-            Updates: MondoWrite tells you when a new version is out (Settings, “Updates”) and installs it in one click. Your projects remain folders of Markdown files, readable outside the app.
-
-            [Code signing policy](https://github.com/sebastienpiconnier/MondoWrite/blob/main/CODE_SIGNING.md#english)
-          # Brouillon à relire puis publier à la main. Pas de préversion : seule une version publiée normale
-          # est « la dernière », celle que l'app trouve (latest.json, API de GitHub).
-          releaseDraft: true
-          prerelease: false
+          # La Release (brouillon) est créée une seule fois par la tâche « release » : quand chaque fabrication
+          # la cherchait puis la créait, deux tournaient en même temps et en créaient deux (1.0.13 : Apple Silicon
+          # et Windows dans l'une, Intel et Linux dans l'autre, mise à jour automatique cassée).
+          releaseId: ${{ needs.release.outputs.id }}
           # latest.json est écrit une seule fois, par la tâche « latest-json » ci-dessous : les quatre
           # fabrications l'écrivaient en même temps et la dernière effaçait les autres plateformes.
           includeUpdaterJson: false
