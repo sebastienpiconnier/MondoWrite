@@ -191,19 +191,43 @@ async function syncFolderHint(): Promise<string | undefined> {
  */
 const DESKTOP_CLOUD_KEY = "cosmos:dossier-cloud-pc";
 
+/** Projets iCloud vus du Mac : le dossier où l'iPhone et l'iPad les rangent (conteneur de l'app, Documents/projets). */
 const MAC_ICLOUD = "Library/Mobile Documents/iCloud~app~cosmos~ecriture/Documents";
 const MAC_ICLOUD_OFF = "cosmos:icloud-pc-off";
+const MAC_ICLOUD_NAME = "iCloud Drive";
+
+async function macIcloudDocs() {
+  return join(await homeDir(), ...MAC_ICLOUD.split("/"));
+}
+
+async function macIcloudProjects() {
+  return join(await macIcloudDocs(), MOBILE_DIR);
+}
+
+function macIcloudOn() {
+  const cloud = desktopCloud();
+  return !!cloud && cloud.name === MAC_ICLOUD_NAME && cloud.path.replace(/\\/g, "/").includes(MAC_ICLOUD);
+}
+
+function setDesktopCloud(path: string, name: string) {
+  localStorage.setItem(DESKTOP_CLOUD_KEY, JSON.stringify({ path, name }));
+}
 
 /**
  * Mac : si le conteneur iCloud de l'app existe (iCloud Drive actif, un autre appareil l'a créé) et que l'auteur n'a pas
- * choisi autre chose ni quitté la synchronisation, il devient le dossier cloud par défaut : les projets de l'iPhone et de l'iPad s'y trouvent.
+ * choisi autre chose ni quitté la synchronisation, ses projets deviennent le dossier cloud par défaut : ceux de l'iPhone
+ * et de l'iPad apparaissent à l'accueil, et un nouveau projet y est créé.
  */
 async function adoptMacIcloud() {
-  if (mobile || desktopCloud()) return;
+  if (mobile) return;
   try {
-    if (localStorage.getItem(MAC_ICLOUD_OFF) === "1") return;
-    const path = await join(await homeDir(), ...MAC_ICLOUD.split("/"));
-    if (await exists(path)) localStorage.setItem(DESKTOP_CLOUD_KEY, JSON.stringify({ path, name: "iCloud Drive" }));
+    const projects = await macIcloudProjects();
+    // Premier essai : le dossier Documents du conteneur, sans « projets » (les projets de l’iPhone sont dans projets/).
+    if (macIcloudOn() && desktopCloud()?.path !== projects) setDesktopCloud(projects, MAC_ICLOUD_NAME);
+    if (desktopCloud() || localStorage.getItem(MAC_ICLOUD_OFF) === "1") return;
+    if (!(await exists(await macIcloudDocs()))) return;
+    await mkdir(projects, { recursive: true });
+    setDesktopCloud(projects, MAC_ICLOUD_NAME);
   } catch {
     /* pas de conteneur iCloud sur cet ordinateur */
   }
@@ -294,8 +318,34 @@ export const tauriStorage: Storage = {
   },
 
   kind: "tauri",
-  icloud: mobile
+  icloud: !mobile
     ? {
+        // Mac : la case des Réglages pointe le dossier cloud sur les projets iCloud (ou le quitte).
+        available: async () => {
+          try {
+            return await exists(await macIcloudDocs());
+          } catch {
+            return false;
+          }
+        },
+        enabled: () => macIcloudOn(),
+        async set(on) {
+          try {
+            if (on) {
+              const projects = await macIcloudProjects();
+              await mkdir(projects, { recursive: true });
+              setDesktopCloud(projects, MAC_ICLOUD_NAME);
+              localStorage.removeItem(MAC_ICLOUD_OFF);
+            } else {
+              if (macIcloudOn()) localStorage.removeItem(DESKTOP_CLOUD_KEY);
+              localStorage.setItem(MAC_ICLOUD_OFF, "1");
+            }
+          } catch {
+            /* le choix vaut pour la session */
+          }
+        },
+      }
+    : {
         available: async () => (await icloudDir()) !== null,
         enabled: () => icloudWanted(),
         async set(on) {
@@ -306,8 +356,7 @@ export const tauriStorage: Storage = {
           }
           if (on) await migratePrivateProjects();
         },
-      }
-    : undefined,
+      },
   canPickFolder: !mobile,
   canImportZip: true,
   cloud: !mobile

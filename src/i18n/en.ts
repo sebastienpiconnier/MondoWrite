@@ -167,6 +167,7 @@ export const en: Messages = {
     focusTypewriter: "Focus mode: typewriter",
     icloud: "Sync projects with iCloud Drive",
     icloudHint: "Projects are kept in iCloud Drive (Files > iCloud Drive > MondoWrite) and found on your other devices. Turning it off leaves them in iCloud and stops syncing this device.",
+    icloudHintMac: "Projects from your iPhone and iPad show up here, and new ones are created there (Finder > iCloud Drive > MondoWrite). Turning it off leaves them in iCloud.",
     typography: "Typography as you type",
     typographyModes: { auto: "Follow the language", fr: "French (« », non-breaking spaces)", en: "English (“ ”)", off: "None" },
     typographyHint: "Quotes, apostrophe ’, ellipsis …, dash from two hyphens. In the manuscript, cards and the Bible.",

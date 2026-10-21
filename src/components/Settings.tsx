@@ -269,13 +269,13 @@ export function Settings({ project = true }: { project?: boolean }) {
                   checked={icloudOn}
                   onChange={(e) => {
                     setIcloudOn(e.target.checked);
-                    void storage.icloud?.set(e.target.checked);
+                    void useCosmos.getState().setIcloud(e.target.checked);
                   }}
                 />
                 {t.settings.icloud}
               </label>
               <p className="settings-hint" id={ids.icloudHint}>
-                {t.settings.icloudHint}
+                {storage.canPickFolder ? t.settings.icloudHintMac : t.settings.icloudHint}
               </p>
             </>
           )}

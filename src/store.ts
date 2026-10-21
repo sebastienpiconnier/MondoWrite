@@ -306,6 +306,8 @@ interface CosmosState {
   chooseCloudFolder: () => Promise<void>;
   /** Mobile : revient à l'espace de l'app (le dossier cloud n'est pas touché). */
   leaveCloudFolder: () => Promise<void>;
+  /** Case « Synchroniser les projets avec iCloud Drive » (iPhone, iPad, Mac), puis liste des projets relue. */
+  setIcloud: (on: boolean) => Promise<void>;
   /** L'import n'a pas eu lieu : dossier déjà occupé par un projet, ou fichier sans scénario. */
   importNotice: "taken" | "empty" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
@@ -1515,6 +1517,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     leaveCloudFolder: async () => {
       storage.cloud?.clear();
+      await refreshProjects();
+    },
+    setIcloud: async (on) => {
+      await storage.icloud?.set(on);
       await refreshProjects();
     },
     importProjectZip: async () => {

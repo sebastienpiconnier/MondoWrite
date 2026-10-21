@@ -168,6 +168,7 @@ export const fr = {
     focusTypewriter: "Mode focus : machine à écrire",
     icloud: "Synchroniser les projets avec iCloud Drive",
     icloudHint: "Les projets sont gardés dans iCloud Drive (Fichiers > iCloud Drive > MondoWrite) et retrouvés sur tes autres appareils. En le désactivant, ils restent dans iCloud et ceux de cet appareil ne sont plus synchronisés.",
+    icloudHintMac: "Les projets de l’iPhone et de l’iPad apparaissent ici et les nouveaux y sont créés (Finder > iCloud Drive > MondoWrite). En le désactivant, ils restent dans iCloud.",
     typography: "Typographie à la frappe",
     typographyModes: { auto: "Selon la langue", fr: "Française (« », espaces insécables)", en: "Anglaise (“ ”)", off: "Aucune" },
     typographyHint: "Guillemets, apostrophe ’, points de suspension …, tiret à partir de deux traits d’union. Dans le manuscrit, les cartes et la Bible.",
