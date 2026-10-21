@@ -1617,7 +1617,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     tryExample: async () => {
-      if (!(await storage.create())) return;
+      // Créé d'office, sans dialogue : dossier cloud ou iCloud s'il y en a un, sinon Documents/MondoWrite (ordinateur).
+      if (!(await storage.create(getT().demo.title, { auto: true }))) return;
       // Les gravures du conte, avant l'ouverture : les cartes les trouvent aussitôt dans medias/.
       // Un échec (quota du navigateur) laisse seulement les cartes sans image.
       try {

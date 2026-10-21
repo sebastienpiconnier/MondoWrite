@@ -476,15 +476,18 @@ export const tauriStorage: Storage = {
   select(id) {
     current = id;
   },
-  async create(name) {
+  async create(name, options) {
     if (!mobile) {
       await adoptMacIcloud();
       const cloud = desktopCloud();
-      if (!cloud || !(await exists(cloud.path))) return this.pickFolder();
-      // Dossier cloud choisi : le projet y naît dans un sous-dossier, sans dialogue.
+      let root = cloud && (await exists(cloud.path)) ? cloud.path : null;
+      // Sans dossier cloud, un projet créé d'office (projet d'exemple) va dans Documents/MondoWrite, sans dialogue.
+      if (!root && options?.auto) root = await join(await documentDir(), "MondoWrite");
+      if (!root) return this.pickFolder();
+      // Le projet y naît dans un sous-dossier qui porte son titre.
       const base = folderSlug(name ?? "") || "Projet";
-      let path = await join(cloud.path, base);
-      for (let i = 2; await exists(path); i++) path = await join(cloud.path, `${base} ${i}`);
+      let path = await join(root, base);
+      for (let i = 2; await exists(path); i++) path = await join(root, `${base} ${i}`);
       await mkdir(path, { recursive: true });
       current = path;
       return true;

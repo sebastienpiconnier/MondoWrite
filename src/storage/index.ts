@@ -50,7 +50,7 @@ export interface Storage {
    * Prépare l'emplacement d'un nouveau projet et le sélectionne : dialogue de dossier sur ordinateur,
    * nouvel emplacement privé ailleurs. Renvoie false si l'auteur annule.
    */
-  create(name?: string): Promise<boolean>;
+  create(name?: string, options?: { auto?: boolean }): Promise<boolean>;
   /** Inscrit le projet sélectionné en tête de la liste, avec son titre et son type. */
   remember(info: { title: string; kind: ProjectKind }): void;
   /** Retire un projet de la liste, sans toucher à ses fichiers. */

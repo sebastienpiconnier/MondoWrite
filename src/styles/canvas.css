@@ -79,6 +79,7 @@
 @media (any-hover: hover) { .frame-lock:hover { background: var(--hover); color: var(--ink); } }
 .frame-lock[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent-soft); }
 .frame.is-locked { border-style: solid; }
+.frame.is-lifted { border-color: var(--accent); border-style: solid; box-shadow: 0 22px 38px -10px rgba(0, 0, 0, 0.5), 0 0 0 3px var(--accent-soft); cursor: grabbing; }
 .frame.is-locked .frame-handle { cursor: default; }
 .frame-resize-line { border-color: transparent !important; }
 .frame-resize-handle { width: 12px !important; height: 12px !important; border-radius: 4px !important; background: var(--surface) !important; border: 2px solid var(--accent) !important; }

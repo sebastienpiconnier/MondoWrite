@@ -2,10 +2,11 @@
 // en-tête (les cartes qu'il contient suivent, voir le store), on le redimensionne par ses bords.
 // Son intérieur laisse passer les clics : on peut toujours créer une carte dedans.
 
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { useCosmos, type FrameNode as FrameNodeT } from "../store";
 import { useT } from "../i18n";
+import { useLifted } from "../lifted";
 
 function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const t = useT().toile;
@@ -13,9 +14,14 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const deleteFrame = useCosmos((s) => s.deleteFrame);
   const toggleFrameLock = useCosmos((s) => s.toggleFrameLock);
   const locked = data.locked === true;
+  // Soulevé par un appui long dans la toile (Toile.tsx) ; perdre la sélection le repose, comme une carte.
+  const lifted = useLifted((s) => s.id === id) && !!selected;
+  useEffect(() => {
+    if (!selected && useLifted.getState().id === id) useLifted.getState().set(null);
+  }, [selected, id]);
 
   return (
-    <div className={`frame${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}${locked ? " is-locked" : ""}`}>
+    <div className={`frame${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}${locked ? " is-locked" : ""}${lifted ? " is-lifted" : ""}`}>
       <NodeResizer minWidth={220} minHeight={140} isVisible={selected && !locked} lineClassName="frame-resize-line" handleClassName="frame-resize-handle" />
       <div className="frame-handle">
         <input

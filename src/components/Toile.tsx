@@ -320,7 +320,7 @@ export function Toile() {
     return () => window.removeEventListener("paste", onPaste);
   }, []);
 
-  // Appui long sur une carte (doigt, stylet ou souris) : elle est sélectionnée et « soulevée » (ombre portée)
+  // Appui long sur une carte, ou dans un cadre libre (doigt, stylet ou souris) : elle est sélectionnée et « soulevée » (ombre portée)
   // pour être déplacée ; on peut enchaîner en la faisant glisser sans lever le doigt. L'appui long ne crée
   // plus de carte sur la toile : trop de cartes naissaient par erreur (création : double-clic, clic droit,
   // bouton « Nouvelle carte » ou touche N). Au relâchement, le navigateur émule mousedown/click sous le doigt :
@@ -329,14 +329,31 @@ export function Toile() {
     const el = wrapper.current;
     if (!el) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let start: { x: number; y: number; id: string } | null = null;
+    let start: { x: number; y: number; id: string; frame: boolean } | null = null;
     let fired = false;
     let swallowUntil = 0;
     // Carte soulevée en cours de déplacement (nous la déplaçons nous-mêmes : le texte de la carte est « nodrag »).
-    let moving: { id: string; x: number; y: number } | null = null;
+    // Un cadre libre se soulève de même (par son en-tête ou un endroit vide de son intérieur) et emmène ses cartes.
+    let moving: { id: string; x: number; y: number; frame: boolean } | null = null;
+    const movable = (id: string, frame: boolean) => {
+      const store = useCosmos.getState();
+      return frame ? store.frames.find((f) => f.id === id && f.data.locked !== true) : store.nodes.find((n) => n.id === id);
+    };
+    /** Cadre libre le plus petit sous le point (l'intérieur d'un cadre ne reçoit pas le pointeur : on le cherche). */
+    const frameAt = (x: number, y: number) => {
+      const p = screenToFlowPosition({ x, y });
+      let best: { id: string; area: number } | null = null;
+      for (const f of useCosmos.getState().frames) {
+        if (f.data.locked === true || f.hidden) continue;
+        const b = frameBox(f);
+        if (p.x < b.x || p.y < b.y || p.x > b.x + b.width || p.y > b.y + b.height) continue;
+        if (!best || b.width * b.height < best.area) best = { id: f.id, area: b.width * b.height };
+      }
+      return best?.id ?? null;
+    };
     const endMove = () => {
       if (!moving) return;
-      const c = useCosmos.getState().nodes.find((n) => n.id === moving!.id);
+      const c = movable(moving.id, moving.frame);
       if (c) useCosmos.getState().onNodesChange([{ type: "position", id: c.id, position: c.position, dragging: false }]);
       moving = null;
     };
@@ -350,11 +367,25 @@ export function Toile() {
       if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
       const target = e.target instanceof Element ? e.target : null;
       const node = target?.closest<HTMLElement>(".react-flow__node-card");
+      if (target?.closest("input, select, button, a, textarea, .react-flow__handle, .card-resize, .react-flow__resize-control, .react-flow__edge, .react-flow__edgelabel-renderer, .canvas-dock")) return;
+      if (!node) {
+        // Cadre : un endroit vide de son intérieur (son en-tête se tire déjà directement, par React Flow).
+        if (!target?.closest(".react-flow__pane")) return;
+        const frameId = frameAt(e.clientX, e.clientY);
+        if (!frameId || !movable(frameId, true)) return;
+        if (useLifted.getState().id === frameId && useCosmos.getState().frames.some((f) => f.id === frameId && f.selected)) {
+          moving = { id: frameId, x: e.clientX, y: e.clientY, frame: true };
+          e.preventDefault();
+          return;
+        }
+        start = { x: e.clientX, y: e.clientY, id: frameId, frame: true };
+        timer = setTimeout(lift, LONG_PRESS_MS);
+        return;
+      }
       // Ni les boutons ni les poignées ; un texte que l'on est en train d'écrire garde son appui long (loupe, sélection).
-      if (!node || target?.closest("input, select, button, a, .react-flow__handle, .card-resize")) return;
       // Carte déjà soulevée : on la déplace tout de suite, depuis n'importe quel point (texte compris).
       if (useLifted.getState().id === node.getAttribute("data-id") && node.classList.contains("selected")) {
-        moving = { id: node.getAttribute("data-id")!, x: e.clientX, y: e.clientY };
+        moving = { id: node.getAttribute("data-id")!, x: e.clientX, y: e.clientY, frame: false };
         e.preventDefault();
         return;
       }
@@ -362,20 +393,22 @@ export function Toile() {
       if (field && (field === document.activeElement || field.contains(document.activeElement))) return;
       const id = node.getAttribute("data-id");
       if (!id) return;
-      start = { x: e.clientX, y: e.clientY, id };
-      timer = setTimeout(() => {
-        if (!start) return;
-        fired = true;
-        navigator.vibrate?.(10);
-        const store = useCosmos.getState();
-        useCosmos.setState({
-          nodes: store.nodes.map((n) => (n.selected === (n.id === start!.id) ? n : { ...n, selected: n.id === start!.id })),
-          frames: store.frames.map((f) => (f.selected ? { ...f, selected: false } : f)),
-        });
-        useLifted.getState().set(start.id);
-        moving = { id: start.id, x: start.x, y: start.y };
-        start = null;
-      }, LONG_PRESS_MS);
+      start = { x: e.clientX, y: e.clientY, id, frame: false };
+      timer = setTimeout(lift, LONG_PRESS_MS);
+    };
+    const lift = () => {
+      if (!start) return;
+      fired = true;
+      navigator.vibrate?.(10);
+      const { id, frame } = start;
+      const store = useCosmos.getState();
+      useCosmos.setState({
+        nodes: store.nodes.map((n) => (n.selected === (!frame && n.id === id) ? n : { ...n, selected: !frame && n.id === id })),
+        frames: store.frames.map((f) => (f.selected === (frame && f.id === id) ? f : { ...f, selected: frame && f.id === id })),
+      });
+      useLifted.getState().set(id);
+      moving = { id, x: start.x, y: start.y, frame };
+      start = null;
     };
     const move = (e: PointerEvent) => {
       if (moving) {
@@ -384,7 +417,7 @@ export function Toile() {
         const dy = (e.clientY - moving.y) / zoom;
         moving.x = e.clientX;
         moving.y = e.clientY;
-        const c = useCosmos.getState().nodes.find((n) => n.id === moving!.id);
+        const c = movable(moving.id, moving.frame);
         if (c && (dx || dy)) {
           useCosmos.getState().onNodesChange([{ type: "position", id: c.id, position: { x: c.position.x + dx, y: c.position.y + dy }, dragging: true }]);
         }
@@ -412,6 +445,8 @@ export function Toile() {
     el.addEventListener("pointerdown", down, true);
     el.addEventListener("pointermove", move, true);
     const up = () => {
+      // Souris : le clic qui suit le relâchement tomberait sur la toile et ôterait la sélection du cadre soulevé.
+      if (fired) swallowUntil = Date.now() + 400;
       cancel();
       endMove();
     };
@@ -420,6 +455,15 @@ export function Toile() {
       if (moving) e.preventDefault();
     };
     el.addEventListener("mousedown", noFocus, true);
+    // Cadre soulevé depuis son intérieur : le pointeur est sur la toile, que d3-zoom ferait défiler en même temps.
+    const noPan = (e: Event) => {
+      if (!moving?.frame) return;
+      // d3-zoom écoute aussi la fenêtre en phase de capture (souris) : il faut arrêter les écouteurs suivants.
+      e.stopImmediatePropagation();
+      if (e.cancelable) e.preventDefault();
+    };
+    window.addEventListener("mousemove", noPan, true);
+    window.addEventListener("touchmove", noPan, { capture: true, passive: false });
     window.addEventListener("pointerup", up, true);
     window.addEventListener("pointercancel", up, true);
     el.addEventListener("touchend", touchEnd, { capture: true, passive: false });
@@ -428,6 +472,8 @@ export function Toile() {
       el.removeEventListener("pointerdown", down, true);
       el.removeEventListener("pointermove", move, true);
       el.removeEventListener("mousedown", noFocus, true);
+      window.removeEventListener("mousemove", noPan, true);
+      window.removeEventListener("touchmove", noPan, true);
       window.removeEventListener("pointerup", up, true);
       window.removeEventListener("pointercancel", up, true);
       el.removeEventListener("touchend", touchEnd, true);
