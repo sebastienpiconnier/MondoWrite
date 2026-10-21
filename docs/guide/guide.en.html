@@ -96,7 +96,7 @@
 <ol class="steps">
   <li>In <span class="ui">New project</span>, type a <span class="ui">Working title</span> (you can change it).</li>
   <li>Choose <span class="ui">A novel</span> or <span class="ui">A screenplay</span>. The canvas and the Bible are the same, only the writing workshop and the vocabulary change. You can switch later.</li>
-  <li>Click <span class="ui">Create project</span>, then choose the folder to save it in. A project is a folder: put it wherever you like, including iCloud Drive, Dropbox or OneDrive.</li>
+  <li>Click <span class="ui">Create project</span>, then choose the folder to save it in (with iCloud or a cloud folder, it is created there directly, in a folder named after it). A project is a folder: put it wherever you like, including iCloud Drive, Dropbox or OneDrive.</li>
 </ol>
 <div class="note" data-label="Good to know"><p>If the chosen folder already contains a MondoWrite project, the app opens it instead of overwriting it. Creating never overwrites anything.</p></div>
 
@@ -104,7 +104,7 @@
 <p>Click a project in the list to open it. <span class="ui">Open folder…</span> opens a project that isn’t in the list yet (copied from another computer, for example). On a computer, removing a project from the list deletes no file: it stays in its folder. On iPhone and iPad, the cross deletes the project after you confirm: its files are erased, from all your devices if it is in iCloud. Export it as a .zip first if you want to keep a copy.</p>
 
 <h3>Try with an example</h3>
-<p><span class="ui">Try with an example</span> creates the <em>Little Red Riding Hood</em> project: characters, places, connected scenes, an outline in two chapters, the complete text of the tale and three engravings by Doré. It is the best way to discover the app. A six-step <span class="ui">Guided tour</span> opens; it stays available in <span class="ui">Settings</span>.</p>
+<p><span class="ui">Try with an example</span> creates the <em>Little Red Riding Hood</em> project without asking anything (in iCloud or your cloud folder if you have one, otherwise in Documents › MondoWrite on a computer): characters, places, connected scenes, an outline in two chapters, the complete text of the tale and three engravings by Doré. It is the best way to discover the app. A six-step <span class="ui">Guided tour</span> opens; it stays available in <span class="ui">Settings</span>.</p>
 <figure><img src="images/en/visite.jpg"><figcaption>The guided tour introduces each view in a few lines.</figcaption></figure>
 
 <h3>Import a manuscript or a screenplay</h3>
@@ -209,7 +209,7 @@
 <figure class="medium"><img src="images/en/photos.jpg"><figcaption>The free photos window.</figcaption></figure>
 
 <h3>Frames</h3>
-<p>A frame gathers cards without imposing anything on them: “The family”, “Act I”, “Research”. Select cards and press <kbd>C</kbd> (or the <span class="ui">Frame</span> button): the frame surrounds them. Name it in its header. Moving the frame moves the cards inside; drag its edges to resize it. Deleting a frame doesn’t delete its cards.</p>
+<p>A frame gathers cards without imposing anything on them: “The family”, “Act I”, “Research”. Select cards and press <kbd>C</kbd> (or the <span class="ui">Frame</span> button): the frame surrounds them. Name it in its header. Moving the frame (by its header, or with a long press on an empty spot inside it, with a finger or the mouse) moves the cards inside; drag its edges to resize it. Deleting a frame doesn’t delete its cards.</p>
 <p>With no cards selected, <kbd>C</kbd> puts an empty frame in a free space near the center of the view. A new card never lands across a frame: created in a frame (double-click, right-click), it stays there, next to its cards; created elsewhere, it goes into an empty space.</p>
 <p>The <strong>padlock</strong> in the header locks the frame: neither it nor its cards move any more, even with <span class="ui">Organize</span>. The cards stay editable, connectable and deletable.</p>
 <figure class="medium"><img src="images/en/cadre.jpg"><figcaption>A “The family” frame around the characters and places.</figcaption></figure>
@@ -554,14 +554,24 @@
 <p>After each save, the desktop app writes into <code>markdown/</code> the manuscript, the bible and the canvas in Markdown, with links between entries. A dated copy is kept every day in <code>markdown/versions/</code>: thirty days, then one per month. These copies are never read back: always write in the app. The <span class="ui">Markdown copies in the project folder</span> setting (<span class="ui">Settings</span> › <span class="ui">This project</span>) turns them off.</p>
 
 <h3>Syncing between devices</h3>
-<p>Three ways, depending on your devices. In every case a project stays an ordinary folder: the sync service copies it, and MondoWrite reloads the changes.</p>
+<p>A project stays an ordinary folder: a sync service copies it from one device to another, and MondoWrite reloads the changes. Choose according to your devices:</p>
+<table>
+  <thead><tr><th>Your devices</th><th>Recommended method</th></tr></thead>
+  <tbody>
+    <tr><td>iPhone, iPad and Mac</td><td>iCloud Drive, on by default: nothing to set up.</td></tr>
+    <tr><td>With a Windows or Linux PC</td><td>A Dropbox folder chosen on each device.</td></tr>
+    <tr><td>One-off hand-over</td><td>A .zip file.</td></tr>
+  </tbody>
+</table>
 <ul>
-  <li><strong>iCloud Drive (iPhone, iPad, Mac).</strong> On iPhone and iPad, projects are kept in the MondoWrite folder of iCloud Drive (<span class="ui">Settings</span> › <span class="ui">Sync projects with iCloud Drive</span>, on by default). On the Mac, the same box appears in <span class="ui">Settings</span> as soon as iCloud Drive holds that folder, checked by default: projects from your iPhone and iPad show up on the projects page, and new projects are created there.</li>
-  <li><strong>A cloud folder (iPhone, iPad, PC, Mac).</strong> On the projects page, <span class="ui">Choose a cloud folder…</span> remembers a folder in Dropbox, iCloud Drive or OneDrive. New projects are created in a subfolder named after their title, and the projects it holds show up in the list. On iPhone and iPad the picker is the Files app; iOS greys out OneDrive for folders, so use Dropbox or iCloud Drive.</li>
-  <li><strong>A .zip file.</strong> <span class="ui">Export</span> › <span class="ui">Full project (.zip)</span> takes everything (text, settings, images and PDFs). <span class="ui">Import a project (.zip)…</span> puts it in an empty folder and never overwrites a project. Handy for a one-off hand-over, from a PC to a Mac for instance.</li>
+  <li><strong>iCloud Drive (iPhone, iPad, Mac).</strong> Projects are kept in the MondoWrite folder of iCloud Drive (<code>projets</code> subfolder). The <span class="ui">Settings</span> › <span class="ui">Sync projects with iCloud Drive</span> box is checked by default on iPhone and iPad, and on the Mac as soon as iCloud Drive holds that folder. Projects created on one device show up by themselves on the projects page of the others, without looking for them. Each device must be signed in to the same iCloud account, with iCloud Drive turned on.</li>
+  <li><strong>A cloud folder (iPhone, iPad, PC, Mac).</strong> On the projects page, <span class="ui">Choose a cloud folder…</span> remembers a synced folder. New projects are created in a subfolder named after their title, and the projects it holds show up in the list. Choose the same folder on each device. On iPhone and iPad the picker is the Files app.</li>
+  <li><strong>A .zip file.</strong> <span class="ui">Export</span> › <span class="ui">Full project (.zip)</span> takes everything (text, settings, images and PDFs). <span class="ui">Import a project (.zip)…</span> puts it in an empty folder and never overwrites a project.</li>
 </ul>
-<p>On iPhone and iPad the app reloads the open project every 20 seconds and when you come back to it.</p>
+<div class="note" data-label="OneDrive"><p>OneDrive doesn’t work for syncing with an iPhone or iPad: iOS doesn’t let an app pick a OneDrive folder (it appears greyed out in the picker). On a computer, a OneDrive folder works as a cloud folder, but only between computers. To connect a PC and an iPhone, use Dropbox.</p></div>
+<p>On iPhone and iPad the app reloads the open project every 20 seconds and when you come back to it. On a computer, it sees changes as soon as they arrive in the folder.</p>
 <div class="note" data-label="Avoid"><p>Don’t write on two devices at the same time: syncing sometimes takes a few seconds. If the same file changed on both sides, the app keeps both versions and lets you choose.</p></div>
+<p>To delete a project from all your devices: on iPhone and iPad, the cross on the projects page; on a computer, move its folder to the trash (in the Finder: iCloud Drive › MondoWrite › projets).</p>
 
 <h3>Editing outside MondoWrite</h3>
 <p>You can edit a project file with other software, or from another computer through a synced folder. The app notices and picks up the new version. If the same file changed on both sides, neither is overwritten: the version on disk is kept, yours is saved next to it (“… (MondoWrite).md”), and a banner lets you choose: <span class="ui">Keep mine</span> or <span class="ui">Keep the disk version</span>.</p>
@@ -596,7 +606,7 @@
 </div>
 
 <h3>With a finger</h3>
-<p>On a touch screen, everything works with a finger: a long press on a card lifts it (it is selected, with a drop shadow) so you can move it, tapping a card’s label changes its type, the <span class="ui">Select</span> button lets you draw around cards, and every drag-and-drop action also has a button.</p>
+<p>On a touch screen, everything works with a finger: a long press on a card lifts it (it is selected, with a drop shadow) so you can move it, a long press inside an unlocked frame lifts the frame with its cards, tapping a card’s label changes its type, the <span class="ui">Select</span> button lets you draw around cards, and every drag-and-drop action also has a button.</p>
 
 <!-- ===================================================================================== -->
 <h2 id="shortcuts"><span class="num">Chapter 13</span>Keyboard shortcuts</h2>
@@ -663,7 +673,7 @@
 <h4>Where are my texts saved?</h4>
 <p>In the folder you chose when creating the project. The path isn’t shown in the app: find it with <span class="ui">Open folder…</span>, or search your computer for the <code>cosmos.json</code> file.</p>
 <h4>How do I work on two computers?</h4>
-<p>Put the project folder in iCloud Drive, Dropbox or OneDrive, and open it with <span class="ui">Open folder…</span> on the other computer. Avoid writing on both at the same time: if a file changes on both sides, the app keeps both versions and lets you choose.</p>
+<p>Choose the same cloud folder (Dropbox, iCloud Drive or OneDrive) on both computers with <span class="ui">Choose a cloud folder…</span>: their projects show up on both sides. Between two Macs, iCloud does it by itself. See “Syncing between devices”. Avoid writing on both at the same time: if a file changes on both sides, the app keeps both versions and lets you choose.</p>
 <h4>I deleted a card by mistake.</h4>
 <p><kbd>Ctrl</kbd> <kbd>Z</kbd>, or the message’s <span class="ui">Undo</span> button, or <span class="ui">Settings</span> › <span class="ui">Trash</span> › <span class="ui">Restore</span>. A scene’s text is never erased with its card.</p>
 <h4>How do I turn a novel into a screenplay?</h4>

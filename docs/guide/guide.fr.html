@@ -96,7 +96,7 @@
 <ol class="steps">
   <li>Dans <span class="ui">Nouveau projet</span>, tape un <span class="ui">Titre de travail</span> (tu pourras le changer).</li>
   <li>Choisis <span class="ui">Un roman</span> ou <span class="ui">Un scénario</span>. Le canevas et la Bible sont les mêmes, seuls l’atelier d’écriture et le vocabulaire changent. Tu pourras basculer plus tard.</li>
-  <li>Clique <span class="ui">Créer le projet</span>, puis choisis le dossier où l’enregistrer. Un projet est un dossier : place-le où tu veux, y compris dans iCloud Drive, Dropbox ou OneDrive.</li>
+  <li>Clique <span class="ui">Créer le projet</span>, puis choisis le dossier où l’enregistrer (avec iCloud ou un dossier cloud, il y est créé directement, dans un dossier à son nom). Un projet est un dossier : place-le où tu veux, y compris dans iCloud Drive, Dropbox ou OneDrive.</li>
 </ol>
 <div class="note" data-label="Bon à savoir"><p>Si le dossier choisi contient déjà un projet MondoWrite, l’app l’ouvre au lieu de l’écraser. Créer n’écrase jamais rien.</p></div>
 
@@ -104,7 +104,7 @@
 <p>Clique un projet de la liste pour l’ouvrir. <span class="ui">Ouvrir un dossier…</span> ouvre un projet qui n’est pas encore dans la liste (copié depuis un autre ordinateur, par exemple). Sur ordinateur, retirer un projet de la liste ne supprime aucun fichier : il reste dans son dossier. Sur iPhone et iPad, la croix supprime le projet après confirmation : ses fichiers sont effacés, et de tous tes appareils s’il est dans iCloud. Exporte-le d’abord en .zip si tu veux en garder une copie.</p>
 
 <h3>Essayer avec un exemple</h3>
-<p><span class="ui">Essayer avec un exemple</span> crée le projet <em>Le Petit Chaperon rouge</em> : des personnages, des lieux, des scènes reliées, un plan en deux chapitres, le texte complet du conte et trois gravures de Doré. C’est le meilleur moyen de découvrir l’app. Une <span class="ui">Visite guidée</span> en six étapes s’ouvre alors ; elle reste disponible dans les <span class="ui">Réglages</span>.</p>
+<p><span class="ui">Essayer avec un exemple</span> crée le projet <em>Le Petit Chaperon rouge</em>, sans rien te demander (dans iCloud ou ton dossier cloud s’il y en a un, sinon dans Documents › MondoWrite sur ordinateur) : des personnages, des lieux, des scènes reliées, un plan en deux chapitres, le texte complet du conte et trois gravures de Doré. C’est le meilleur moyen de découvrir l’app. Une <span class="ui">Visite guidée</span> en six étapes s’ouvre alors ; elle reste disponible dans les <span class="ui">Réglages</span>.</p>
 <figure><img src="images/fr/visite.jpg"><figcaption>La visite guidée présente chaque vue en quelques lignes.</figcaption></figure>
 
 <h3>Importer un manuscrit ou un scénario</h3>
@@ -209,7 +209,7 @@
 <figure class="medium"><img src="images/fr/photos.jpg"><figcaption>La fenêtre des photos libres.</figcaption></figure>
 
 <h3>Les cadres</h3>
-<p>Un cadre regroupe des cartes sans rien leur imposer : « La famille », « Acte I », « Recherche ». Sélectionne des cartes et appuie sur <kbd>C</kbd> (ou le bouton <span class="ui">Cadre</span>) : le cadre les entoure. Donne-lui un nom dans son en-tête. Déplacer le cadre déplace les cartes qui sont dedans ; tire ses bords pour le redimensionner. Supprimer un cadre ne supprime pas ses cartes.</p>
+<p>Un cadre regroupe des cartes sans rien leur imposer : « La famille », « Acte I », « Recherche ». Sélectionne des cartes et appuie sur <kbd>C</kbd> (ou le bouton <span class="ui">Cadre</span>) : le cadre les entoure. Donne-lui un nom dans son en-tête. Déplacer le cadre (par son en-tête, ou par un appui long sur un endroit vide de son intérieur, au doigt comme à la souris) déplace les cartes qui sont dedans ; tire ses bords pour le redimensionner. Supprimer un cadre ne supprime pas ses cartes.</p>
 <p>Sans cartes sélectionnées, <kbd>C</kbd> pose un cadre vide dans un espace libre, près du centre de la vue. Une nouvelle carte ne se pose jamais à cheval sur un cadre : créée dans un cadre (double-clic, clic droit), elle y reste, à côté de ses cartes ; créée ailleurs, elle va dans un espace vide.</p>
 <p>Le <strong>cadenas</strong> de l’en-tête verrouille le cadre : ni lui ni ses cartes ne bougent plus, même avec <span class="ui">Organiser</span>. Les cartes restent modifiables, reliables et supprimables.</p>
 <figure class="medium"><img src="images/fr/cadre.jpg"><figcaption>Un cadre « La famille » autour des personnages et des lieux.</figcaption></figure>
@@ -554,14 +554,24 @@
 <p>Après chaque enregistrement, l’app de bureau écrit dans <code>markdown/</code> le manuscrit (ou rien pour un scénario, qui est déjà du texte), la bible et le canevas en Markdown, avec des liens entre les fiches. Une copie datée est gardée chaque jour dans <code>markdown/versions/</code> : trente jours, puis une par mois. Ces copies ne sont jamais relues : écris toujours dans l’app. Le réglage <span class="ui">Copies Markdown dans le dossier du projet</span> (<span class="ui">Réglages</span> › <span class="ui">Ce projet</span>) les arrête.</p>
 
 <h3>Synchroniser entre appareils</h3>
-<p>Trois façons, selon tes appareils. Dans tous les cas, un projet reste un dossier ordinaire : c’est le service de synchronisation qui le copie, et MondoWrite relit les changements.</p>
+<p>Un projet reste un dossier ordinaire : c’est un service de synchronisation qui le copie d’un appareil à l’autre, et MondoWrite relit les changements. Choisis selon tes appareils :</p>
+<table>
+  <thead><tr><th>Tes appareils</th><th>Méthode conseillée</th></tr></thead>
+  <tbody>
+    <tr><td>iPhone, iPad et Mac</td><td>iCloud Drive, activé par défaut : rien à régler.</td></tr>
+    <tr><td>Avec un PC Windows ou Linux</td><td>Un dossier Dropbox choisi sur chaque appareil.</td></tr>
+    <tr><td>Échange ponctuel</td><td>Un fichier .zip.</td></tr>
+  </tbody>
+</table>
 <ul>
-  <li><strong>iCloud Drive (iPhone, iPad, Mac).</strong> Sur iPhone et iPad, les projets sont rangés dans le dossier MondoWrite d’iCloud Drive (<span class="ui">Réglages</span> › <span class="ui">Synchroniser les projets avec iCloud Drive</span>, activé par défaut). Sur le Mac, la même case apparaît dans les <span class="ui">Réglages</span> dès qu’iCloud Drive contient ce dossier, cochée par défaut : les projets de l’iPhone et de l’iPad s’affichent sur la page des projets, et les nouveaux projets y sont créés.</li>
-  <li><strong>Un dossier cloud (iPhone, iPad, PC, Mac).</strong> Sur la page des projets, <span class="ui">Choisir un dossier cloud…</span> retient un dossier de Dropbox, d’iCloud Drive ou d’OneDrive. Les nouveaux projets y sont créés dans un sous-dossier portant leur titre, et ceux qu’il contient apparaissent dans la liste. Sur iPhone et iPad, le sélecteur est celui de Fichiers ; iOS grise OneDrive pour les dossiers, utilise alors Dropbox ou iCloud Drive.</li>
-  <li><strong>Un fichier .zip.</strong> <span class="ui">Exporter</span> › <span class="ui">Projet complet (.zip)</span> emporte tout (textes, réglages, images et PDF). <span class="ui">Importer un projet (.zip)…</span> le dépose dans un dossier vide, sans jamais écraser un projet. Pratique pour un échange ponctuel, d’un PC à un Mac par exemple.</li>
+  <li><strong>iCloud Drive (iPhone, iPad, Mac).</strong> Les projets sont rangés dans le dossier MondoWrite d’iCloud Drive (sous-dossier <code>projets</code>). La case <span class="ui">Réglages</span> › <span class="ui">Synchroniser les projets avec iCloud Drive</span> est cochée par défaut sur iPhone et iPad, et sur le Mac dès qu’iCloud Drive contient ce dossier. Les projets créés sur un appareil apparaissent tout seuls sur la page des projets des autres, sans aller les chercher. Il faut être connecté au même compte iCloud, avec iCloud Drive activé, sur chaque appareil.</li>
+  <li><strong>Un dossier cloud (iPhone, iPad, PC, Mac).</strong> Sur la page des projets, <span class="ui">Choisir un dossier cloud…</span> retient un dossier synchronisé. Les nouveaux projets y sont créés dans un sous-dossier portant leur titre, et ceux qu’il contient apparaissent dans la liste. Choisis le même dossier sur chaque appareil. Sur iPhone et iPad, le sélecteur est celui de l’app Fichiers.</li>
+  <li><strong>Un fichier .zip.</strong> <span class="ui">Exporter</span> › <span class="ui">Projet complet (.zip)</span> emporte tout (textes, réglages, images et PDF). <span class="ui">Importer un projet (.zip)…</span> le dépose dans un dossier vide, sans jamais écraser un projet.</li>
 </ul>
-<p>Sur iPhone et iPad, l’app relit le projet ouvert toutes les 20 secondes et quand tu reviens dedans.</p>
+<div class="note" data-label="OneDrive"><p>OneDrive ne convient pas pour synchroniser avec un iPhone ou un iPad : iOS ne laisse pas une app choisir un dossier OneDrive (il apparaît grisé dans le sélecteur). Sur ordinateur, un dossier OneDrive fonctionne comme dossier cloud, mais seulement entre ordinateurs. Pour relier un PC et un iPhone, utilise Dropbox.</p></div>
+<p>Sur iPhone et iPad, l’app relit le projet ouvert toutes les 20 secondes et quand tu reviens dedans. Sur ordinateur, elle voit les changements dès qu’ils arrivent dans le dossier.</p>
 <div class="note" data-label="À éviter"><p>N’écris pas sur deux appareils en même temps : la synchronisation prend parfois quelques secondes. Si le même fichier a changé des deux côtés, l’app garde les deux versions et te laisse choisir.</p></div>
+<p>Pour supprimer un projet de tous tes appareils : sur iPhone et iPad, la croix de la page des projets ; sur ordinateur, mets son dossier à la corbeille (dans le Finder : iCloud Drive › MondoWrite › projets).</p>
 
 <h3>Modifier hors de MondoWrite</h3>
 <p>Tu peux modifier un fichier du projet avec un autre logiciel, ou depuis un autre ordinateur par un dossier synchronisé. L’app le remarque et reprend la nouvelle version. Si le même fichier a changé des deux côtés, aucun n’est écrasé : la version du disque est gardée, la tienne est enregistrée à côté (« … (MondoWrite).md »), et un bandeau te laisse choisir : <span class="ui">Garder ma version</span> ou <span class="ui">Garder celle du disque</span>.</p>
@@ -596,7 +606,7 @@
 </div>
 
 <h3>Au doigt</h3>
-<p>Sur un écran tactile, tout se fait au doigt : un appui long sur une carte la soulève (elle est sélectionnée, avec une ombre portée) pour la déplacer, toucher l’étiquette d’une carte change son type, le bouton <span class="ui">Sélection</span> permet d’entourer des cartes, et chaque action déclenchée par un glisser-déposer a aussi un bouton.</p>
+<p>Sur un écran tactile, tout se fait au doigt : un appui long sur une carte la soulève (elle est sélectionnée, avec une ombre portée) pour la déplacer, un appui long dans un cadre libre soulève le cadre avec ses cartes, toucher l’étiquette d’une carte change son type, le bouton <span class="ui">Sélection</span> permet d’entourer des cartes, et chaque action déclenchée par un glisser-déposer a aussi un bouton.</p>
 
 <!-- ===================================================================================== -->
 <h2 id="raccourcis"><span class="num">Chapitre 13</span>Raccourcis clavier</h2>
@@ -663,7 +673,7 @@
 <h4>Où sont enregistrés mes textes ?</h4>
 <p>Dans le dossier que tu as choisi en créant le projet. Le chemin n’est pas affiché dans l’app : retrouve-le avec <span class="ui">Ouvrir un dossier…</span>, ou cherche le fichier <code>cosmos.json</code> sur ton ordinateur.</p>
 <h4>Comment travailler sur deux ordinateurs ?</h4>
-<p>Place le dossier du projet dans iCloud Drive, Dropbox ou OneDrive, et ouvre-le avec <span class="ui">Ouvrir un dossier…</span> sur l’autre ordinateur. Évite d’écrire sur les deux en même temps : en cas de modification des deux côtés, l’app garde les deux versions et te laisse choisir.</p>
+<p>Choisis le même dossier cloud (Dropbox, iCloud Drive ou OneDrive) sur les deux ordinateurs avec <span class="ui">Choisir un dossier cloud…</span> : leurs projets apparaissent des deux côtés. Entre deux Mac, iCloud le fait tout seul. Voir « Synchroniser entre appareils ». Évite d’écrire sur les deux en même temps : en cas de modification des deux côtés, l’app garde les deux versions et te laisse choisir.</p>
 <h4>J’ai supprimé une carte par erreur.</h4>
 <p><kbd>Ctrl</kbd> <kbd>Z</kbd>, ou le bouton <span class="ui">Annuler</span> du message, ou <span class="ui">Réglages</span> › <span class="ui">Corbeille</span> › <span class="ui">Remettre</span>. Le texte d’une scène n’est jamais effacé avec sa carte.</p>
 <h4>Comment transformer un roman en scénario ?</h4>
