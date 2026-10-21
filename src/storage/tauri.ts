@@ -206,9 +206,10 @@ const folderSlug = (title: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^A-Za-z0-9 _-]+/g, "")
+    .replace(/\s+/g, " ")
     .trim()
-    .replace(/\s+/g, "-")
-    .slice(0, 40);
+    .slice(0, 50)
+    .trim();
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -401,12 +402,21 @@ export const tauriStorage: Storage = {
       // Dossier cloud choisi : le projet y naît dans un sous-dossier, sans dialogue.
       const base = folderSlug(name ?? "") || "Projet";
       let path = await join(cloud.path, base);
-      for (let i = 2; await exists(path); i++) path = await join(cloud.path, `${base}-${i}`);
+      for (let i = 2; await exists(path); i++) path = await join(cloud.path, `${base} ${i}`);
       await mkdir(path, { recursive: true });
       current = path;
       return true;
     }
-    current = `projet-${Date.now().toString(36)}`;
+    // Le dossier porte le titre du roman ou du scénario ; un doublon reçoit un numéro.
+    const root = await mobileRoot();
+    const base = folderSlug(name ?? "");
+    if (!base) {
+      current = `projet-${Date.now().toString(36)}`;
+      return true;
+    }
+    let id = base;
+    for (let i = 2; await exists(await join(root, id)); i++) id = `${base} ${i}`;
+    current = id;
     return true;
   },
   remember(info) {

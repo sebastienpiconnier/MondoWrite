@@ -1534,11 +1534,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
           if (name.startsWith(`${MEDIA_DIR}/`)) medias.push([name.slice(MEDIA_DIR.length + 1), data]);
           else files[name] = strFromU8(data);
         }
-        if (!deserialize(files)) {
+        const imported = deserialize(files);
+        if (!imported) {
           set({ homeNotice: true });
           return;
         }
-        if (!(await storage.create())) return;
+        if (!(await storage.create(imported.meta.title))) return;
         // Ordinateur : le dossier choisi contient déjà un projet, on ne l'écrase jamais.
         if (await storage.readAll().catch(() => null)) {
           storage.forget();
@@ -1581,7 +1582,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ importNotice: "empty" });
         return;
       }
-      if (!(await storage.create())) return;
+      if (!(await storage.create(project.meta.title))) return;
       // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
       if (await storage.readAll().catch(() => null)) {
         storage.forget();
