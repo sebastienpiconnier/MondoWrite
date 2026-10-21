@@ -100,6 +100,7 @@ export const fr = {
     screenplay: "Un scénario",
     screenplayHint: "Séquencier, format cinéma standard, pages et minutes.",
     folderHint: "Tu choisiras ensuite le dossier où enregistrer le projet.",
+    folderHintCloud: "Le projet sera créé dans le dossier cloud « {name} », dans un dossier à son nom.",
     create: "Créer le projet",
     example: "Essayer avec un exemple",
     // Profil de l'auteur : saisi une fois, repris par chaque nouveau projet, gardé sur l'appareil.

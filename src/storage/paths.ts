@@ -30,3 +30,11 @@ export const CONFLICT_MARK = " (MondoWrite)";
 export const conflictCopyPath = (path: string) => path.replace(/(\.[^./]+)?$/, (ext) => `${CONFLICT_MARK}${ext}`);
 export const isConflictCopy = (path: string) => /\(MondoWrite\)(\.[^./]+)?$/.test(path);
 export const VERSIONS_DIR = "versions";
+
+/**
+ * Chemin qu'un projet peut contenir, relatif à son dossier : cosmos.json, scenario.fountain ou un .md de cartes/,
+ * manuscrit/, corbeille/. Tout le reste (« .. », sous-dossiers, autres fichiers) est refusé : un .zip importé
+ * ne doit rien écrire hors du projet.
+ */
+export const isProjectFilePath = (path: string) =>
+  path === META_FILE || path === SCREENPLAY_FILE || TEXT_DIRS.some((dir) => new RegExp(`^${dir}/[^/\\\\.][^/\\\\]*\\.md$`).test(path) && !path.includes(".."));

@@ -44,28 +44,43 @@ async fn icloud_container(app: tauri::AppHandle) -> Option<String> {
 }
 
 /// Lance le téléchargement des fichiers iCloud pas encore présents sous `dir` (repères « .nom.icloud »)
-/// et renvoie combien restent à venir.
+/// et renvoie combien restent à venir. Seulement dans le conteneur iCloud de l'app (iPhone et iPad) :
+/// ailleurs, rien n'est parcouru.
 #[tauri::command]
 async fn icloud_download(dir: String) -> usize {
-  fn walk(dir: &std::path::Path, pending: &mut usize) {
-    let Ok(entries) = std::fs::read_dir(dir) else { return };
-    for entry in entries.flatten() {
-      let path = entry.path();
-      let name = entry.file_name().to_string_lossy().to_string();
-      if path.is_dir() {
-        walk(&path, pending);
-      } else if let Some(real) = name.strip_prefix('.').and_then(|n| n.strip_suffix(".icloud")) {
-        *pending += 1;
-        #[cfg(target_os = "ios")]
-        icloud::download(&dir.join(real).to_string_lossy());
-        #[cfg(not(target_os = "ios"))]
-        let _ = real;
+  #[cfg(target_os = "ios")]
+  {
+    fn walk(dir: &std::path::Path, pending: &mut usize, depth: usize) {
+      // Profondeur bornée, et jamais de lien symbolique suivi (pas de boucle).
+      if depth > 8 {
+        return;
+      }
+      let Ok(entries) = std::fs::read_dir(dir) else { return };
+      for entry in entries.flatten() {
+        let Ok(kind) = entry.file_type() else { continue };
+        let name = entry.file_name().to_string_lossy().to_string();
+        if kind.is_dir() {
+          walk(&entry.path(), pending, depth + 1);
+        } else if let Some(real) = name.strip_prefix('.').and_then(|n| n.strip_suffix(".icloud")) {
+          *pending += 1;
+          icloud::download(&dir.join(real).to_string_lossy());
+        }
       }
     }
+    let Some(root) = icloud::container(ICLOUD_CONTAINER) else { return 0 };
+    let (Ok(root), Ok(dir)) = (std::fs::canonicalize(root), std::fs::canonicalize(&dir)) else { return 0 };
+    if !dir.starts_with(&root) {
+      return 0;
+    }
+    let mut pending = 0;
+    walk(&dir, &mut pending, 0);
+    pending
   }
-  let mut pending = 0;
-  walk(std::path::Path::new(&dir), &mut pending);
-  pending
+  #[cfg(not(target_os = "ios"))]
+  {
+    let _ = dir;
+    0
+  }
 }
 
 /// Dossier choisi dans l'app Fichiers (OneDrive, Dropbox, Drive…) : son chemin et le signet qui en garde l'accès.

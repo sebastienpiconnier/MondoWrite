@@ -174,7 +174,7 @@ async function copyPath(name: string): Promise<string | null> {
 async function syncFolderHint(): Promise<string | undefined> {
   try {
     const home = await homeDir();
-    for (const rel of ["Library/Mobile Documents/iCloud~app~cosmos~ecriture/Documents", "Library/CloudStorage/Dropbox", "Dropbox"]) {
+    for (const rel of [`${MAC_ICLOUD}/${MOBILE_DIR}`, MAC_ICLOUD, "Library/CloudStorage/Dropbox", "Dropbox"]) {
       const path = await join(home, ...rel.split("/"));
       if (await exists(path)) return path;
     }
@@ -204,9 +204,15 @@ async function macIcloudProjects() {
   return join(await macIcloudDocs(), MOBILE_DIR);
 }
 
+/** Chemin sans « \\ » ni « / » final, pour comparer deux chemins. */
+const plainPath = (path: string) => path.replace(/\\/g, "/").replace(/\/+$/, "");
+
+/** Le dossier cloud de l'ordinateur est celui des projets iCloud (case cochée, ou dossier choisi à la main). */
 function macIcloudOn() {
-  const cloud = desktopCloud();
-  return !!cloud && cloud.name === MAC_ICLOUD_NAME && cloud.path.replace(/\\/g, "/").includes(MAC_ICLOUD);
+  const path = desktopCloud()?.path;
+  if (!path) return false;
+  const plain = plainPath(path);
+  return plain.endsWith(MAC_ICLOUD) || plain.endsWith(`${MAC_ICLOUD}/${MOBILE_DIR}`);
 }
 
 function setDesktopCloud(path: string, name: string) {
@@ -222,8 +228,9 @@ async function adoptMacIcloud() {
   if (mobile) return;
   try {
     const projects = await macIcloudProjects();
-    // Premier essai : le dossier Documents du conteneur, sans « projets » (les projets de l’iPhone sont dans projets/).
-    if (macIcloudOn() && desktopCloud()?.path !== projects) setDesktopCloud(projects, MAC_ICLOUD_NAME);
+    // Dossier Documents du conteneur (premier essai, ou choisi à la main) : les projets de l’iPhone sont dans projets/.
+    const chosen = desktopCloud()?.path;
+    if (chosen && plainPath(chosen).endsWith(MAC_ICLOUD)) setDesktopCloud(projects, MAC_ICLOUD_NAME);
     if (desktopCloud() || localStorage.getItem(MAC_ICLOUD_OFF) === "1") return;
     if (!(await exists(await macIcloudDocs()))) return;
     await mkdir(projects, { recursive: true });
@@ -242,9 +249,12 @@ function desktopCloud(): { path: string; name: string } | null {
   }
 }
 
-/** Nom de dossier sûr, tiré d'un titre. */
-const folderSlug = (title: string) =>
-  title
+/** Noms que Windows refuse pour un dossier (CON, NUL, COM1…), quelle que soit la casse. */
+const RESERVED = /^(con|prn|aux|nul|com\d|lpt\d)$/i;
+
+/** Nom de dossier sûr, tiré d'un titre : ni séparateur, ni point, ni nom réservé de Windows. */
+const folderSlug = (title: string) => {
+  const slug = title
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^A-Za-z0-9 _-]+/g, "")
@@ -252,6 +262,8 @@ const folderSlug = (title: string) =>
     .trim()
     .slice(0, 50)
     .trim();
+  return RESERVED.test(slug) ? `${slug} projet` : slug;
+};
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -361,7 +373,8 @@ export const tauriStorage: Storage = {
   canImportZip: true,
   cloud: !mobile
     ? {
-        name: () => desktopCloud()?.name ?? null,
+        // Le dossier des projets iCloud s'appelle « projets » : on l'annonce comme iCloud Drive.
+        name: () => (macIcloudOn() ? MAC_ICLOUD_NAME : (desktopCloud()?.name ?? null)),
         async pick() {
           const chosen = await open({ directory: true, recursive: true, title: getT().dialog.pickCloudFolder, defaultPath: await syncFolderHint() });
           if (typeof chosen !== "string") return false;
@@ -439,6 +452,14 @@ export const tauriStorage: Storage = {
             if (list.some((e) => e.id === path)) continue;
             if (await exists(await join(path, META_FILE))) list.push({ id: path, name: entry.name, openedAt: 0 });
           }
+          // Un projet du dossier cloud supprimé sur un autre appareil quitte la liste (pas ceux d'un disque débranché ailleurs).
+          const root = plainPath(cloud.path);
+          for (const e of [...list]) {
+            if (plainPath(e.id).startsWith(`${root}/`) && !(await exists(e.id).catch(() => true))) {
+              dropRecent(e.id);
+              list.splice(list.indexOf(e), 1);
+            }
+          }
         } catch {
           // Dossier cloud absent ou pas encore synchronisé : on garde la liste mémorisée.
         }
@@ -461,7 +482,7 @@ export const tauriStorage: Storage = {
     }
     if (await exists(dir)) {
       for (const entry of await readDir(dir)) {
-        if (entry.isDirectory && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0, ...(cloud ? { cloud: true } : {}) });
+        if (entry.isDirectory && !entry.name.startsWith(".") && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0, ...(cloud ? { cloud: true } : {}) });
       }
     }
     // Un projet mémorisé dont le dossier a disparu (supprimé sur un autre appareil, ancien emplacement) quitte la liste.

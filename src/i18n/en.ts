@@ -99,6 +99,7 @@ export const en: Messages = {
     screenplay: "A screenplay",
     screenplayHint: "Step outline, standard film format, pages and minutes.",
     folderHint: "You’ll then choose the folder where the project is saved.",
+    folderHintCloud: "The project will be created in the “{name}” cloud folder, in a folder named after it.",
     create: "Create project",
     example: "Try with an example",
     // Author profile: entered once, reused by every new project, kept on the device.

@@ -183,7 +183,9 @@ export function Home() {
               ))}
             </fieldset>
 
-            {storage.canPickFolder && <p className="settings-hint">{h.folderHint}</p>}
+            {storage.canPickFolder && (
+              <p className="settings-hint">{storage.cloud?.name() ? fmt(h.folderHintCloud, { name: storage.cloud.name() ?? "" }) : h.folderHint}</p>
+            )}
             <div className="home-buttons">
               <button type="submit" className="home-create" disabled={busy}>
                 {h.create}

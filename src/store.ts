@@ -8,7 +8,7 @@ import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
 import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
-import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
+import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
@@ -20,7 +20,7 @@ import { useSettings } from "./settings";
 import { visibleSections } from "./bibleSections";
 import { IMPORT_EXTENSIONS, projectFromFile } from "./import";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
-import { clampCardWidth, documentExtension, imageExtension } from "./media";
+import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
 import { documentFiche, documentTitle } from "./documents";
 import { removeMentions, renameMentions } from "./mentions";
 import { countWords, isBlank, type Manuscript } from "./manuscript";
@@ -1539,8 +1539,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const medias: [string, Uint8Array][] = [];
         for (const [path, data] of entries) {
           const name = path.slice(prefix.length);
-          if (name.startsWith(`${MEDIA_DIR}/`)) medias.push([name.slice(MEDIA_DIR.length + 1), data]);
-          else files[name] = strFromU8(data);
+          // Un .zip vient de n'importe où : seuls les fichiers d'un projet, aux noms sûrs, sont repris (jamais de « .. »).
+          if (name.startsWith(`${MEDIA_DIR}/`)) {
+            const media = name.slice(MEDIA_DIR.length + 1);
+            if (isMediaName(media) || isDocumentName(media)) medias.push([media, data]);
+          } else if (isProjectFilePath(name)) files[name] = strFromU8(data);
         }
         const imported = deserialize(files);
         if (!imported) {

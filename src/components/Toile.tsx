@@ -422,6 +422,8 @@ export function Toile() {
           useCosmos.getState().onNodesChange([{ type: "position", id: c.id, position: { x: c.position.x + dx, y: c.position.y + dy }, dragging: true }]);
         }
         if (e.cancelable) e.preventDefault();
+        // Cadre tiré depuis la toile : en mode Sélection, la toile tracerait aussi un rectangle.
+        if (moving.frame) e.stopPropagation();
         return;
       }
       if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > LONG_PRESS_TOLERANCE) cancel();
