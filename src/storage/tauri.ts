@@ -191,6 +191,24 @@ async function syncFolderHint(): Promise<string | undefined> {
  */
 const DESKTOP_CLOUD_KEY = "cosmos:dossier-cloud-pc";
 
+const MAC_ICLOUD = "Library/Mobile Documents/iCloud~app~cosmos~ecriture/Documents";
+const MAC_ICLOUD_OFF = "cosmos:icloud-pc-off";
+
+/**
+ * Mac : si le conteneur iCloud de l'app existe (iCloud Drive actif, un autre appareil l'a créé) et que l'auteur n'a pas
+ * choisi autre chose ni quitté la synchronisation, il devient le dossier cloud par défaut : les projets de l'iPhone et de l'iPad s'y trouvent.
+ */
+async function adoptMacIcloud() {
+  if (mobile || desktopCloud()) return;
+  try {
+    if (localStorage.getItem(MAC_ICLOUD_OFF) === "1") return;
+    const path = await join(await homeDir(), ...MAC_ICLOUD.split("/"));
+    if (await exists(path)) localStorage.setItem(DESKTOP_CLOUD_KEY, JSON.stringify({ path, name: "iCloud Drive" }));
+  } catch {
+    /* pas de conteneur iCloud sur cet ordinateur */
+  }
+}
+
 function desktopCloud(): { path: string; name: string } | null {
   try {
     const raw = JSON.parse(localStorage.getItem(DESKTOP_CLOUD_KEY) ?? "null") as { path?: unknown; name?: unknown } | null;
@@ -299,11 +317,17 @@ export const tauriStorage: Storage = {
           const chosen = await open({ directory: true, recursive: true, title: getT().dialog.pickCloudFolder, defaultPath: await syncFolderHint() });
           if (typeof chosen !== "string") return false;
           localStorage.setItem(DESKTOP_CLOUD_KEY, JSON.stringify({ path: chosen, name: baseName(chosen) }));
+          try {
+            localStorage.removeItem(MAC_ICLOUD_OFF);
+          } catch {
+            /* sans effet */
+          }
           return true;
         },
         clear() {
           try {
             localStorage.removeItem(DESKTOP_CLOUD_KEY);
+            localStorage.setItem(MAC_ICLOUD_OFF, "1");
           } catch {
             /* rien à effacer */
           }
@@ -354,6 +378,7 @@ export const tauriStorage: Storage = {
   async list() {
     if (!mobile) {
       adoptLegacyFolder();
+      await adoptMacIcloud();
       const list = readRecents();
       // Dossier cloud : ses sous-dossiers qui contiennent un projet sont proposés, même jamais ouverts ici.
       const cloud = desktopCloud();
@@ -397,6 +422,7 @@ export const tauriStorage: Storage = {
   },
   async create(name) {
     if (!mobile) {
+      await adoptMacIcloud();
       const cloud = desktopCloud();
       if (!cloud || !(await exists(cloud.path))) return this.pickFolder();
       // Dossier cloud choisi : le projet y naît dans un sous-dossier, sans dialogue.
