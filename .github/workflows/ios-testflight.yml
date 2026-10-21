@@ -54,14 +54,20 @@ jobs:
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           printf '%s' "$IOS_MOBILE_PROVISION" | tr -d '\r\n ' | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/mondowrite.mobileprovision"
 
+      # Clé API App Store Connect : Tauri l'exige pour signer dès que APPLE_API_KEY et APPLE_API_ISSUER sont posés
+      # (APPLE_API_KEY_PATH), et altool la cherche dans ~/.appstoreconnect/private_keys pour l'envoi.
+      - name: Clé API App Store Connect
+        run: |
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$APPLE_API_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8"
+          echo "APPLE_API_KEY_PATH=$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8" >> "$GITHUB_ENV"
+
       # Le numéro de build doit grimper à chaque envoi : on prend celui de l'exécution.
       - name: Fabriquer l'.ipa
         run: npm run tauri ios build -- --export-method app-store-connect --build-number ${{ github.run_number }}
 
       - name: Envoyer à TestFlight
         run: |
-          mkdir -p "$HOME/.appstoreconnect/private_keys"
-          printf '%s' "$APPLE_API_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8"
           ipa=$(find src-tauri/gen/apple/build -name '*.ipa' | head -n 1)
           echo "Envoi de $ipa"
           xcrun altool --upload-app --type ios --file "$ipa" --apiKey "$APPLE_API_KEY" --apiIssuer "$APPLE_API_ISSUER"
