@@ -601,6 +601,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .manuscript.is-focus .ms-page.is-dimmed .ms-editor { color: color-mix(in srgb, var(--ink) 34%, transparent); }
 .manuscript.is-focus .ms-page.is-dimmed .ms-editor .is-focus-on { color: var(--ink); }
 .manuscript.is-focus .ms-veil { background: var(--ground); }
+/* Mode focus : de l'air au-dessus d'un chapitre, et son bandeau (numéro, titre) et sa lettrine s'estompent comme le reste du texte. */
+.manuscript.is-focus .ms-chapter-flow { padding-top: 2.6em; }
+.manuscript.is-focus .ms-page.is-dimmed .ms-chapter-flow, .manuscript.is-focus .ms-page.is-dimmed .ms-editor .scene-break { opacity: 0.34; transition: opacity 0.2s; }
+.manuscript.is-focus .ms-page.is-dimmed .ms-editor p.has-dropcap:not(.is-focus-on)::first-letter { color: color-mix(in srgb, var(--ink) 34%, transparent); }
 
 /* Chutier : passages mis de côté (volet de droite), compteur de mots et correcteur dans la barre de la scène. */
 .ms-chutier-count { font: 13px var(--font-ui); color: var(--ink-2); }

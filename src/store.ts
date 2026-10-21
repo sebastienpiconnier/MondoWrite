@@ -1483,7 +1483,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
 
     createProject: async ({ title, kind }) => {
-      if (!(await storage.create())) return;
+      if (!(await storage.create(title))) return;
       // L'emplacement choisi contient déjà un projet : on l'ouvre, on ne l'écrase pas.
       const existing = await storage.readAll().catch(() => null);
       if (existing && openFiles(existing)) return;

@@ -110,7 +110,7 @@ export function Home() {
               ))}
             </ul>
           )}
-          {storage.cloud?.name() && <p className="settings-hint">{fmt(h.cloudActive, { name: storage.cloud.name() ?? "" })}</p>}
+          {storage.cloud?.name() && <p className="settings-hint">{fmt(storage.canPickFolder ? h.cloudActivePc : h.cloudActive, { name: storage.cloud.name() ?? "" })}</p>}
           <div className="home-buttons">
             {storage.canPickFolder && (
               <button type="button" className="ghost-button" disabled={busy} onClick={() => run(openFolder)}>
@@ -118,13 +118,13 @@ export function Home() {
               </button>
             )}
             {storage.cloud && (
-              <button type="button" className="ghost-button" disabled={busy} title={h.cloudHint} onClick={() => run(chooseCloudFolder)}>
+              <button type="button" className="ghost-button" disabled={busy} title={storage.canPickFolder ? h.cloudHintPc : h.cloudHint} onClick={() => run(chooseCloudFolder)}>
                 {storage.cloud.name() ? h.cloudChange : h.cloudChoose}
               </button>
             )}
             {storage.cloud?.name() && (
               <button type="button" className="ghost-button" disabled={busy} onClick={() => run(leaveCloudFolder)}>
-                {h.cloudLeave}
+                {storage.canPickFolder ? h.cloudLeavePc : h.cloudLeave}
               </button>
             )}
             {storage.canImportZip && (

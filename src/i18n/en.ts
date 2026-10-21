@@ -74,6 +74,9 @@ export const en: Messages = {
     cloudChange: "Change cloud folder…",
     cloudLeave: "Back to the app space",
     cloudHint: "In Files, pick a folder from OneDrive, Dropbox, Drive or iCloud Drive. Its subfolders are your projects: they sync with your other devices, no .zip needed. On a computer, open the same folder with “Open a folder…”.",
+    cloudHintPc: "Pick a synced folder once (iCloud Drive, Dropbox, OneDrive…). New projects are created there automatically, and the projects it contains show up here: they follow you to your other devices.",
+    cloudActivePc: "Cloud folder: {name}. New projects are created there.",
+    cloudLeavePc: "Stop using this folder",
     cloudActive: "Cloud folder: {name}. Your projects are its subfolders.",
     importZip: "Import a project (.zip)…",
     importZipHint: "First export the project as a .zip on the other machine (Export, Full project), send it over (OneDrive, Dropbox, iCloud Drive, USB drive…), then pick it here. Images and PDFs are included.",
@@ -276,7 +279,7 @@ export const en: Messages = {
   },
 
 
-  dialog: { pickFolder: "Choose the project folder" },
+  dialog: { pickCloudFolder: "Choose the cloud folder (iCloud Drive, Dropbox, OneDrive…)", pickFolder: "Choose the project folder" },
 
   ai: {
     section: "AI (optional)",

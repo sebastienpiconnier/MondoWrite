@@ -23,6 +23,9 @@ const NO_CHAPTER = "";
 const NEW_CHAPTER = "+";
 const MODES: SequencerMode[] = ["outline", "cards"];
 
+/** Téléphone : le plan se lit en liste seulement (les fiches n\u2019y tiennent pas). */
+const phoneSq = () => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
+
 export function Plan() {
   const t = useT();
   const p = t.plan;
@@ -30,7 +33,7 @@ export function Plan() {
   // Même réglage d'appareil que le séquencier : liste ou fiches.
   const mode = useSettings((s) => s.sequencerMode);
   const setMode = useSettings((s) => s.setSequencerMode);
-  const asCards = mode === "cards";
+  const asCards = !phoneSq() && mode === "cards";
   const sq = t.screenplay.sequencer;
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);

@@ -33,8 +33,9 @@ export interface Storage {
   /** iPhone et iPad : synchronisation des projets par iCloud Drive (absent ailleurs). */
   icloud?: { available(): Promise<boolean>; enabled(): boolean; set(on: boolean): Promise<void> };
   /**
-   * iPhone et iPad : dossier cloud choisi dans l'app Fichiers (OneDrive, Dropbox, Drive, iCloud Drive). Ses sous-dossiers
-   * sont les projets, synchronisés par le service avec les autres appareils. Absent ailleurs.
+   * Dossier cloud choisi une fois (iCloud Drive, Dropbox, OneDrive, Drive) : ses sous-dossiers sont les projets, synchronisés
+   * par le service avec les autres appareils. iPhone et iPad : choisi dans l'app Fichiers ; ordinateur : un nouveau projet y naît
+   * tout seul. Absent dans le navigateur.
    */
   cloud?: { name(): string | null; pick(): Promise<boolean>; clear(): void };
   /** Nom du dossier projet choisi (null dans le navigateur, sur mobile, ou si rien n'est choisi). */
@@ -49,7 +50,7 @@ export interface Storage {
    * Prépare l'emplacement d'un nouveau projet et le sélectionne : dialogue de dossier sur ordinateur,
    * nouvel emplacement privé ailleurs. Renvoie false si l'auteur annule.
    */
-  create(): Promise<boolean>;
+  create(name?: string): Promise<boolean>;
   /** Inscrit le projet sélectionné en tête de la liste, avec son titre et son type. */
   remember(info: { title: string; kind: ProjectKind }): void;
   /** Retire un projet de la liste, sans toucher à ses fichiers. */

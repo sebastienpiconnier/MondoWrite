@@ -75,6 +75,9 @@ export const fr = {
     cloudChange: "Changer de dossier cloud…",
     cloudLeave: "Revenir à l’espace de l’app",
     cloudHint: "Choisis dans Fichiers un dossier de OneDrive, Dropbox, Drive ou iCloud Drive. Ses sous-dossiers sont tes projets : ils se synchronisent avec tes autres appareils, sans .zip. Sur ordinateur, ouvre le même dossier avec « Ouvrir un dossier… ».",
+    cloudHintPc: "Choisis une fois un dossier synchronisé (iCloud Drive, Dropbox, OneDrive…). Les nouveaux projets y sont créés tout seuls, et ceux qu’il contient apparaissent ici : ils se retrouvent sur tes autres appareils.",
+    cloudActivePc: "Dossier cloud : {name}. Les nouveaux projets y sont créés.",
+    cloudLeavePc: "Ne plus utiliser ce dossier",
     cloudActive: "Dossier cloud : {name}. Tes projets sont ses sous-dossiers.",
     importZip: "Importer un projet (.zip)…",
     importZipHint: "Exporte d’abord le projet en .zip sur l’autre machine (Exporter, Projet complet), transmets-le (OneDrive, Dropbox, iCloud Drive, clé USB…), puis choisis-le ici. Les images et les PDF sont inclus.",
@@ -277,7 +280,7 @@ export const fr = {
   },
 
 
-  dialog: { pickFolder: "Choisir le dossier du projet" },
+  dialog: { pickFolder: "Choisir le dossier du projet", pickCloudFolder: "Choisir le dossier cloud (iCloud Drive, Dropbox, OneDrive…)" },
 
   // IA facultative : elle questionne et propose, l'auteur décide.
   ai: {

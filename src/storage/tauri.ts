@@ -184,6 +184,32 @@ async function syncFolderHint(): Promise<string | undefined> {
   return undefined;
 }
 
+/**
+ * Ordinateur : un dossier cloud (iCloud Drive, Dropbox, OneDrive…) choisi une fois. Un nouveau projet y est créé tout seul,
+ * dans un sous-dossier, et ses sous-dossiers qui contiennent un projet apparaissent à l'accueil. Le service de synchronisation
+ * du système fait le reste. (Le choix du dossier reste autorisé d'un lancement à l'autre par le plugin persisted-scope.)
+ */
+const DESKTOP_CLOUD_KEY = "cosmos:dossier-cloud-pc";
+
+function desktopCloud(): { path: string; name: string } | null {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DESKTOP_CLOUD_KEY) ?? "null") as { path?: unknown; name?: unknown } | null;
+    return raw && typeof raw.path === "string" && typeof raw.name === "string" ? { path: raw.path, name: raw.name } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Nom de dossier sûr, tiré d'un titre. */
+const folderSlug = (title: string) =>
+  title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 _-]+/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 40);
+
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const tauriStorage: Storage = {
@@ -265,8 +291,24 @@ export const tauriStorage: Storage = {
     : undefined,
   canPickFolder: !mobile,
   canImportZip: true,
-  cloud: mobile
+  cloud: !mobile
     ? {
+        name: () => desktopCloud()?.name ?? null,
+        async pick() {
+          const chosen = await open({ directory: true, recursive: true, title: getT().dialog.pickCloudFolder, defaultPath: await syncFolderHint() });
+          if (typeof chosen !== "string") return false;
+          localStorage.setItem(DESKTOP_CLOUD_KEY, JSON.stringify({ path: chosen, name: baseName(chosen) }));
+          return true;
+        },
+        clear() {
+          try {
+            localStorage.removeItem(DESKTOP_CLOUD_KEY);
+          } catch {
+            /* rien à effacer */
+          }
+        },
+      }
+    : {
         name: () => cloudCache?.name ?? savedCloud()?.name ?? null,
         async pick() {
           let folder: CloudFolder | null = null;
@@ -291,8 +333,7 @@ export const tauriStorage: Storage = {
           cloudCache = null;
           current = null;
         },
-      }
-    : undefined,
+      },
   location: () => (mobile || !current ? null : baseName(current)),
 
   async pickFolder() {
@@ -312,7 +353,22 @@ export const tauriStorage: Storage = {
   async list() {
     if (!mobile) {
       adoptLegacyFolder();
-      return byRecency(readRecents());
+      const list = readRecents();
+      // Dossier cloud : ses sous-dossiers qui contiennent un projet sont proposés, même jamais ouverts ici.
+      const cloud = desktopCloud();
+      if (cloud) {
+        try {
+          for (const entry of await readDir(cloud.path)) {
+            if (!entry.isDirectory || entry.name.startsWith(".")) continue;
+            const path = await join(cloud.path, entry.name);
+            if (list.some((e) => e.id === path)) continue;
+            if (await exists(await join(path, META_FILE))) list.push({ id: path, name: entry.name, openedAt: 0 });
+          }
+        } catch {
+          // Dossier cloud absent ou pas encore synchronisé : on garde la liste mémorisée.
+        }
+      }
+      return byRecency(list);
     }
     // Mobile : la liste mémorisée, complétée par les dossiers présents (réinstallation, ancien projet unique).
     const list = readRecents();
@@ -338,8 +394,18 @@ export const tauriStorage: Storage = {
   select(id) {
     current = id;
   },
-  async create() {
-    if (!mobile) return this.pickFolder();
+  async create(name) {
+    if (!mobile) {
+      const cloud = desktopCloud();
+      if (!cloud || !(await exists(cloud.path))) return this.pickFolder();
+      // Dossier cloud choisi : le projet y naît dans un sous-dossier, sans dialogue.
+      const base = folderSlug(name ?? "") || "Projet";
+      let path = await join(cloud.path, base);
+      for (let i = 2; await exists(path); i++) path = await join(cloud.path, `${base}-${i}`);
+      await mkdir(path, { recursive: true });
+      current = path;
+      return true;
+    }
     current = `projet-${Date.now().toString(36)}`;
     return true;
   },

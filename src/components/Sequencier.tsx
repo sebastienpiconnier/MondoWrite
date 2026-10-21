@@ -23,6 +23,9 @@ import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, isScreenp
 
 const MODES: SequencerMode[] = ["outline", "cards"];
 
+/** Téléphone : le plan se lit en liste seulement (les fiches n\u2019y tiennent pas). */
+const phoneSq = () => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
+
 export function Sequencier() {
   const { t } = useVocab();
   const sp = t.screenplay;
@@ -105,7 +108,7 @@ export function Sequencier() {
   };
 
   const scenes = list.filter((b) => b.kind === "scene").length;
-  const cards = mode === "cards";
+  const cards = !phoneSq() && mode === "cards";
   const sceneCards = useMemo(() => list.filter((b) => b.kind === "scene" && b.cardId).map((b) => b.cardId as string), [list]);
 
   return (
