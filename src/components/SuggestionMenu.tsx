@@ -35,6 +35,7 @@ export function SuggestionMenu({ title, items, active, onPick, className = "", s
           className={`slash-item${i === active ? " is-active" : ""}`}
           // Garde le focus dans l'éditeur, à la souris comme au doigt.
           onPointerDown={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => onPick(i)}
         >
           {item.color && <span className="card-dot" style={{ background: item.color }} />}

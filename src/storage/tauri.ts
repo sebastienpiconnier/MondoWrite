@@ -144,6 +144,15 @@ async function migratePrivateProjects() {
   }
 }
 
+/** Un dossier est un projet s'il contient cosmos.json (ou son repère iCloud, pas encore téléchargé). */
+async function isProjectDir(dir: string) {
+  try {
+    return (await exists(await join(dir, META_FILE))) || (await exists(await join(dir, `.${META_FILE}.icloud`)));
+  } catch {
+    return false;
+  }
+}
+
 async function projectFolder(): Promise<string | null> {
   if (!current) return null;
   if (!mobile) return current;
@@ -406,6 +415,8 @@ export const tauriStorage: Storage = {
           }
           if (!folder) return false;
           const name = baseName(folder.path);
+          // Les projets de l'ancien dossier cloud n'ont plus de sens : leurs noms désignaient ses sous-dossiers.
+          for (const e of readRecents()) if (e.cloud || e.id === CLOUD_SELF) dropRecent(e.id);
           localStorage.setItem(CLOUD_KEY, JSON.stringify({ name, bookmark: folder.bookmark }));
           cloudCache = { path: folder.path, name };
           current = null;
@@ -480,16 +491,20 @@ export const tauriStorage: Storage = {
     } else {
       list.splice(0, list.length, ...list.filter((e) => e.id !== CLOUD_SELF && !e.cloud));
     }
+    // Seuls les sous-dossiers qui sont des projets : jamais cartes/, medias/, verrous/… d'un projet choisi comme dossier.
     if (await exists(dir)) {
       for (const entry of await readDir(dir)) {
-        if (entry.isDirectory && !entry.name.startsWith(".") && !list.some((e) => e.id === entry.name)) list.push({ id: entry.name, name: entry.name, openedAt: 0, ...(cloud ? { cloud: true } : {}) });
+        if (!entry.isDirectory || entry.name.startsWith(".") || list.some((e) => e.id === entry.name)) continue;
+        if (await isProjectDir(await join(dir, entry.name))) list.push({ id: entry.name, name: entry.name, openedAt: 0, ...(cloud ? { cloud: true } : {}) });
       }
     }
-    // Un projet mémorisé dont le dossier a disparu (supprimé sur un autre appareil, ancien emplacement) quitte la liste.
+    // Un projet mémorisé dont le dossier a disparu (supprimé sur un autre appareil, ancien emplacement) ou qui n'est
+    // pas un projet (sous-dossier listé par une version précédente) quitte la liste. Un nouveau projet pas encore
+    // enregistré n'a pas encore de dossier : celui qu'on vient d'ouvrir reste.
     const present: typeof list = [];
     for (const e of list) {
       const path = e.id === CLOUD_SELF ? dir : await join(dir, e.id);
-      if (await exists(path).catch(() => true)) present.push(e);
+      if (e.id === current || (await isProjectDir(path))) present.push(e);
       else dropRecent(e.id);
     }
     return byRecency(present);
@@ -535,7 +550,8 @@ export const tauriStorage: Storage = {
         // Le dossier cloud choisi lui-même n'est jamais effacé : on le quitte depuis l'accueil.
         if (id === CLOUD_SELF || id.includes("/") || id.includes("\\") || id.startsWith(".")) return;
         const path = await join(await mobileRoot(), id);
-        if (await exists(path)) await remove(path, { recursive: true });
+        // Jamais un dossier qui n'est pas un projet (sécurité : un sous-dossier d'un projet listé par erreur).
+        if (await isProjectDir(path)) await remove(path, { recursive: true });
         dropRecent(id);
         if (current === id) current = null;
       }

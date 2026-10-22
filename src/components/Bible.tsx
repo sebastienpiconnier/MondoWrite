@@ -266,9 +266,6 @@ export function Bible() {
                 </h3>
                 {(type === "personnage" || type === "lieu") && <Poster card={card} />}
                 </div>
-                <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
-                  {t.bible.seeOnCanvas}
-                </button>
               </header>
               {/* Personnage : l'essentiel d'abord (moteur, texte), le reste se déplie à la demande. */}
               {type !== "personnage" && <Gallery card={card} />}
@@ -324,6 +321,10 @@ export function Bible() {
                   })}
                 </div>
               )}
+              {/* En bas de la fiche : dans l'en-tête, il prenait la place du titre sur téléphone. */}
+              <button type="button" className="link-button bible-see-canvas" onClick={() => setView("toile", card.id)}>
+                {t.bible.seeOnCanvas}
+              </button>
             </article>
           );
   };

@@ -143,8 +143,8 @@ export function Home() {
               </button>
             )}
             {storage.cloud?.name() && (
-              <button type="button" className="ghost-button" disabled={busy} onClick={() => run(leaveCloudFolder)}>
-                {storage.canPickFolder ? h.cloudLeavePc : h.cloudLeave}
+              <button type="button" className="ghost-button" disabled={busy} title={storage.canPickFolder ? h.cloudLeaveHintPc : h.cloudLeaveHint} onClick={() => run(leaveCloudFolder)}>
+                {storage.canPickFolder ? h.cloudLeavePc : storage.icloud?.enabled() ? h.cloudLeaveIcloud : h.cloudLeave}
               </button>
             )}
             {storage.canImportZip && (

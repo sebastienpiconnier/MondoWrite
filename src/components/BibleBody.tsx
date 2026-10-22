@@ -1,7 +1,7 @@
 // Texte d'une fiche de la Bible, modifiable sur place : c'est le corps de la carte, le même que sur le
 // canevas. Une fiche vide montre « À creuser… » en texte indicatif, et l'on écrit directement dedans.
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
@@ -11,6 +11,7 @@ import { fmt, getT } from "../i18n";
 import { useSettings } from "../settings";
 import { MentionNode } from "./MentionNode";
 import type { CardData } from "../types";
+import { useMentionMenu } from "./useMentionMenu";
 
 const attributes = (title: string) => ({
   class: "bible-editor",
@@ -19,6 +20,10 @@ const attributes = (title: string) => ({
 
 export function BibleBody({ card }: { card: CardData }) {
   const lang = useSettings((s) => s.lang);
+  // « @ » cite une autre carte, comme sur le canevas (la fiche et la carte agrandie n'avaient pas ce menu).
+  const mentions = useMentionMenu(card.id);
+  const mentionsRef = useRef(mentions);
+  mentionsRef.current = mentions;
   const editor = useEditor({
     extensions: [
       ...richTextExtensions({ link: false }),
@@ -28,8 +33,13 @@ export function BibleBody({ card }: { card: CardData }) {
     ],
     content: card.html,
     immediatelyRender: true,
-    editorProps: { attributes: attributes(card.title) },
-    onUpdate: ({ editor: ed }) => useCosmos.getState().updateCard(card.id, { html: ed.getHTML() }),
+    editorProps: { attributes: attributes(card.title), handleKeyDown: (_view, event) => mentionsRef.current.handleKey(event) },
+    onUpdate: ({ editor: ed }) => {
+      useCosmos.getState().updateCard(card.id, { html: ed.getHTML() });
+      mentionsRef.current.detect(ed);
+    },
+    onSelectionUpdate: ({ editor: ed }) => mentionsRef.current.detect(ed),
+    onBlur: () => mentionsRef.current.onBlur(),
   });
 
   // Texte changé ailleurs (annuler, réponse de l'assistant, synthèse ajoutée) : l'éditeur suit.
@@ -49,6 +59,7 @@ export function BibleBody({ card }: { card: CardData }) {
   return (
     <div className="bible-body">
       <EditorContent editor={editor} />
+      {mentions.menu}
       {editor && <FormatBar editor={editor} />}
     </div>
   );

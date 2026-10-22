@@ -83,6 +83,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const [mentionActive, setMentionActive] = useState(-1);
   // Position du « @ » d'un menu fermé par Échap : il ne se rouvre pas à la lettre suivante.
   const dismissed = useRef(-1);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mentionCount = mention ? mention.candidates.length + (mention.create ? 1 : 0) : 0;
 
   // Refs pour que les gestionnaires TipTap (créés une seule fois) voient l'état courant.
@@ -101,6 +102,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   /** Remplace « @… » par la mention de la carte choisie (ou d'une carte créée à l'instant) et tire le fil. */
   const pickMention = (index: number) => {
     const m = stateRef.current.mention;
+    clearTimeout(blurTimer.current);
     if (!m || !editor || index < 0) return;
     const store = useCosmos.getState();
     const found = m.candidates[index];
@@ -248,7 +250,12 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       detectSlash(ed);
       detectMention(ed);
     },
-    onBlur: () => setMention(null),
+    // Sur iPhone et iPad, toucher une suggestion fait d'abord perdre le focus au texte : fermer tout de suite
+    // retirait le menu avant le toucher (la mention ne se faisait pas). On laisse le temps au toucher d'arriver.
+    onBlur: () => {
+      clearTimeout(blurTimer.current);
+      blurTimer.current = setTimeout(() => setMention(null), 300);
+    },
   });
 
   // Carte soulevée = mode déplacement : le texte n'est plus modifiable (React Flow ne déplace pas une carte

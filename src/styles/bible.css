@@ -84,7 +84,8 @@
 .bible-add .eyebrow { flex-basis: 100%; }
 .bible-add .ghost-button { display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; width: auto; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); font-size: 14px; }
 .empty-view .bible-add { justify-content: center; border-top: 0; }
-.bible-body { font: 17px/1.6 var(--font-text); margin-top: 8px; }
+.bible-body { position: relative; font: 17px/1.6 var(--font-text); margin-top: 8px; }
+.bible-body .slash-menu { font-family: var(--font-ui); line-height: 1.3; }
 .bible-body p { margin: 0 0 10px; }
 /* Texte de la fiche, modifiable sur place. */
 .bible-editor { min-height: 1.6em; margin: 0 -8px; padding: 4px 8px; border: 1px solid transparent; border-radius: 8px; outline: none; color: var(--ink); cursor: text; }
@@ -158,6 +159,7 @@
 .chip { font-size: 13px; background: var(--accent-soft); color: var(--accent-ink); padding: 5px 10px; border-radius: 999px; }
 .link-button { border: 0; background: none; color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; padding: 6px 0; }
 @media (any-hover: hover) { .link-button:hover { text-decoration: underline; } }
+.bible-see-canvas { display: block; margin-top: 12px; min-height: 44px; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
