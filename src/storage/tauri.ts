@@ -21,6 +21,7 @@ import { LOCK_DIR } from "../lock";
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
 const MOBILE_DIR = "projets";
 const mobile = isMobileOS();
+const macOS = !mobile && typeof navigator !== "undefined" && /Mac/.test(navigator.platform || navigator.userAgent);
 
 /** Projet sélectionné : chemin du dossier (ordinateur) ou nom du dossier privé (mobile). */
 let current: string | null = null;
@@ -29,6 +30,8 @@ const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? 
 
 /** iCloud Drive (iPhone et iPad) : le choix de l'auteur, activé par défaut dès que le conteneur iCloud existe. */
 const ICLOUD_KEY = "cosmos:icloud";
+/** iCloud a déjà servi sur cet appareil : s'il disparaît, ses projets ne s'affichent plus (on le signale). */
+const ICLOUD_SEEN_KEY = "cosmos:icloud-vu";
 let icloudDocs: string | null | undefined;
 
 /** Dossier Documents du conteneur iCloud de l'app, ou null (hors iOS, session iCloud absente, droit non accordé). */
@@ -39,6 +42,11 @@ async function icloudDir(): Promise<string | null> {
       icloudDocs = await invoke<string | null>("icloud_container");
     } catch {
       icloudDocs = null;
+    }
+    try {
+      if (icloudDocs) localStorage.setItem(ICLOUD_SEEN_KEY, "1");
+    } catch {
+      /* sans effet */
     }
   }
   return icloudDocs;
@@ -339,7 +347,10 @@ export const tauriStorage: Storage = {
   },
 
   kind: "tauri",
-  icloud: !mobile
+  // Mac seulement côté ordinateur : iCloud n'a pas de dossier d'app sous Windows ni Linux (là, un dossier cloud).
+  icloud: !mobile && !macOS
+    ? undefined
+    : !mobile
     ? {
         // Mac : la case des Réglages pointe le dossier cloud sur les projets iCloud (ou le quitte).
         available: async () => {
@@ -432,6 +443,20 @@ export const tauriStorage: Storage = {
           current = null;
         },
       },
+  async cloudIssue() {
+    try {
+      if (mobile) {
+        if (savedCloud() && !(await cloudRoot())) return "folder";
+        if (!savedCloud() && icloudWanted() && localStorage.getItem(ICLOUD_SEEN_KEY) === "1" && (await icloudDir()) === null) return "icloud";
+        return null;
+      }
+      const cloud = desktopCloud();
+      if (!cloud || (await exists(cloud.path).catch(() => true))) return null;
+      return macIcloudOn() ? "icloud" : "folder";
+    } catch {
+      return null;
+    }
+  },
   location: () => (mobile || !current ? null : baseName(current)),
 
   async pickFolder() {

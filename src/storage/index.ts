@@ -38,6 +38,11 @@ export interface Storage {
    * tout seul. Absent dans le navigateur.
    */
   cloud?: { name(): string | null; pick(): Promise<boolean>; clear(): void };
+  /**
+   * Projets synchronisés devenus inaccessibles : « icloud » (iCloud Drive coupé alors qu'il servait), « folder » (dossier
+   * cloud introuvable : service arrêté, disque débranché, accès retiré), sinon null. Les fichiers ne sont pas perdus.
+   */
+  cloudIssue?(): Promise<"icloud" | "folder" | null>;
   /** Nom du dossier projet choisi (null dans le navigateur, sur mobile, ou si rien n'est choisi). */
   location(): string | null;
   /** Demande un dossier à l'auteur (Tauri uniquement). Renvoie false si annulé. */

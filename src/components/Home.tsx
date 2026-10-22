@@ -1,7 +1,7 @@
 // Écran d'accueil : on choisit le projet sur lequel travailler, ou on en crée un.
 // Affiché à chaque lancement et depuis le bouton « Projets » de la barre du haut.
 
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
@@ -24,6 +24,15 @@ export function Home() {
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
   const [busy, setBusy] = useState(false);
+  // Projets synchronisés devenus inaccessibles (iCloud coupé, dossier cloud introuvable) : on le dit, sans alarmer.
+  const [cloudIssue, setCloudIssue] = useState<"icloud" | "folder" | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void storage.cloudIssue?.().then((issue) => alive && setCloudIssue(issue));
+    return () => {
+      alive = false;
+    };
+  }, [projects]);
   /** Mobile : projet dont la suppression attend une confirmation (deux gestes, jamais un seul toucher). */
   const [asking, setAsking] = useState<string | null>(null);
   const ids = { title: useId(), recent: useId(), fresh: useId() };
@@ -76,6 +85,16 @@ export function Home() {
                     ? t.app.openFailed
                     : h.openFailed
                   : h.notAProject}
+          </p>
+        )}
+
+        {cloudIssue && (
+          <p className="home-alert" role="status">
+            {cloudIssue === "icloud"
+              ? storage.canPickFolder
+                ? h.icloudGonePc
+                : h.icloudGone
+              : fmt(h.cloudGone, { name: storage.cloud?.name() ?? "" })}
           </p>
         )}
 

@@ -30,7 +30,8 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [typing, setTyping] = useState(false);
   const [aiStatus, setAiStatus] = useState("");
   // iPhone et iPad : synchronisation par iCloud Drive (proposée seulement si iCloud est disponible).
-  const [icloudOk, setIcloudOk] = useState(false);
+  // null : pas encore su (évite d'afficher un instant le message « iCloud n'est pas activé »).
+  const [icloudOk, setIcloudOk] = useState<boolean | null>(null);
   const [icloudOn, setIcloudOn] = useState(() => storage.icloud?.enabled() ?? false);
   useEffect(() => {
     void storage.icloud?.available().then(setIcloudOk);
@@ -259,6 +260,11 @@ export function Settings({ project = true }: { project?: boolean }) {
             <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
             {t.settings.focusTypewriter}
           </label>
+          {icloudOk === false && storage.icloud && (
+            <p className="settings-hint" id={ids.icloudHint}>
+              {storage.canPickFolder ? t.settings.icloudOffMac : t.settings.icloudOff}
+            </p>
+          )}
           {icloudOk && storage.icloud && (
             <>
               <label className="settings-check" htmlFor={ids.icloud}>
