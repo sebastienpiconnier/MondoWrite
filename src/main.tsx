@@ -21,13 +21,17 @@ import "./styles/writing.css";
 import "./styles/phone.css";
 import { App } from "./App";
 import { initSettings } from "./settings";
-import { isMobileOS, isTauri } from "./platform";
+import { isAppleKeyboard, isMobileOS, isTauri } from "./platform";
 import { initAppMenu } from "./appMenu";
 import { watchKeyboard } from "./keyboard";
 import { watchTextScale } from "./textScale";
 
 // App de bureau : comportements d'app du système (curseur flèche sur les commandes, voir styles.css).
-if (isTauri() && !isMobileOS()) document.documentElement.dataset.app = "desktop";
+if (isTauri() && !isMobileOS()) {
+  document.documentElement.dataset.app = "desktop";
+  // Mac : la barre de titre est intégrée (titleBarStyle Overlay) ; les boutons de fenêtre sont sur la barre du haut.
+  if (isAppleKeyboard()) document.documentElement.dataset.platform = "mac";
+}
 // Langue et thème appliqués avant le premier rendu (pas de flash clair en mode sombre).
 initSettings();
 // Mac : barre des menus dans la langue de l'app, avec le menu Aide.

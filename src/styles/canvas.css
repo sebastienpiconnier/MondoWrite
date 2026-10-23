@@ -34,12 +34,12 @@
 .canvas-top > :not(.toile-hint) { pointer-events: auto; }
 .filter-banner {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; padding: 6px 8px 6px 16px;
-  border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); box-shadow: var(--shadow-card); font-size: 14px; font-weight: 500;
+  border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); box-shadow: var(--shadow-card); font-size: 0.875rem; font-weight: 500;
 }
 .filter-banner .ghost-button { min-height: 40px; }
 .toile-hint {
   max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-  background: var(--surface); border-radius: 999px; padding: 9px 18px; font-size: 13px; color: var(--ink-2);
+  background: var(--surface); border-radius: 999px; padding: 9px 18px; font-size: 0.8125rem; color: var(--ink-2);
   box-shadow: var(--shadow-card); pointer-events: none; white-space: nowrap;
 }
 .toile-hint strong { color: var(--ink); }
@@ -48,8 +48,8 @@
   position: absolute; transform: translate(-50%, -50%); z-index: 10; display: flex; align-items: center; gap: 4px;
   padding: 4px; border-radius: 999px; border: 2px solid var(--accent); background: var(--surface); box-shadow: var(--shadow-pop);
 }
-.label-editor input { min-width: 200px; height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 14px; outline: none; }
-.label-unlink { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 13px; cursor: pointer; }
+.label-editor input { min-width: 200px; height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 0.875rem; outline: none; }
+.label-unlink { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 0.8125rem; cursor: pointer; }
 @media (any-hover: hover) { .label-unlink:hover { color: var(--danger); border-color: var(--danger); } }
 @media (pointer: coarse) { .label-editor input, .label-unlink { min-height: 44px; } }
 
@@ -176,7 +176,7 @@
 .card-source { display: flex; align-items: center; gap: 6px; max-width: calc(100% - 24px); min-height: 32px; margin: 0 12px 10px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink-2); font: 500 13px var(--font-ui); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (any-hover: hover) { .card-source:hover { background: var(--ground); color: var(--ink); } }
 .source-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
-.source-tools .ghost-button { width: auto; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); font-size: 14px; }
+.source-tools .ghost-button { width: auto; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); font-size: 0.875rem; }
 .source-tools p { flex-basis: 100%; margin: 0; }
 /* Personnage : questions gardées pour plus tard, un lien vers sa fiche dans la Bible. */
 .card-questions { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-height: 32px; margin: 0 12px 12px; padding: 4px 10px 4px 4px; border: 1px dashed var(--type); border-radius: 999px; background: transparent; color: var(--ink-2); font: 500 13px var(--font-ui); text-align: left; cursor: pointer; }
@@ -198,8 +198,8 @@
   position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 20; min-width: 230px; padding: 10px;
   display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop);
 }
-.canvas-filter-title { margin: 0 4px 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
-.canvas-filter-item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: 8px; color: var(--ink); font-size: 14px; cursor: pointer; }
+.canvas-filter-title { margin: 0 4px 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.canvas-filter-item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: 8px; color: var(--ink); font-size: 0.875rem; cursor: pointer; }
 @media (any-hover: hover) { .canvas-filter-item:hover { background: var(--ground); } }
 .canvas-filter-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .canvas-filter-actions { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -269,21 +269,21 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .todo-group li > input { width: 18px; height: 18px; margin-top: 12px; flex-shrink: 0; accent-color: var(--accent); }
 .todo-item { flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 @media (any-hover: hover) { .todo-item:hover { background: var(--accent-soft); } }
-.todo-text { font-size: 14px; }
-.todo-where { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.todo-text { font-size: 0.875rem; }
+.todo-where { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--ink-2); }
 
 /* Recherche */
 .search-panel { width: min(360px, calc(100vw - 32px)); }
-.search-input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 15px; }
+.search-input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.9375rem; }
 .search-input::placeholder { color: var(--placeholder); }
 .search-results { list-style: none; margin: 0; padding: 0; max-height: min(50vh, 420px); overflow: auto; display: flex; flex-direction: column; gap: 2px; }
 .search-result { width: 100%; min-height: 44px; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; }
 .search-result.is-active { background: var(--accent-soft); }
 @media (any-hover: hover) { .search-result:hover { background: var(--accent-soft); } }
 .search-result-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.search-result-type { flex-shrink: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
-.search-result-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.search-result-text { font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.search-result-type { flex-shrink: 0; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.search-result-title { font-size: 0.875rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-result-text { font-size: 0.8125rem; line-height: 1.4; color: var(--ink-2); }
 
 /* Bouton « Nouvelle carte » */
 /* « Nouvelle carte » : le bouton crée une Idée, la flèche ouvre les autres façons de créer une carte. */
@@ -305,8 +305,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .add-card-item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 .add-card-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .add-card-text { display: flex; flex-direction: column; gap: 1px; }
-.add-card-label { font-size: 15px; font-weight: 600; }
-.add-card-hint { font-size: 13px; color: var(--muted); }
+.add-card-label { font-size: 0.9375rem; font-weight: 600; }
+.add-card-hint { font-size: 0.8125rem; color: var(--muted); }
 
 /* ---------- Écrans tactiles : rien ne dépend du survol ---------- */
 @media (pointer: coarse) {
@@ -351,14 +351,14 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 
 
 /* Boutons du canevas qui portent une action peu évidente : l'icône et un mot, lisible au doigt comme à la souris. */
-.history-buttons .icon-button.has-label { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 10px; font-size: 14px; }
+.history-buttons .icon-button.has-label { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 10px; font-size: 0.875rem; }
 @media (max-width: 560px) {
   .history-buttons .icon-button.has-label { width: 44px; padding: 0; }
   .history-buttons .tool-label { display: none; }
 }
 
 /* Source collée ou déposée : annoncée quelques secondes, avec « Voir » (elle arrive souvent hors de la vue). */
-.toile-notice { position: absolute; z-index: 6; left: 50%; bottom: 140px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 14px; }
+.toile-notice { position: absolute; z-index: 6; left: 50%; bottom: 140px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 0.875rem; }
 .toile-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }
 @media (any-hover: hover) { .toile-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); } }
 /* Cartes Lien et Image de la zone Recherche : un corps vide ne s'affiche que quand on écrit dans la carte. */
@@ -370,7 +370,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .selection-bar {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
   max-width: calc(100% - 32px); padding: 6px 8px 6px 16px; border-radius: 999px;
-  background: var(--surface); box-shadow: var(--shadow-pop); font-size: 14px; color: var(--ink);
+  background: var(--surface); box-shadow: var(--shadow-pop); font-size: 0.875rem; color: var(--ink);
 }
 .selection-bar .ghost-button { min-height: 44px; }
 .selection-count { font-weight: 600; margin-right: 4px; }

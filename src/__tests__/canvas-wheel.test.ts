@@ -3,7 +3,7 @@
 // sauf dans un contenu qui défile vraiment.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { attachCanvasWheel, canScroll, panBy, pinchFactor, wheelPixels, zoomAround, type ScrollBox, type Viewport } from "../canvasWheel";
+import { attachCanvasWheel, canScroll, panBy, pinchFactor, wheelPixels, wheelZoomFactor, zoomAround, type ScrollBox, type Viewport } from "../canvasWheel";
 
 const wheel = (o: Partial<{ deltaX: number; deltaY: number; deltaMode: number; ctrlKey: boolean; shiftKey: boolean }>) => ({
   deltaX: 0,
@@ -48,6 +48,13 @@ describe("zoom par pincement", () => {
     const vp: Viewport = { x: 0, y: 0, zoom: 2 };
     expect(zoomAround(vp, 1.5, 10, 10, 0.15, 2)).toBe(vp);
     expect(zoomAround({ x: 0, y: 0, zoom: 0.2 }, 0.1, 0, 0, 0.15, 2).zoom).toBe(0.15);
+  });
+});
+
+describe("molette qui zoome (réglage)", () => {
+  it("un cran de souris : un pas mesuré, dans le bon sens", () => {
+    expect(wheelZoomFactor(wheel({ deltaY: 100 }))).toBeCloseTo(Math.pow(2, -0.2));
+    expect(wheelZoomFactor(wheel({ deltaY: -100 }))).toBeGreaterThan(1);
   });
 });
 
@@ -96,14 +103,14 @@ describe("branchement sur le canevas", () => {
     document.body.innerHTML = "";
   });
 
-  function setup() {
+  function setup(mode: "pan" | "zoom" = "pan") {
     document.body.innerHTML = `<div id="root"><div class="react-flow"><div class="pane"></div><div class="card-body" style="overflow-y:auto"><p>texte</p></div></div><div class="dock"></div></div>`;
     const root = document.getElementById("root") as HTMLElement;
     let vp: Viewport = { x: 0, y: 0, zoom: 1 };
     const setViewport = vi.fn((next: Viewport) => {
       vp = next;
     });
-    detach = attachCanvasWheel({ root, getViewport: () => vp, setViewport, minZoom: 0.15, maxZoom: 2 });
+    detach = attachCanvasWheel({ root, getViewport: () => vp, setViewport, minZoom: 0.15, maxZoom: 2, mode: () => mode });
     return { root, setViewport, view: () => vp };
   }
 
@@ -146,6 +153,22 @@ describe("branchement sur le canevas", () => {
     const e = fire(body.querySelector("p")!, { deltaY: 20 });
     expect(setViewport).not.toHaveBeenCalled();
     expect(e.defaultPrevented).toBe(false);
+  });
+
+  it("réglage « la molette zoome » : la molette seule zoome, comme avant", () => {
+    const { root, view } = setup("zoom");
+    fire(root.querySelector(".pane")!, { deltaY: -100 });
+    expect(view().zoom).toBeGreaterThan(1);
+    expect(view().zoom).toBeLessThan(1.3);
+  });
+
+  it("réglage « la molette zoome » : une carte qui défile garde la molette", () => {
+    const { root, setViewport } = setup("zoom");
+    const body = root.querySelector(".card-body") as HTMLElement;
+    Object.defineProperty(body, "scrollHeight", { value: 500 });
+    Object.defineProperty(body, "clientHeight", { value: 200 });
+    fire(body.querySelector("p")!, { deltaY: 20 });
+    expect(setViewport).not.toHaveBeenCalled();
   });
 
   it("hors du canevas (rangée d'outils) : rien n'est intercepté", () => {

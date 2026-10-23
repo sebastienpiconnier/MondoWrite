@@ -23,7 +23,7 @@ async function buildMenu() {
   const { Menu, Submenu, PredefinedMenuItem, MenuItem } = await import("@tauri-apps/api/menu");
   const t = getT();
   const m = t.appMenu;
-  const { screen, kind } = useCosmos.getState();
+  const { screen, kind, view: currentView } = useCosmos.getState();
   const inProject = screen === "project";
   const atHome = !inProject;
   const views = vocab(t, kind).views;
@@ -94,6 +94,11 @@ async function buildMenu() {
       await MenuItem.new({ id: "view-bible", text: views.bible, accelerator: "CmdOrCtrl+3", enabled: inProject, action: goTo("bible") }),
       await MenuItem.new({ id: "view-manuscrit", text: views.manuscrit, accelerator: "CmdOrCtrl+4", enabled: inProject, action: goTo("manuscrit") }),
       await sep(),
+      // Zoom de la page du manuscrit ou du scénario : seulement dans cette vue (raccourcis rejoués).
+      await MenuItem.new({ id: "zoom-in", text: m.zoomIn, accelerator: "CmdOrCtrl+=", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("=", "Equal") }),
+      await MenuItem.new({ id: "zoom-out", text: m.zoomOut, accelerator: "CmdOrCtrl+-", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("-", "Minus") }),
+      await MenuItem.new({ id: "zoom-reset", text: m.actualSize, accelerator: "CmdOrCtrl+0", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("0", "Digit0") }),
+      await sep(),
       await PredefinedMenuItem.new({ item: "Fullscreen", text: m.fullscreen }),
     ],
   });
@@ -142,8 +147,8 @@ export function initAppMenu() {
   useSettings.subscribe((s, prev) => {
     if (s.lang !== prev.lang) void build();
   });
-  // Accueil ou projet ouvert (commandes grisées ou non), roman ou scénario (noms des vues).
+  // Accueil ou projet ouvert (commandes grisées ou non), roman ou scénario (noms des vues), vue en cours (zoom).
   useCosmos.subscribe((s, prev) => {
-    if (s.screen !== prev.screen || s.kind !== prev.kind) void build();
+    if (s.screen !== prev.screen || s.kind !== prev.kind || s.view !== prev.view) void build();
   });
 }

@@ -12,6 +12,7 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import Highlight from "@tiptap/extension-highlight";
+import Strike from "@tiptap/extension-strike";
 import { markdownToHtml } from "../storage/markdown";
 import { looksLikeMarkdown, markHighlights } from "../markdownText";
 import { useSettings } from "../settings";
@@ -82,9 +83,21 @@ const Revisit = Highlight.extend({
   },
 });
 
+/**
+ * Barré : Cmd/Ctrl+Maj+D, à la place de Cmd/Ctrl+Maj+S de TipTap (sur Mac, ⇧⌘S est « Enregistrer sous » ou
+ * « Dupliquer » ; ⇧⌘X, l'usage de Google Docs, est déjà « à reprendre » ; ⇧⌘5 lance la capture d'écran).
+ * Le Markdown `~~texte~~` à la frappe reste celui de TipTap.
+ */
+const StrikeD = Strike.extend({
+  addKeyboardShortcuts() {
+    return { "Mod-Shift-d": () => this.editor.commands.toggleStrike() };
+  },
+});
+
 export function richTextExtensions({ link = true }: { link?: boolean } = {}) {
   return [
-    StarterKit.configure({ heading: { levels: [1, 2, 3] }, ...(link ? {} : { link: false }) }),
+    StarterKit.configure({ heading: { levels: [1, 2, 3] }, strike: false, ...(link ? {} : { link: false }) }),
+    StrikeD,
     TaskList,
     TaskItem.configure({ nested: true }),
     Revisit,

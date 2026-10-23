@@ -59,7 +59,7 @@
 @media (pointer: coarse) { .edge-handle.is-left, .edge-handle.is-right { width: 24px; height: 88px; } .edge-handle.is-top { width: 88px; height: 22px; } }
 .manuscript.is-focus .edge-handle { display: none; }
 /* La barre de la scène reste en haut quand on défile : mode focus, remplacer, scène suivante sont toujours à portée. */
-.ms-meta-wrap { position: sticky; top: 0; z-index: 6; margin: 0 0 8px; animation: ms-meta-in 0.24s ease-out; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px)); max-width: 100%; align-self: center; }
+.ms-meta-wrap { position: sticky; top: 0; z-index: 6; margin: 0 0 8px; animation: ms-meta-in 0.24s ease-out; width: calc(34 * clamp(12px, calc((100cqw - 8px) / 34), 23px) * var(--page-zoom, 1)); max-width: 100%; align-self: center; }
 .ms-meta-anchor { position: relative; }
 .ms-meta { padding: 6px 8px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-card); }
 /* La barre de la scène est collée au menu du haut et en descend comme un volet. */
@@ -81,7 +81,7 @@
   background: var(--page); color: var(--page-ink); box-shadow: var(--shadow-card);
   /* La page suit la largeur de la fenêtre : tout est en em, seule la taille du texte change, la page garde
      ses proportions. Bornée pour rester lisible (petit écran) et confortable (grand écran). */
-  font: 17px/1.6 var(--font-text); font-size: clamp(12px, calc((100cqw - 8px) / var(--ms-width)), 23px);
+  font: 17px/1.6 var(--font-text); font-size: calc(clamp(12px, calc((100cqw - 8px) / var(--ms-width)), 23px) * var(--page-zoom, 1));
 }
 /* Marge haute (--ms-top, en lignes) comprise dans la hauteur : une page fait toujours une page, même quand
    son texte descend plus bas (page de titre, dédicace, mentions légales…). */
@@ -622,3 +622,12 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 @media (pointer: coarse) { .ms-chutier-actions button { min-height: 44px; } }
 .ms-counter { margin-left: auto; font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
 .ms-meta .ghost-button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); border-color: transparent; }
+
+/* Zoom de la page (réglage de l'appareil, Cmd/Ctrl + et -) : tout est en em, la page grandit d'un bloc et garde
+   ses coupures. Plus large que la colonne, elle défile de côté au lieu d'être coupée (écran large). */
+@media (min-width: 721px) {
+  html[data-page-zoomed] .ms-main, html[data-page-zoomed] .screenplay .sp-scroll { overflow-x: auto; }
+  html[data-page-zoomed] .ms-sheet { max-width: none; width: max-content; min-width: min(100%, 900px); }
+  html[data-page-zoomed] .ms-page, html[data-page-zoomed] .ms-meta-wrap { max-width: none; }
+}
+/* Téléphone : la page prend toute la largeur ; agrandi, le texte passe à la ligne (phone.css). */

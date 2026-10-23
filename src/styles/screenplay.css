@@ -80,7 +80,7 @@
 .sp-page {
   --sp-width: 51; --sp-height: 66; --sp-lines: 55;
   position: relative; width: calc(var(--sp-width) * 1em); margin: 0 auto 2em; background: var(--page); color: var(--page-ink);
-  box-shadow: var(--shadow-card); font: 16px/1 var(--font-script); font-size: min(16px, calc(100cqw / var(--sp-width)));
+  box-shadow: var(--shadow-card); font: 16px/1 var(--font-script); font-size: calc(min(16px, calc(100cqw / var(--sp-width))) * var(--page-zoom, 1));
 }
 /* A4 : 8,27 pouces de large, soit 57 caractères de texte au lieu de 60. */
 .sp-page[data-paper="a4"] { --sp-width: 49.62; --sp-height: 70.14; --sp-lines: 59; }

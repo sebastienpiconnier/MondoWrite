@@ -8,7 +8,7 @@ import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { useCommand } from "../commands";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
-import { useSettings, PALETTES, type Palette, type ThemePref } from "../settings";
+import { useSettings, PAGE_ZOOMS, PALETTES, type Palette, type ThemePref, type WheelMode } from "../settings";
 import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
@@ -70,6 +70,8 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [open, setOpen] = useState(false);
   // Barre des menus du Mac (Réglages…) et Cmd/Ctrl + virgule : ouvrir.
   useCommand("settings", () => setOpen(true));
+  const wheelMode = useSettings((s) => s.wheelMode);
+  const finePointer = typeof window !== "undefined" && !!window.matchMedia?.("(any-pointer: fine)").matches;
   // Augmenter le contraste (réglage du système) : la palette Contraste s'impose, on le dit sous le choix.
   const [moreContrast, setMoreContrast] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-contrast: more)").matches);
   useEffect(() => {
@@ -81,7 +83,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -249,6 +251,16 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </select>
           {moreContrast && <p className="settings-hint">{t.settings.paletteSystemContrast}</p>}
+          {/* Seulement avec une souris ou un trackpad : au doigt, déplacer et pincer ne changent pas. */}
+          {finePointer && (
+            <>
+              <label htmlFor={ids.wheel}>{t.settings.wheel}</label>
+              <select id={ids.wheel} value={wheelMode} onChange={(e) => useSettings.getState().setWheelMode(e.target.value as WheelMode)}>
+                <option value="pan">{t.settings.wheelPan}</option>
+                <option value="zoom">{t.settings.wheelZoom}</option>
+              </select>
+            </>
+          )}
           {/* Le nom d'auteur vient du profil, qui se remplit sur la page des projets. */}
           <div className="settings-label" id={ids.author}>{t.settings.author}</div>
           <p className="settings-value" aria-labelledby={ids.author}>{author || t.settings.authorNone}</p>
@@ -273,6 +285,15 @@ export function Settings({ project = true }: { project?: boolean }) {
             <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
             {t.settings.focusTypewriter}
           </label>
+          <label htmlFor={ids.pageZoom}>{t.settings.pageZoom}</label>
+          <select id={ids.pageZoom} value={String(writing.zoom)} onChange={(e) => setWriting({ ...writing, zoom: Number(e.target.value) })}>
+            {/* Une valeur relue hors des crans reste proposée, sinon la liste afficherait autre chose. */}
+            {(PAGE_ZOOMS.includes(writing.zoom as (typeof PAGE_ZOOMS)[number]) ? PAGE_ZOOMS : [...PAGE_ZOOMS, writing.zoom].sort((a, b) => a - b)).map((z) => (
+              <option key={z} value={String(z)}>
+                {new Intl.NumberFormat(lang, { style: "percent" }).format(z)}
+              </option>
+            ))}
+          </select>
           {icloudOk === false && storage.icloud && (
             <p className="settings-hint" id={ids.icloudHint}>
               {storage.canPickFolder ? t.settings.icloudOffMac : t.settings.icloudOff}

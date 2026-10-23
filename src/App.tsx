@@ -1,6 +1,7 @@
 import { openGuide } from "./help";
 import { useEffect } from "react";
 import { sendCommand } from "./commands";
+import { nextZoom, useSettings } from "./settings";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useCosmos } from "./store";
 import { TopBar } from "./components/TopBar";
@@ -126,6 +127,14 @@ export function App() {
       if (e.shiftKey && !e.altKey && key === "h" && useCosmos.getState().view !== "manuscrit") {
         e.preventDefault();
         useCosmos.getState().openReplace();
+        return;
+      }
+      // Cmd/Ctrl + plus, moins, zéro : zoom de la page du manuscrit ou du scénario (vue Manuscrit seulement).
+      const zoomStep = e.altKey ? null : key === "+" || key === "=" ? 1 : key === "-" || e.code === "Minus" ? -1 : !e.shiftKey && (key === "0" || e.code === "Digit0" || e.code === "Numpad0") ? 0 : null;
+      if (zoomStep !== null && useCosmos.getState().view === "manuscrit") {
+        e.preventDefault();
+        const { writing, setWriting } = useSettings.getState();
+        setWriting({ ...writing, zoom: nextZoom(writing.zoom, zoomStep) });
         return;
       }
       if (digit && !e.shiftKey && !e.altKey) {

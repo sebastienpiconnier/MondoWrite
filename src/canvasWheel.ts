@@ -3,7 +3,8 @@
 // - Pincement (molette avec ctrlKey, ce que Chrome et Windows envoient ; ou événements gesture de WebKit sur
 //   Mac) : zoom du canevas autour du pointeur, toujours, même au-dessus d'une carte.
 // - Glissement à deux doigts ou molette seule : la zone sous le pointeur défile si elle a vraiment du contenu
-//   à faire défiler dans ce sens ; sinon le canevas se déplace.
+//   à faire défiler dans ce sens ; sinon le canevas se déplace (mode « pan », par défaut) ou zoome (mode
+//   « zoom », réglage de l'appareil, l'ancien comportement pour la souris).
 // Les fonctions de ce fichier sont pures (testées) ; le branchement est dans Toile.tsx.
 
 export interface Viewport {
@@ -38,6 +39,13 @@ export function pinchFactor(e: WheelLike): number {
   const step = e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002;
   // Un pincement envoie de petits pas ; Ctrl + molette d'une souris, un grand : on le ramène à ±27 % par cran.
   const exponent = Math.max(-0.35, Math.min(0.35, -e.deltaY * step * 10));
+  return Math.pow(2, exponent);
+}
+
+/** Facteur de zoom d'un cran de molette sans Ctrl (mode « zoom ») : l'échelle de React Flow, bornée. */
+export function wheelZoomFactor(e: WheelLike): number {
+  const step = e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002;
+  const exponent = Math.max(-0.35, Math.min(0.35, -e.deltaY * step));
   return Math.pow(2, exponent);
 }
 
@@ -110,13 +118,15 @@ interface CanvasWheelOptions {
   setViewport: (vp: Viewport) => void;
   minZoom: number;
   maxZoom: number;
+  /** Ce que fait la molette sans Ctrl : déplacer (par défaut) ou zoomer. Relu à chaque geste. */
+  mode?: () => "pan" | "zoom";
 }
 
 /** Ce que React Flow garde pour lui : mini-carte (elle a son propre zoom) et boutons posés sur le canevas. */
 const OWN_WHEEL = ".react-flow__minimap, .react-flow__panel";
 
 /** Branche le gestionnaire unique ; rend la fonction qui le retire. */
-export function attachCanvasWheel({ root, getViewport, setViewport, minZoom, maxZoom }: CanvasWheelOptions): () => void {
+export function attachCanvasWheel({ root, getViewport, setViewport, minZoom, maxZoom, mode = () => "pan" }: CanvasWheelOptions): () => void {
   const point = (clientX: number, clientY: number) => {
     const r = root.getBoundingClientRect();
     return [clientX - r.left, clientY - r.top] as const;
@@ -142,7 +152,11 @@ export function attachCanvasWheel({ root, getViewport, setViewport, minZoom, max
     if (scrollableUnder(e.target, root, dx, dy)) return;
     e.preventDefault();
     const vp = getViewport();
-    const next = panBy(vp, dx, dy);
+    let next: Viewport;
+    if (mode() === "zoom") {
+      const [px, py] = point(e.clientX, e.clientY);
+      next = zoomAround(vp, wheelZoomFactor(e), px, py, minZoom, maxZoom);
+    } else next = panBy(vp, dx, dy);
     if (next !== vp) setViewport(next);
   };
 

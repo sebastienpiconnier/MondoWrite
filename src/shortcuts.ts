@@ -32,7 +32,7 @@ export const SHORTCUT_GROUPS = {
   text: [
     ["bold", ["Mod", "B"]],
     ["italic", ["Mod", "I"]],
-    ["strike", ["Mod", "Shift", "S"]],
+    ["strike", ["Mod", "Shift", "D"]],
     ["heading", ["Mod", "Alt", "1…3"]],
     ["bullet", ["Mod", "Shift", "8"]],
     ["ordered", ["Mod", "Shift", "7"]],
@@ -49,6 +49,7 @@ export const SHORTCUT_GROUPS = {
     ["chutier", ["Mod", "Shift", "K"]],
     ["spell", ["Mod", ";"]],
     ["moveScene", ["Alt", "↑ ↓"]],
+    ["pageZoom", ["Mod", "+ − 0"]],
   ],
   screenplay: [
     ["elementType", ["Tab"]],

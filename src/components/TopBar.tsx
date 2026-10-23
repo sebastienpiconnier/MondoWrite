@@ -33,8 +33,10 @@ export function TopBar() {
   }, [more]);
 
   return (
-    <header className={`topbar${more ? " more-open" : ""}`}>
-      <div className="brand">
+    // data-tauri-drag-region : le fond de la barre déplace la fenêtre (barre de titre intégrée du Mac),
+    // un double-clic l'agrandit ; les boutons et le titre gardent leurs clics.
+    <header className={`topbar${more ? " more-open" : ""}`} data-tauri-drag-region>
+      <div className="brand" data-tauri-drag-region>
         <BrandMark size={34} />
         {/* Le nom, et dessous le titre du projet (modifiable sur place) : la colonne reste étroite, les vues
             gardent leur place au centre, même sur un iPad en paysage. */}

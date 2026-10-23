@@ -49,7 +49,7 @@
 
   /* Manuscrit : pas de page de livre, le texte prend toute la largeur, plus gros (la mise en page par page ne compte pas ici). */
   .ms-main { padding: 12px max(4px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(4px, env(safe-area-inset-left)); }
-  .manuscript .ms-page { width: 100%; margin-top: 0; box-shadow: none; font-size: 19px; line-height: 1.55; }
+  .manuscript .ms-page { width: 100%; margin-top: 0; box-shadow: none; font-size: calc(19px * var(--page-zoom, 1)); line-height: 1.55; }
   .manuscript .ms-page .ms-editor, .manuscript .ms-page .ms-editor:focus-visible { min-height: 0; padding: 0.5em 1.1em 0; }
   .manuscript.is-focus .ms-page .ms-editor, .manuscript.is-focus .ms-page .ms-editor:focus-visible { padding: 0 1.1em; }
   .manuscript .ms-page .ms-editor p { text-align: left; }

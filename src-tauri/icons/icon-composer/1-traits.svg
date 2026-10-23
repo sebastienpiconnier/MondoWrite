@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Calque du fond de la pile : les traits de la constellation (le M). Traits un peu épaissis par rapport à
+       icon-ios.svg : sous le verre, un trait fin s'efface. -->
+  <polyline points="226.8,724.5 298.25,298.25 510.76,582.83 723.88,297.01 795.34,724.5" fill="none" stroke="#8E9099" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

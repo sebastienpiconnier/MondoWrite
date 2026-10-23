@@ -60,8 +60,8 @@ export function Home() {
 
   return (
     <div className="home">
-      <header className="topbar">
-        <div className="brand">
+      <header className="topbar" data-tauri-drag-region>
+        <div className="brand" data-tauri-drag-region>
           <BrandMark size={34} />
           <span className="brand-text">
             <Wordmark className="brand-name" />

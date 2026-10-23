@@ -18,6 +18,11 @@ export const PALETTES = ["encre", "indigo", "papier", "foret", "aube", "sepia", 
 export type Palette = (typeof PALETTES)[number];
 export const DEFAULT_PALETTE: Palette = "encre";
 export const isPalette = (v: unknown): v is Palette => (PALETTES as readonly unknown[]).includes(v);
+/**
+ * Molette et trackpad sur le canevas (réglage de l'appareil) : « pan » (par défaut) = deux doigts ou molette
+ * déplacent, pincer ou Ctrl + molette zoome ; « zoom » = la molette zoome, comme avant la 1.0.17 (souris).
+ */
+export type WheelMode = "pan" | "zoom";
 /** Présentation du séquencier : en liste ou en fiches. */
 export type SequencerMode = "outline" | "cards";
 
@@ -61,7 +66,22 @@ export interface WritingSettings {
   highlight: FocusHighlight;
   /** Typographie automatique à la frappe : selon la langue de l'interface, française, anglaise, ou aucune. */
   typography: TypographySetting;
+  /** Zoom de la page du manuscrit et de la feuille du scénario (1 = taille normale, qui suit la fenêtre). */
+  zoom: number;
 }
+
+/** Crans du zoom de la page (Cmd/Ctrl + et -, menu Présentation, Réglages). */
+export const PAGE_ZOOMS = [0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2] as const;
+
+/** Cran suivant (+1), précédent (-1) ou taille normale (0) ; une valeur hors des crans va au plus proche. */
+export function nextZoom(zoom: number, step: -1 | 0 | 1): number {
+  if (step === 0) return 1;
+  const i = PAGE_ZOOMS.findIndex((z) => z >= zoom - 1e-6);
+  const at = i < 0 ? PAGE_ZOOMS.length - 1 : PAGE_ZOOMS[i] > zoom + 1e-6 && step > 0 ? i - 1 : i;
+  return PAGE_ZOOMS[Math.max(0, Math.min(PAGE_ZOOMS.length - 1, at + step))];
+}
+
+const readZoom = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.max(PAGE_ZOOMS[0], Math.min(PAGE_ZOOMS[PAGE_ZOOMS.length - 1], v)) : 1);
 
 function readWriting(raw: unknown): WritingSettings {
   const w = (raw ?? {}) as Partial<Record<keyof WritingSettings, unknown>>;
@@ -69,6 +89,7 @@ function readWriting(raw: unknown): WritingSettings {
     typewriter: w.typewriter === true,
     highlight: isFocusHighlight(w.highlight) ? w.highlight : "off",
     typography: isTypographySetting(w.typography) ? w.typography : "auto",
+    zoom: readZoom(w.zoom),
   };
 }
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);
@@ -83,6 +104,8 @@ interface SettingsState {
   palette: Palette;
   setPalette: (palette: Palette) => void;
   sequencerMode: SequencerMode;
+  wheelMode: WheelMode;
+  setWheelMode: (mode: WheelMode) => void;
   setSequencerMode: (mode: SequencerMode) => void;
   /** Profil de l'auteur (nom, nom de plume, coordonnées), repris par les nouveaux projets. */
   profile: AuthorProfile;
@@ -134,7 +157,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -160,6 +183,8 @@ export const useSettings = create<SettingsState>((set) => ({
   setPalette: (palette) => set({ palette }),
   sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
+  wheelMode: saved.wheelMode === "zoom" ? "zoom" : "pan",
+  setWheelMode: (wheelMode) => set({ wheelMode }),
   profile: initialProfile,
   setProfile: (profile) => {
     const clean = cleanProfile(profile);
@@ -194,14 +219,18 @@ const contrastQuery = () => (typeof window !== "undefined" ? window.matchMedia?.
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, profile, ai, bibleSections, writing, photos, updates }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.dataset.palette = shownPalette(palette, !!contrastQuery()?.matches);
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
+    // Zoom de la page (manuscrit, scénario) : une variable CSS ; agrandie, la page peut défiler de côté.
+    root.style.setProperty("--page-zoom", String(writing.zoom));
+    if (writing.zoom > 1) root.dataset.pageZoomed = "";
+    else delete root.dataset.pageZoomed;
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, profile, ai, bibleSections, writing, photos, updates }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

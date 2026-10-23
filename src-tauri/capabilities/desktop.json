@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "desktop",
-  "description": "Permissions de l'app de bureau seulement : chercher, télécharger et installer une nouvelle version de MondoWrite, puis redémarrer ; surveiller le dossier du projet (modifications faites dans un autre logiciel)",
+  "description": "Permissions de l'app de bureau seulement : chercher, télécharger et installer une nouvelle version de MondoWrite, puis redémarrer ; surveiller le dossier du projet (modifications faites dans un autre logiciel) ; déplacer la fenêtre par la barre du haut (barre de titre intégrée du Mac)",
   "platforms": ["macOS", "windows", "linux"],
   "windows": [
     "main"
@@ -10,6 +10,7 @@
     "updater:default",
     "process:allow-restart",
     "fs:allow-watch",
-    "fs:allow-unwatch"
+    "fs:allow-unwatch",
+    "core:window:allow-start-dragging"
   ]
 }

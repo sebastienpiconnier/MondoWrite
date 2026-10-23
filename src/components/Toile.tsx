@@ -137,7 +137,15 @@ export function Toile() {
   useEffect(() => {
     const root = wrapper.current;
     if (!root) return;
-    return attachCanvasWheel({ root, getViewport, setViewport: (vp) => void setViewport(vp), minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM });
+    return attachCanvasWheel({
+      root,
+      getViewport,
+      setViewport: (vp) => void setViewport(vp),
+      minZoom: MIN_ZOOM,
+      maxZoom: MAX_ZOOM,
+      // Réglage de l'appareil (Réglages) : la molette déplace (par défaut) ou zoome, comme avant.
+      mode: () => useSettings.getState().wheelMode,
+    });
   }, [getViewport, setViewport]);
   const [labelEditor, setLabelEditor] = useState<LabelEditor | null>(null);
   const edgeCountBeforeConnect = useRef(0);

@@ -220,6 +220,11 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
   padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--line);
 }
 .topbar > .brand { justify-self: start; }
+/* Mac, app de bureau : barre de titre intégrée. Les trois boutons de fenêtre sont posés sur la barre du haut
+   (trafficLightPosition dans tauri.conf.json) : on leur laisse la place à gauche. En plein écran ils disparaissent. */
+html[data-platform="mac"] .topbar { padding-left: 92px; }
+html[data-platform="mac"] .topbar { -webkit-user-select: none; user-select: none; }
+html[data-platform="mac"] .topbar :is(input, textarea) { -webkit-user-select: text; user-select: text; }
 .topbar > .actions { justify-self: end; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
 /* Logotype : « Mondo » droit et gras, « Write » en italique fin (Playfair Display), comme sur la planche. */
