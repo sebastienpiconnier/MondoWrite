@@ -21,15 +21,21 @@ import "./styles/writing.css";
 import "./styles/phone.css";
 import { App } from "./App";
 import { initSettings } from "./settings";
+import { isMobileOS, isTauri } from "./platform";
 import { initAppMenu } from "./appMenu";
 import { watchKeyboard } from "./keyboard";
+import { watchTextScale } from "./textScale";
 
+// App de bureau : comportements d'app du système (curseur flèche sur les commandes, voir styles.css).
+if (isTauri() && !isMobileOS()) document.documentElement.dataset.app = "desktop";
 // Langue et thème appliqués avant le premier rendu (pas de flash clair en mode sombre).
 initSettings();
 // Mac : barre des menus dans la langue de l'app, avec le menu Aide.
 initAppMenu();
 // Écran tactile : la hauteur du clavier virtuel (--keyboard-h) laisse le texte défiler au-dessus.
 watchKeyboard();
+// iPad et iPhone : les textes de l'interface suivent la taille de texte du système (Dynamic Type).
+watchTextScale();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

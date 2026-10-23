@@ -312,10 +312,12 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 @media (pointer: coarse) {
   .card-more { min-height: 44px; }
   .card-port { width: 22px; height: 22px; border-width: 3px; opacity: 1; }
-  .card-delete { opacity: 1; width: 36px; height: 36px; }
-  .card-type { min-height: 36px; }
+  /* Le point reste petit à l'œil, mais se touche sur 44 px. */
+  .card-port::after { content: ""; position: absolute; inset: -11px; }
+  .card-delete { opacity: 1; width: 44px; height: 44px; }
+  .card-type { min-height: 44px; }
   .frame .card-delete { opacity: 1; }
-  .frame-lock { opacity: 1; width: 40px; height: 40px; }
+  .frame-lock { opacity: 1; width: 44px; height: 44px; }
   .card-image-remove { opacity: 1; width: 36px; height: 36px; }
   .card-resize.react-flow__resize-control.handle { width: 24px; height: 24px; }
   .frame-resize-handle { width: 22px !important; height: 22px !important; }

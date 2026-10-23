@@ -1,6 +1,7 @@
-/* Palettes de couleurs. Fichier généré : ne pas modifier à la main.
+/* Palettes de couleurs. Fichier généré, puis retouché à la main (octobre 2026) pour le contraste AA (4,5:1) de tous
+   les textes, textes indicatifs et texte estompé du mode focus compris : vérifié par palettes-contrast.test.ts.
    La palette est posée sur <html data-palette="..."> par settings.ts, le mode (clair ou sombre) sur data-theme.
-   Chaque bloc ne redéfinit que les jetons qui dépendent de la couleur ; les couleurs de type de carte restent celles de styles.css. */
+   Chaque bloc ne redéfinit que les jetons qui dépendent de la couleur ; les couleurs de type de carte restent celles de styles.css (sauf Sépia, assombries pour son fond crème). */
 
 :root[data-palette="indigo"]:not([data-theme="dark"]) {
   --ink: #1B1E2E;
@@ -24,7 +25,7 @@
   --minimap-mask: rgba(238, 240, 244, 0.7);
   --page: #FFFFFF;
   --page-ink: #1B1E2E;
-  --page-ink-dim: #9fa1a7;
+  --page-ink-dim: #72757d;
   --cover-bg: #1c1e56;
   --cover-muted: #d9d9f3;
 }
@@ -51,7 +52,7 @@
   --minimap-mask: rgba(19, 21, 29, 0.7);
   --page: #1D2030;
   --page-ink: #E7E9F1;
-  --page-ink-dim: #727481;
+  --page-ink-dim: #878995;
   --cover-bg: #31324e;
   --cover-muted: #ebebfd;
 }
@@ -60,7 +61,7 @@
   --ink: #2B2620;
   --ink-2: #504c46;
   --muted: #69655f;
-  --placeholder: #7a7670;
+  --placeholder: #74706b;
   --line: #d8d3ca;
   --line-2: #c4bfb6;
   --ground: #F4EFE6;
@@ -78,9 +79,10 @@
   --minimap-mask: rgba(244, 239, 230, 0.7);
   --page: #FFFDF8;
   --page-ink: #2B2620;
-  --page-ink-dim: #a6a39d;
+  --page-ink-dim: #76736c;
   --cover-bg: #492419;
   --cover-muted: #efdcd5;
+  --status-draft: #6b7084;
 }
 
 :root[data-palette="papier"][data-theme="dark"] {
@@ -105,7 +107,7 @@
   --minimap-mask: rgba(28, 24, 20, 0.7);
   --page: #2A231C;
   --page-ink: #EFE6D8;
-  --page-ink-dim: #7d756b;
+  --page-ink-dim: #938b81;
   --cover-bg: #482c1e;
   --cover-muted: #f9e8df;
 }
@@ -114,7 +116,7 @@
   --ink: #1E2A24;
   --ink-2: #454f4a;
   --muted: #5f6863;
-  --placeholder: #707974;
+  --placeholder: #6a736e;
   --line: #cdd3cd;
   --line-2: #b8bfba;
   --ground: #E9EEE9;
@@ -132,9 +134,10 @@
   --minimap-mask: rgba(233, 238, 233, 0.7);
   --page: #FFFFFF;
   --page-ink: #1E2A24;
-  --page-ink-dim: #a1a6a3;
+  --page-ink-dim: #707672;
   --cover-bg: #162e28;
   --cover-muted: #d5e1dc;
+  --status-draft: #6c7185;
 }
 
 :root[data-palette="foret"][data-theme="dark"] {
@@ -159,7 +162,7 @@
   --minimap-mask: rgba(16, 26, 21, 0.7);
   --page: #1B2A22;
   --page-ink: #E3EEE6;
-  --page-ink-dim: #6f7c74;
+  --page-ink-dim: #85928a;
   --cover-bg: #244132;
   --cover-muted: #e2f5eb;
 }
@@ -186,7 +189,7 @@
   --minimap-mask: rgba(232, 238, 245, 0.7);
   --page: #FFFFFF;
   --page-ink: #14203A;
-  --page-ink-dim: #9ca1ac;
+  --page-ink-dim: #6f7584;
   --cover-bg: #073242;
   --cover-muted: #cee3e9;
 }
@@ -213,7 +216,7 @@
   --minimap-mask: rgba(15, 20, 32, 0.7);
   --page: #1A2133;
   --page-ink: #E4EAF5;
-  --page-ink-dim: #6f7584;
+  --page-ink-dim: #848a98;
   --cover-bg: #1d4048;
   --cover-muted: #def4f9;
 }
@@ -222,7 +225,7 @@
   --ink: #2B1F27;
   --ink-2: #51464d;
   --muted: #6b6166;
-  --placeholder: #7c7277;
+  --placeholder: #7a7075;
   --line: #d9d0d2;
   --line-2: #c5bcbe;
   --ground: #F5EDEE;
@@ -240,7 +243,7 @@
   --minimap-mask: rgba(245, 237, 238, 0.7);
   --page: #FFFFFF;
   --page-ink: #2B1F27;
-  --page-ink-dim: #a6a1a4;
+  --page-ink-dim: #797377;
   --cover-bg: #3a1d32;
   --cover-muted: #e8d9e1;
 }
@@ -267,7 +270,7 @@
   --minimap-mask: rgba(27, 18, 24, 0.7);
   --page: #2A1C25;
   --page-ink: #F3E6EE;
-  --page-ink-dim: #7e7179;
+  --page-ink-dim: #92858d;
   --cover-bg: #452c3b;
   --cover-muted: #f7e8f1;
 }
@@ -276,7 +279,7 @@
   --ink: #33281C;
   --ink-2: #564b3f;
   --muted: #6d6357;
-  --placeholder: #7c7266;
+  --placeholder: #72685d;
   --line: #d1c9bc;
   --line-2: #bfb6a9;
   --ground: #EBE3D6;
@@ -294,9 +297,13 @@
   --minimap-mask: rgba(235, 227, 214, 0.7);
   --page: #F6F0E3;
   --page-ink: #33281C;
-  --page-ink-dim: #a49c8f;
+  --page-ink-dim: #736b5e;
   --cover-bg: #3b161f;
   --cover-muted: #e8d5d8;
+  --status-draft: #65697d;
+  --type-lieu: #1c766a;
+  --type-scene: #9c5900;
+  --type-question: #65697d;
 }
 
 :root[data-palette="sepia"][data-theme="dark"] {
@@ -321,7 +328,7 @@
   --minimap-mask: rgba(26, 21, 15, 0.7);
   --page: #2B2318;
   --page-ink: #EADFCB;
-  --page-ink-dim: #7b7263;
+  --page-ink-dim: #958b7b;
   --cover-bg: #442429;
   --cover-muted: #f7e2e5;
 }
@@ -348,7 +355,7 @@
   --minimap-mask: rgba(242, 240, 238, 0.7);
   --page: #FFFFFF;
   --page-ink: #221E1A;
-  --page-ink-dim: #a2a19f;
+  --page-ink-dim: #767573;
   --cover-bg: #4e2107;
   --cover-muted: #f1dbcc;
 }
@@ -375,7 +382,7 @@
   --minimap-mask: rgba(22, 20, 18, 0.7);
   --page: #252120;
   --page-ink: #F1ECE6;
-  --page-ink-dim: #7b7673;
+  --page-ink-dim: #8e8986;
   --cover-bg: #522c14;
   --cover-muted: #ffe8d8;
 }
@@ -402,7 +409,7 @@
   --minimap-mask: rgba(255, 255, 255, 0.7);
   --page: #FFFFFF;
   --page-ink: #000000;
-  --page-ink-dim: #949494;
+  --page-ink-dim: #757575;
   --cover-bg: #07205d;
   --cover-muted: #cedaf7;
 }
@@ -429,7 +436,7 @@
   --minimap-mask: rgba(0, 0, 0, 0.7);
   --page: #000000;
   --page-ink: #FFFFFF;
-  --page-ink-dim: #6b6b6b;
+  --page-ink-dim: #767676;
   --cover-bg: #233352;
   --cover-muted: #e2ecff;
 }

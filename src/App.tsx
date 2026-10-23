@@ -1,5 +1,6 @@
 import { openGuide } from "./help";
 import { useEffect } from "react";
+import { sendCommand } from "./commands";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useCosmos } from "./store";
 import { TopBar } from "./components/TopBar";
@@ -109,6 +110,12 @@ export function App() {
         e.preventDefault();
         const { dialog, setDialog } = useCosmos.getState();
         setDialog(dialog === "shortcuts" ? null : "shortcuts");
+        return;
+      }
+      // Cmd/Ctrl + virgule : les réglages (convention du Mac), accueil compris.
+      if (key === "," && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        sendCommand("settings");
         return;
       }
       if (useCosmos.getState().screen !== "project") return;

@@ -2,7 +2,12 @@
 // menu Aide qui ouvre le guide de l'utilisateur. Seulement sur Mac : ailleurs, un menu de l'app ajouterait
 // une barre de menus à la fenêtre (Windows, Linux), et l'aide passe par F1 et les Réglages.
 // Les éléments « prédéfinis » (copier, coller, masquer, quitter…) gardent le comportement du système ;
-// seul leur libellé est traduit. Le menu est refait quand la langue change.
+// seul leur libellé est traduit. Le menu est refait quand la langue, l'écran ou le type de projet changent.
+//
+// Règles de la barre des menus d'Apple : toute commande de l'app y figure, avec son raccourci ; une commande
+// indisponible est grisée, jamais retirée (`enabled`). Les raccourcis déjà servis par l'app sont rejoués
+// (replayShortcut) pour suivre exactement le chemin du clavier ; chaque action ne fait qu'« ouvrir » ou
+// « aller à », sans effet si le raccourci clavier arrive aussi.
 
 import { getT } from "./i18n";
 import { isAppleKeyboard, isMobileOS, isTauri, openExternal } from "./platform";
@@ -10,15 +15,25 @@ import { useSettings } from "./settings";
 import { useCosmos } from "./store";
 import { openGuide } from "./help";
 import { REPO } from "./updates";
+import { replayShortcut, sendCommand } from "./commands";
+import { storage } from "./storage";
+import { vocab } from "./vocab";
 
 async function buildMenu() {
   const { Menu, Submenu, PredefinedMenuItem, MenuItem } = await import("@tauri-apps/api/menu");
-  const m = getT().appMenu;
+  const t = getT();
+  const m = t.appMenu;
+  const { screen, kind } = useCosmos.getState();
+  const inProject = screen === "project";
+  const atHome = !inProject;
+  const views = vocab(t, kind).views;
   const sep = () => PredefinedMenuItem.new({ item: "Separator" });
   const app = await Submenu.new({
     text: "MondoWrite",
     items: [
       await MenuItem.new({ id: "about", text: m.about, action: () => useCosmos.getState().setDialog("about") }),
+      await sep(),
+      await MenuItem.new({ id: "settings", text: m.settings, accelerator: "CmdOrCtrl+,", action: () => sendCommand("settings") }),
       await sep(),
       await PredefinedMenuItem.new({ item: "Services", text: m.services }),
       await sep(),
@@ -29,7 +44,26 @@ async function buildMenu() {
       await PredefinedMenuItem.new({ item: "Quit", text: m.quit }),
     ],
   });
-  const file = await Submenu.new({ text: m.file, items: [await PredefinedMenuItem.new({ item: "CloseWindow", text: m.closeWindow })] });
+  const file = await Submenu.new({
+    text: m.file,
+    items: [
+      // « Projets » enregistre le projet ouvert puis revient à l'accueil (comme le bouton de la barre du haut).
+      await MenuItem.new({ id: "projects", text: m.projects, enabled: inProject, action: () => void useCosmos.getState().closeProject() }),
+      await MenuItem.new({
+        id: "open-folder",
+        text: m.openFolder,
+        accelerator: "CmdOrCtrl+O",
+        enabled: atHome && storage.canPickFolder,
+        action: () => void useCosmos.getState().openFolder(),
+      }),
+      await MenuItem.new({ id: "import", text: m.importFile, enabled: atHome, action: () => void useCosmos.getState().importFile() }),
+      await sep(),
+      await MenuItem.new({ id: "save", text: m.save, accelerator: "CmdOrCtrl+S", enabled: inProject, action: () => replayShortcut("s", "KeyS") }),
+      await MenuItem.new({ id: "export", text: m.exportMenu, enabled: inProject, action: () => sendCommand("export") }),
+      await sep(),
+      await PredefinedMenuItem.new({ item: "CloseWindow", text: m.closeWindow }),
+    ],
+  });
   const edit = await Submenu.new({
     text: m.edit,
     items: [
@@ -40,9 +74,29 @@ async function buildMenu() {
       await PredefinedMenuItem.new({ item: "Copy", text: m.copy }),
       await PredefinedMenuItem.new({ item: "Paste", text: m.paste }),
       await PredefinedMenuItem.new({ item: "SelectAll", text: m.selectAll }),
+      await sep(),
+      await MenuItem.new({ id: "find", text: m.find, accelerator: "CmdOrCtrl+F", enabled: inProject, action: () => replayShortcut("f", "KeyF") }),
+      await MenuItem.new({
+        id: "replace",
+        text: m.replace,
+        accelerator: "CmdOrCtrl+Shift+H",
+        enabled: inProject,
+        action: () => replayShortcut("H", "KeyH", true),
+      }),
     ],
   });
-  const view = await Submenu.new({ text: m.view, items: [await PredefinedMenuItem.new({ item: "Fullscreen", text: m.fullscreen })] });
+  const goTo = (view: "toile" | "plan" | "bible" | "manuscrit") => () => useCosmos.getState().setView(view);
+  const view = await Submenu.new({
+    text: m.view,
+    items: [
+      await MenuItem.new({ id: "view-toile", text: views.toile, accelerator: "CmdOrCtrl+1", enabled: inProject, action: goTo("toile") }),
+      await MenuItem.new({ id: "view-plan", text: views.plan, accelerator: "CmdOrCtrl+2", enabled: inProject, action: goTo("plan") }),
+      await MenuItem.new({ id: "view-bible", text: views.bible, accelerator: "CmdOrCtrl+3", enabled: inProject, action: goTo("bible") }),
+      await MenuItem.new({ id: "view-manuscrit", text: views.manuscrit, accelerator: "CmdOrCtrl+4", enabled: inProject, action: goTo("manuscrit") }),
+      await sep(),
+      await PredefinedMenuItem.new({ item: "Fullscreen", text: m.fullscreen }),
+    ],
+  });
   const win = await Submenu.new({
     text: m.window,
     items: [
@@ -56,7 +110,7 @@ async function buildMenu() {
     text: m.help,
     items: [
       await MenuItem.new({ id: "guide", text: m.guide, action: () => void openGuide() }),
-      await MenuItem.new({ id: "shortcuts", text: m.shortcuts, action: () => useCosmos.getState().setDialog("shortcuts") }),
+      await MenuItem.new({ id: "shortcuts", text: m.shortcuts, accelerator: "CmdOrCtrl+/", action: () => useCosmos.getState().setDialog("shortcuts") }),
       await MenuItem.new({
         id: "tour",
         text: m.tour,
@@ -87,5 +141,9 @@ export function initAppMenu() {
   void build();
   useSettings.subscribe((s, prev) => {
     if (s.lang !== prev.lang) void build();
+  });
+  // Accueil ou projet ouvert (commandes grisées ou non), roman ou scénario (noms des vues).
+  useCosmos.subscribe((s, prev) => {
+    if (s.screen !== prev.screen || s.kind !== prev.kind) void build();
   });
 }

@@ -1,7 +1,7 @@
 // Contenu de la fenêtre « Corbeille » : les cartes supprimées, à remettre à leur place ou à supprimer
 // pour de bon. Chaque geste est une étape d'annulation, comme la suppression elle-même.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
@@ -60,23 +60,42 @@ export function TrashList() {
   );
 }
 
+/** Durée d'affichage du message après une suppression (en pause tant que le pointeur ou le focus y sont). */
+export const TRASH_NOTICE_MS = 4000;
+
 /** Message après une suppression : la carte est dans la corbeille ; Annuler ou aller la voir. */
 export function TrashNotice() {
   const t = useT();
   const notice = useCosmos((s) => s.trashNotice);
   const clear = useCosmos((s) => s.clearTrashNotice);
-  // Le message s'efface seul après dix secondes ; la corbeille, elle, garde la carte.
+  // Le message s'efface seul après quatre secondes ; la corbeille, elle, garde la carte. Survol ou focus
+  // clavier le mettent en pause (le temps d'atteindre « Annuler »), le compte repart en sortant.
+  const [paused, setPaused] = useState({ pointer: false, focus: false });
+  const held = paused.pointer || paused.focus;
   useEffect(() => {
-    if (!notice) return;
+    setPaused({ pointer: false, focus: false });
+  }, [notice?.at]);
+  useEffect(() => {
+    if (!notice || held) return;
     const timer = window.setTimeout(() => {
       if (useCosmos.getState().trashNotice?.at === notice.at) clear();
-    }, 10000);
+    }, TRASH_NOTICE_MS);
     return () => window.clearTimeout(timer);
-  }, [notice, clear]);
+  }, [notice, clear, held]);
   if (!notice) return null;
   const text = notice.count > 1 ? fmt(t.trash.movedMany, { n: notice.count }) : notice.title ? fmt(t.trash.moved, { title: notice.title }) : t.trash.movedUntitled;
   return (
-    <div className="trash-notice" role="status" key={notice.at}>
+    <div
+      className="trash-notice"
+      role="status"
+      key={notice.at}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setPaused((p) => ({ ...p, pointer: true }))}
+      onPointerLeave={() => setPaused((p) => ({ ...p, pointer: false }))}
+      onFocus={() => setPaused((p) => ({ ...p, focus: true }))}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused((p) => ({ ...p, focus: false }));
+      }}
+    >
       <span>{text}</span>
       <button
         type="button"
@@ -91,7 +110,7 @@ export function TrashNotice() {
       <button type="button" className="ghost-button" onClick={() => useCosmos.getState().setDialog("trash")}>
         {t.trash.see}
       </button>
-      <button type="button" className="icon-button" aria-label={t.gallery.close} title={t.gallery.close} onClick={clear}>
+      <button type="button" className="icon-button trash-notice-close" aria-label={t.gallery.close} title={t.gallery.close} onClick={clear}>
         <span aria-hidden="true">×</span>
       </button>
     </div>

@@ -4,6 +4,7 @@
 // Menu de vrais boutons : souris, doigt et clavier (Échap referme, le focus revient sur le bouton).
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useCommand } from "../commands";
 import { authorName, contactLines } from "../profile";
 import { countWords } from "../manuscript";
 import { roundWords } from "../export/prose";
@@ -46,6 +47,8 @@ export function ExportMenu() {
   const t = all.screenplay.export;
   const x = useT().exports;
   const [open, setOpen] = useState(false);
+  // Barre des menus du Mac (Fichier > Exporter…).
+  useCommand("export", () => setOpen(true));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);

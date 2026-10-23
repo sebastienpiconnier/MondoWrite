@@ -29,6 +29,7 @@ import { isTouch } from "../platform";
 import { useLifted } from "../lifted";
 import { documentExtension, imageExtension } from "../media";
 import { TEXT_FILE_RE, clipFromText } from "../clip";
+import { attachCanvasWheel } from "../canvasWheel";
 
 /** Fichiers qui deviennent une carte quand on les dépose ou les colle sur le canevas. */
 const isIncomingFile = (f: File) =>
@@ -79,6 +80,10 @@ interface LabelEditor {
   value: string;
 }
 
+/** Bornes du zoom du canevas (React Flow et gestionnaire de la molette). */
+const MIN_ZOOM = 0.15;
+const MAX_ZOOM = 2;
+
 export function Toile() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
     useCosmos();
@@ -125,8 +130,15 @@ export function Toile() {
   );
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
-  const { screenToFlowPosition, fitView, getViewport } = useReactFlow();
+  const { screenToFlowPosition, fitView, getViewport, setViewport } = useReactFlow();
   const wrapper = useRef<HTMLDivElement>(null);
+  // Molette et trackpad : un seul gestionnaire (canvasWheel.ts). Pincement = zoom, même sur une carte ;
+  // glissement à deux doigts = déplacement, sauf dans un contenu qui défile vraiment.
+  useEffect(() => {
+    const root = wrapper.current;
+    if (!root) return;
+    return attachCanvasWheel({ root, getViewport, setViewport: (vp) => void setViewport(vp), minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM });
+  }, [getViewport, setViewport]);
   const [labelEditor, setLabelEditor] = useState<LabelEditor | null>(null);
   const edgeCountBeforeConnect = useRef(0);
   const touch = isTouch();
@@ -570,8 +582,8 @@ export function Toile() {
         selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode={["Meta", "Control"]}
         deleteKeyCode={["Delete", "Backspace"]}
-        minZoom={0.15}
-        maxZoom={2}
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
         fitView
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
         defaultEdgeOptions={{

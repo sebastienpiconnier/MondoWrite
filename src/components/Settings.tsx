@@ -6,6 +6,7 @@ import { isTypographySetting } from "../typography";
 import { UpdateSettings } from "./Updates";
 import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
+import { useCommand } from "../commands";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, PALETTES, type Palette, type ThemePref } from "../settings";
 import { FOCUS_HIGHLIGHTS } from "../focusText";
@@ -67,6 +68,17 @@ export function Settings({ project = true }: { project?: boolean }) {
   const markdownCopies = useCosmos((s) => s.markdownCopies);
   const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const [open, setOpen] = useState(false);
+  // Barre des menus du Mac (Réglages…) et Cmd/Ctrl + virgule : ouvrir.
+  useCommand("settings", () => setOpen(true));
+  // Augmenter le contraste (réglage du système) : la palette Contraste s'impose, on le dit sous le choix.
+  const [moreContrast, setMoreContrast] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-contrast: more)").matches);
+  useEffect(() => {
+    const q = window.matchMedia?.("(prefers-contrast: more)");
+    if (!q) return;
+    const on = () => setMoreContrast(q.matches);
+    q.addEventListener("change", on);
+    return () => q.removeEventListener("change", on);
+  }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId() };
@@ -236,6 +248,7 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          {moreContrast && <p className="settings-hint">{t.settings.paletteSystemContrast}</p>}
           {/* Le nom d'auteur vient du profil, qui se remplit sur la page des projets. */}
           <div className="settings-label" id={ids.author}>{t.settings.author}</div>
           <p className="settings-value" aria-labelledby={ids.author}>{author || t.settings.authorNone}</p>

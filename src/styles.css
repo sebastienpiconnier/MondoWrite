@@ -42,7 +42,7 @@
   --type-document: #7a5c2e;
   --backdrop: rgb(20 22 34 / 0.6); /* fond derrière une photo agrandie */
   --revisit: #ffe58a; /* « à reprendre » */
-  --page-ink-dim: #9a9eae; /* texte hors focus (mode focus) */
+  --page-ink-dim: #6f7584; /* texte hors focus (mode focus), estompé mais lisible : 4,5:1 au moins */
   --type-question: #6b7085;
   /* Statut d'une scène (pastilles) : brouillon, à revoir, terminée */
   --status-draft: #6e7388;
@@ -56,7 +56,8 @@
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-brand: "Playfair Display", Georgia, serif;
-  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  /* Interface : police du système sur Mac, iPad et iPhone (SF Pro, comme les apps d'Apple), IBM Plex Sans ailleurs. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "IBM Plex Sans", system-ui, sans-serif;
   --font-text: "IBM Plex Serif", Georgia, serif;
   --font-script: "Courier Prime", "Courier New", monospace; /* format scénario */
 }
@@ -100,7 +101,7 @@
   --type-document: #d6c47a;
   --backdrop: rgb(0 0 0 / 0.7);
   --revisit: #6b5a12;
-  --page-ink-dim: #6c7083;
+  --page-ink-dim: #848a98;
   --type-question: #8e93a8;
   --status-draft: #9ca1b4;
   --status-revise: #f5a35c;
@@ -120,6 +121,33 @@ body { overscroll-behavior: none; }
 body { font-family: var(--font-ui); color: var(--ink); background: var(--ground); -webkit-font-smoothing: antialiased; }
 button { font: inherit; color: inherit; }
 
+/* ---------- Comportement d'app, pas de page web (Human Interface Guidelines) ---------- */
+/* Un libellé de bouton ne se sélectionne pas en glissant ; le texte de l'auteur, lui, reste sélectionnable. */
+button, [role="button"], [role="menuitem"], [role="option"], [role="tab"], .eyebrow { -webkit-user-select: none; user-select: none; }
+/* Au doigt : pas de voile gris du navigateur, mais un état « pressé » visible sur chaque bouton. */
+html { -webkit-tap-highlight-color: transparent; }
+@media (pointer: coarse) { button:not(:disabled):active { filter: brightness(0.92); } }
+/* App de bureau (data-app, posé par main.tsx) : flèche sur les commandes, comme les apps du système ;
+   la main reste réservée aux liens. */
+html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="menuitem"], [role="option"], [role="tab"]):not(.link-button) { cursor: default; }
+
+/* Cibles tactiles : 44 px au doigt pour les boutons de base (règle du projet et repère d'Apple). */
+@media (pointer: coarse) {
+  .icon-button { width: 44px; height: 44px; }
+  .ghost-button, .views button { min-height: 44px; }
+}
+
+/* ---------- Réglages d'accessibilité du système ---------- */
+/* Réduire les animations : plus aucune transition ni animation, partout (fondus compris). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .card.is-lifted { transform: none !important; }
+}
+/* Réduire la transparence : fonds pleins à la place des voiles flous. */
+@media (prefers-reduced-transparency: reduce) {
+  * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+
 .loading { display: grid; place-items: center; height: 100%; color: var(--muted); }
 
 .app { display: flex; flex-direction: column; height: 100%; }
@@ -127,7 +155,7 @@ button { font: inherit; color: inherit; }
 /* Message d'échec d'enregistrement, sous la barre du haut */
 .app-alert {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 20px;
-  background: var(--surface); border-bottom: 2px solid var(--danger); color: var(--ink); font-size: 14px; line-height: 1.45;
+  background: var(--surface); border-bottom: 2px solid var(--danger); color: var(--ink); font-size: 0.875rem; line-height: 1.45;
 }
 .app-alert > span:first-child { flex: 1 1 320px; }
 .app-alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -141,46 +169,46 @@ button { font: inherit; color: inherit; }
 /* La barre du haut est une grille à trois colonnes : à l'accueil, les réglages vont dans la dernière, à droite. */
 .home-actions { grid-column: 3; justify-self: end; }
 .home-main { flex: 1; min-height: 0; overflow: auto; display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; justify-content: center; gap: 24px; padding: 32px max(24px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
-.home-alert { flex-basis: 100%; max-width: 944px; margin: 0; padding: 12px 16px; background: var(--surface); border-left: 4px solid var(--danger); border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.5; }
+.home-alert { flex-basis: 100%; max-width: 944px; margin: 0; padding: 12px 16px; background: var(--surface); border-left: 4px solid var(--danger); border-radius: 0 10px 10px 0; font-size: 0.875rem; line-height: 1.5; }
 .home-panel { flex: 1 1 340px; max-width: 460px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px; background: var(--surface); border-radius: 16px; }
-.home-panel h1, .home-panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 24px; }
+.home-panel h1, .home-panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; }
 .home-list { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 6px; }
 .home-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.home-confirm { flex-basis: 100%; padding: 10px 12px; border: 1px solid var(--danger); border-radius: 10px; font-size: 14px; line-height: 1.45; }
+.home-confirm { flex-basis: 100%; padding: 10px 12px; border: 1px solid var(--danger); border-radius: 10px; font-size: 0.875rem; line-height: 1.45; }
 .home-confirm p { margin: 0 0 8px; }
 .ghost-button.is-danger { color: var(--danger); border-color: var(--danger); }
 .home-project { flex: 1; min-width: 0; min-height: 56px; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; cursor: pointer; }
 @media (any-hover: hover) { .home-project:hover { border-color: var(--line-2); background: var(--ground); } }
-.home-project-title { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
-.home-project-meta { font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
-.home-list .icon-button { flex-shrink: 0; width: 44px; height: 44px; font-size: 18px; }
+.home-project-title { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
+.home-project-meta { font-size: 0.8125rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.home-list .icon-button { flex-shrink: 0; width: 44px; height: 44px; font-size: 1.125rem; }
 .home-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-.home-form > label, .home-kinds legend { font-size: 13px; font-weight: 600; }
-.home-form input[type="text"] { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.home-form > label, .home-kinds legend { font-size: 0.8125rem; font-weight: 600; }
+.home-form input[type="text"] { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 1rem; }
 .home-form input[type="text"]::placeholder { color: var(--placeholder); }
 .home-kinds { margin: 8px 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .home-kinds legend { padding: 0; margin-bottom: 6px; }
 .home-kind { flex: 1 1 160px; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; padding: 12px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; }
 .home-kind.is-selected { border-color: var(--accent); }
 .home-kind input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-.home-kind-name { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
-.home-kind-hint { grid-column: 1 / -1; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.home-kind-name { font-family: var(--font-display); font-weight: 500; font-size: 1.0625rem; }
+.home-kind-hint { grid-column: 1 / -1; font-size: 0.8125rem; line-height: 1.4; color: var(--ink-2); }
 .home-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.home-create { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--accent); color: var(--surface); font-size: 15px; font-weight: 600; cursor: pointer; }
+.home-create { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--accent); color: var(--surface); font-size: 0.9375rem; font-weight: 600; cursor: pointer; }
 @media (any-hover: hover) { .home-create:hover { background: var(--accent-ink); } }
 .home-buttons .ghost-button { min-height: 44px; }
 /* Profil de l'auteur : une grille de champs (deux par ligne quand la place le permet), puis un résumé. */
 .home-panel.profile-panel { max-width: 944px; flex-basis: 100%; }
 .profile-form { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; }
 .profile-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.profile-field label { font-size: 13px; font-weight: 600; }
-.profile-field input, .profile-field textarea { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.profile-field label { font-size: 0.8125rem; font-weight: 600; }
+.profile-field input, .profile-field textarea { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 1rem; }
 .profile-field textarea { resize: vertical; line-height: 1.4; }
 .profile-field.is-address, .profile-form .home-buttons { grid-column: 1 / -1; }
 .profile-card { display: flex; flex-direction: column; gap: 4px; }
-.profile-name { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 18px; overflow-wrap: anywhere; }
-.profile-meta { margin: 0; font-size: 14px; color: var(--ink-2); }
-.profile-contact { margin: 4px 0 0; display: flex; flex-direction: column; font-size: 14px; line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; }
+.profile-name { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.125rem; overflow-wrap: anywhere; }
+.profile-meta { margin: 0; font-size: 0.875rem; color: var(--ink-2); }
+.profile-contact { margin: 4px 0 0; display: flex; flex-direction: column; font-size: 0.875rem; line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; }
 .home button:disabled { opacity: 0.6; cursor: default; }
 
 /* ---------- Barre du haut ---------- */
@@ -197,12 +225,12 @@ button { font: inherit; color: inherit; }
 /* Logotype : « Mondo » droit et gras, « Write » en italique fin (Playfair Display), comme sur la planche. */
 .wordmark { font-family: var(--font-brand); font-weight: 700; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
 .wordmark i { font-weight: 400; font-style: italic; letter-spacing: 0; }
-.brand-name { font-size: 22px; line-height: 1.05; }
+.brand-name { font-size: 1.375rem; line-height: 1.05; }
 .brand { min-width: 0; }
 /* Titre du projet : un champ qui ressemble à du texte, modifiable sur place. */
 .brand-project {
   min-width: 8ch; max-width: min(30ch, 34vw); min-height: 26px; margin: 2px 0 0 -8px; padding: 0 8px; field-sizing: content;
-  border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: inherit; font-size: 13px;
+  border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: inherit; font-size: 0.8125rem;
   text-overflow: ellipsis;
 }
 @media (any-hover: hover) { .brand-project:hover { border-color: var(--line); } }
@@ -211,20 +239,20 @@ button { font: inherit; color: inherit; }
 
 .views { display: flex; align-items: center; gap: 4px; margin: 0; background: var(--ground); border-radius: 999px; padding: 4px; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-.brand-tagline { margin-top: 3px; font-family: var(--font-brand); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
-.views button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-size: 14px; cursor: pointer; min-height: 36px; }
+.brand-tagline { margin-top: 3px; font-family: var(--font-brand); font-size: 0.6875rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.views button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-size: 0.875rem; cursor: pointer; min-height: 36px; }
 @media (any-hover: hover) { .views button:hover { background: var(--hover); } }
 .views button.is-current { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 
 /* margin-left: auto : si la barre passe sur deux lignes (fenêtre étroite), les actions restent à droite. */
 .actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.status { display: inline-grid; justify-items: end; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.status { display: inline-grid; justify-items: end; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
 .status > span:not(.sr-only) { grid-area: 1 / 1; visibility: hidden; }
 .status > span.is-current { visibility: visible; }
-.runtime { min-width: 9ch; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
-.runtime strong { font-family: var(--font-display); font-size: 16px; color: var(--ink); }
+.runtime { min-width: 9ch; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; font-size: 0.75rem; color: var(--ink-2); white-space: nowrap; }
+.runtime strong { font-family: var(--font-display); font-size: 1rem; color: var(--ink); }
 .status-erreur { color: var(--danger); font-weight: 600; }
-.ghost-button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; font-size: 14px; cursor: pointer; }
+.ghost-button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; font-size: 0.875rem; cursor: pointer; }
 @media (any-hover: hover) { .ghost-button:hover { border-color: var(--line-2); background: var(--ground); } }
 .icon-button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; cursor: pointer; color: var(--ink); }
 .icon-button[aria-expanded="true"] { border-color: var(--line-2); background: var(--ground); }
@@ -240,8 +268,8 @@ button { font: inherit; color: inherit; }
 .settings-panel.has-project { width: min(1140px, calc(100vw - 24px)); }
 .settings-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .settings-links { grid-column: 1 / -1; }
-.settings-panel label, .settings-label { font-size: 13px; font-weight: 600; margin-top: 6px; }
-.settings-value { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.settings-panel label, .settings-label { font-size: 0.8125rem; font-weight: 600; margin-top: 6px; }
+.settings-value { margin: 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
 
 /* Menu Exporter : une colonne à la largeur de ses libellés (jamais de défilement horizontal), qui défile en hauteur au besoin. */
 .export-panel {
@@ -249,14 +277,14 @@ button { font: inherit; color: inherit; }
   max-height: calc(100vh - 96px); max-height: calc(100dvh - 96px); overflow: hidden auto;
 }
 .export-panel .ghost-button { text-align: left; padding-block: 8px; line-height: 1.3; }
-.export-error { position: absolute; right: 0; top: calc(100% + 8px); white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--danger); }
+.export-error { position: absolute; right: 0; top: calc(100% + 8px); white-space: nowrap; font-size: 0.8125rem; font-weight: 600; color: var(--danger); }
 .settings-panel label.settings-check { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
 .settings-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-.settings-hint { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.settings-hint { margin: 2px 0 0; font-size: 0.75rem; line-height: 1.4; color: var(--muted); }
 .settings-sep { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .settings-panel select {
   min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px;
-  background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 0.875rem;
 }
 
 
@@ -264,7 +292,7 @@ button { font: inherit; color: inherit; }
 .tour { position: fixed; z-index: 60; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 8px)); transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); padding: 18px 20px 16px; border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); border: 1px solid var(--line); }
 .tour-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .tour h2 { margin: 6px 0 6px; font: 600 20px/1.3 var(--font-display); }
-.tour p { margin: 0 0 14px; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.tour p { margin: 0 0 14px; font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); }
 .tour-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .tour-actions button { min-height: 44px; }
 

@@ -2,6 +2,7 @@
 // Cmd/Ctrl+F. Choisir un résultat montre la carte sur le canevas.
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCommand } from "../commands";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { typeColor } from "../types";
@@ -16,6 +17,8 @@ export function Search() {
   const nodes = useCosmos((st) => st.nodes);
   const revealCard = useCosmos((st) => st.revealCard);
   const [open, setOpen] = useState(false);
+  // Barre des menus du Mac (Édition > Rechercher…).
+  useCommand("search", () => setOpen(true));
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);

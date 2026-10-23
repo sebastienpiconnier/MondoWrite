@@ -7,7 +7,8 @@
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { headingOf } from "../screenplay/sceneText";
 import { DraftPreview } from "./SceneDraft";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { loadFolded, saveFolded, setFolded } from "../bibleFold";
 import { useCosmos } from "../store";
 import { typeColor, type CardData, type CardType } from "../types";
 import { fmt, useT } from "../i18n";
@@ -111,6 +112,16 @@ export function Bible() {
     });
   // Fiche ouverte depuis le canevas (« 3 questions à compléter ») : assistant ouvert sur elle.
   const [assisted, setAssisted] = useState<string | null>(null);
+  // Fiches repliées (seulement l'en-tête) : réglage d'affichage de l'appareil, gardé d'une ouverture à l'autre.
+  const [folded, setFoldedList] = useState(loadFolded);
+  const foldedIds = useMemo(() => new Set(folded), [folded]);
+  const fold = useCallback((ids: readonly string[], value: boolean) => {
+    setFoldedList((prev) => {
+      const next = setFolded(prev, ids, value);
+      if (next !== prev) saveFolded(next);
+      return next;
+    });
+  }, []);
 
   // Fiche qui vient d'être créée ici : elle reste en tête et son titre prend le focus,
   // sans sauter dans l'ordre alphabétique à chaque lettre tapée.
@@ -159,9 +170,10 @@ export function Bible() {
     const { bibleSections, setBibleSections } = useSettings.getState();
     if (bibleSections.hidden.includes(card.type)) setBibleSections(toggleSection(bibleSections, card.type));
     setCurrent(card.type);
+    fold([card.id], false);
     if (target.assistant) setAssisted(card.id);
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${card.id}"]`)?.scrollIntoView({ block: "start" }));
-  }, [target, nodes, clearTarget]);
+  }, [target, nodes, clearTarget, fold]);
 
   // Une rubrique du sommaire : on défile jusqu'à elle (toutes sont sur la même page).
   const rootRef = useRef<HTMLDivElement>(null);
@@ -224,14 +236,19 @@ export function Bible() {
     if (!card) return;
     setCurrent(card.type);
     setRelations(false);
+    fold([id], false);
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${id}"]`)?.scrollIntoView({ block: "start" }));
   };
 
   /** Une fiche de la Bible : la carte elle-même, modifiable sur place. */
   const entry = (card: CardData, type: CardType) => {
           const links = edges.filter((e) => e.source === card.id || e.target === card.id);
+          // Une fiche qu'on vient de créer n'est jamais repliée (son titre attend la frappe).
+          const isFolded = foldedIds.has(card.id) && card.id !== fresh;
+          const name = card.title.trim() || t.bible.untitled;
+          const bodyId = `bible-entry-body-${card.id}`;
           return (
-            <article key={card.id} data-entry={card.id} className={`bible-entry${type === "personnage" ? " is-character" : ""}`} style={{ ["--type" as string]: typeColor(type) }}>
+            <article key={card.id} data-entry={card.id} className={`bible-entry${type === "personnage" ? " is-character" : ""}${isFolded ? " is-folded" : ""}`} style={{ ["--type" as string]: typeColor(type) }}>
               {type !== "personnage" && (
                 <EntryImage name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
               )}
@@ -266,7 +283,24 @@ export function Bible() {
                 </h3>
                 {(type === "personnage" || type === "lieu") && <Poster card={card} />}
                 </div>
+                <button
+                  type="button"
+                  className="icon-button bible-fold"
+                  aria-expanded={!isFolded}
+                  aria-controls={bodyId}
+                  aria-label={fmt(isFolded ? t.bible.unfold : t.bible.fold, { title: name })}
+                  title={fmt(isFolded ? t.bible.unfold : t.bible.fold, { title: name })}
+                  onClick={() => fold([card.id], !isFolded)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
               </header>
+              {/* Repliée : seulement l'en-tête ; le contenu n'est pas monté (Bible légère avec beaucoup de fiches). */}
+              <div id={bodyId} className="bible-entry-body" hidden={isFolded}>
+              {!isFolded && (
+              <>
               {/* Personnage : l'essentiel d'abord (moteur, texte), le reste se déplie à la demande. */}
               {type !== "personnage" && <Gallery card={card} />}
               {type === "personnage" && <CharacterMotor card={card} />}
@@ -325,6 +359,9 @@ export function Bible() {
               <button type="button" className="link-button bible-see-canvas" onClick={() => setView("toile", card.id)}>
                 {t.bible.seeOnCanvas}
               </button>
+              </>
+              )}
+              </div>
             </article>
           );
   };
@@ -412,7 +449,6 @@ export function Bible() {
             </button>
           )}
         </div>
-        {adders}
       </nav>
 
       {onCover || !shown ? (
@@ -433,6 +469,39 @@ export function Bible() {
                   {types[group.type].section}
                   <span className="toc-count">{group.cards.length}</span>
                 </h2>
+                <div className="bible-section-tools">
+                  {group.cards.length > 0 && !(group.type === "personnage" && relations) && (
+                    <>
+                      <button
+                        type="button"
+                        className="link-button"
+                        disabled={group.cards.every((c) => foldedIds.has(c.id))}
+                        aria-label={fmt(t.bible.foldAllAria, { section: types[group.type].section })}
+                        onClick={() => fold(group.cards.map((c) => c.id), true)}
+                      >
+                        {t.bible.foldAll}
+                      </button>
+                      <button
+                        type="button"
+                        className="link-button"
+                        disabled={!group.cards.some((c) => foldedIds.has(c.id))}
+                        aria-label={fmt(t.bible.unfoldAllAria, { section: types[group.type].section })}
+                        onClick={() => fold(group.cards.map((c) => c.id), false)}
+                      >
+                        {t.bible.unfoldAll}
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className="icon-button bible-section-add"
+                    aria-label={fmt(t.bible.addType, { type: types[group.type].label })}
+                    title={fmt(t.bible.addType, { type: types[group.type].label })}
+                    onClick={() => create(group.type)}
+                  >
+                    <span aria-hidden="true">+</span>
+                  </button>
+                </div>
                 {group.type === "personnage" && group.cards.length > 0 && (
                   <div className="sq-modes" role="group" aria-label={t.relations.tabsAria}>
                     <button type="button" aria-pressed={!relations} onClick={() => setRelations(false)}>

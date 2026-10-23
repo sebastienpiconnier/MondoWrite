@@ -21,12 +21,12 @@
 .sp-scenes, .sp-side { overflow: auto; padding: 20px 14px; display: flex; flex-direction: column; gap: 10px; }
 .sp-scenes { border-right: 1px solid var(--line); }
 .sp-side { border-left: 1px solid var(--line); }
-.sp-empty { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
-.sp-detail { margin: 0; font-size: 13px; color: var(--ink-2); }
+.sp-empty { margin: 0; font-size: 0.875rem; line-height: 1.5; color: var(--ink-2); }
+.sp-detail { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
 .sp-scene-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .sp-scene-list button {
   width: 100%; min-height: 44px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-  padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-size: 13px; cursor: pointer;
+  padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; text-align: left; font-size: 0.8125rem; cursor: pointer;
 }
 @media (any-hover: hover) { .sp-scene-list button:hover { background: var(--hover); } }
 .sp-scene-list button.is-current { background: var(--accent-soft); color: var(--accent-ink); }
@@ -35,21 +35,21 @@
 .sp-scene-list li.is-dragged { opacity: 0.5; }
 .sp-scene-list li.is-over { outline: 2px dashed var(--accent); outline-offset: 1px; }
 .sp-scene-moves { display: flex; gap: 4px; padding: 2px 0 2px 10px; }
-.sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 13px; }
+.sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 0.8125rem; }
 .sp-scene-moves .icon-button:disabled { opacity: 0.3; cursor: default; }
 @media (pointer: coarse) { .sp-scene-moves .icon-button { width: 44px; height: 44px; } }
 .sp-towrite-title { margin-top: 12px; }
-.sp-towrite { flex-shrink: 0; font-size: 12px; font-style: italic; color: var(--ink-2); }
+.sp-towrite { flex-shrink: 0; font-size: 0.75rem; font-style: italic; color: var(--ink-2); }
 
 .sp-center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .sp-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px; align-self: center; max-width: calc(100% - 32px);
   margin: 16px 16px 0; padding: 6px; background: var(--surface); border-radius: 12px;
 }
-.sp-bar button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.sp-bar button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; font-size: 0.875rem; cursor: pointer; white-space: nowrap; }
 @media (any-hover: hover) { .sp-bar button:hover { background: var(--hover); } }
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
-.sp-bar-hint { padding: 0 10px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sp-bar-hint { padding: 0 10px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .sp-focus { border: 1px solid var(--line) !important; }
 /* Options du scénario (numéros, soulignement) : à droite de la barre, avant le mode focus. */
 .sp-option { border: 1px solid var(--line) !important; }
@@ -126,7 +126,7 @@
   margin: 1.3em 0 0; padding: 6px 10px; border-left: 3px solid var(--line-2); border-radius: 0 6px 6px 0;
   background: var(--ground); color: var(--ink-2); font: 14px/1.45 var(--font-ui); white-space: pre-wrap; cursor: default;
 }
-.sp-preserved::before { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.sp-preserved::before { display: block; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .sp-preserved[data-preserved="note"]::before { content: var(--sp-label-note); }
 .sp-preserved[data-preserved="boneyard"]::before { content: var(--sp-label-boneyard); }
 .sp-preserved[data-preserved="section"]::before { content: var(--sp-label-section); }
@@ -153,13 +153,13 @@
   .sp-title-center { margin-top: 1em; }
 }
 
-.sp-footer { margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); text-align: center; }
+.sp-footer { margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 0.8125rem; color: var(--ink-2); text-align: center; }
 .sp-box { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.sp-box-title { font-size: 14px; overflow-wrap: anywhere; }
+.sp-box-title { font-size: 0.875rem; overflow-wrap: anywhere; }
 .sp-card-body { font: 14px/1.5 var(--font-text); color: var(--ink-2); }
 .sp-card-body p { margin: 0 0 6px; }
 .sp-speakers { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 4px; }
-.sp-speakers li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+.sp-speakers li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 0.875rem; }
 
 /* En-tête encore vide (on l'écrit, ou on vient de l'effacer) : le libellé « Scène sans titre » reste discret,
    comme le texte indicatif de l'éditeur. */

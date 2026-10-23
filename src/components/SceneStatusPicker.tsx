@@ -56,11 +56,12 @@ export function SceneStatusPicker({ card, className = "" }: { card: CardData; cl
     const close = () => setOpen(false);
     document.addEventListener("pointerdown", away, true);
     window.addEventListener("resize", close);
-    window.addEventListener("wheel", close, { passive: true });
+    // En capture : le canevas arrête la molette avant qu'elle ne remonte jusqu'à la fenêtre.
+    window.addEventListener("wheel", close, { passive: true, capture: true });
     return () => {
       document.removeEventListener("pointerdown", away, true);
       window.removeEventListener("resize", close);
-      window.removeEventListener("wheel", close);
+      window.removeEventListener("wheel", close, { capture: true });
     };
   }, [open]);
 

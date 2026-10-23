@@ -183,13 +183,22 @@ export const useSettings = create<SettingsState>((set) => ({
   setUpdates: (updates) => set((s) => ({ updates: { ...s.updates, ...updates } })),
 }));
 
+/**
+ * Palette affichée : celle de l'auteur, sauf si le système demande plus de contraste (Augmenter le contraste
+ * sur Mac et iPad, Contraste élevé sous Windows) : la palette Contraste, le temps du réglage. Le choix de
+ * l'auteur, lui, reste enregistré tel quel.
+ */
+export const shownPalette = (palette: Palette, moreContrast: boolean): Palette => (moreContrast ? "contraste" : palette);
+
+const contrastQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-contrast: more)") : undefined);
+
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
   const apply = ({ lang, theme, themePref, palette, sequencerMode, profile, ai, bibleSections, writing, photos, updates }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
-    root.dataset.palette = palette;
+    root.dataset.palette = shownPalette(palette, !!contrastQuery()?.matches);
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     try {
       localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, profile, ai, bibleSections, writing, photos, updates }));
@@ -211,6 +220,9 @@ export function initSettings() {
     syncWindow(useSettings.getState().themePref);
     useSettings.subscribe((s, prev) => s.themePref !== prev.themePref && syncWindow(s.themePref));
   }
+
+  // Augmenter le contraste, activé ou coupé pendant que l'app tourne : la palette affichée suit.
+  contrastQuery()?.addEventListener("change", () => apply(useSettings.getState()));
 
   // Le système passe en sombre (ou en clair) : on suit si l'auteur l'a demandé.
   darkQuery()?.addEventListener("change", () => {
