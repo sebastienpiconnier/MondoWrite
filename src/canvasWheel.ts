@@ -57,6 +57,25 @@ export function zoomAround(vp: Viewport, factor: number, px: number, py: number,
   return { x: px - (px - vp.x) * k, y: py - (py - vp.y) * k, zoom };
 }
 
+/**
+ * Pincement à deux doigts (écran tactile) : vue au début du geste, milieu et écart des doigts au début et
+ * maintenant. Le point du canevas qui était sous le milieu des doigts y reste : on zoome et on déplace à la fois.
+ */
+export function pinchView(
+  start: Viewport,
+  startMid: { x: number; y: number },
+  startDist: number,
+  mid: { x: number; y: number },
+  dist: number,
+  minZoom: number,
+  maxZoom: number,
+): Viewport {
+  const zoom = startDist > 0 ? Math.max(minZoom, Math.min(maxZoom, (start.zoom * dist) / startDist)) : start.zoom;
+  const fx = (startMid.x - start.x) / start.zoom;
+  const fy = (startMid.y - start.y) / start.zoom;
+  return { x: mid.x - fx * zoom, y: mid.y - fy * zoom, zoom };
+}
+
 /** Déplacement du canevas (les doigts poussent le contenu, comme dans un document). */
 export function panBy(vp: Viewport, dx: number, dy: number): Viewport {
   if (dx === 0 && dy === 0) return vp;
@@ -161,12 +180,40 @@ export function attachCanvasWheel({ root, getViewport, setViewport, minZoom, max
   };
 
   // WebKit sur Mac (app de bureau) : le pincement du trackpad arrive en événements gesture, avec une échelle
-  // cumulée depuis le début du geste. Sur iPad, le pincement des doigts passe déjà par les événements tactiles
-  // (React Flow) : on ignore alors les gesture pour ne pas zoomer deux fois.
+  // cumulée depuis le début du geste. Sur iPad, le pincement des doigts passe par les événements tactiles :
+  // on ignore alors les gesture pour ne pas zoomer deux fois.
   let touches = 0;
   let lastScale = 1;
+  // Pincement tactile qui touche une carte : React Flow refuse tout geste qui commence sur une carte (nœud,
+  // classe nopan), le pincement ne faisait donc rien. On le prend en charge ; ailleurs (deux doigts sur le
+  // fond), React Flow garde le sien.
+  let pinch: { vp: Viewport; mid: { x: number; y: number }; dist: number } | null = null;
+  const fingers = (list: TouchList) => {
+    const a = list[0];
+    const b = list[1];
+    const [ax, ay] = point(a.clientX, a.clientY);
+    const [bx, by] = point(b.clientX, b.clientY);
+    return { mid: { x: (ax + bx) / 2, y: (ay + by) / 2 }, dist: Math.hypot(ax - bx, ay - by) };
+  };
+  const onCard = (t: EventTarget | null) => t instanceof Element && !!t.closest(".react-flow__node");
   const onTouch = (e: TouchEvent) => {
     touches = e.touches.length;
+    if (e.type === "touchstart" && e.touches.length === 2 && !pinch) {
+      const both = [e.touches[0], e.touches[1]];
+      if (both.every((t) => onCanvas(t.target)) && both.some((t) => onCard(t.target))) {
+        const f = fingers(e.touches);
+        pinch = { vp: getViewport(), mid: f.mid, dist: f.dist };
+      }
+    }
+    if (e.touches.length < 2) pinch = null;
+  };
+  const onTouchMove = (e: TouchEvent) => {
+    if (!pinch || e.touches.length < 2) return;
+    // Le geste est au canevas : ni défilement de la page, ni carte déplacée, ni React Flow en même temps.
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+    const f = fingers(e.touches);
+    setViewport(pinchView(pinch.vp, pinch.mid, pinch.dist, f.mid, f.dist, minZoom, maxZoom));
   };
   const onGestureStart = (e: Event) => {
     lastScale = 1;
@@ -188,6 +235,7 @@ export function attachCanvasWheel({ root, getViewport, setViewport, minZoom, max
 
   root.addEventListener("wheel", onWheel, { capture: true, passive: false });
   root.addEventListener("touchstart", onTouch, { capture: true, passive: true });
+  root.addEventListener("touchmove", onTouchMove, { capture: true, passive: false });
   root.addEventListener("touchend", onTouch, { capture: true, passive: true });
   root.addEventListener("touchcancel", onTouch, { capture: true, passive: true });
   root.addEventListener("gesturestart", onGestureStart, { capture: true, passive: false } as AddEventListenerOptions);
@@ -195,6 +243,7 @@ export function attachCanvasWheel({ root, getViewport, setViewport, minZoom, max
   return () => {
     root.removeEventListener("wheel", onWheel, { capture: true });
     root.removeEventListener("touchstart", onTouch, { capture: true });
+    root.removeEventListener("touchmove", onTouchMove, { capture: true });
     root.removeEventListener("touchend", onTouch, { capture: true });
     root.removeEventListener("touchcancel", onTouch, { capture: true });
     root.removeEventListener("gesturestart", onGestureStart, { capture: true });

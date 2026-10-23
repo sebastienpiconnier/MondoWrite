@@ -30,19 +30,16 @@ const PLACE = (
   </svg>
 );
 
-export function FormatBar({
-  editor,
-  revisit = true,
-  onChutier,
-  onCreate,
-}: {
-  editor: Editor;
+interface FormatOptions {
   revisit?: boolean;
   /** Manuscrit : met le passage sélectionné au chutier. */
   onChutier?: () => void;
   /** Manuscrit : crée une fiche personnage ou lieu du nom sélectionné (`name` rend "" si ce n'est pas un nom possible). */
   onCreate?: { name: (state: EditorState) => string; run: (type: "personnage" | "lieu") => void };
-}) {
+}
+
+/** Les boutons de mise en forme d'un éditeur, état actif compris (barre de sélection et barre du clavier). */
+export function useFormatActions(editor: Editor, { revisit = true, onChutier, onCreate }: FormatOptions = {}): Action[] {
   const f = useT().format;
   const chain = () => editor.chain().focus();
   // Abonnement à la sélection : les boutons actifs suivent le curseur.
@@ -79,8 +76,13 @@ export function FormatBar({
       : []),
     ...(onChutier ? [{ key: "chutier", label: f.chutier, glyph: "⤓", active: false, run: onChutier }] : []),
   ];
+  return actions;
+}
+
+/** Les boutons eux-mêmes : le clic garde la sélection et le focus dans l'éditeur (le clavier reste ouvert). */
+export function FormatButtons({ actions }: { actions: Action[] }) {
+  const f = useT().format;
   return (
-    <BubbleMenu editor={editor} className="format-bar nodrag nopan" options={{ placement: "top" }}>
       <div role="toolbar" aria-label={f.aria}>
         {actions.map((a) => (
           <button
@@ -98,6 +100,14 @@ export function FormatBar({
           </button>
         ))}
       </div>
+  );
+}
+
+export function FormatBar({ editor, ...options }: { editor: Editor } & FormatOptions) {
+  const actions = useFormatActions(editor, options);
+  return (
+    <BubbleMenu editor={editor} className="format-bar nodrag nopan" options={{ placement: "top" }}>
+      <FormatButtons actions={actions} />
     </BubbleMenu>
   );
 }

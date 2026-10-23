@@ -388,3 +388,12 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 
 /* Les boutons de zoom montent au-dessus du lien « React Flow » (attribution, en bas à droite). */
 .react-flow__panel.react-flow__controls.bottom { margin-bottom: max(38px, calc(env(safe-area-inset-bottom) + 20px)); }
+
+/* Menu des filtres ouvert : il passe devant tout le reste du canevas (sur téléphone il prend toute la hauteur et
+   le bandeau « Filtre actif » cachait ses premières cases), et ce bandeau s'efface (le menu a son « Tout afficher »). */
+.canvas-dock:has(.canvas-filter-panel) { z-index: 40; }
+.toile:has(.canvas-filter-panel) .filter-banner { display: none; }
+/* Téléphone : le menu des filtres s'ouvre vers la gauche depuis son bouton (il sortait de l'écran à droite). */
+@media (max-width: 720px) {
+  .canvas-filter-panel { left: auto; right: 0; max-width: calc(100vw - 24px); }
+}

@@ -3,7 +3,7 @@
 // sauf dans un contenu qui défile vraiment.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { attachCanvasWheel, canScroll, panBy, pinchFactor, wheelPixels, wheelZoomFactor, zoomAround, type ScrollBox, type Viewport } from "../canvasWheel";
+import { attachCanvasWheel, canScroll, panBy, pinchFactor, pinchView, wheelPixels, wheelZoomFactor, zoomAround, type ScrollBox, type Viewport } from "../canvasWheel";
 
 const wheel = (o: Partial<{ deltaX: number; deltaY: number; deltaMode: number; ctrlKey: boolean; shiftKey: boolean }>) => ({
   deltaX: 0,
@@ -48,6 +48,23 @@ describe("zoom par pincement", () => {
     const vp: Viewport = { x: 0, y: 0, zoom: 2 };
     expect(zoomAround(vp, 1.5, 10, 10, 0.15, 2)).toBe(vp);
     expect(zoomAround({ x: 0, y: 0, zoom: 0.2 }, 0.1, 0, 0, 0.15, 2).zoom).toBe(0.15);
+  });
+});
+
+describe("pincement à deux doigts (écran tactile)", () => {
+  it("écarter les doigts zoome, le point entre les doigts reste en place", () => {
+    const start: Viewport = { x: 40, y: 20, zoom: 1 };
+    const mid = { x: 300, y: 200 };
+    const next = pinchView(start, mid, 100, mid, 200, 0.15, 2);
+    expect(next.zoom).toBe(2);
+    expect((mid.x - next.x) / next.zoom).toBeCloseTo((mid.x - start.x) / start.zoom);
+  });
+  it("les doigts qui glissent ensemble déplacent la vue", () => {
+    const next = pinchView({ x: 0, y: 0, zoom: 1 }, { x: 100, y: 100 }, 80, { x: 130, y: 90 }, 80, 0.15, 2);
+    expect(next).toEqual({ x: 30, y: -10, zoom: 1 });
+  });
+  it("bornes du zoom respectées", () => {
+    expect(pinchView({ x: 0, y: 0, zoom: 1 }, { x: 0, y: 0 }, 100, { x: 0, y: 0 }, 1000, 0.15, 2).zoom).toBe(2);
   });
 });
 
@@ -169,6 +186,38 @@ describe("branchement sur le canevas", () => {
     Object.defineProperty(body, "clientHeight", { value: 200 });
     fire(body.querySelector("p")!, { deltaY: 20 });
     expect(setViewport).not.toHaveBeenCalled();
+  });
+
+  const touch = (el: Element, type: string, points: [number, number][], targets: Element[]) => {
+    const list = points.map(([clientX, clientY], i) => ({ clientX, clientY, target: targets[i] ?? el, identifier: i }));
+    const e = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(e, "touches", { value: type === "touchend" ? [] : list });
+    el.dispatchEvent(e);
+    return e;
+  };
+
+  it("pincement à deux doigts posés sur une carte : le canevas zoome", () => {
+    document.body.innerHTML = `<div id="root"><div class="react-flow"><div class="react-flow__node"><p>carte</p></div></div></div>`;
+    const root = document.getElementById("root") as HTMLElement;
+    let vp: Viewport = { x: 0, y: 0, zoom: 1 };
+    detach = attachCanvasWheel({ root, getViewport: () => vp, setViewport: (n) => (vp = n), minZoom: 0.15, maxZoom: 2 });
+    const p = root.querySelector("p")!;
+    touch(p, "touchstart", [[100, 100], [200, 100]], [p, p]);
+    const move = touch(p, "touchmove", [[50, 100], [250, 100]], [p, p]);
+    expect(vp.zoom).toBeCloseTo(2);
+    expect(move.defaultPrevented).toBe(true);
+    touch(p, "touchend", [], []);
+    touch(p, "touchmove", [[0, 0], [10, 0]], [p, p]);
+    expect(vp.zoom).toBeCloseTo(2);
+  });
+
+  it("deux doigts sur le fond : React Flow garde le geste", () => {
+    const { root, setViewport } = setup();
+    const pane = root.querySelector(".pane")!;
+    touch(pane, "touchstart", [[100, 100], [200, 100]], [pane, pane]);
+    const move = touch(pane, "touchmove", [[50, 100], [250, 100]], [pane, pane]);
+    expect(setViewport).not.toHaveBeenCalled();
+    expect(move.defaultPrevented).toBe(false);
   });
 
   it("hors du canevas (rangée d'outils) : rien n'est intercepté", () => {

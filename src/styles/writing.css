@@ -631,3 +631,18 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
   html[data-page-zoomed] .ms-page, html[data-page-zoomed] .ms-meta-wrap { max-width: none; }
 }
 /* Téléphone : la page prend toute la largeur ; agrandi, le texte passe à la ligne (phone.css). */
+
+/* Barre de mise en forme au-dessus du clavier virtuel (KeyboardFormatBar) : collée au clavier, toute la largeur,
+   boutons de 44 px, défile de côté si elle déborde (téléphone). */
+.keyboard-format-bar {
+  position: fixed; left: 0; right: 0; bottom: var(--keyboard-h, 0px); z-index: 60;
+  padding: 4px max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+  background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-card);
+  overflow-x: auto; overscroll-behavior-x: contain;
+}
+.keyboard-format-bar [role="toolbar"] { display: flex; gap: 4px; width: max-content; margin: 0 auto; }
+.keyboard-format-bar button { min-width: 44px; height: 44px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: 600 1.0625rem var(--font-text); }
+.keyboard-format-bar button.is-active { background: var(--accent-soft); color: var(--accent-ink); }
+.keyboard-format-bar button:active { background: var(--hover); }
+.keyboard-format-bar .format-italic span { font-style: italic; }
+.keyboard-format-bar .format-strike span { text-decoration: line-through; }

@@ -16,6 +16,7 @@ import { Tour } from "./components/Tour";
 import { Dialogs } from "./components/Dialogs";
 import { ConfirmChapter } from "./components/ConfirmChapter";
 import { TrashNotice } from "./components/TrashList";
+import { KeyboardFormatBar } from "./components/KeyboardFormatBar";
 import { UpdateNotice, useLaunchUpdateCheck } from "./components/Updates";
 import { fmt, useT } from "./i18n";
 import { storage } from "./storage";
@@ -227,6 +228,7 @@ export function App() {
       </div>
       <Tour />
       <TrashNotice />
+      <KeyboardFormatBar />
       {/* Le mode focus n'est pas dérangé : le bandeau attend qu'on en sorte. */}
       {!focusMode && <UpdateNotice />}
       <Dialogs />
