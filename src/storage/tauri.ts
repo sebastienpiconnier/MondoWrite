@@ -16,6 +16,7 @@ import { getT } from "../i18n";
 import { MISSING_FOLDER } from "../saveErrors";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 import { LOCK_DIR } from "../lock";
+import { downloadProgress, reportLoad } from "../loadProgress";
 
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
@@ -122,9 +123,13 @@ async function mobileRoot() {
 async function ensureDownloaded(dir: string) {
   if ((await cloudRoot()) || !(await activeIcloud())) return;
   try {
+    let first = 0;
     for (let i = 0; i < 12; i++) {
       const pending = await invoke<number>("icloud_download", { dir });
       if (!pending) return;
+      first = Math.max(first, pending);
+      const { done, total } = downloadProgress(first, pending);
+      reportLoad("download", done, total);
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
   } catch {
@@ -633,15 +638,20 @@ export const tauriStorage: Storage = {
     const metaPath = await join(dir, META_FILE);
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
-    // Cartes et manuscrit : un fichier Markdown par carte, dans chacun de ces dossiers.
+    // Cartes et manuscrit : un fichier Markdown par carte, dans chacun de ces dossiers. On liste d'abord, pour
+    // annoncer l'avancement (un fichier iCloud peut mettre du temps à arriver).
+    const paths: [string, string][] = [];
     for (const name of TEXT_DIRS) {
       const folder = await join(dir, name);
       if (!(await exists(folder))) continue;
       for (const entry of await readDir(folder)) {
-        if (entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)) {
-          files[`${name}/${entry.name}`] = await readTextFile(await join(folder, entry.name));
-        }
+        if (entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)) paths.push([`${name}/${entry.name}`, await join(folder, entry.name)]);
       }
+    }
+    reportLoad("read", 0, paths.length);
+    for (const [i, [key, full]] of paths.entries()) {
+      files[key] = await readTextFile(full);
+      reportLoad("read", i + 1, paths.length);
     }
     const screenplayPath = await join(dir, SCREENPLAY_FILE);
     if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);

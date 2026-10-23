@@ -1,6 +1,7 @@
 // Écran d'accueil : on choisit le projet sur lequel travailler, ou on en crée un.
 // Affiché à chaque lancement et depuis le bouton « Projets » de la barre du haut.
 
+import { LoadingProject } from "./LoadingProject";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
@@ -60,6 +61,7 @@ export function Home() {
 
   return (
     <div className="home">
+      <LoadingProject />
       <header className="topbar" data-tauri-drag-region>
         <div className="brand" data-tauri-drag-region>
           <BrandMark size={34} />

@@ -86,7 +86,7 @@ export function Bible() {
   const lang = useSettings((s) => s.lang);
   const nodes = useCosmos((s) => s.nodes);
   const edges = useCosmos((s) => s.edges);
-  const setView = useCosmos((s) => s.setView);
+  const revealCard = useCosmos((s) => s.revealCard);
   const updateCard = useCosmos((s) => s.updateCard);
   const addTitledCard = useCosmos((s) => s.addTitledCard);
   const target = useCosmos((s) => s.bibleTarget);
@@ -356,7 +356,7 @@ export function Bible() {
                 </div>
               )}
               {/* En bas de la fiche : dans l'en-tête, il prenait la place du titre sur téléphone. */}
-              <button type="button" className="link-button bible-see-canvas" onClick={() => setView("toile", card.id)}>
+              <button type="button" className="link-button bible-see-canvas" onClick={() => revealCard(card.id)}>
                 {t.bible.seeOnCanvas}
               </button>
               </>

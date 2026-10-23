@@ -69,7 +69,7 @@ export function ScreenplayView() {
   const lang = useSettings((s) => s.lang);
   const screenplay = useCosmos((s) => s.screenplay);
   const nodes = useCosmos((s) => s.nodes);
-  const setView = useCosmos((s) => s.setView);
+  const revealCard = useCosmos((s) => s.revealCard);
   const paper = useCosmos((s) => s.paper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
@@ -891,7 +891,7 @@ export function ScreenplayView() {
                     // HTML produit par TipTap ou nettoyé au chargement (voir sanitizeHtml).
                     <div className="sp-card-body" dangerouslySetInnerHTML={{ __html: card.html }} />
                   )}
-                  <button type="button" className="link-button" onClick={() => setView("toile", card.id)}>
+                  <button type="button" className="link-button" onClick={() => revealCard(card.id)}>
                     {t.bible.seeOnCanvas}
                   </button>
                 </>

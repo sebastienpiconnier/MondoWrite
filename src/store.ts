@@ -46,6 +46,7 @@ import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
+import { endLoad, startLoad } from "./loadProgress";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
@@ -1446,7 +1447,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     redo: () => restore("future"),
     revealCard: (id) => {
       if (!get().nodes.some((n) => n.id === id)) return;
-      set({ view: "toile", focusId: id, nodes: get().nodes.map((n) => ({ ...n, selected: n.id === id })) });
+      // La carte est mise en avant (les autres s'estompent) jusqu'au prochain clic sur le fond ou Échap.
+      set({ view: "toile", focusId: id, spotlightId: id, nodes: get().nodes.map((n) => ({ ...n, selected: n.id === id })) });
     },
     view: "toile",
     focusId: null,
@@ -1466,6 +1468,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     openProject: async (id) => {
       storage.select(id);
       set({ openFailed: false, homeNotice: false });
+      const entry = get().projects.find((p) => p.id === id);
+      startLoad(entry?.title || entry?.name || "");
       try {
         const files = await storage.readAll();
         // Dossier vidé ou déplacé depuis la dernière fois : on reste à l'accueil, avec un message.
@@ -1483,6 +1487,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
         console.error(err);
         storage.forget();
         set({ openFailed: true });
+      } finally {
+        endLoad();
       }
     },
 

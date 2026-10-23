@@ -67,6 +67,14 @@ export const en: Messages = {
 
   // Home screen: choose the project to work on.
   home: {
+    loading: {
+      title: "Opening “{title}”…",
+      untitled: "Opening the project…",
+      start: "Getting ready…",
+      download: "Files arriving from iCloud: {done} of {total}",
+      read: "Reading files: {done} of {total}",
+      slow: "The first opening on this device can take a while: iCloud is downloading the project’s files to it.",
+    },
     title: "Your projects",
     empty: "No project yet. Create the first one, or try with an example.",
     openedOn: "opened {date}",

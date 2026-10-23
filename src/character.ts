@@ -94,6 +94,8 @@ export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeo
 export const sheetFields = (type: CardType): readonly SheetField[] => (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
 
 /** Champs courts (une ligne) ; les autres sont des zones de texte qui grandissent. */
+/** Textes longs : toute la largeur de la fiche (CardSheet). */
+export const WIDE_FIELDS: ReadonlySet<SheetField> = new Set(["synopsis"]);
 export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature", "url", "auteur", "publication", "consulte", "pages"]);
 
 /** Adresse web d'une source, si elle en a une valide (http ou https). */

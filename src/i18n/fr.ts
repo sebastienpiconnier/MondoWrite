@@ -68,6 +68,14 @@ export const fr = {
 
   // Écran d'accueil : choisir le projet sur lequel travailler.
   home: {
+    loading: {
+      title: "Ouverture de « {title} »…",
+      untitled: "Ouverture du projet…",
+      start: "Préparation…",
+      download: "Arrivée des fichiers depuis iCloud : {done} sur {total}",
+      read: "Lecture des fichiers : {done} sur {total}",
+      slow: "La première ouverture sur cet appareil peut prendre un moment : iCloud y télécharge les fichiers du projet.",
+    },
     title: "Tes projets",
     empty: "Aucun projet pour l’instant. Crée le premier, ou essaie avec un exemple.",
     openedOn: "ouvert le {date}",
