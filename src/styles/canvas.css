@@ -102,9 +102,10 @@
   content: ""; position: absolute; z-index: 1; left: 0; top: 0; bottom: 0; width: 4px;
   border-radius: 10px 0 0 10px; background: var(--type); pointer-events: none;
 }
-.card-handle { display: flex; align-items: center; gap: 2px; padding: 10px 12px 2px; cursor: grab; }
-/* Le type à gauche (il cède la place sur une carte étroite), les boutons de la carte à droite. */
-.card-handle > .card-type { margin-right: auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.card-handle { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 10px 12px 2px; cursor: grab; }
+/* Le type à gauche, toujours en entier (il se tronquait : « PERSONN… ») ; les boutons à droite, qui passent à
+   la ligne sur une carte étroite ou au doigt (boutons de 44 px). */
+.card-handle > .card-type { margin-right: auto; flex: none; white-space: nowrap; }
 .card-handle:active { cursor: grabbing; }
 /* Carte tenue par un cadre verrouillé : elle ne se déplace pas. */
 .react-flow__node-card:not(.draggable) :is(.card-handle, .card-image) { cursor: default; }
@@ -397,3 +398,18 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 @media (max-width: 720px) {
   .canvas-filter-panel { left: auto; right: 0; max-width: calc(100vw - 24px); }
 }
+
+/* Cartes : le navigateur ne traite aucun geste tactile lui-même (comme le fond de React Flow). Sans cela, iOS
+   gardait pour lui le pincement à deux doigts posés sur une carte et l'app ne le recevait jamais. */
+.toile .react-flow__node { touch-action: none; }
+/* Téléphone : pas de bandeau « Filtre actif », il couvrait le menu des filtres ; le bouton du filtre, plein,
+   dit qu'un filtre est posé. */
+@media (max-width: 720px) {
+  .filter-banner { display: none; }
+}
+/* Bouton du filtre quand un filtre est posé : entonnoir plein. */
+.canvas-filter > .is-on svg { fill: currentColor; }
+/* Barre de mise en forme : le chutier montre son icône et son nom (le seul bouton qui n'est pas une mise en forme). */
+.format-bar .format-chutier { padding: 0 8px 0 6px; }
+.format-bar .format-chutier > span { display: inline-flex; align-items: center; gap: 5px; }
+.format-bar .format-text { font: 600 0.8125rem var(--font-ui); }

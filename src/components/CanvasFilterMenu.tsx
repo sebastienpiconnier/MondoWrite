@@ -47,7 +47,8 @@ export function CanvasFilterMenu() {
         ref={buttonRef}
         type="button"
         className={`icon-button has-label${active ? " is-on" : ""}`}
-        aria-label={t.button}
+        // Le bandeau « Filtre actif » n'existe pas sur téléphone : le nom du bouton le dit (et l'entonnoir est plein).
+        aria-label={active ? t.buttonActive : t.button}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         title={t.hint}

@@ -24,6 +24,14 @@ const PERSON = (
     <path d="M2.5 14c0-3 2.4-5 5.5-5s5.5 2 5.5 5z" />
   </svg>
 );
+/** Chutier : un bac où le passage descend (il quitte le texte sans être perdu), avec son nom en toutes lettres. */
+const TRAY = (
+  <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 1.5v6.5" />
+    <path d="M5.2 5.4 8 8.2l2.8-2.8" />
+    <path d="M1.8 9.5h3.4l.9 1.7h3.8l.9-1.7h3.4V14H1.8z" />
+  </svg>
+);
 const PLACE = (
   <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor">
     <path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.2 4.5 8.5 4.5 8.5s4.5-5.3 4.5-8.5A4.5 4.5 0 0 0 8 1.5zm0 6.2a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4z" />
@@ -74,7 +82,22 @@ export function useFormatActions(editor: Editor, { revisit = true, onChutier, on
           { key: "create-lieu", label: f.createPlace, glyph: PLACE, active: false, run: () => onCreate.run("lieu") },
         ]
       : []),
-    ...(onChutier ? [{ key: "chutier", label: f.chutier, glyph: "⤓", active: false, run: onChutier }] : []),
+    ...(onChutier
+      ? [
+          {
+            key: "chutier",
+            label: f.chutier,
+            glyph: (
+              <>
+                {TRAY}
+                <span className="format-text">{f.chutierShort}</span>
+              </>
+            ),
+            active: false,
+            run: onChutier,
+          },
+        ]
+      : []),
   ];
   return actions;
 }

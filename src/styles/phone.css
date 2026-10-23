@@ -8,7 +8,7 @@
   /* Le titre du projet prend toute la largeur jusqu'à « ⋯ » (il était coupé à la largeur du logo). */
   .topbar .brand-text { flex: 1; min-width: 0; }
   .brand-project { display: block; field-sizing: fixed; width: calc(100% + 8px); max-width: calc(100% + 8px); }
-  .topbar-more { display: grid; flex: none; width: 44px; height: 44px; }
+  .topbar-more { display: grid; flex: none; width: 56px; height: 44px; border-radius: 999px; }
   .topbar > .actions { display: none; position: absolute; z-index: 60; top: calc(100% + 6px); left: 8px; right: 8px; flex-wrap: wrap; justify-content: flex-start; margin: 0; padding: 10px; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop); }
   .topbar.more-open > .actions { display: flex; }
   .topbar > .actions .icon-button, .topbar > .actions .ghost-button { min-height: 44px; }
