@@ -2,7 +2,7 @@
 // « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
-import { spellOnInPages } from "../writingAids";
+import { usePageSpell } from "./usePageSpell";
 import { StatusDot } from "./SceneStatusPicker";
 import { EdgeHandle } from "./EdgeHandle";
 import { StatsBox } from "./StatsBox";
@@ -81,8 +81,8 @@ export function ScreenplayView() {
   const chutier = useCosmos((s) => s.chutier);
   // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
   const [panels, togglePanel] = usePanels();
-  // Correcteur : à la demande, sauf si les Réglages le veulent partout.
-  const [spell, setSpell] = useState(() => spellOnInPages(useSettings.getState().writing.spellcheck));
+  // Correcteur : seulement si les Réglages le veulent aussi dans le scénario (suivi en direct).
+  const spell = usePageSpell();
   const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
   useEffect(() => {
     if (!notice) return;
@@ -463,9 +463,6 @@ export function ScreenplayView() {
       if (e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
         sendRef.current();
-      } else if (!e.shiftKey && e.key === ";") {
-        e.preventDefault();
-        setSpell((on) => !on);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -774,16 +771,6 @@ export function ScreenplayView() {
             onClick={sendToChutier}
           >
             {t.book.chutier.title}
-          </button>
-          <button
-            type="button"
-            className="sp-option"
-            aria-pressed={spell}
-            title={t.book.spellHint}
-            onPointerDown={(e) => e.preventDefault()}
-            onClick={() => setSpell((on) => !on)}
-          >
-            {t.book.spell}
           </button>
           <button
             type="button"

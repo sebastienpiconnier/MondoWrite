@@ -9,7 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
-import { spellOnInPages } from "../writingAids";
+import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
@@ -119,8 +119,8 @@ export function Manuscript() {
   const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
   // Compteur de mots de la barre : scène, chapitre ou livre, au clic. Correcteur orthographique : à la demande.
   const [counter, setCounter] = useState(readCounter);
-  // Correcteur : à la demande, sauf si les Réglages le veulent partout.
-  const [spell, setSpell] = useState(() => spellOnInPages(useSettings.getState().writing.spellcheck));
+  // Correcteur : seulement si les Réglages le veulent aussi dans le manuscrit (suivi en direct).
+  const spell = usePageSpell();
   const chutier = useCosmos((s) => s.chutier);
   useEffect(() => {
     if (!notice) return;
@@ -153,17 +153,6 @@ export function Manuscript() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Correcteur orthographique à la demande : Cmd/Ctrl + ; le met ou le retire.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key === ";") {
-        e.preventDefault();
-        setSpell((on) => !on);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   // Mode focus : Cmd/Ctrl+Maj+F le bascule, Échap le quitte ; quitter la vue le termine.
   useEffect(() => {
@@ -590,9 +579,6 @@ export function Manuscript() {
             )}
             <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
               {t.focus.enter}
-            </button>
-            <button type="button" className="ghost-button ms-start-chapter" aria-pressed={spell} title={b.spellHint} onClick={() => setSpell((on) => !on)}>
-              {b.spell}
             </button>
             <button type="button" className="ghost-button ms-start-chapter" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onClick={() => useCosmos.getState().openReplace({ sceneId: current })}>
               {t.replace.button}

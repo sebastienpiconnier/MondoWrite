@@ -2,6 +2,7 @@
 // canevas reste léger même avec un long manuscrit), et un éditeur dans la carte agrandie. C'est le même
 // texte que dans la vue Manuscrit (manuscrit/<id>.md) : rien n'est recopié.
 
+import { usePageSpell } from "./usePageSpell";
 import { useEffect, useMemo, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -93,6 +94,8 @@ export function DraftEditor({ card, autofocus = false }: { card: CardData; autof
     editorProps: { attributes: attributes(title) },
     onUpdate: ({ editor: ed }) => useCosmos.getState().setManuscriptText(card.id, ed.getHTML()),
   });
+
+  usePageSpell(editor);
 
   // Texte changé ailleurs (case cochée depuis « À faire », vue Manuscrit) : l'éditeur suit.
   const stored = useCosmos((s) => s.manuscript[card.id] ?? "");

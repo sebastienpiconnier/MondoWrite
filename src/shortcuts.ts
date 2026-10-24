@@ -49,7 +49,6 @@ export const SHORTCUT_GROUPS = {
     ["focus", ["Mod", "Shift", "F"]],
     ["exitFocus", ["Échap"]],
     ["chutier", ["Mod", "Shift", "K"]],
-    ["spell", ["Mod", ";"]],
     ["moveScene", ["Alt", "↑ ↓"]],
     ["pageZoom", ["Mod", "+ − 0"]],
   ],
