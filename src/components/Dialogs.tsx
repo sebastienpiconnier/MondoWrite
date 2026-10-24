@@ -37,6 +37,7 @@ export function Dialogs() {
     if (dialog === "card" && !expanded) setDialog(null);
   }, [dialog, expanded, setDialog]);
 
+  const downOnBackdrop = useRef(false);
   const apple = isAppleKeyboard();
   const keyName = (k: string) =>
     ({ Mod: apple ? "⌘" : "Ctrl", Shift: apple ? "⇧" : t.shortcuts.shift, Alt: apple ? "⌥" : "Alt", Entrée: t.shortcuts.enter, Échap: t.shortcuts.escape, Suppr: t.shortcuts.delete, Glisser: t.shortcuts.drag, Clic: t.shortcuts.click })[k] ?? k;
@@ -47,9 +48,15 @@ export function Dialogs() {
       className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
-      // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme.
+      // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
+      // enfoncé sur le fond : une sélection de texte qui finit hors de la fenêtre n'est pas un clic à côté.
+      onPointerDown={(e) => {
+        downOnBackdrop.current = e.target === e.currentTarget;
+      }}
       onClick={(e) => {
-        if (dialog === "card" && e.target === e.currentTarget) setDialog(null);
+        const fromBackdrop = downOnBackdrop.current;
+        downOnBackdrop.current = false;
+        if (dialog === "card" && fromBackdrop && e.target === e.currentTarget) setDialog(null);
       }}
     >
       {dialog === "card" && expanded && <ExpandedCard card={expanded} />}

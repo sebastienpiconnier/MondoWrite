@@ -191,6 +191,7 @@
 <ul>
   <li><span class="ui">Ajouter une image</span> ou <span class="ui">Changer l’image</span> ;</li>
   <li><span class="ui">Filtrer sur cette carte</span> : n’afficher que cette carte et ses voisines (reliées par un fil ou une mention) ;</li>
+  <li><span class="ui">Copier la carte</span> et <span class="ui">Dupliquer la carte</span> ;</li>
   <li><span class="ui">Renommer partout…</span> : changer le nom de la carte et le remplacer aussi dans tout le texte (voir le Manuscrit, « Rechercher et remplacer »).</li>
 </ul>
 <figure class="small"><img src="images/fr/carte-menu.jpg"><figcaption>Le menu ⋯ d’une carte.</figcaption></figure>
@@ -204,6 +205,10 @@
   <li><strong>Un PDF</strong> : dépose-le ou choisis <span class="ui">Document…</span>. La carte Document montre l’aperçu de la première page, le nombre de pages et l’auteur ; <span class="ui">Lire le document</span> l’ouvre dans la liseuse de l’app.</li>
   <li><strong>Un texte</strong> collé devient une Idée ; un fichier <code>.md</code> ou <code>.txt</code> déposé devient une carte (une note Obsidian garde son titre et son type).</li>
 </ul>
+<p>Collé sur une carte (clique son bord, puis <kbd>Ctrl</kbd> <kbd>V</kbd>), le texte va dans cette carte, à la fin : dans ses notes, ou dans le texte de la scène pour une carte Scène. Aucune carte n’est créée.</p>
+<h4>Copier, coller et dupliquer des cartes</h4>
+<p>Choisis une ou plusieurs cartes, puis <kbd>Ctrl</kbd> <kbd>C</kbd> et <kbd>Ctrl</kbd> <kbd>V</kbd> : les copies arrivent là où est le pointeur, avec leur fiche, leurs images, le texte des scènes et les fils entre elles. <kbd>Ctrl</kbd> <kbd>D</kbd>, ou <span class="ui">Dupliquer la carte</span> dans le menu ⋯, pose une copie juste à côté. Dans une autre app, le collage donne le titre et le texte des cartes.</p>
+<p>Une carte qui change de type ne perd rien : une Scène devenue Idée garde son synopsis et son texte dans ses notes, et un long texte dans une carte qui devient Scène devient le texte de la scène (une ligne courte devient son synopsis).</p>
 <h4>Les photos libres</h4>
 <p><span class="ui">Image…</span> ouvre la fenêtre <span class="ui">Photos libres</span> : cherche un mot (« phare, tempête, forêt la nuit… ») et choisis une photo. Trois sources : <strong>Openverse</strong>, sans clé, qui réunit des images sous licence libre (Flickr, Wikimedia, musées) ; <strong>Pixabay</strong> et <strong>Unsplash</strong>, qui demandent une clé gratuite, gardée sur ton appareil. L’auteur, la page et la licence de la photo sont notés dans la fiche de la carte. <span class="ui">Choisir une image sur l’appareil…</span> prend un fichier de ton ordinateur.</p>
 <figure class="medium"><img src="images/fr/photos.jpg"><figcaption>La fenêtre des photos libres.</figcaption></figure>
@@ -385,7 +390,7 @@
 <p>La colonne des scènes et la colonne de droite se replient : une poignée sur le bord de la page les ouvre et les ferme, et MondoWrite retient ton choix. Sur un écran étroit (iPad en hauteur, iPhone), elles deviennent des tiroirs qui se superposent à la page, fermés par défaut sur téléphone.</p>
 
 <h3>Le correcteur orthographique</h3>
-<p>Le bouton <span class="ui">Orthographe</span> (<kbd>Ctrl</kbd> <kbd>;</kbd>) active ou coupe le correcteur du système. Il est coupé pendant l’écriture, pour ne pas souligner ton texte en rouge, et se met en marche à la demande, au moment de te relire.</p>
+<p>Le bouton <span class="ui">Orthographe</span> (<kbd>Ctrl</kbd> <kbd>;</kbd>) active ou coupe le correcteur du système. Il est coupé pendant l’écriture, pour ne pas souligner ton texte en rouge, et se met en marche à la demande, au moment de te relire. Dans les Réglages, <span class="ui">Correcteur orthographique</span> le règle pour toute l’app : <span class="ui">Sauf manuscrit et scénario</span> (à la demande dans ces deux vues), <span class="ui">Partout</span> ou <span class="ui">Nulle part</span>. <span class="ui">Suggestions et correction automatique du clavier</span>, décoché, empêche le clavier de l’iPad, de l’iPhone ou du Mac de proposer des mots et de corriger ton texte à ta place.</p>
 
 <h3>Lecture continue</h3>
 <p><span class="ui">Lecture continue</span> fait défiler tout le livre d’un seul tenant, chapitre après chapitre, avec les séparateurs entre les scènes. Un clic sur un passage le rend modifiable sur place, curseur là où tu as cliqué. <span class="ui">Une scène par page</span> revient à l’affichage habituel.</p>
@@ -592,6 +597,8 @@
   <tr><td><span class="ui">Langue</span></td><td>Français ou anglais. À la première ouverture, la langue du système.</td></tr>
   <tr><td><span class="ui">Apparence</span></td><td>Comme le système, claire ou sombre.</td></tr>
   <tr><td><span class="ui">Typographie à la frappe</span></td><td>Selon la langue, française, anglaise ou aucune.</td></tr>
+  <tr><td><span class="ui">Correcteur orthographique</span></td><td>Sauf manuscrit et scénario (à la demande), partout ou nulle part.</td></tr>
+  <tr><td><span class="ui">Suggestions et correction automatique du clavier</span></td><td>Mots proposés et corrigés par le clavier du système, ou rien.</td></tr>
   <tr><td><span class="ui">Nom d’auteur</span></td><td>Lu dans ton profil, à modifier sur la page des projets.</td></tr>
   <tr><td><span class="ui">Photos libres</span></td><td>Les clés Pixabay et Unsplash (Openverse n’en demande pas).</td></tr>
   <tr><td><span class="ui">IA (facultative)</span></td><td>Le service, la clé ou l’adresse, le modèle.</td></tr>
@@ -636,7 +643,8 @@
   <tr><td class="keys"><kbd>Ctrl</kbd> + clic</td><td>Ajouter une carte à la sélection</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>A</kbd> · <kbd>Échap</kbd></td><td>Tout sélectionner · Tout désélectionner</td></tr>
   <tr><td class="keys"><kbd>Suppr</kbd></td><td>Mettre la sélection à la corbeille</td></tr>
-  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>V</kbd></td><td>Coller un lien, une image ou un texte : une carte</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>C</kbd> · <kbd>Ctrl</kbd> <kbd>V</kbd></td><td>Copier les cartes choisies · Coller des cartes, un lien, une image ou un texte (dans la carte qui a le focus)</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>D</kbd></td><td>Dupliquer les cartes choisies</td></tr>
 </table>
 <h3>Texte (cartes, Bible, manuscrit)</h3>
 <table>

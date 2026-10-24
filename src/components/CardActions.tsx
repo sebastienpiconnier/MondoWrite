@@ -32,6 +32,15 @@ export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage
     // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
     [hasImage ? t.changeImage : t.addImage, () => useCosmos.getState().openPhotos({ kind: "card", id })],
     [t.filterHere, () => useCosmos.getState().setFilterCard(id)],
+    // Copier : Cmd/Ctrl + V (ou Coller du menu Édition) la recrée ; le presse-papiers reçoit aussi son texte.
+    [
+      t.copyCard,
+      () => {
+        const text = useCosmos.getState().copyCards([id]);
+        if (text) void navigator.clipboard?.writeText(text).catch(() => undefined);
+      },
+    ],
+    [t.duplicateCard, () => useCosmos.getState().duplicateCards([id])],
     // Un nom propre change : la carte et toutes ses occurrences dans le texte.
     ...(title.trim() ? [[all.replace.renameMenu, () => useCosmos.getState().openReplace({ find: title.trim(), renameId: id })] as [string, () => void]] : []),
   ];

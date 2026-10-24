@@ -2,7 +2,9 @@
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
-import { headingOf, setSceneBody } from "./screenplay/sceneText";
+import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
+import { copyBounds, copyText, linksWithin, pasteCopy, type CardCopy, type CopiedCard } from "./cardClipboard";
+import { appendHtml, fountainElements, notesAreSceneText, sceneBodyHtml, sceneToNotes, textElements, textToHtml, withoutLeadingSynopsis } from "./cardText";
 import { foldNovelNodes, foldNovelNotes, foldScreenplayNotes } from "./sceneNotes";
 import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
@@ -13,7 +15,7 @@ import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
 import type { Screenplay, ScreenplayElement } from "./screenplay/model";
-import { listScenes, setSceneSynopsis } from "./screenplay/scenes";
+import { listScenes, sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes";
 import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
@@ -143,6 +145,16 @@ interface CosmosState {
    * qu'on colle n'est ni l'un ni l'autre (le collage suit alors son chemin normal).
    */
   turnIntoLink: (id: string, text: string) => boolean;
+  /** Dernières cartes copiées (état de la session, jamais enregistré). */
+  cardCopy: CardCopy | null;
+  /** Copie ces cartes ; rend le texte lisible à mettre dans le presse-papiers du système. */
+  copyCards: (ids: string[]) => string;
+  /** Colle les dernières cartes copiées près de `at` (sinon à côté des originales) : une étape d'historique. */
+  pasteCards: (at?: { x: number; y: number }) => string[];
+  /** Copie puis colle aussitôt à côté (menu ⋯, Cmd/Ctrl + D). */
+  duplicateCards: (ids: string[]) => string[];
+  /** Texte collé sur une carte (pas dans un de ses champs) : il va dans la carte, à la fin, jamais dans une nouvelle carte. */
+  pasteIntoCard: (id: string, text: string) => boolean;
   turnIntoImage: (id: string, file: { name: string; data: Uint8Array }) => Promise<boolean>;
   /**
    * Complète une source depuis sa page : titre (s'il n'est que le nom du site), auteur, publication, et
@@ -1036,6 +1048,96 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const fiche = readFiche(parsed.fiche, parsed.type);
       return get().addResearchCard({ type: parsed.type, title: parsed.title, html: markdownToHtml(markHighlights(parsed.markdown)), ...(fiche ? { fiche } : {}) }, at);
     },
+    cardCopy: null,
+    copyCards: (ids) => {
+      const chosen = new Set(ids);
+      const { nodes, edges, manuscript, screenplay, kind } = get();
+      const cards: CopiedCard[] = nodes
+        .filter((n) => chosen.has(n.id))
+        .map((n) => {
+          const box = boxes([n])[0];
+          const copied: CopiedCard = { data: structuredClone(n.data), x: n.position.x, y: n.position.y, width: box.width, height: box.height };
+          if (n.data.type === "scene") {
+            const at = screenplay && kind === "scenario" ? headingOf(screenplay.elements, n.id) : -1;
+            if (screenplay && at >= 0) {
+              copied.synopsis = sceneSynopsis(screenplay.elements, at);
+              copied.body = structuredClone(sceneBody(screenplay.elements, at));
+            } else if (manuscript[n.id]) copied.text = manuscript[n.id];
+          }
+          return copied;
+        });
+      if (cards.length === 0) return "";
+      const copy: CardCopy = { cards, links: linksWithin(edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: typeof e.label === "string" ? e.label : "" })), chosen), text: copyText(cards) || cards.map((c) => c.data.type).join(" ") };
+      set({ cardCopy: copy });
+      return copy.text;
+    },
+    pasteCards: (at) => {
+      const copy = get().cardCopy;
+      if (!copy || copy.cards.length === 0) return [];
+      record();
+      const bounds = copyBounds(copy.cards);
+      // Sans endroit indiqué : juste à côté des cartes copiées. Le groupe garde sa disposition, sans chevaucher.
+      const wanted = at ?? { x: bounds.x + 40, y: bounds.y + 40 };
+      const origin = placeCard(wanted, occupied(), { width: bounds.width, height: bounds.height });
+      const { cards, links } = pasteCopy(copy, origin, newId);
+      let { screenplay, manuscript } = get();
+      const { kind } = get();
+      for (const c of cards) {
+        if (c.data.type !== "scene") continue;
+        // Roman : le texte de la scène vient avec elle (la copie n'est rangée ni dans le plan ni dans un chapitre).
+        if (c.text) manuscript = { ...manuscript, [c.data.id]: c.text };
+        // Scénario : une scène titrée entre à la fin du texte, avec son synopsis et son corps.
+        if (screenplay && kind === "scenario" && c.data.title.trim()) {
+          screenplay = appendScene(screenplay, { id: c.data.id, title: c.data.title });
+          const head = headingOf(screenplay.elements, c.data.id);
+          let elements = screenplay.elements;
+          if (head >= 0 && c.synopsis) elements = setSceneSynopsis(elements, head, c.synopsis);
+          if (head >= 0 && c.body?.length) elements = setSceneBody(elements, headingOf(elements, c.data.id), c.body);
+          screenplay = { ...screenplay, elements };
+        }
+      }
+      let edges = get().edges;
+      for (const l of links) edges = addEdge({ id: newId(), source: l.source, target: l.target, sourceHandle: null, targetHandle: null, label: l.label ?? "", type: "floating" }, edges);
+      set({
+        nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), ...cards.map((c) => ({ ...toNode(c.data, c.x, c.y, c.width), selected: true }))],
+        edges,
+        manuscript,
+        screenplay,
+      });
+      touch();
+      return cards.map((c) => c.data.id);
+    },
+    duplicateCards: (ids) => {
+      const keep = get().cardCopy;
+      if (!get().copyCards(ids)) return [];
+      const made = get().pasteCards();
+      // Dupliquer ne remplace pas ce qu'on avait copié.
+      set({ cardCopy: keep });
+      return made;
+    },
+    pasteIntoCard: (id, text) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card || !text.trim()) return false;
+      // Carte vide et adresse collée : la carte devient ce Lien (comme un collage dans son texte).
+      if (get().turnIntoLink(id, text)) return true;
+      const { screenplay, kind } = get();
+      if (card.type === "scene") {
+        const at = screenplay && kind === "scenario" ? headingOf(screenplay.elements, id) : -1;
+        // Scénario : le texte s'ajoute au corps de la scène, en éléments Fountain.
+        if (screenplay && at >= 0) {
+          const body = [...sceneBody(screenplay.elements, at), ...fountainElements(text)];
+          get().setSceneText(id, body);
+          return true;
+        }
+        // Roman : à la fin du texte de la scène.
+        if (kind !== "scenario") {
+          get().setManuscriptText(id, appendHtml(get().manuscript[id], textToHtml(text)));
+          return true;
+        }
+      }
+      get().updateCard(id, { html: appendHtml(card.html, textToHtml(text)) });
+      return true;
+    },
     turnIntoLink: (id, text) => {
       const card = get().nodes.find((n) => n.id === id)?.data;
       const clip = clipFromText(text);
@@ -1858,6 +1960,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const keys = Object.keys(patch);
       const typed = keys.length === 1 && (keys[0] === "title" || keys[0] === "html");
       record(typed ? `card:${id}:${keys[0]}` : "");
+      const before = get().nodes.find((n) => n.id === id)?.data;
+      const leavesScene = before?.type === "scene" && patch.type !== undefined && patch.type !== "scene";
       let nodes = get().nodes.map((n) => {
         if (n.id !== id) return n;
         const data = { ...n.data, ...patch };
@@ -1872,10 +1976,35 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const { title } = patch;
       if (typeof title === "string") nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, id, title)));
       let { screenplay } = get();
-      // Roman : une carte qui devient Scène (ou une Scène qui reçoit des notes) range ses notes dans son
-      // synopsis ; son corps est désormais son manuscrit.
+      // Une Scène qui change de type garde son texte : synopsis et texte de la scène passent dans ses notes.
+      // Roman : le texte quitte le manuscrit (il y revient si la carte redevient Scène). Scénario : le texte
+      // reste aussi dans le fichier Fountain (releaseCard), la carte en garde une copie.
+      if (leavesScene && before) {
+        let synopsis = before.fiche?.synopsis;
+        let text: string | undefined = get().manuscript[id];
+        if (screenplay && get().kind === "scenario") {
+          const at = headingOf(screenplay.elements, id);
+          synopsis = at < 0 ? undefined : sceneSynopsis(screenplay.elements, at);
+          text = at < 0 ? undefined : sceneBodyHtml(sceneBody(screenplay.elements, at));
+        } else if (text) {
+          const manuscript = { ...get().manuscript };
+          delete manuscript[id];
+          set({ manuscript });
+        }
+        const html = sceneToNotes(before.html, synopsis, text);
+        if (html) nodes = nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, html } } : n));
+      }
+      // Roman : une carte qui devient Scène (ou une Scène qui reçoit des notes) range ses notes : un long texte
+      // devient le texte de la scène (manuscrit), une ligne courte son synopsis.
       if (get().kind !== "scenario") nodes = nodes.map((n) => {
         if (n.id !== id) return n;
+        if (n.data.type === "scene" && notesAreSceneText(n.data.html)) {
+          const text = withoutLeadingSynopsis(n.data.html!, n.data.fiche?.synopsis);
+          const current = get().manuscript[id] ?? "";
+          // Déjà là (aller-retour annulé : le manuscrit n'est pas dans l'historique) : rien n'est doublé.
+          if (!current.includes(text)) set({ manuscript: { ...get().manuscript, [id]: appendHtml(current, text) } });
+          return { ...n, data: { ...n.data, html: "" } };
+        }
         const data = foldNovelNotes(n.data);
         return data === n.data ? n : { ...n, data };
       });
@@ -1888,6 +2017,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
         else if (!linked && get().kind === "scenario") screenplay = appendScene(screenplay, { id, title: card.title });
         // Sinon son en-tête suit son titre.
         else if (typeof patch.title === "string") screenplay = renameHeading(screenplay, id, patch.title);
+        // Scénario : un long texte dans les notes d'une Scène reliée devient le corps de sa scène (s'il est vide).
+        if (get().kind === "scenario" && card.type === "scene" && notesAreSceneText(card.html)) {
+          const at = headingOf(screenplay.elements, id);
+          if (at >= 0 && sceneBody(screenplay.elements, at).length === 0) {
+            const synopsis = sceneSynopsis(screenplay.elements, at);
+            const body = textElements(withoutLeadingSynopsis(card.html!, synopsis));
+            screenplay = { ...screenplay, elements: setSceneBody(screenplay.elements, at, body) };
+            nodes = nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, html: "" } } : n));
+          }
+        }
         // Scénario : une Scène reliée à son en-tête range ses notes dans le synopsis de la scène.
         if (get().kind === "scenario" && card.type === "scene") {
           const folded = foldScreenplayNotes(nodes.filter((n) => n.id === id), screenplay);

@@ -222,7 +222,7 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 .topbar > .brand { justify-self: start; }
 /* Mac, app de bureau : barre de titre intégrée. Les trois boutons de fenêtre sont posés sur la barre du haut
    (trafficLightPosition dans tauri.conf.json) : on leur laisse la place à gauche. En plein écran ils disparaissent. */
-html[data-platform="mac"] .topbar { padding-left: 92px; }
+html[data-platform="mac"]:not([data-fullscreen]) .topbar { padding-left: 92px; }
 html[data-platform="mac"] .topbar { -webkit-user-select: none; user-select: none; }
 html[data-platform="mac"] .topbar :is(input, textarea) { -webkit-user-select: text; user-select: text; }
 .topbar > .actions { justify-self: end; }

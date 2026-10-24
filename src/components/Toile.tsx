@@ -2,6 +2,7 @@
 // au doigt, ou bouton « + »), on tire un fil d'un point de connexion vers une autre
 // carte, on double-clique (ou touche, sur écran tactile) un fil pour l'étiqueter.
 
+import { isCardCopy } from "../cardClipboard";
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import {
   Background,
@@ -83,6 +84,15 @@ interface LabelEditor {
 /** Bornes du zoom du canevas (React Flow et gestionnaire de la molette). */
 const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2;
+
+/** Cartes visées par Copier ou Dupliquer : celles choisies, sinon celle qui a le focus. */
+function chosenCards(target: HTMLElement | Element | null): string[] {
+  const { nodes } = useCosmos.getState();
+  const selected = nodes.filter((n) => n.selected && !n.hidden).map((n) => n.id);
+  if (selected.length > 0) return selected;
+  const id = target?.closest?.(".react-flow__node")?.getAttribute("data-id");
+  return id && nodes.some((n) => n.id === id) ? [id] : [];
+}
 
 export function Toile() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
@@ -272,6 +282,14 @@ export function Toile() {
         for (const n of chosen) resizeCard(n.id, e.key === "ArrowRight" ? 40 : -40);
         return;
       }
+      // Ctrl ou Cmd + D : les cartes choisies sont dupliquées à côté (comme « Dupliquer » du menu ⋯).
+      if (key === "d" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        const ids = chosenCards(target);
+        if (ids.length === 0) return;
+        e.preventDefault();
+        useCosmos.getState().duplicateCards(ids);
+        return;
+      }
       // Ctrl ou Cmd + A : toutes les cartes et tous les cadres. Échap : plus rien de sélectionné.
       if (key === "a" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
         e.preventDefault();
@@ -316,6 +334,25 @@ export function Toile() {
   const pasteAtRef = useRef(pasteAt);
   pasteAtRef.current = pasteAt;
 
+  // Copier hors d'un champ, sans texte sélectionné : les cartes choisies (ou celle qui a le focus) sont copiées.
+  // Le presse-papiers du système reçoit leur texte lisible ; un collage sur le canevas recrée les cartes.
+  useEffect(() => {
+    const onCopy = (e: ClipboardEvent) => {
+      const target = e.target instanceof Element ? e.target : null;
+      if (target?.closest("input, textarea, select, [contenteditable='true'], dialog")) return;
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed && selection.toString().trim()) return;
+      const ids = chosenCards(target as HTMLElement | null);
+      if (ids.length === 0 || !e.clipboardData) return;
+      const text = useCosmos.getState().copyCards(ids);
+      if (!text) return;
+      e.preventDefault();
+      e.clipboardData.setData("text/plain", text);
+    };
+    window.addEventListener("copy", onCopy);
+    return () => window.removeEventListener("copy", onCopy);
+  }, []);
+
   // Coller hors d'un champ : un lien, un texte ou une image devient une carte Lien, Extrait ou Image, là où l'on est.
   useEffect(() => {
     const onPaste = async (e: ClipboardEvent) => {
@@ -332,6 +369,20 @@ export function Toile() {
         return;
       }
       const text = data.getData("text/plain");
+      // Cartes copiées dans MondoWrite : on les recrée (là où est le pointeur), avec leurs fils.
+      if (isCardCopy(store.cardCopy, text)) {
+        e.preventDefault();
+        store.pasteCards(at);
+        return;
+      }
+      // Collé sur une carte (elle a le focus : sa vignette, son aperçu, ses boutons) : le texte va dans cette
+      // carte, jamais dans une nouvelle.
+      const onCard = target?.closest(".react-flow__node")?.getAttribute("data-id");
+      if (onCard && store.nodes.some((n) => n.id === onCard) && text.trim()) {
+        e.preventDefault();
+        store.pasteIntoCard(onCard, text);
+        return;
+      }
       if (!clipFromText(text)) return;
       e.preventDefault();
       store.addResearchClip(text, at);

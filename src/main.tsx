@@ -25,12 +25,17 @@ import { isAppleKeyboard, isMobileOS, isTauri } from "./platform";
 import { initAppMenu } from "./appMenu";
 import { watchKeyboard } from "./keyboard";
 import { watchTextScale } from "./textScale";
+import { watchFullscreen } from "./fullscreen";
 
 // App de bureau : comportements d'app du système (curseur flèche sur les commandes, voir styles.css).
 if (isTauri() && !isMobileOS()) {
   document.documentElement.dataset.app = "desktop";
   // Mac : la barre de titre est intégrée (titleBarStyle Overlay) ; les boutons de fenêtre sont sur la barre du haut.
-  if (isAppleKeyboard()) document.documentElement.dataset.platform = "mac";
+  if (isAppleKeyboard()) {
+    document.documentElement.dataset.platform = "mac";
+    // En plein écran, plus de boutons de fenêtre : le logo revient au bord gauche.
+    void watchFullscreen();
+  }
 }
 // Langue et thème appliqués avant le premier rendu (pas de flash clair en mode sombre).
 initSettings();

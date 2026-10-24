@@ -2,6 +2,7 @@
 // « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
+import { spellOnInPages } from "../writingAids";
 import { StatusDot } from "./SceneStatusPicker";
 import { EdgeHandle } from "./EdgeHandle";
 import { StatsBox } from "./StatsBox";
@@ -80,7 +81,8 @@ export function ScreenplayView() {
   const chutier = useCosmos((s) => s.chutier);
   // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
   const [panels, togglePanel] = usePanels();
-  const [spell, setSpell] = useState(false);
+  // Correcteur : à la demande, sauf si les Réglages le veulent partout.
+  const [spell, setSpell] = useState(() => spellOnInPages(useSettings.getState().writing.spellcheck));
   const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
   useEffect(() => {
     if (!notice) return;

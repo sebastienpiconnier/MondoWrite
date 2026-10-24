@@ -27,7 +27,9 @@ export const SHORTCUT_GROUPS = {
     ["selectAll", ["Mod", "A"]],
     ["deselect", ["Échap"]],
     ["delete", ["Suppr"]],
+    ["copyCards", ["Mod", "C"]],
     ["paste", ["Mod", "V"]],
+    ["duplicate", ["Mod", "D"]],
   ],
   text: [
     ["bold", ["Mod", "B"]],

@@ -1,6 +1,7 @@
 // Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
+import { applyWritingAids, isSpellcheckMode, type SpellcheckMode } from "./writingAids";
 import { isTypographySetting, type TypographySetting } from "./typography";
 import { isFocusHighlight, type FocusHighlight } from "./focusText";
 import { readSections, type BibleSections } from "./bibleSections";
@@ -68,6 +69,10 @@ export interface WritingSettings {
   typography: TypographySetting;
   /** Zoom de la page du manuscrit et de la feuille du scénario (1 = taille normale, qui suit la fenêtre). */
   zoom: number;
+  /** Correcteur orthographique : partout, à la demande dans le manuscrit et le scénario, ou nulle part. */
+  spellcheck: SpellcheckMode;
+  /** Suggestions et correction automatique du clavier du système. */
+  suggestions: boolean;
 }
 
 /** Crans du zoom de la page (Cmd/Ctrl + et -, menu Présentation, Réglages). */
@@ -90,6 +95,8 @@ function readWriting(raw: unknown): WritingSettings {
     highlight: isFocusHighlight(w.highlight) ? w.highlight : "off",
     typography: isTypographySetting(w.typography) ? w.typography : "auto",
     zoom: readZoom(w.zoom),
+    spellcheck: isSpellcheckMode(w.spellcheck) ? w.spellcheck : "notes",
+    suggestions: w.suggestions !== false,
   };
 }
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);
@@ -227,6 +234,7 @@ export function initSettings() {
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     // Zoom de la page (manuscrit, scénario) : une variable CSS ; agrandie, la page peut défiler de côté.
     root.style.setProperty("--page-zoom", String(writing.zoom));
+    applyWritingAids(writing.spellcheck, writing.suggestions);
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;
     try {

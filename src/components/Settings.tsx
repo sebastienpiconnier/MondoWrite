@@ -1,6 +1,7 @@
 // Bouton « Réglages » : langue de l'interface et apparence (système, claire, sombre).
 // Listes déroulantes natives : accessibles au clavier, au lecteur d'écran et au doigt.
 
+import { SPELLCHECK_MODES, isSpellcheckMode } from "../writingAids";
 import { openGuide } from "../help";
 import { isTypographySetting } from "../typography";
 import { UpdateSettings } from "./Updates";
@@ -83,7 +84,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -334,6 +335,26 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </select>
           <p className="settings-hint" id={ids.typographyHint}>{t.settings.typographyHint}</p>
+          {/* Correcteur et suggestions du système (writingAids.ts) : réglages de l'appareil. */}
+          <label htmlFor={ids.spell}>{t.settings.spellcheck}</label>
+          <select
+            id={ids.spell}
+            aria-describedby={ids.spellHint}
+            value={writing.spellcheck}
+            onChange={(e) => isSpellcheckMode(e.target.value) && setWriting({ ...writing, spellcheck: e.target.value })}
+          >
+            {SPELLCHECK_MODES.map((v) => (
+              <option key={v} value={v}>
+                {t.settings.spellcheckModes[v]}
+              </option>
+            ))}
+          </select>
+          <p className="settings-hint" id={ids.spellHint}>{t.settings.spellcheckHint}</p>
+          <label className="settings-check" htmlFor={ids.suggestions}>
+            <input id={ids.suggestions} type="checkbox" aria-describedby={ids.suggestionsHint} checked={writing.suggestions} onChange={(e) => setWriting({ ...writing, suggestions: e.target.checked })} />
+            {t.settings.suggestions}
+          </label>
+          <p className="settings-hint" id={ids.suggestionsHint}>{t.settings.suggestionsHint}</p>
           {/* Photos libres : Openverse sans clé ; Pixabay et Unsplash avec la clé de l'auteur, sur cet appareil seulement. */}
           <div className="eyebrow settings-sep">{t.photos.settingsSection}</div>
           {(["pixabay", "unsplash"] as const).map((source) => (

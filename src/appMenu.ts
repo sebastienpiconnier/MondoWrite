@@ -74,6 +74,8 @@ async function buildMenu() {
       await PredefinedMenuItem.new({ item: "Copy", text: m.copy }),
       await PredefinedMenuItem.new({ item: "Paste", text: m.paste }),
       await PredefinedMenuItem.new({ item: "SelectAll", text: m.selectAll }),
+      // Cartes choisies sur le canevas (Copier et Coller, éléments du système, copient aussi les cartes).
+      await MenuItem.new({ id: "duplicate", text: m.duplicate, accelerator: "CmdOrCtrl+D", enabled: inProject && currentView === "toile", action: () => replayShortcut("d", "KeyD") }),
       await sep(),
       await MenuItem.new({ id: "find", text: m.find, accelerator: "CmdOrCtrl+F", enabled: inProject, action: () => replayShortcut("f", "KeyF") }),
       await MenuItem.new({

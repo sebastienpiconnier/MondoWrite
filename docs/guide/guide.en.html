@@ -191,6 +191,7 @@
 <ul>
   <li><span class="ui">Add an image</span> or <span class="ui">Change the image</span>;</li>
   <li><span class="ui">Filter on this card</span>: show only this card and its neighbours (connected by a thread or a mention);</li>
+  <li><span class="ui">Copy card</span> and <span class="ui">Duplicate card</span>;</li>
   <li><span class="ui">Rename everywhere…</span>: change the card’s name and replace it throughout the text too (see the Manuscript, “Find and replace”).</li>
 </ul>
 <figure class="small"><img src="images/en/carte-menu.jpg"><figcaption>A card’s ⋯ menu.</figcaption></figure>
@@ -204,6 +205,10 @@
   <li><strong>A PDF</strong>: drop it or choose <span class="ui">Document…</span>. The Document card shows a preview of the first page, the page count and the author; <span class="ui">Read the document</span> opens it in the app’s reader.</li>
   <li><strong>Pasted text</strong> becomes an Idea; a dropped <code>.md</code> or <code>.txt</code> file becomes a card (an Obsidian note keeps its title and type).</li>
 </ul>
+<p>Pasted onto a card (click its edge, then <kbd>Ctrl</kbd> <kbd>V</kbd>), the text goes into that card, at the end: into its notes, or into the scene’s text for a Scene card. No card is created.</p>
+<h4>Copying, pasting and duplicating cards</h4>
+<p>Select one or more cards, then <kbd>Ctrl</kbd> <kbd>C</kbd> and <kbd>Ctrl</kbd> <kbd>V</kbd>: the copies arrive where the pointer is, with their sheet, their images, the scenes’ text and the threads between them. <kbd>Ctrl</kbd> <kbd>D</kbd>, or <span class="ui">Duplicate card</span> in the ⋯ menu, puts a copy right next to it. In another app, pasting gives the cards’ title and text.</p>
+<p>A card that changes type loses nothing: a Scene turned into an Idea keeps its synopsis and its text in its notes, and a long text in a card that becomes a Scene becomes the scene’s text (a short line becomes its synopsis).</p>
 <h4>Free photos</h4>
 <p><span class="ui">Image…</span> opens the <span class="ui">Free photos</span> window: search for a word (“lighthouse, storm, forest at night…”) and pick a photo. Three sources: <strong>Openverse</strong>, with no key, which gathers openly licensed images (Flickr, Wikimedia, museums); <strong>Pixabay</strong> and <strong>Unsplash</strong>, which need a free key, kept on your device. The photo’s author, page and licence are noted in the card’s sheet. <span class="ui">Choose an image on this device…</span> takes a file from your computer.</p>
 <figure class="medium"><img src="images/en/photos.jpg"><figcaption>The free photos window.</figcaption></figure>
@@ -385,7 +390,7 @@
 <p>The scenes column and the right column fold away: a handle on the edge of the page opens and closes them, and MondoWrite remembers your choice. On a narrow screen (iPad upright, iPhone) they become drawers over the page, closed by default on a phone.</p>
 
 <h3>The spell checker</h3>
-<p>The <span class="ui">Spelling</span> button (<kbd>Ctrl</kbd> <kbd>;</kbd>) turns the system spell checker on or off. It is off while you write, so your text is not underlined in red, and you switch it on when it is time to proofread.</p>
+<p>The <span class="ui">Spelling</span> button (<kbd>Ctrl</kbd> <kbd>;</kbd>) turns the system spell checker on or off. It is off while you write, so your text is not underlined in red, and you switch it on when it is time to proofread. In Settings, <span class="ui">Spell checker</span> sets it for the whole app: <span class="ui">Except manuscript and screenplay</span> (on demand in those two views), <span class="ui">Everywhere</span> or <span class="ui">Nowhere</span>. Unchecking <span class="ui">Keyboard suggestions and autocorrect</span> stops the iPad, iPhone or Mac keyboard from suggesting words and correcting your text for you.</p>
 
 <h3>Continuous reading</h3>
 <p><span class="ui">Continuous reading</span> scrolls the whole book in one go, chapter after chapter, with separators between scenes. A click on a passage makes it editable in place, with the cursor where you clicked. <span class="ui">One scene per page</span> returns to the usual display.</p>
@@ -592,6 +597,8 @@
   <tr><td><span class="ui">Language</span></td><td>English or French. The first time, the system’s language.</td></tr>
   <tr><td><span class="ui">Appearance</span></td><td>Match system, light or dark.</td></tr>
   <tr><td><span class="ui">Typography as you type</span></td><td>Follow the language, French, English or none.</td></tr>
+  <tr><td><span class="ui">Spell checker</span></td><td>Except manuscript and screenplay (on demand), everywhere or nowhere.</td></tr>
+  <tr><td><span class="ui">Keyboard suggestions and autocorrect</span></td><td>Words suggested and corrected by the system keyboard, or none.</td></tr>
   <tr><td><span class="ui">Author name</span></td><td>Read from your profile, edited on the projects page.</td></tr>
   <tr><td><span class="ui">Free photos</span></td><td>The Pixabay and Unsplash keys (Openverse needs none).</td></tr>
   <tr><td><span class="ui">AI (optional)</span></td><td>The service, the key or address, the model.</td></tr>
@@ -636,7 +643,8 @@
   <tr><td class="keys"><kbd>Ctrl</kbd> + click</td><td>Add a card to the selection</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>A</kbd> · <kbd>Esc</kbd></td><td>Select all · Deselect all</td></tr>
   <tr><td class="keys"><kbd>Delete</kbd></td><td>Move the selection to the trash</td></tr>
-  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>V</kbd></td><td>Paste a link, an image or text: a card</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>C</kbd> · <kbd>Ctrl</kbd> <kbd>V</kbd></td><td>Copy the selected cards · Paste cards, a link, an image or text (into the focused card)</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>D</kbd></td><td>Duplicate the selected cards</td></tr>
 </table>
 <h3>Text (cards, Bible, manuscript)</h3>
 <table>

@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { spellOnInPages } from "../writingAids";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
@@ -118,7 +119,8 @@ export function Manuscript() {
   const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
   // Compteur de mots de la barre : scène, chapitre ou livre, au clic. Correcteur orthographique : à la demande.
   const [counter, setCounter] = useState(readCounter);
-  const [spell, setSpell] = useState(false);
+  // Correcteur : à la demande, sauf si les Réglages le veulent partout.
+  const [spell, setSpell] = useState(() => spellOnInPages(useSettings.getState().writing.spellcheck));
   const chutier = useCosmos((s) => s.chutier);
   useEffect(() => {
     if (!notice) return;
