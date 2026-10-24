@@ -54,8 +54,9 @@ interface Finding {
 
 ### Interface
 
-- Vue Scénario et vue Manuscrit : un bouton **« Vérifier »** dans la barre au-dessus de la page, qui ouvre un panneau
-  dans la colonne de droite (à la place de « Dans cette scène », un onglet pour revenir).
+- Vue Scénario et vue Manuscrit : la colonne de droite a deux **onglets**, « Dans cette scène » et « Vérifier »
+  (décidé le 24 oct. 2026). Le bouton **« Vérifier · N »** de la barre au-dessus de la page ouvre l'onglet et donne le
+  nombre de points.
 - Le panneau groupe les points par règle, avec leur nombre. Un point se clique : la vue va à la scène et sélectionne
   l'élément ou le passage. **« Ignorer »** le retire de la liste pour la session.
 - Pour `similarNames` : un bouton **« Renommer partout… »** qui ouvre la fenêtre existante (`ReplacePanel`, `renameId`)
@@ -91,15 +92,20 @@ interface Finding {
 
 ## 3. Rapports
 
-- Dans la Bible, rubrique Personnages : un bouton **« Rapport »** qui ouvre un tableau (fenêtre `Dialogs`) :
+- Dans la Bible, rubrique Personnages : une troisième présentation, **« Fiches · Relations · Chiffres »** (décidé le
+  24 oct. 2026), état d'affichage comme « Relations ». Pas de fenêtre : le tableau a la largeur de la page.
+  - un clic sur un nom ouvre sa fiche ; dans un scénario, « Ses répliques » mène au filtre par personnage ;
+  - chaque fiche personnage montre aussi une ligne discrète sous le nom : « 3 scènes · 14 répliques · 38 % du temps
+    de parole » (roman : « 3 scènes où il est cité »).
+- Le tableau :
   - scénario : scènes, répliques, mots dits, part du temps de parole, première et dernière apparition (n° de scène) ;
   - roman : scènes où le personnage est cité (`detectCards`), mots des scènes où il apparaît ;
   - **répartition par genre** à partir du champ `genre` de la fiche (valeur libre de l'auteur : on groupe les valeurs
     telles qu'écrites, plus « non renseigné ») : nombre de personnages, de répliques, de mots dits.
 - Tri par colonne, export CSV par `storage.saveAs` (un seul format, lisible par tout tableur).
 - Le tableau suit `useVocab` (Décor, Lieu…) et la langue pour les nombres (`Intl`).
-- Fichiers : `src/review/report.ts` (nouveau, pur), `src/components/ReportDialog.tsx` (nouveau), `Bible.tsx`,
-  `Dialogs.tsx`, i18n, test des comptes.
+- Fichiers : `src/review/report.ts` (nouveau, pur), `src/components/CharacterStats.tsx` (nouveau), `Bible.tsx`
+  (présentation « Chiffres », ligne de la fiche), i18n, test des comptes.
 
 ## Accessibilité et multiplateforme
 
@@ -107,6 +113,11 @@ interface Finding {
   point, Échap ferme.
 - Cibles de 44 px au doigt, contraste vérifié dans les palettes, rien au survol seul.
 - Textes en rem, couleurs par jetons.
+
+## Maquettes
+
+Artifact « MondoWrite, outils de relecture » (Design, 24 oct. 2026) : vérifier le scénario (onglets), filtre par
+personnage, chiffres des personnages dans la Bible.
 
 ## Guide
 
@@ -119,7 +130,7 @@ interface Finding {
 - [ ] `checks.ts` (roman), tests
 - [ ] `ReviewPanel` dans le Scénario, puis dans le Manuscrit ; menu du Mac
 - [ ] Filtre par personnage : `scenesWith`, décorations, choix dans la liste des scènes, lien depuis la Bible
-- [ ] `report.ts`, `ReportDialog`, export CSV
+- [ ] `report.ts`, présentation « Chiffres » de la Bible, ligne de chiffres dans la fiche, export CSV
 - [ ] i18n complet, guide (fr, en), captures, PDF, CLAUDE.md
 - [ ] Vérification à la main : roman et scénario, tactile, anglais, mode sombre
 
