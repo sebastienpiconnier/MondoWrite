@@ -164,3 +164,14 @@
 /* En-tête encore vide (on l'écrit, ou on vient de l'effacer) : le libellé « Scène sans titre » reste discret,
    comme le texte indicatif de l'éditeur. */
 .is-slugline.is-untitled { color: var(--placeholder); font-style: italic; }
+
+/* Filtre par personnage : scènes cachées, texte des autres estompé (toujours modifiable). */
+.sp-editor .is-filter-hidden { display: none; }
+.sp-editor .is-filter-dim { color: var(--page-ink-dim); }
+.sp-filter { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.sp-filter label { font-size: 0.8125rem; color: var(--ink-2); }
+.sp-filter select { min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.sp-filter .sp-detail { margin: 0; }
+.sp-filter-banner { flex-basis: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; margin: 4px 0 0; padding: 4px 6px 4px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: 0.875rem; font-weight: 500; }
+.sp-filter-banner button { min-width: 32px; min-height: 32px; border: 0; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 1.1rem; cursor: pointer; }
+@media (pointer: coarse) { .sp-filter-banner button { min-width: 44px; min-height: 44px; } }

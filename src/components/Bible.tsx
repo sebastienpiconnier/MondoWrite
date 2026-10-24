@@ -28,6 +28,8 @@ import { CharacterMotor } from "./CharacterMotor";
 import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
+import { CharacterStats } from "./CharacterStats";
+import { novelReport, screenplayReport, type CharacterRow } from "../review/report";
 import { EdgeHandle } from "./EdgeHandle";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
@@ -91,6 +93,19 @@ export function Bible() {
   const addTitledCard = useCosmos((s) => s.addTitledCard);
   const target = useCosmos((s) => s.bibleTarget);
   const clearTarget = useCosmos((s) => s.clearBibleTarget);
+  // Chiffres des personnages (présentation « Chiffres » et ligne sous le nom), relus dans le texte.
+  const planState = useCosmos((s) => s.plan);
+  const manuscriptText = useCosmos((s) => s.manuscript);
+  const charRows = useMemo(() => {
+    const cards = nodes.map((n) => n.data);
+    if (kind === "scenario") return screenplay ? screenplayReport(screenplay.elements, cards, lang) : [];
+    return novelReport(manuscriptText, bookOrder(nodes, planState), cards);
+  }, [kind, screenplay, nodes, lang, manuscriptText, planState]);
+  const rowOf = useMemo(() => new Map(charRows.filter((r) => r.id).map((r) => [r.id!, r])), [charRows]);
+  const seeLines = (name: string) => {
+    useCosmos.getState().setCharFilter({ name: name.toLocaleUpperCase(lang), mode: "lines" });
+    useCosmos.getState().setView("manuscrit");
+  };
   // Sommaire repliable par sa poignée ; fermé d'office sur téléphone, où il prenait la moitié de l'écran.
   const [tocOpen, setTocOpen] = useState(() => {
     try {
@@ -156,8 +171,9 @@ export function Bible() {
   const [current, setCurrent] = useState<CardType | "projet">("projet");
   const onCover = current === "projet";
   const onPage = onCover;
-  // Personnages : fiches ou carte des relations (état d'affichage, non enregistré).
-  const [relations, setRelations] = useState(false);
+  // Personnages : fiches, carte des relations ou chiffres (état d'affichage, non enregistré).
+  const [charView, setCharView] = useState<"cards" | "map" | "stats">("cards");
+  const relations = charView !== "cards";
   const shown = sections.find((s) => s.type === current) ?? sections.find((s) => s.cards.length > 0) ?? sections[0];
 
   // Arrivée depuis le canevas : la bonne partie, la fiche à l'écran, l'assistant ouvert si demandé.
@@ -235,7 +251,7 @@ export function Bible() {
     const card = nodes.find((n) => n.id === id)?.data;
     if (!card) return;
     setCurrent(card.type);
-    setRelations(false);
+    setCharView("cards");
     fold([id], false);
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${id}"]`)?.scrollIntoView({ block: "start" }));
   };
@@ -281,6 +297,7 @@ export function Bible() {
                     }}
                   />
                 </h3>
+                {type === "personnage" && rowOf.get(card.id) && <StatsLine row={rowOf.get(card.id)!} script={kind === "scenario"} />}
                 {(type === "personnage" || type === "lieu") && <Poster card={card} />}
                 </div>
                 <button
@@ -359,6 +376,16 @@ export function Bible() {
               <button type="button" className="link-button bible-see-canvas" onClick={() => revealCard(card.id)}>
                 {t.bible.seeOnCanvas}
               </button>
+              {/* Scénario : ses répliques, le reste estompé (filtre par personnage de la vue Scénario). */}
+              {card.type === "personnage" && kind === "scenario" && card.title.trim() && (
+                <button
+                  type="button"
+                  className="link-button bible-see-canvas"
+                  onClick={() => seeLines(card.title.trim())}
+                >
+                  {t.bible.seeLines}
+                </button>
+              )}
               </>
               )}
               </div>
@@ -504,16 +531,23 @@ export function Bible() {
                 </div>
                 {group.type === "personnage" && group.cards.length > 0 && (
                   <div className="sq-modes" role="group" aria-label={t.relations.tabsAria}>
-                    <button type="button" aria-pressed={!relations} onClick={() => setRelations(false)}>
+                    <button type="button" aria-pressed={charView === "cards"} onClick={() => setCharView("cards")}>
                       {t.relations.tabCards}
                     </button>
-                    <button type="button" aria-pressed={relations} onClick={() => setRelations(true)}>
+                    <button type="button" aria-pressed={charView === "map"} onClick={() => setCharView("map")}>
                       {t.relations.tabMap}
+                    </button>
+                    <button type="button" aria-pressed={charView === "stats"} onClick={() => setCharView("stats")}>
+                      {t.relations.tabStats}
                     </button>
                   </div>
                 )}
               </div>
-              {group.type === "personnage" && relations && group.cards.length > 0 ? (
+              {group.type === "personnage" && charView === "stats" && group.cards.length > 0 ? (
+                <div className="bible-entry">
+                  <CharacterStats rows={charRows} kind={kind === "scenario" ? "script" : "text"} onOpen={openCard} onSeeLines={kind === "scenario" ? seeLines : undefined} />
+                </div>
+              ) : group.type === "personnage" && relations && group.cards.length > 0 ? (
                 <div className="bible-entry">
                   <RelationsMap onOpen={openCard} />
                 </div>
@@ -535,4 +569,21 @@ export function Bible() {
     </div>
     </div>
   );
+}
+
+/** Ligne discrète sous le nom d'un personnage : scènes, répliques, temps de parole (roman : scènes où il est cité). */
+function StatsLine({ row, script }: { row: CharacterRow; script: boolean }) {
+  const t = useT().charStats;
+  const lang = useSettings((s) => s.lang);
+  if (row.scenes === 0 && row.lines === 0) return null;
+  const n = (v: number) => new Intl.NumberFormat(lang).format(v);
+  const scenes = row.scenes === 1 ? t.scenesOne : fmt(t.scenesMany, { n: n(row.scenes) });
+  const text = script
+    ? fmt(t.ficheScript, {
+        scenes,
+        lines: row.lines === 1 ? t.linesOne : fmt(t.linesMany, { n: n(row.lines) }),
+        share: new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 0 }).format(row.share),
+      })
+    : fmt(t.ficheText, { scenes });
+  return <p className="bible-stats-line">{text}</p>;
 }

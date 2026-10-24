@@ -85,6 +85,8 @@ async function buildMenu() {
         enabled: inProject,
         action: () => replayShortcut("H", "KeyH", true),
       }),
+      // Onglet « Vérifier » du Manuscrit ou du Scénario.
+      await MenuItem.new({ id: "review", text: m.review, enabled: inProject && currentView === "manuscrit", action: () => sendCommand("review") }),
     ],
   });
   const goTo = (view: "toile" | "plan" | "bible" | "manuscrit") => () => useCosmos.getState().setView(view);

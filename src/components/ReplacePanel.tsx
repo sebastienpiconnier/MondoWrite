@@ -24,11 +24,11 @@ export function ReplacePanel() {
   const screenplay = useCosmos((s) => s.screenplay);
   const nodes = useCosmos((s) => s.nodes);
   const [find, setFind] = useState(init?.find ?? "");
-  const [replacement, setReplacement] = useState(renamed ? renamed.title : "");
+  const [replacement, setReplacement] = useState(renamed ? renamed.title : (init?.replacement ?? ""));
   // Renommer : un nom propre, mot entier, cartes comprises, partout où il est écrit tel quel ou en capitales.
   const [matchCase, setMatchCase] = useState(false);
   const [nameCase, setNameCase] = useState(!!renamed);
-  const [wholeWord, setWholeWord] = useState(!!renamed);
+  const [wholeWord, setWholeWord] = useState(!!renamed || !!init?.replacement);
   const [cards, setCards] = useState(!!renamed);
   const [scope, setScope] = useState<"scene" | "project">("project");
   const [done, setDone] = useState<string | null>(null);

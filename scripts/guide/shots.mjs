@@ -282,6 +282,9 @@ await step("relations", async () => {
   await page.getByRole("button", { name: T("Relations", "Relationships"), exact: true }).first().click();
   await wait(800);
   await shot("bible-relations");
+  await page.getByRole("button", { name: T("Chiffres", "Figures"), exact: true }).first().click();
+  await wait(800);
+  await shot("bible-chiffres");
   await page.getByRole("button", { name: T("Fiches", "Sheets"), exact: true }).first().click();
 });
 await step("lieux", async () => {
@@ -396,6 +399,31 @@ await step("import", async () => {
 });
 await view(T("Scénario", "Screenplay"));
 await shot("scenario");
+await step("vérifier et filtre", async () => {
+  // Une faute de frappe le temps de la capture (« LE LOUPP »), pour que l'onglet ait quelque chose à montrer.
+  const cue = page.locator(".sp-editor [data-type=character], .sp-editor .sp-character, .sp-editor p", { hasText: new RegExp(`^${T("LE LOUP", "THE WOLF")}$`) }).nth(1);
+  await cue.click();
+  await page.keyboard.press("End");
+  await page.keyboard.type("P");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type(T("Ici.", "Here."));
+  await wait(800);
+  await page.locator(".sp-bar button", { hasText: T(/^Vérifier/, /^Check/) }).first().click();
+  await wait(600);
+  await shot("scenario-verifier");
+  // On retire la faute : annuler dans l'éditeur.
+  await page.locator(".sp-editor").first().click();
+  for (let i = 0; i < 4; i++) await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
+  await wait(600);
+  await page.selectOption("#sp-filter-name", T("LE LOUP", "THE WOLF"));
+  await page.getByRole("button", { name: T("Ses répliques", "Their lines"), exact: true }).click();
+  await wait(800);
+  await shot("scenario-filtre");
+  // On rend tout le scénario et l'onglet « Dans cette scène » pour la suite.
+  await page.selectOption("#sp-filter-name", "");
+  await page.locator(".side-tabs button").first().click();
+  await wait(300);
+});
 await step("complétion", async () => {
   const target = page.getByText(D.lastLine).last();
   await target.scrollIntoViewIfNeeded();

@@ -315,3 +315,31 @@
   .bible-entry header .bible-fold, .bible-section-add { width: 44px; height: 44px; }
   .bible-section-tools .link-button { min-height: 44px; }
 }
+
+/* Personnages › Chiffres : tableau trié par colonne, répartition par genre (review/report.ts). */
+.char-stats { display: flex; flex-direction: column; gap: 14px; }
+.char-stats-tools { display: flex; justify-content: flex-end; }
+.char-stats-table { overflow-x: auto; }
+.char-stats table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.875rem; }
+.char-stats th, .char-stats td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; white-space: nowrap; }
+.char-stats thead th { border-bottom-color: var(--line-2); }
+.char-stats thead button { padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; min-height: 32px; }
+.char-stats thead button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.char-stats .is-number { text-align: right; }
+.char-stats thead .is-number button { margin-left: auto; display: block; }
+.char-stats tbody th { font-weight: 600; }
+.char-stats-name { color: var(--ink); font-weight: 600; }
+.char-stats-share { display: inline-flex; align-items: center; gap: 8px; }
+.char-stats-bar { display: inline-block; width: 110px; height: 8px; border-radius: 999px; background: var(--ground); overflow: hidden; }
+.char-stats-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+.char-stats-title { margin: 4px 0 0; font-size: 1rem; }
+.char-stats-genders { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+.char-stats-genders li { display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 0.8125rem; }
+.char-stats-gender { color: var(--ink-2); }
+.char-stats-big { font-size: 1.375rem; font-weight: 600; color: var(--ink); }
+.char-stats-note { margin: 0; font-size: 0.8125rem; }
+@media (pointer: coarse) { .char-stats thead button { min-height: 44px; } }
+
+/* Fiche d'un personnage : ses chiffres en une ligne sous le nom. */
+.bible-stats-line { margin: 2px 0 0; color: var(--ink-2); font-size: 0.8125rem; }
+.char-stats-sub { color: var(--ink-2); }

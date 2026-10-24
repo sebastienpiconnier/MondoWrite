@@ -1,5 +1,6 @@
 // Extensions TipTap de l'éditeur de scénario, assemblées.
 
+import { CharacterFilterExtension } from "./characterFilter";
 import { FocusWriting } from "../../components/focusWriting";
 import type { FocusHighlight } from "../../focusText";
 import type { Extensions } from "@tiptap/react";
@@ -76,5 +77,6 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     Autodetect.configure({ locale: options.locale }),
     ...(options.pages ? [Pages.configure(options.pages)] : []),
     ...(options.focus ? [FocusWriting.configure(options.focus)] : []),
+    CharacterFilterExtension,
   ];
 }

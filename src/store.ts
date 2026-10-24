@@ -3,6 +3,7 @@
 
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
+import type { CharacterFilter } from "./review/filter";
 import { copyBounds, copyText, linksWithin, pasteCopy, type CardCopy, type CopiedCard } from "./cardClipboard";
 import { appendHtml, fountainElements, notesAreSceneText, sceneBodyHtml, sceneToNotes, textElements, textToHtml, withoutLeadingSynopsis } from "./cardText";
 import { foldNovelNodes, foldNovelNotes, foldScreenplayNotes } from "./sceneNotes";
@@ -182,6 +183,9 @@ interface CosmosState {
    * États d'affichage du canevas, jamais enregistrés ni annulables : carte mise en avant (le reste estompé),
    * filtre, carte agrandie, menu d'une carte.
    */
+  /** Scénario : filtre par personnage (« Ses scènes », « Ses répliques »). Affichage, jamais enregistré. */
+  charFilter: CharacterFilter | null;
+  setCharFilter: (filter: CharacterFilter | null) => void;
   spotlightId: string | null;
   setSpotlight: (id: string | null) => void;
   filter: CanvasFilter;
@@ -665,6 +669,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       conflicts: [],
       saveError: null,
       spotlightId: null,
+      charFilter: null,
       filter: NO_FILTER,
       expandedId: null,
       cardMenu: null,
@@ -803,6 +808,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     dialog: null,
     // Ouvrir la corbeille efface le message « mis à la corbeille » : on y est.
     setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}), ...(dialog !== "card" ? { expandedId: null } : {}) }),
+    charFilter: null,
+    setCharFilter: (charFilter) => set({ charFilter }),
     spotlightId: null,
     setSpotlight: (spotlightId) => set({ spotlightId: spotlightId && get().nodes.some((n) => n.id === spotlightId) ? spotlightId : null }),
     filter: NO_FILTER,
@@ -1607,6 +1614,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         conflicts: [],
         saveError: null,
         spotlightId: null,
+        charFilter: null,
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,
@@ -1716,6 +1724,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         conflicts: [],
         saveError: null,
         spotlightId: null,
+        charFilter: null,
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,
@@ -2173,6 +2182,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         conflicts: [],
         saveError: null,
         spotlightId: null,
+        charFilter: null,
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,

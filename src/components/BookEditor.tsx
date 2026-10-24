@@ -42,6 +42,8 @@ export interface BookApi {
   sendToChutier: () => { passage: Passage } | { error: "empty" | "scene" };
   /** Remet un passage à sa place (à défaut de sa scène, à la fin de `fallback`). Rend où il est allé, ou null. */
   putBack: (passage: Passage, fallback: string | null) => "exact" | "near" | "elsewhere" | null;
+  /** Sélectionne un passage du texte d'une scène (onglet « Vérifier ») ; faux s'il n'est pas trouvé tel quel. */
+  selectText: (id: string, needle: string) => boolean;
 }
 
 /** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
@@ -387,6 +389,38 @@ export function BookEditor({
         ed.view.dispatch(out.tr.scrollIntoView());
         ed.view.focus();
         return { passage: out.passage };
+      },
+      selectText: (id, needle) => {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed || !needle) return false;
+        const g = sceneGroups(ed.state.doc).find((x) => x.id === id);
+        if (!g) return false;
+        let found: { from: number; to: number } | null = null;
+        // Paragraphe par paragraphe : le texte d'un bloc, puis sa position dans le document.
+        ed.state.doc.nodesBetween(g.markerPos, g.end, (node, pos) => {
+          if (found || !node.isTextblock) return !found;
+          const at = node.textContent.indexOf(needle);
+          if (at >= 0) {
+            // Position dans le document d'un caractère du bloc (le texte peut être coupé par une mise en forme).
+            const map = (target: number) => {
+              let seen = 0;
+              let result = -1;
+              node.forEach((child, childOffset) => {
+                if (result >= 0) return;
+                const len = child.textContent.length;
+                if (child.isText && target <= seen + len) result = pos + 1 + childOffset + (target - seen);
+                seen += len;
+              });
+              return result >= 0 ? result : pos + 1 + target;
+            };
+            found = { from: map(at), to: map(at + needle.length) };
+          }
+          return false;
+        });
+        if (!found) return false;
+        const { from, to } = found;
+        ed.chain().focus().setTextSelection({ from, to }).scrollIntoView().run();
+        return true;
       },
       putBack: (passage, fallback) => {
         const ed = editorRef.current;

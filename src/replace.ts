@@ -147,6 +147,8 @@ export interface ReplaceInit {
   sceneId: string | null;
   /** Carte à renommer partout (menu de la carte) : son titre change avec le texte. */
   renameId: string | null;
+  /** Remplacement proposé (onglet « Vérifier » : le nom à garder). Mot entier coché d'office. */
+  replacement?: string;
 }
 
 export interface ReplaceRequest extends ReplaceOptions {

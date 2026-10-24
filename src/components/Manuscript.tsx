@@ -21,6 +21,9 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { EdgeHandle } from "./EdgeHandle";
 import { fmt, useT } from "../i18n";
+import { checkManuscript, type Finding } from "../review/checks";
+import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
+import { useCommand } from "../commands";
 import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
@@ -129,6 +132,25 @@ export function Manuscript() {
   }, [notice]);
   const handlers = useRef<BookHandlers | null>(null);
   const bookApi = useRef<BookApi | null>(null);
+
+  // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
+  const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
+  const findings = useMemo(() => checkManuscript(manuscript, order, cards), [manuscript, order, cards]);
+  const openFindings = useOpenFindings(findings);
+  const openReview = () => {
+    setSideTab("review");
+    if (!panels.side) togglePanel("side");
+  };
+  useCommand("review", openReview);
+  const goToFinding = (f: Finding) => {
+    const id = f.sceneId;
+    if (!id) return;
+    setChosen(id);
+    // Au redessin suivant : la scène est dans l'éditeur, on y sélectionne le passage.
+    window.requestAnimationFrame(() => {
+      if (!f.needle || !bookApi.current?.selectText(id, f.needle)) bookApi.current?.scrollToScene(id);
+    });
+  };
   // Pages occupées par la scène en cours, mesurées par l'éditeur (null : feuille continue).
   const [place, setPlace] = useState<{ first: number; last: number } | null>(null);
 
@@ -583,6 +605,9 @@ export function Manuscript() {
             <button type="button" className="ghost-button ms-start-chapter" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onClick={() => useCosmos.getState().openReplace({ sceneId: current })}>
               {t.replace.button}
             </button>
+            <button type="button" className="ghost-button ms-start-chapter" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onClick={openReview}>
+              {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
+            </button>
             {/* La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle. */}
             <button
               type="button"
@@ -648,7 +673,17 @@ export function Manuscript() {
         </div>
       </div>
 
-      <aside className="sp-side">
+      <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : m.inScene}>
+        <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} />
+        {sideTab === "review" ? (
+          <ReviewPanel
+            findings={findings}
+            kind="text"
+            where={(f) => cards.find((c) => c.id === f.sceneId)?.title.trim() || m.untitled}
+            onGo={goToFinding}
+          />
+        ) : (
+        <>
         <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} />
         <section className="sp-box">
           <h2 className="sp-box-title">{m.inScene}</h2>
@@ -680,6 +715,8 @@ export function Manuscript() {
           </button>
         </section>
         <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
+        </>
+        )}
       </aside>
     </div>
   );

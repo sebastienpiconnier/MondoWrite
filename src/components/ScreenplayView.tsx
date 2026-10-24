@@ -21,6 +21,11 @@ import { SuggestionMenu } from "./SuggestionMenu";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
+import { checkScreenplay, type Finding } from "../review/checks";
+import { scenesWith, speakingNames } from "../review/filter";
+import { setCharacterFilter } from "../screenplay/editor/characterFilter";
+import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
+import { useCommand } from "../commands";
 import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
@@ -226,7 +231,8 @@ export function ScreenplayView() {
             return { lines: l.linesPerPage, pageLines: l.pageLines, marginTop: l.margin.top * 6 };
           },
           // Pas de pages en mode focus (comme dans le manuscrit) : le texte seul, sans coupures de page.
-          enabled: (dom) => !useCosmos.getState().focusMode && (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
+          // Filtre par personnage : des scènes sont cachées, la feuille passe en continu (les pages mentiraient).
+          enabled: (dom) => !useCosmos.getState().focusMode && !useCosmos.getState().charFilter && (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
         },
         // Mode focus : Échap le quitte, comme dans le manuscrit. Sinon il rend la main à la barre d'éléments.
         onEscape: () => {
@@ -469,6 +475,25 @@ export function ScreenplayView() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Onglet « Vérifier » : points à regarder dans le scénario (rien n'est corrigé tout seul).
+  const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
+  const findings = useMemo(() => checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), [elements, paper, nodes, lang]);
+  const openFindings = useOpenFindings(findings);
+  const openReview = () => {
+    setSideTab("review");
+    if (!panels.side) togglePanel("side");
+  };
+  useCommand("review", openReview);
+  // Filtre par personnage : ses scènes, ou ses répliques (le reste estompé). Affichage seulement.
+  const charFilter = useCosmos((s) => s.charFilter);
+  const setCharFilter = useCosmos((s) => s.setCharFilter);
+  const speakingList = useMemo(() => speakingNames(elements, lang), [elements, lang]);
+  const keptScenes = useMemo(() => (charFilter ? new Set(scenesWith(elements, charFilter.name)) : null), [elements, charFilter]);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dispatch(setCharacterFilter(editor.state, charFilter));
+  }, [editor, charFilter]);
+
   if (!editor || !screenplay) return null;
 
   const plural = (n: number, one: string, many: string) =>
@@ -498,6 +523,24 @@ export function ScreenplayView() {
     const dom = editor.view.nodeDOM(posOf(editor.state.doc, blocks(elements)[b].start));
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
     if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
+  };
+
+  const goToFinding = (f: Finding) => {
+    emit();
+    const pos = posOf(editor.state.doc, f.at);
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node) return;
+    // Passage caché par le filtre par personnage : on retire le filtre, puis on y va.
+    const hidden = editor.view.nodeDOM(pos);
+    if (hidden instanceof HTMLElement && hidden.classList.contains("is-filter-hidden")) {
+      useCosmos.getState().setCharFilter(null);
+      window.requestAnimationFrame(() => goToFinding(f));
+      return;
+    }
+    // Tout l'élément est sélectionné : on voit tout de suite de quoi il s'agit.
+    editor.chain().focus().setTextSelection({ from: pos + 1, to: pos + Math.max(1, node.nodeSize - 1) }).run();
+    const dom = editor.view.nodeDOM(pos);
+    if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "center" });
   };
 
   const goTo = (index: number) => {
@@ -613,6 +656,7 @@ export function ScreenplayView() {
 
   return (
     <div
+      data-char-filter={charFilter ? "" : undefined}
       className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}
       ref={rootRef}
     >
@@ -634,8 +678,39 @@ export function ScreenplayView() {
       <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
         <div className="eyebrow">{sp.scenesTitle}</div>
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
+        {(speakingList.length > 0 || charFilter) && (
+          <div className="sp-filter">
+            <label htmlFor="sp-filter-name">{sp.filterLabel}</label>
+            <select
+              id="sp-filter-name"
+              value={charFilter?.name ?? ""}
+              onChange={(e) => setCharFilter(e.target.value ? { name: e.target.value, mode: charFilter?.mode ?? "scenes" } : null)}
+            >
+              <option value="">{sp.filterAll}</option>
+              {/* Nom venu de la Bible sans réplique encore : il reste proposé. */}
+              {(charFilter && !speakingList.includes(charFilter.name) ? [...speakingList, charFilter.name] : speakingList).map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            {charFilter && (
+              <>
+                <div className="side-tabs" role="group" aria-label={sp.filterModes}>
+                  <button type="button" aria-pressed={charFilter.mode === "scenes"} onClick={() => setCharFilter({ ...charFilter, mode: "scenes" })}>
+                    {sp.filterScenes}
+                  </button>
+                  <button type="button" aria-pressed={charFilter.mode === "lines"} onClick={() => setCharFilter({ ...charFilter, mode: "lines" })}>
+                    {sp.filterLines}
+                  </button>
+                </div>
+                <p className="sp-detail">{fmt(sp.filterCount, { shown: keptScenes?.size ?? 0, total: scenes.length })}</p>
+              </>
+            )}
+          </div>
+        )}
         <ol className="sp-scene-list">
-          {scenes.map((s, k) => (
+          {scenes.map((s, k) => keptScenes && !keptScenes.has(s.index) ? null : (
             <li
               key={s.index}
               className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}`}
@@ -785,6 +860,17 @@ export function ScreenplayView() {
           <button type="button" className="sp-option" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onPointerDown={(e) => e.preventDefault()} onClick={openReplace}>
             {t.replace.button}
           </button>
+          <button type="button" className="sp-option" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onPointerDown={(e) => e.preventDefault()} onClick={openReview}>
+            {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
+          </button>
+          {charFilter && (
+            <p className="sp-filter-banner" role="status">
+              <span>{fmt(charFilter.mode === "lines" ? sp.filterBannerLines : sp.filterBannerScenes, { name: charFilter.name })}</span>
+              <button type="button" aria-label={sp.filterClearAria} title={sp.filterClear} onClick={() => setCharFilter(null)}>
+                ×
+              </button>
+            </p>
+          )}
         </div>
         <div className="sr-only" aria-live="polite">
           {current.type ? sp.elements[current.type] : ""}
@@ -795,7 +881,7 @@ export function ScreenplayView() {
         </div>
 
         <div className="sp-scroll">
-          {!focusMode && <TitlePage paper={paper} onChange={setTitleField} />}
+          {!focusMode && !charFilter && <TitlePage paper={paper} onChange={setTitleField} />}
           <div
             className={`sp-page${focusMode && (writing.highlight === "sentence" || writing.highlight === "paragraph") ? " is-dimmed" : ""}`}
             data-paper={paper}
@@ -855,7 +941,17 @@ export function ScreenplayView() {
       <EdgeHandle side="left" open={panels.scenes} label={t.manuscript.panelScenes} onClick={() => togglePanel("scenes")} />
       <EdgeHandle side="right" open={panels.side} label={t.manuscript.panelSide} onClick={() => togglePanel("side")} />
 
-      <aside className="sp-side" aria-label={sp.inSceneTitle}>
+      <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : sp.inSceneTitle}>
+        <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} />
+        {sideTab === "review" ? (
+          <ReviewPanel
+            findings={findings}
+            kind="script"
+            where={(f) => (f.scene ? fmt(t.review.scene, { n: f.scene }) : t.review.beforeFirst)}
+            onGo={goToFinding}
+          />
+        ) : (
+        <>
         <StatsBox
           stats={stats}
           done={scenes.filter((s) => (statusCards.get(s.cardId ?? "") ? sceneStatus(statusCards.get(s.cardId!)!) === "fini" : false)).length}
@@ -926,6 +1022,8 @@ export function ScreenplayView() {
           </>
         )}
         <Chutier passages={chutier} cards={nodes.map((n) => n.data)} onPutBack={putBack} />
+        </>
+        )}
       </aside>
     </div>
   );

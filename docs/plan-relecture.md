@@ -126,13 +126,13 @@ personnage, chiffres des personnages dans la Bible.
 
 ## Étapes
 
-- [ ] `names.ts` et `checks.ts` (scénario), tests
-- [ ] `checks.ts` (roman), tests
-- [ ] `ReviewPanel` dans le Scénario, puis dans le Manuscrit ; menu du Mac
-- [ ] Filtre par personnage : `scenesWith`, décorations, choix dans la liste des scènes, lien depuis la Bible
-- [ ] `report.ts`, présentation « Chiffres » de la Bible, ligne de chiffres dans la fiche, export CSV
-- [ ] i18n complet, guide (fr, en), captures, PDF, CLAUDE.md
-- [ ] Vérification à la main : roman et scénario, tactile, anglais, mode sombre
+- [x] `names.ts` et `checks.ts` (scénario), tests
+- [x] `checks.ts` (roman), tests
+- [x] `ReviewPanel` dans le Scénario, puis dans le Manuscrit ; menu du Mac
+- [x] Filtre par personnage : `scenesWith`, décorations, choix dans la liste des scènes, lien depuis la Bible
+- [x] `report.ts`, présentation « Chiffres » de la Bible, ligne de chiffres dans la fiche, export CSV
+- [x] i18n complet, guide (fr, en), captures, PDF, CLAUDE.md
+- [x] Vérification à la main : roman et scénario (navigateur, Playwright). Reste : tactile et mode sombre sur un vrai iPad
 
 ## Plus tard (lot 2)
 
