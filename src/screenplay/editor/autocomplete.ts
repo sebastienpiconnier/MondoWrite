@@ -62,6 +62,9 @@ const SMALL_WORDS = new Set([
   ...["the", "a", "an", "and", "or", "in", "on", "at", "to", "for", "by", "with", "from", "into"],
 ]);
 
+// Mots élidés devant une apostrophe : le mot qui suit garde sa majuscule (« l’École », « d’Artagnan », « O’Brien »).
+const ELISIONS = new Set(["l", "d", "j", "m", "n", "s", "t", "c", "qu", "jusqu", "lorsqu", "puisqu", "o"]);
+
 /** « LE GARDIEN » → « Le Gardien » : titre de la carte créée depuis un nom en majuscules. Un lieu
  *  (`place`) garde aussi les articles et prépositions en minuscules, sauf en tête. */
 export function titleCase(name: string, locale: string, place = false): string {
@@ -76,8 +79,9 @@ export function titleCase(name: string, locale: string, place = false): string {
       const isFirst = first;
       first = false;
       // Élision : « l'auberge », « d'Artagnan » ; le mot qui suit l'apostrophe prend sa majuscule.
+      // Seulement après une vraie élision (et O’Brien) : « GRANDMOTHER'S » donne « Grandmother's ».
       const elided = /^(\p{L}+)(['’])(.+)$/u.exec(word);
-      if (elided) {
+      if (elided && ELISIONS.has(elided[1])) {
         const head = small.has(elided[1]) && !isFirst ? elided[1] : up(elided[1]);
         return head + elided[2] + up(elided[3]);
       }

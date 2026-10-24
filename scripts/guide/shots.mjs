@@ -424,6 +424,20 @@ await step("vérifier et filtre", async () => {
   await page.locator(".side-tabs button").first().click();
   await wait(300);
 });
+await step("statistiques des décors", async () => {
+  await view("Bible");
+  await wait(600);
+  await page.getByRole("button", { name: T(/^Décors/, /^Locations/) }).click();
+  await wait(800);
+  const group = page.locator('[data-group="lieu"]');
+  await group.getByRole("button", { name: T("Statistiques", "Statistics"), exact: true }).click();
+  await wait(800);
+  await group.scrollIntoViewIfNeeded();
+  await shot("bible-decors-stats");
+  await group.getByRole("button", { name: T("Fiches", "Sheets"), exact: true }).click();
+  await view(T("Scénario", "Screenplay"));
+  await wait(600);
+});
 await step("complétion", async () => {
   const target = page.getByText(D.lastLine).last();
   await target.scrollIntoViewIfNeeded();

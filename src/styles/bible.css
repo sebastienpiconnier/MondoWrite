@@ -338,6 +338,12 @@
 .char-stats-gender { color: var(--ink-2); }
 .char-stats-big { font-size: 1.375rem; font-weight: 600; color: var(--ink); }
 .char-stats-note { margin: 0; font-size: 0.8125rem; }
+/* Statistiques des lieux : colonnes non triables (même allure que les titres triables) et personnages. */
+.char-stats-head { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
+.place-stats .char-stats-bar { width: 64px; }
+.place-stats th.is-number, .place-stats thead th:has(.char-stats-head) { text-align: right; }
+.place-stats-who { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.place-stats-people { max-width: 22em; white-space: normal; color: var(--ink-2); font-size: 0.8125rem; font-weight: 400; }
 @media (pointer: coarse) { .char-stats thead button { min-height: 44px; } }
 
 /* Fiche d'un personnage : ses chiffres en une ligne sous le nom. */

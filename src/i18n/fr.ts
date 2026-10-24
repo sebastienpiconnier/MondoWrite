@@ -1249,6 +1249,36 @@ export const fr = {
   },
 
   // Carte des relations (rubrique Personnages de la Bible).
+  // Bible › Lieux › Statistiques (Décors dans un scénario) : relus dans le texte, rien n'est enregistré.
+  placeStats: {
+    tabsAria: "Présentation des lieux",
+    columns: {
+      scenes: "Scènes",
+      pages: "Pages",
+      words: "Mots de ses scènes",
+      share: "Part du récit",
+      appear: "Apparitions",
+      setting: "Int. / Ext.",
+      moment: "Jour / Nuit",
+    },
+    settingCell: "Int. {int} · Ext. {ext}",
+    momentCell: "Jour {day} · Nuit {night}",
+    pagesValue: "≈ {n}",
+    more: "+{n}",
+    csvHeadersScript: ["Décor", "Scènes", "Pages", "Part (%)", "Première scène", "Dernière scène", "Intérieur", "Extérieur", "Jour", "Nuit", "Personnages"],
+    csvHeadersText: ["Lieu", "Scènes", "Mots", "Part (%)", "Première scène", "Dernière scène", "Personnages"],
+    summaryTitle: "Dans tout le scénario",
+    int: "Intérieur",
+    ext: "Extérieur",
+    day: "Jour",
+    night: "Nuit",
+    ofScenes: "{n} sur {total} scènes",
+    noteScript: "Lu dans les en-têtes de scène (INT. ou EXT., moment). Pages estimées : une page vaut environ une minute. Un décor écrit sans carte a sa propre ligne.",
+    noteText: "Une scène se passe dans un lieu quand un fil l’y relie sur le canevas, ou quand son texte le nomme. Ses personnages sont ceux que le texte cite ou qu’un fil relie à la scène.",
+    ficheIn: "Dans {scenes}",
+    fichePages: "≈ {n} p.",
+    empty: "Aucun lieu pour l’instant.",
+  },
   // Bible › Personnages › Statistiques : relus dans le texte, rien n'est enregistré.
   charStats: {
     columns: {

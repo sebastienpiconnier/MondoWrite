@@ -166,6 +166,8 @@ describe("titre d'une carte créée", () => {
     expect(titleCase("LE GARDIEN", "fr")).toBe("Le Gardien");
     expect(titleCase("ÉLODIE D’ARC", "fr")).toBe("Élodie d’Arc");
     expect(titleCase("MARIE-CLAIRE", "fr")).toBe("Marie-Claire");
+    expect(titleCase("GRANDMOTHER'S HOUSE", "en", true)).toBe("Grandmother's House");
+    expect(titleCase("SEAN O'BRIEN", "en")).toBe("Sean O'Brien");
   });
 });
 

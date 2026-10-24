@@ -1209,6 +1209,35 @@ export const en: Messages = {
   },
 
   // Relationship map (Characters section of the Bible).
+  placeStats: {
+    tabsAria: "How to show the places",
+    columns: {
+      scenes: "Scenes",
+      pages: "Pages",
+      words: "Words of its scenes",
+      share: "Share of the story",
+      appear: "Appearances",
+      setting: "Int. / Ext.",
+      moment: "Day / Night",
+    },
+    settingCell: "Int. {int} · Ext. {ext}",
+    momentCell: "Day {day} · Night {night}",
+    pagesValue: "≈ {n}",
+    more: "+{n}",
+    csvHeadersScript: ["Location", "Scenes", "Pages", "Share (%)", "First scene", "Last scene", "Interior", "Exterior", "Day", "Night", "Characters"],
+    csvHeadersText: ["Place", "Scenes", "Words", "Share (%)", "First scene", "Last scene", "Characters"],
+    summaryTitle: "Across the screenplay",
+    int: "Interior",
+    ext: "Exterior",
+    day: "Day",
+    night: "Night",
+    ofScenes: "{n} of {total} scenes",
+    noteScript: "Read from the scene headings (INT. or EXT., time of day). Estimated pages: one page is about one minute. A location written without a card gets its own row.",
+    noteText: "A scene takes place somewhere when a thread links it to that place on the canvas, or when its text names it. Its characters are the ones the text names or a thread links to the scene.",
+    ficheIn: "In {scenes}",
+    fichePages: "≈ {n} pp.",
+    empty: "No place yet.",
+  },
   charStats: {
     columns: {
       name: "Character",

@@ -29,6 +29,9 @@ import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
 import { CharacterStats } from "./CharacterStats";
+import { PlaceStats } from "./PlaceStats";
+import { usePagination } from "./usePagination";
+import { novelPlaces, screenplayPlaces, settingSummary, type PlaceRow } from "../review/places";
 import { novelReport, screenplayReport, type CharacterRow } from "../review/report";
 import { EdgeHandle } from "./EdgeHandle";
 
@@ -102,6 +105,15 @@ export function Bible() {
     return novelReport(manuscriptText, bookOrder(nodes, planState), cards);
   }, [kind, screenplay, nodes, lang, manuscriptText, planState]);
   const rowOf = useMemo(() => new Map(charRows.filter((r) => r.id).map((r) => [r.id!, r])), [charRows]);
+  // Statistiques des lieux (décors d'un scénario), relues dans le texte comme celles des personnages.
+  const pagination = usePagination();
+  const placeRows = useMemo(() => {
+    const cards = nodes.map((n) => n.data);
+    if (kind === "scenario") return screenplay ? screenplayPlaces(screenplay.elements, cards, pagination, lang) : [];
+    return novelPlaces(manuscriptText, bookOrder(nodes, planState), cards, edges);
+  }, [kind, screenplay, nodes, lang, manuscriptText, planState, edges, pagination]);
+  const placeOf = useMemo(() => new Map(placeRows.filter((r) => r.id).map((r) => [r.id!, r])), [placeRows]);
+  const summary = useMemo(() => (kind === "scenario" && screenplay ? settingSummary(screenplay.elements) : undefined), [kind, screenplay]);
   const seeLines = (name: string) => {
     useCosmos.getState().setCharFilter({ name: name.toLocaleUpperCase(lang), mode: "lines" });
     useCosmos.getState().setView("manuscrit");
@@ -174,6 +186,8 @@ export function Bible() {
   // Personnages : fiches, carte des relations ou chiffres (état d'affichage, non enregistré).
   const [charView, setCharView] = useState<"cards" | "map" | "stats">("cards");
   const relations = charView !== "cards";
+  // Lieux : fiches ou statistiques (état d'affichage).
+  const [placeView, setPlaceView] = useState<"cards" | "stats">("cards");
   const shown = sections.find((s) => s.type === current) ?? sections.find((s) => s.cards.length > 0) ?? sections[0];
 
   // Arrivée depuis le canevas : la bonne partie, la fiche à l'écran, l'assistant ouvert si demandé.
@@ -298,6 +312,7 @@ export function Bible() {
                   />
                 </h3>
                 {type === "personnage" && rowOf.get(card.id) && <StatsLine row={rowOf.get(card.id)!} script={kind === "scenario"} />}
+                {type === "lieu" && placeOf.get(card.id) && <PlaceLine row={placeOf.get(card.id)!} script={kind === "scenario"} />}
                 {(type === "personnage" || type === "lieu") && <Poster card={card} />}
                 </div>
                 <button
@@ -497,7 +512,7 @@ export function Bible() {
                   <span className="toc-count">{group.cards.length}</span>
                 </h2>
                 <div className="bible-section-tools">
-                  {group.cards.length > 0 && !(group.type === "personnage" && relations) && (
+                  {group.cards.length > 0 && !(group.type === "personnage" && relations) && !(group.type === "lieu" && placeView === "stats") && (
                     <>
                       <button
                         type="button"
@@ -529,6 +544,16 @@ export function Bible() {
                     <span aria-hidden="true">+</span>
                   </button>
                 </div>
+                {group.type === "lieu" && group.cards.length > 0 && (
+                  <div className="sq-modes" role="group" aria-label={t.placeStats.tabsAria}>
+                    <button type="button" aria-pressed={placeView === "cards"} onClick={() => setPlaceView("cards")}>
+                      {t.relations.tabCards}
+                    </button>
+                    <button type="button" aria-pressed={placeView === "stats"} onClick={() => setPlaceView("stats")}>
+                      {t.relations.tabStats}
+                    </button>
+                  </div>
+                )}
                 {group.type === "personnage" && group.cards.length > 0 && (
                   <div className="sq-modes" role="group" aria-label={t.relations.tabsAria}>
                     <button type="button" aria-pressed={charView === "cards"} onClick={() => setCharView("cards")}>
@@ -543,7 +568,11 @@ export function Bible() {
                   </div>
                 )}
               </div>
-              {group.type === "personnage" && charView === "stats" && group.cards.length > 0 ? (
+              {group.type === "lieu" && placeView === "stats" && group.cards.length > 0 ? (
+                <div className="bible-entry">
+                  <PlaceStats rows={placeRows} kind={kind === "scenario" ? "script" : "text"} summary={summary} onOpen={openCard} />
+                </div>
+              ) : group.type === "personnage" && charView === "stats" && group.cards.length > 0 ? (
                 <div className="bible-entry">
                   <CharacterStats rows={charRows} kind={kind === "scenario" ? "script" : "text"} onOpen={openCard} onSeeLines={kind === "scenario" ? seeLines : undefined} />
                 </div>
@@ -586,4 +615,18 @@ function StatsLine({ row, script }: { row: CharacterRow; script: boolean }) {
       })
     : fmt(t.ficheText, { scenes });
   return <p className="bible-stats-line">{text}</p>;
+}
+
+/** Ligne discrète sous le nom d'un lieu : scènes, et pour un décor pages, intérieur ou extérieur, jour ou nuit. */
+function PlaceLine({ row, script }: { row: PlaceRow; script: boolean }) {
+  const t = useT();
+  const lang = useSettings((s) => s.lang);
+  if (row.scenes === 0) return null;
+  const n = (v: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(v);
+  const parts = [fmt(t.placeStats.ficheIn, { scenes: row.scenes === 1 ? t.charStats.scenesOne : fmt(t.charStats.scenesMany, { n: n(row.scenes) }) })];
+  if (script) {
+    if (row.pages) parts.push(fmt(t.placeStats.fichePages, { n: n(row.pages) }));
+    parts.push(fmt(t.placeStats.settingCell, { int: n(row.int), ext: n(row.ext) }), fmt(t.placeStats.momentCell, { day: n(row.day), night: n(row.night) }));
+  }
+  return <p className="bible-stats-line">{parts.join(" · ")}</p>;
 }
