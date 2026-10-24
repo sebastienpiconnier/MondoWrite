@@ -31,7 +31,7 @@ export function editDistance(a: string, b: string, max = 2): number {
 
 /**
  * Deux noms différents qui désignent sans doute la même personne : identiques une fois repliés, ou à une
- * lettre près pour des noms d'au moins 5 lettres (en deçà, « LÉA » et « LÉO » sont deux personnages).
+ * lettre près pour des noms d'au moins 4 lettres (en deçà, « LÉA » et « LÉO » sont deux personnages).
  */
 export function similarNames(a: string, b: string): boolean {
   if (a === b) return false;
@@ -39,6 +39,6 @@ export function similarNames(a: string, b: string): boolean {
   const fb = foldName(b);
   if (!fa || !fb) return false;
   if (fa === fb) return true;
-  if (Math.min(fa.length, fb.length) < 5) return false;
+  if (Math.min(fa.length, fb.length) < 4) return false;
   return editDistance(fa, fb, 1) <= 1;
 }

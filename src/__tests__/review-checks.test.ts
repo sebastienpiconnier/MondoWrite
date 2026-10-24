@@ -17,6 +17,7 @@ describe("noms presque identiques", () => {
   it("une lettre d'écart pour un nom d'au moins 5 lettres ; pas pour deux noms courts", () => {
     expect(similarNames("CHAPPERON", "CHAPERON")).toBe(true);
     expect(similarNames("LÉA", "LÉO")).toBe(false);
+    expect(similarNames("LOUP", "LOUPP")).toBe(true);
     expect(similarNames("MARIE", "MARIUS")).toBe(false);
     expect(editDistance("MARIE", "MARIUS", 1)).toBe(2);
   });

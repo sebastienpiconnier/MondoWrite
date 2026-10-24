@@ -28,6 +28,8 @@ function decorate(doc: PMNode, filter: CharacterFilter | null): DecorationSet {
   nodes.forEach(({ node, pos }, i) => {
     if (seen[i] === "hide") decorations.push(Decoration.node(pos, pos + node.nodeSize, { class: "is-filter-hidden" }));
     else if (seen[i] === "dim") decorations.push(Decoration.node(pos, pos + node.nodeSize, { class: "is-filter-dim" }));
+    // « Ses répliques » : ce qu'il dit est surligné, pour ressortir nettement du texte estompé.
+    else if (filter.mode === "lines") decorations.push(Decoration.node(pos, pos + node.nodeSize, { class: "is-filter-lit" }));
   });
   return DecorationSet.create(doc, decorations);
 }

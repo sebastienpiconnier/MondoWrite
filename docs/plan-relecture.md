@@ -92,7 +92,7 @@ interface Finding {
 
 ## 3. Rapports
 
-- Dans la Bible, rubrique Personnages : une troisième présentation, **« Fiches · Relations · Chiffres »** (décidé le
+- Dans la Bible, rubrique Personnages : une troisième présentation, **« Fiches · Relations · Statistiques »** (décidé le
   24 oct. 2026), état d'affichage comme « Relations ». Pas de fenêtre : le tableau a la largeur de la page.
   - un clic sur un nom ouvre sa fiche ; dans un scénario, « Ses répliques » mène au filtre par personnage ;
   - chaque fiche personnage montre aussi une ligne discrète sous le nom : « 3 scènes · 14 répliques · 38 % du temps
@@ -105,7 +105,7 @@ interface Finding {
 - Tri par colonne, export CSV par `storage.saveAs` (un seul format, lisible par tout tableur).
 - Le tableau suit `useVocab` (Décor, Lieu…) et la langue pour les nombres (`Intl`).
 - Fichiers : `src/review/report.ts` (nouveau, pur), `src/components/CharacterStats.tsx` (nouveau), `Bible.tsx`
-  (présentation « Chiffres », ligne de la fiche), i18n, test des comptes.
+  (présentation « Statistiques », ligne de la fiche), i18n, test des comptes.
 
 ## Accessibilité et multiplateforme
 
@@ -130,7 +130,7 @@ personnage, chiffres des personnages dans la Bible.
 - [x] `checks.ts` (roman), tests
 - [x] `ReviewPanel` dans le Scénario, puis dans le Manuscrit ; menu du Mac
 - [x] Filtre par personnage : `scenesWith`, décorations, choix dans la liste des scènes, lien depuis la Bible
-- [x] `report.ts`, présentation « Chiffres » de la Bible, ligne de chiffres dans la fiche, export CSV
+- [x] `report.ts`, présentation « Statistiques » de la Bible, ligne de chiffres dans la fiche, export CSV
 - [x] i18n complet, guide (fr, en), captures, PDF, CLAUDE.md
 - [x] Vérification à la main : roman et scénario (navigateur, Playwright). Reste : tactile et mode sombre sur un vrai iPad
 

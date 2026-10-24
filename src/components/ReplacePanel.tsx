@@ -28,7 +28,9 @@ export function ReplacePanel() {
   // Renommer : un nom propre, mot entier, cartes comprises, partout où il est écrit tel quel ou en capitales.
   const [matchCase, setMatchCase] = useState(false);
   const [nameCase, setNameCase] = useState(!!renamed);
-  const [wholeWord, setWholeWord] = useState(!!renamed || !!init?.replacement);
+  // Venu de « Vérifier » (nom à corriger) : mot entier, et le curseur dans le champ du remplacement.
+  const fromReview = !!init?.find && init.replacement !== undefined;
+  const [wholeWord, setWholeWord] = useState(!!renamed || fromReview);
   const [cards, setCards] = useState(!!renamed);
   const [scope, setScope] = useState<"scene" | "project">("project");
   const [done, setDone] = useState<string | null>(null);
@@ -89,11 +91,11 @@ export function ReplacePanel() {
       <h2 id="app-dialog-title">{renamed ? fmt(r.renameTitle, { title: renamed.title }) : r.title}</h2>
       <label className="replace-field">
         <span>{r.find}</span>
-        <input type="search" value={find} autoFocus={!renamed} autoComplete="off" onChange={(e) => (setFind(e.target.value), setDone(null))} />
+        <input type="search" value={find} autoFocus={!renamed && !fromReview} autoComplete="off" onChange={(e) => (setFind(e.target.value), setDone(null))} />
       </label>
       <label className="replace-field">
         <span>{renamed ? r.newName : r.replaceWith}</span>
-        <input type="text" value={replacement} autoFocus={!!renamed} autoComplete="off" onChange={(e) => (setReplacement(e.target.value), setDone(null))} />
+        <input type="text" value={replacement} autoFocus={!!renamed || fromReview} autoComplete="off" onChange={(e) => (setReplacement(e.target.value), setDone(null))} />
       </label>
       <div className="replace-options">
         {renamed ? (

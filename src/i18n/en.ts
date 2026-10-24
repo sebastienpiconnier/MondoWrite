@@ -1247,7 +1247,7 @@ export const en: Messages = {
     tabsAria: "How to show the characters",
     tabCards: "Sheets",
     tabMap: "Relationships",
-    tabStats: "Figures",
+    tabStats: "Statistics",
     noCharacters: "No characters yet.",
     noLinks: "No thread between two characters yet.",
     hint: "Draw a thread between two characters on the canvas and name it (“sister of”, “betrays”): it shows up here. Tap a portrait to open their sheet.",

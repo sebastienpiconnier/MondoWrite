@@ -1249,7 +1249,7 @@ export const fr = {
   },
 
   // Carte des relations (rubrique Personnages de la Bible).
-  // Bible › Personnages › Chiffres : relus dans le texte, rien n'est enregistré.
+  // Bible › Personnages › Statistiques : relus dans le texte, rien n'est enregistré.
   charStats: {
     columns: {
       name: "Personnage",
@@ -1288,7 +1288,7 @@ export const fr = {
     tabsAria: "Présentation des personnages",
     tabCards: "Fiches",
     tabMap: "Relations",
-    tabStats: "Chiffres",
+    tabStats: "Statistiques",
     noCharacters: "Aucun personnage pour l’instant.",
     noLinks: "Aucun fil entre deux personnages pour l’instant.",
     hint: "Tire un fil entre deux personnages sur le canevas et nomme-le (« sœur de », « trahit ») : il apparaît ici. Touche un portrait pour ouvrir sa fiche.",

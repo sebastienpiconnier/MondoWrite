@@ -282,7 +282,7 @@ await step("relations", async () => {
   await page.getByRole("button", { name: T("Relations", "Relationships"), exact: true }).first().click();
   await wait(800);
   await shot("bible-relations");
-  await page.getByRole("button", { name: T("Chiffres", "Figures"), exact: true }).first().click();
+  await page.getByRole("button", { name: T("Statistiques", "Statistics"), exact: true }).first().click();
   await wait(800);
   await shot("bible-chiffres");
   await page.getByRole("button", { name: T("Fiches", "Sheets"), exact: true }).first().click();

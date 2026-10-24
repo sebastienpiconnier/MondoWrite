@@ -168,6 +168,10 @@
 /* Filtre par personnage : scènes cachées, texte des autres estompé (toujours modifiable). */
 .sp-editor .is-filter-hidden { display: none; }
 .sp-editor .is-filter-dim { color: var(--page-ink-dim); }
+/* Ses répliques : surlignées (affichage seul, n'ajoute aucune hauteur). */
+.sp-editor .is-filter-lit { background: var(--accent-soft); box-shadow: 0 0 0 0.3em var(--accent-soft); border-radius: 0.15em; width: fit-content; color: var(--ink); font-weight: 700; }
+/* Choix du mode : l'option choisie en accent plein, pas seulement en blanc sur gris. */
+.sp-filter .side-tabs button[aria-pressed="true"] { background: var(--accent); color: var(--surface); box-shadow: none; }
 .sp-filter { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
 .sp-filter label { font-size: 0.8125rem; color: var(--ink-2); }
 .sp-filter select { min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
