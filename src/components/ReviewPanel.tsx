@@ -85,19 +85,9 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
                     </button>
                   )}
                   {f.rule === "unknownCharacter" && (
-                    <>
-                      <button type="button" className="review-primary" onClick={() => useCosmos.getState().addTitledCard("personnage", titleCase(f.names![0], lang))}>
-                        {t.createCard}
-                      </button>
-                      {/* Une faute de frappe : renommer vers le bon nom, à taper dans la fenêtre. */}
-                      <button
-                        type="button"
-                        className="review-ignore"
-                        onClick={() => useCosmos.getState().openReplace({ find: f.names![0], replacement: "", sceneId: null, renameId: null })}
-                      >
-                        {t.rename}
-                      </button>
-                    </>
+                    <button type="button" className="review-primary" onClick={() => useCosmos.getState().addTitledCard("personnage", titleCase(f.names![0], lang))}>
+                      {t.createCard}
+                    </button>
                   )}
                   <button type="button" className="review-ignore" onClick={() => ignore(f.key)}>
                     {t.ignore}

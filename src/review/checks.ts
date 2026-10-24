@@ -80,7 +80,9 @@ export function checkScreenplay(elements: ScreenplayElement[], layout: Layout, c
   for (let i = 0; i < names.length; i++) {
     for (let j = i + 1; j < names.length; j++) {
       if (!similarNames(names[i], names[j])) continue;
-      const [rare, common] = who.get(names[i])!.lines <= who.get(names[j])!.lines ? [names[i], names[j]] : [names[j], names[i]];
+      // Le bon nom est celui qui a sa carte, sinon le plus employé.
+      const weight = (n: string) => (hasCard(n, cards) ? 1e6 : 0) + who.get(n)!.lines;
+      const [rare, common] = weight(names[i]) <= weight(names[j]) ? [names[i], names[j]] : [names[j], names[i]];
       const pair = `${rare}|${common}`;
       if (seen.has(pair)) continue;
       seen.add(pair);
@@ -89,7 +91,9 @@ export function checkScreenplay(elements: ScreenplayElement[], layout: Layout, c
   }
 
   // Personnage qui parle sans carte (il n'apparaît ni dans la Bible ni sur le canevas).
-  for (const [name, { first }] of who) if (!hasCard(name, cards)) out.push(make("unknownCharacter", first, { names: [name] }));
+  // Un nom déjà signalé comme variante d'un autre ne l'est pas deux fois : « Renommer partout » suffit.
+  const variants = new Set([...seen].map((pair) => pair.split("|")[0]));
+  for (const [name, { first }] of who) if (!hasCard(name, cards) && !variants.has(name)) out.push(make("unknownCharacter", first, { names: [name] }));
 
   elements.forEach((el, i) => {
     const text = el.text;

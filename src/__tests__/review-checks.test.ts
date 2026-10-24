@@ -65,8 +65,8 @@ describe("vérification d'un scénario", () => {
     expect(byRule("similarNames")[0].counts).toEqual([1, 2]);
     expect(byRule("similarNames")[0].scene).toBe(2);
   });
-  it("personnage sans carte, surnoms compris", () => {
-    expect(byRule("unknownCharacter").map((f) => f.names?.[0])).toEqual(["CHAPPERON", "BÛCHERON"]);
+  it("personnage sans carte, surnoms compris (la variante d'un nom connu n'est pas comptée deux fois)", () => {
+    expect(byRule("unknownCharacter").map((f) => f.names?.[0])).toEqual(["BÛCHERON"]);
   });
   it("action trop longue, en-tête sans moment, personnage sans réplique, espaces en trop", () => {
     expect(byRule("longAction")).toHaveLength(1);
@@ -108,5 +108,16 @@ describe("vérification d'un roman", () => {
     const spaces = found.filter((f) => f.rule === "extraSpaces");
     expect(spaces).toHaveLength(2);
     expect(spaces[0].text).toContain("Kerdonis");
+  });
+});
+
+describe("variante d'un nom connu", () => {
+  it("n'est signalée qu'une fois, avec le nom de la carte comme bon nom", () => {
+    const els = script("INT. SALON - JOUR\n\nETHANN\nSalut.\n\nETHAN\nBonjour.");
+    const f = checkScreenplay(els, LAYOUTS.a4, [card("e", "Ethan")], "fr");
+    const similar = f.filter((x) => x.rule === "similarNames");
+    expect(similar).toHaveLength(1);
+    expect(similar[0].names).toEqual(["ETHANN", "ETHAN"]);
+    expect(f.some((x) => x.rule === "unknownCharacter")).toBe(false);
   });
 });
