@@ -5,6 +5,8 @@
 import type { CardData, CardType, Link } from "./types";
 import { detectCards, type Manuscript } from "./manuscript";
 import { mentionedIds } from "./mentions";
+import type { ScreenplayElement } from "./screenplay/model";
+import { characterName, headingParts, listScenes } from "./screenplay/scenes";
 
 /** « linked » : un fil relie la carte à la scène. « cited » : la scène la cite, sans fil. */
 export type Presence = "linked" | "cited" | "none";
@@ -53,4 +55,25 @@ export function timeline(
       // Les lignes les plus présentes en haut ; à égalité, par titre.
       .sort((a, b) => b.count - a.count || a.card.title.localeCompare(b.card.title, lang)),
   })).filter((group) => group.rows.length > 0);
+}
+
+const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/**
+ * Scénario : ce que chaque scène « cite », à lire comme le texte d'une scène de roman (par carte Scène) :
+ * le décor de son en-tête, les personnages qui y parlent et l'action. Les répliques n'en font pas partie
+ * (un nom dit par quelqu'un ne met pas ce personnage dans la scène).
+ */
+export function screenplaySceneTexts(elements: ScreenplayElement[]): Manuscript {
+  const out: Manuscript = {};
+  for (const scene of listScenes(elements)) {
+    if (!scene.cardId) continue;
+    const parts = [headingParts(scene.text).location];
+    for (const el of elements.slice(scene.index + 1, scene.end)) {
+      if (el.type === "character") parts.push(characterName(el.text));
+      else if (el.type === "action") parts.push(el.text);
+    }
+    out[scene.cardId] = parts.filter(Boolean).map((p) => `<p>${escapeHtml(p)}</p>`).join("");
+  }
+  return out;
 }

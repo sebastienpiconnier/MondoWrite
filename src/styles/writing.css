@@ -289,6 +289,12 @@
   .topbar { display: flex; flex-wrap: wrap; justify-content: space-between; }
   .views { order: 3; width: 100%; justify-content: center; margin: 0; }
 }
+/* Même chose dès que le contenu ne tient plus sur une ligne, quelle que soit la largeur (useTopbarFit : taille du
+   texte de l'iPad, durée d'un scénario, langue plus longue). Sans cela les vues passaient sur le logo. */
+@media (min-width: 721px) {
+  .topbar.is-stacked { display: flex; flex-wrap: wrap; justify-content: space-between; }
+  .topbar.is-stacked .views { order: 3; width: 100%; justify-content: center; margin: 0; }
+}
 /* iPad en paysage (1101 à 1280 px) : sans le slogan, le titre du projet garde sa place entre le logo et les vues. */
 @media (min-width: 1101px) and (max-width: 1280px) { .brand-tagline { display: none; } }
 @media (min-width: 1101px) and (max-width: 1180px) {

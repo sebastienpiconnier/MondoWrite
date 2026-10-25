@@ -1,5 +1,5 @@
-// Fichier modifié hors de MondoWrite pendant que l'auteur le modifiait ici : le bandeau dit lequel, où
-// sa version a été gardée, et lui laisse choisir. Un conflit à la fois, le nombre des suivants à côté.
+// Fichier modifié ailleurs pendant que l'auteur le modifiait ici : le bandeau dit en clair ce qui est en jeu
+// (sans nom de fichier) et lui laisse choisir la version. Un conflit à la fois, le nombre des suivants à côté.
 
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
@@ -23,7 +23,7 @@ export function ConflictNotice() {
       : subject.kind === "manuscript"
         ? fmt(c.manuscript, { title: titleOf(subject.id) })
         : c[subject.kind];
-  const message = first.copy ? fmt(c.changed, { what, file: first.copy }) : fmt(c.deleted, { what });
+  const message = first.copy ? fmt(c.changed, { what }) : fmt(c.deleted, { what });
 
   return (
     <div className="app-alert is-conflict" role="alert">
@@ -33,10 +33,10 @@ export function ConflictNotice() {
       </span>
       <span className="app-alert-actions">
         <button type="button" className="ghost-button" onClick={() => void resolve(first.path, "mine")}>
-          {c.keepMine}
+          {first.copy ? c.keepMine : c.deleteAnyway}
         </button>
         <button type="button" className="ghost-button" onClick={() => void resolve(first.path, "disk")}>
-          {c.keepDisk}
+          {first.copy ? c.keepDisk : c.keepIt}
         </button>
       </span>
     </div>

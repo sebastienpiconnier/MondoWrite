@@ -1,4 +1,4 @@
-// Chronologie par intrigue (dans la vue Plan d'un roman) : un tableau où chaque colonne est une scène,
+// Chronologie par intrigue (Plan d'un roman, séquencier d'un scénario) : un tableau où chaque colonne est une scène,
 // dans l'ordre du plan, et chaque ligne une intrigue (carte Thème), un personnage ou un lieu.
 // Toucher une case tire un fil entre la carte et la scène, ou le retire : c'est le même fil que sur le canevas.
 
@@ -8,7 +8,7 @@ import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { typeColor } from "../types";
-import { timeline } from "../timeline";
+import { screenplaySceneTexts, timeline } from "../timeline";
 
 export function Timeline({ order }: { order: string[] }) {
   const p = useT().plan;
@@ -17,11 +17,15 @@ export function Timeline({ order }: { order: string[] }) {
   const nodes = useCosmos((s) => s.nodes);
   const edges = useCosmos((s) => s.edges);
   const manuscript = useCosmos((s) => s.manuscript);
+  const kind = useCosmos((s) => s.kind);
+  const screenplay = useCosmos((s) => s.screenplay);
+  // Scénario : pas de manuscrit, les scènes citent leur décor, leurs personnages et leur action.
+  const texts = useMemo(() => (kind === "scenario" && screenplay ? screenplaySceneTexts(screenplay.elements) : manuscript), [kind, screenplay, manuscript]);
   const toggleLink = useCosmos((s) => s.toggleLink);
   const revealCard = useCosmos((s) => s.revealCard);
 
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
-  const groups = useMemo(() => timeline(cards, edges, manuscript, order, lang), [cards, edges, manuscript, order, lang]);
+  const groups = useMemo(() => timeline(cards, edges, texts, order, lang), [cards, edges, texts, order, lang]);
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() || p.untitled;
 
   if (order.length === 0) return <p className="sp-empty">{p.empty}</p>;

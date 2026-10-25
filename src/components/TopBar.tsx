@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCosmos, type View } from "../store";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { useVocab } from "../vocab";
@@ -10,6 +10,7 @@ import { TodoPanel } from "./TodoPanel";
 import { fmt } from "../i18n";
 import { useSettings } from "../settings";
 import { minutesFor, usePagination } from "./usePagination";
+import { useTopbarFit } from "./useTopbarFit";
 
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
 
@@ -23,6 +24,9 @@ export function TopBar() {
 
   // Téléphone : les actions se rangent derrière « ⋯ » ; les vues passent en barre d'onglets en bas (CSS).
   const [more, setMore] = useState(false);
+  // Les vues passent sous la marque quand tout ne tient plus sur une ligne (mesuré, pas deviné d'après la largeur).
+  const barRef = useRef<HTMLElement>(null);
+  const stacked = useTopbarFit(barRef, [kind, lang]);
   useEffect(() => {
     if (!more) return;
     const onDown = (e: PointerEvent) => {
@@ -35,7 +39,7 @@ export function TopBar() {
   return (
     // data-tauri-drag-region : le fond de la barre déplace la fenêtre (barre de titre intégrée du Mac),
     // un double-clic l'agrandit ; les boutons et le titre gardent leurs clics.
-    <header className={`topbar${more ? " more-open" : ""}`} data-tauri-drag-region>
+    <header ref={barRef} className={`topbar${more ? " more-open" : ""}${stacked ? " is-stacked" : ""}`} data-tauri-drag-region>
       <div className="brand" data-tauri-drag-region>
         <BrandMark size={34} />
         {/* Le nom, et dessous le titre du projet (modifiable sur place) : la colonne reste étroite, les vues
