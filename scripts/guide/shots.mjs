@@ -333,13 +333,6 @@ await step("statistiques du roman", async () => {
   await closeDialog();
   await wait(300);
 });
-await step("lecture continue", async () => {
-  await page.getByRole("button", { name: T("Lecture continue", "Continuous reading") }).click();
-  await wait(900);
-  await shot("lecture-continue");
-  await page.getByRole("button", { name: T("Une scène par page", "One scene per page") }).click();
-  await wait(500);
-});
 await step("focus", async () => {
   await page.getByRole("button", { name: T("Mode focus", "Focus mode") }).click();
   await wait(800);
