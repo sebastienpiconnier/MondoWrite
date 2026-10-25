@@ -16,7 +16,7 @@ import { SCREENPLAY_FILE, storage } from "../storage";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
 import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
 import { bibleOf, canvasOf, manuscriptOf } from "../export/projectDocs";
-import { visibleSections } from "../bibleSections";
+import { bibleOrder } from "../bibleParts";
 import { canvasBounds } from "../export/canvas";
 import { boxes, frameBox } from "../projectState";
 import { fileName } from "../screenplay/export";
@@ -140,7 +140,7 @@ export function ExportMenu() {
 
   const bibleFile = (format: DocFormat) => async () => {
     // Les rubriques de la Bible, dans son ordre : ce qu'on masque dans la Bible ne s'exporte pas.
-    const doc = bibleOf(useCosmos.getState(), ctx(), visibleSections(useSettings.getState().bibleSections));
+    const doc = bibleOf(useCosmos.getState(), ctx(), bibleOrder(useSettings.getState().bibleSections));
     // Le Markdown cite les images de medias/ ; le PDF et le Word les intègrent.
     const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (name) => storage.mediaUrl(name));
     return exportDocument(full, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });

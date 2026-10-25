@@ -20,7 +20,7 @@ import { listScenes, sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes
 import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
-import { visibleSections } from "./bibleSections";
+import { bibleOrder } from "./bibleParts";
 import { IMPORT_EXTENSIONS, projectFromFile } from "./import";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
@@ -2278,7 +2278,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
           const snapshot = get();
           const { lang, author, bibleSections } = useSettings.getState();
           void import("./markdownCopies").then((m) =>
-            m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, visibleSections(bibleSections)), snapshot.markdownCopies),
+            m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, bibleOrder(bibleSections)), snapshot.markdownCopies),
           );
         }
       } catch (err) {

@@ -15,7 +15,9 @@ import { fmt, useT } from "../i18n";
 import { POSTER_FIELDS } from "../character";
 import { mentionsIn } from "../manuscript";
 import { bookOrder } from "../book";
-import { DEFAULT_SECTIONS, moveSection, sectionOrder, toggleSection, visibleSections } from "../bibleSections";
+import { toggleSection } from "../bibleSections";
+import { PART_OF, bibleOrder, partNumber } from "../bibleParts";
+import { BibleToc } from "./BibleToc";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { useMediaUrl } from "./useMediaUrl";
@@ -143,14 +145,15 @@ export function Bible() {
     if (fresh) mainRef.current?.querySelector<HTMLInputElement>(`input[data-card="${fresh}"]`)?.focus();
   }, [fresh]);
 
-  // Rubriques : toutes affichées (même vides, pour y créer une fiche), dans l'ordre choisi, sauf celles
-  // que l'auteur a décochées. Réglage de l'appareil (bibleSections.ts).
+  // Rubriques : toutes affichées (même vides, pour y créer une fiche), rangées dans les cinq parties de la
+  // Bible (bibleParts.ts), dans l'ordre choisi à l'intérieur de chacune, sauf celles que l'auteur a décochées.
+  // Réglage de l'appareil (bibleSections.ts).
   const prefs = useSettings((s) => s.bibleSections);
   const setPrefs = useSettings((s) => s.setBibleSections);
   const [arranging, setArranging] = useState(false);
   const sections = useMemo(
     () =>
-      visibleSections(prefs).map((type) => ({
+      bibleOrder(prefs).map((type) => ({
         type,
         cards: nodes
           .filter((n) => n.data.type === type)
@@ -229,7 +232,7 @@ export function Bible() {
   const adders = (
     <div className="bible-add">
       <div className="eyebrow">{t.bible.add}</div>
-      {visibleSections(prefs).map((type) => (
+      {bibleOrder(prefs).map((type) => (
         <button
           key={type}
           type="button"
@@ -405,76 +408,21 @@ export function Bible() {
     <div className={`bible-frame${tocOpen ? "" : " hide-toc"}`}>
     <EdgeHandle side="left" open={tocOpen} label={t.bible.tocTitle} onClick={toggleToc} />
     <div className="bible" ref={rootRef} onScroll={onScroll}>
-      <nav className="bible-toc" aria-label={t.bible.tocAria}>
-        <div className="eyebrow">{t.bible.tocTitle}</div>
-        {arranging ? (
-          <ul className="toc-arrange" aria-label={t.bible.arrangeAria}>
-            {sectionOrder(prefs).map((type, i, all) => {
-              const label = types[type].section;
-              const visible = !prefs.hidden.includes(type);
-              return (
-                <li key={type}>
-                  <label className="toc-check">
-                    <input type="checkbox" checked={visible} onChange={() => setPrefs(toggleSection(prefs, type))} />
-                    <span className="card-dot" style={{ background: typeColor(type) }} />
-                    <span>{label}</span>
-                    <span className="toc-count">{counts.get(type) ?? 0}</span>
-                  </label>
-                  <button type="button" className="icon-button" disabled={i === 0} aria-label={fmt(t.bible.moveUp, { section: label })} onClick={() => setPrefs(moveSection(prefs, type, "up"))}>
-                    <span aria-hidden="true">↑</span>
-                  </button>
-                  <button type="button" className="icon-button" disabled={i === all.length - 1} aria-label={fmt(t.bible.moveDown, { section: label })} onClick={() => setPrefs(moveSection(prefs, type, "down"))}>
-                    <span aria-hidden="true">↓</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-        <ul>
-          <li>
-            <button type="button" className={`toc-cover${onCover ? " is-current" : ""}`} aria-current={onCover ? "true" : undefined} onClick={() => {
-              closeTocOnPhone();
-              setCurrent("projet");
-            }}>
-              <span className="toc-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
-                  <path d="M5 17a3 3 0 0 1 3-3h11" />
-                </svg>
-                {t.pitch.toc}
-              </span>
-            </button>
-          </li>
-          {sections.map((s) => (
-            <li key={s.type}>
-              <button
-                type="button"
-                className={!onPage && s === shown ? "is-current" : ""}
-                aria-current={!onPage && s === shown ? "true" : undefined}
-                onClick={() => goTo(s.type)}
-              >
-                <span className="toc-label">
-                  <span className="card-dot" style={{ background: typeColor(s.type) }} />
-                  {types[s.type].section}
-                </span>
-                <span className="toc-count">{s.cards.length}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        )}
-        <div className="toc-tools">
-          <button type="button" className="link-button" aria-expanded={arranging} onClick={() => setArranging(!arranging)}>
-            {arranging ? t.bible.arrangeDone : t.bible.arrange}
-          </button>
-          {arranging && (
-            <button type="button" className="link-button" onClick={() => setPrefs(DEFAULT_SECTIONS)}>
-              {t.bible.arrangeReset}
-            </button>
-          )}
-        </div>
-      </nav>
+      <BibleToc
+        sections={sections.map((g) => ({ type: g.type, count: g.cards.length }))}
+        counts={counts}
+        prefs={prefs}
+        setPrefs={setPrefs}
+        arranging={arranging}
+        setArranging={setArranging}
+        onCover={onPage}
+        current={shown?.type ?? null}
+        openCover={() => {
+          closeTocOnPhone();
+          setCurrent("projet");
+        }}
+        goTo={goTo}
+      />
 
       {onCover || !shown ? (
         <section className="bible-main is-cover" aria-label={t.pitch.toc} ref={mainRef}>
@@ -486,8 +434,14 @@ export function Bible() {
         // (mêmes rubriques, même ordre, mêmes images). Le sommaire mène à chacune.
         <section className="bible-main" aria-label={t.bible.tocTitle} ref={mainRef}>
           <h1 className="sr-only">{t.bible.tocTitle}</h1>
-          {sections.map((group) => (
+          {sections.map((group, i) => (
             <div key={group.type} className="bible-group" data-group={group.type}>
+              {/* Première rubrique d'une partie : son nom, comme dans un dossier (« 3 · Univers »). */}
+              {PART_OF[group.type] !== PART_OF[sections[i - 1]?.type ?? group.type] || i === 0 ? (
+                <p className={`bible-part-title${PART_OF[group.type] === "pourVous" ? " is-private" : ""}`}>
+                  {fmt(t.bible.partTitle, { n: partNumber(PART_OF[group.type]), part: t.bible.parts[PART_OF[group.type]] })}
+                </p>
+              ) : null}
               <div className="bible-main-head">
                 <h2 className="bible-group-title">
                   <span className="card-dot" style={{ background: typeColor(group.type) }} />

@@ -35,11 +35,11 @@ But : le sommaire suit l'ordre d'un dossier. Aucun fichier ne change, seul l'aff
 
 Travail :
 
-- [ ] `src/bibleParts.ts` (pur) : `BIBLE_PARTS`, la partie de chaque type, et `partsFor(sections)` qui respecte l'ordre et les rubriques masquées de `bibleSections` (réglage existant, inchangé).
-- [ ] Sortir le sommaire de `Bible.tsx` (594 lignes) dans `BibleToc.tsx` : en-têtes numérotés de partie, « Pour vous » séparé par un trait et en gris.
-- [ ] Partie vide : en-tête discret, une ligne « À écrire » et le bouton « Questionner » là où il existe (couverture).
-- [ ] i18n : `t.bible.parts.*` en français puis en anglais.
-- [ ] Tests : `bible-parts.test.ts` (chaque type a une partie, ordre stable, rubriques masquées respectées).
+- [x] `src/bibleParts.ts` (pur) : `BIBLE_PARTS`, `PART_OF`, `bibleOrder(prefs)` (rubriques visibles dans l'ordre des parties, ordre de l'auteur gardé dans chaque partie), `moveInPart`. Utilisé par la Bible, l'export et les copies Markdown (même ordre partout).
+- [x] Sortir le sommaire de `Bible.tsx` dans `BibleToc.tsx` : en-têtes numérotés de partie (une partie d'une seule rubrique est un seul bouton), « Pour vous » séparé par un trait et en gris, avec « Pour toi seul ». Le mode « Choisir et ranger » range à l'intérieur de chaque partie. Dans la page, la première rubrique d'une partie porte « 3 · Univers ».
+- [ ] Partie vide : en-tête discret, une ligne « À écrire » et le bouton « Questionner » là où il existe (couverture). Reste : la rubrique vide garde son message et son bouton actuels ; « Questionner » sur la couverture viendra avec le lot 4 (nouveaux champs de présentation).
+- [x] i18n : `t.bible.parts`, `partTitle`, `privateHint` en français et en anglais.
+- [x] Tests : `bible-parts.test.ts` (chaque type a une partie, ordre stable, rubriques masquées respectées, ordre ancien relu).
 
 Multiplateforme : sommaire repliable sur téléphone (≤ 720 px), en-têtes de partie touchables (44 px).
 

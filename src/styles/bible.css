@@ -387,3 +387,21 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
 .cross-shared-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 @media (any-hover: hover) { .cross-cell:hover { border-color: var(--line-2); } }
 .stats-panel .sq-modes { display: flex; }
+
+/* Parties de la Bible (Bible v2) : le sommaire suit l'ordre d'un dossier, « Pour vous » à part. */
+.bible-toc .toc-parts { gap: 10px; }
+.toc-part > ul { margin-top: 2px; }
+.toc-part-head { display: flex; align-items: center; gap: 10px; padding: 6px 12px 2px; font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; color: var(--ink); }
+.toc-part-num { display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; border-radius: 6px; background: var(--ground); color: var(--ink-2); font-family: var(--font-ui); font-size: 0.6875rem; font-weight: 600; }
+.bible-toc button.toc-part-button { font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; }
+.bible-toc button.toc-sub { padding-left: 42px; }
+.toc-part.is-private { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.toc-part.is-private .toc-part-head, .toc-part.is-private .toc-part-button { color: var(--ink-2); }
+.toc-part-hint { margin: 2px 12px 0 42px; font-size: 0.75rem; line-height: 1.4; color: var(--ink-2); }
+.toc-arrange-part + .toc-arrange-part { margin-top: 10px; }
+.toc-arrange-part.is-private { padding-top: 10px; border-top: 1px solid var(--line); }
+.toc-arrange-part ul { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.toc-arrange-part li { display: flex; align-items: center; gap: 4px; }
+.bible-part-title { margin: 0 0 -4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
+.bible-part-title.is-private { color: var(--ink-2); }
+.bible-group + .bible-group:has(> .bible-part-title) { margin-top: 44px; }
