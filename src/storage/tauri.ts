@@ -463,6 +463,14 @@ export const tauriStorage: Storage = {
     }
   },
   location: () => (mobile || !current ? null : baseName(current)),
+  // iCloud Drive range ses dossiers sous « Mobile Documents » (Mac comme iPhone) ; sur mobile sans dossier choisi,
+  // les projets sont dans le conteneur iCloud de l'app quand la synchronisation est active.
+  inIcloud() {
+    if (!current) return false;
+    if (!mobile) return plainPath(current).includes("/Mobile Documents/");
+    if (cloudCache) return plainPath(cloudCache.path).includes("/Mobile Documents/");
+    return icloudWanted() && !!icloudDocs;
+  },
 
   async pickFolder() {
     if (mobile) return true;

@@ -43,6 +43,8 @@ export interface Storage {
    * cloud introuvable : service arrêté, disque débranché, accès retiré), sinon null. Les fichiers ne sont pas perdus.
    */
   cloudIssue?(): Promise<"icloud" | "folder" | null>;
+  /** Le projet ouvert est-il synchronisé par iCloud (pour dire « celle d'iCloud » dans un conflit) ? Faux ailleurs. */
+  inIcloud?(): boolean;
   /** Nom du dossier projet choisi (null dans le navigateur, sur mobile, ou si rien n'est choisi). */
   location(): string | null;
   /** Demande un dossier à l'auteur (Tauri uniquement). Renvoie false si annulé. */

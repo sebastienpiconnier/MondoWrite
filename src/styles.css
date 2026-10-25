@@ -163,6 +163,8 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 /* Conflit avec un autre logiciel : rien n'est perdu, le bandeau attend un choix (accent, pas danger). */
 .app-alert.is-conflict { border-bottom-color: var(--accent); }
 .conflict-more { color: var(--ink-2); white-space: nowrap; }
+.conflict-text { display: flex; flex-direction: column; gap: 2px; }
+.conflict-note { font-size: 0.8125rem; color: var(--ink-2); }
 
 /* ---------- Accueil : choisir ou créer un projet ---------- */
 .home { display: flex; flex-direction: column; height: 100%; }
