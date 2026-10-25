@@ -47,28 +47,30 @@ Multiplateforme : sommaire repliable sur téléphone (≤ 720 px), en-têtes de 
 
 Affichage : accroche sous le nom, bande moteur, « au début → à la fin », « qui il est » (le corps de la carte), relations (tirées des fils, déjà calculées par `relatedRuns`), puis « Ajouter si utile ».
 
-- [ ] `character.ts` : ajouter à `CHARACTER_FIELDS` les clés `accroche`, `conflit`, `debut`, `fin` (clés écrites dans le fichier : ne plus jamais les renommer).
-- [ ] Bande moteur (`CharacterMotor.tsx`) : **Veut** (`objectif`), **A besoin** (`besoin`), **Conflit intérieur** (`conflit`). La blessure (`blessure`) passe dans « Ajouter si utile » et reste visible quand elle est remplie : aucun auteur ne perd ce qu'il a écrit. Antagoniste inchangé (motivation, force, faille).
+- [ ] `character.ts` : ajouter à `CHARACTER_FIELDS` les clés `accroche`, `debut`, `fin` et `principal` (valeur `oui` ou absente, `readFiche` rejette le reste). Clés écrites dans le fichier : ne plus jamais les renommer.
+- [ ] Bande moteur (`CharacterMotor.tsx`) : **Veut** (`objectif`), **A besoin** (`besoin`), **Blessure, conflit intérieur** (même clé `blessure`, seuls le libellé et le texte indicatif changent dans `t.character.motor`). Aucune nouvelle clé, aucune donnée déplacée : ce qu'un auteur a écrit comme blessure reste à sa place. Antagoniste inchangé (motivation, force, faille).
+- [ ] Case « Personnage principal » (`principal`) sur l'affiche : un interrupteur, aussi au clavier ; les principaux passent en tête de la partie Personnages et ont une page chacun à l'export.
 - [ ] Arc : deux cases « Au début » / « À la fin » sous la bande ; la petite courbe du type d'arc reste ; l'ancien texte libre `arc` s'affiche s'il est rempli (« Évolution »).
 - [ ] Accroche : une ligne en italique sous le nom, dans l'affiche (`Poster` de `Bible.tsx`).
-- [ ] « Ajouter si utile » : les champs vides sont cachés derrière un menu (voix, traits = `personnalite`, défaut moteur, blessure, peur, secret, apparence, origine…). Un champ rempli s'affiche toujours. Généraliser dans `CardSheet` pour les lieux et intrigues.
+- [ ] « Ajouter si utile » : les champs vides sont cachés derrière un menu (voix, traits = `personnalite`, défaut moteur, peur, secret, apparence, origine…). Un champ rempli s'affiche toujours. Généraliser dans `CardSheet` pour les lieux et intrigues.
 - [ ] Assistant : une question « En une phrase, qui est ce personnage ? » propose de remplir l'accroche, sur clic de l'auteur ; mettre à jour `docs/prompts-ia.md`. L'IA n'écrit pas l'accroche elle-même.
-- [ ] Tests : lecture et écriture des nouvelles clés, ancien projet sans ces clés, blessure remplie toujours visible.
+- [ ] Tests : lecture et écriture des nouvelles clés, ancien projet sans ces clés, `principal` invalide ignoré.
 
 ## Lot 3 : l'export v2 (dossier de présentation et bible de travail)
 
 Le dialogue en trois questions : **pour qui** (moi : bible de travail ; un tiers : éditeur pour un roman, producteur pour un scénario), **parties** (les cinq, à cocher et ranger, « Pour vous » décochée pour un tiers), **rendu** (Sobre, Éditorial, Nuit ; une couleur d'accent ; une image de couverture du projet). Aperçu en direct, réglage enregistré sous un nom.
 
-- [ ] **Modèle pur** `src/export/bibleExport.ts` : `BibleExportOptions { audience, parts, theme, accent, cover }` et `buildBibleExport(state, options)`. Pour un tiers : pas de questions, pas d'idées en vrac ; personnages principaux (rôle protagoniste, antagoniste ou « principal ») une page chacun, les autres regroupés dans « Et aussi ».
+- [ ] **Modèle pur** `src/export/bibleExport.ts` : `BibleExportOptions { audience, parts, theme, accent, cover }` et `buildBibleExport(state, options)`. Pour un tiers : pas de questions, pas d'idées en vrac ; personnages cochés « principal » une page chacun, les autres regroupés dans « Et aussi ». Aucun principal coché : tous les personnages ont leur page (projet qui n'a pas encore fait ce choix).
 - [ ] **Blocs plus riches** dans `ExportDoc` (`doc.ts`) : `fields` (libellé et valeur en grille, pour la bande moteur), `lead` (accroche, pitch en grand), `pageBreak`, `cover`. Word et Markdown les dégradent proprement (libellé en gras puis valeur) : aucun export existant ne casse.
 - [ ] **Mise en page pure** `src/export/bibleLayout.ts` et **dessin** `src/export/biblePdf.ts` (pdf-lib), sur le modèle de `paperback.ts` / `paperbackPdf.ts`. Un thème = un objet de jetons (polices, tailles, couleurs, marges, style de couverture) :
    - Sobre : IBM Plex Sans et Serif, noir sur blanc ;
    - Éditorial : Crimson Text (déjà embarquée), papier crème, accent ;
    - Nuit : Space Grotesk pour les titres, Plex Serif pour le texte, couverture sombre.
-   Polices : les paquets `@fontsource` du projet sont en WOFF2 ; vérifier que `@pdf-lib/fontkit` les accepte, sinon ajouter les TTF (licence OFL) dans `src/assets/fonts`. Chargement à la demande, comme aujourd'hui.
+   Polices : les paquets `@fontsource` du projet sont en WOFF2 ; vérifier que `@pdf-lib/fontkit` les accepte, sinon ajouter les TTF (licence OFL) dans `src/assets/fonts`. Chargement à la demande, comme aujourd'hui. **Mesurer avant de choisir** : poids ajouté au paquet iOS et au téléchargement Mac ; si c'est trop lourd, ne garder qu'une graisse par police (régulière et grasse, italique synthétisée) ou réduire Sobre à Plex Sans seul.
 - [ ] **Aperçu fidèle** : on génère le vrai PDF (anti-rebond de 300 ms) et on dessine ses pages avec pdf.js (`pdfDocument.ts`, `renderPage` existe déjà). Ce que l'on voit est exactement le fichier exporté.
 - [ ] **Dialogue** `BibleExportDialog.tsx`, ouvert depuis l'entrée « Bible » d'`ExportMenu`. Word et Markdown restent proposés en bas du dialogue.
 - [ ] **Réglages** : bloc facultatif `bibleExport` dans `cosmos.json` (liste `{ nom, options }`), ajouté à `KNOWN_META`. Par projet, car l'image de couverture appartient au projet.
+- [ ] **Vignettes des lieux** : la partie Univers du PDF montre jusqu'à quatre photos tirées des galeries des lieux (image principale d'abord), en vignettes légendées par le nom du lieu. Rien ne revient dans l'app : le tableau d'ambiance reste retiré.
 - [ ] **Nom de fichier daté** (« Dossier de présentation - Titre - 2026-10-25.pdf ») : chaque export sert de version.
 - [ ] Tests : `bible-export.test.ts` (options → document : parties, audience, personnages principaux), `bible-layout.test.ts` (une page par principal, rien ne déborde, nombre de pages stable sur le projet d'exemple).
 
@@ -100,10 +102,13 @@ Pour chaque lot :
 
 Fusion proposée : lots 1 à 3 ensemble en **1.4.0** (la Bible et son export forment un tout visible), lot 4 en **1.5.0**.
 
-## Décisions à prendre avant de coder
+## Décisions prises (25 octobre 2026)
 
-- Bande moteur : « Conflit intérieur » remplace-t-il vraiment « Blessure » à l'écran (proposition ci-dessus), ou s'ajoute-t-il en quatrième case ?
-- Personnages « principaux » : déduits du rôle saisi, ou une case à cocher sur la fiche ?
-- Réglages d'export par projet (proposé) ou par appareil ?
-- Poids des polices embarquées pour les trois rendus (à mesurer sur le paquet iOS).
-- Le tableau d'ambiance a été retiré à ta demande : l'export peut-il quand même montrer quelques photos des lieux en vignettes (proposé), sans revenir dans l'app ?
+- Bande moteur : « Blessure » et « Conflit intérieur » fusionnés en une seule case, sur la clé existante `blessure`.
+- Personnages principaux : une case à cocher sur la fiche (`principal`).
+- Réglages d'export : par projet (`bibleExport` dans `cosmos.json`).
+- Vignettes des lieux dans l'export : oui, sans retour du tableau d'ambiance dans l'app.
+
+## Reste à mesurer
+
+- Poids des polices embarquées pour les trois rendus, sur le paquet iOS (lot 3, avant de figer les thèmes).
