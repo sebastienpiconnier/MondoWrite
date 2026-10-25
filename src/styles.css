@@ -255,9 +255,15 @@ html[data-platform="mac"] .topbar :is(input, textarea) { -webkit-user-select: te
 .status { display: inline-grid; justify-items: end; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
 .status > span:not(.sr-only) { grid-area: 1 / 1; visibility: hidden; }
 .status > span.is-current { visibility: visible; }
-.runtime { min-width: 9ch; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; font-size: 0.75rem; color: var(--ink-2); white-space: nowrap; }
-.runtime strong { font-family: var(--font-display); font-size: 1rem; color: var(--ink); }
 .status-erreur { color: var(--danger); font-weight: 600; }
+/* Barre compacte (useTopbarFit, iPad) : « Projets » et « Exporter » en icônes, le statut dans le bouton Enregistrer. */
+.tb-icon { display: none; }
+.topbar.is-compact .tb-icon { display: block; }
+.topbar.is-compact .tb-label, .topbar.is-compact .actions > .status { display: none; }
+.topbar.is-compact .tb-iconable { display: inline-flex; align-items: center; justify-content: center; padding-inline: 0; min-width: 40px; }
+.tb-save { position: relative; }
+.topbar.is-compact .tb-save:is(.is-modifie, .is-enregistrement, .is-erreur)::after { content: ""; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.topbar.is-compact .tb-save.is-erreur::after { background: var(--danger); }
 .ghost-button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; font-size: 0.875rem; cursor: pointer; }
 @media (any-hover: hover) { .ghost-button:hover { border-color: var(--line-2); background: var(--ground); } }
 .icon-button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; cursor: pointer; color: var(--ink); }

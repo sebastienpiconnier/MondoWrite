@@ -7,26 +7,21 @@ import { ExportMenu } from "./ExportMenu";
 import { AiMenu } from "./AiMenu";
 import { Search } from "./Search";
 import { TodoPanel } from "./TodoPanel";
-import { fmt } from "../i18n";
-import { useSettings } from "../settings";
-import { minutesFor, usePagination } from "./usePagination";
 import { useTopbarFit } from "./useTopbarFit";
+import { useSettings } from "../settings";
 
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
 
 export function TopBar() {
   const { t, views, kind } = useVocab();
   const lang = useSettings((s) => s.lang);
-  const pagination = usePagination();
-  const pages = kind === "scenario" ? (pagination?.pages ?? 0) : 0;
-  const pageCount = fmt(new Intl.PluralRules(lang).select(pages) === "one" ? t.screenplay.pagesOne : t.screenplay.pagesMany, { n: pages });
   const { view, setView, status, save, closeProject, title, setTitle } = useCosmos();
 
   // Téléphone : les actions se rangent derrière « ⋯ » ; les vues passent en barre d'onglets en bas (CSS).
   const [more, setMore] = useState(false);
   // Les vues passent sous la marque quand tout ne tient plus sur une ligne (mesuré, pas deviné d'après la largeur).
   const barRef = useRef<HTMLElement>(null);
-  const stacked = useTopbarFit(barRef, [kind, lang]);
+  const { compact, stacked } = useTopbarFit(barRef, [kind, lang]);
   useEffect(() => {
     if (!more) return;
     const onDown = (e: PointerEvent) => {
@@ -39,7 +34,7 @@ export function TopBar() {
   return (
     // data-tauri-drag-region : le fond de la barre déplace la fenêtre (barre de titre intégrée du Mac),
     // un double-clic l'agrandit ; les boutons et le titre gardent leurs clics.
-    <header ref={barRef} className={`topbar${more ? " more-open" : ""}${stacked ? " is-stacked" : ""}`} data-tauri-drag-region>
+    <header ref={barRef} className={`topbar${more ? " more-open" : ""}${compact ? " is-compact" : ""}${stacked ? " is-stacked" : ""}`} data-tauri-drag-region>
       <div className="brand" data-tauri-drag-region>
         <BrandMark size={34} />
         {/* Le nom, et dessous le titre du projet (modifiable sur place) : la colonne reste étroite, les vues
@@ -89,13 +84,6 @@ export function TopBar() {
       </button>
 
       <div className="actions">
-        {/* Toujours là pour un scénario, même vide : la barre ne bouge pas quand le texte arrive. */}
-        {kind === "scenario" && pagination && (
-          <span className="runtime" aria-label={t.screenplay.lengthAria}>
-            <strong>{fmt(t.screenplay.minutes, { n: minutesFor(pages) })}</strong>
-            <span>{pageCount}</span>
-          </span>
-        )}
         {/* Tous les libellés sont empilés (un seul visible) : la largeur ne change pas d'un statut à
             l'autre, donc rien ne bouge dans la barre pendant un enregistrement. */}
         <span className={`status status-${status}`}>
@@ -108,11 +96,25 @@ export function TopBar() {
             {t.status[status]}
           </span>
         </span>
-        <button type="button" className="ghost-button" title={t.home.backHint} onClick={() => closeProject()}>
-          {t.home.projects}
+        {/* Barre compacte (iPad) : le libellé laisse place à une icône, le nom reste pour les lecteurs d'écran. */}
+        <button type="button" className="ghost-button tb-iconable" aria-label={t.home.projects} title={t.home.backHint} onClick={() => closeProject()}>
+          <svg className="tb-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="7" height="7" rx="1.5" />
+            <rect x="13" y="4" width="7" height="7" rx="1.5" />
+            <rect x="4" y="13" width="7" height="7" rx="1.5" />
+            <rect x="13" y="13" width="7" height="7" rx="1.5" />
+          </svg>
+          <span className="tb-label">{t.home.projects}</span>
         </button>
-        {/* En icône : la barre porte déjà le statut, et l'enregistrement est automatique. */}
-        <button type="button" className="icon-button" aria-label={t.actions.save} title={t.actions.saveHint} onClick={save}>
+        {/* En icône : la barre porte déjà le statut, et l'enregistrement est automatique. Barre compacte : le
+            statut passe dans le bouton (point quand ce n'est pas enregistré, et son nom dans l'infobulle). */}
+        <button
+          type="button"
+          className={`icon-button tb-save is-${status}`}
+          aria-label={t.actions.save}
+          title={compact ? `${t.actions.saveHint} (${t.status[status]})` : t.actions.saveHint}
+          onClick={save}
+        >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
             <path d="M8 4v5h7V4M8 20v-6h8v6" />

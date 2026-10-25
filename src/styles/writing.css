@@ -284,20 +284,16 @@
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Fenêtre moyenne : les vues passent sur une seconde ligne, sinon les boutons de droite débordent. */
-@media (max-width: 1100px) {
-  .topbar { display: flex; flex-wrap: wrap; justify-content: space-between; }
-  .views { order: 3; width: 100%; justify-content: center; margin: 0; }
-}
-/* Même chose dès que le contenu ne tient plus sur une ligne, quelle que soit la largeur (useTopbarFit : taille du
-   texte de l'iPad, durée d'un scénario, langue plus longue). Sans cela les vues passaient sur le logo. */
+/* Les vues passent sur une seconde ligne seulement quand le contenu ne tient plus sur une (useTopbarFit, mesure
+   réelle : taille du texte de l'iPad, langue plus longue, bouton IA). Sur un iPad en paysage, tout tient sur une
+   ligne : le canevas garde la hauteur. Sans la mesure, les vues passaient sur le logo. */
 @media (min-width: 721px) {
   .topbar.is-stacked { display: flex; flex-wrap: wrap; justify-content: space-between; }
   .topbar.is-stacked .views { order: 3; width: 100%; justify-content: center; margin: 0; }
 }
-/* iPad en paysage (1101 à 1280 px) : sans le slogan, le titre du projet garde sa place entre le logo et les vues. */
-@media (min-width: 1101px) and (max-width: 1280px) { .brand-tagline { display: none; } }
-@media (min-width: 1101px) and (max-width: 1180px) {
+/* iPad (721 à 1280 px) : sans le slogan, le titre du projet garde sa place entre le logo et les vues. */
+@media (min-width: 721px) and (max-width: 1280px) { .brand-tagline { display: none; } }
+@media (min-width: 721px) and (max-width: 1180px) {
   .topbar { column-gap: 10px; }
   .views button { padding: 8px 12px; }
 }
@@ -305,7 +301,7 @@
   .topbar > .actions { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; min-width: 0; }
   .brand-tagline { display: none; }
   .toile-hint { display: none; }
-  .brand-project, .status, .runtime span { display: none; }
+  .brand-project, .status { display: none; }
   .sequencer { padding: 16px max(16px, env(safe-area-inset-right)) calc(max(16px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)) max(16px, env(safe-area-inset-left)); }
   .react-flow__minimap { display: none; }
   .bible { padding: 16px max(16px, env(safe-area-inset-right)) calc(max(16px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)) max(16px, env(safe-area-inset-left)); }

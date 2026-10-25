@@ -198,7 +198,8 @@ export function ExportMenu() {
       <button
         ref={buttonRef}
         type="button"
-        className="ghost-button"
+        className="ghost-button tb-iconable"
+        aria-label={t.button}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => {
@@ -206,7 +207,11 @@ export function ExportMenu() {
           setOpen(!open);
         }}
       >
-        {t.button}
+        <svg className="tb-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 15V4M8 8l4-4 4 4" />
+          <path d="M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6" />
+        </svg>
+        <span className="tb-label">{t.button}</span>
       </button>
       {open && (
         <div className="settings-panel export-panel" id={panelId} role="group" aria-label={t.menuAria}>
