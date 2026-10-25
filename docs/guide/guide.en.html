@@ -291,11 +291,11 @@
 
 <h3>The relationship map</h3>
 <p>In the Characters section, the <span class="ui">Relationships</span> tab draws the characters and the threads that connect them on the canvas, with their labels, then the list of relationships. Draw a thread between two characters and name it (“sister of”, “betrays”): it shows up here. Tap a portrait to open their entry.</p>
+<p>A thread gets thicker with the number of scenes the two characters share, and the list spells it out (“3 scenes together”). A dotted thread joins two characters who never share a scene: a relationship the story doesn’t show yet.</p>
 <figure class="medium"><img src="images/en/bible-relations.jpg"><figcaption>The relationships between the tale’s characters.</figcaption></figure>
 
-<h3>Character statistics</h3>
-<p>The <span class="ui">Statistics</span> tab of the Characters section builds a table from your text: for each character, their scenes, lines and words spoken (screenplay), their share of speaking time and their appearances (from first to last scene). In a novel, the scenes are those where the text names them, and the <span class="ui">Presence</span> column gives their share. Touch a column title to sort, a name to open the entry; in a screenplay, <span class="ui">Their lines</span> opens the character filter. Below, <span class="ui">By gender</span> groups the values of the entries’ “Gender” field as you wrote them. <span class="ui">Export as CSV…</span> saves the table for a spreadsheet. Each entry also shows its statistics on one line under the name.</p>
-<figure><img src="images/en/bible-chiffres.jpg"><figcaption>The tale’s character statistics.</figcaption></figure>
+<h3>Figures under each entry</h3>
+<p>Under each character’s name, a discreet line gives their scenes (and, in a screenplay, their lines and share of speaking time); under each place’s name, its scenes (and for a location, its pages, interior or exterior, day or night). Everything is read from your text. The details, sorting and CSV export are in the <span class="ui">Statistics</span> window, opened from the Manuscript or the Screenplay (see “Project statistics”).</p>
 
 <h3>Other entries</h3>
 <p>Each type has its sheet, folded under the text:</p>
@@ -308,11 +308,6 @@
 <p>Questions <span class="ui">To dig into</span> and loose ideas have their own sections too. <span class="ui">Show on canvas</span>, at the bottom of each entry, shows its card in the spotlight: the others fade until you click the background or press <kbd>Esc</kbd>.</p>
 <figure><img src="images/en/bible-lieux.jpg"><figcaption>The places section.</figcaption></figure>
 
-<h3>Place statistics</h3>
-<p>Like the characters, the Places section has a <span class="ui">Statistics</span> view, read from your text: for each place, its scenes, its share of the story, its appearances (from first to last scene) and the characters met there. In a novel, a scene takes place somewhere when a thread links it to that place on the canvas, or when its text names it. In a screenplay, the section is called Locations and everything is read from the scene headings: the pages of each location (one page is about one minute), the interior or exterior scenes, day or night, and the split across the whole screenplay. It is a shooting breakdown: you see at a glance what will be expensive (exterior nights) or a location used only once. A location written without a card gets its own row. <span class="ui">Export as CSV…</span> saves the table, and each entry shows its figures on one line under the name.</p>
-<figure><img src="images/en/bible-decors-stats.jpg"><figcaption>Location statistics, in the tale as a screenplay.</figcaption></figure>
-
-<!-- ===================================================================================== -->
 <h2 id="outline"><span class="num">Chapter 6</span>The Outline</h2>
 
 <p class="lead">The Outline shapes the story: the order of scenes, their place in a structure, their chapters. It contains only scenes: those of the canvas, the Bible or the Manuscript, always the same ones.</p>
@@ -419,6 +414,16 @@
 <h3>Check the text</h3>
 <p>The <span class="ui">Check</span> button in the bar (with the number of items found) opens the tab of the same name in the right column, next to <span class="ui">In this scene</span>. It points out what deserves a look, without ever correcting anything: a name spelled almost like an entry’s (“Inés” for “Inès”), two spaces in a row, a space before a comma or a period. Touch an item to go to the passage, selected in the text. <span class="ui">Rename everywhere…</span> opens “Find and replace” with the right name; <span class="ui">Ignore</span> removes the item from the list until the app is closed.</p>
 
+<h3>Project statistics</h3>
+<p>The <span class="ui">Statistics</span> button in the bar (also in the Screenplay’s bar, and in the Mac <span class="ui">View</span> menu) opens a window that counts, in your text, what you can’t see while writing. Nothing is typed in or saved there.</p>
+<ul>
+  <li><span class="ui">Characters</span>: for each one, their scenes, lines and words spoken (screenplay), their share of speaking time (or their <span class="ui">Presence</span> in a novel, the scenes where the text names them) and their appearances, from first to last scene. Touch a column title to sort, a name to open their entry. Below, <span class="ui">By gender</span> groups the values of the entries’ “Gender” field as you wrote them.</li>
+  <li><span class="ui">Places</span> (<span class="ui">Locations</span> in a screenplay): for each place, its scenes, its share of the story, its appearances and the characters met there. In a novel, a scene takes place somewhere when a thread links it to that place on the canvas, or when its text names it.</li>
+  <li><span class="ui">Who meets whom</span>: a table of the scenes each pair of characters shares (they speak or are named in them). Touch a cell to list their shared scenes and open one. Beside it, the most present pair and the characters who never meet: nothing wrong in itself, it’s a question to ask yourself.</li>
+</ul>
+<p>Each tab has its <span class="ui">Export as CSV…</span>, for a spreadsheet.</p>
+<figure><img src="images/en/stats-personnages.jpg"><figcaption>The Statistics window, Characters tab, on the tale.</figcaption></figure>
+
 <h3>Write from the card</h3>
 <p>A Scene card carries its text. On the canvas, it shows its synopsis, the start of its scene and its word count. Expanded, it becomes a page where you write the scene, the same as in the Manuscript; <span class="ui">Open in Manuscript</span> takes you there.</p>
 <figure><img src="images/en/carte-agrandie-scene.jpg"><figcaption>The scene “The meeting in the woods” written in its expanded card.</figcaption></figure>
@@ -468,6 +473,14 @@
 <h3>Filter by character</h3>
 <p>At the top of the scene list, choose a <span class="ui">Character</span>: <span class="ui">Their scenes</span> keeps only the scenes where they speak or are named in the action; <span class="ui">Their lines</span> also fades everything they don’t say. The faded text stays editable, and the sheet becomes continuous while the filter is on. The banner in the bar, or <span class="ui">All</span>, brings back the whole screenplay. From their entry in the Bible, <span class="ui">See their lines in the screenplay</span> sets this filter directly.</p>
 <figure><img src="images/en/scenario-filtre.jpg"><figcaption>The Wolf’s lines, the rest faded.</figcaption></figure>
+
+<h3>Screenplay statistics</h3>
+<p>The <span class="ui">Statistics</span> button in the bar opens the same window as in a novel (see “Project statistics”), read from the screenplay. The <span class="ui">Locations</span> tab is a shooting breakdown: the pages of each location (one page is about one minute), its interior or exterior scenes, day or night, and the characters met there. You see at a glance what will be expensive (exterior nights) or a location used only once. A location written without a card gets its own row.</p>
+<figure><img src="images/en/stats-decors.jpg"><figcaption>The locations of the tale as a screenplay.</figcaption></figure>
+<p>In <span class="ui">Who meets whom</span>, a touched cell also offers <span class="ui">See these scenes in the screenplay</span>: the filter then keeps only the scenes where both characters meet.</p>
+<figure><img src="images/en/stats-croisements.jpg"><figcaption>The Wolf and Little Red Riding Hood share two scenes.</figcaption></figure>
+<p>The <span class="ui">Int./Ext. and Day/Night</span> tab counts across the whole screenplay. A “LATER”, “CONTINUOUS” or “SAME TIME” scene, or one with no time, carries over the day or night of the previous scene: it is counted as “carried over”, without touching the text. An INT./EXT. scene counts on both sides.</p>
+<figure class="medium"><img src="images/en/stats-int-ext.jpg"><figcaption>Interior or exterior, day or night, across the screenplay.</figcaption></figure>
 
 <h3>The step outline</h3>
 <p>The step outline lists the scenes in screenplay order, with their synopsis, characters, length and status. Drag a scene or use its arrows to change the order of the screenplay itself.</p>
@@ -548,11 +561,20 @@
 
 <h3>The screenplay</h3>
 <ul>
-  <li><span class="ui">PDF, standard format</span>: Courier 12, standard margins, about a page a minute, dialogue split cleanly across pages (“(MORE)”, “(CONT’D)”);</li>
+  <li><span class="ui">PDF…</span>: the standard format (Courier 12, standard margins, about a page a minute, dialogue split cleanly across pages with “(MORE)” and “(CONT’D)”, dual dialogue side by side), in a settings window described below;</li>
   <li><span class="ui">Fountain</span>, the screenplay’s text file;</li>
   <li><span class="ui">Final Draft (FDX)</span>, for productions that use it.</li>
 </ul>
 <figure class="small"><img src="images/en/exporter-scenario.jpg"><figcaption>The Export menu of a screenplay.</figcaption></figure>
+<h4>PDF settings</h4>
+<p>The <span class="ui">Export the screenplay as PDF</span> window shows the first page as it will come out, updated with every choice:</p>
+<ul>
+  <li><span class="ui">Content</span>: <span class="ui">The whole screenplay</span>, or <span class="ui">One character’s part</span>. For an actor: only their scenes, their lines highlighted, and the scenes keep their number from the whole screenplay (to talk about “scene 12” with the crew).</li>
+  <li><span class="ui">Also print</span>: the title page, scene synopses, sections and template beats, your <code>[[…]]</code> notes, in gray. All unchecked (except the title page), it’s the standard format, the one you send.</li>
+  <li><span class="ui">On every page</span>: a <span class="ui">Header</span> at the top left, where <code>{date}</code>, <code>{title}</code> and <code>{author}</code> are filled in on export (“Draft 3 · {date}”), and a <span class="ui">Watermark</span> across the page (“Confidential”). The page number stays at the top right.</li>
+</ul>
+<p>These choices are kept in the project: next time, the window opens as you left it.</p>
+<figure><img src="images/en/scenario-export-pdf.jpg"><figcaption>The Wolf’s part, for the actor, with header and watermark.</figcaption></figure>
 
 <h3>The Bible and the canvas</h3>
 <p>The <strong>Bible</strong> exports to PDF, Word or Markdown: the project cover, then the sections chosen in the Bible, in their order, with each entry’s images and links. The <strong>canvas</strong> exports to a PNG image of the whole board, a standard PDF (A4, to send) or a large-format one (A1, to print and pin on the wall), or as card text (Word, Markdown), one part per frame.</p>

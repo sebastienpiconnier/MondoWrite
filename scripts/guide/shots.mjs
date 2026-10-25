@@ -146,9 +146,9 @@ await step("cartes", async () => {
   await fit();
 });
 await step("nouvelle carte", async () => {
-  await page.locator(".add-card-more").click();
+  await page.locator(".add-card-main").click();
   await wait(300);
-  await shot("nouvelle-carte-menu", { clip: await union([".add-card-more", "[role=menu]"]) });
+  await shot("nouvelle-carte-menu", { clip: await union([".add-card-main", "[role=menu]"]) });
   await page.keyboard.press("Escape");
 });
 await step("fils", async () => {
@@ -242,7 +242,7 @@ await step("corbeille", async () => {
   await closeDialog();
 });
 await step("photos", async () => {
-  await page.locator(".add-card-more").click();
+  await page.locator(".add-card-main").click();
   await page.getByRole("menuitem", { name: /Image/ }).first().click();
   await wait(800);
   await shot("photos", { el: "dialog[open]" });
@@ -282,9 +282,6 @@ await step("relations", async () => {
   await page.getByRole("button", { name: T("Relations", "Relationships"), exact: true }).first().click();
   await wait(800);
   await shot("bible-relations");
-  await page.getByRole("button", { name: T("Statistiques", "Statistics"), exact: true }).first().click();
-  await wait(800);
-  await shot("bible-chiffres");
   await page.getByRole("button", { name: T("Fiches", "Sheets"), exact: true }).first().click();
 });
 await step("lieux", async () => {
@@ -328,6 +325,13 @@ await step("remplacer", async () => {
   await wait(400);
   await shot("remplacer", { el: "dialog[open]" });
   await closeDialog();
+});
+await step("statistiques du roman", async () => {
+  await page.getByRole("button", { name: T("Statistiques", "Statistics"), exact: true }).first().click();
+  await wait(600);
+  await shot("stats-personnages", { el: "dialog[open]" });
+  await closeDialog();
+  await wait(300);
 });
 await step("lecture continue", async () => {
   await page.getByRole("button", { name: T("Lecture continue", "Continuous reading") }).click();

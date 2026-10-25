@@ -18,6 +18,8 @@ export function countWords(html: string | undefined): number {
 export const totalWords = (manuscript: Manuscript, ids: string[]) => ids.reduce((sum, id) => sum + countWords(manuscript[id]), 0);
 
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/** Articles qu'on ne prend jamais pour un prénom (titre « The Mother », « Les Thénardier »…). */
+const ARTICLES = new Set(["the", "les", "une", "des", "aux", "der", "die", "das", "los", "las", "una", "uno", "gli"]);
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // Un trait d'union lie deux mots en un seul : « la mère » n'est pas citée dans « la mère-grand ».
 const hasWord = (text: string, word: string) => new RegExp(`(?<![\\p{L}\\p{N}]-?)${escape(word)}(?!-?[\\p{L}\\p{N}])`, "u").test(text);
@@ -39,7 +41,8 @@ export function namesOf(card: CardData): string[] {
   const names = [title];
   if (card.type === "personnage") {
     const first = title.split(/\s+/)[0];
-    if (first.length >= 3 && first !== title) names.push(first);
+    // Le prénom seul (« Inès » pour « Inès Morvan »), jamais un article : « The Wolf » serait cité à chaque « the ».
+    if (first.length >= 3 && first !== title && !ARTICLES.has(first)) names.push(first);
     for (const nick of (card.fiche?.surnoms ?? "").split(/[,;]/)) if (nick.trim().length >= 2) names.push(fold(nick).trim());
   }
   return [...new Set(names)];

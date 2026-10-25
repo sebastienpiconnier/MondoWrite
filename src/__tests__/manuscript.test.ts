@@ -164,3 +164,13 @@ describe("manuscrit dans le projet", () => {
     expect(state().manuscript).toEqual({});
   });
 });
+
+describe("noms cités : jamais un article pris pour un prénom", () => {
+  it("« The Mother » n'est pas citée par chaque « the »", () => {
+    const mother = { id: "m", type: "personnage", title: "The Mother", html: "" } as CardData;
+    const ines = { id: "i", type: "personnage", title: "Inès Morvan", html: "" } as CardData;
+    expect(detectCards("<p>The wolf ran to the house.</p>", [mother])).toEqual([]);
+    expect(detectCards("<p>The Mother waits.</p>", [mother])).toEqual([mother]);
+    expect(detectCards("<p>Inès monte au phare.</p>", [ines])).toEqual([ines]);
+  });
+});
