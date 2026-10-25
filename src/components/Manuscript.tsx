@@ -608,7 +608,7 @@ export function Manuscript() {
             <button type="button" className="ghost-button ms-start-chapter" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onClick={openReview}>
               {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
             </button>
-            <button type="button" className="ghost-button ms-start-chapter" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
+            <button type="button" className="ghost-button ms-start-chapter stats-button" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
               {t.projectStats.button}
             </button>
             {/* La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle. */}

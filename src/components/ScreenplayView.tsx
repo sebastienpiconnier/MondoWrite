@@ -477,6 +477,8 @@ export function ScreenplayView() {
 
   // Onglet « Vérifier » : points à regarder dans le scénario (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
+  // Téléphone : la barre d'éléments est un volet replié en haut de la feuille (sur iPad et ordinateur, toujours ouverte).
+  const [toolsOpen, setToolsOpen] = useState(false);
   const findings = useMemo(() => checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), [elements, paper, nodes, lang]);
   const openFindings = useOpenFindings(findings);
   const openReview = () => {
@@ -816,7 +818,21 @@ export function ScreenplayView() {
       </nav>
 
       <div className="sp-center">
-        <div className="sp-bar" role="toolbar" aria-label={sp.barAria} ref={barRef}>
+        <div className={`sp-bar${toolsOpen ? " is-open" : ""}`} role="toolbar" aria-label={sp.barAria} ref={barRef}>
+          {/* Téléphone seulement (CSS) : le type de l'élément en cours ouvre ou ferme le volet, sans quitter le texte. */}
+          <button
+            type="button"
+            className="sp-bar-toggle"
+            aria-expanded={toolsOpen}
+            aria-label={`${sp.barAria} : ${current.type ? sp.elements[current.type] : "…"}`}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => setToolsOpen(!toolsOpen)}
+          >
+            <span>{current.type ? sp.elements[current.type] : sp.barAria}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d={toolsOpen ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"} />
+            </svg>
+          </button>
           {EDITABLE_TYPES.map((type) => (
             <button
               key={type}
@@ -827,6 +843,7 @@ export function ScreenplayView() {
               onClick={() => {
                 editor.view.focus();
                 setElementType(type)(editor.state, editor.view.dispatch);
+                setToolsOpen(false);
               }}
             >
               {sp.elements[type]}
@@ -863,7 +880,7 @@ export function ScreenplayView() {
           <button type="button" className="sp-option" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onPointerDown={(e) => e.preventDefault()} onClick={openReview}>
             {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
           </button>
-          <button type="button" className="sp-option" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
+          <button type="button" className="sp-option stats-button" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
             {t.projectStats.button}
           </button>
           {charFilter && (
