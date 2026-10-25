@@ -10,6 +10,8 @@ export type CharacterFilterMode = "scenes" | "lines";
 export interface CharacterFilter {
   name: string;
   mode: CharacterFilterMode;
+  /** Second personnage (« Qui croise qui ») : seulement les scènes où les deux paraissent. */
+  with?: string;
 }
 
 /** Ce que devient chaque élément : montré, estompé ou caché. */
@@ -60,11 +62,20 @@ export function scenesWith(elements: El[], name: string): number[] {
   return out;
 }
 
+/** Index des en-têtes des scènes gardées par un filtre (les deux personnages ensemble, s'il y en a deux). */
+export function keptScenes(elements: El[], filter: CharacterFilter): number[] {
+  const own = scenesWith(elements, filter.name);
+  if (!filter.with?.trim()) return own;
+  const other = new Set(scenesWith(elements, filter.with));
+  return own.filter((i) => other.has(i));
+}
+
 /** Visibilité de chaque élément pour un filtre donné (tout « show » sans filtre). */
 export function filterElements(elements: El[], filter: CharacterFilter | null): Visibility[] {
   if (!filter || !filter.name.trim()) return elements.map(() => "show");
   const key = foldName(filter.name);
-  const kept = new Set(scenesWith(elements, filter.name));
+  const withKey = filter.with?.trim() ? foldName(filter.with) : null;
+  const kept = new Set(keptScenes(elements, filter));
   const out: Visibility[] = [];
   let inKept = false;
   let speaking = false;
@@ -80,7 +91,7 @@ export function filterElements(elements: El[], filter: CharacterFilter | null): 
       return;
     }
     // « Ses répliques » : son nom et ce qui le suit (didascalies, répliques) en pleine encre, le reste estompé.
-    if (el.type === "character") speaking = isSpeaker(el, key);
+    if (el.type === "character") speaking = isSpeaker(el, key) || (withKey !== null && isSpeaker(el, withKey));
     else if (!DIALOGUE.has(el.type)) speaking = false;
     out.push(speaking ? "show" : "dim");
   });

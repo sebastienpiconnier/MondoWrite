@@ -248,7 +248,9 @@
 .rel { display: flex; flex-direction: column; gap: 14px; }
 .rel-map { position: relative; width: 100%; margin: 0 auto; }
 .rel-map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.rel-line { stroke: var(--edge); stroke-width: 2; opacity: 0.55; }
+.rel-line { stroke: var(--edge); stroke-width: 2; opacity: 0.55; stroke-linecap: round; }
+.rel-line.is-apart { stroke-dasharray: 4 6; }
+.rel-list-shared { font-size: 0.8125rem; }
 .rel-label { font: 600 13px var(--font-ui); fill: var(--accent-ink); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
 .rel-name { font: 500 14px var(--font-ui); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .rel-face { position: absolute; display: grid; place-items: center; padding: 0; border: 3px solid var(--type-personnage); border-radius: 50%; background: var(--ground); color: var(--type-personnage); font: 600 22px var(--font-display); cursor: pointer; overflow: hidden; box-shadow: var(--shadow-card); }
@@ -349,3 +351,39 @@
 /* Fiche d'un personnage : ses chiffres en une ligne sous le nom. */
 .bible-stats-line { margin: 2px 0 0; color: var(--ink-2); font-size: 0.8125rem; }
 .char-stats-sub { color: var(--ink-2); }
+
+/* Fenêtre Statistiques (StatsPanel) : onglets, tableaux de la Bible d'avant, « Qui croise qui ». */
+.app-dialog.is-stats { width: min(1040px, calc(100vw - 32px)); }
+.stats-panel { display: flex; flex-direction: column; gap: 14px; }
+.stats-panel h2 { margin: 0; }
+.stats-tabs { align-self: flex-start; flex-wrap: wrap; }
+.char-stats td .char-stats-sub { display: block; font-size: 0.75rem; }
+.cross-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cross-head p { margin: 0; font-size: 0.875rem; max-width: 60ch; }
+.cross-layout { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.cross-main { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.cross-side { flex: 1 1 240px; display: flex; flex-direction: column; gap: 10px; }
+.cross-side section { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 0.875rem; }
+.app-dialog .cross-side h3 { margin: 0 0 6px; }
+.cross-side p { margin: 4px 0 0; }
+.cross-side ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+.cross-big { font-size: 1.125rem; font-weight: 600; color: var(--ink); }
+.cross-table { overflow-x: auto; }
+.cross table { width: auto; border-collapse: separate; border-spacing: 4px; }
+.cross th, .cross td { border: 0; padding: 0; }
+.cross tbody th { padding-right: 10px; white-space: nowrap; }
+.cross thead th { vertical-align: bottom; font-size: 0.75rem; font-weight: 600; color: var(--ink-2); padding: 0 2px 4px; }
+.cross thead th { width: 6.5em; }
+.cross thead th span { display: block; max-width: 7.5em; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.cross-cell { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 3.25em; height: 44px; border: 1px solid transparent; border-radius: 8px; font: 600 0.9375rem var(--font-ui); font-variant-numeric: tabular-nums; color: var(--ink); background: color-mix(in srgb, var(--accent) var(--heat, 10%), var(--surface)); cursor: pointer; }
+.cross-cell.is-top { border-color: var(--accent); }
+.cross-cell.is-never { background: var(--surface); border: 1px dashed var(--status-revise); color: var(--status-revise); }
+.cross-cell[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+.cross-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; background: var(--ground); color: var(--muted); text-align: center; cursor: default; }
+.cross-shared { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--ground); font-size: 0.875rem; }
+.cross-shared p { margin: 0 0 6px; }
+.cross-shared ul { margin: 0 0 8px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.cross-shared-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+@media (any-hover: hover) { .cross-cell:hover { border-color: var(--line-2); } }
+.stats-panel .sq-modes { display: flex; }

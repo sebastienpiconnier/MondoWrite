@@ -1,5 +1,6 @@
 // Carte des relations, dans la rubrique Personnages de la Bible : les portraits reliés par les fils du
-// canevas, avec leurs étiquettes. Rien n'est enregistré à part : c'est une autre lecture des fils.
+// canevas, avec leurs étiquettes. Un fil s'épaissit avec le nombre de scènes que les deux partagent
+// (useProjectStats, comme « Qui croise qui ») ; en pointillé, ils n'en partagent aucune. Rien n'est enregistré à part : c'est une autre lecture des fils.
 // Toucher un portrait ouvre sa fiche. La liste des relations, en texte, suit la carte (lecteurs d'écran,
 // et lecture rapide sur téléphone).
 
@@ -10,6 +11,8 @@ import { useSettings } from "../settings";
 import { edgePoint, relationMap } from "../relations";
 import type { CardData } from "../types";
 import { useMediaUrl } from "./useMediaUrl";
+import { useProjectStats } from "./useProjectStats";
+import { sharedById } from "../review/crossings";
 
 const R = 34;
 const R_HUB = 44;
@@ -34,6 +37,11 @@ export function RelationsMap({ onOpen }: { onOpen: (id: string) => void }) {
     () => relationMap([...cards.values()], edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: String(e.label ?? "") })), lang),
     [cards, edges, lang],
   );
+  const { cast } = useProjectStats();
+  const together = useMemo(() => new Map(map.edges.map((e) => [e.id, sharedById(cast.people, e.source, e.target)])), [map, cast]);
+  const most = Math.max(1, ...together.values());
+  // Rien d'écrit encore (aucune scène ne cite personne) : pas de pointillés partout.
+  const anyScene = cast.people.some((p) => p.scenes.length > 0);
   const at = new Map(map.nodes.map((n) => [n.id, n]));
   const radius = (id: string) => (id === map.hub ? R_HUB : R);
   const name = (id: string) => cards.get(id)?.title.trim() || t.bible.untitled;
@@ -53,7 +61,14 @@ export function RelationsMap({ onOpen }: { onOpen: (id: string) => void }) {
             const q = edgePoint(b.x, b.y, a.x, a.y, radius(b.id) + gap(b, a));
             return (
               <g key={e.id}>
-                <line x1={p.x} y1={p.y} x2={q.x} y2={q.y} className="rel-line" />
+                <line
+                  x1={p.x}
+                  y1={p.y}
+                  x2={q.x}
+                  y2={q.y}
+                  className={`rel-line${anyScene && !together.get(e.id) ? " is-apart" : ""}`}
+                  style={{ strokeWidth: anyScene ? 1.5 + (5 * (together.get(e.id) ?? 0)) / most : undefined }}
+                />
                 {e.label && (
                   <text x={(p.x + q.x) / 2} y={(p.y + q.y) / 2} className="rel-label" textAnchor="middle" dominantBaseline="middle">
                     {e.label.length > 28 ? `${e.label.slice(0, 27)}…` : e.label}
@@ -93,6 +108,7 @@ export function RelationsMap({ onOpen }: { onOpen: (id: string) => void }) {
               <strong>{name(e.source)}</strong>
               <span className="rel-list-label">{e.label || r.unlabeled}</span>
               <strong>{name(e.target)}</strong>
+              {anyScene && <span className="muted rel-list-shared">{fmt(together.get(e.id) === 1 ? r.sharedOne : r.sharedMany, { n: together.get(e.id) ?? 0 })}</span>}
             </li>
           ))}
         </ul>

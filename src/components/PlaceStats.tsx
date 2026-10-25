@@ -1,5 +1,5 @@
-// Bible › Lieux › Statistiques (Décors dans un scénario) : tableau trié par colonne, répartition intérieur
-// ou extérieur, jour ou nuit (scénario), export CSV. Tout est relu dans le texte (review/places.ts).
+// Fenêtre Statistiques › Lieux (Décors dans un scénario) : tableau trié par colonne, intérieur ou extérieur,
+// jour ou nuit par décor (scénario), export CSV. Tout est relu dans le texte (review/places.ts).
 
 import { useMemo, useState } from "react";
 import { fmt, useT } from "../i18n";
@@ -7,22 +7,21 @@ import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { storage } from "../storage";
 import { useVocab } from "../vocab";
-import { placesCsv, sortPlaces, type PlaceRow, type PlaceSortKey, type SettingSummary } from "../review/places";
+import { placesCsv, sortPlaces, type PlaceRow, type PlaceSortKey } from "../review/places";
 
 interface Props {
   rows: PlaceRow[];
   kind: "script" | "text";
-  /** Scénario : répartition sur tout le texte. */
-  summary?: SettingSummary;
   onOpen: (id: string) => void;
 }
 
 /** Personnages montrés sous le nom d'un lieu : les quatre premiers, puis « +n ». */
 const SHOWN = 4;
 
-export function PlaceStats({ rows, kind, summary, onOpen }: Props) {
+export function PlaceStats({ rows, kind, onOpen }: Props) {
   const t = useT().placeStats;
   const cs = useT().charStats;
+  const ps = useT().projectStats;
   const { types } = useVocab();
   const lang = useSettings((s) => s.lang);
   const title = useCosmos((s) => s.title);
@@ -121,7 +120,10 @@ export function PlaceStats({ rows, kind, summary, onOpen }: Props) {
                 {script && (
                   <>
                     <td className="is-number">{r.scenes ? `${number(r.int)} / ${number(r.ext)}` : ""}</td>
-                    <td className="is-number">{r.scenes ? `${number(r.day)} / ${number(r.night)}` : ""}</td>
+                    <td className="is-number">
+                      {r.scenes ? `${number(r.day)} / ${number(r.night)}` : ""}
+                      {r.inherited > 0 && <span className="char-stats-sub">{fmt(ps.inherited, { n: number(r.inherited) })}</span>}
+                    </td>
                   </>
                 )}
               </tr>
@@ -130,27 +132,6 @@ export function PlaceStats({ rows, kind, summary, onOpen }: Props) {
         </table>
       </div>
 
-      {summary && summary.scenes > 0 && (
-        <>
-          <h4 className="char-stats-title">{t.summaryTitle}</h4>
-          <ul className="char-stats-genders">
-            {(
-              [
-                [t.int, summary.int],
-                [t.ext, summary.ext],
-                [t.day, summary.day],
-                [t.night, summary.night],
-              ] as const
-            ).map(([label, n]) => (
-              <li key={label}>
-                <span className="char-stats-gender">{label}</span>
-                <span className="char-stats-big">{percent(n / summary.scenes)}</span>
-                <span className="char-stats-sub">{fmt(t.ofScenes, { n: number(n), total: number(summary.scenes) })}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
       <p className="muted char-stats-note">{script ? t.noteScript : t.noteText}</p>
     </div>
   );

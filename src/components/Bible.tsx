@@ -28,11 +28,9 @@ import { CharacterMotor } from "./CharacterMotor";
 import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
-import { CharacterStats } from "./CharacterStats";
-import { PlaceStats } from "./PlaceStats";
-import { usePagination } from "./usePagination";
-import { novelPlaces, screenplayPlaces, settingSummary, type PlaceRow } from "../review/places";
-import { novelReport, screenplayReport, type CharacterRow } from "../review/report";
+import type { PlaceRow } from "../review/places";
+import type { CharacterRow } from "../review/report";
+import { useProjectStats } from "./useProjectStats";
 import { EdgeHandle } from "./EdgeHandle";
 
 /** Image d'une fiche, en tête (la même que sur sa carte). Proportions gardées, bandes comblées par un fond flou. */
@@ -96,24 +94,11 @@ export function Bible() {
   const addTitledCard = useCosmos((s) => s.addTitledCard);
   const target = useCosmos((s) => s.bibleTarget);
   const clearTarget = useCosmos((s) => s.clearBibleTarget);
-  // Chiffres des personnages (présentation « Chiffres » et ligne sous le nom), relus dans le texte.
-  const planState = useCosmos((s) => s.plan);
-  const manuscriptText = useCosmos((s) => s.manuscript);
-  const charRows = useMemo(() => {
-    const cards = nodes.map((n) => n.data);
-    if (kind === "scenario") return screenplay ? screenplayReport(screenplay.elements, cards, lang) : [];
-    return novelReport(manuscriptText, bookOrder(nodes, planState), cards);
-  }, [kind, screenplay, nodes, lang, manuscriptText, planState]);
+  // Chiffres relus dans le texte : une ligne sous chaque personnage et chaque lieu (le détail est dans la
+  // fenêtre Statistiques, ouverte depuis le Manuscrit ou le Scénario).
+  const { characters: charRows, places: placeRows } = useProjectStats();
   const rowOf = useMemo(() => new Map(charRows.filter((r) => r.id).map((r) => [r.id!, r])), [charRows]);
-  // Statistiques des lieux (décors d'un scénario), relues dans le texte comme celles des personnages.
-  const pagination = usePagination();
-  const placeRows = useMemo(() => {
-    const cards = nodes.map((n) => n.data);
-    if (kind === "scenario") return screenplay ? screenplayPlaces(screenplay.elements, cards, pagination, lang) : [];
-    return novelPlaces(manuscriptText, bookOrder(nodes, planState), cards, edges);
-  }, [kind, screenplay, nodes, lang, manuscriptText, planState, edges, pagination]);
   const placeOf = useMemo(() => new Map(placeRows.filter((r) => r.id).map((r) => [r.id!, r])), [placeRows]);
-  const summary = useMemo(() => (kind === "scenario" && screenplay ? settingSummary(screenplay.elements) : undefined), [kind, screenplay]);
   const seeLines = (name: string) => {
     useCosmos.getState().setCharFilter({ name: name.toLocaleUpperCase(lang), mode: "lines" });
     useCosmos.getState().setView("manuscrit");
@@ -183,11 +168,9 @@ export function Bible() {
   const [current, setCurrent] = useState<CardType | "projet">("projet");
   const onCover = current === "projet";
   const onPage = onCover;
-  // Personnages : fiches, carte des relations ou chiffres (état d'affichage, non enregistré).
-  const [charView, setCharView] = useState<"cards" | "map" | "stats">("cards");
+  // Personnages : fiches ou carte des relations (état d'affichage, non enregistré).
+  const [charView, setCharView] = useState<"cards" | "map">("cards");
   const relations = charView !== "cards";
-  // Lieux : fiches ou statistiques (état d'affichage).
-  const [placeView, setPlaceView] = useState<"cards" | "stats">("cards");
   const shown = sections.find((s) => s.type === current) ?? sections.find((s) => s.cards.length > 0) ?? sections[0];
 
   // Arrivée depuis le canevas : la bonne partie, la fiche à l'écran, l'assistant ouvert si demandé.
@@ -512,7 +495,7 @@ export function Bible() {
                   <span className="toc-count">{group.cards.length}</span>
                 </h2>
                 <div className="bible-section-tools">
-                  {group.cards.length > 0 && !(group.type === "personnage" && relations) && !(group.type === "lieu" && placeView === "stats") && (
+                  {group.cards.length > 0 && !(group.type === "personnage" && relations) && (
                     <>
                       <button
                         type="button"
@@ -544,16 +527,6 @@ export function Bible() {
                     <span aria-hidden="true">+</span>
                   </button>
                 </div>
-                {group.type === "lieu" && group.cards.length > 0 && (
-                  <div className="sq-modes" role="group" aria-label={t.placeStats.tabsAria}>
-                    <button type="button" aria-pressed={placeView === "cards"} onClick={() => setPlaceView("cards")}>
-                      {t.relations.tabCards}
-                    </button>
-                    <button type="button" aria-pressed={placeView === "stats"} onClick={() => setPlaceView("stats")}>
-                      {t.relations.tabStats}
-                    </button>
-                  </div>
-                )}
                 {group.type === "personnage" && group.cards.length > 0 && (
                   <div className="sq-modes" role="group" aria-label={t.relations.tabsAria}>
                     <button type="button" aria-pressed={charView === "cards"} onClick={() => setCharView("cards")}>
@@ -562,21 +535,10 @@ export function Bible() {
                     <button type="button" aria-pressed={charView === "map"} onClick={() => setCharView("map")}>
                       {t.relations.tabMap}
                     </button>
-                    <button type="button" aria-pressed={charView === "stats"} onClick={() => setCharView("stats")}>
-                      {t.relations.tabStats}
-                    </button>
                   </div>
                 )}
               </div>
-              {group.type === "lieu" && placeView === "stats" && group.cards.length > 0 ? (
-                <div className="bible-entry">
-                  <PlaceStats rows={placeRows} kind={kind === "scenario" ? "script" : "text"} summary={summary} onOpen={openCard} />
-                </div>
-              ) : group.type === "personnage" && charView === "stats" && group.cards.length > 0 ? (
-                <div className="bible-entry">
-                  <CharacterStats rows={charRows} kind={kind === "scenario" ? "script" : "text"} onOpen={openCard} onSeeLines={kind === "scenario" ? seeLines : undefined} />
-                </div>
-              ) : group.type === "personnage" && relations && group.cards.length > 0 ? (
+              {group.type === "personnage" && relations && group.cards.length > 0 ? (
                 <div className="bible-entry">
                   <RelationsMap onOpen={openCard} />
                 </div>

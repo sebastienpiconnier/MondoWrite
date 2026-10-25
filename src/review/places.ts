@@ -34,6 +34,8 @@ export interface PlaceRow {
   ext: number;
   day: number;
   night: number;
+  /** Scénario : scènes dont le jour ou la nuit vient de la scène précédente (« PLUS TARD »). */
+  inherited: number;
 }
 
 /** INT., EXT., INT./EXT. ou I/E d'un préfixe d'en-tête. */
@@ -56,6 +58,24 @@ export function momentOf(time: string): Moment {
   return "other";
 }
 
+// Moments qui continuent la scène d'avant : « PLUS TARD », « CONTINU », « MÊME MOMENT », « LATER »…
+const CONTINUING = new Set(["PLUS", "TARD", "CONTINU", "CONTINUE", "CONTINUOUS", "CONT", "LATER", "SAME", "MEME", "MOMENT", "MOMENTS", "SUITE", "INSTANT", "TIME", "APRES", "PEU", "UN", "LE", "AU"]);
+
+/** Le moment de chaque scène, dans l'ordre du scénario. Un moment absent ou qui continue la scène d'avant
+ *  (« PLUS TARD ») reprend le jour ou la nuit de la scène précédente : `inherited` le signale. */
+export function sceneMoments(elements: ScreenplayElement[]): { moment: Moment; inherited: boolean }[] {
+  let previous: Moment = "other";
+  return listScenes(elements).map((scene) => {
+    const { time } = headingParts(scene.text);
+    const own = momentOf(time);
+    const words = foldName(time).split(/[^A-Z]+/).filter(Boolean);
+    const continues = own === "other" && words.every((w) => CONTINUING.has(w));
+    const result = continues && previous !== "other" ? { moment: previous, inherited: true } : { moment: own, inherited: false };
+    previous = result.moment;
+    return result;
+  });
+}
+
 /** Le décor d'un en-tête correspond-il à ce lieu ? Égal une fois replié, ou lieu principal d'un « PHARE, LANTERNE ». */
 export function sameLocation(location: string, name: string): boolean {
   const a = foldName(location);
@@ -65,7 +85,7 @@ export function sameLocation(location: string, name: string): boolean {
 }
 
 const empty = (id: string | null, name: string): PlaceRow => ({
-  id, name, scenes: 0, pages: 0, words: 0, share: 0, first: null, last: null, characters: [], int: 0, ext: 0, day: 0, night: 0,
+  id, name, scenes: 0, pages: 0, words: 0, share: 0, first: null, last: null, characters: [], int: 0, ext: 0, day: 0, night: 0, inherited: 0,
 });
 
 /** Scénario : une ligne par carte Lieu, plus les décors des en-têtes qui n'ont pas de carte. */
@@ -76,11 +96,12 @@ export function screenplayPlaces(elements: ScreenplayElement[], cards: CardData[
   const extra = new Map<string, PlaceRow>();
   // Un personnage qui a sa carte est écrit comme sur sa carte (« Le Loup » plutôt que « LE LOUP »).
   const titled = new Map(cards.filter((c) => c.type === "personnage" && c.title.trim()).map((c) => [foldName(c.title), c.title.trim()]));
+  const moments = sceneMoments(elements);
   let totalPages = 0;
-  for (const scene of scenes) {
+  for (const [i, scene] of scenes.entries()) {
     const pages = pagination ? pagesBetween(pagination, scene.index, scene.end) : 0;
     totalPages += pages;
-    const { prefix, location, time } = headingParts(scene.text);
+    const { prefix, location } = headingParts(scene.text);
     if (!location) continue;
     let row = rows[places.findIndex((c) => sameLocation(location, c.title))];
     if (!row) {
@@ -95,9 +116,10 @@ export function screenplayPlaces(elements: ScreenplayElement[], cards: CardData[
     const setting = settingOf(prefix);
     if (setting === "int" || setting === "both") row.int++;
     if (setting === "ext" || setting === "both") row.ext++;
-    const moment = momentOf(time);
+    const { moment, inherited } = moments[i];
     if (moment === "day") row.day++;
     if (moment === "night") row.night++;
+    if (inherited) row.inherited++;
     for (const { name } of sceneCharacters(elements, scene)) {
       const upper = titled.get(foldName(name)) ?? name.toLocaleUpperCase(locale);
       if (!row.characters.some((n) => foldName(n) === foldName(upper))) row.characters.push(upper);
@@ -147,23 +169,29 @@ export interface SettingSummary {
   /** Scènes dont l'en-tête ne dit ni INT. ni EXT., ou dont le moment n'est ni jour ni nuit. */
   unknownSetting: number;
   otherMoment: number;
+  /** Scènes dont le jour ou la nuit vient de la scène précédente. */
+  inheritedDay: number;
+  inheritedNight: number;
   scenes: number;
 }
 
 /** Scénario entier : scènes en intérieur ou extérieur, de jour ou de nuit. */
 export function settingSummary(elements: ScreenplayElement[]): SettingSummary {
-  const s: SettingSummary = { int: 0, ext: 0, day: 0, night: 0, unknownSetting: 0, otherMoment: 0, scenes: 0 };
-  for (const scene of listScenes(elements)) {
-    const { prefix, time } = headingParts(scene.text);
+  const s: SettingSummary = { int: 0, ext: 0, day: 0, night: 0, unknownSetting: 0, otherMoment: 0, inheritedDay: 0, inheritedNight: 0, scenes: 0 };
+  const moments = sceneMoments(elements);
+  for (const [i, scene] of listScenes(elements).entries()) {
+    const { prefix } = headingParts(scene.text);
     s.scenes++;
     const setting = settingOf(prefix);
     if (setting === "int" || setting === "both") s.int++;
     if (setting === "ext" || setting === "both") s.ext++;
     if (setting === "") s.unknownSetting++;
-    const moment = momentOf(time);
+    const { moment, inherited } = moments[i];
     if (moment === "day") s.day++;
     else if (moment === "night") s.night++;
     else s.otherMoment++;
+    if (inherited && moment === "day") s.inheritedDay++;
+    if (inherited && moment === "night") s.inheritedNight++;
   }
   return s;
 }

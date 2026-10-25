@@ -3,7 +3,7 @@ import type { ScreenplayElement } from "../screenplay/model";
 import type { CardData } from "../types";
 import { paginate } from "../screenplay/paginate";
 import { LAYOUTS } from "../screenplay/layout";
-import { momentOf, novelPlaces, placesCsv, sameLocation, screenplayPlaces, settingOf, settingSummary, sortPlaces } from "../review/places";
+import { momentOf, novelPlaces, sceneMoments, placesCsv, sameLocation, screenplayPlaces, settingOf, settingSummary, sortPlaces } from "../review/places";
 
 const el = (type: ScreenplayElement["type"], text: string): ScreenplayElement => ({ type, text }) as ScreenplayElement;
 const card = (id: string, type: CardData["type"], title: string): CardData => ({ id, type, title, html: "" }) as CardData;
@@ -39,6 +39,13 @@ describe("lecture des en-têtes", () => {
     expect(momentOf("PLUS TARD")).toBe("other");
     expect(momentOf("")).toBe("other");
   });
+  it("« PLUS TARD » ou un moment absent reprennent celui de la scène d'avant", () => {
+    const h = (t: string) => el("sceneHeading", t);
+    const m = sceneMoments([h("INT. MAISON - NUIT"), h("INT. MAISON - PLUS TARD"), h("EXT. RUE"), h("EXT. RUE - FLASHBACK"), h("INT. BAR - UN PEU PLUS TARD")]);
+    expect(m.map((x) => x.moment)).toEqual(["night", "night", "night", "other", "other"]);
+    expect(m.map((x) => x.inherited)).toEqual([false, true, true, false, false]);
+    expect(sceneMoments([h("INT. MAISON - CONTINU")])[0]).toEqual({ moment: "other", inherited: false });
+  });
   it("même décor, sous-lieu compris", () => {
     expect(sameLocation("PHARE, LANTERNE", "Phare")).toBe(true);
     expect(sameLocation("MAISON DE LA MÈRE", "Maison de la Mère")).toBe(true);
@@ -72,7 +79,7 @@ describe("statistiques des décors d'un scénario", () => {
     expect(mairie.scenes).toBe(1);
   });
   it("résume le scénario entier", () => {
-    expect(settingSummary(script)).toEqual({ int: 3, ext: 2, day: 2, night: 1, unknownSetting: 0, otherMoment: 1, scenes: 4 });
+    expect(settingSummary(script)).toEqual({ int: 3, ext: 2, day: 3, night: 1, unknownSetting: 0, otherMoment: 0, inheritedDay: 1, inheritedNight: 0, scenes: 4 });
   });
   it("trie et exporte", () => {
     expect(sortPlaces(rows, "scenes", true)[0].id).toBe("p1");

@@ -31,7 +31,7 @@ export interface CharacterRow {
 const spokenWords = (text: string) => text.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 
 /** Noms par lesquels une carte Personnage est désignée : titre et surnoms. */
-const cardNames = (card: CardData) => [card.title, ...(card.fiche?.surnoms ?? "").split(/[,;]/)].map((n) => n.trim()).filter(Boolean);
+export const cardNames = (card: CardData) => [card.title, ...(card.fiche?.surnoms ?? "").split(/[,;]/)].map((n) => n.trim()).filter(Boolean);
 
 /** Scénario : une ligne par carte Personnage, plus les noms qui parlent sans carte. */
 export function screenplayReport(elements: ScreenplayElement[], cards: CardData[], locale = "fr"): CharacterRow[] {

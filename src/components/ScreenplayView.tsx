@@ -22,7 +22,7 @@ import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
 import { checkScreenplay, type Finding } from "../review/checks";
-import { scenesWith, speakingNames } from "../review/filter";
+import { keptScenes as keptBy, speakingNames } from "../review/filter";
 import { setCharacterFilter } from "../screenplay/editor/characterFilter";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
 import { useCommand } from "../commands";
@@ -488,7 +488,7 @@ export function ScreenplayView() {
   const charFilter = useCosmos((s) => s.charFilter);
   const setCharFilter = useCosmos((s) => s.setCharFilter);
   const speakingList = useMemo(() => speakingNames(elements, lang), [elements, lang]);
-  const keptScenes = useMemo(() => (charFilter ? new Set(scenesWith(elements, charFilter.name)) : null), [elements, charFilter]);
+  const keptScenes = useMemo(() => (charFilter ? new Set(keptBy(elements, charFilter)) : null), [elements, charFilter]);
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     editor.view.dispatch(setCharacterFilter(editor.state, charFilter));
@@ -863,9 +863,12 @@ export function ScreenplayView() {
           <button type="button" className="sp-option" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onPointerDown={(e) => e.preventDefault()} onClick={openReview}>
             {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
           </button>
+          <button type="button" className="sp-option" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
+            {t.projectStats.button}
+          </button>
           {charFilter && (
             <p className="sp-filter-banner" role="status">
-              <span>{fmt(charFilter.mode === "lines" ? sp.filterBannerLines : sp.filterBannerScenes, { name: charFilter.name })}</span>
+              <span>{charFilter.with ? fmt(charFilter.mode === "lines" ? sp.filterBannerPairLines : sp.filterBannerPair, { name: charFilter.name, other: charFilter.with }) : fmt(charFilter.mode === "lines" ? sp.filterBannerLines : sp.filterBannerScenes, { name: charFilter.name })}</span>
               <button type="button" aria-label={sp.filterClearAria} title={sp.filterClear} onClick={() => setCharFilter(null)}>
                 ×
               </button>

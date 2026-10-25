@@ -98,6 +98,9 @@ async function buildMenu() {
       await MenuItem.new({ id: "view-bible", text: views.bible, accelerator: "CmdOrCtrl+3", enabled: inProject, action: goTo("bible") }),
       await MenuItem.new({ id: "view-manuscrit", text: views.manuscrit, accelerator: "CmdOrCtrl+4", enabled: inProject, action: goTo("manuscrit") }),
       await sep(),
+      // Fenêtre Statistiques : personnages, lieux, qui croise qui (tout le projet, depuis n'importe quelle vue).
+      await MenuItem.new({ id: "stats", text: m.stats, enabled: inProject, action: () => useCosmos.getState().setDialog("stats") }),
+      await sep(),
       // Zoom de la page du manuscrit ou du scénario : seulement dans cette vue (raccourcis rejoués).
       await MenuItem.new({ id: "zoom-in", text: m.zoomIn, accelerator: "CmdOrCtrl+=", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("=", "Equal") }),
       await MenuItem.new({ id: "zoom-out", text: m.zoomOut, accelerator: "CmdOrCtrl+-", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("-", "Minus") }),
