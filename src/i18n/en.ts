@@ -43,30 +43,13 @@ export const en: Messages = {
   },
 
   conflict: {
-    changed: {
-      project: "The canvas was changed here and {where} at the same time.",
-      screenplay: "The screenplay was changed here and {where} at the same time.",
-      card: "The card “{title}” was changed here and {where} at the same time.",
-      manuscript: "The text of “{title}” was changed here and {where} at the same time.",
-      other: "A project file was changed here and {where} at the same time.",
-    },
-    deleted: {
-      project: "You deleted the canvas here, but it was changed {where}.",
-      screenplay: "You deleted the screenplay here, but it was changed {where}.",
-      card: "You deleted the card “{title}” here, but it was changed {where}.",
-      manuscript: "You deleted the text of “{title}” here, but it was changed {where}.",
-      other: "You deleted a project file here, but it was changed {where}.",
-    },
+    message: "Your project was changed here and {where} at the same time. Which version do you want to keep?",
     whereIcloud: "on another device",
     whereOther: "elsewhere",
-    question: "Which version do you want to keep?",
     note: "The other version is set aside until you choose.",
     keepMine: "This one",
     keepIcloud: "The iCloud one",
     keepOther: "The other one",
-    deleteAnyway: "Delete",
-    keepIt: "Keep",
-    more: "+{n} waiting",
   },
 
   search: {

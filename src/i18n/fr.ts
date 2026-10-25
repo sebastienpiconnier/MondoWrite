@@ -43,32 +43,15 @@ export const fr = {
     hint: "Carte mise en avant · Échap ou un clic sur le fond pour tout revoir",
   },
 
-  // Un fichier changé ici ET ailleurs (autre appareil par iCloud, autre logiciel) : dit en clair, sans nom de fichier.
+  // Le projet changé ici ET ailleurs (autre appareil par iCloud, autre logiciel) : un seul message, quel que soit le fichier.
   conflict: {
-    changed: {
-      project: "Le canevas a été modifié ici et {where} en même temps.",
-      screenplay: "Le scénario a été modifié ici et {where} en même temps.",
-      card: "La carte « {title} » a été modifiée ici et {where} en même temps.",
-      manuscript: "Le texte de « {title} » a été modifié ici et {where} en même temps.",
-      other: "Un fichier du projet a été modifié ici et {where} en même temps.",
-    },
-    deleted: {
-      project: "Tu as supprimé le canevas ici, mais il a été modifié {where}.",
-      screenplay: "Tu as supprimé le scénario ici, mais il a été modifié {where}.",
-      card: "Tu as supprimé la carte « {title} » ici, mais elle a été modifiée {where}.",
-      manuscript: "Tu as supprimé le texte de « {title} » ici, mais il a été modifié {where}.",
-      other: "Tu as supprimé un fichier du projet ici, mais il a été modifié {where}.",
-    },
+    message: "Ton projet a été modifié ici et {where} en même temps. Laquelle des deux versions veux-tu garder ?",
     whereIcloud: "sur un autre appareil",
     whereOther: "ailleurs",
-    question: "Laquelle des deux versions veux-tu garder ?",
     note: "L’autre version reste de côté tant que tu n’as pas choisi.",
     keepMine: "Celle-ci",
     keepIcloud: "Celle d’iCloud",
     keepOther: "L’autre",
-    deleteAnyway: "Supprimer",
-    keepIt: "Garder",
-    more: "+{n} en attente",
   },
 
   search: {
