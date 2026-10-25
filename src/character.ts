@@ -30,6 +30,11 @@ export const CHARACTER_FIELDS = [
   "relations",
   "arcType",
   "arc",
+  // Bible v2 : accroche d'une ligne, arc en deux temps, personnage principal (valeur « oui » ou absente).
+  "accroche",
+  "debut",
+  "fin",
+  "principal",
 ] as const;
 export type CharacterField = (typeof CHARACTER_FIELDS)[number];
 
@@ -51,11 +56,18 @@ export const ARC_TYPES = ["positif", "negatif", "plat"] as const;
 export type ArcType = (typeof ARC_TYPES)[number];
 export const isArcType = (v: unknown): v is ArcType => typeof v === "string" && (ARC_TYPES as readonly string[]).includes(v);
 
+/** Champs d'un personnage montrés hors de la liste de la fiche : en-tête (accroche, principal) et arc. */
+export const CHARACTER_HEAD_FIELDS = ["arcType", "arc", "accroche", "debut", "fin", "principal"] as const satisfies readonly CharacterField[];
+
+/** Valeur écrite pour un personnage principal (jamais traduite). */
+export const PRINCIPAL = "oui";
+export const isPrincipal = (card: Pick<CardData, "type" | "fiche">) => card.type === "personnage" && card.fiche?.principal === PRINCIPAL;
+
 /** Champs montrés ailleurs que dans la liste de la fiche (bande du moteur, choix de l'arc). */
 export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<string> {
   // Le statut d'une scène a son propre sélecteur (SceneStatusPicker) : pas une ligne de la fiche.
   if (card.type === "scene") return new Set<string>(["statut"]);
-  return card.type === "personnage" ? new Set<string>([...motorFields(card), "arcType", "arc"]) : new Set<string>();
+  return card.type === "personnage" ? new Set<string>([...motorFields(card), ...CHARACTER_HEAD_FIELDS]) : new Set<string>();
 }
 
 /** Valeur d'un champ telle qu'on la lit (le type d'arc est une clé, montrée par son libellé). */
@@ -123,6 +135,7 @@ export function readFiche(raw: unknown, type: CardType = "personnage"): Record<s
     if (typeof value !== "string" || !value.trim()) continue;
     if (key === "arcType" && !isArcType(value)) continue;
     if (key === "statut" && !isSceneStatus(value)) continue;
+    if (key === "principal" && value !== PRINCIPAL) continue;
     out[key] = value.slice(0, MAX_VALUE);
   }
   return Object.keys(out).length > 0 ? out : undefined;

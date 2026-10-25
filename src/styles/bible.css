@@ -405,3 +405,20 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
 .bible-part-title { margin: 0 0 -4px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
 .bible-part-title.is-private { color: var(--ink-2); }
 .bible-group + .bible-group:has(> .bible-part-title) { margin-top: 44px; }
+
+/* Fiche personnage (Bible v2) : accroche sous le nom, étoile « principal », arc en deux temps, pastilles « Ajouter si utile ». */
+.bible-hook { width: 100%; margin: 2px 0 4px; padding: 2px 0; border: 0; border-radius: 4px; background: transparent; color: var(--ink-2); font: italic 1rem/1.4 var(--font-text); }
+.bible-hook::placeholder { color: var(--placeholder); }
+.bible-hook:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bible-principal { color: var(--ink-2); flex-shrink: 0; }
+.bible-principal.is-on { color: var(--accent-ink); }
+.motor-arc-ends { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+.motor-cell.is-arc-end { position: relative; background: transparent; border: 1px solid var(--line); }
+.motor-arc-arrow { position: absolute; right: -9px; top: 50%; transform: translate(50%, -50%); color: var(--accent-ink); font-size: 1rem; line-height: 1; }
+@media (max-width: 720px) { .motor-arc-arrow { display: none; } }
+.motor-arc-text label { display: block; margin-bottom: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.sheet-add { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 14px 10px; }
+.sheet-add .eyebrow { width: 100%; }
+.sheet-add-chip { min-height: 36px; border: 1px dashed var(--line-2); background: transparent; color: var(--ink-2); cursor: pointer; font: inherit; font-size: 0.8125rem; }
+@media (any-hover: hover) { .sheet-add-chip:hover { background: var(--hover); color: var(--ink); } }
+@media (pointer: coarse) { .sheet-add-chip { min-height: 44px; } }

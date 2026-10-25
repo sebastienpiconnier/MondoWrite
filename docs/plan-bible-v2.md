@@ -47,14 +47,14 @@ Multiplateforme : sommaire repliable sur téléphone (≤ 720 px), en-têtes de 
 
 Affichage : accroche sous le nom, bande moteur, « au début → à la fin », « qui il est » (le corps de la carte), relations (tirées des fils, déjà calculées par `relatedRuns`), puis « Ajouter si utile ».
 
-- [ ] `character.ts` : ajouter à `CHARACTER_FIELDS` les clés `accroche`, `debut`, `fin` et `principal` (valeur `oui` ou absente, `readFiche` rejette le reste). Clés écrites dans le fichier : ne plus jamais les renommer.
-- [ ] Bande moteur (`CharacterMotor.tsx`) : **Veut** (`objectif`), **A besoin** (`besoin`), **Blessure, conflit intérieur** (même clé `blessure`, seuls le libellé et le texte indicatif changent dans `t.character.motor`). Aucune nouvelle clé, aucune donnée déplacée : ce qu'un auteur a écrit comme blessure reste à sa place. Antagoniste inchangé (motivation, force, faille).
-- [ ] Case « Personnage principal » (`principal`) sur l'affiche : un interrupteur, aussi au clavier ; les principaux passent en tête de la partie Personnages et ont une page chacun à l'export.
-- [ ] Arc : deux cases « Au début » / « À la fin » sous la bande ; la petite courbe du type d'arc reste ; l'ancien texte libre `arc` s'affiche s'il est rempli (« Évolution »).
-- [ ] Accroche : une ligne en italique sous le nom, dans l'affiche (`Poster` de `Bible.tsx`).
-- [ ] « Ajouter si utile » : les champs vides sont cachés derrière un menu (voix, traits = `personnalite`, défaut moteur, peur, secret, apparence, origine…). Un champ rempli s'affiche toujours. Généraliser dans `CardSheet` pour les lieux et intrigues.
-- [ ] Assistant : une question « En une phrase, qui est ce personnage ? » propose de remplir l'accroche, sur clic de l'auteur ; mettre à jour `docs/prompts-ia.md`. L'IA n'écrit pas l'accroche elle-même.
-- [ ] Tests : lecture et écriture des nouvelles clés, ancien projet sans ces clés, `principal` invalide ignoré.
+- [x] `character.ts` : ajouter à `CHARACTER_FIELDS` les clés `accroche`, `debut`, `fin` et `principal` (valeur `oui` ou absente, `readFiche` rejette le reste). Clés écrites dans le fichier : ne plus jamais les renommer.
+- [x] Bande moteur (`CharacterMotor.tsx`) : **Veut** (`objectif`), **A besoin** (`besoin`), **Blessure, conflit intérieur** (même clé `blessure`, seuls le libellé et le texte indicatif changent dans `t.character.motor`). Aucune nouvelle clé, aucune donnée déplacée : ce qu'un auteur a écrit comme blessure reste à sa place. Antagoniste inchangé (motivation, force, faille).
+- [x] Case « Personnage principal » (`principal`) sur l'affiche : une étoile à côté du nom (bouton `aria-pressed`), les principaux passent en tête de la partie Personnages. La page de chacun à l'export viendra avec le lot 3.
+- [x] Arc : deux cases « Au début » / « À la fin » sous la bande ; la petite courbe du type d'arc reste ; l'ancien texte libre `arc` s'affiche s'il est rempli (« Évolution »).
+- [x] Accroche : une ligne en italique sous le nom, modifiable sur place (en-tête de la fiche dans `Bible.tsx`).
+- [x] « Ajouter si utile » : dans `CardSheet` (tous les types), une pastille « + Champ » par champ vide ; toucher la pastille montre le champ et y met le curseur. « Afficher les champs vides » reste pour tout voir. Le champ « défaut moteur » n'existe pas encore : `faille` en tient lieu.
+- [x] Assistant : question `hook` « En une phrase, qui est ce personnage ? » à la fin du thème « L'essentiel » (`THEME_KEYS`, pas dans les anciens niveaux) ; la réponse de l'auteur remplit l'accroche (`QUESTION_FIELD`). Question de la banque fixe, pas de l'IA : `docs/prompts-ia.md` inchangé.
+- [x] Tests : `bible-character-v2.test.ts` (nouvelles clés lues et réécrites, ancien projet, `principal` invalide ignoré, export sans « principal », question `hook`).
 
 ## Lot 3 : l'export v2 (dossier de présentation et bible de travail)
 

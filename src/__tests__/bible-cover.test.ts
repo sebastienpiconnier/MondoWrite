@@ -45,7 +45,7 @@ describe("moteur d'un personnage", () => {
     expect(isAntagonist({ fiche: { role: "Antagoniste principal" } })).toBe(true);
     expect(isAntagonist({ fiche: { role: "the villain" } })).toBe(true);
     expect(motorFields({ fiche: { role: "Antagonist" } })).toEqual(["motivation", "force", "faille"]);
-    expect(bandFields({ type: "personnage", fiche: {} })).toEqual(new Set(["objectif", "besoin", "blessure", "arcType", "arc"]));
+    expect(bandFields({ type: "personnage", fiche: {} })).toEqual(new Set(["objectif", "besoin", "blessure", "arcType", "arc", "accroche", "debut", "fin", "principal"]));
     expect(bandFields({ type: "lieu", fiche: {} }).size).toBe(0);
   });
 

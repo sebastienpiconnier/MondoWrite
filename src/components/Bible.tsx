@@ -12,7 +12,7 @@ import { loadFolded, saveFolded, setFolded } from "../bibleFold";
 import { useCosmos } from "../store";
 import { typeColor, type CardData, type CardType } from "../types";
 import { fmt, useT } from "../i18n";
-import { POSTER_FIELDS } from "../character";
+import { POSTER_FIELDS, PRINCIPAL, isPrincipal } from "../character";
 import { mentionsIn } from "../manuscript";
 import { bookOrder } from "../book";
 import { toggleSection } from "../bibleSections";
@@ -158,7 +158,8 @@ export function Bible() {
         cards: nodes
           .filter((n) => n.data.type === type)
           .map((n) => n.data)
-          .sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : a.title.localeCompare(b.title, lang))),
+          // Les personnages principaux d'abord (Bible v2), puis l'ordre alphabétique.
+          .sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : Number(isPrincipal(b)) - Number(isPrincipal(a)) || a.title.localeCompare(b.title, lang))),
       })),
     [nodes, lang, fresh, prefs],
   );
@@ -297,10 +298,39 @@ export function Bible() {
                     }}
                   />
                 </h3>
+                {/* L'accroche : le personnage en une phrase, sous son nom, comme dans un dossier. */}
+                {type === "personnage" && (
+                  <input
+                    type="text"
+                    className="bible-hook"
+                    value={card.fiche?.accroche ?? ""}
+                    placeholder={t.character.placeholders.accroche}
+                    aria-label={t.character.hookAria}
+                    autoComplete="off"
+                    onChange={(e) => useCosmos.getState().setFiche(card.id, "accroche", e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                    }}
+                  />
+                )}
                 {type === "personnage" && rowOf.get(card.id) && <StatsLine row={rowOf.get(card.id)!} script={kind === "scenario"} />}
                 {type === "lieu" && placeOf.get(card.id) && <PlaceLine row={placeOf.get(card.id)!} script={kind === "scenario"} />}
                 {(type === "personnage" || type === "lieu") && <Poster card={card} />}
                 </div>
+                {type === "personnage" && (
+                  <button
+                    type="button"
+                    className={`icon-button bible-principal${isPrincipal(card) ? " is-on" : ""}`}
+                    aria-pressed={isPrincipal(card)}
+                    aria-label={fmt(t.character.principalAria, { title: name })}
+                    title={`${isPrincipal(card) ? t.character.principalOn : t.character.principalOff}. ${t.character.principalHint}`}
+                    onClick={() => useCosmos.getState().setFiche(card.id, "principal", isPrincipal(card) ? "" : PRINCIPAL)}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill={isPrincipal(card) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1-4.5-4.2 6.1-.8z" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="icon-button bible-fold"

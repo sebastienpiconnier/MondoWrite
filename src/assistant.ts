@@ -39,7 +39,7 @@ const range = (theme: AssistantTheme, ranks: number[]) => ranks.map((i) => `${th
  * répétait est écartée (passe.4, voix.0, emotions.3, relations.0, pensee.4).
  */
 export const THEME_KEYS: Record<Theme, readonly string[]> = {
-  essentiel: ["want", "need", "obstacle", "role", "look", "strength", "flaw", "change"],
+  essentiel: ["want", "need", "obstacle", "role", "look", "strength", "flaw", "change", "hook"],
   passe: ["past", "loss", "regret", ...range("passe", [0, 1, 2, 3, 5, 6])],
   corps: range("corps", [0, 1, 2, 3, 4, 5]),
   voix: ["voice", ...range("voix", [1, 2, 3, 4, 5, 6])],
@@ -82,6 +82,8 @@ export const QUESTION_FIELD: Partial<Record<string, CharacterField>> = {
   look: "apparence",
   change: "arc",
   relation: "relations",
+  // Bible v2 : la réponse de l'auteur devient l'accroche, telle qu'il l'a écrite (l'IA ne l'écrit jamais).
+  hook: "accroche",
 }
 
 /** Champ où reporter une réponse, s'il existe et qu'il est encore vide. */

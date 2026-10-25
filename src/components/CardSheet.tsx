@@ -2,10 +2,10 @@
 // Personnage : rôle, genre, âge, métier, surnoms, apparence, objectif, faille, relations…
 // Lieu : époque, ambiance, ce qui s'y passe, pourquoi il compte.
 // Intrigue : nature, question dramatique, enjeu, déclencheur, obstacles, point de bascule, résolution.
-// Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; « Plus de détails »
-// montre les autres. Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
+// Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; les autres attendent
+// derrière « Ajouter si utile », une pastille par champ (Bible v2), ou tous d'un coup par « Afficher les champs vides ». Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { SHORT_FIELDS, WIDE_FIELDS, bandFields, sheetFields, type SheetField } from "../character";
@@ -29,6 +29,13 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   // Un champ qu'on vient de vider reste à l'écran le temps de la saisie.
   const [touched, setTouched] = useState<Set<SheetField>>(new Set());
   const id = useId();
+  // Champ ajouté par sa pastille : il prend le focus dès qu'il est affiché.
+  const [focusKey, setFocusKey] = useState<SheetField | null>(null);
+  useEffect(() => {
+    if (!focusKey) return;
+    document.getElementById(`${id}-${focusKey}`)?.focus();
+    setFocusKey(null);
+  }, [focusKey, id]);
   if (fields.length === 0) return null;
   const showAll = more || filled === 0;
   const shown = fields.filter((key) => showAll || (card.fiche?.[key] ?? "").trim() || touched.has(key));
@@ -62,6 +69,27 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
       {open && (
         <div id={`${id}-fields`}>
           <div className="sheet-fields">{shown.map(field)}</div>
+          {filled > 0 && empty > 0 && !more && (
+            <div className="sheet-add" role="group" aria-label={t.addIfUseful}>
+              <span className="eyebrow">{t.addIfUseful}</span>
+              {fields
+                .filter((key) => !shown.includes(key))
+                .map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="chip sheet-add-chip"
+                    aria-label={fmt(t.addField, { field: labels[key] })}
+                    onClick={() => {
+                      setTouched(new Set(touched).add(key));
+                      setFocusKey(key);
+                    }}
+                  >
+                    <span aria-hidden="true">+</span> {labels[key]}
+                  </button>
+                ))}
+            </div>
+          )}
           {filled > 0 && empty > 0 && (
             <button type="button" className="link-button sheet-more" aria-expanded={more} onClick={() => setMore(!more)}>
               {more ? t.fewerDetails : fmt(t.moreDetails, { n: empty })}

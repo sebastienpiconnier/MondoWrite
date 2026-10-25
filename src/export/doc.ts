@@ -256,6 +256,8 @@ export function bibleDoc(
       if (strings.fields && card.fiche) {
         for (const key of sheetFields(card.type)) {
           const value = card.fiche[key]?.trim();
+          // « Personnage principal » sert à ranger (et au dossier), pas à lire : jamais écrit dans la fiche exportée.
+          if (key === "principal") continue;
           if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: ficheText(key, value, strings.arcTypes) }] });
         }
       }

@@ -1,6 +1,7 @@
 // Moteur d'un personnage, en tête de sa fiche dans la Bible : trois cases lues d'un coup d'œil
-// (Veut, A besoin de, Blessure ; pour un antagoniste : Motivation, Force, Faille), puis le type d'arc,
-// dessiné. Ce sont des champs de la fiche (frontmatter `fiche`), rien n'est recopié ailleurs.
+// (Veut, A besoin de, Blessure et conflit intérieur ; pour un antagoniste : Motivation, Force, Faille), puis
+// l'arc : son type, dessiné, et ses deux temps (Au début, À la fin). Ce sont des champs de la fiche
+// (frontmatter `fiche`), rien n'est recopié ailleurs. L'ancien texte « Évolution » reste affiché s'il est rempli.
 
 import { useId } from "react";
 import { useCosmos } from "../store";
@@ -62,13 +63,23 @@ export function CharacterMotor({ card }: { card: CardData }) {
           </button>
         ))}
       </div>
-      {/* L'évolution en mots, juste sous sa forme dessinée : une seule notion, l'arc. */}
-      <div className="motor-arc-text">
-        <label className="sr-only" htmlFor={`${id}-arc`}>
-          {t.fields.arc}
-        </label>
-        <textarea id={`${id}-arc`} rows={1} value={card.fiche?.arc ?? ""} placeholder={t.placeholders.arc} onChange={(e) => setFiche(card.id, "arc", e.target.value)} />
+      {/* L'arc en deux temps, juste sous sa forme dessinée : une seule notion, l'arc. */}
+      <div className="motor-arc-ends" role="group" aria-label={t.arcAria}>
+        {(["debut", "fin"] as const).map((key, i) => (
+          <div key={key} className={`motor-cell is-arc-end${card.fiche?.[key]?.trim() ? " is-filled" : ""}`}>
+            <label htmlFor={`${id}-${key}`}>{t.fields[key]}</label>
+            <textarea id={`${id}-${key}`} rows={1} value={card.fiche?.[key] ?? ""} placeholder={t.placeholders[key]} onChange={(e) => setFiche(card.id, key, e.target.value)} />
+            {i === 0 && <span className="motor-arc-arrow" aria-hidden="true">→</span>}
+          </div>
+        ))}
       </div>
+      {/* Ancien champ « Évolution » (avant la Bible v2) : gardé sous les yeux tant qu'il a du texte. */}
+      {(card.fiche?.arc ?? "") !== "" && (
+        <div className="motor-arc-text">
+          <label htmlFor={`${id}-arc`}>{t.fields.arc}</label>
+          <textarea id={`${id}-arc`} rows={1} value={card.fiche?.arc ?? ""} placeholder={t.placeholders.arc} onChange={(e) => setFiche(card.id, "arc", e.target.value)} />
+        </div>
+      )}
     </div>
   );
 }
