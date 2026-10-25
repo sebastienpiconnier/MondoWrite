@@ -7,6 +7,7 @@ import type { Plan } from "./plan";
 import type { Goals, Progress } from "./stats";
 import type { Pitch } from "./pitch";
 import type { PrintOptions } from "./export/printOptions";
+import type { ScriptPrint } from "./screenplay/export/scriptPrint";
 
 export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question" | "image" | "lien" | "document";
 
@@ -120,6 +121,8 @@ export interface ProjectMeta {
   chutier?: unknown[];
   /** Réglages du livre broché (format, papier, ISBN, pages de fin), voir export/printOptions.ts. Absent : valeurs par défaut. */
   print?: PrintOptions;
+  /** Réglages de l'export PDF du scénario (contenu, en-tête, filigrane…), voir screenplay/export/scriptPrint.ts. Absent : format standard. */
+  scriptPdf?: ScriptPrint;
   viewport?: { x: number; y: number; zoom: number };
 }
 

@@ -172,7 +172,13 @@ export function ExportMenu() {
 
   const groups = [
     kind === "scenario"
-      ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
+      ? {
+          title: x.screenplay,
+          // Le PDF a sa fenêtre (contenu, en-tête, filigrane…), qui enregistre elle-même le fichier.
+          items: EXPORT_FORMATS.map((f) =>
+            f === "pdf" ? { key: "sp-pdf", label: t.pdfMenu, open: () => useCosmos.getState().setDialog("scriptPdf") } : { key: `sp-${f}`, label: t[f], build: screenplayFile(f) },
+          ),
+        }
       : {
           title: x.manuscript,
           items: [

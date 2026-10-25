@@ -477,7 +477,27 @@ await step("export scénario", async () => {
   await page.getByRole("button", { name: T("Exporter", "Export") }).click();
   await wait(300);
   await shot("exporter-scenario", { clip: await union([".export-panel"], 20) });
-  await page.keyboard.press("Escape");
+  // Fenêtre du PDF : texte d'un comédien, en-tête et filigrane (réglages remis à zéro après).
+  await page.locator(".export-panel button", { hasText: "PDF…" }).click();
+  await wait(600);
+  const dlg = page.locator("dialog[open]");
+  await dlg.getByLabel(T("Le texte d’un personnage", "One character’s part")).check();
+  await dlg.getByLabel(T("Personnage", "Character"), { exact: true }).selectOption(T("LE LOUP", "THE WOLF"));
+  await dlg.getByLabel(T("Synopsis des scènes", "Scene synopses")).check();
+  await dlg.getByLabel(T("En-tête", "Header")).fill(T("Version 3 · {date}", "Draft 3 · {date}"));
+  await dlg.getByLabel(T("Filigrane", "Watermark")).fill(T("Confidentiel", "Confidential"));
+  await wait(500);
+  await shot("scenario-export-pdf", { el: "dialog[open]" });
+  if (process.env.GUIDE_PDF) {
+    const download = page.waitForEvent("download");
+    await dlg.getByRole("button", { name: T("Enregistrer le PDF…", "Save the PDF…") }).click();
+    await (await download).saveAs(process.env.GUIDE_PDF);
+  }
+  await dlg.getByLabel(T("Tout le scénario", "The whole screenplay")).check();
+  await dlg.getByLabel(T("Synopsis des scènes", "Scene synopses")).uncheck();
+  await dlg.getByLabel(T("En-tête", "Header")).fill("");
+  await dlg.getByLabel(T("Filigrane", "Watermark")).fill("");
+  await closeDialog();
 });
 await step("canevas scénario", async () => {
   await view(T("Canevas", "Canvas"));

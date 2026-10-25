@@ -36,6 +36,7 @@ import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
 import type { Passage } from "./chutier";
 import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
+import { DEFAULT_SCRIPT_PRINT, type ScriptPrint } from "./screenplay/export/scriptPrint";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
 import type { Photo } from "./imageSources";
@@ -168,8 +169,8 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -232,6 +233,9 @@ interface CosmosState {
   /** Réglages du livre broché (fenêtre « Livre broché »), hors historique comme la couverture. */
   print: PrintOptions;
   setPrint: (patch: Partial<PrintOptions>) => void;
+  /** Réglages de l'export PDF du scénario (`scriptPdf` de cosmos.json), hors historique comme `print`. */
+  scriptPdf: ScriptPrint;
+  setScriptPdf: (patch: Partial<ScriptPrint>) => void;
   progress: Progress;
   /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
   restoreScene: (id: string) => void;
@@ -1269,6 +1273,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const next = { ...get().print, ...patch };
       if (JSON.stringify(next) === JSON.stringify(get().print)) return;
       set({ print: next });
+      touch();
+    },
+    scriptPdf: DEFAULT_SCRIPT_PRINT,
+    setScriptPdf: (patch) => {
+      const next = { ...get().scriptPdf, ...patch };
+      if (JSON.stringify(next) === JSON.stringify(get().scriptPdf)) return;
+      set({ scriptPdf: next });
       touch();
     },
     trash: [],

@@ -29,6 +29,8 @@ export interface ExportOptions {
   underlineHeadings?: boolean;
   /** scenario.fountain tel qu'il est sur disque, quand le scénario n'a pas changé depuis. */
   source?: string;
+  /** PDF seulement : choix de la fenêtre « Exporter le scénario en PDF » (en-tête déjà rempli). */
+  print?: { titlePage: boolean; synopsis: boolean; sections: boolean; notes: boolean; character: string; header: string; watermark: string };
 }
 
 const MIME: Record<ExportFormat, string> = {
@@ -69,6 +71,7 @@ export async function exportScreenplay(
       strings: options.strings,
       numberScenes: options.numberScenes,
       underlineHeadings: options.underlineHeadings,
+      ...(options.print ?? {}),
     });
   }
   return { name: `${fileName(options.title, "scenario")}.${format}`, extension: format, mime: MIME[format], data };
