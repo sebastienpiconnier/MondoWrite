@@ -479,6 +479,10 @@ export function ScreenplayView() {
   const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
   // Téléphone : la barre d'éléments est un volet replié en haut de la feuille (sur iPad et ordinateur, toujours ouverte).
   const [toolsOpen, setToolsOpen] = useState(false);
+  // Le mode focus commence volet fermé : seule la feuille compte.
+  useEffect(() => {
+    if (focusMode) setToolsOpen(false);
+  }, [focusMode]);
   const findings = useMemo(() => checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), [elements, paper, nodes, lang]);
   const openFindings = useOpenFindings(findings);
   const openReview = () => {

@@ -84,3 +84,19 @@
   .bible-frame > .edge-handle { background: var(--surface); }
   .bible-frame:not(.hide-toc) > .edge-handle { left: calc(min(320px, 85vw) - 1px); z-index: 10; }
 }
+
+/* Téléphone : la barre d'éléments est un volet replié en haut de la feuille (elle couvrait le texte au-dessus du
+   clavier). Fermé, seul le type en cours se montre ; ouvert, la même disposition que sur iPad. */
+@media (max-width: 720px) {
+  /* Collé sous la barre du haut, en bandeau mince ; ouvert, il garde ses marges de panneau. */
+  .sp-bar { margin: 0; max-width: none; align-self: stretch; border-radius: 0; border-bottom: 1px solid var(--line); padding: 2px 8px; }
+  .sp-bar.is-open { padding: 4px 8px 8px; }
+  .sp-bar .sp-bar-toggle { display: inline-flex !important; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; font-size: 0.875rem; font-weight: 600; }
+  /* Mode focus : la barre du haut est cachée ; le volet passe sous l'encoche, à gauche de la croix de sortie. */
+  .screenplay.is-focus .sp-bar { padding-top: calc(env(safe-area-inset-top) + 6px); padding-right: 60px; justify-content: flex-start; background: var(--ground); border-bottom-color: transparent; }
+  .screenplay.is-focus .sp-bar .sp-bar-toggle { min-height: 40px; }
+  .sp-bar:not(.is-open) > :not(.sp-bar-toggle, .sp-filter-banner) { display: none; }
+  .sp-bar.is-open .sp-bar-toggle { flex: 0 0 100%; justify-content: center; }
+  .screenplay.is-focus .sp-bar.is-open .sp-bar-toggle { justify-content: flex-start; }
+  .sp-bar-hint { display: none; }
+}

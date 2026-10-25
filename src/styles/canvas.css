@@ -338,17 +338,10 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
   .sp-bar-hint { display: block; flex: 0 0 100%; height: 0; padding: 0; overflow: hidden; font-size: 0; line-height: 0; }
   .sp-bar .sp-bar-hint + .sp-option { margin-left: 0; }
 }
-/* Téléphone : la barre d'éléments est un volet replié en haut de la feuille (elle couvrait le texte au-dessus du
-   clavier). Fermé, seul le type en cours se montre ; ouvert, la même disposition que sur iPad. */
-.sp-bar-toggle { display: none !important; }
-@media (max-width: 720px) {
-  .sp-bar { margin: 8px 8px 0; max-width: none; align-self: stretch; }
-  .sp-bar .sp-bar-toggle { display: inline-flex !important; align-items: center; gap: 6px; font-weight: 600; }
-  .sp-bar:not(.is-open) > :not(.sp-bar-toggle, .sp-filter-banner) { display: none; }
-  .sp-bar.is-open .sp-bar-toggle { flex: 0 0 100%; justify-content: center; }
-  .sp-bar-hint { display: none; }
-}
 
+
+/* Volet de la barre d'éléments : seulement sur téléphone (phone.css). */
+.sp-bar-toggle { display: none !important; }
 
 /* Boutons du canevas qui portent une action peu évidente : l'icône et un mot, lisible au doigt comme à la souris. */
 .history-buttons .icon-button.has-label { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 10px; font-size: 0.875rem; }
