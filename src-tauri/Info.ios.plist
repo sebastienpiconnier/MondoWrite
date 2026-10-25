@@ -1,25 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Fusionné par Tauri dans l'Info.plist de l'app iPhone/iPad : le dossier Documents de l'app (les projets)
-     apparaît dans l'app Fichiers, sous « Sur mon iPad > MondoWrite ». -->
+<!-- Fusionné par Tauri dans l'Info.plist de l'app iOS (à chaque `tauri ios build` ou `dev`, src-tauri/gen/ n'est
+     pas versionné). Sur iPhone, l'app reste en portrait : la clé « ~iphone » l'emporte sur la liste générale, et
+     l'iPad garde toutes les orientations. L'écran intérieur de l'iPhone Duo (déplié) ignore cette liste : l'app
+     y tourne librement, comme sur un iPad. L'écran extérieur du Duo reste un iPhone, donc en portrait. -->
 <plist version="1.0">
 <dict>
-  <key>UIFileSharingEnabled</key>
-  <true/>
-  <key>LSSupportsOpeningDocumentsInPlace</key>
-  <true/>
-  <!-- iCloud Drive : le dossier de l'app apparaît dans Fichiers (iCloud Drive > MondoWrite) et sur le Mac. -->
-  <key>NSUbiquitousContainers</key>
-  <dict>
-    <key>iCloud.app.cosmos.ecriture</key>
-    <dict>
-      <key>NSUbiquitousContainerIsDocumentScopePublic</key>
-      <true/>
-      <key>NSUbiquitousContainerName</key>
-      <string>MondoWrite</string>
-      <key>NSUbiquitousContainerSupportedFolderLevels</key>
-      <string>Any</string>
-    </dict>
-  </dict>
+  <key>UISupportedInterfaceOrientations~iphone</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+  </array>
 </dict>
 </plist>
