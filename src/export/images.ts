@@ -29,10 +29,10 @@ function toJpeg(url: string): Promise<DocImage> {
   });
 }
 
-/** Le document avec ses images chargées ; une image manquante ou illisible est simplement laissée de côté. */
-export async function withImages(doc: ExportDoc, mediaUrl: (name: string) => Promise<string | null>): Promise<ExportDoc> {
+/** Images lues dans medias/ et réencodées en JPEG ; une image manquante ou illisible est absente du résultat. */
+export async function loadImages(names: Iterable<string>, mediaUrl: (name: string) => Promise<string | null>): Promise<Record<string, DocImage>> {
   const images: Record<string, DocImage> = {};
-  for (const name of docImageNames(doc)) {
+  for (const name of new Set(names)) {
     const url = await mediaUrl(name).catch(() => null);
     if (!url) continue;
     try {
@@ -43,5 +43,10 @@ export async function withImages(doc: ExportDoc, mediaUrl: (name: string) => Pro
       if (url.startsWith("blob:")) URL.revokeObjectURL(url);
     }
   }
-  return { ...doc, images };
+  return images;
+}
+
+/** Le document avec ses images chargées ; une image manquante ou illisible est simplement laissée de côté. */
+export async function withImages(doc: ExportDoc, mediaUrl: (name: string) => Promise<string | null>): Promise<ExportDoc> {
+  return { ...doc, images: await loadImages(docImageNames(doc), mediaUrl) };
 }

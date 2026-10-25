@@ -20,6 +20,7 @@ import { storyScenes } from "./book";
 import { isEmptyPitch, readPitch, type Pitch } from "./pitch";
 import { readChutier, type Passage } from "./chutier";
 import { cleanPrint, printToMeta, type PrintOptions } from "./export/printOptions";
+import { bibleExportToMeta, cleanBibleExport, type BibleExportState } from "./bibleExport";
 import { cleanScriptPrint, scriptPrintToMeta, type ScriptPrint } from "./screenplay/export/scriptPrint";
 import { writeTitleField } from "./screenplay/titlePage";
 import { headingTitles, initialScreenplay, type SceneCard } from "./screenplay/link";
@@ -89,11 +90,11 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -281,6 +282,7 @@ export function toProject(
       ...(s.chutier.length > 0 ? { chutier: s.chutier } : {}),
       ...(printToMeta(s.print) ? { print: printToMeta(s.print) } : {}),
       ...(scriptPrintToMeta(s.scriptPdf) ? { scriptPdf: scriptPrintToMeta(s.scriptPdf) } : {}),
+      ...(bibleExportToMeta(s.bibleExport) ? { bibleExport: bibleExportToMeta(s.bibleExport) } : {}),
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
@@ -312,6 +314,7 @@ export interface ProjectSlice {
   chutier: Passage[];
   print: PrintOptions;
   scriptPdf: ScriptPrint;
+  bibleExport: BibleExportState;
   metaKeep: Record<string, unknown>;
   trash: TrashedCard[];
 }

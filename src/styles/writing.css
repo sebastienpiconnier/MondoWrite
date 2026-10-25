@@ -686,3 +686,40 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .spdf-line.is-lit { background: var(--revisit); color: var(--page-ink); }
 .spdf-watermark { position: absolute; left: 50%; top: 50%; white-space: nowrap; font-family: var(--font-ui); font-weight: 700; letter-spacing: 0.06em; text-transform: none; color: var(--line-2); opacity: 0.7; pointer-events: none; }
 .app-dialog.is-script-pdf .app-dialog-actions { justify-content: flex-start; }
+
+/* Fenêtre « Exporter la Bible » (BibleExportDialog.tsx) : le formulaire de .spdf, l'aperçu en pages du vrai PDF. */
+.bexp-reader span { display: flex; flex-direction: column; gap: 2px; }
+.bexp-reader small { font-size: 0.8125rem; color: var(--ink-2); }
+.bexp-reader { min-height: 44px; }
+.bexp-parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.bexp-parts li { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.bexp-parts li .spdf-choice { flex: 1; min-width: 0; }
+.bexp-parts li:not(.is-on) .spdf-choice { color: var(--ink-2); }
+.bexp-empty { font-size: 0.75rem; color: var(--ink-2); font-style: italic; }
+.bexp-move { display: flex; gap: 2px; }
+.bexp-move button, .bexp-ghost { min-width: 44px; min-height: 44px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 0.9375rem var(--font-ui); cursor: pointer; }
+.bexp-move button:disabled, .bexp-ghost:disabled { opacity: 0.4; cursor: default; }
+.bexp-themes { display: flex; gap: 6px; flex-wrap: wrap; }
+.bexp-theme { flex: 1 1 90px; min-height: 44px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 600 0.875rem var(--font-ui); cursor: pointer; }
+.bexp-theme.is-editorial { font-family: var(--font-text); }
+.bexp-theme.is-nuit { font-family: var(--font-display); }
+.bexp-theme[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.bexp-accents { display: flex; gap: 6px; margin: 6px 0 4px; }
+.bexp-accent { width: 44px; height: 44px; border: 3px solid var(--surface); border-radius: 50%; box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; }
+.bexp-accent[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.bexp-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.bexp-row select, .bexp-row input[type="text"] { flex: 1 1 160px; min-width: 0; }
+.bexp :is(button, select, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bexp-preview { flex-direction: column; align-items: center; justify-content: flex-start; gap: 10px; max-height: min(78vh, 900px); overflow-y: auto; }
+.bexp-preview-status { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
+.bexp-pages { display: flex; flex-direction: column; gap: 12px; align-items: center; transition: opacity 0.2s; }
+.bexp-pages.is-working { opacity: 0.5; }
+.bexp-pages.is-hidden { display: none; }
+.bexp-page { max-width: 100%; height: auto; box-shadow: var(--shadow-card); }
+@media (any-hover: hover) {
+  .bexp-move button:not(:disabled):hover, .bexp-ghost:not(:disabled):hover, .bexp-theme:hover { background: var(--hover); }
+}
+@media (max-width: 640px) {
+  .app-dialog.is-bible-export { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
+  .bexp-preview { max-height: none; }
+}

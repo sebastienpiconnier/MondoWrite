@@ -14,9 +14,8 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
-import { BIBLE_FORMATS, MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
-import { bibleOf, canvasOf, manuscriptOf } from "../export/projectDocs";
-import { bibleOrder } from "../bibleParts";
+import { MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
+import { canvasOf, manuscriptOf } from "../export/projectDocs";
 import { canvasBounds } from "../export/canvas";
 import { boxes, frameBox } from "../projectState";
 import { fileName } from "../screenplay/export";
@@ -138,14 +137,6 @@ export function ExportMenu() {
     return exportDocument(doc, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });
   };
 
-  const bibleFile = (format: DocFormat) => async () => {
-    // Les rubriques de la Bible, dans son ordre : ce qu'on masque dans la Bible ne s'exporte pas.
-    const doc = bibleOf(useCosmos.getState(), ctx(), bibleOrder(useSettings.getState().bibleSections));
-    // Le Markdown cite les images de medias/ ; le PDF et le Word les intègrent.
-    const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (name) => storage.mediaUrl(name));
-    return exportDocument(full, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });
-  };
-
   const canvasFile = (format: CanvasFormat) => async (): Promise<ExportedFile | null> => {
     const { nodes, title } = useCosmos.getState();
     if (nodes.length === 0) return null;
@@ -187,7 +178,8 @@ export function ExportMenu() {
             { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") },
           ],
         },
-    { title: x.bible, items: BIBLE_FORMATS.map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
+    // La Bible a sa fenêtre (pour qui, parties, rendu, aperçu, PDF, Word ou Markdown).
+    { title: x.bible, items: [{ key: "bible", label: all.bibleExport.menu, open: () => useCosmos.getState().setDialog("bibleExport") }] },
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
     { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, label: canvasLabels[f], build: canvasFile(f) })) },
   ] as { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] }[];

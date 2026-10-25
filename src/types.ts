@@ -123,6 +123,8 @@ export interface ProjectMeta {
   print?: PrintOptions;
   /** Réglages de l'export PDF du scénario (contenu, en-tête, filigrane…), voir screenplay/export/scriptPrint.ts. Absent : format standard. */
   scriptPdf?: ScriptPrint;
+  /** Réglages de l'export de la Bible (pour qui, parties, rendu) et réglages nommés, voir bibleExport.ts. Absent : valeurs par défaut. */
+  bibleExport?: unknown;
   viewport?: { x: number; y: number; zoom: number };
 }
 

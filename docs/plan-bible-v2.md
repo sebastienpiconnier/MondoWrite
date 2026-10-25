@@ -60,19 +60,15 @@ Affichage : accroche sous le nom, bande moteur, « au début → à la fin », �
 
 Le dialogue en trois questions : **pour qui** (moi : bible de travail ; un tiers : éditeur pour un roman, producteur pour un scénario), **parties** (les cinq, à cocher et ranger, « Pour vous » décochée pour un tiers), **rendu** (Sobre, Éditorial, Nuit ; une couleur d'accent ; une image de couverture du projet). Aperçu en direct, réglage enregistré sous un nom.
 
-- [ ] **Modèle pur** `src/export/bibleExport.ts` : `BibleExportOptions { audience, parts, theme, accent, cover }` et `buildBibleExport(state, options)`. Pour un tiers : pas de questions, pas d'idées en vrac ; personnages cochés « principal » une page chacun, les autres regroupés dans « Et aussi ». Aucun principal coché : tous les personnages ont leur page (projet qui n'a pas encore fait ce choix).
-- [ ] **Blocs plus riches** dans `ExportDoc` (`doc.ts`) : `fields` (libellé et valeur en grille, pour la bande moteur), `lead` (accroche, pitch en grand), `pageBreak`, `cover`. Word et Markdown les dégradent proprement (libellé en gras puis valeur) : aucun export existant ne casse.
-- [ ] **Mise en page pure** `src/export/bibleLayout.ts` et **dessin** `src/export/biblePdf.ts` (pdf-lib), sur le modèle de `paperback.ts` / `paperbackPdf.ts`. Un thème = un objet de jetons (polices, tailles, couleurs, marges, style de couverture) :
-   - Sobre : IBM Plex Sans et Serif, noir sur blanc ;
-   - Éditorial : Crimson Text (déjà embarquée), papier crème, accent ;
-   - Nuit : Space Grotesk pour les titres, Plex Serif pour le texte, couverture sombre.
-   Polices : les paquets `@fontsource` du projet sont en WOFF2 ; vérifier que `@pdf-lib/fontkit` les accepte, sinon ajouter les TTF (licence OFL) dans `src/assets/fonts`. Chargement à la demande, comme aujourd'hui. **Mesurer avant de choisir** : poids ajouté au paquet iOS et au téléchargement Mac ; si c'est trop lourd, ne garder qu'une graisse par police (régulière et grasse, italique synthétisée) ou réduire Sobre à Plex Sans seul.
-- [ ] **Aperçu fidèle** : on génère le vrai PDF (anti-rebond de 300 ms) et on dessine ses pages avec pdf.js (`pdfDocument.ts`, `renderPage` existe déjà). Ce que l'on voit est exactement le fichier exporté.
-- [ ] **Dialogue** `BibleExportDialog.tsx`, ouvert depuis l'entrée « Bible » d'`ExportMenu`. Word et Markdown restent proposés en bas du dialogue.
-- [ ] **Réglages** : bloc facultatif `bibleExport` dans `cosmos.json` (liste `{ nom, options }`), ajouté à `KNOWN_META`. Par projet, car l'image de couverture appartient au projet.
-- [ ] **Vignettes des lieux** : la partie Univers du PDF montre jusqu'à quatre photos tirées des galeries des lieux (image principale d'abord), en vignettes légendées par le nom du lieu. Rien ne revient dans l'app : le tableau d'ambiance reste retiré.
-- [ ] **Nom de fichier daté** (« Dossier de présentation - Titre - 2026-10-25.pdf ») : chaque export sert de version.
-- [ ] Tests : `bible-export.test.ts` (options → document : parties, audience, personnages principaux), `bible-layout.test.ts` (une page par principal, rien ne déborde, nombre de pages stable sur le projet d'exemple).
+- [x] **Modèle pur** : réglages dans `src/bibleExport.ts` (`BibleExportOptions { audience, parts, theme, accent, cover, places }`, réglages nommés, nettoyage à la lecture), contenu dans `src/export/biblePack.ts` (`buildBiblePack`). Pour un tiers : pas de « Pour vous » ; personnages cochés « principal » une page chacun, les autres regroupés dans « Et aussi » ; aucun principal coché : tous ont leur page.
+- [x] **Blocs plus riches** : plutôt que d'enrichir `ExportDoc` (et risquer Word et Markdown), le PDF a son propre modèle de blocs (`PackBlock` : accroche, cases, arc, affiche d'un personnage, vignettes, liste). Word et Markdown gardent `bibleOf`, limité aux rubriques des parties choisies (`typesForParts`).
+- [x] **Mise en page pure** `src/export/bibleLayout.ts`, **rendus** `src/export/bibleThemes.ts`, **dessin** `src/export/biblePdf.ts` (pdf-lib, import dynamique). Polices : Crimson Text (déjà embarquée) et les fichiers **WOFF** de Fontsource (pas WOFF2 : fontkit ne sait pas en faire un sous-ensemble et plante), décompressés par `src/export/woff.ts` (la décompression de fontkit dans le navigateur abîmait des glyphes). Mesure : les fichiers WOFF de Plex Sans, Plex Serif 400 et Space Grotesk 700 sont déjà dans le paquet (repli CSS de l'interface) ; seuls Plex Serif italique et Plex Serif 600 s'ajoutent, environ 45 Ko. Chaque PDF n'embarque que les glyphes utilisés.
+- [x] **Aperçu fidèle** : le vrai PDF, refait 350 ms après le dernier changement, pages dessinées par pdf.js.
+- [x] **Dialogue** `BibleExportDialog.tsx`, ouvert depuis l'entrée « Bible… » d'`ExportMenu` (remplace les trois entrées PDF, Word, Markdown, proposées en bas du dialogue).
+- [x] **Réglages** : bloc facultatif `bibleExport` dans `cosmos.json` (`current` et `presets`), dans `KNOWN_META`, écrit seulement s'il diffère des valeurs par défaut.
+- [x] **Vignettes des lieux** : jusqu'à quatre photos des lieux (image principale d'abord), légendées.
+- [x] **Nom de fichier daté** (`bibleFileName`).
+- [x] Tests : `bible-export.test.ts` (réglages, presets, aller-retour cosmos.json, contenu selon le lecteur, principaux, mise en pages : signets, pas de page blanche, rien hors page).
 
 Multiplateforme : dialogue plein écran sur téléphone, aperçu sous les réglages ; glisser pour ranger doublé de boutons monter / descendre ; partage du fichier par la feuille de partage sur iOS.
 
@@ -111,4 +107,4 @@ Fusion proposée : lots 1 à 3 ensemble en **1.4.0** (la Bible et son export for
 
 ## Reste à mesurer
 
-- Poids des polices embarquées pour les trois rendus, sur le paquet iOS (lot 3, avant de figer les thèmes).
+- ~~Poids des polices embarquées~~ : mesuré au lot 3 (environ 45 Ko en plus, voir plus haut).
