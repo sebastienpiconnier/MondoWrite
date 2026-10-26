@@ -9,7 +9,7 @@ import type { Pitch } from "./pitch";
 import type { PrintOptions } from "./export/printOptions";
 import type { ScriptPrint } from "./screenplay/export/scriptPrint";
 
-export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question" | "image" | "lien" | "document";
+export type CardType = "idee" | "personnage" | "lieu" | "scene" | "intrigue" | "theme" | "question" | "image" | "lien" | "document" | "episode";
 
 /**
  * Nature du projet. Change le vocabulaire (Lieu → Décor, Plan → Séquencier…), le style des
@@ -21,10 +21,16 @@ export const PROJECT_KINDS: ProjectKind[] = ["roman", "scenario"];
 export const isProjectKind = (v: unknown): v is ProjectKind => v === "roman" || v === "scenario";
 
 /** Types dans l'ordre des menus. Libellés : i18n (`t.types[type]`). Couleurs : styles.css (`--type-<type>`). */
-export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "intrigue", "theme", "question", "image", "lien", "document"];
+export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "intrigue", "episode", "theme", "question", "image", "lien", "document"];
+
+/**
+ * Types proposés dans un projet (menus, filtres, rubriques) : l'Épisode (lot 6 de la Bible v2) ne sert qu'à une
+ * série. Un roman qui a déjà des cartes Épisode (scénario rebasculé en roman) les garde visibles.
+ */
+export const typesFor = (kind: ProjectKind, present = false): CardType[] => (kind === "scenario" || present ? CARD_TYPES : CARD_TYPES.filter((t) => t !== "episode"));
 
 /** Ordre des parties de la bible : les personnages d'abord, les idées en vrac à la fin. */
-export const BIBLE_ORDER: CardType[] = ["personnage", "intrigue", "lieu", "scene", "theme", "question", "image", "lien", "document", "idee"];
+export const BIBLE_ORDER: CardType[] = ["personnage", "intrigue", "lieu", "episode", "scene", "theme", "question", "image", "lien", "document", "idee"];
 
 /** Couleur d'un type, en variable CSS (s'adapte au mode clair/sombre). */
 export const typeColor = (t: CardType) => `var(--type-${t})`;

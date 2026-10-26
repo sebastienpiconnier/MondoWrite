@@ -106,8 +106,9 @@
 /* Un texte long (synopsis) ou un champ seul prend toute la largeur de la fiche. */
 .sheet-field.is-wide { grid-column: 1 / -1; }
 .sheet-field label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
-.sheet-field input, .sheet-field textarea { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: 15px/1.45 var(--font-text); resize: vertical; field-sizing: content; }
+.sheet-field input, .sheet-field textarea, .sheet-field select { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: 15px/1.45 var(--font-text); resize: vertical; field-sizing: content; }
 .sheet-field input::placeholder, .sheet-field textarea::placeholder { color: var(--placeholder); }
+.sheet-field select { min-height: 44px; field-sizing: fixed; resize: none; }
 /* Champs de texte du menu Réglages (nom d'auteur, clé d'API, modèle) */
 .settings-panel input[type="text"], .settings-panel input[type="password"], .settings-panel input[type="url"] { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.875rem; }
 .settings-panel { max-height: calc(100vh - 90px); max-height: calc(100dvh - 90px); overflow-y: auto; }
@@ -218,6 +219,9 @@
 .pitch-intention[open] summary { margin-bottom: 6px; }
 .pitch-field.is-bare > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .pitch-series-body { display: flex; flex-direction: column; gap: 16px; }
+.pitch-series-field { display: flex; flex-direction: column; gap: 16px; }
+.pitch-episodes { display: flex; flex-direction: column; gap: 6px; }
+.pitch-episodes .pitch-hint { margin: 0; }
 /* « Questionner » (CoverAssistant) : un bouton discret en tête du dos de la couverture, puis une question à la fois. */
 .cover-ask { align-self: flex-end; min-height: 44px; }
 .cover-asker { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: var(--ground); }

@@ -51,6 +51,6 @@ describe("parties de la Bible", () => {
   it("garde un ordre enregistré par une version précédente", () => {
     // Ordre ancien, intrigue avant personnage : la partie Personnages reste devant Structure.
     const prefs = { order: ["intrigue", "personnage", "lieu", "scene", "theme", "question", "image", "lien", "document", "idee"] as CardType[], hidden: [] };
-    expect(bibleOrder(prefs).slice(0, 5)).toEqual(["theme", "personnage", "lieu", "intrigue", "scene"]);
+    expect(bibleOrder(prefs).slice(0, 6)).toEqual(["theme", "personnage", "lieu", "intrigue", "episode", "scene"]);
   });
 });

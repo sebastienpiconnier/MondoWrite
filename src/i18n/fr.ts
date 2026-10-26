@@ -214,6 +214,7 @@ export const fr = {
     lieu: { label: "Lieu", section: "Lieux", titlePlaceholder: "Nom du lieu" },
     scene: { label: "Scène", section: "Scènes", titlePlaceholder: "Titre de la scène" },
     intrigue: { label: "Intrigue", section: "Intrigues", titlePlaceholder: "Nom de l’intrigue" },
+    episode: { label: "Épisode", section: "Épisodes", titlePlaceholder: "Titre de l’épisode" },
     image: { label: "Image", section: "Images", titlePlaceholder: "Légende…" },
     lien: { label: "Lien", section: "Liens", titlePlaceholder: "Titre du lien" },
     document: { label: "Document", section: "Documents", titlePlaceholder: "Titre du document" },
@@ -1270,6 +1271,9 @@ export const fr = {
     alsoTitle: "Et aussi",
     memo: "En un coup d’œil",
     grid: "Les fils du pilote",
+    gridSeason: "Les fils de la saison",
+    inEpisode: "Épisode {n}",
+    inEpisodes: "Épisodes {list}",
     annex: "Annexe",
     pilotTitle: "Les premières pages du pilote",
     pilotNote: "Le début du scénario, au format standard (dix pages au plus).",
@@ -1366,7 +1370,11 @@ export const fr = {
     openTheme: "Voir le thème « {title} »",
     seriesTitle: "Écrire la série",
     seriesHint: "Pour une série : ce qui aide un producteur à y croire et un scénariste à la rejoindre.",
-    episodesHint: "Un épisode par ligne. Le dossier en fait une liste numérotée.",
+    episodesNone: "Les épisodes sont des cartes Épisode (titre, synopsis, personnage pivot), dans la Structure de la Bible.",
+    episodesCount: "{n} épisodes dans la Structure de la Bible.",
+    episodesOne: "1 épisode dans la Structure de la Bible.",
+    episodesAdd: "Nouvel épisode",
+    episodesOpen: "Voir les épisodes",
     ask: "Questionner",
     askAria: "Questionner le projet : une question pour chaque champ vide",
     askTitle: "Une question à la fois",
@@ -1870,7 +1878,7 @@ export const fr = {
 
   // Fiches des lieux et des intrigues (celle des personnages est dans `character`).
   fiche: {
-    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", lien: "Référence", image: "Référence", document: "Référence", scene: "Fiche de la scène" },
+    titles: { personnage: "Fiche d’identité", lieu: "Fiche du lieu", intrigue: "Fiche de l’intrigue", lien: "Référence", image: "Référence", document: "Référence", scene: "Fiche de la scène", episode: "Fiche de l’épisode" },
     fields: {
       epoque: "Époque",
       ambiance: "Ambiance",
@@ -1890,7 +1898,14 @@ export const fr = {
       pages: "Pages",
       synopsis: "Synopsis",
       statut: "Statut",
+      numero: "Numéro",
+      pivot: "Personnage pivot",
     },
+    // Textes indicatifs propres à un type, quand le champ est partagé (synopsis d'une scène ou d'un épisode).
+    typePlaceholders: {
+      episode: { numero: "1", synopsis: "Trois ou quatre phrases : ce qui arrive, ce qui change, où l’épisode nous laisse." },
+    },
+    pivotNone: "Personne en particulier",
     placeholders: {
       epoque: "Aujourd’hui, 1912, l’an 3000…",
       ambiance: "Sons, odeurs, lumière",

@@ -11,7 +11,8 @@ import { isProjectKind, type CardData, type Frame, type Project, type ProjectKin
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
-import { CARD_SIZE, type Box } from "./placement";
+import { CARD_SIZE, firstFreeCell, type Box } from "./placement";
+import { adoptPitchEpisodes } from "./episodes";
 import { type Manuscript } from "./manuscript";
 import { readGoals, readProgress, type Goals, type Progress } from "./stats";
 import { addQuestion, legacyParkedCards } from "./character";
@@ -215,7 +216,17 @@ export function openProject(p: Project) {
     renamed = true;
     return { ...f, data: { ...f.data, title } };
   });
-  const base = { ...read, ...adopted, frames };
+  // Épisodes écrits dans la couverture (avant le lot 6) : une carte Épisode chacun, posée dans un espace libre.
+  const episodes = adoptPitchEpisodes(read.pitch, adopted.nodes.map((n) => n.data), newId);
+  if (episodes) {
+    const placed = [...adopted.nodes];
+    for (const card of episodes.cards) {
+      const at = firstFreeCell([...boxes(placed), ...frames.map(frameBox)]);
+      placed.push(toNode(card, at.x, at.y));
+    }
+    adopted.nodes = placed;
+  }
+  const base = { ...read, ...adopted, frames, pitch: episodes?.pitch ?? read.pitch };
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
   const screenplayRead =
     p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
@@ -231,7 +242,7 @@ export function openProject(p: Project) {
   return {
     // Un projet qu'on ouvre repart d'un historique vide.
     state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, past: [], future: [] },
-    dirty: renamed || screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
+    dirty: renamed || !!episodes || screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
   };
 }
 

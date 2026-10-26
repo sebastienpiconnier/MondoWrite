@@ -212,6 +212,7 @@ export const en: Messages = {
     lieu: { label: "Place", section: "Places", titlePlaceholder: "Place name" },
     scene: { label: "Scene", section: "Scenes", titlePlaceholder: "Scene title" },
     intrigue: { label: "Plot", section: "Plots", titlePlaceholder: "Name of the plot" },
+    episode: { label: "Episode", section: "Episodes", titlePlaceholder: "Episode title" },
     image: { label: "Image", section: "Images", titlePlaceholder: "Caption…" },
     lien: { label: "Link", section: "Links", titlePlaceholder: "Link title" },
     document: { label: "Document", section: "Documents", titlePlaceholder: "Document title" },
@@ -1434,6 +1435,9 @@ export const en: Messages = {
     alsoTitle: "Also",
     memo: "At a glance",
     grid: "Threads in the pilot",
+    gridSeason: "Threads across the season",
+    inEpisode: "Episode {n}",
+    inEpisodes: "Episodes {list}",
     annex: "Appendix",
     pilotTitle: "The first pages of the pilot",
     pilotNote: "The opening of the screenplay, in standard format (ten pages at most).",
@@ -1529,7 +1533,11 @@ export const en: Messages = {
     openTheme: "See the theme “{title}”",
     seriesTitle: "Writing the series",
     seriesHint: "For a series: what helps a producer believe in it and a writer join it.",
-    episodesHint: "One episode per line. The pitch document turns it into a numbered list.",
+    episodesNone: "Episodes are Episode cards (title, synopsis, pivot character), in the Structure part of the Bible.",
+    episodesCount: "{n} episodes in the Structure part of the Bible.",
+    episodesOne: "1 episode in the Structure part of the Bible.",
+    episodesAdd: "New episode",
+    episodesOpen: "See the episodes",
     ask: "Ask me",
     askAria: "Ask about the project: one question for each empty field",
     askTitle: "One question at a time",
@@ -1841,7 +1849,7 @@ export const en: Messages = {
   },
 
   fiche: {
-    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet", lien: "Reference", image: "Reference", document: "Reference", scene: "Scene sheet" },
+    titles: { personnage: "Character sheet", lieu: "Place sheet", intrigue: "Plot sheet", lien: "Reference", image: "Reference", document: "Reference", scene: "Scene sheet", episode: "Episode sheet" },
     fields: {
       epoque: "Period",
       ambiance: "Atmosphere",
@@ -1861,7 +1869,13 @@ export const en: Messages = {
       pages: "Pages",
       synopsis: "Synopsis",
       statut: "Status",
+      numero: "Number",
+      pivot: "Pivot character",
     },
+    typePlaceholders: {
+      episode: { numero: "1", synopsis: "Three or four sentences: what happens, what changes, where the episode leaves us." },
+    },
+    pivotNone: "No one in particular",
     placeholders: {
       epoque: "Today, 1912, the year 3000…",
       ambiance: "Sounds, smells, light",

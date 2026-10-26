@@ -10,7 +10,8 @@ import { DraftPreview } from "./SceneDraft";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadFolded, saveFolded, setFolded } from "../bibleFold";
 import { useCosmos } from "../store";
-import { typeColor, type CardData, type CardType } from "../types";
+import { typeColor, typesFor, type CardData, type CardType } from "../types";
+import { episodeOrder } from "../episodes";
 import { fmt, useT } from "../i18n";
 import { POSTER_FIELDS, PRINCIPAL, isPrincipal } from "../character";
 import { mentionsIn } from "../manuscript";
@@ -151,17 +152,25 @@ export function Bible() {
   const prefs = useSettings((s) => s.bibleSections);
   const setPrefs = useSettings((s) => s.setBibleSections);
   const [arranging, setArranging] = useState(false);
+  // Rubriques du projet : pas d'Épisodes dans un roman (sauf s'il en a déjà).
+  const shownTypes = useMemo(() => {
+    const allowed = typesFor(kind, nodes.some((n) => n.data.type === "episode"));
+    return bibleOrder(prefs).filter((type) => allowed.includes(type));
+  }, [prefs, kind, nodes]);
   const sections = useMemo(
     () =>
-      bibleOrder(prefs).map((type) => ({
-        type,
-        cards: nodes
-          .filter((n) => n.data.type === type)
-          .map((n) => n.data)
-          // Les personnages principaux d'abord (Bible v2), puis l'ordre alphabétique.
-          .sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : Number(isPrincipal(b)) - Number(isPrincipal(a)) || a.title.localeCompare(b.title, lang))),
-      })),
-    [nodes, lang, fresh, prefs],
+      shownTypes.map((type) => {
+        const cards = nodes.filter((n) => n.data.type === type).map((n) => n.data);
+        return {
+          type,
+          // Les épisodes dans l'ordre de la saison ; ailleurs les personnages principaux d'abord (Bible v2), puis l'ordre alphabétique.
+          cards:
+            type === "episode"
+              ? episodeOrder(cards)
+              : cards.sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : Number(isPrincipal(b)) - Number(isPrincipal(a)) || a.title.localeCompare(b.title, lang))),
+        };
+      }),
+    [nodes, lang, fresh, shownTypes],
   );
   const counts = useMemo(() => {
     const out = new Map<CardType, number>();
@@ -233,7 +242,7 @@ export function Bible() {
   const adders = (
     <div className="bible-add">
       <div className="eyebrow">{t.bible.add}</div>
-      {bibleOrder(prefs).map((type) => (
+      {shownTypes.map((type) => (
         <button
           key={type}
           type="button"
@@ -457,7 +466,7 @@ export function Bible() {
       {onCover || !shown ? (
         <section className="bible-main is-cover" aria-label={t.pitch.toc} ref={mainRef}>
           <h1 className="sr-only">{t.pitch.toc}</h1>
-          <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} />
+          <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} onAddEpisode={() => create("episode")} />
         </section>
       ) : (
         // Toutes les rubriques affichées, l'une sous l'autre : la Bible se lit comme le document exporté

@@ -25,6 +25,7 @@
 .react-flow__minimap-node.type-lien { fill: var(--type-lien); }
 .react-flow__minimap-node.type-image { fill: var(--type-image); }
 .react-flow__minimap-node.type-document { fill: var(--type-document); }
+.react-flow__minimap-node.type-episode { fill: var(--type-episode); }
 .react-flow__minimap-node.type-question { fill: var(--type-question); }
 /* Haut du canevas : filtre actif, mise en avant, sélection multiple ou aide, l'un sous l'autre, centrés. */
 .canvas-top {

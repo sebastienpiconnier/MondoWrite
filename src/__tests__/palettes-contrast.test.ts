@@ -42,7 +42,7 @@ const PAIRS: [string, string][] = [
   ["page-ink", "page"],
   ["page-ink-dim", "page"],
   ["danger", "surface"],
-  ...["idee", "personnage", "lieu", "scene", "theme", "intrigue", "lien", "image", "document", "question"].map((t): [string, string] => [`type-${t}`, "surface"]),
+  ...["idee", "personnage", "lieu", "scene", "theme", "intrigue", "lien", "image", "document", "question", "episode"].map((t): [string, string] => [`type-${t}`, "surface"]),
   ...["draft", "revise", "done"].map((s): [string, string] => [`status-${s}`, "surface"]),
 ];
 

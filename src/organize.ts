@@ -211,8 +211,8 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
 
   const rows: Layout[] = [
     {
-      items: [...typeFrame("personnage"), ...typeFrame("intrigue"), ...typeFrame("lieu"), ...typeFrame("theme"), ...typeFrame("question")],
-      columns: 5,
+      items: [...typeFrame("personnage"), ...typeFrame("intrigue"), ...typeFrame("episode"), ...typeFrame("lieu"), ...typeFrame("theme"), ...typeFrame("question")],
+      columns: 6,
       gap: GROUP_GAP,
     },
     // Les rangées du récit l'une sous l'autre (chacune de gauche à droite, voir inRows).

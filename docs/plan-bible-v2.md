@@ -178,11 +178,13 @@ Issu de la critique de la v2 d'après quatre sources : l'article de Denis Lima s
 
 À faire évoluer sans rien perdre : pitch.episodes (une ligne « Titre : ce qui s'y passe ») reste lue.
 
-- [ ] Un épisode = titre, personnage pivot (relié à une carte Personnage), synopsis de 3 à 4 phrases, fils présents. Format : ajouts seulement, clés fixes, jamais renommées.
-- [ ] Grille intrigues × épisodes (la grille actuelle croise les parties du pilote) ; l'ancienne reste pour l'annexe pilote.
-- [ ] Mémo des personnages : colonne « épisodes où il apparaît ».
-- [ ] Export : épisodes en liste courte pour un tiers, sans séquencier ni traitement.
-- [ ] Reprise des anciennes lignes pitch.episodes dans les nouveaux épisodes, testée.
+- [x] Un épisode = titre, personnage pivot (relié à une carte Personnage), synopsis de 3 à 4 phrases, fils présents. Format : ajouts seulement, clés fixes, jamais renommées.
+- [x] Grille intrigues × épisodes (la grille actuelle croise les parties du pilote) ; l'ancienne reste pour l'annexe pilote.
+- [x] Mémo des personnages : colonne « épisodes où il apparaît ».
+- [x] Export : épisodes en liste courte pour un tiers, sans séquencier ni traitement.
+- [x] Reprise des anciennes lignes pitch.episodes dans les nouveaux épisodes, testée.
+
+Fait (26 octobre 2026) : carte Épisode (`episode`, Structure, proposée dans un scénario seulement), fiche `numero`, `synopsis`, `pivot` ; intrigues et personnages par les fils ; `episodes.ts`. Dans la 1.3.1, une carte Épisode s'affiche en Idée et garde son type (`keep`) ; la ligne `pitch.episodes` reprise n'existe plus, la couverture de la 1.3.1 n'a donc plus de liste d'épisodes.
 
 ### 3. Couverture et auteur
 - [ ] Champs de la couverture (scénario) : saison (la question de la saison, le mystère global) et finSaison (où elle finit, pas la fin de la série : on ne promet pas les saisons suivantes).

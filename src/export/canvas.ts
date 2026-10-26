@@ -82,7 +82,9 @@ export function canvasDoc(
     blocks.push({ kind: "paragraph", runs: [{ text: strings.types[card.type], italic: true }] });
     if (card.image && isMediaName(card.image)) blocks.push({ kind: "image", name: card.image });
     for (const key of sheetFields(card.type)) {
-      const value = card.fiche?.[key]?.trim();
+      const raw = card.fiche?.[key]?.trim();
+      // Pivot d'un épisode : la fiche garde l'identifiant du personnage, on écrit son nom.
+      const value = key === "pivot" ? (raw ? cards.find((c) => c.card.id === raw)?.card.title.trim() : "") : raw;
       if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: ficheText(key, value, strings.arcTypes) }] });
     }
     blocks.push(...htmlToBlocks(card.html).map((b): Block => (b.kind === "heading" ? { kind: "paragraph", runs: b.runs.map((r) => ({ ...r, bold: true })) } : b)));

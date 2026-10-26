@@ -39,6 +39,13 @@ describe("compatibilité avec les versions futures", () => {
     expect(cardToFile(moved)).toContain("type: personnage");
   });
 
+  it("une carte Épisode (lot 6) garde sa fiche : numéro, synopsis, pivot", () => {
+    const card = { id: "e1", type: "episode" as const, title: "Le signal", html: "", fiche: { numero: "1", synopsis: "Inès entend.", pivot: "p" } };
+    const again = fileToCard(cardToFile(card))!;
+    expect(again).toMatchObject(card);
+    expect(again.keep).toBeUndefined();
+  });
+
   it("les clés inconnues de cosmos.json sont repérées pour être réécrites", () => {
     expect(unknownMeta({ version: 1, title: "K", layout: [], links: [], timeline2: { a: 1 }, glossary: [] })).toEqual({ timeline2: { a: 1 }, glossary: [] });
   });

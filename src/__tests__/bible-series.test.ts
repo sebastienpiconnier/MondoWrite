@@ -85,7 +85,9 @@ describe("couverture d'une série", () => {
     const all = askableFields("roman");
     expect(nextAsk({}, "roman", [...all.slice(1), all[0]])).toBe(all[1]);
     expect(nextAsk(Object.fromEntries(all.map((k) => [k, "x"])), "roman", [])).toBeNull();
-    expect(askableFields("scenario")).toContain("episodes");
+    // Les épisodes sont des cartes (lot 6) : plus de champ de la couverture à remplir.
+    expect(askableFields("scenario")).not.toContain("episodes");
+    expect(askableFields("scenario")).toContain("mecanique");
     // Une question pour chaque champ, dans les deux langues.
     for (const k of askableFields("scenario")) {
       expect(fr.pitch.questions[k]).toBeTruthy();

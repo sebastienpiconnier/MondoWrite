@@ -15,7 +15,7 @@ import { sourceUrl } from "../character";
 import { openExternal } from "../platform";
 import { hostOf } from "../research";
 import Placeholder from "@tiptap/extension-placeholder";
-import { CARD_TYPES, typeColor, type CardType } from "../types";
+import { typesFor, typeColor, type CardType } from "../types";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
 import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -74,8 +74,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     setSlash(menu);
   };
   const options = useMemo(
-    () => (slash ? CARD_TYPES.filter((type) => norm(types[type].label).includes(norm(slash.query))) : []),
-    [slash, types],
+    () => (slash ? typesFor(kind, data.type === "episode").filter((type) => norm(types[type].label).includes(norm(slash.query))) : []),
+    [slash, types, kind, data.type],
   );
 
   const [mention, setMention] = useState<MentionState | null>(null);
@@ -415,7 +415,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           aria-expanded={slash?.via === "label"}
           aria-label={fmt(t.card.changeType, { type: types[data.type].label })}
           onClick={() => {
-            setActive(Math.max(0, CARD_TYPES.indexOf(data.type)));
+            setActive(Math.max(0, typesFor(kind, data.type === "episode").indexOf(data.type)));
             openMenu(slash?.via === "label" ? null : { via: "label", query: "" });
           }}
         >
@@ -493,7 +493,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           // plus un éditeur, c'est le chemin clavier qui reste pour toutes les cartes).
           if (e.key === "/" && !data.title) {
             e.preventDefault();
-            setActive(Math.max(0, CARD_TYPES.indexOf(data.type)));
+            setActive(Math.max(0, typesFor(kind, data.type === "episode").indexOf(data.type)));
             openMenu({ via: "label", query: "" });
             return;
           }

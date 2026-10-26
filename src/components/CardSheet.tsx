@@ -15,12 +15,16 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   const all = useT();
   const t = all.character;
   const labels: Record<string, string> = { ...all.character.fields, ...all.fiche.fields };
-  const placeholders: Record<string, string> = { ...all.character.placeholders, ...all.fiche.placeholders };
+  const typePlaceholders = all.fiche.typePlaceholders as Partial<Record<string, Record<string, string>>>;
+  const placeholders: Record<string, string> = { ...all.character.placeholders, ...all.fiche.placeholders, ...typePlaceholders[card.type] };
   const title = all.fiche.titles[card.type as keyof typeof all.fiche.titles] ?? t.sheet;
   // Les champs montrés ailleurs (moteur et arc d'un personnage) ne sont pas répétés ici.
   const band = bandFields(card);
   const fields = sheetFields(card.type).filter((key) => !band.has(key));
   const setFiche = useCosmos((s) => s.setFiche);
+  // Épisode : le personnage pivot se choisit parmi les cartes Personnage (la fiche garde son identifiant).
+  const nodes = useCosmos((s) => (card.type === "episode" ? s.nodes : null));
+  const people = (nodes ?? []).filter((n) => n.data.type === "personnage" && n.data.title.trim()).map((n) => n.data);
   const filled = fields.filter((key) => card.fiche?.[key]?.trim()).length;
   // Ouverte d'office quand quelque chose est rempli ; sinon un bouton invite à la compléter.
   const [open, setOpen] = useState(startOpen ?? filled > 0);
@@ -54,7 +58,20 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
     return (
       <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}`}>
         <label htmlFor={props.id}>{labels[key]}</label>
-        {SHORT_FIELDS.has(key) ? <input type="text" autoComplete="off" {...props} /> : <textarea rows={1} {...props} />}
+        {key === "pivot" ? (
+          <select id={props.id} value={props.value} onChange={props.onChange}>
+            <option value="">{all.fiche.pivotNone}</option>
+            {people.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title.trim()}
+              </option>
+            ))}
+          </select>
+        ) : SHORT_FIELDS.has(key) ? (
+          <input type="text" autoComplete="off" {...props} />
+        ) : (
+          <textarea rows={1} {...props} />
+        )}
       </div>
     );
   };

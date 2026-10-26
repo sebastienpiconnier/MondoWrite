@@ -86,6 +86,11 @@ export const PLACE_FIELDS = ["epoque", "ambiance", "evenements", "importance"] a
 export const SOURCE_FIELDS = ["url", "auteur", "publication", "consulte"] as const;
 /** Fiche d'un document importé (PDF) : d'où il vient et sa longueur. */
 export const DOCUMENT_FIELDS = ["auteur", "publication", "pages"] as const;
+/**
+ * Fiche d'un épisode de série : numéro (ordre de la saison), synopsis de trois ou quatre phrases, personnage
+ * pivot (identifiant d'une carte Personnage). Les fils présents sont les fils du canevas vers les Intrigues.
+ */
+export const EPISODE_FIELDS = ["numero", "synopsis", "pivot"] as const;
 export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution"] as const;
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
@@ -103,17 +108,18 @@ export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
   personnage: CHARACTER_FIELDS,
   lieu: PLACE_FIELDS,
   intrigue: PLOT_FIELDS,
+  episode: EPISODE_FIELDS,
   lien: SOURCE_FIELDS,
   image: SOURCE_FIELDS,
   document: DOCUMENT_FIELDS,
 };
-export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number] | (typeof DOCUMENT_FIELDS)[number] | (typeof SCENE_FIELDS)[number];
+export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number] | (typeof DOCUMENT_FIELDS)[number] | (typeof SCENE_FIELDS)[number] | (typeof EPISODE_FIELDS)[number];
 export const sheetFields = (type: CardType): readonly SheetField[] => (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
 
 /** Champs courts (une ligne) ; les autres sont des zones de texte qui grandissent. */
 /** Textes longs : toute la largeur de la fiche (CardSheet). */
 export const WIDE_FIELDS: ReadonlySet<SheetField> = new Set(["synopsis"]);
-export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature", "url", "auteur", "publication", "consulte", "pages"]);
+export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["numero", "role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature", "url", "auteur", "publication", "consulte", "pages"]);
 
 /** Adresse web d'une source, si elle en a une valide (http ou https). */
 export function sourceUrl(card: Pick<CardData, "type" | "fiche">): string | null {

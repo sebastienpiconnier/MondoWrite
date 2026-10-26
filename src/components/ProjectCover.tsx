@@ -12,6 +12,7 @@ import { NOVEL_CHIPS, PITCH_CHIPS, SERIES_TEXTS, chipSuggestions, pitchFields, p
 import { CoverAssistant } from "./CoverAssistant";
 import { countWords } from "../manuscript";
 import { typeColor } from "../types";
+import { episodeOrder } from "../episodes";
 import { minutesFor, usePagination } from "./usePagination";
 
 /** Pastille : montre la valeur, ou « + Genre ». Toucher ouvre les suggestions et une saisie libre. */
@@ -179,7 +180,7 @@ function Volume() {
   );
 }
 
-export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: string) => void; onAddTheme: () => void }) {
+export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpenTheme: (id: string) => void; onAddTheme: () => void; onAddEpisode: () => void }) {
   const { t, kind, types } = useVocab();
   const p = t.pitch;
   const title = useCosmos((s) => s.title);
@@ -198,7 +199,8 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
   );
   // Pas de point de vue ni de temps du récit pour un scénario (toujours au présent, caméra).
   const chips = PITCH_CHIPS.filter((c) => kind === "roman" || !(NOVEL_CHIPS as readonly string[]).includes(c));
-  const seriesFilled = SERIES_TEXTS.some((k) => pitch[k]?.trim());
+  const episodes = useMemo(() => episodeOrder(nodes.map((n) => n.data)), [nodes]);
+  const seriesFilled = SERIES_TEXTS.some((k) => pitch[k]?.trim()) || episodes.length > 0;
   const tagId = useId();
 
   // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge, WebKit).
@@ -289,7 +291,27 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
             <div className="pitch-series-body">
               <p className="pitch-hint">{p.seriesHint}</p>
               {SERIES_TEXTS.map((k) => (
-                <PitchArea key={k} field={k} hint={k === "episodes" ? p.episodesHint : undefined} />
+                <div key={k} className="pitch-series-field">
+                  <PitchArea field={k} />
+                  {/* Les épisodes sont des cartes (lot 6) : la couverture dit où les trouver, après l'épisode type. */}
+                  {k === "episodeType" && (
+                    <div className="pitch-episodes">
+                      <span className="pitch-key">{p.fields.episodes}</span>
+                      <p className="pitch-hint">{episodes.length === 0 ? p.episodesNone : episodes.length === 1 ? p.episodesOne : fmt(p.episodesCount, { n: episodes.length })}</p>
+                      <div className="pitch-theme-list">
+                        {episodes.length > 0 && (
+                          <button type="button" className="chip pitch-theme" onClick={() => onOpenTheme(episodes[0].id)}>
+                            <span className="card-dot" style={{ background: typeColor("episode") }} />
+                            {p.episodesOpen}
+                          </button>
+                        )}
+                        <button type="button" className="link-button" onClick={onAddEpisode}>
+                          <span className="card-dot" style={{ background: typeColor("episode") }} /> {p.episodesAdd}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </details>

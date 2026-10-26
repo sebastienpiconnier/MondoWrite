@@ -7,11 +7,12 @@ import { useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { filterActive } from "../canvasFilter";
-import { CARD_TYPES, typeColor } from "../types";
+import { typesFor, typeColor } from "../types";
 
 export function CanvasFilterMenu() {
   const t = useT().filter;
-  const { types: labels } = useVocab();
+  const { types: labels, kind } = useVocab();
+  const menuTypes = typesFor(kind);
   const filter = useCosmos((s) => s.filter);
   const setFilterTypes = useCosmos((s) => s.setFilterTypes);
   const clearFilter = useCosmos((s) => s.clearFilter);
@@ -62,7 +63,7 @@ export function CanvasFilterMenu() {
       {open && (
         <div id={panelId} className="canvas-filter-panel" role="group" aria-label={t.button}>
           <p className="canvas-filter-title">{t.title}</p>
-          {CARD_TYPES.map((type) => {
+          {menuTypes.map((type) => {
             const shown = !filter.types.includes(type);
             return (
               <label key={type} className="canvas-filter-item">
@@ -80,7 +81,7 @@ export function CanvasFilterMenu() {
             <button type="button" className="ghost-button" disabled={!active} onClick={clearFilter}>
               {t.showAll}
             </button>
-            <button type="button" className="ghost-button" disabled={CARD_TYPES.every((x) => filter.types.includes(x))} onClick={() => setFilterTypes([...CARD_TYPES])}>
+            <button type="button" className="ghost-button" disabled={menuTypes.every((x) => filter.types.includes(x))} onClick={() => setFilterTypes([...menuTypes])}>
               {t.hideAll}
             </button>
           </div>

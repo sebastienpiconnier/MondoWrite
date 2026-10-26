@@ -6,14 +6,15 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useT } from "../i18n";
 import { useVocab } from "../vocab";
-import { CARD_TYPES, typeColor, type CardType } from "../types";
+import { typesFor, typeColor, type CardType } from "../types";
 
 /** Types qui ouvrent une fenêtre avant de créer la carte : leur libellé finit par « … ». */
 const ASKS: CardType[] = ["image", "document"];
 
 export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }) {
   const t = useT().toile;
-  const { types } = useVocab();
+  const { types, kind } = useVocab();
+  const menuTypes = typesFor(kind);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -82,7 +83,7 @@ export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }
       </button>
       {open && (
         <div id={menuId} className="add-card-menu" role="menu" aria-label={t.addCardMore} onKeyDown={onMenuKey}>
-          {CARD_TYPES.map((type, i) => (
+          {menuTypes.map((type, i) => (
             <button
               key={type}
               ref={(el) => {

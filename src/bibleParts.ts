@@ -19,6 +19,7 @@ export const PART_OF: Record<CardType, PartKey> = {
   lieu: "univers",
   intrigue: "structure",
   scene: "structure",
+  episode: "structure",
   question: "pourVous",
   idee: "pourVous",
   lien: "pourVous",

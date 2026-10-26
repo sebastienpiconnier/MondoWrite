@@ -7,6 +7,7 @@ import { BIBLE_ORDER } from "../types";
 import { isMediaName } from "../media";
 import { isBlank, type Manuscript } from "../manuscript";
 import { ficheText, sheetFields } from "../character";
+import { episodeOrder } from "../episodes";
 import { PITCH_CHIPS, PITCH_TEXTS, type Pitch } from "../pitch";
 
 export interface Run {
@@ -247,7 +248,9 @@ export function bibleDoc(
 ): ExportDoc {
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() || strings.untitled;
   const chapters = order.map((type) => {
-    const entries = cards.filter((c) => c.type === type).sort((a, b) => a.title.localeCompare(b.title, info.lang));
+    const ofType = cards.filter((c) => c.type === type);
+    // Les épisodes dans l'ordre de la saison, le reste par titre.
+    const entries = type === "episode" ? episodeOrder(ofType) : ofType.sort((a, b) => a.title.localeCompare(b.title, info.lang));
     const blocks: Block[] = [];
     for (const card of entries) {
       blocks.push({ kind: "heading", runs: [{ text: card.title.trim() || strings.untitled }], anchor: card.id });
@@ -255,7 +258,9 @@ export function bibleDoc(
       // Fiche d'identité d'un personnage : un paragraphe par champ rempli, libellé en gras.
       if (strings.fields && card.fiche) {
         for (const key of sheetFields(card.type)) {
-          const value = card.fiche[key]?.trim();
+          const raw = card.fiche[key]?.trim();
+          // Pivot d'un épisode : la fiche garde l'identifiant du personnage, on écrit son nom.
+          const value = key === "pivot" ? (raw ? cards.find((c) => c.id === raw)?.title.trim() : "") : raw;
           // « Personnage principal » sert à ranger (et au dossier), pas à lire : jamais écrit dans la fiche exportée.
           if (key === "principal") continue;
           if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: ficheText(key, value, strings.arcTypes) }] });

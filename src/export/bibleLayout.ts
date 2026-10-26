@@ -327,7 +327,7 @@ export function layoutBible({ pack, theme, accent, paper, metrics, imageSize }: 
         ensure(18 + rowH * Math.min(b.rows.length, 3));
         y += 6;
         b.cols.forEach((_, i) => {
-          const n = String(i + 1);
+          const n = b.marks?.[i] ?? String(i + 1);
           text(left + labelW + i * colW + (colW - metrics.width(n, F("ui"), S.kicker)) / 2, y + S.kicker, n, F("ui"), S.kicker, theme.muted);
         });
         y += S.kicker + 6;
@@ -341,7 +341,7 @@ export function layoutBible({ pack, theme, accent, paper, metrics, imageSize }: 
           });
           y += rowH;
         }
-        const legend = b.cols.map((c, i) => `${i + 1} ${c}`).join("  ·  ");
+        const legend = b.cols.map((c, i) => `${b.marks?.[i] ?? i + 1} ${c}`).join("  ·  ");
         y += 4;
         drawLines(wrap([{ text: legend, font: F("ui") }], width, S.kicker + 0.5, metrics), left, S.kicker + 0.5, theme.muted, 1.5);
         y += 8;

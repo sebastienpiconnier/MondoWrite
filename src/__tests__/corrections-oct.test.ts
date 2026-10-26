@@ -89,7 +89,7 @@ describe("chapitres", () => {
 
 describe("organiser le canevas", () => {
   const labels = {
-    groups: { idee: "Idées", personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", image: "Images", lien: "Liens", document: "Documents" },
+    groups: { idee: "Idées", personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", image: "Images", lien: "Liens", document: "Documents", episode: "Épisodes" },
     beat: (k: string) => k,
     chapter: (n: number, title: string) => (title ? `Chapitre ${n} · ${title}` : `Chapitre ${n}`),
     continued: (label: string) => `${label} (suite)`,
@@ -222,7 +222,7 @@ describe("exports", () => {
     expect(doc.chapters.map((c) => c.title)).toEqual(["Chapitre 1 · Le phare", "Seule"]);
     expect(doc.chapters[0].blocks.map((b) => ("runs" in b ? b.runs : []).map((r) => r.text).join(""))).toEqual(["Un.", SCENE_BREAK, "Deux."]);
     const bible = bibleDoc({ title: "K", author: "", lang: "fr" }, [{ ...card("p1", "personnage", "Inès"), fiche: { age: "34" } }], [], {
-      sections: { personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", image: "Images", lien: "Liens", document: "Documents", idee: "Idées" },
+      sections: { personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", image: "Images", lien: "Liens", document: "Documents", idee: "Idées", episode: "Épisodes" },
       untitled: "Sans titre",
       linkedTo: "Relié à",
       fields: { age: "Âge" },

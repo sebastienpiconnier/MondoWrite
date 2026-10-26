@@ -12,6 +12,7 @@ import { PLAN_TEMPLATES, chapterNumbers } from "../plan";
 import { bookOrder } from "../book";
 import type { Pitch } from "../pitch";
 import { NOVEL_CHIPS, readEpisodes } from "../pitch";
+import { appearances, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, pivotOf } from "../episodes";
 import { countWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
 import { listScenes, sceneSynopsis } from "../screenplay/scenes";
@@ -47,8 +48,11 @@ export type PackBlock =
   | { kind: "person"; name: string; meta: string; hook: string; image: string | null; initials: string }
   | { kind: "thumbs"; items: { image: string; caption: string }[] }
   | { kind: "list"; items: { mark: string; text: string; note?: string }[]; columns: 1 | 2 }
-  /** Grille des fils : une ligne par intrigue, une colonne par partie du pilote (numérotée, légende dessous). */
-  | { kind: "grid"; cols: string[]; rows: { label: string; cells: boolean[] }[] }
+  /**
+   * Grille des fils : une ligne par intrigue, une colonne par partie du pilote ou par épisode (numérotée,
+   * légende dessous). `marks` : numéros des colonnes quand ce ne sont pas 1, 2, 3… (numéros des épisodes).
+   */
+  | { kind: "grid"; cols: string[]; marks?: string[]; rows: { label: string; cells: boolean[] }[] }
   | { kind: "rule" }
   | { kind: "pageBreak" };
 
@@ -139,6 +143,8 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() ?? "";
   const kindLabel = forMe ? e.kinds.work : s.kind === "scenario" ? e.kinds.series : e.kinds.pitch;
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
+  // Épisodes de la série (cartes Épisode, lot 6), dans l'ordre de la saison.
+  const episodes = s.kind === "scenario" ? episodeOrder(cards) : [];
   const words = Object.values(s.manuscript).reduce((sum, html) => sum + countWords(html), 0);
 
   // Ligne de couverture : roman ou série, genre, volume (mots écrits, ou objectif).
@@ -187,9 +193,16 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       const full = forMe || principals.length === 0 ? [...principals, ...all.filter((c) => !isPrincipal(c))] : principals;
       const others = full === principals ? all.filter((c) => !isPrincipal(c)) : [];
       // Bible de série : tout le monde en une page, d'un coup d'œil, avant les fiches.
-      const memo = all.filter((c) => c.title.trim() && clean(c.fiche?.accroche));
+      // Avec des épisodes, le mémo dit aussi où chacun paraît (pivot ou relié par un fil).
+      const seen = s.kind === "scenario" ? appearances(cards, s.edges) : new Map<string, string[]>();
+      const memoNote = (c: CardData) => {
+        const where = seen.get(c.id) ?? [];
+        const inEps = where.length === 0 ? "" : where.length === 1 ? fmt(e.inEpisode, { n: where[0] }) : fmt(e.inEpisodes, { list: where.join(", ") });
+        return [clean(c.fiche?.accroche), inEps].filter(Boolean).join(" · ");
+      };
+      const memo = all.filter((c) => c.title.trim() && memoNote(c));
       if (s.kind === "scenario" && options.memo && memo.length >= 2) {
-        blocks.push({ kind: "label", text: e.memo }, { kind: "list", columns: 2, items: memo.map((c) => ({ mark: "", text: c.title.trim(), note: clean(c.fiche?.accroche) })) }, { kind: "pageBreak" });
+        blocks.push({ kind: "label", text: e.memo }, { kind: "list", columns: 2, items: memo.map((c) => ({ mark: "", text: c.title.trim(), note: memoNote(c) })) }, { kind: "pageBreak" });
       }
       full.forEach((c, i) => {
         if (i > 0) blocks.push(isPrincipal(c) || !forMe ? { kind: "pageBreak" } : { kind: "rule" });
@@ -224,10 +237,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 
     if (part === "structure") {
       if (s.kind === "scenario") {
-        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"));
-        const episodes = readEpisodes(s.pitch.episodes);
-        if (episodes.length > 0)
-          blocks.push({ kind: "label", text: t.pitch.fields.episodes }, { kind: "list", columns: 1, items: episodes.map((ep, i) => ({ mark: String(i + 1), text: ep.title, note: ep.synopsis })) });
+        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"), ...episodeBlocks());
       }
       for (const c of byType("intrigue")) {
         blocks.push({ kind: "h3", text: c.title.trim() || t.bible.untitled, sub: clean(c.fiche?.nature) });
@@ -235,7 +245,11 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         if (cells.length > 0) blocks.push({ kind: "cells", items: cells });
         if (forMe) blocks.push(...paras(c.html));
       }
-      if (s.kind === "scenario" && options.grid) blocks.push(...threadGrid());
+      if (s.kind === "scenario" && options.grid) {
+        // Les fils de la saison (intrigues × épisodes) ; sans épisodes reliés, ceux du pilote.
+        const season = seasonGrid();
+        blocks.push(...(season.length > 0 ? season : threadGrid()));
+      }
       blocks.push(...planBlocks());
       if (s.kind === "scenario") {
         // Écrire la série : ce qu'un scénariste qui rejoint l'écriture doit savoir.
@@ -292,6 +306,49 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     if (!text) return [];
     const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l): PackBlock => ({ kind: "para", runs: [{ text: l }] }));
     return withLabel ? [{ kind: "label", text: t.pitch.fields[key] }, ...lines] : lines;
+  }
+
+  /**
+   * Épisodes : pour un tiers, une liste courte (titre, synopsis, pivot), sans séquencier ni traitement ;
+   * pour soi, chaque épisode avec ses intrigues, ses personnages et ses notes. Projet pas encore repris
+   * (anciennes lignes de la couverture) : ces lignes.
+   */
+  function episodeBlocks(): PackBlock[] {
+    if (episodes.length === 0) {
+      const lines = readEpisodes(s.pitch.episodes);
+      return lines.length === 0 ? [] : [{ kind: "label", text: t.pitch.fields.episodes }, { kind: "list", columns: 1, items: lines.map((ep, i) => ({ mark: String(i + 1), text: ep.title, note: ep.synopsis })) }];
+    }
+    const numbers = episodeNumbers(episodes);
+    const named = (c: CardData) => c.title.trim() || t.bible.untitled;
+    const pivotNote = (c: CardData) => {
+      const pivot = pivotOf(c, cards);
+      return pivot?.title.trim() ? `${t.fiche.fields.pivot} : ${pivot.title.trim()}` : "";
+    };
+    if (!forMe)
+      return [
+        { kind: "label", text: v.types.episode.section },
+        { kind: "list", columns: 1, items: episodes.map((c) => ({ mark: numbers.get(c.id)!, text: named(c), note: [clean(c.fiche?.synopsis), pivotNote(c)].filter(Boolean).join(" · ") })) },
+      ];
+    const out: PackBlock[] = [{ kind: "h2", text: v.types.episode.section }];
+    for (const c of episodes) {
+      out.push({ kind: "h3", text: `${numbers.get(c.id)}. ${named(c)}`, sub: pivotOf(c, cards)?.title.trim() });
+      if (clean(c.fiche?.synopsis)) out.push({ kind: "para", runs: [{ text: clean(c.fiche?.synopsis) }] });
+      const facts = [
+        { label: v.types.intrigue.section, value: episodeThreads(c, cards, s.edges).map(named).join(", ") },
+        { label: v.types.personnage.section, value: episodeCast(c, cards, s.edges).map(named).join(", ") },
+      ].filter((f) => f.value);
+      if (facts.length > 0) out.push({ kind: "para", small: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
+      out.push(...paras(c.html));
+    }
+    return out;
+  }
+
+  /** Grille des fils de la saison : intrigues × épisodes, s'il y a au moins deux épisodes et un fil. */
+  function seasonGrid(): PackBlock[] {
+    if (episodes.length < 2 || episodes.length > MAX_GRID_COLS) return [];
+    const grid = episodeGrid(cards, s.edges);
+    if (grid.rows.length === 0) return [];
+    return [{ kind: "label", text: e.gridSeason }, { kind: "grid", cols: episodes.map((c) => c.title.trim() || t.bible.untitled), marks: grid.cols, rows: grid.rows }];
   }
 
   /** Grille des fils du pilote : intrigues × parties du scénario (sections, ou scènes s'il n'y en a pas). */
