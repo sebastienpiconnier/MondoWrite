@@ -45,13 +45,27 @@ const MAX_CHIP = 120;
 
 const limit = (key: PitchField) => ((PITCH_CHIPS as readonly string[]).includes(key) ? MAX_CHIP : MAX_TEXT);
 
-/** Couverture lue dans cosmos.json : seules les clés connues et les textes non vides sont gardés. */
+/** Clé d'un champ qu'une version future aurait ajouté : gardée et réécrite telle quelle, jamais affichée. */
+const FUTURE_KEY = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
+const MAX_FUTURE = 40;
+
+/**
+ * Couverture lue dans cosmos.json : les clés connues et leurs textes non vides. Une clé inconnue (champ d'une
+ * version plus récente) qui porte un texte est gardée telle quelle, pour être réécrite : ouvrir le projet ici
+ * ne la perd pas. Les versions 1.3 et avant, elles, perdaient ces clés à l'enregistrement.
+ */
 export function readPitch(raw: unknown): Pitch {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const out: Pitch = {};
   for (const key of FIELDS) {
     const value = (raw as Record<string, unknown>)[key];
     if (typeof value === "string" && value.trim()) out[key] = value.slice(0, limit(key));
+  }
+  let future = 0;
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if ((FIELDS as readonly string[]).includes(key) || !FUTURE_KEY.test(key) || typeof value !== "string" || !value.trim()) continue;
+    if (future++ >= MAX_FUTURE) break;
+    (out as Record<string, string>)[key] = value.slice(0, MAX_TEXT);
   }
   return out;
 }

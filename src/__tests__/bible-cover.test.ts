@@ -14,8 +14,8 @@ import { fr } from "../i18n/fr";
 import { en } from "../i18n/en";
 
 describe("couverture du projet, fonctions pures", () => {
-  it("ne garde que les clés connues et les textes non vides", () => {
-    expect(readPitch({ tagline: "Le phare ment.", logline: "  ", genre: "Polar", inconnu: "x", ton: 3 })).toEqual({ tagline: "Le phare ment.", genre: "Polar" });
+  it("ne garde que les textes non vides (une clé inconnue est gardée pour une version future)", () => {
+    expect(readPitch({ tagline: "Le phare ment.", logline: "  ", genre: "Polar", inconnu: "x", ton: 3 })).toEqual({ tagline: "Le phare ment.", genre: "Polar", inconnu: "x" });
     expect(readPitch(null)).toEqual({});
     expect(readPitch(["x"])).toEqual({});
     expect(readPitch({ genre: "x".repeat(500) }).genre).toHaveLength(120);

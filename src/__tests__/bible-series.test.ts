@@ -154,3 +154,11 @@ describe("bible de série", () => {
     expect(pages.some((p) => p.mark === fr.bibleExport.pilotTitle)).toBe(true);
   });
 });
+
+describe("couverture, versions futures", () => {
+  it("garde les clés inconnues de la couverture pour les réécrire", () => {
+    const p = readPitch({ logline: "x", nouveauChamp: "texte", vide: " ", "../x": "non", nombre: 3 });
+    expect(p).toEqual({ logline: "x", nouveauChamp: "texte" });
+    expect(pitchFilled(p, "roman")).toBe(1);
+  });
+});
