@@ -83,9 +83,73 @@ Multiplateforme : dialogue plein écran sur téléphone, aperçu sous les régla
 - [x] Rendu Nuit proposé par défaut pour un producteur (`defaultTheme`, `exportStateFor` : tant que l'auteur n'a rien changé, rien n'est écrit dans `cosmos.json`).
 - [x] **Questionner** sur la couverture (`CoverAssistant`) : une question par champ vide, la réponse va telle quelle dans le champ, « Une autre » passe (`nextAsk`).
 
-## Lot 5 : « Ce qui change » (après retours des testeurs)
+## Lot 5 : « Ce qui change » (plan détaillé, 26 octobre 2026)
 
-Une case libre sur la carte Scène, avec mentions @ ; elle remplit « Au fil des scènes », qui sait quoi et les objets de la partie « Pour vous ». Plan détaillé à écrire une fois les lots 1 à 3 en mains des testeurs.
+Une seule saisie nouvelle, sur la scène ; tout le reste se calcule. C'est la « dimension de temps » du document de conception : la Bible sait dire qui et où, elle apprend à dire **quand les choses changent**. Aucune vue n'a de champ à elle (principe « On saisit dans le récit, la Bible se remplit seule »).
+
+### Ce que l'auteur saisit
+
+Sur une scène, une case **« Ce qui change »** : quelques lignes libres, une par changement, avec mentions `@` (le menu des cartes existe déjà).
+
+> @Inès apprend que @Yann a survécu au naufrage.
+> @Inès perd la clé du phare.
+> @Yann se rend à @La maison du port.
+
+Des pastilles de verbes posent le début de la ligne, en raccourci : **apprend**, **reçoit**, **perd**, **se rend à**, **promet**, **tient**. Elles ne font qu'écrire le mot : une phrase libre reste valable, et une ligne sans verbe connu reste une simple note datée par la scène.
+
+### Où elle s'écrit (trois chemins, comme le reste)
+
+- carte Scène agrandie (`ExpandedCard`), sous le synopsis ;
+- panneau « Dans cette scène » du Manuscrit et du Scénario (colonne de droite), là où l'auteur écrit ;
+- fiche Scène de la Bible (rubrique Scènes).
+
+Sur le canevas, la carte montre seulement « 3 changements » (comme « N questions à compléter »), qui ouvre la carte agrandie.
+
+### Format (contrat)
+
+- Une ligne de frontmatter facultative sur la carte Scène, comme `questions` : `changes: ["@Inès apprend que @Yann a survécu.", …]`, chaque mention écrite `[@Titre](cosmos:<id>)` comme dans le texte. Ajout à `KNOWN_FRONT`, lecture par `readChanges` (chaînes non vides, 40 lignes et 500 caractères au plus).
+- Rien dans `scenario.fountain` : une scène de scénario garde ses changements dans sa carte (le Fountain reste lisible par les autres logiciels).
+- Versions d'avant : depuis octobre 2026, une ligne de frontmatter inconnue est gardée (`keep.front`) et réécrite ; rien ne se perd en allant-retour avec la 1.3.1.
+- Les mentions suivent les renommages et redeviennent du texte à la suppression d'une carte, par les mêmes fonctions que le corps des cartes (`mentions.ts`) : à brancher sur `changes` dans `updateCard` et `toTrash`.
+- Historique d'annulation : `changes` fait partie de la carte, donc de `record()`.
+
+### Lecture (pure, testée) : `src/changes.ts`
+
+- `parseChange(line)` → `{ who: id[], verb: "apprend" | "recoit" | "perd" | "serend" | "promet" | "tient" | null, what: string, refs: id[] }`. Verbes reconnus en français et en anglais (learns, gets, loses, goes to, promises, keeps), au présent, après la première mention ; le reste de la ligne est `what`.
+- `changeLog(cards, order)` : tous les changements dans l'ordre du récit (`bookOrder` pour un roman, ordre du Fountain pour un scénario), avec la scène, son numéro et son chapitre.
+- `stateAt(characterId, log, index)` : l'état d'un personnage à une scène : où il est (dernier « se rend à »), ce qu'il porte (reçoit moins perd), ce qu'il sait (« apprend »), ce qu'il ignore encore (ce que d'autres ont appris et pas lui).
+- `whoKnows(log)` : matrice « qui sait quoi » : une ligne par chose apprise (le `what` normalisé, ou la carte citée), une colonne par personnage, la scène où chacun l'apprend.
+- `objects(log)` : les objets cités par « reçoit » / « perd », avec leur porteur au fil des scènes.
+- `promises(log)` : chaque « promet » et le « tient » qui lui répond (même carte citée, ou même texte) ; une promesse jamais tenue.
+
+### Ce qui se remplit
+
+1. **Fiche personnage, onglet « Au fil des scènes »** (à côté de « Fiche ») : un curseur sur les scènes (ou les chapitres) montre `stateAt` ; à droite, le journal de ses changements, chaque ligne ouvre sa scène. Rien à saisir ici.
+2. **Partie « Pour vous »**, trois rubriques calculées, présentes seulement quand elles ont du contenu : **Au fil des scènes** (journal complet), **Qui sait quoi** (matrice), **Objets** (qui porte quoi, et quand).
+3. **Onglet « Vérifier »** (`review/checks.ts`), deux règles nouvelles, toujours formulées en questions avec « C'est voulu » : un personnage nomme dans ses répliques ou son texte une chose avant de l'avoir apprise (« parle avant de savoir », d'après `whoKnows` et le texte des scènes) ; une promesse jamais tenue.
+4. **Export** : la bible de travail (lecteur « moi ») reçoit ces trois rubriques dans « Pour vous » (journal en liste, matrice en grille, réutilise le bloc `grid` du lot 4). Jamais dans un dossier pour un tiers. Markdown et Word : le journal en liste.
+5. **IA** (si branchée, plus tard) : la cohérence reçoit le journal des changements ; elle pose des questions, comme aujourd'hui.
+
+### Étapes
+
+- [ ] `changes.ts` (pur) et ses tests : lecture des lignes, verbes fr/en, journal, état, matrice, objets, promesses.
+- [ ] Format : `changes` dans `CardData`, `markdown.ts` (lecture, écriture, `KNOWN_FRONT`), mentions suivies au renommage et à la suppression, test d'aller-retour et de `keep` côté ancienne version.
+- [ ] Saisie : composant `SceneChanges` (lignes éditables avec `@`, pastilles de verbes, ajout, retrait), dans la carte agrandie, « Dans cette scène » et la Bible ; compteur sur la carte du canevas.
+- [ ] Bible : onglet « Au fil des scènes » de la fiche personnage, rubriques calculées de « Pour vous ».
+- [ ] Vérifier : règles « parle avant de savoir » et « promesse non tenue » (`RuleKey`, textes fr/en).
+- [ ] Export : rubriques de « Pour vous » dans la bible de travail (PDF, Word, Markdown).
+- [ ] Guide (fr, en) et captures ; `CLAUDE.md` (format `changes`, `changes.ts`).
+
+### Hors de ce lot
+
+« Moment de l'histoire » et la chronologie à deux ordres, la carte Monde (règles, termes, groupes, secrets), les anneaux de complétude du sommaire : chacun son lot, après les retours sur celui-ci.
+
+### Questions à trancher avant de coder
+
+1. **Verbes** : pastilles de raccourci sur du texte libre (proposé), ou texte libre seul ?
+2. **Qui sait quoi** sans carte Secret : une ligne par chose apprise, regroupée par texte ou par carte citée (proposé), ou attendre la carte Monde « secret » ?
+3. **Objets** sans carte Objet : texte après « reçoit » / « perd » (proposé), ou exiger une carte citée par `@` ?
+4. **Curseur de l'onglet** : par scène (précis) ou par chapitre (plus lisible, proposé pour un roman ; par scène pour un scénario) ?
 
 ## Compatibilité avec `main` (vérifiée le 26 octobre 2026, à la lecture du code de `main`)
 
