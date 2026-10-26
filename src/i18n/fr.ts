@@ -665,8 +665,6 @@ export const fr = {
       headingFormat: "En-tête incomplet",
       emptyElement: "Élément vide",
       extraSpaces: "Espaces en trop",
-      speaksBeforeKnowing: "Parle avant de savoir",
-      unkeptPromise: "Promesse non tenue",
     },
     hints: {
       similarNames: "Sans doute le même nom écrit de deux façons.",
@@ -675,8 +673,6 @@ export const fr = {
       headingFormat: "Un en-tête dit INT. ou EXT., le décor, puis le moment (JOUR, NUIT…).",
       emptyElement: "Un en-tête sans texte, ou un personnage sans réplique.",
       extraSpaces: "Deux espaces de suite, ou une espace avant une virgule ou un point.",
-      speaksBeforeKnowing: "D’après « Ce qui change », il ne l’apprend que plus tard. C’est peut-être voulu.",
-      unkeptPromise: "Une scène promet, aucune ne tient (« tient sa promesse »). C’est peut-être pour la suite.",
     },
     items: {
       similarNamesScript: "{where} : « {rare} » ({a}) ressemble à « {common} » ({b}).",
@@ -687,8 +683,6 @@ export const fr = {
       emptyHeading: "{where} : en-tête vide",
       emptyCharacter: "{where} : {text}, sans réplique",
       extraSpaces: "{where} : {text}",
-      speaksBeforeKnowing: "{where} : {name} parle de {thing}, qu’il n’apprend qu’à la scène {scene}.",
-      unkeptPromise: "{where} : {text}",
     },
   },
   replace: {
@@ -1225,45 +1219,6 @@ export const fr = {
   },
 
   // Exporter la Bible (Bible v2) : pour qui, quelles parties, quel rendu ; aperçu du vrai PDF.
-  // « Ce qui change » (Bible v2, lot 5) : quelques lignes libres sur une scène, avec mentions @.
-  changes: {
-    title: "Ce qui change",
-    hint: "Une ligne par changement, avec @ pour citer : « @Inès apprend que @Yann a survécu ». Le reste de la Bible se remplit seul.",
-    placeholder: "@Inès apprend que…",
-    aria: "Ce qui change dans la scène « {title} »",
-    ariaUntitled: "Ce qui change dans cette scène",
-    verbsAria: "Insérer un verbe",
-    verbs: { apprend: "apprend", recoit: "reçoit", perd: "perd", serend: "se rend à", promet: "promet", tient: "tient sa promesse" },
-    countOne: "1 changement",
-    countMany: "{n} changements",
-    countAria: "Voir ce qui change dans « {title} »",
-    // Fiche d'un personnage : son état au fil des scènes, lu dans « Ce qui change ».
-    character: "Au fil des scènes",
-    stepAria: "Moment du récit",
-    after: "À la fin de : {step}",
-    chapter: "Chapitre {n}",
-    chapterTitled: "Chapitre {n} · {title}",
-    scene: "Scène {n} · {title}",
-    place: "Où",
-    carries: "Porte",
-    knows: "Sait",
-    ignores: "Ignore encore",
-    nothing: "Rien pour l’instant",
-    journal: "Ses changements",
-    inScene: "{scene}",
-    // Partie « Pour vous » de la Bible : tout le journal, et ce qui s'en déduit.
-    story: "Au fil du récit",
-    storyHint: "Tout vient de « Ce qui change », sur les scènes. Rien ne s’écrit ici.",
-    storyJournal: "Le journal",
-    whoKnows: "Qui sait quoi",
-    whoKnowsHint: "Une ligne par chose apprise ; la case dit la scène où chacun l’apprend.",
-    objects: "Objets",
-    promises: "Promesses",
-    promiseKept: "tenue : {scene}",
-    promiseOpen: "pas encore tenue",
-    openScene: "Ouvrir la scène « {title} »",
-    untitledScene: "Scène sans titre",
-  },
   bibleExport: {
     menu: "Bible…",
     title: "Exporter la Bible",

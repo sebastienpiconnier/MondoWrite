@@ -16,7 +16,6 @@ import { openExternal } from "../platform";
 import { hostOf } from "../research";
 import Placeholder from "@tiptap/extension-placeholder";
 import { CARD_TYPES, typeColor, type CardType } from "../types";
-import { changeCount } from "../changes";
 import { useCosmos, type CardNode as CardNodeT } from "../store";
 import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -554,19 +553,6 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         <button type="button" className="card-questions nodrag" onClick={() => useCosmos.getState().openInBible(id, true)}>
           <span className="card-questions-count">{data.questions!.length}</span>
           {fmt(data.questions!.length === 1 ? t.character.pendingOne : t.character.pendingMany, { n: data.questions!.length })}
-        </button>
-      )}
-
-      {/* « Ce qui change » d'une scène : seulement un compteur ; il ouvre la carte agrandie, où l'on écrit. */}
-      {data.type === "scene" && changeCount(data.changes) > 0 && (
-        <button
-          type="button"
-          className="card-questions card-changes nodrag"
-          aria-label={fmt(t.changes.countAria, { title: data.title.trim() || t.bible.untitled })}
-          onClick={() => useCosmos.getState().expandCard(id)}
-        >
-          <span className="card-questions-count">{changeCount(data.changes)}</span>
-          {changeCount(data.changes) === 1 ? t.changes.countOne : fmt(t.changes.countMany, { n: changeCount(data.changes) })}
         </button>
       )}
 

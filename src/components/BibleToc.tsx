@@ -28,8 +28,6 @@ interface Props {
   current: CardType | null;
   openCover: () => void;
   goTo: (type: CardType) => void;
-  /** « Au fil du récit » (lot 5), seulement quand une scène a des changements. */
-  story?: { label: string; onClick: () => void };
 }
 
 function PartBadge({ part }: { part: PartKey }) {
@@ -40,7 +38,7 @@ function PartBadge({ part }: { part: PartKey }) {
   );
 }
 
-export function BibleToc({ sections, counts, prefs, setPrefs, arranging, setArranging, onCover, current, openCover, goTo, story }: Props) {
+export function BibleToc({ sections, counts, prefs, setPrefs, arranging, setArranging, onCover, current, openCover, goTo }: Props) {
   const { t, types } = useVocab();
   const parts = t.bible.parts;
   // La Présentation existe toujours : elle porte la couverture, même si la rubrique Thèmes est masquée.
@@ -142,13 +140,6 @@ export function BibleToc({ sections, counts, prefs, setPrefs, arranging, setArra
               </li>
             );
           })}
-          {story && (
-            <li className="toc-part is-private">
-              <button type="button" className="toc-sub toc-story" onClick={story.onClick}>
-                <span className="toc-label">{story.label}</span>
-              </button>
-            </li>
-          )}
         </ul>
       )}
       <div className="toc-tools">

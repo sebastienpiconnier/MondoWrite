@@ -12,7 +12,6 @@ import { useMediaUrl } from "./useMediaUrl";
 import { DraftEditor } from "./SceneDraft";
 import { ScriptSceneEditor } from "./ScriptSceneEditor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
-import { SceneChanges } from "./SceneChanges";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -56,7 +55,6 @@ export function ExpandedCard({ card }: { card: CardData }) {
           <section className="expanded-draft" aria-label={t.draft.heading}>
             <ScriptSceneEditor card={card} />
           </section>
-          <SceneChanges card={card} />
           <button
             type="button"
             className="link-button expanded-open"
@@ -76,7 +74,6 @@ export function ExpandedCard({ card }: { card: CardData }) {
             <h3 className="expanded-draft-title">{t.draft.heading}</h3>
             <DraftEditor card={card} autofocus />
           </section>
-          {!card.page && <SceneChanges card={card} />}
           <button type="button" className="link-button expanded-open" onClick={() => {
               useCosmos.getState().setDialog(null);
               useCosmos.getState().openInManuscript(card.id);

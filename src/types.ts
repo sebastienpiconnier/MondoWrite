@@ -50,8 +50,6 @@ export interface CardData {
   questions?: string[];
   /** Personnage : réponses aux questions de l'assistant qui ne remplissent pas un champ de la fiche, par clé de question. */
   reponses?: Record<string, string>;
-  /** Carte Scène : « Ce qui change » (Bible v2), en HTML d'éditeur, un paragraphe par ligne, avec mentions. Voir changes.ts. */
-  changes?: string;
   /**
    * Ce qu'une version plus récente de MondoWrite a écrit et que celle-ci ne connaît pas : lignes du
    * frontmatter, champs de la fiche, type de carte. Gardé tel quel et réécrit, jamais affiché.

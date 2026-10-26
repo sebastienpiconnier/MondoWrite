@@ -83,7 +83,11 @@ Multiplateforme : dialogue plein écran sur téléphone, aperçu sous les régla
 - [x] Rendu Nuit proposé par défaut pour un producteur (`defaultTheme`, `exportStateFor` : tant que l'auteur n'a rien changé, rien n'est écrit dans `cosmos.json`).
 - [x] **Questionner** sur la couverture (`CoverAssistant`) : une question par champ vide, la réponse va telle quelle dans le champ, « Une autre » passe (`nextAsk`).
 
-## Lot 5 : « Ce qui change » (plan détaillé, 26 octobre 2026)
+## Lot 5 : « Ce qui change » (écarté le 26 octobre 2026)
+
+> Codé puis retiré à la demande de l'auteur : « cela va trop loin et n'apporte rien ». Le code reste dans l'historique de la branche (commits 196e01a, db9a847, f992341, annulés ensuite) si l'idée revient. Le plan ci-dessous est gardé pour mémoire.
+
+### Plan d'origine
 
 Une seule saisie nouvelle, sur la scène ; tout le reste se calcule. C'est la « dimension de temps » du document de conception : la Bible sait dire qui et où, elle apprend à dire **quand les choses changent**. Aucune vue n'a de champ à elle (principe « On saisit dans le récit, la Bible se remplit seule »).
 
@@ -132,25 +136,24 @@ Sur le canevas, la carte montre seulement « 3 changements » (comme « N questi
 
 ### Étapes
 
-- [x] `changes.ts` (pur) et ses tests : lecture des lignes, verbes fr/en, journal, état, matrice, objets, promesses.
-- [x] Format : `changes` dans `CardData`, `markdown.ts` (lecture, écriture, `KNOWN_FRONT`), mentions suivies au renommage et à la suppression, test d'aller-retour et de `keep` côté ancienne version.
-- [x] Saisie : composant `SceneChanges` (lignes éditables avec `@`, pastilles de verbes, ajout, retrait), dans la carte agrandie, « Dans cette scène » et la Bible ; compteur sur la carte du canevas.
-- [x] Bible : onglet « Au fil des scènes » de la fiche personnage, rubriques calculées de « Pour vous ».
-- [x] Vérifier : règles « parle avant de savoir » et « promesse non tenue » (`RuleKey`, textes fr/en).
-- [x] Export : rubriques de « Pour vous » dans la bible de travail (PDF, Word, Markdown).
-- [x] Guide (fr, en) ; `CLAUDE.md` (format `changes`, `changes.ts`). Reste : une capture de « Ce qui change » pour le guide.
-- Écarts : « Au fil des scènes » est un volet repliable sous la fiche (pas un onglet), pour ne pas ajouter de bloc ouvert ; « Parle avant de savoir » ne vaut que pour un scénario (dans un roman, le texte ne dit pas qui parle) et seulement pour une chose citée par `@`.
+- [ ] `changes.ts` (pur) et ses tests : lecture des lignes, verbes fr/en, journal, état, matrice, objets, promesses.
+- [ ] Format : `changes` dans `CardData`, `markdown.ts` (lecture, écriture, `KNOWN_FRONT`), mentions suivies au renommage et à la suppression, test d'aller-retour et de `keep` côté ancienne version.
+- [ ] Saisie : composant `SceneChanges` (lignes éditables avec `@`, pastilles de verbes, ajout, retrait), dans la carte agrandie, « Dans cette scène » et la Bible ; compteur sur la carte du canevas.
+- [ ] Bible : onglet « Au fil des scènes » de la fiche personnage, rubriques calculées de « Pour vous ».
+- [ ] Vérifier : règles « parle avant de savoir » et « promesse non tenue » (`RuleKey`, textes fr/en).
+- [ ] Export : rubriques de « Pour vous » dans la bible de travail (PDF, Word, Markdown).
+- [ ] Guide (fr, en) et captures ; `CLAUDE.md` (format `changes`, `changes.ts`).
 
 ### Hors de ce lot
 
 « Moment de l'histoire » et la chronologie à deux ordres, la carte Monde (règles, termes, groupes, secrets), les anneaux de complétude du sommaire : chacun son lot, après les retours sur celui-ci.
 
-### Décisions (26 octobre 2026)
+### Questions à trancher avant de coder
 
-1. **Verbes** : pastilles de raccourci sur du texte libre.
-2. **Qui sait quoi** : calculé depuis les lignes « apprend », regroupé par texte ou par carte citée ; pas de carte Secret dans ce lot.
-3. **Objets** : le texte après « reçoit » / « perd » suffit, sans carte.
-4. **Curseur** : par chapitre pour un roman (par scène s'il n'a pas de chapitres), par scène pour un scénario.
+1. **Verbes** : pastilles de raccourci sur du texte libre (proposé), ou texte libre seul ?
+2. **Qui sait quoi** sans carte Secret : une ligne par chose apprise, regroupée par texte ou par carte citée (proposé), ou attendre la carte Monde « secret » ?
+3. **Objets** sans carte Objet : texte après « reçoit » / « perd » (proposé), ou exiger une carte citée par `@` ?
+4. **Curseur de l'onglet** : par scène (précis) ou par chapitre (plus lisible, proposé pour un roman ; par scène pour un scénario) ?
 
 ## Compatibilité avec `main` (vérifiée le 26 octobre 2026, à la lecture du code de `main`)
 

@@ -8,12 +8,11 @@ import { characterName, headingParts, listScenes, sceneAt } from "../screenplay/
 import { wrap } from "../screenplay/paginate";
 import type { CardData } from "../types";
 import { foldName, similarNames } from "./names";
-import { promises, whoKnows, type LoggedChange } from "../changes";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
-export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter" | "speaksBeforeKnowing" | "unkeptPromise";
+export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter";
 
-export const RULE_ORDER: RuleKey[] = ["similarNames", "unknownCharacter", "speaksBeforeKnowing", "unkeptPromise", "longAction", "headingFormat", "emptyElement", "extraSpaces"];
+export const RULE_ORDER: RuleKey[] = ["similarNames", "unknownCharacter", "longAction", "headingFormat", "emptyElement", "extraSpaces"];
 
 export interface Finding {
   /** Identifiant stable du point (pour « Ignorer » pendant la session). */
@@ -193,62 +192,4 @@ export function groupFindings(list: Finding[], ignored: ReadonlySet<string>): { 
     groups.set(f.rule, [...(groups.get(f.rule) ?? []), f]);
   }
   return RULE_ORDER.filter((r) => groups.has(r)).map((rule) => ({ rule, items: groups.get(rule)! }));
-}
-
-/**
- * Points tirés de « Ce qui change » (lot 5), toujours des questions, jamais des fautes :
- * - une promesse (« promet ») qu'aucune scène ne tient ;
- * - scénario : un personnage nomme dans ses répliques une chose (une carte citée) avant la scène où il
- *   l'apprend. C'est peut-être voulu (il ment, il devine) : « Ignorer » suffit.
- * `order` : les scènes dans l'ordre du journal ; `elements` : le scénario (absent pour un roman).
- */
-export function checkChanges(log: LoggedChange[], order: string[], cards: CardData[], elements?: ScreenplayElement[]): Finding[] {
-  const out: Finding[] = [];
-  const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() ?? "";
-  const scenes = elements ? listScenes(elements) : [];
-  const headingOf = (sceneId: string) => scenes.find((s) => s.cardId === sceneId);
-  for (const p of promises(log)) {
-    if (p.kept) continue;
-    const h = headingOf(p.made.sceneId);
-    out.push({
-      key: `unkeptPromise:${p.made.sceneId}:${p.key}`,
-      rule: "unkeptPromise",
-      at: h ? h.index : -1,
-      scene: h ? h.number : p.made.index + 1,
-      sceneId: p.made.sceneId,
-      text: p.made.text,
-      names: [p.made.who.map(titleOf).join(", "), p.text],
-    });
-  }
-  if (!elements) return out;
-  // Rang de chaque scène du scénario dans le journal.
-  const rank = new Map(order.map((id, i) => [id, i]));
-  for (const row of whoKnows(log)) {
-    const thing = row.key.startsWith("@") ? row.key.slice(1) : null;
-    const name = thing ? titleOf(thing) : "";
-    if (!thing || name.length < 3) continue;
-    const needle = foldName(name);
-    for (const [who, learned] of row.learned) {
-      const speaker = foldName(titleOf(who));
-      if (!speaker) continue;
-      let current = "";
-      elements.forEach((el, i) => {
-        if (el.type === "character") current = foldName(characterName(el.text));
-        if (el.type !== "dialogue" || current !== speaker) return;
-        const scene = sceneAt(scenes, i);
-        const at = scene?.cardId ? rank.get(scene.cardId) : undefined;
-        if (at === undefined || at >= learned.index || !foldName(el.text).includes(needle)) return;
-        out.push({
-          key: `speaksBeforeKnowing:${i}:${who}:${thing}`,
-          rule: "speaksBeforeKnowing",
-          at: i,
-          scene: scene?.number ?? 0,
-          sceneId: scene?.cardId ?? null,
-          text: el.text,
-          names: [titleOf(who), name, String(learned.index + 1)],
-        });
-      });
-    }
-  }
-  return out;
 }

@@ -19,11 +19,9 @@ import { blocks, moveBlock } from "../screenplay/sequence";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { SynopsisField } from "./SynopsisField";
-import { SceneChanges } from "./SceneChanges";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
-import { checkScreenplay, type Finding, checkChanges } from "../review/checks";
-import { useStoryLog } from "./useStoryLog";
+import { checkScreenplay, type Finding } from "../review/checks";
 import { keptScenes as keptBy, speakingNames } from "../review/filter";
 import { setCharacterFilter } from "../screenplay/editor/characterFilter";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
@@ -485,11 +483,7 @@ export function ScreenplayView() {
   useEffect(() => {
     if (focusMode) setToolsOpen(false);
   }, [focusMode]);
-  const storyLog = useStoryLog();
-  const findings = useMemo(
-    () => [...checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), ...checkChanges(storyLog.log, storyLog.order, nodes.map((n) => n.data), elements)],
-    [elements, paper, nodes, lang, storyLog],
-  );
+  const findings = useMemo(() => checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), [elements, paper, nodes, lang]);
   const openFindings = useOpenFindings(findings);
   const openReview = () => {
     setSideTab("review");
@@ -1009,7 +1003,6 @@ export function ScreenplayView() {
                   <button type="button" className="link-button" onClick={() => revealCard(card.id)}>
                     {t.bible.seeOnCanvas}
                   </button>
-                  <SceneChanges key={card.id} card={card} compact />
                 </>
               ) : (
                 <>

@@ -12,7 +12,6 @@ import { PLAN_TEMPLATES, chapterNumbers } from "../plan";
 import { bookOrder } from "../book";
 import type { Pitch } from "../pitch";
 import { NOVEL_CHIPS, readEpisodes } from "../pitch";
-import { changeLog, objectTracks, projectStoryOrder, whoKnows } from "../changes";
 import { countWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
 import { listScenes, sceneSynopsis } from "../screenplay/scenes";
@@ -267,7 +266,6 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         blocks.push({ kind: "label", text: e.sources });
         blocks.push({ kind: "list", columns: 1, items: sources.map((c) => ({ mark: "–", text: c.title.trim() || clean(c.fiche?.url), note: [clean(c.fiche?.auteur), clean(c.fiche?.publication), clean(c.fiche?.url)].filter(Boolean).join(" · ") })) });
       }
-      if (forMe) blocks.push(...storyBlocks());
       section(part, t.bible.parts.pourVous, blocks);
     }
   }
@@ -339,28 +337,6 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       { kind: "label", text: e.grid },
       { kind: "grid", cols: parts.map((c, i) => c.label || String(i + 1)), rows: grid },
     ];
-  }
-
-  /** « Au fil du récit » (lot 5) : le journal de « Ce qui change », qui sait quoi, les objets. Bible de travail seulement. */
-  function storyBlocks(): PackBlock[] {
-    const order = projectStoryOrder(s.kind, s.nodes, s.plan, s.screenplay?.elements);
-    const log = changeLog(s.nodes.map((n) => ({ id: n.id, changes: n.data.changes })), order);
-    if (log.length === 0) return [];
-    const ch = t.changes;
-    const sceneName = (id: string) => titleOf(id) || ch.untitledScene;
-    const out: PackBlock[] = [
-      { kind: "h2", text: ch.story },
-      { kind: "label", text: ch.storyJournal },
-      { kind: "list", columns: 1, items: log.map((c) => ({ mark: String(c.index + 1), text: c.text, note: sceneName(c.sceneId) })) },
-    ];
-    const rows = whoKnows(log);
-    const people = [...new Set(rows.flatMap((r) => [...r.learned.keys()]))];
-    if (rows.length > 0 && people.length > 0 && people.length <= 16)
-      out.push({ kind: "label", text: ch.whoKnows }, { kind: "grid", cols: people.map((id) => titleOf(id) || "?"), rows: rows.map((r) => ({ label: r.text, cells: people.map((id) => r.learned.has(id)) })) });
-    const objects = objectTracks(log);
-    if (objects.length > 0)
-      out.push({ kind: "label", text: ch.objects }, { kind: "list", columns: 1, items: objects.map((o) => ({ mark: "", text: o.text, note: o.moves.map((m) => `${m.who.map(titleOf).join(", ")} ${m.verb === "recoit" ? ch.verbs.recoit : ch.verbs.perd} (${m.index + 1})`).join(" · ") })) });
-    return out;
   }
 
   function characterBlocks(c: CardData): PackBlock[] {
