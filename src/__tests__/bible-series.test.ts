@@ -156,12 +156,12 @@ describe("bible de série", () => {
 
   it("annonce le pilote en annexe, seulement si on le joint", () => {
     const withPilot = buildBiblePack(series(), defaultsFor("tiers", "scenario"), ctx);
-    expect(withPilot.pilotPages).toBe(PILOT_PAGES);
+    expect(withPilot.annexPages).toBe(PILOT_PAGES);
     expect(withPilot.sections.at(-1)?.title).toBe(fr.bibleExport.pilotTitle);
     const without = buildBiblePack(series(), { ...defaultsFor("tiers", "scenario"), pilot: false }, ctx);
-    expect(without.pilotPages).toBe(0);
+    expect(without.annexPages).toBe(0);
     const novel = buildBiblePack({ ...series(), kind: "roman" }, { ...defaultsFor("tiers"), pilot: true }, ctx);
-    expect(novel.pilotPages).toBe(0);
+    expect(novel.annexPages).toBe(0);
   });
 
   it("met la grille en page sans sortir de la page", () => {

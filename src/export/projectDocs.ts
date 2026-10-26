@@ -9,7 +9,8 @@ import { chapterNumbers, chapterOf, type Plan } from "../plan";
 import { bookOrder, isPageKind } from "../book";
 import { SCENE_BREAK, bibleDoc, htmlToBlocks, manuscriptDoc, type ExportDoc } from "./doc";
 import type { BookDoc, BookSection } from "./paperback";
-import { isBlank } from "../manuscript";
+import { countWords, isBlank } from "../manuscript";
+import { roundWords } from "./prose";
 import { canvasDoc } from "./canvas";
 import { boxes, frameBox, type CardNode, type FrameNode } from "../projectState";
 import type { Manuscript } from "../manuscript";
@@ -56,6 +57,24 @@ export function manuscriptOf(s: ProjectDocSource, ctx: DocContext, contact: stri
     const n = numbers.get(chapter.id) ?? 0;
     return { id: chapter.id, title: chapter.title.trim() ? fmt(t.chapters.numberedTitle, { n, title: chapter.title.trim() }) : fmt(t.chapters.numbered, { n }) };
   });
+}
+
+/**
+ * PDF du manuscrit au format Shunn : « Nom / TITRE » en tête de page, nombre de mots arrondi, « par Untel ».
+ * `signed` : nom signé du profil (sinon l'auteur du document). Partagé par le menu Exporter et l'extrait
+ * joint à la Bible d'un roman.
+ */
+export function withShunn(doc: ExportDoc, manuscript: Manuscript, t: Messages, lang: string, signed: string): ExportDoc {
+  const words = Object.values(manuscript).reduce((n, html) => n + countWords(html), 0);
+  const surname = (signed || doc.author).split(/\s+/).filter(Boolean).pop() ?? "";
+  return {
+    ...doc,
+    shunn: {
+      running: [surname, doc.title.toLocaleUpperCase(lang)].filter(Boolean).join(" / "),
+      words: fmt(t.exports.aboutWords, { n: new Intl.NumberFormat(lang).format(roundWords(words)) }),
+      byline: doc.author ? fmt(t.exports.byline, { author: doc.author }) : "",
+    },
+  };
 }
 
 /**

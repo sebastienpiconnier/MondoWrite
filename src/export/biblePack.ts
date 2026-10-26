@@ -65,8 +65,11 @@ export interface PackSection {
 }
 
 export interface BiblePack {
-  /** Pages du pilote à ajouter à la fin du PDF (0 : aucune). La dernière section les annonce. */
-  pilotPages: number;
+  /**
+   * Pages à ajouter à la fin du PDF (0 : aucune) : le début du pilote (scénario) ou du manuscrit (roman, lot 6).
+   * La dernière section les annonce.
+   */
+  annexPages: number;
   title: string;
   author: string;
   /** « Dossier de présentation », « Bible de série », « Bible de travail » */
@@ -103,6 +106,8 @@ export interface PackContext {
 
 /** Pages du pilote jointes en annexe, au plus. */
 export const PILOT_PAGES = 10;
+/** Pages du manuscrit jointes en extrait (roman), au plus. */
+export const EXTRACT_PAGES = 10;
 /** Colonnes de la grille des fils, au plus (au-delà, elle serait illisible). */
 const MAX_GRID_COLS = 16;
 
@@ -305,9 +310,12 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   // Annexe : les premières pages du pilote (scénario), annoncées par une page ; biblePdf.ts les ajoute après.
   const pilotPages = options.pilot && s.kind === "scenario" && listScenes(s.screenplay?.elements ?? []).length > 0 ? PILOT_PAGES : 0;
   if (pilotPages > 0) sections.push({ part: "structure", kicker: e.annex, title: e.pilotTitle, blocks: [{ kind: "para", runs: [{ text: e.pilotNote }] }] });
+  // Roman : le début du manuscrit au format Shunn, pour un éditeur (dialogue : PDF du menu Exporter).
+  const extractPages = options.extract && s.kind === "roman" && words > 0 ? EXTRACT_PAGES : 0;
+  if (extractPages > 0) sections.push({ part: "structure", kicker: e.annex, title: e.extractTitle, blocks: [{ kind: "para", runs: [{ text: e.extractNote }] }] });
 
   return {
-    pilotPages,
+    annexPages: pilotPages || extractPages,
     title: s.title.trim() || t.home.untitled,
     author: ctx.author.trim(),
     kind: kindLabel,

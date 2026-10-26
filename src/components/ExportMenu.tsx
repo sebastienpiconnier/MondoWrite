@@ -6,8 +6,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useCommand } from "../commands";
 import { authorName, contactLines } from "../profile";
-import { countWords } from "../manuscript";
-import { roundWords } from "../export/prose";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
@@ -15,7 +13,7 @@ import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
 import { MANUSCRIPT_FORMATS, exportDocument, type DocFormat } from "../export";
-import { canvasOf, manuscriptOf } from "../export/projectDocs";
+import { canvasOf, manuscriptOf, withShunn } from "../export/projectDocs";
 import { canvasBounds } from "../export/canvas";
 import { boxes, frameBox } from "../projectState";
 import { fileName } from "../screenplay/export";
@@ -121,19 +119,11 @@ export function ExportMenu() {
   const manuscriptFile = (format: DocFormat) => async () => {
     // Le manuscrit porte les coordonnées du profil sur sa page de garde (pas la bible ni l'EPUB).
     const contact = format === "epub" ? [] : contactLines(useSettings.getState().profile);
-    const doc = manuscriptOf(useCosmos.getState(), ctx(), contact);
-    if (doc.chapters.length === 0) return null;
-    if (format === "pdf") {
-      // Format Shunn : « Nom / TITRE / page » en tête, nombre de mots arrondi, « par Untel ».
-      const { lang, profile } = useSettings.getState();
-      const words = Object.values(useCosmos.getState().manuscript).reduce((n, html) => n + countWords(html), 0);
-      const surname = (authorName(profile) || doc.author).split(/\s+/).filter(Boolean).pop() ?? "";
-      doc.shunn = {
-        running: [surname, doc.title.toLocaleUpperCase(lang)].filter(Boolean).join(" / "),
-        words: fmt(x.aboutWords, { n: new Intl.NumberFormat(lang).format(roundWords(words)) }),
-        byline: doc.author ? fmt(x.byline, { author: doc.author }) : "",
-      };
-    }
+    const base = manuscriptOf(useCosmos.getState(), ctx(), contact);
+    if (base.chapters.length === 0) return null;
+    // Format Shunn pour le PDF : « Nom / TITRE / page » en tête, nombre de mots arrondi, « par Untel ».
+    const { lang, profile } = useSettings.getState();
+    const doc = format === "pdf" ? withShunn(base, useCosmos.getState().manuscript, all, lang, authorName(profile)) : base;
     return exportDocument(doc, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });
   };
 

@@ -65,8 +65,9 @@ export function BibleExportDialog() {
   const [preview, setPreview] = useState<{ status: "working" | "ready" | "failed" | "empty"; pages: number }>({ status: "working", pages: 0 });
   const pdfRef = useRef<Uint8Array | null>(null);
   const images = useRef(new Map<string, DocImage | null>());
-  // PDF du scénario pour l'annexe du pilote, refait seulement quand le scénario ou le format de page change.
-  const pilotRef = useRef<{ key: unknown; paper: string; bytes: Uint8Array } | null>(null);
+  // PDF de l'annexe (scénario pour le pilote, manuscrit pour l'extrait d'un roman), refait seulement quand
+  // ce qu'il imprime ou le format de page change.
+  const annexRef = useRef<{ key: unknown[]; paper: string; bytes: Uint8Array } | null>(null);
   const canvases = useRef<HTMLDivElement>(null);
 
   const source: PackSource = useMemo(
@@ -105,9 +106,21 @@ export function BibleExportDialog() {
           for (const n of missing) images.current.set(n, loaded[n] ?? null);
         }
         const available = Object.fromEntries([...images.current].filter((e): e is [string, DocImage] => !!e[1]));
-        let pilot: Uint8Array | null = null;
-        if (pack.pilotPages > 0 && screenplay) {
-          if (pilotRef.current?.key !== screenplay || pilotRef.current.paper !== paper) {
+        let annex: Uint8Array | null = null;
+        const { profile } = useSettings.getState();
+        const annexKey = kind === "scenario" ? [screenplay] : [manuscript, nodes, plan, author, profile];
+        const fresh = (r: typeof annexRef.current): r is NonNullable<typeof r> => !!r && r.paper === paper && r.key.length === annexKey.length && r.key.every((k, i) => k === annexKey[i]);
+        if (pack.annexPages > 0 && kind === "roman") {
+          if (!fresh(annexRef.current)) {
+            const { manuscriptOf, withShunn } = await import("../export/projectDocs");
+            const { contactLines, authorName } = await import("../profile");
+            const doc = withShunn(manuscriptOf(useCosmos.getState(), { t, lang, author }, contactLines(profile)), manuscript, t, lang, authorName(profile));
+            const file = await exportDocument(doc, "pdf", { name: doc.title, paper, contents: t.exports.contents });
+            annexRef.current = { key: annexKey, paper, bytes: file.data };
+          }
+          annex = annexRef.current!.bytes;
+        } else if (pack.annexPages > 0 && screenplay) {
+          if (!fresh(annexRef.current)) {
             const { exportScreenplay } = await import("../screenplay/export");
             const file = await exportScreenplay(screenplay, "pdf", {
               title: source.title,
@@ -118,11 +131,11 @@ export function BibleExportDialog() {
               underlineHeadings: useCosmos.getState().underlineHeadings,
               print: { ...DEFAULT_SCRIPT_PRINT, titlePage: false },
             });
-            pilotRef.current = { key: screenplay, paper, bytes: file.data };
+            annexRef.current = { key: annexKey, paper, bytes: file.data };
           }
-          pilot = pilotRef.current.bytes;
+          annex = annexRef.current!.bytes;
         }
-        const { bytes, pages } = await bibleToPdf({ pack, options, paper, lang, images: available, pilot });
+        const { bytes, pages } = await bibleToPdf({ pack, options, paper, lang, images: available, annex });
         if (stale) return;
         pdfRef.current = bytes;
         const doc = await openPdf(bytes);
@@ -147,7 +160,7 @@ export function BibleExportDialog() {
       stale = true;
       window.clearTimeout(timer);
     };
-  }, [pack, options, paper, lang, format, screenplay, source.title, t]);
+  }, [pack, options, paper, lang, format, screenplay, source.title, t, kind, manuscript, nodes, plan, author]);
 
   const exportFile = async () => {
     if (busy) return;
@@ -283,6 +296,15 @@ export function BibleExportDialog() {
               <span>
                 {e.pilot}
                 <small>{e.pilotHint}</small>
+              </span>
+            </label>
+          )}
+          {kind === "roman" && options.audience === "tiers" && (
+            <label className="spdf-choice bexp-reader">
+              <input type="checkbox" checked={options.extract} onChange={(ev) => set({ ...options, extract: ev.target.checked })} />
+              <span>
+                {e.extract}
+                <small>{e.extractHint}</small>
               </span>
             </label>
           )}

@@ -39,6 +39,7 @@ describe("réglages de l'export de la Bible", () => {
       cover: "",
       places: true,
       pilot: false,
+      extract: false,
       grid: false,
       memo: false,
       recipient: "",

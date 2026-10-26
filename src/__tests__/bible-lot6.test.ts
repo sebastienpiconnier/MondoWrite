@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { askableFields, pitchFields, readPitch } from "../pitch";
 import { cleanOptions, defaultsFor } from "../bibleExport";
-import { buildBiblePack, type PackSource } from "../export/biblePack";
+import { buildBiblePack, EXTRACT_PAGES, type PackSource } from "../export/biblePack";
 import { cleanProfile } from "../profile";
 import { fr } from "../i18n/fr";
 import { en } from "../i18n/en";
@@ -113,5 +113,28 @@ describe("Vérifier : trois questions sur l'histoire", () => {
         expect(t.review.hints[r as keyof typeof t.review.hints]).toBeTruthy();
       }
     }
+  });
+});
+
+describe("roman : extrait en annexe", () => {
+  const novel = (): PackSource => ({ ...source("roman"), manuscript: { s1: "<p>Il était une fois une petite fille de village.</p>" } } as never);
+
+  it("un éditeur reçoit les premières pages du manuscrit, annoncées par une page", () => {
+    expect(defaultsFor("tiers", "roman").extract).toBe(true);
+    expect(defaultsFor("tiers", "scenario").extract).toBe(false);
+    expect(defaultsFor("moi", "roman").extract).toBe(false);
+    const pack = buildBiblePack(novel(), defaultsFor("tiers", "roman"), ctx);
+    expect(pack.annexPages).toBe(EXTRACT_PAGES);
+    expect(pack.sections.at(-1)?.title).toBe(fr.bibleExport.extractTitle);
+    // Sans texte, ou option décochée : rien.
+    expect(buildBiblePack(source("roman"), defaultsFor("tiers", "roman"), ctx).annexPages).toBe(0);
+    expect(buildBiblePack(novel(), { ...defaultsFor("tiers", "roman"), extract: false }, ctx).annexPages).toBe(0);
+    // Un scénario ne joint jamais d'extrait du manuscrit.
+    expect(buildBiblePack({ ...novel(), kind: "scenario" } as never, { ...defaultsFor("tiers", "scenario"), extract: true }, ctx).annexPages).toBe(0);
+  });
+
+  it("un réglage enregistré avant le lot 6 n'a pas d'extrait", () => {
+    expect(cleanOptions({ audience: "tiers" }).extract).toBe(false);
+    expect(cleanOptions({ audience: "tiers", extract: true }).extract).toBe(true);
   });
 });

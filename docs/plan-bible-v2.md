@@ -204,7 +204,7 @@ Toujours formulées en questions avec « C'est voulu » (review/checks.ts, RuleK
 - [x] Aucun épisode renseigné : le dossier promet sans raconter (scénario).
 
 ### 5. Roman : extrait
-- [ ] Option extract des réglages d'export, sur le modèle de pilot : les premières pages du manuscrit en annexe pour un éditeur (nombre borné, comme PILOT_PAGES).
+- [x] Option extract des réglages d'export, sur le modèle de pilot : les premières pages du manuscrit en annexe pour un éditeur (nombre borné, comme PILOT_PAGES).
 
 ### Hors de ce lot (écarté ou plus tard)
 Références visuelles et moodboard : l'article les juge risquées au-delà d'une ou deux pages, et le moodboard a déjà été retiré.

@@ -31,6 +31,8 @@ export interface BibleExportOptions {
   grid: boolean;
   /** Scénario : la page « En un coup d'œil » (les accroches). Pour un tiers, décochée par défaut : elle répète les fiches. */
   memo: boolean;
+  /** Roman : les premières pages du manuscrit en annexe, pour un éditeur (lot 6, sur le modèle du pilote). */
+  extract: boolean;
   /**
    * Destinataire : pourquoi ce guichet ou cette chaîne, en une phrase (lot 6). Réglage de l'envoi plutôt que
    * donnée du projet : un même dossier part à plusieurs endroits (un réglage nommé par destinataire).
@@ -56,7 +58,7 @@ export const defaultTheme = (audience: BibleAudience, kind: ProjectKind = "roman
 /** Réglages de départ pour un lecteur : tout pour soi ; sans « Pour vous » pour un tiers. */
 export function defaultsFor(audience: BibleAudience, kind: ProjectKind = "roman"): BibleExportOptions {
   const forMe = audience === "moi";
-  return { audience, parts: forMe ? [...BIBLE_PARTS] : [...PUBLIC_PARTS], theme: defaultTheme(audience, kind), accent: 0, cover: "", places: true, pilot: !forMe && kind === "scenario", grid: forMe, memo: forMe, recipient: "" };
+  return { audience, parts: forMe ? [...BIBLE_PARTS] : [...PUBLIC_PARTS], theme: defaultTheme(audience, kind), accent: 0, cover: "", places: true, pilot: !forMe && kind === "scenario", extract: !forMe && kind === "roman", grid: forMe, memo: forMe, recipient: "" };
 }
 
 /**
@@ -93,6 +95,7 @@ export function cleanOptions(raw: unknown): BibleExportOptions {
     cover: typeof o.cover === "string" && isMediaName(o.cover) ? o.cover : "",
     places: typeof o.places === "boolean" ? o.places : d.places,
     pilot: o.pilot === true,
+    extract: o.extract === true,
     grid: typeof o.grid === "boolean" ? o.grid : d.grid,
     memo: typeof o.memo === "boolean" ? o.memo : d.memo,
     recipient: typeof o.recipient === "string" ? o.recipient.replace(/\s+/g, " ").trim().slice(0, MAX_RECIPIENT) : "",
@@ -132,7 +135,7 @@ export const deletePreset = (state: BibleExportState, name: string): BibleExport
 export function withAudience(options: BibleExportOptions, audience: BibleAudience, kind: ProjectKind = "roman"): BibleExportOptions {
   if (options.audience === audience) return options;
   const d = defaultsFor(audience, kind);
-  return { ...options, audience, parts: d.parts, theme: d.theme, pilot: d.pilot, grid: d.grid, memo: d.memo };
+  return { ...options, audience, parts: d.parts, theme: d.theme, pilot: d.pilot, extract: d.extract, grid: d.grid, memo: d.memo };
 }
 
 /** Coche ou décoche une partie ; une partie cochée reprend sa place dans l'ordre des parties. */
