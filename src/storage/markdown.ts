@@ -9,6 +9,7 @@
 // fichier: k3x9a7bq2m.pdf   (facultatif, carte Document : le PDF, dans medias/)
 // fiche: {"age":"34"}       (facultatif, personnage : caractéristiques standard, voir character.ts)
 // questions: ["…"]          (facultatif : questions gardées pour plus tard)
+// changes: ["…"]            (facultatif, Scène : « Ce qui change », une ligne Markdown par changement)
 // corbeille: {…}             (seulement dans corbeille/ : jour, place, fils et scène du scénario)
 // images: ["a.jpg","b.png"] (facultatif : photos supplémentaires de la fiche)
 // page: dedicace            (facultatif, carte Scène : page hors récit du livre, voir book.ts)
@@ -132,6 +133,8 @@ export function cardToFile(card: CardData): string {
     ...(card.images && card.images.length > 0 ? [`images: ${JSON.stringify(card.images)}`] : []),
     ...(card.questions && card.questions.length > 0 ? [`questions: ${JSON.stringify(card.questions)}`] : []),
     ...(card.reponses && Object.keys(card.reponses).length > 0 ? [`reponses: ${JSON.stringify(card.reponses)}`] : []),
+    // Écrit même si la carte n'est plus une Scène : redevenue Scène, elle les retrouve.
+    ...(changesToLines(card.changes).length > 0 ? [`changes: ${JSON.stringify(changesToLines(card.changes))}`] : []),
     ...(card.trashed ? [`corbeille: ${JSON.stringify(card.trashed)}`] : []),
     // Ce qu'une version plus récente a écrit et que celle-ci ignore : réécrit tel quel.
     ...Object.entries(card.keep?.front ?? {}).map(([key, value]) => `${key}: ${value}`),
@@ -180,6 +183,9 @@ export function fileToCard(text: string): CardData | null {
   if (questions) card.questions = questions;
   const reponses = readReponses(parseJson(fields.reponses));
   if (reponses) card.reponses = reponses;
+  // « Ce qui change » d'une Scène : lignes Markdown, relues comme le corps (donc nettoyées).
+  const changes = linesToChanges(parseJson(fields.changes));
+  if (changes) card.changes = changes;
   const trashed = readTrashInfo(parseJson(fields.corbeille));
   if (trashed) card.trashed = trashed;
   const keep = keepUnknown(fields, rawFiche, fiche);
@@ -189,7 +195,28 @@ export function fileToCard(text: string): CardData | null {
 }
 
 /** Lignes du frontmatter que cette version écrit elle-même. */
-const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille"]);
+const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "changes", "corbeille"]);
+
+const MAX_CHANGES = 40;
+const MAX_CHANGE_LENGTH = 500;
+
+/** « Ce qui change » (HTML d'éditeur) → une ligne Markdown par paragraphe non vide. */
+export function changesToLines(html: string | undefined): string[] {
+  if (!html) return [];
+  const paragraphs = html.match(/<p[^>]*>[\s\S]*?<\/p>/g) ?? [html];
+  return paragraphs
+    .map((p) => htmlToMarkdown(p).replace(/\s*\n\s*/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, MAX_CHANGES);
+}
+
+/** Lignes lues sur disque → HTML d'éditeur (chaque ligne passe par le nettoyage, comme un corps de carte). */
+export function linesToChanges(raw: unknown): string | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const lines = raw.filter((l): l is string => typeof l === "string" && l.trim() !== "").slice(0, MAX_CHANGES);
+  const html = lines.map((l) => markdownToHtml(l.slice(0, MAX_CHANGE_LENGTH).replace(/\n/g, " ")).trim()).join("");
+  return html || undefined;
+}
 const KEY_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 
 /**

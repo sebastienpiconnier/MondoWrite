@@ -52,7 +52,7 @@ import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
-import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
+import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withChanges, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
 
@@ -515,7 +515,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       screenplay = out.screenplay;
     }
     let nodes = from.nodes.filter((n) => !gone.has(n.id));
-    for (const id of ids) nodes = nodes.map((n) => withHtml(n, removeMentions(n.data.html, id)));
+    for (const id of ids) nodes = nodes.map((n) => withChanges(withHtml(n, removeMentions(n.data.html, id)), (html) => removeMentions(html, id)));
     const first = entries[0];
     return {
       nodes,
@@ -2004,7 +2004,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       });
       // Les mentions de cette carte, dans les autres, suivent son nouveau titre.
       const { title } = patch;
-      if (typeof title === "string") nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, id, title)));
+      if (typeof title === "string") nodes = nodes.map((n) => withChanges(withHtml(n, renameMentions(n.data.html, id, title)), (html) => renameMentions(html, id, title)));
       let { screenplay } = get();
       // Une Scène qui change de type garde son texte : synopsis et texte de la scène passent dans ses notes.
       // Roman : le texte quitte le manuscrit (il y revient si la carte redevient Scène). Scénario : le texte

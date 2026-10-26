@@ -66,6 +66,12 @@ export const newId = () => nanoid(10);
 
 /** Même carte si son texte ne change pas (les mentions ne touchent que les cartes concernées). */
 export const withHtml = (node: CardNode, html: string): CardNode => (html === node.data.html ? node : { ...node, data: { ...node.data, html } });
+/** Même chose pour « Ce qui change » d'une Scène : les mentions y suivent les renommages et les suppressions. */
+export const withChanges = (node: CardNode, edit: (html: string) => string): CardNode => {
+  if (!node.data.changes) return node;
+  const changes = edit(node.data.changes);
+  return changes === node.data.changes ? node : { ...node, data: { ...node.data, changes } };
+};
 
 export const toNode = (card: CardData, x: number, y: number, width = CARD_WIDTH): CardNode => ({
   id: card.id,

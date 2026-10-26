@@ -144,12 +144,12 @@ Sur le canevas, la carte montre seulement « 3 changements » (comme « N questi
 
 « Moment de l'histoire » et la chronologie à deux ordres, la carte Monde (règles, termes, groupes, secrets), les anneaux de complétude du sommaire : chacun son lot, après les retours sur celui-ci.
 
-### Questions à trancher avant de coder
+### Décisions (26 octobre 2026)
 
-1. **Verbes** : pastilles de raccourci sur du texte libre (proposé), ou texte libre seul ?
-2. **Qui sait quoi** sans carte Secret : une ligne par chose apprise, regroupée par texte ou par carte citée (proposé), ou attendre la carte Monde « secret » ?
-3. **Objets** sans carte Objet : texte après « reçoit » / « perd » (proposé), ou exiger une carte citée par `@` ?
-4. **Curseur de l'onglet** : par scène (précis) ou par chapitre (plus lisible, proposé pour un roman ; par scène pour un scénario) ?
+1. **Verbes** : pastilles de raccourci sur du texte libre.
+2. **Qui sait quoi** : calculé depuis les lignes « apprend », regroupé par texte ou par carte citée ; pas de carte Secret dans ce lot.
+3. **Objets** : le texte après « reçoit » / « perd » suffit, sans carte.
+4. **Curseur** : par chapitre pour un roman (par scène s'il n'a pas de chapitres), par scène pour un scénario.
 
 ## Compatibilité avec `main` (vérifiée le 26 octobre 2026, à la lecture du code de `main`)
 
