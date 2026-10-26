@@ -20,7 +20,7 @@ export const isFront = (kind: PageKind) => FRONT.has(kind);
 /** Pages sans titre de chapitre ni lettrine, composées à part (centrées, en italique…). */
 export const QUIET_PAGES: ReadonlySet<PageKind> = new Set(["titre", "copyright", "dedicace", "epigraphe"]);
 
-interface Positioned {
+export interface Positioned {
   id: string;
   data: CardData;
   position: { x: number; y: number };

@@ -8,6 +8,11 @@
 //   changes: ["[@Inès](cosmos:k3x9a7bq2m) apprend que [@Yann](cosmos:p4t8w2zq1c) a survécu."]
 // En mémoire, `changes` est le HTML de l'éditeur (un paragraphe par ligne).
 
+import { storyScenes, type Positioned } from "./book";
+import { planOrder, type Plan } from "./plan";
+import { listScenes } from "./screenplay/scenes";
+import type { ScreenplayElement } from "./screenplay/model";
+
 /** Verbes reconnus : clés internes, jamais affichées ni écrites. */
 export const CHANGE_VERBS = ["apprend", "recoit", "perd", "serend", "promet", "tient"] as const;
 export type ChangeVerb = (typeof CHANGE_VERBS)[number];
@@ -236,4 +241,45 @@ export function promises(log: LoggedChange[]): Promise_[] {
     }
   }
   return out;
+}
+
+export interface StoryStep {
+  /** Rang de la dernière scène de l'étape : l'état est lu « après » elle. */
+  index: number;
+  /** Chapitre (numéro et titre) ou scène (titre). */
+  kind: "chapter" | "scene";
+  number: number;
+  title: string;
+}
+
+/**
+ * Étapes du curseur « Au fil des scènes » : par chapitre pour un roman qui en a, sinon par scène. Une étape
+ * vaut la fin de son chapitre (l'état d'un personnage « au chapitre 3 » est celui de la fin du chapitre).
+ */
+export function storySteps(order: string[], titleOf: (id: string) => string, chapter: ((id: string) => { id: string; number: number; title: string } | null) | null): StoryStep[] {
+  if (chapter && order.some((id) => chapter(id))) {
+    const steps: StoryStep[] = [];
+    order.forEach((id, index) => {
+      const c = chapter(id);
+      const last = steps[steps.length - 1];
+      if (c && last?.kind === "chapter" && last.number === c.number) last.index = index;
+      else if (c) steps.push({ index, kind: "chapter", number: c.number, title: c.title });
+      else if (last) last.index = index;
+    });
+    return steps;
+  }
+  return order.map((id, index) => ({ index, kind: "scene", number: index + 1, title: titleOf(id) }));
+}
+
+/**
+ * Ordre du récit pour le journal : celui du Plan (roman) ; celui du fichier Fountain (scénario), puis les
+ * scènes pas encore écrites. Les pages hors récit n'y sont pas.
+ */
+export function projectStoryOrder(kind: "roman" | "scenario", nodes: Positioned[], plan: Plan, elements?: ScreenplayElement[] | null): string[] {
+  const ids = storyScenes(nodes);
+  if (kind !== "scenario" || !elements) return planOrder(plan, ids);
+  const known = new Set(ids);
+  const linked = [...new Set(listScenes(elements).map((s) => s.cardId ?? ""))].filter((id) => known.has(id));
+  const written = new Set(linked);
+  return [...linked, ...ids.filter((id) => !written.has(id))];
 }

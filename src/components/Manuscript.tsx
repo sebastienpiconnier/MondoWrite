@@ -15,13 +15,15 @@ import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
 import type { BookHandlers } from "./bookExtensions";
 import { SynopsisField } from "./SynopsisField";
+import { SceneChanges } from "./SceneChanges";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { EdgeHandle } from "./EdgeHandle";
 import { fmt, useT } from "../i18n";
-import { checkManuscript, type Finding } from "../review/checks";
+import { checkManuscript, type Finding, checkChanges } from "../review/checks";
+import { useStoryLog } from "./useStoryLog";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
 import { useCommand } from "../commands";
 import { typeColor } from "../types";
@@ -135,7 +137,11 @@ export function Manuscript() {
 
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
-  const findings = useMemo(() => checkManuscript(manuscript, order, cards), [manuscript, order, cards]);
+  const storyLog = useStoryLog();
+  const findings = useMemo(
+    () => [...checkManuscript(manuscript, order, cards), ...checkChanges(storyLog.log, storyLog.order, cards)],
+    [manuscript, order, cards, storyLog],
+  );
   const openFindings = useOpenFindings(findings);
   const openReview = () => {
     setSideTab("review");
@@ -717,6 +723,11 @@ export function Manuscript() {
             {fmt(m.show, { title })}
           </button>
         </section>
+        {card.type === "scene" && !card.page && (
+          <section className="sp-box">
+            <SceneChanges key={card.id} card={card} compact />
+          </section>
+        )}
         <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
         </>
         )}

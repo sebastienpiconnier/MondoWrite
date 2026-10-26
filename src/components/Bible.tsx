@@ -5,6 +5,9 @@
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
+import { SceneChanges } from "./SceneChanges";
+import { CharacterTimeline, StoryLogSection } from "./StoryChanges";
+import { useStoryLog } from "./useStoryLog";
 import { headingOf } from "../screenplay/sceneText";
 import { DraftPreview } from "./SceneDraft";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -198,6 +201,7 @@ export function Bible() {
   const closeTocOnPhone = () => {
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches) setTocOpen(false);
   };
+  const storyLog = useStoryLog();
   const goTo = (type: CardType) => {
     closeTocOnPhone();
     setCurrent(type);
@@ -352,6 +356,7 @@ export function Bible() {
               {/* Personnage : l'essentiel d'abord (moteur, texte), le reste se déplie à la demande. */}
               {type !== "personnage" && <Gallery card={card} />}
               {type === "personnage" && <CharacterMotor card={card} />}
+              {type === "personnage" && <CharacterTimeline card={card} />}
               {/* Le synopsis d'une scène de scénario vit dans le fichier Fountain (séquencier) : pas de fiche ici. */}
               {type !== "personnage" && !(type === "scene" && kind === "scenario") && <CardSheet card={card} />}
               {(type === "lien" || type === "image") && <SourceTools card={card} />}
@@ -372,6 +377,7 @@ export function Bible() {
                   de roman, c'est son manuscrit : un aperçu, qu'on écrit dans la carte agrandie. */}
               {type === "scene" && (kind !== "scenario" || headingOf(screenplay?.elements ?? [], card.id) >= 0) ? <DraftPreview card={card} className="is-bible" /> : <BibleBody card={card} />}
               {type === "scene" && !card.page && <SceneStatusPicker card={card} />}
+              {type === "scene" && !card.page && <SceneChanges card={card} />}
               {type === "personnage" && (
                 <>
                   <CardSheet card={card} startOpen={false} />
@@ -452,6 +458,18 @@ export function Bible() {
           setCurrent("projet");
         }}
         goTo={goTo}
+        story={
+          storyLog.log.length > 0
+            ? {
+                label: t.changes.story,
+                onClick: () => {
+                  closeTocOnPhone();
+                  if (onPage) setCurrent(sections[0]?.type ?? "personnage");
+                  requestAnimationFrame(() => mainRef.current?.querySelector("[data-story]")?.scrollIntoView({ block: "start" }));
+                },
+              }
+            : undefined
+        }
       />
 
       {onCover || !shown ? (
@@ -539,6 +557,7 @@ export function Bible() {
               )}
             </div>
           ))}
+          <StoryLogSection />
         </section>
       )}
     </div>

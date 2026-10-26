@@ -110,3 +110,64 @@ describe("« Ce qui change » sur disque", () => {
     expect(card.changes).not.toMatch(/onerror|<img/);
   });
 });
+
+import { checkChanges, RULE_ORDER } from "../review/checks";
+import { parse } from "../screenplay/parse";
+
+describe("Vérifier, d'après « Ce qui change »", () => {
+  const cards = [
+    { id: "ines", type: "personnage" as const, title: "Inès", html: "" },
+    { id: "lettre", type: "idee" as const, title: "La lettre", html: "" },
+    { id: "s1", type: "scene" as const, title: "PHARE", html: "" },
+    { id: "s2", type: "scene" as const, title: "PORT", html: "" },
+  ];
+  const elements = parse("INT. PHARE - NUIT [[cosmos:s1]]\n\nINÈS\nJ'ai lu la lettre.\n\nEXT. PORT - JOUR [[cosmos:s2]]\n\nINÈS\nAdieu.\n").elements;
+  const log = changeLog(
+    [
+      { id: "s1", changes: '<p><span data-mention="ines">@Inès</span> promet de revenir.</p>' },
+      { id: "s2", changes: '<p><span data-mention="ines">@Inès</span> apprend que <span data-mention="lettre">@La lettre</span> existe.</p>' },
+    ],
+    ["s1", "s2"],
+  );
+
+  it("promesse non tenue et parole avant de savoir", () => {
+    const found = checkChanges(log, ["s1", "s2"], cards, elements);
+    expect(found.map((f) => f.rule).sort()).toEqual(["speaksBeforeKnowing", "unkeptPromise"]);
+    const early = found.find((f) => f.rule === "speaksBeforeKnowing")!;
+    expect(early).toMatchObject({ sceneId: "s1", names: ["Inès", "La lettre", "2"] });
+    expect(RULE_ORDER).toContain("unkeptPromise");
+  });
+
+  it("un roman n'a que les promesses", () => {
+    expect(checkChanges(log, ["s1", "s2"], cards).map((f) => f.rule)).toEqual(["unkeptPromise"]);
+  });
+});
+
+import { buildBiblePack } from "../export/biblePack";
+import { defaultsFor } from "../bibleExport";
+import { demoProject } from "../demo";
+import { fromProject } from "../projectState";
+import { bibleOf } from "../export/projectDocs";
+import { fr } from "../i18n/fr";
+
+describe("« Au fil du récit » dans les exports", () => {
+  const s = fromProject(demoProject());
+  const scene = s.nodes.find((n) => n.data.type === "scene" && !n.data.page)!;
+  const wolf = s.nodes.find((n) => n.data.type === "personnage")!;
+  const nodes = s.nodes.map((n) => (n === scene ? { ...n, data: { ...n.data, changes: `<p><span data-mention="${wolf.id}">@${wolf.data.title}</span> apprend le chemin.</p>` } } : n));
+  const src = { ...s, nodes, screenplay: null };
+  const ctx = { t: fr, lang: "fr", author: "", date: new Date(2026, 9, 26) };
+
+  it("dans la bible de travail, jamais dans un dossier pour un tiers", () => {
+    const moi = buildBiblePack(src, defaultsFor("moi"), ctx);
+    expect(JSON.stringify(moi.sections.find((x) => x.part === "pourVous"))).toContain(fr.changes.story);
+    const tiers = buildBiblePack(src, { ...defaultsFor("tiers"), parts: ["presentation", "pourVous"] }, ctx);
+    expect(JSON.stringify(tiers)).not.toContain(fr.changes.story);
+  });
+
+  it("Word et Markdown : seulement avec la partie « Pour vous »", () => {
+    const withPrivate = bibleOf(src, ctx, ["personnage", "question"]);
+    expect(withPrivate.chapters.at(-1)?.title).toBe(fr.changes.story);
+    expect(bibleOf(src, ctx, ["personnage"]).chapters.some((c) => c.title === fr.changes.story)).toBe(false);
+  });
+});

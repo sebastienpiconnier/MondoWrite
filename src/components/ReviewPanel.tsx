@@ -54,6 +54,10 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
         return f.text.trim() ? fmt(t.items.emptyCharacter, { where: w, text: f.text }) : fmt(t.items.emptyHeading, { where: w });
       case "extraSpaces":
         return fmt(t.items.extraSpaces, { where: w, text: f.text });
+      case "speaksBeforeKnowing":
+        return fmt(t.items.speaksBeforeKnowing, { where: w, name: f.names![0], thing: f.names![1], scene: f.names![2] });
+      case "unkeptPromise":
+        return fmt(t.items.unkeptPromise, { where: w, text: f.text });
     }
   };
 

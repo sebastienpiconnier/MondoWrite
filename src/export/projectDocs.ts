@@ -1,13 +1,16 @@
 // Documents du projet ouvert (manuscrit, bible, canevas), prêts pour un export ou pour les copies Markdown du
 // dossier projet. Une seule façon de les fabriquer : le menu Exporter et les copies lisent la même chose.
 
+import { changeLog, projectStoryOrder } from "../changes";
+import { PART_OF, isPrivatePart } from "../bibleParts";
+import type { ScreenplayElement } from "../screenplay/model";
 import { fmt, type Messages } from "../i18n";
 import type { ProjectKind, CardType } from "../types";
 import { CARD_TYPES } from "../types";
 import { vocab } from "../vocab";
 import { chapterNumbers, chapterOf, type Plan } from "../plan";
 import { bookOrder, isPageKind } from "../book";
-import { SCENE_BREAK, bibleDoc, htmlToBlocks, manuscriptDoc, type ExportDoc } from "./doc";
+import { SCENE_BREAK, bibleDoc, htmlToBlocks, manuscriptDoc, type Block, type ExportDoc } from "./doc";
 import type { BookDoc, BookSection } from "./paperback";
 import { isBlank } from "../manuscript";
 import { canvasDoc } from "./canvas";
@@ -26,6 +29,8 @@ export interface ProjectDocSource {
   plan: Plan;
   manuscript: Manuscript;
   pitch: Pitch;
+  /** Scénario : l'ordre de ses scènes sert au journal de « Ce qui change ». */
+  screenplay?: { elements: ScreenplayElement[] } | null;
 }
 
 export interface DocContext {
@@ -93,6 +98,18 @@ export function bookOf(s: ProjectDocSource, ctx: DocContext, year: number): Book
 
 /** Bible : couverture puis les rubriques données, dans leur ordre. */
 export function bibleOf(s: ProjectDocSource, ctx: DocContext, sections: CardType[]): ExportDoc {
+  const doc = bibleCards(s, ctx, sections);
+  // « Au fil du récit » (lot 5) : avec la partie « Pour vous » seulement, jamais pour un tiers.
+  if (!sections.some((type) => isPrivatePart(PART_OF[type]))) return doc;
+  const order = projectStoryOrder(s.kind, s.nodes, s.plan, s.screenplay?.elements);
+  const log = changeLog(s.nodes.map((n) => ({ id: n.id, changes: n.data.changes })), order);
+  if (log.length === 0) return doc;
+  const titleOf = (id: string) => s.nodes.find((n) => n.id === id)?.data.title.trim() || ctx.t.changes.untitledScene;
+  const blocks: Block[] = log.map((c) => ({ kind: "paragraph", runs: [{ text: `${c.index + 1}. ${titleOf(c.sceneId)} : `, bold: true }, { text: c.text }] }));
+  return { ...doc, chapters: [...doc.chapters, { title: ctx.t.changes.story, blocks }] };
+}
+
+function bibleCards(s: ProjectDocSource, ctx: DocContext, sections: CardType[]): ExportDoc {
   const { t } = ctx;
   const base = info(s, ctx);
   return bibleDoc(
