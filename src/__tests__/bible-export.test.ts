@@ -39,6 +39,8 @@ describe("réglages de l'export de la Bible", () => {
       cover: "",
       places: true,
       pilot: false,
+      grid: false,
+      memo: false,
     });
     expect(cleanBibleExport(undefined)).toEqual(DEFAULT_BIBLE_EXPORT);
   });

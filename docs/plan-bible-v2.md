@@ -155,6 +155,61 @@ Sur le canevas, la carte montre seulement « 3 changements » (comme « N questi
 3. **Objets** sans carte Objet : texte après « reçoit » / « perd » (proposé), ou exiger une carte citée par `@` ?
 4. **Curseur de l'onglet** : par scène (précis) ou par chapitre (plus lisible, proposé pour un roman ; par scène pour un scénario) ?
 
+## Lot 6 : un dossier court pour un tiers (proposé le 26 octobre 2026)
+
+Issu de la critique de la v2 d'après quatre sources : l'article de Denis Lima sur la bible commerciale (15 à 20 pages, FAIA fiction 15 pages), le dossier CNC des Revenants, le modèle de bible de série de Plotiar et l'article de J'écris un roman. Principe : l'export « tiers » est un dossier de vente court, pas une bible de travail réduite. Rien n'est ajouté à ce que l'auteur doit saisir sans raison, et rien ne bloque l'export.
+
+### Ordre proposé
+
+1. Compteur de pages, réglages par défaut du tiers (rapide, grand effet).
+2. Vrais épisodes de série (reprend la demande d'évolution plus bas).
+3. Champs manquants de la couverture et bloc auteur.
+4. Questions « Vérifier ».
+5. Extrait pour un roman.
+
+### 1. Compteur et réglages par défaut
+- [x] Compteur de pages dans BibleExportDialog : le nombre de pages du PDF d'aperçu, toujours affiché. Pour un tiers, repère discret « 15 à 20 pages attendues par la plupart des commissions », jamais de blocage ni de rouge (principe des repères de complétude).
+- [x] Rendu Sobre par défaut pour un producteur (aujourd'hui Nuit, defaultsFor / defaultTheme) ; Nuit reste un choix. Tant que l'auteur n'a rien changé, rien n'est écrit dans cosmos.json (comportement de exportStateFor, à garder).
+- [x] Pour un tiers, décochés par défaut : la grille des fils, et la page « En un coup d'œil » (elle répète les accroches des fiches). Deux options de l'export (à cocher), pas une disparition.
+- [x] Consigne d'écriture et voix masquées pour un tiers (biblePack.ts, aujourd'hui montrées hors bible de travail) : ce sont des éléments de bible d'écriture. Elles restent dans la bible de travail.
+- [x] Tests : compteur égal au nombre de pages du PDF ; réglages par défaut du tiers ; un projet déjà enregistré garde ses choix ; bible de travail inchangée.
+
+### 2. Vrais épisodes (scénario)
+
+À faire évoluer sans rien perdre : pitch.episodes (une ligne « Titre : ce qui s'y passe ») reste lue.
+
+- [ ] Un épisode = titre, personnage pivot (relié à une carte Personnage), synopsis de 3 à 4 phrases, fils présents. Format : ajouts seulement, clés fixes, jamais renommées.
+- [ ] Grille intrigues × épisodes (la grille actuelle croise les parties du pilote) ; l'ancienne reste pour l'annexe pilote.
+- [ ] Mémo des personnages : colonne « épisodes où il apparaît ».
+- [ ] Export : épisodes en liste courte pour un tiers, sans séquencier ni traitement.
+- [ ] Reprise des anciennes lignes pitch.episodes dans les nouveaux épisodes, testée.
+
+### 3. Couverture et auteur
+- [ ] Champs de la couverture (scénario) : saison (la question de la saison, le mystère global) et finSaison (où elle finit, pas la fin de la série : on ne promet pas les saisons suivantes).
+- [ ] Bloc auteur en une page ou moins, tiré du profil de l'appareil (parcours, filmographie ou publications) ; jamais écrit dans le projet.
+- [ ] Champ destinataire (« pourquoi ce guichet ou cette chaîne », une phrase) dans la note d'intention, réglage de l'export plutôt que donnée du projet (bibleExport).
+- [ ] Note d'intention : compteur de longueur discret, repère d'environ une page.
+- [ ] Questionner (CoverAssistant) : questions sur ce que la série n'est pas et pourquoi l'auteur la porte. L'IA ne rédige pas.
+
+### 4. Vérifier : trois questions
+
+Toujours formulées en questions avec « C'est voulu » (review/checks.ts, RuleKey, textes fr et en).
+
+- [ ] Le personnage marqué principal n'est pas celui qui a le plus de scènes (statistiques existantes).
+- [ ] Un personnage principal n'a pas de « Veut » (objectif).
+- [ ] Aucun épisode renseigné : le dossier promet sans raconter (scénario).
+
+### 5. Roman : extrait
+- [ ] Option extract des réglages d'export, sur le modèle de pilot : les premières pages du manuscrit en annexe pour un éditeur (nombre borné, comme PILOT_PAGES).
+
+### Hors de ce lot (écarté ou plus tard)
+Références visuelles et moodboard : l'article les juge risquées au-delà d'une ou deux pages, et le moodboard a déjà été retiré.
+Plan des tomes d'une saga de romans, registre de continuité (mises en place et résolutions) : utiles aux longues séries, à reprendre après les retours des testeurs.
+
+### Critères
+
+Les critères habituels (tests, français et anglais, compatibilité avec main dans les deux sens, CLAUDE.md, guide et captures). Les nouvelles clés (saison, finSaison, épisodes, réglages bibleExport) sont à lister dans KNOWN_META et pitch, et à tester dans forward-compat.test.ts avec la 1.3.1.
+
 ## Compatibilité avec `main` (vérifiée le 26 octobre 2026, à la lecture du code de `main`)
 
 - Projet de la v2 ouvert puis enregistré par la version de `main` (1.3) : `bibleExport` est gardé (clé inconnue de `cosmos.json`, `metaKeep`), les nouveaux champs de fiche aussi (`accroche`, `debut`, `fin`, `principal`, enjeux, `ecriture` : `keep.fiche`). **Mais les nouvelles clés de la couverture sont perdues** (`statut`, `credits`, `dapres` et tout « Écrire la série ») : le `readPitch` de la 1.3 ne garde que ses clés.

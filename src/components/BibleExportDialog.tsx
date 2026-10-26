@@ -278,6 +278,24 @@ export function BibleExportDialog() {
               </span>
             </label>
           )}
+          {kind === "scenario" && options.parts.includes("structure") && (
+            <label className="spdf-choice bexp-reader">
+              <input type="checkbox" checked={options.grid} onChange={(ev) => set({ ...options, grid: ev.target.checked })} />
+              <span>
+                {e.gridOption}
+                <small>{e.gridHint}</small>
+              </span>
+            </label>
+          )}
+          {kind === "scenario" && options.parts.includes("personnages") && (
+            <label className="spdf-choice bexp-reader">
+              <input type="checkbox" checked={options.memo} onChange={(ev) => set({ ...options, memo: ev.target.checked })} />
+              <span>
+                {e.memoOption}
+                <small>{e.memoHint}</small>
+              </span>
+            </label>
+          )}
           {options.parts.includes("univers") && (
             <label className="spdf-choice">
               <input type="checkbox" checked={options.places} onChange={(ev) => set({ ...options, places: ev.target.checked })} />
@@ -358,6 +376,7 @@ export function BibleExportDialog() {
                     : preview.pages === 1
                       ? e.previewOne
                       : fmt(e.previewPages, { n: preview.pages })}
+              {preview.status === "ready" && options.audience === "tiers" && <span className="bexp-page-hint"> · {e.pageHint}</span>}
             </p>
             <div ref={canvases} className={`bexp-pages${preview.status === "working" ? " is-working" : ""}${preview.status === "empty" || preview.status === "failed" ? " is-hidden" : ""}`} />
           </>

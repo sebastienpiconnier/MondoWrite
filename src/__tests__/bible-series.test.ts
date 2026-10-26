@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
 import { askableFields, nextAsk, pitchFields, pitchFilled, readEpisodes, readPitch, SERIES_TEXTS } from "../pitch";
-import { DEFAULT_BIBLE_EXPORT, defaultsFor, exportStateFor, savePreset, withAudience } from "../bibleExport";
+import { DEFAULT_BIBLE_EXPORT, cleanOptions, defaultsFor, exportStateFor, savePreset, withAudience } from "../bibleExport";
 import { buildBiblePack, PILOT_PAGES, type PackBlock, type PackSource } from "../export/biblePack";
 import { layoutBible, type Metrics } from "../export/bibleLayout";
 import { THEMES } from "../export/bibleThemes";
@@ -99,10 +99,12 @@ describe("couverture d'une série", () => {
 });
 
 describe("bible de série", () => {
-  it("Nuit et pilote par défaut pour un producteur, sans rien écrire", () => {
-    expect(defaultsFor("tiers", "scenario")).toMatchObject({ theme: "nuit", pilot: true });
+  it("Sobre et pilote par défaut pour un producteur, sans grille ni mémo, sans rien écrire", () => {
+    expect(defaultsFor("tiers", "scenario")).toMatchObject({ theme: "sobre", pilot: true, grid: false, memo: false });
     expect(defaultsFor("tiers", "roman")).toMatchObject({ theme: "editorial", pilot: false });
-    expect(exportStateFor(DEFAULT_BIBLE_EXPORT, "scenario").current.theme).toBe("nuit");
+    expect(defaultsFor("moi", "scenario")).toMatchObject({ theme: "sobre", grid: true, memo: true });
+    expect(exportStateFor(DEFAULT_BIBLE_EXPORT, "scenario").current.theme).toBe("sobre");
+    expect(withAudience(defaultsFor("tiers", "scenario"), "moi", "scenario")).toMatchObject({ grid: true, memo: true });
     const changed = savePreset(DEFAULT_BIBLE_EXPORT, "A");
     expect(exportStateFor(changed, "scenario")).toBe(changed);
     expect(withAudience(defaultsFor("moi", "scenario"), "tiers", "scenario").pilot).toBe(true);
@@ -121,7 +123,9 @@ describe("bible de série", () => {
   });
 
   it("grille des fils : l'intrigue est dans la case du teaser", () => {
-    const pack = buildBiblePack(series(), defaultsFor("tiers", "scenario"), ctx);
+    const off = buildBiblePack(series(), defaultsFor("tiers", "scenario"), ctx);
+    expect(blocksOf(off, "structure").some((b) => b.kind === "grid")).toBe(false);
+    const pack = buildBiblePack(series(), { ...defaultsFor("tiers", "scenario"), grid: true }, ctx);
     const grid = blocksOf(pack, "structure").find((b) => b.kind === "grid");
     expect(grid).toBeTruthy();
     if (grid?.kind !== "grid") return;
@@ -129,12 +133,23 @@ describe("bible de série", () => {
     expect(grid.rows).toEqual([{ label: "Le signal", cells: [true, false] }]);
   });
 
-  it("mémo des personnages, enjeux en cases, consigne d'écriture pour un tiers", () => {
-    const pack = buildBiblePack(series(), defaultsFor("tiers", "scenario"), ctx);
-    const people = blocksOf(pack, "personnages");
-    expect(people[0]).toEqual({ kind: "label", text: fr.bibleExport.memo });
-    expect(people.some((b) => b.kind === "cells" && b.items.some((i) => i.value === "Garder le phare"))).toBe(true);
-    expect(texts(people)).toContain("Phrases courtes");
+  it("mémo des personnages en option, enjeux en cases, consigne d'écriture pour soi seulement", () => {
+    const tiers = blocksOf(buildBiblePack(series(), defaultsFor("tiers", "scenario"), ctx), "personnages");
+    expect(tiers[0]).not.toEqual({ kind: "label", text: fr.bibleExport.memo });
+    expect(tiers.some((b) => b.kind === "cells" && b.items.some((i) => i.value === "Garder le phare"))).toBe(true);
+    expect(texts(tiers)).not.toContain("Phrases courtes");
+    const withMemo = blocksOf(buildBiblePack(series(), { ...defaultsFor("tiers", "scenario"), memo: true }, ctx), "personnages");
+    expect(withMemo[0]).toEqual({ kind: "label", text: fr.bibleExport.memo });
+    const moi = blocksOf(buildBiblePack(series(), defaultsFor("moi", "scenario"), ctx), "personnages");
+    expect(moi[0]).toEqual({ kind: "label", text: fr.bibleExport.memo });
+    expect(texts(moi)).toContain("Phrases courtes");
+  });
+
+  it("un réglage enregistré garde ses choix", () => {
+    const saved = cleanOptions({ ...defaultsFor("tiers", "scenario"), theme: "nuit", grid: true, memo: true });
+    expect(saved).toMatchObject({ theme: "nuit", grid: true, memo: true });
+    // Ancien réglage sans grille ni mémo : valeurs de départ de son public.
+    expect(cleanOptions({ audience: "moi" })).toMatchObject({ grid: true, memo: true });
   });
 
   it("annonce le pilote en annexe, seulement si on le joint", () => {
@@ -148,7 +163,7 @@ describe("bible de série", () => {
   });
 
   it("met la grille en page sans sortir de la page", () => {
-    const pack = buildBiblePack(series(), defaultsFor("tiers", "scenario"), ctx);
+    const pack = buildBiblePack(series(), { ...defaultsFor("tiers", "scenario"), grid: true }, ctx);
     const pages = layoutBible({ pack, theme: THEMES.nuit, accent: THEMES.nuit.accents[0], paper: "a4", metrics, imageSize: () => null });
     for (const p of pages) for (const op of p.ops) if (op.op === "rect" || op.op === "text") expect(op.x).toBeLessThanOrEqual(595.28);
     expect(pages.some((p) => p.mark === fr.bibleExport.pilotTitle)).toBe(true);

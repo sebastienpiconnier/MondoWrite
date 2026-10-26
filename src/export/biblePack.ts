@@ -188,7 +188,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       const others = full === principals ? all.filter((c) => !isPrincipal(c)) : [];
       // Bible de série : tout le monde en une page, d'un coup d'œil, avant les fiches.
       const memo = all.filter((c) => c.title.trim() && clean(c.fiche?.accroche));
-      if (s.kind === "scenario" && memo.length >= 2) {
+      if (s.kind === "scenario" && options.memo && memo.length >= 2) {
         blocks.push({ kind: "label", text: e.memo }, { kind: "list", columns: 2, items: memo.map((c) => ({ mark: "", text: c.title.trim(), note: clean(c.fiche?.accroche) })) }, { kind: "pageBreak" });
       }
       full.forEach((c, i) => {
@@ -235,7 +235,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         if (cells.length > 0) blocks.push({ kind: "cells", items: cells });
         if (forMe) blocks.push(...paras(c.html));
       }
-      if (s.kind === "scenario") blocks.push(...threadGrid());
+      if (s.kind === "scenario" && options.grid) blocks.push(...threadGrid());
       blocks.push(...planBlocks());
       if (s.kind === "scenario") {
         // Écrire la série : ce qu'un scénariste qui rejoint l'écriture doit savoir.
@@ -354,7 +354,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     else if (clean(f.arc)) out.push({ kind: "para", runs: [{ text: `${t.character.fields.arc} : `, bold: true }, { text: clean(f.arc) }] });
     // Le reste de la fiche : tout pour soi ; pour un tiers, seulement la voix.
     const shown = new Set<string>([...motorFields(c), ...CHARACTER_HEAD_FIELDS, "role", "age", "metier", "relations", "surnoms", "enjeuExt", "enjeuRel", "enjeuInt"]);
-    const extra = CHARACTER_FIELDS.filter((k) => !shown.has(k) && (forMe || k === "voix" || k === "ecriture")).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
+    const extra = CHARACTER_FIELDS.filter((k) => !shown.has(k) && forMe).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
     for (const x of extra) out.push({ kind: "para", small: true, runs: [{ text: `${x.label} : `, bold: true }, { text: x.value }] });
     // Relations : les fils vers les autres personnages, puis le champ de la fiche.
     const rel = s.edges

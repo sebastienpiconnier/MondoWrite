@@ -712,6 +712,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .bexp :is(button, select, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .bexp-preview { flex-direction: column; align-items: center; justify-content: flex-start; gap: 10px; max-height: min(78vh, 900px); overflow-y: auto; }
 .bexp-preview-status { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
+.bexp-page-hint { color: var(--ink-2); }
 .bexp-pages { display: flex; flex-direction: column; gap: 12px; align-items: center; transition: opacity 0.2s; }
 .bexp-pages.is-working { opacity: 0.5; }
 .bexp-pages.is-hidden { display: none; }
