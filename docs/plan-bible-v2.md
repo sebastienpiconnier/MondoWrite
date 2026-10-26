@@ -132,13 +132,14 @@ Sur le canevas, la carte montre seulement « 3 changements » (comme « N questi
 
 ### Étapes
 
-- [ ] `changes.ts` (pur) et ses tests : lecture des lignes, verbes fr/en, journal, état, matrice, objets, promesses.
-- [ ] Format : `changes` dans `CardData`, `markdown.ts` (lecture, écriture, `KNOWN_FRONT`), mentions suivies au renommage et à la suppression, test d'aller-retour et de `keep` côté ancienne version.
-- [ ] Saisie : composant `SceneChanges` (lignes éditables avec `@`, pastilles de verbes, ajout, retrait), dans la carte agrandie, « Dans cette scène » et la Bible ; compteur sur la carte du canevas.
-- [ ] Bible : onglet « Au fil des scènes » de la fiche personnage, rubriques calculées de « Pour vous ».
-- [ ] Vérifier : règles « parle avant de savoir » et « promesse non tenue » (`RuleKey`, textes fr/en).
-- [ ] Export : rubriques de « Pour vous » dans la bible de travail (PDF, Word, Markdown).
-- [ ] Guide (fr, en) et captures ; `CLAUDE.md` (format `changes`, `changes.ts`).
+- [x] `changes.ts` (pur) et ses tests : lecture des lignes, verbes fr/en, journal, état, matrice, objets, promesses.
+- [x] Format : `changes` dans `CardData`, `markdown.ts` (lecture, écriture, `KNOWN_FRONT`), mentions suivies au renommage et à la suppression, test d'aller-retour et de `keep` côté ancienne version.
+- [x] Saisie : composant `SceneChanges` (lignes éditables avec `@`, pastilles de verbes, ajout, retrait), dans la carte agrandie, « Dans cette scène » et la Bible ; compteur sur la carte du canevas.
+- [x] Bible : onglet « Au fil des scènes » de la fiche personnage, rubriques calculées de « Pour vous ».
+- [x] Vérifier : règles « parle avant de savoir » et « promesse non tenue » (`RuleKey`, textes fr/en).
+- [x] Export : rubriques de « Pour vous » dans la bible de travail (PDF, Word, Markdown).
+- [x] Guide (fr, en) ; `CLAUDE.md` (format `changes`, `changes.ts`). Reste : une capture de « Ce qui change » pour le guide.
+- Écarts : « Au fil des scènes » est un volet repliable sous la fiche (pas un onglet), pour ne pas ajouter de bloc ouvert ; « Parle avant de savoir » ne vaut que pour un scénario (dans un roman, le texte ne dit pas qui parle) et seulement pour une chose citée par `@`.
 
 ### Hors de ce lot
 
