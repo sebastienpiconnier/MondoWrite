@@ -285,7 +285,7 @@ await step("relations", async () => {
   await page.getByRole("button", { name: T("Fiches", "Sheets"), exact: true }).first().click();
 });
 await step("lieux", async () => {
-  await page.getByRole("button", { name: T(/^Lieux/, /^Places/) }).click();
+  await page.getByRole("button", { name: T(/Univers|^Lieux/, /World|^Places/) }).click();
   await wait(800);
   await shot("bible-lieux");
 });
@@ -349,6 +349,16 @@ await step("exporter", async () => {
   await page.getByRole("button", { name: T("Livre broché (KDP)…", "Paperback (KDP)…") }).click();
   await page.waitForSelector(T("text=pages, dos de", "text=pages, spine"), { timeout: 20000 });
   await shot("livre-broche", { el: "dialog[open]" });
+  await closeDialog();
+});
+await step("export-bible", async () => {
+  await page.getByRole("button", { name: T("Exporter", "Export") }).click();
+  await wait(400);
+  await page.getByRole("button", { name: T("Bible…", "Bible…") }).click();
+  // L'aperçu est le vrai PDF : on attend le nombre de pages.
+  await page.waitForSelector(".bexp-pages:not(.is-working) canvas", { timeout: 30000 });
+  await wait(800);
+  await shot("bible-export", { el: "dialog[open]" });
   await closeDialog();
 });
 await step("réglages", async () => {

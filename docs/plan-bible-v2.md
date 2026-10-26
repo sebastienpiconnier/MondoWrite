@@ -87,6 +87,16 @@ Multiplateforme : dialogue plein écran sur téléphone, aperçu sous les régla
 
 Une case libre sur la carte Scène, avec mentions @ ; elle remplit « Au fil des scènes », qui sait quoi et les objets de la partie « Pour vous ». Plan détaillé à écrire une fois les lots 1 à 3 en mains des testeurs.
 
+## Compatibilité avec `main` (vérifiée le 26 octobre 2026, à la lecture du code de `main`)
+
+- Projet de la v2 ouvert puis enregistré par la version de `main` (1.3) : `bibleExport` est gardé (clé inconnue de `cosmos.json`, `metaKeep`), les nouveaux champs de fiche aussi (`accroche`, `debut`, `fin`, `principal`, enjeux, `ecriture` : `keep.fiche`). **Mais les nouvelles clés de la couverture sont perdues** (`statut`, `credits`, `dapres` et tout « Écrire la série ») : le `readPitch` de la 1.3 ne garde que ses clés.
+- Correctif prêt, commit à part « Couverture : garder les clés inconnues » sur `bible-v2` : à reporter sur `main` (`git cherry-pick`) et publier en 1.3.x **avant** de donner la v2 aux testeurs, pour qu'un aller-retour entre les deux versions ne perde rien.
+- Projet de `main` ouvert dans la v2 : rien ne se perd (tout ce qui existait est lu).
+
+## Demandes d'évolution
+
+- **Vrais épisodes de série** (demandée le 26 octobre 2026, au lot 4) : aujourd'hui un projet scénario contient un seul scénario, et le gabarit « épisode » ne découpe qu'un épisode. Les épisodes s'écrivent donc dans la couverture (`pitch.episodes`, une ligne « Titre : ce qui s'y passe »), et la grille des fils croise les intrigues avec les parties du pilote, pas avec les épisodes de la saison. À faire évoluer : des épisodes comme objets du projet (plusieurs scénarios, ou un découpage du Fountain par épisode), pour une grille intrigues × épisodes et des synopsis par épisode tirés du séquencier. Reprendre alors `episodes` de la couverture sans rien perdre.
+
 ## Critères pour fusionner dans `main`
 
 Pour chaque lot :
