@@ -91,10 +91,12 @@ export interface BiblePdfInput {
   paper: "a4" | "letter";
   lang: string;
   images: Record<string, DocImage>;
+  /** PDF du scénario au format standard : ses `pack.pilotPages` premières pages sont ajoutées à la fin. */
+  pilot?: Uint8Array | null;
 }
 
 /** Compose et dessine le PDF. Rend aussi le nombre de pages (l'aperçu l'affiche). */
-export async function bibleToPdf({ pack, options, paper, lang, images }: BiblePdfInput): Promise<{ bytes: Uint8Array; pages: number }> {
+export async function bibleToPdf({ pack, options, paper, lang, images, pilot }: BiblePdfInput): Promise<{ bytes: Uint8Array; pages: number }> {
   const theme = THEMES[options.theme];
   const accent = theme.accents[options.accent] ?? theme.accents[0];
   const pdf = await PDFDocument.create();
@@ -134,10 +136,19 @@ export async function bibleToPdf({ pack, options, paper, lang, images }: BiblePd
       }
     }
   }
+  // Annexe : les premières pages du pilote, recopiées telles quelles depuis le PDF du scénario (sans la page de titre).
+  let total = pages.length;
+  if (pilot && pack.pilotPages > 0) {
+    const source = await PDFDocument.load(pilot);
+    const count = source.getPageCount();
+    const indices = Array.from({ length: Math.min(pack.pilotPages, count) }, (_, i) => i);
+    for (const copied of await pdf.copyPages(source, indices)) pdf.addPage(copied);
+    total += indices.length;
+  }
   addOutline(pdf, marks);
   pdf.setTitle(`${pack.kind} - ${pack.title}`);
   if (pack.author) pdf.setAuthor(pack.author);
   pdf.setLanguage(lang);
   pdf.setCreator("MondoWrite");
-  return { bytes: await pdf.save(), pages: pages.length };
+  return { bytes: await pdf.save(), pages: total };
 }

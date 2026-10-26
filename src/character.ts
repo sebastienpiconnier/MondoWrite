@@ -35,6 +35,11 @@ export const CHARACTER_FIELDS = [
   "debut",
   "fin",
   "principal",
+  // Bible v2, lot 4 (bible de série) : enjeux à trois étages et consigne d'écriture, facultatifs.
+  "enjeuExt",
+  "enjeuRel",
+  "enjeuInt",
+  "ecriture",
 ] as const;
 export type CharacterField = (typeof CHARACTER_FIELDS)[number];
 

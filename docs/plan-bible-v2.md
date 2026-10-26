@@ -37,7 +37,7 @@ Travail :
 
 - [x] `src/bibleParts.ts` (pur) : `BIBLE_PARTS`, `PART_OF`, `bibleOrder(prefs)` (rubriques visibles dans l'ordre des parties, ordre de l'auteur gardé dans chaque partie), `moveInPart`. Utilisé par la Bible, l'export et les copies Markdown (même ordre partout).
 - [x] Sortir le sommaire de `Bible.tsx` dans `BibleToc.tsx` : en-têtes numérotés de partie (une partie d'une seule rubrique est un seul bouton), « Pour vous » séparé par un trait et en gris, avec « Pour toi seul ». Le mode « Choisir et ranger » range à l'intérieur de chaque partie. Dans la page, la première rubrique d'une partie porte « 3 · Univers ».
-- [ ] Partie vide : en-tête discret, une ligne « À écrire » et le bouton « Questionner » là où il existe (couverture). Reste : la rubrique vide garde son message et son bouton actuels ; « Questionner » sur la couverture viendra avec le lot 4 (nouveaux champs de présentation).
+- [x] Partie vide : en-tête discret, une ligne « À écrire » et le bouton « Questionner » là où il existe (couverture). Reste : la rubrique vide garde son message et son bouton actuels ; « Questionner » sur la couverture est fait au lot 4 (`CoverAssistant`).
 - [x] i18n : `t.bible.parts`, `partTitle`, `privateHint` en français et en anglais.
 - [x] Tests : `bible-parts.test.ts` (chaque type a une partie, ordre stable, rubriques masquées respectées, ordre ancien relu).
 
@@ -74,13 +74,14 @@ Multiplateforme : dialogue plein écran sur téléphone, aperçu sous les régla
 
 ## Lot 4 : la bible de série (projets scénario)
 
-- [ ] **Présentation** : nouvelles clés de `pitch` (`PITCH_TEXTS`) : `arene`, `pourquoi`, `mecanique`, `episodeType`, `aFaire`, `aEviter`, `promesse`, `pistes` ; nouvelles pastilles (`PITCH_CHIPS`) : `statut`, `credits`, `dapres`, utiles aussi au roman. Une sous-partie « Écrire la série » n'apparaît que dans un projet scénario.
-- [ ] **Fiche** : enjeux à trois étages en champs facultatifs (`enjeuExt`, `enjeuRel`, `enjeuInt`) et une consigne d'écriture (`ecriture`), dans « Ajouter si utile ».
-- [ ] **Épisodes** : synopsis tirés des chapitres du séquencier, un chapitre valant un épisode avec le gabarit « épisode de série » (`plan.ts`). À vérifier : comment un projet scénario range aujourd'hui ses épisodes.
-- [ ] **Grille des fils** (intrigues × épisodes) tirée de `timeline.ts`, déjà calculée.
-- [ ] **Annexe pilote** : les premières pages de `scenario.fountain` au format standard, produites par l'export scénario existant et ajoutées au PDF (`copyPages` de pdf-lib).
-- [ ] **Mémo personnages** : l'accroche de chaque personnage, sur une page.
-- [ ] Rendu Nuit proposé par défaut pour un producteur.
+- [x] **Présentation** : nouvelles clés de `pitch` : `pourquoi`, `promesse`, `arene`, `mecanique`, `episodeType`, `episodes`, `aFaire`, `aEviter`, `pistes` (`SERIES_TEXTS`, sous-partie repliable « Écrire la série » de la couverture, projet scénario seulement) ; pastilles `statut`, `credits`, `dapres` (roman et scénario ; les deux dernières en saisie libre). Le repère « n/total renseignés » compte les champs du type de projet (`pitchFields`).
+- [x] **Fiche** : `enjeuExt`, `enjeuRel`, `enjeuInt`, `ecriture` dans `CHARACTER_FIELDS`, donc dans « Ajouter si utile ». Le PDF montre les enjeux en cases et la consigne d'écriture aussi pour un tiers.
+- [x] **Épisodes** : un projet scénario n'a pas d'épisodes (un projet = un scénario, le gabarit « épisode » découpe un seul épisode). Ils s'écrivent donc dans la couverture (`episodes`, une ligne par épisode, « Titre : ce qui s'y passe », `readEpisodes`) et sortent en liste numérotée.
+- [x] **Grille des fils** : intrigues × parties du pilote (sections du Fountain, cases de gabarit comprises ; sans section, une colonne par scène), présence calculée par `timeline` comme la chronologie ; au plus 16 colonnes, numérotées, légende dessous.
+- [x] **Annexe pilote** : option `pilot` des réglages d'export (cochée par défaut pour un producteur) ; une page d'annonce, puis les dix premières pages du PDF du scénario (format standard, sans page de titre) recopiées par `copyPages`.
+- [x] **Mémo personnages** : « En un coup d'œil », les accroches sur une page avant les fiches (scénario, dès deux personnages avec accroche).
+- [x] Rendu Nuit proposé par défaut pour un producteur (`defaultTheme`, `exportStateFor` : tant que l'auteur n'a rien changé, rien n'est écrit dans `cosmos.json`).
+- [x] **Questionner** sur la couverture (`CoverAssistant`) : une question par champ vide, la réponse va telle quelle dans le champ, « Une autre » passe (`nextAsk`).
 
 ## Lot 5 : « Ce qui change » (après retours des testeurs)
 

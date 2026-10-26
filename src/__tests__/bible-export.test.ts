@@ -38,6 +38,7 @@ describe("réglages de l'export de la Bible", () => {
       accent: 0,
       cover: "",
       places: true,
+      pilot: false,
     });
     expect(cleanBibleExport(undefined)).toEqual(DEFAULT_BIBLE_EXPORT);
   });

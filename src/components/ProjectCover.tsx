@@ -8,7 +8,8 @@ import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
-import { PITCH_CHIPS, PITCH_FIELD_COUNT, chipSuggestions, pitchFilled, type PitchChip, type PitchText } from "../pitch";
+import { NOVEL_CHIPS, PITCH_CHIPS, SERIES_TEXTS, chipSuggestions, pitchFields, pitchFilled, type PitchChip, type PitchText } from "../pitch";
+import { CoverAssistant } from "./CoverAssistant";
 import { countWords } from "../manuscript";
 import { typeColor } from "../types";
 import { minutesFor, usePagination } from "./usePagination";
@@ -25,7 +26,9 @@ function Chip({ field }: { field: PitchChip }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const label = p.fields[field];
-  const list = (kind === "scenario" && field in p.suggestScenario ? p.suggestScenario[field as keyof typeof p.suggestScenario] : p.suggest[field]) as readonly string[];
+  // Crédits et « d'après » n'ont pas de suggestions : saisie libre seulement.
+  const suggest = p.suggest as Record<string, readonly string[] | undefined>;
+  const list = (kind === "scenario" && field in p.suggestScenario ? p.suggestScenario[field as keyof typeof p.suggestScenario] : suggest[field]) ?? [];
   const suggestions = chipSuggestions(list, value);
 
   useEffect(() => {
@@ -194,7 +197,8 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
     [nodes, lang],
   );
   // Pas de point de vue ni de temps du récit pour un scénario (toujours au présent, caméra).
-  const chips = PITCH_CHIPS.filter((c) => kind === "roman" || (c !== "pov" && c !== "temps"));
+  const chips = PITCH_CHIPS.filter((c) => kind === "roman" || !(NOVEL_CHIPS as readonly string[]).includes(c));
+  const seriesFilled = SERIES_TEXTS.some((k) => pitch[k]?.trim());
   const tagId = useId();
 
   // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge, WebKit).
@@ -244,10 +248,11 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
             <Chip key={c} field={c} />
           ))}
         </div>
-        <div className="cover-filled">{fmt(p.filled, { n: pitchFilled(pitch), total: PITCH_FIELD_COUNT })}</div>
+        <div className="cover-filled">{fmt(p.filled, { n: pitchFilled(pitch, kind), total: pitchFields(kind).length })}</div>
       </div>
 
       <div className="cover-back">
+        <CoverAssistant />
         <PitchArea field="logline" className="is-logline" hint={p.loglineHint} />
         <PitchArea field="resume" />
         <PitchArea field="comps" />
@@ -277,6 +282,18 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
           <summary>{p.fields.intention}</summary>
           <PitchArea field="intention" className="is-bare" />
         </details>
+        {/* Bible de série : ce qui aide un producteur à y croire et un scénariste à rejoindre l'écriture. */}
+        {kind === "scenario" && (
+          <details className="pitch-intention pitch-series" open={seriesFilled}>
+            <summary>{p.seriesTitle}</summary>
+            <div className="pitch-series-body">
+              <p className="pitch-hint">{p.seriesHint}</p>
+              {SERIES_TEXTS.map((k) => (
+                <PitchArea key={k} field={k} hint={k === "episodes" ? p.episodesHint : undefined} />
+              ))}
+            </div>
+          </details>
+        )}
       </div>
     </section>
   );

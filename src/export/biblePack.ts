@@ -11,10 +11,12 @@ import type { Plan } from "../plan";
 import { PLAN_TEMPLATES, chapterNumbers } from "../plan";
 import { bookOrder } from "../book";
 import type { Pitch } from "../pitch";
-import { PITCH_CHIPS } from "../pitch";
+import { NOVEL_CHIPS, readEpisodes } from "../pitch";
 import { countWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
 import { listScenes, sceneSynopsis } from "../screenplay/scenes";
+import { beatOf, sectionLabel } from "../screenplay/template";
+import { screenplaySceneTexts, timeline } from "../timeline";
 import type { CardNode } from "../projectState";
 import { CHARACTER_FIELDS, CHARACTER_HEAD_FIELDS, isPrincipal, motorFields, nicknames } from "../character";
 import { PART_OF, partNumber, type PartKey } from "../bibleParts";
@@ -45,6 +47,8 @@ export type PackBlock =
   | { kind: "person"; name: string; meta: string; hook: string; image: string | null; initials: string }
   | { kind: "thumbs"; items: { image: string; caption: string }[] }
   | { kind: "list"; items: { mark: string; text: string; note?: string }[]; columns: 1 | 2 }
+  /** Grille des fils : une ligne par intrigue, une colonne par partie du pilote (numérotée, légende dessous). */
+  | { kind: "grid"; cols: string[]; rows: { label: string; cells: boolean[] }[] }
   | { kind: "rule" }
   | { kind: "pageBreak" };
 
@@ -57,6 +61,8 @@ export interface PackSection {
 }
 
 export interface BiblePack {
+  /** Pages du pilote à ajouter à la fin du PDF (0 : aucune). La dernière section les annonce. */
+  pilotPages: number;
   title: string;
   author: string;
   /** « Dossier de présentation », « Bible de série », « Bible de travail » */
@@ -88,6 +94,11 @@ export interface PackContext {
   author: string;
   date: Date;
 }
+
+/** Pages du pilote jointes en annexe, au plus. */
+export const PILOT_PAGES = 10;
+/** Colonnes de la grille des fils, au plus (au-delà, elle serait illisible). */
+const MAX_GRID_COLS = 16;
 
 /** Images des lieux en vignettes, au plus. */
 export const MAX_THUMBS = 4;
@@ -145,9 +156,16 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     if (part === "presentation") {
       const p = s.pitch;
       if (clean(p.logline)) blocks.push({ kind: "label", text: t.pitch.fields.logline }, { kind: "lead", text: clean(p.logline) });
-      const chips = PITCH_CHIPS.filter((k) => k !== "format" || s.kind !== "scenario").map((k) => clean(p[k])).filter(Boolean);
+      // Pastilles : les valeurs seules ; statut, « d'après » et crédits avec leur libellé (une valeur seule serait obscure).
+      const chips = (["genre", "cible", "format", "pov", "temps", "ton"] as const)
+        .filter((k) => (k !== "format" || s.kind !== "scenario") && (s.kind !== "scenario" || !(NOVEL_CHIPS as readonly string[]).includes(k)))
+        .map((k) => clean(p[k]))
+        .filter(Boolean);
       if (chips.length > 0) blocks.push({ kind: "chips", items: chips });
-      for (const key of ["resume", "comps", "intention"] as const) {
+      const facts = (["dapres", "credits", "statut"] as const).map((k) => ({ label: t.pitch.fields[k], value: clean(p[k]) })).filter((f) => f.value);
+      if (facts.length > 0) blocks.push({ kind: "para", small: true, muted: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
+      const presentationTexts = s.kind === "scenario" ? (["resume", "pourquoi", "promesse", "comps", "intention"] as const) : (["resume", "comps", "intention"] as const);
+      for (const key of presentationTexts) {
         const text = (p[key] ?? "").trim();
         if (!text) continue;
         blocks.push({ kind: "label", text: t.pitch.fields[key] });
@@ -168,6 +186,11 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       // Personne n'est coché « principal » : tout le monde a sa fiche.
       const full = forMe || principals.length === 0 ? [...principals, ...all.filter((c) => !isPrincipal(c))] : principals;
       const others = full === principals ? all.filter((c) => !isPrincipal(c)) : [];
+      // Bible de série : tout le monde en une page, d'un coup d'œil, avant les fiches.
+      const memo = all.filter((c) => c.title.trim() && clean(c.fiche?.accroche));
+      if (s.kind === "scenario" && memo.length >= 2) {
+        blocks.push({ kind: "label", text: e.memo }, { kind: "list", columns: 2, items: memo.map((c) => ({ mark: "", text: c.title.trim(), note: clean(c.fiche?.accroche) })) }, { kind: "pageBreak" });
+      }
       full.forEach((c, i) => {
         if (i > 0) blocks.push(isPrincipal(c) || !forMe ? { kind: "pageBreak" } : { kind: "rule" });
         blocks.push(...characterBlocks(c));
@@ -181,6 +204,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 
     if (part === "univers") {
       const places = byType("lieu");
+      if (s.kind === "scenario") blocks.push(...pitchText("arene", false));
       if (options.places) {
         const thumbs = places.flatMap((c) => [c.image, ...(c.images ?? [])].filter((n): n is string => !!n && isMediaName(n)).map((image) => ({ image, caption: c.title.trim() })));
         // Une image par lieu d'abord, puis les autres.
@@ -199,13 +223,30 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     }
 
     if (part === "structure") {
+      if (s.kind === "scenario") {
+        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"));
+        const episodes = readEpisodes(s.pitch.episodes);
+        if (episodes.length > 0)
+          blocks.push({ kind: "label", text: t.pitch.fields.episodes }, { kind: "list", columns: 1, items: episodes.map((ep, i) => ({ mark: String(i + 1), text: ep.title, note: ep.synopsis })) });
+      }
       for (const c of byType("intrigue")) {
         blocks.push({ kind: "h3", text: c.title.trim() || t.bible.untitled, sub: clean(c.fiche?.nature) });
         const cells = (["question", "enjeu", "declencheur", "tournant", "resolution"] as const).map((k) => ({ label: t.fiche.fields[k], value: clean(c.fiche?.[k]) })).filter((x) => x.value);
         if (cells.length > 0) blocks.push({ kind: "cells", items: cells });
         if (forMe) blocks.push(...paras(c.html));
       }
+      if (s.kind === "scenario") blocks.push(...threadGrid());
       blocks.push(...planBlocks());
+      if (s.kind === "scenario") {
+        // Écrire la série : ce qu'un scénariste qui rejoint l'écriture doit savoir.
+        const rules = (["aFaire", "aEviter"] as const).map((k) => ({ label: t.pitch.fields[k], value: clean(s.pitch[k]) })).filter((x) => x.value);
+        const pistes = pitchText("pistes");
+        if (rules.length > 0 || pistes.length > 0) {
+          blocks.push({ kind: "h2", text: t.pitch.seriesTitle });
+          if (rules.length > 0) blocks.push({ kind: "cells", items: rules });
+          blocks.push(...pistes);
+        }
+      }
       section(part, e.titles.structure, blocks);
     }
 
@@ -229,7 +270,12 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     }
   }
 
+  // Annexe : les premières pages du pilote (scénario), annoncées par une page ; biblePdf.ts les ajoute après.
+  const pilotPages = options.pilot && s.kind === "scenario" && listScenes(s.screenplay?.elements ?? []).length > 0 ? PILOT_PAGES : 0;
+  if (pilotPages > 0) sections.push({ part: "structure", kicker: e.annex, title: e.pilotTitle, blocks: [{ kind: "para", runs: [{ text: e.pilotNote }] }] });
+
   return {
+    pilotPages,
     title: s.title.trim() || t.home.untitled,
     author: ctx.author.trim(),
     kind: kindLabel,
@@ -240,6 +286,59 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     sections,
   };
 
+  /** Un texte de la couverture sous son libellé (un paragraphe par ligne). */
+  function pitchText(key: "arene" | "mecanique" | "episodeType" | "pistes", withLabel = true): PackBlock[] {
+    const text = (s.pitch[key] ?? "").trim();
+    if (!text) return [];
+    const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l): PackBlock => ({ kind: "para", runs: [{ text: l }] }));
+    return withLabel ? [{ kind: "label", text: t.pitch.fields[key] }, ...lines] : lines;
+  }
+
+  /** Grille des fils du pilote : intrigues × parties du scénario (sections, ou scènes s'il n'y en a pas). */
+  function threadGrid(): PackBlock[] {
+    const elements = s.screenplay?.elements ?? [];
+    const threads = byType("intrigue").filter((c) => c.title.trim());
+    if (threads.length === 0) return [];
+    const beatLabels = t.plan.beats as Record<string, { label: string }>;
+    const cols: { label: string; ids: string[] }[] = [];
+    let current: { label: string; ids: string[] } | null = null;
+    for (const el of elements) {
+      if (el.type === "section") {
+        const key = beatOf(el.text);
+        current = { label: (key && beatLabels[key]?.label) || sectionLabel(el.text), ids: [] };
+        cols.push(current);
+      } else if (el.type === "sceneHeading" && el.cardId) {
+        if (!current) {
+          current = { label: "", ids: [] };
+          cols.push(current);
+        }
+        current.ids.push(el.cardId);
+      }
+    }
+    let parts = cols.filter((c) => c.ids.length > 0);
+    // Sans sections : une colonne par scène, si elles ne sont pas trop nombreuses.
+    if (parts.length <= 1) parts = parts.flatMap((c) => c.ids).map((id) => ({ label: titleOf(id), ids: [id] }));
+    if (parts.length < 2 || parts.length > MAX_GRID_COLS) return [];
+    const order = parts.flatMap((c) => c.ids);
+    const rows = timeline(cards, s.edges, screenplaySceneTexts(elements), order, lang).find((g) => g.type === "intrigue")?.rows ?? [];
+    const grid = rows
+      .filter((r) => r.count > 0)
+      .map((r) => {
+        let at = 0;
+        const cells = parts.map((c) => {
+          const here = r.cells.slice(at, at + c.ids.length).some((x) => x !== "none");
+          at += c.ids.length;
+          return here;
+        });
+        return { label: r.card.title.trim(), cells };
+      });
+    if (grid.length === 0) return [];
+    return [
+      { kind: "label", text: e.grid },
+      { kind: "grid", cols: parts.map((c, i) => c.label || String(i + 1)), rows: grid },
+    ];
+  }
+
   function characterBlocks(c: CardData): PackBlock[] {
     const f = c.fiche ?? {};
     const name = c.title.trim() || t.bible.untitled;
@@ -249,11 +348,13 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     const labels = t.character.motor.labels as Record<string, string>;
     const motor = motorFields(c).map((k) => ({ label: labels[k] ?? k, value: clean(f[k]) })).filter((x) => x.value);
     if (motor.length > 0) out.push({ kind: "cells", items: motor });
+    const stakes = (["enjeuExt", "enjeuRel", "enjeuInt"] as const).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
+    if (stakes.length > 0) out.push({ kind: "cells", items: stakes });
     if (clean(f.debut) || clean(f.fin)) out.push({ kind: "arc", from: { label: t.character.fields.debut, value: clean(f.debut) }, to: { label: t.character.fields.fin, value: clean(f.fin) } });
     else if (clean(f.arc)) out.push({ kind: "para", runs: [{ text: `${t.character.fields.arc} : `, bold: true }, { text: clean(f.arc) }] });
     // Le reste de la fiche : tout pour soi ; pour un tiers, seulement la voix.
-    const shown = new Set<string>([...motorFields(c), ...CHARACTER_HEAD_FIELDS, "role", "age", "metier", "relations", "surnoms"]);
-    const extra = CHARACTER_FIELDS.filter((k) => !shown.has(k) && (forMe || k === "voix")).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
+    const shown = new Set<string>([...motorFields(c), ...CHARACTER_HEAD_FIELDS, "role", "age", "metier", "relations", "surnoms", "enjeuExt", "enjeuRel", "enjeuInt"]);
+    const extra = CHARACTER_FIELDS.filter((k) => !shown.has(k) && (forMe || k === "voix" || k === "ecriture")).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
     for (const x of extra) out.push({ kind: "para", small: true, runs: [{ text: `${x.label} : `, bold: true }, { text: x.value }] });
     // Relations : les fils vers les autres personnages, puis le champ de la fiche.
     const rel = s.edges

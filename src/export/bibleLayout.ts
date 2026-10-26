@@ -318,6 +318,35 @@ export function layoutBible({ pack, theme, accent, paper, metrics, imageSize }: 
         y = top + h + 22;
         return;
       }
+      case "grid": {
+        // Numéros en tête de colonne, légende dessous : un libellé de case ne tiendrait pas dans une colonne étroite.
+        const labelW = Math.min(150, width * 0.32);
+        const colW = (width - labelW) / b.cols.length;
+        const cell = Math.min(colW - 3, 14);
+        const rowH = Math.max(cell + 6, S.small * 1.5);
+        ensure(18 + rowH * Math.min(b.rows.length, 3));
+        y += 6;
+        b.cols.forEach((_, i) => {
+          const n = String(i + 1);
+          text(left + labelW + i * colW + (colW - metrics.width(n, F("ui"), S.kicker)) / 2, y + S.kicker, n, F("ui"), S.kicker, theme.muted);
+        });
+        y += S.kicker + 6;
+        for (const row of b.rows) {
+          ensure(rowH);
+          const label = wrap([{ text: row.label, font: F("textBold") }], labelW - 8, S.small, metrics)[0];
+          if (label) for (const sg of label.segs) text(left + sg.x, y + rowH / 2 + S.small * 0.35, sg.text, sg.font, S.small, theme.ink);
+          row.cells.forEach((on, i) => {
+            const x = left + labelW + i * colW + (colW - cell) / 2;
+            page.ops.push({ op: "rect", x, y: y + (rowH - cell) / 2, w: cell, h: cell, color: on ? accent.paper : theme.soft });
+          });
+          y += rowH;
+        }
+        const legend = b.cols.map((c, i) => `${i + 1} ${c}`).join("  ·  ");
+        y += 4;
+        drawLines(wrap([{ text: legend, font: F("ui") }], width, S.kicker + 0.5, metrics), left, S.kicker + 0.5, theme.muted, 1.5);
+        y += 8;
+        return;
+      }
       case "list": {
         const cols = b.columns;
         const gap = 18;

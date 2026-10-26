@@ -7,12 +7,34 @@
 // texte de l'auteur, dans sa langue (une pastille choisie dans les suggestions garde le libellé choisi).
 // Le volume n'est pas saisi ici : il vient de l'objectif d'écriture. Les thèmes sont les cartes Thème.
 
-/** Textes de la couverture, dans l'ordre d'affichage. */
-export const PITCH_TEXTS = ["tagline", "logline", "resume", "comps", "intention"] as const;
+/**
+ * Textes de la couverture, dans l'ordre d'affichage. Les derniers (Bible v2) ne servent qu'à un scénario :
+ * la sous-partie « Écrire la série » (`SERIES_TEXTS`).
+ */
+export const PITCH_TEXTS = [
+  "tagline",
+  "logline",
+  "resume",
+  "comps",
+  "intention",
+  "pourquoi",
+  "promesse",
+  "arene",
+  "mecanique",
+  "episodeType",
+  "episodes",
+  "aFaire",
+  "aEviter",
+  "pistes",
+] as const;
 /** Pastilles : une valeur courte, choisie dans une liste ou saisie librement. */
-export const PITCH_CHIPS = ["genre", "cible", "format", "pov", "temps", "ton"] as const;
+export const PITCH_CHIPS = ["genre", "cible", "format", "pov", "temps", "ton", "statut", "credits", "dapres"] as const;
 
 export type PitchText = (typeof PITCH_TEXTS)[number];
+/** Textes propres à une série : sous-partie « Écrire la série » de la couverture d'un scénario. */
+export const SERIES_TEXTS = ["pourquoi", "promesse", "arene", "mecanique", "episodeType", "episodes", "aFaire", "aEviter", "pistes"] as const satisfies readonly PitchText[];
+/** Pastilles d'un roman seulement (un scénario est toujours au présent, vu par la caméra). */
+export const NOVEL_CHIPS = ["pov", "temps"] as const satisfies readonly (typeof PITCH_CHIPS)[number][];
 export type PitchChip = (typeof PITCH_CHIPS)[number];
 export type PitchField = PitchText | PitchChip;
 export type Pitch = Partial<Record<PitchField, string>>;
@@ -46,9 +68,24 @@ export function setPitchField(pitch: Pitch, key: PitchField, value: string): Pit
 
 export const isEmptyPitch = (pitch: Pitch) => Object.keys(pitch).length === 0;
 
+/** Champs de la couverture selon le type de projet. */
+export const pitchFields = (kind: "roman" | "scenario" = "roman"): PitchField[] =>
+  FIELDS.filter((key) => (kind === "scenario" ? !(NOVEL_CHIPS as readonly string[]).includes(key) : !(SERIES_TEXTS as readonly string[]).includes(key)));
+
 /** Champs remplis, pour le repère discret de la couverture. */
-export const pitchFilled = (pitch: Pitch) => FIELDS.filter((key) => pitch[key]?.trim()).length;
-export const PITCH_FIELD_COUNT = FIELDS.length;
+export const pitchFilled = (pitch: Pitch, kind: "roman" | "scenario" = "roman") => pitchFields(kind).filter((key) => pitch[key]?.trim()).length;
+
+/** Épisodes d'une série : une ligne par épisode, « Titre : synopsis » (le titre seul est permis). */
+export function readEpisodes(text: string | undefined): { title: string; synopsis: string }[] {
+  return (text ?? "")
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*(?:[-–•*]|\d+[.)])\s*/, "").trim())
+    .filter(Boolean)
+    .map((line) => {
+      const m = line.match(/^(.{1,120}?)\s*:\s+(.+)$/);
+      return m ? { title: m[1].trim(), synopsis: m[2].trim() } : { title: line, synopsis: "" };
+    });
+}
 
 /** Suggestions d'une pastille, sans celle déjà choisie, sans doublon (casse et accents ignorés). */
 export function chipSuggestions(list: readonly string[], current: string | undefined): string[] {
@@ -62,4 +99,18 @@ export function chipSuggestions(list: readonly string[], current: string | undef
     out.push(item);
   }
   return out;
+}
+
+/** Champs que « Questionner » peut remplir, dans l'ordre des questions. */
+export const askableFields = (kind: "roman" | "scenario"): PitchText[] =>
+  PITCH_TEXTS.filter((key) => kind === "scenario" || !(SERIES_TEXTS as readonly string[]).includes(key));
+
+/**
+ * Prochaine question de « Questionner » : le premier champ vide qui n'a pas été passé. Quand tous les champs
+ * vides ont été passés, on reprend celui qui a été passé il y a le plus longtemps (`skipped` est dans l'ordre
+ * des passages : le dernier passé à la fin). Null : tout est rempli.
+ */
+export function nextAsk(pitch: Pitch, kind: "roman" | "scenario", skipped: readonly string[]): PitchText | null {
+  const empty = askableFields(kind).filter((key) => !pitch[key]?.trim());
+  return empty.find((key) => !skipped.includes(key)) ?? [...empty].sort((a, b) => skipped.indexOf(a) - skipped.indexOf(b))[0] ?? null;
 }

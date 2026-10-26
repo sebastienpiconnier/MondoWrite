@@ -18,6 +18,7 @@ import {
   movePart,
   savePreset,
   togglePart,
+  exportStateFor,
   withAudience,
   type BibleAudience,
   type BibleExportOptions,
@@ -26,6 +27,7 @@ import { buildBiblePack, typesForParts, type PackSource } from "../export/bibleP
 import { swatch } from "../export/bibleThemes";
 import { isMediaName } from "../media";
 import { fileName } from "../screenplay/export";
+import { DEFAULT_SCRIPT_PRINT } from "../screenplay/export/scriptPrint";
 import { exportDocument } from "../export";
 import { bibleOf } from "../export/projectDocs";
 import type { DocImage } from "../export/doc";
@@ -41,9 +43,11 @@ export function BibleExportDialog() {
   const lang = useSettings((s) => s.lang);
   const author = useSettings((s) => s.author).trim();
   const sections = useSettings((s) => s.bibleSections);
-  const state = useCosmos((s) => s.bibleExport);
+  const stored = useCosmos((s) => s.bibleExport);
   const setState = useCosmos((s) => s.setBibleExport);
   const kind = useCosmos((s) => s.kind);
+  // Tant que rien n'a été changé : les réglages de départ de ce type de projet (Nuit et pilote pour un producteur).
+  const state = useMemo(() => exportStateFor(stored, kind), [stored, kind]);
   const title = useCosmos((s) => s.title);
   const nodes = useCosmos((s) => s.nodes);
   const edges = useCosmos((s) => s.edges);
@@ -61,6 +65,8 @@ export function BibleExportDialog() {
   const [preview, setPreview] = useState<{ status: "working" | "ready" | "failed" | "empty"; pages: number }>({ status: "working", pages: 0 });
   const pdfRef = useRef<Uint8Array | null>(null);
   const images = useRef(new Map<string, DocImage | null>());
+  // PDF du scénario pour l'annexe du pilote, refait seulement quand le scénario ou le format de page change.
+  const pilotRef = useRef<{ key: unknown; paper: string; bytes: Uint8Array } | null>(null);
   const canvases = useRef<HTMLDivElement>(null);
 
   const source: PackSource = useMemo(
@@ -98,7 +104,24 @@ export function BibleExportDialog() {
           for (const n of missing) images.current.set(n, loaded[n] ?? null);
         }
         const available = Object.fromEntries([...images.current].filter((e): e is [string, DocImage] => !!e[1]));
-        const { bytes, pages } = await bibleToPdf({ pack, options, paper, lang, images: available });
+        let pilot: Uint8Array | null = null;
+        if (pack.pilotPages > 0 && screenplay) {
+          if (pilotRef.current?.key !== screenplay || pilotRef.current.paper !== paper) {
+            const { exportScreenplay } = await import("../screenplay/export");
+            const file = await exportScreenplay(screenplay, "pdf", {
+              title: source.title,
+              paper,
+              locale: lang,
+              strings: { more: t.screenplay.more, contd: t.screenplay.contd },
+              numberScenes: useCosmos.getState().sceneNumbers,
+              underlineHeadings: useCosmos.getState().underlineHeadings,
+              print: { ...DEFAULT_SCRIPT_PRINT, titlePage: false },
+            });
+            pilotRef.current = { key: screenplay, paper, bytes: file.data };
+          }
+          pilot = pilotRef.current.bytes;
+        }
+        const { bytes, pages } = await bibleToPdf({ pack, options, paper, lang, images: available, pilot });
         if (stale) return;
         pdfRef.current = bytes;
         const doc = await openPdf(bytes);
@@ -123,7 +146,7 @@ export function BibleExportDialog() {
       stale = true;
       window.clearTimeout(timer);
     };
-  }, [pack, options, paper, lang, format]);
+  }, [pack, options, paper, lang, format, screenplay, source.title, t]);
 
   const exportFile = async () => {
     if (busy) return;
@@ -174,7 +197,7 @@ export function BibleExportDialog() {
           <legend>{e.forWhom}</legend>
           {(["moi", "tiers"] as const).map((a) => (
             <label key={a} className="spdf-choice bexp-reader">
-              <input type="radio" name="bexp-reader" checked={options.audience === a} onChange={() => set(withAudience(options, a))} />
+              <input type="radio" name="bexp-reader" checked={options.audience === a} onChange={() => set(withAudience(options, a, kind))} />
               <span>
                 {reader[a][0]}
                 <small>{reader[a][1]}</small>
@@ -246,6 +269,15 @@ export function BibleExportDialog() {
               ))}
             </select>
           </label>
+          {kind === "scenario" && screenplay && (
+            <label className="spdf-choice bexp-reader">
+              <input type="checkbox" checked={options.pilot} onChange={(ev) => set({ ...options, pilot: ev.target.checked })} />
+              <span>
+                {e.pilot}
+                <small>{e.pilotHint}</small>
+              </span>
+            </label>
+          )}
           {options.parts.includes("univers") && (
             <label className="spdf-choice">
               <input type="checkbox" checked={options.places} onChange={(ev) => set({ ...options, places: ev.target.checked })} />

@@ -5,6 +5,7 @@
 
 import { BIBLE_PARTS, isPrivatePart, type PartKey } from "./bibleParts";
 import { isMediaName } from "./media";
+import type { ProjectKind } from "./types";
 
 /** « moi » : bible de travail (tout) ; « tiers » : dossier de présentation (roman) ou bible de série (scénario). */
 export type BibleAudience = "moi" | "tiers";
@@ -24,6 +25,8 @@ export interface BibleExportOptions {
   cover: string;
   /** Photos des lieux en vignettes dans la partie Univers. */
   places: boolean;
+  /** Scénario : les premières pages du pilote en annexe du PDF. */
+  pilot: boolean;
 }
 
 export interface BiblePreset {
@@ -38,10 +41,20 @@ export interface BibleExportState {
 
 const PUBLIC_PARTS = BIBLE_PARTS.filter((p) => !isPrivatePart(p));
 
+/** Rendu de départ : Sobre pour soi, Éditorial pour un éditeur, Nuit pour un producteur. */
+export const defaultTheme = (audience: BibleAudience, kind: ProjectKind = "roman"): BibleTheme => (audience === "moi" ? "sobre" : kind === "scenario" ? "nuit" : "editorial");
+
 /** Réglages de départ pour un lecteur : tout pour soi ; sans « Pour vous » pour un tiers. */
-export function defaultsFor(audience: BibleAudience, theme: BibleTheme = audience === "moi" ? "sobre" : "editorial"): BibleExportOptions {
-  return { audience, parts: audience === "moi" ? [...BIBLE_PARTS] : [...PUBLIC_PARTS], theme, accent: 0, cover: "", places: true };
+export function defaultsFor(audience: BibleAudience, kind: ProjectKind = "roman"): BibleExportOptions {
+  return { audience, parts: audience === "moi" ? [...BIBLE_PARTS] : [...PUBLIC_PARTS], theme: defaultTheme(audience, kind), accent: 0, cover: "", places: true, pilot: audience === "tiers" && kind === "scenario" };
 }
+
+/**
+ * Réglages montrés par la fenêtre : ceux du projet, ou, tant que l'auteur n'a rien changé, ceux de départ pour
+ * ce type de projet (un producteur reçoit Nuit et le pilote en annexe). Rien n'est écrit avant un changement.
+ */
+export const exportStateFor = (state: BibleExportState, kind: ProjectKind): BibleExportState =>
+  bibleExportToMeta(state) === undefined ? { ...state, current: defaultsFor(state.current.audience, kind) } : state;
 
 export const DEFAULT_BIBLE_EXPORT: BibleExportState = { current: defaultsFor("tiers"), presets: [] };
 
@@ -68,6 +81,7 @@ export function cleanOptions(raw: unknown): BibleExportOptions {
     accent,
     cover: typeof o.cover === "string" && isMediaName(o.cover) ? o.cover : "",
     places: typeof o.places === "boolean" ? o.places : d.places,
+    pilot: o.pilot === true,
   };
 }
 
@@ -100,11 +114,11 @@ export function savePreset(state: BibleExportState, name: string): BibleExportSt
 export const deletePreset = (state: BibleExportState, name: string): BibleExportState =>
   state.presets.some((p) => p.name === name) ? { ...state, presets: state.presets.filter((p) => p.name !== name) } : state;
 
-/** Change de lecteur : les parties et le rendu reprennent les valeurs de départ de ce lecteur, le reste est gardé. */
-export function withAudience(options: BibleExportOptions, audience: BibleAudience): BibleExportOptions {
+/** Change de lecteur : parties, rendu et annexe reprennent les valeurs de départ de ce lecteur, le reste est gardé. */
+export function withAudience(options: BibleExportOptions, audience: BibleAudience, kind: ProjectKind = "roman"): BibleExportOptions {
   if (options.audience === audience) return options;
-  const d = defaultsFor(audience);
-  return { ...options, audience, parts: d.parts, theme: d.theme };
+  const d = defaultsFor(audience, kind);
+  return { ...options, audience, parts: d.parts, theme: d.theme, pilot: d.pilot };
 }
 
 /** Coche ou décoche une partie ; une partie cochée reprend sa place dans l'ordre des parties. */
