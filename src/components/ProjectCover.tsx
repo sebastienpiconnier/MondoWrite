@@ -180,6 +180,9 @@ function Volume() {
   );
 }
 
+/** Mots d'une page de note d'intention, à peu près (repère, jamais une limite). */
+const INTENTION_PAGE = 450;
+
 export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpenTheme: (id: string) => void; onAddTheme: () => void; onAddEpisode: () => void }) {
   const { t, kind, types } = useVocab();
   const p = t.pitch;
@@ -282,7 +285,8 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
         </div>
         <details className="pitch-intention" open={!!pitch.intention}>
           <summary>{p.fields.intention}</summary>
-          <PitchArea field="intention" className="is-bare" />
+          {/* Repère discret de longueur (lot 6) : une note d'intention tient en une page environ. */}
+          <PitchArea field="intention" className="is-bare" hint={pitch.intention?.trim() ? fmt(p.intentionLength, { n: countWords(pitch.intention), page: INTENTION_PAGE }) : undefined} />
         </details>
         {/* Bible de série : ce qui aide un producteur à y croire et un scénariste à rejoindre l'écriture. */}
         {kind === "scenario" && (

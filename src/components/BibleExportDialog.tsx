@@ -73,7 +73,8 @@ export function BibleExportDialog() {
     () => ({ title: title.trim() || t.home.untitled, kind, nodes, edges, plan, manuscript, pitch, screenplay, goals }),
     [title, t, kind, nodes, edges, plan, manuscript, pitch, screenplay, goals],
   );
-  const ctx = useMemo(() => ({ t, lang, author, date: new Date() }), [t, lang, author]);
+  const profile = useSettings((s) => s.profile);
+  const ctx = useMemo(() => ({ t, lang, author, date: new Date(), profile }), [t, lang, author, profile]);
   const pack = useMemo(() => buildBiblePack(source, options, ctx), [source, options, ctx]);
   // Parties qui ont du contenu pour ce lecteur (une partie vide n'est pas imprimée).
   const filled = useMemo(() => new Set(buildBiblePack(source, { ...options, parts: [...BIBLE_PARTS] }, ctx).sections.map((s) => s.part)), [source, options, ctx]);
@@ -204,6 +205,13 @@ export function BibleExportDialog() {
               </span>
             </label>
           ))}
+          {options.audience === "tiers" && (
+            <label className="spdf-field bexp-recipient">
+              {e.recipient}
+              <input type="text" value={options.recipient} maxLength={300} placeholder={kind === "scenario" ? e.recipientPlaceholderSeries : e.recipientPlaceholderNovel} onChange={(ev) => set({ ...options, recipient: ev.target.value })} />
+              <small className="spdf-hint">{e.recipientHint}</small>
+            </label>
+          )}
         </fieldset>
         <fieldset>
           <legend>{e.parts}</legend>

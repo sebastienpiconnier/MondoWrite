@@ -31,6 +31,11 @@ export interface BibleExportOptions {
   grid: boolean;
   /** Scénario : la page « En un coup d'œil » (les accroches). Pour un tiers, décochée par défaut : elle répète les fiches. */
   memo: boolean;
+  /**
+   * Destinataire : pourquoi ce guichet ou cette chaîne, en une phrase (lot 6). Réglage de l'envoi plutôt que
+   * donnée du projet : un même dossier part à plusieurs endroits (un réglage nommé par destinataire).
+   */
+  recipient: string;
 }
 
 export interface BiblePreset {
@@ -45,13 +50,13 @@ export interface BibleExportState {
 
 const PUBLIC_PARTS = BIBLE_PARTS.filter((p) => !isPrivatePart(p));
 
-/** Rendu de départ : Sobre pour soi, Éditorial pour un éditeur, Nuit pour un producteur. */
+/** Rendu de départ : Éditorial pour un éditeur, Sobre ailleurs (pour soi, et pour un producteur depuis le lot 6). */
 export const defaultTheme = (audience: BibleAudience, kind: ProjectKind = "roman"): BibleTheme => (audience === "tiers" && kind === "roman" ? "editorial" : "sobre");
 
 /** Réglages de départ pour un lecteur : tout pour soi ; sans « Pour vous » pour un tiers. */
 export function defaultsFor(audience: BibleAudience, kind: ProjectKind = "roman"): BibleExportOptions {
   const forMe = audience === "moi";
-  return { audience, parts: forMe ? [...BIBLE_PARTS] : [...PUBLIC_PARTS], theme: defaultTheme(audience, kind), accent: 0, cover: "", places: true, pilot: !forMe && kind === "scenario", grid: forMe, memo: forMe };
+  return { audience, parts: forMe ? [...BIBLE_PARTS] : [...PUBLIC_PARTS], theme: defaultTheme(audience, kind), accent: 0, cover: "", places: true, pilot: !forMe && kind === "scenario", grid: forMe, memo: forMe, recipient: "" };
 }
 
 /**
@@ -64,6 +69,7 @@ export const exportStateFor = (state: BibleExportState, kind: ProjectKind): Bibl
 export const DEFAULT_BIBLE_EXPORT: BibleExportState = { current: defaultsFor("tiers"), presets: [] };
 
 const MAX_PRESETS = 20;
+const MAX_RECIPIENT = 300;
 
 /** Parties relues : connues, sans doublon, « Pour vous » ramenée à la fin. */
 export function cleanParts(raw: unknown): PartKey[] {
@@ -89,6 +95,7 @@ export function cleanOptions(raw: unknown): BibleExportOptions {
     pilot: o.pilot === true,
     grid: typeof o.grid === "boolean" ? o.grid : d.grid,
     memo: typeof o.memo === "boolean" ? o.memo : d.memo,
+    recipient: typeof o.recipient === "string" ? o.recipient.replace(/\s+/g, " ").trim().slice(0, MAX_RECIPIENT) : "",
   };
 }
 

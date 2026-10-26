@@ -18,11 +18,15 @@ export const PITCH_TEXTS = [
   "comps",
   "intention",
   "pourquoi",
+  "pourquoiMoi",
   "promesse",
+  "nestPas",
   "arene",
   "mecanique",
   "episodeType",
   "episodes",
+  "saison",
+  "finSaison",
   "aFaire",
   "aEviter",
   "pistes",
@@ -35,7 +39,7 @@ export type PitchText = (typeof PITCH_TEXTS)[number];
  * Textes propres à une série : sous-partie « Écrire la série » de la couverture d'un scénario. `episodes` n'y est
  * plus (lot 6) : chaque épisode est une carte Épisode, et la clé n'est relue que pour la reprise (episodes.ts).
  */
-export const SERIES_TEXTS = ["pourquoi", "promesse", "arene", "mecanique", "episodeType", "aFaire", "aEviter", "pistes"] as const satisfies readonly PitchText[];
+export const SERIES_TEXTS = ["pourquoi", "pourquoiMoi", "promesse", "nestPas", "arene", "mecanique", "episodeType", "saison", "finSaison", "aFaire", "aEviter", "pistes"] as const satisfies readonly PitchText[];
 /** Pastilles d'un roman seulement (un scénario est toujours au présent, vu par la caméra). */
 export const NOVEL_CHIPS = ["pov", "temps"] as const satisfies readonly (typeof PITCH_CHIPS)[number][];
 export type PitchChip = (typeof PITCH_CHIPS)[number];

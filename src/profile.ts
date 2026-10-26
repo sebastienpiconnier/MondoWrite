@@ -11,15 +11,20 @@ export interface AuthorProfile {
   phone: string;
   /** Adresse postale, sur plusieurs lignes. */
   address: string;
+  /** Parcours, en quelques lignes (Bible v2, lot 6 : page « L'auteur » du dossier envoyé). */
+  bio: string;
+  /** Filmographie ou publications, une œuvre par ligne. */
+  works: string;
 }
 
-export const PROFILE_FIELDS = ["firstName", "lastName", "penName", "email", "phone", "address"] as const satisfies readonly (keyof AuthorProfile)[];
+export const PROFILE_FIELDS = ["firstName", "lastName", "penName", "email", "phone", "address", "bio", "works"] as const satisfies readonly (keyof AuthorProfile)[];
 
-export const EMPTY_PROFILE: AuthorProfile = { firstName: "", lastName: "", penName: "", email: "", phone: "", address: "" };
+export const EMPTY_PROFILE: AuthorProfile = { firstName: "", lastName: "", penName: "", email: "", phone: "", address: "", bio: "", works: "" };
 
-const clean = (value: unknown, max: number, lines = false) => {
+/** `lines` : nombre de lignes gardées (0 : une seule ligne, espaces resserrés). */
+const clean = (value: unknown, max: number, lines = 0) => {
   if (typeof value !== "string") return "";
-  const text = lines ? value.replace(/\r\n?/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 6).join("\n") : value.replace(/\s+/g, " ").trim();
+  const text = lines > 0 ? value.replace(/\r\n?/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, lines).join("\n") : value.replace(/\s+/g, " ").trim();
   return text.slice(0, max);
 };
 
@@ -32,7 +37,9 @@ export function cleanProfile(raw: unknown): AuthorProfile {
     penName: clean(p.penName, 120),
     email: clean(p.email, 160),
     phone: clean(p.phone, 40),
-    address: clean(p.address, 400, true),
+    address: clean(p.address, 400, 6),
+    bio: clean(p.bio, 1500, 12),
+    works: clean(p.works, 1500, 30),
   };
 }
 

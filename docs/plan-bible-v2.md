@@ -187,11 +187,13 @@ Issu de la critique de la v2 d'après quatre sources : l'article de Denis Lima s
 Fait (26 octobre 2026) : carte Épisode (`episode`, Structure, proposée dans un scénario seulement), fiche `numero`, `synopsis`, `pivot` ; intrigues et personnages par les fils ; `episodes.ts`. Dans la 1.3.1, une carte Épisode s'affiche en Idée et garde son type (`keep`) ; la ligne `pitch.episodes` reprise n'existe plus, la couverture de la 1.3.1 n'a donc plus de liste d'épisodes.
 
 ### 3. Couverture et auteur
-- [ ] Champs de la couverture (scénario) : saison (la question de la saison, le mystère global) et finSaison (où elle finit, pas la fin de la série : on ne promet pas les saisons suivantes).
-- [ ] Bloc auteur en une page ou moins, tiré du profil de l'appareil (parcours, filmographie ou publications) ; jamais écrit dans le projet.
-- [ ] Champ destinataire (« pourquoi ce guichet ou cette chaîne », une phrase) dans la note d'intention, réglage de l'export plutôt que donnée du projet (bibleExport).
-- [ ] Note d'intention : compteur de longueur discret, repère d'environ une page.
-- [ ] Questionner (CoverAssistant) : questions sur ce que la série n'est pas et pourquoi l'auteur la porte. L'IA ne rédige pas.
+- [x] Champs de la couverture (scénario) : saison (la question de la saison, le mystère global) et finSaison (où elle finit, pas la fin de la série : on ne promet pas les saisons suivantes).
+- [x] Bloc auteur en une page ou moins, tiré du profil de l'appareil (parcours, filmographie ou publications) ; jamais écrit dans le projet.
+- [x] Champ destinataire (« pourquoi ce guichet ou cette chaîne », une phrase) dans la note d'intention, réglage de l'export plutôt que donnée du projet (bibleExport).
+- [x] Note d'intention : compteur de longueur discret, repère d'environ une page.
+- [x] Questionner (CoverAssistant) : questions sur ce que la série n'est pas et pourquoi l'auteur la porte. L'IA ne rédige pas.
+
+Fait : deux champs de plus pour Questionner, `nestPas` (ce qu'elle n'est pas) et `pourquoiMoi` (pourquoi l'auteur la porte, en tête de la page « L'auteur »). Profil : `bio` et `works`.
 
 ### 4. Vérifier : trois questions
 

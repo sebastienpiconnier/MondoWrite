@@ -7,7 +7,7 @@ import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { authorName, cleanProfile, contactLines, hasProfile, legalName, type AuthorProfile } from "../profile";
 
-type TextField = Exclude<keyof AuthorProfile, "address">;
+type TextField = Exclude<keyof AuthorProfile, "address" | "bio" | "works">;
 
 export function ProfilePanel() {
   const t = useT().home.profile;
@@ -71,6 +71,16 @@ export function ProfilePanel() {
               <label htmlFor={`${fieldId}-address`}>{t.address}</label>
               <textarea id={`${fieldId}-address`} rows={3} value={draft.address} autoComplete="street-address" onChange={(e) => set("address", e.target.value)} />
             </div>
+            {/* Pour la page « L'auteur » d'un dossier envoyé (Bible) : jamais écrit dans un projet. */}
+            {(["bio", "works"] as const).map((field) => (
+              <div key={field} className={`profile-field is-address is-${field}`}>
+                <label htmlFor={`${fieldId}-${field}`}>{t[field]}</label>
+                <textarea id={`${fieldId}-${field}`} rows={3} value={draft[field]} placeholder={t[`${field}Placeholder`]} aria-describedby={`${fieldId}-${field}Hint`} onChange={(e) => set(field, e.target.value)} />
+                <p className="settings-hint" id={`${fieldId}-${field}Hint`}>
+                  {t.dossierHint}
+                </p>
+              </div>
+            ))}
             <div className="home-buttons">
               <button type="submit" className="home-create">
                 {t.save}

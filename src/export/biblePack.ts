@@ -97,6 +97,8 @@ export interface PackContext {
   lang: string;
   author: string;
   date: Date;
+  /** Profil de l'appareil : parcours et œuvres pour la page « L'auteur » d'un dossier envoyé (jamais dans le projet). */
+  profile?: { bio?: string; works?: string };
 }
 
 /** Pages du pilote jointes en annexe, au plus. */
@@ -170,12 +172,15 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       if (chips.length > 0) blocks.push({ kind: "chips", items: chips });
       const facts = (["dapres", "credits", "statut"] as const).map((k) => ({ label: t.pitch.fields[k], value: clean(p[k]) })).filter((f) => f.value);
       if (facts.length > 0) blocks.push({ kind: "para", small: true, muted: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
-      const presentationTexts = s.kind === "scenario" ? (["resume", "pourquoi", "promesse", "comps", "intention"] as const) : (["resume", "comps", "intention"] as const);
+      const presentationTexts = s.kind === "scenario" ? (["resume", "pourquoi", "promesse", "nestPas", "comps", "intention"] as const) : (["resume", "comps", "intention"] as const);
+      // Pour un tiers, une phrase sur le destinataire termine la note d'intention (réglage de l'export).
+      const recipient = forMe ? "" : clean(options.recipient);
       for (const key of presentationTexts) {
         const text = (p[key] ?? "").trim();
-        if (!text) continue;
+        if (!text && !(key === "intention" && recipient)) continue;
         blocks.push({ kind: "label", text: t.pitch.fields[key] });
         for (const line of text.split(/\n+/).map((l) => l.trim()).filter(Boolean)) blocks.push({ kind: "para", runs: [{ text: line }] });
+        if (key === "intention" && recipient) blocks.push({ kind: "para", runs: [{ text: recipient }] });
       }
       const themes = byType("theme");
       if (themes.length > 0) {
@@ -237,7 +242,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 
     if (part === "structure") {
       if (s.kind === "scenario") {
-        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"), ...episodeBlocks());
+        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"), ...pitchText("saison"), ...pitchText("finSaison"), ...episodeBlocks());
       }
       for (const c of byType("intrigue")) {
         blocks.push({ kind: "h3", text: c.title.trim() || t.bible.untitled, sub: clean(c.fiche?.nature) });
@@ -284,6 +289,19 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     }
   }
 
+  // Page « L'auteur » d'un dossier envoyé : pourquoi il porte la série, parcours, œuvres (profil de l'appareil).
+  if (!forMe) {
+    const why = s.kind === "scenario" ? pitchText("pourquoiMoi") : [];
+    const bio = (ctx.profile?.bio ?? "").split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const works = (ctx.profile?.works ?? "").split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const blocks: PackBlock[] = [
+      ...why,
+      ...bio.map((l): PackBlock => ({ kind: "para", runs: [{ text: l }] })),
+      ...(works.length > 0 ? [{ kind: "label", text: e.works } as PackBlock, { kind: "list", columns: 1, items: works.map((w) => ({ mark: "–", text: w })) } as PackBlock] : []),
+    ];
+    if (blocks.length > 0) sections.push({ part: "presentation", kicker: e.authorKicker, title: ctx.author.trim() || e.authorKicker, blocks });
+  }
+
   // Annexe : les premières pages du pilote (scénario), annoncées par une page ; biblePdf.ts les ajoute après.
   const pilotPages = options.pilot && s.kind === "scenario" && listScenes(s.screenplay?.elements ?? []).length > 0 ? PILOT_PAGES : 0;
   if (pilotPages > 0) sections.push({ part: "structure", kicker: e.annex, title: e.pilotTitle, blocks: [{ kind: "para", runs: [{ text: e.pilotNote }] }] });
@@ -301,7 +319,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   };
 
   /** Un texte de la couverture sous son libellé (un paragraphe par ligne). */
-  function pitchText(key: "arene" | "mecanique" | "episodeType" | "pistes", withLabel = true): PackBlock[] {
+  function pitchText(key: "arene" | "mecanique" | "episodeType" | "saison" | "finSaison" | "pistes" | "pourquoiMoi", withLabel = true): PackBlock[] {
     const text = (s.pitch[key] ?? "").trim();
     if (!text) return [];
     const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l): PackBlock => ({ kind: "para", runs: [{ text: l }] }));

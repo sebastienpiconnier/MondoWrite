@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { cardToFile, fileToCard } from "../storage/markdown";
 import { unknownMeta } from "../store";
+import { readPitch } from "../pitch";
 
 describe("compatibilité avec les versions futures", () => {
   it("une carte garde ses lignes inconnues, ses champs de fiche inconnus et son type inconnu", () => {
@@ -44,6 +45,11 @@ describe("compatibilité avec les versions futures", () => {
     const again = fileToCard(cardToFile(card))!;
     expect(again).toMatchObject(card);
     expect(again.keep).toBeUndefined();
+  });
+
+  it("les clés de la couverture du lot 6 sont relues (la 1.3.1 les garde aussi, comme clés inconnues)", () => {
+    const pitch = { saison: "Le signal", finSaison: "En mer", nestPas: "Pas d’horreur", pourquoiMoi: "Mon grand-père" };
+    expect(readPitch(pitch)).toEqual(pitch);
   });
 
   it("les clés inconnues de cosmos.json sont repérées pour être réécrites", () => {

@@ -41,6 +41,7 @@ describe("réglages de l'export de la Bible", () => {
       pilot: false,
       grid: false,
       memo: false,
+      recipient: "",
     });
     expect(cleanBibleExport(undefined)).toEqual(DEFAULT_BIBLE_EXPORT);
   });
