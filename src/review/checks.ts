@@ -8,11 +8,18 @@ import { characterName, headingParts, listScenes, sceneAt } from "../screenplay/
 import { wrap } from "../screenplay/paginate";
 import type { CardData } from "../types";
 import { foldName, similarNames } from "./names";
+import { isPrincipal } from "../character";
+import { SERIES_TEXTS, type Pitch } from "../pitch";
+import type { CharacterRow } from "./report";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
-export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter";
+export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
 
-export const RULE_ORDER: RuleKey[] = ["similarNames", "unknownCharacter", "longAction", "headingFormat", "emptyElement", "extraSpaces"];
+/** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
+export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes";
+export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes"];
+
+export const RULE_ORDER: RuleKey[] = ["similarNames", "unknownCharacter", "longAction", "headingFormat", "emptyElement", "extraSpaces", "principalNotMost", "noGoal", "noEpisodes"];
 
 export interface Finding {
   /** Identifiant stable du point (pour « Ignorer » pendant la session). */
@@ -177,6 +184,33 @@ export function checkManuscript(manuscript: Record<string, string>, order: strin
     }
   });
   return sortFindings(out);
+}
+
+/** Un scénario est une série si la couverture le dit (format) ou si « Écrire la série » est commencée. */
+export const isSeries = (pitch: Pitch) => /s[ée]rie|series/i.test(pitch.format ?? "") || SERIES_TEXTS.some((k) => pitch[k]?.trim()) || !!pitch.episodes?.trim();
+
+/**
+ * Questions sur l'histoire, pour le roman comme pour le scénario : le personnage marqué principal n'est pas
+ * celui qu'on voit le plus (statistiques des personnages, `rows`) ; un principal ne dit pas ce qu'il veut ;
+ * une série sans épisode. Jamais une erreur : l'auteur peut répondre « C'est voulu ».
+ */
+export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman" | "scenario", pitch: Pitch): Finding[] {
+  const out: Finding[] = [];
+  const principals = cards.filter(isPrincipal);
+  const scenesOf = (id: string) => rows.find((r) => r.id === id)?.scenes ?? 0;
+  if (principals.length > 0) {
+    const best = Math.max(...principals.map((c) => scenesOf(c.id)));
+    const top = rows.filter((r) => r.id && !principals.some((c) => c.id === r.id)).sort((a, b) => b.scenes - a.scenes)[0];
+    if (top && top.scenes > best) {
+      const main = principals.find((c) => scenesOf(c.id) === best)!;
+      out.push({ key: `principalNotMost:${main.id}:${top.id}`, rule: "principalNotMost", at: -1, scene: 0, sceneId: main.id, text: "", names: [main.title.trim(), top.name], counts: [best, top.scenes] });
+    }
+  }
+  for (const c of principals) {
+    if (!c.fiche?.objectif?.trim() && c.title.trim()) out.push({ key: `noGoal:${c.id}`, rule: "noGoal", at: -1, scene: 0, sceneId: c.id, text: "", names: [c.title.trim()] });
+  }
+  if (kind === "scenario" && isSeries(pitch) && !cards.some((c) => c.type === "episode")) out.push({ key: "noEpisodes", rule: "noEpisodes", at: -1, scene: 0, sceneId: null, text: "" });
+  return out;
 }
 
 /** Par règle (dans l'ordre de `RULE_ORDER`), puis dans l'ordre du texte. */

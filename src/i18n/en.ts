@@ -692,6 +692,9 @@ export const en: Messages = {
       headingFormat: "Incomplete heading",
       emptyElement: "Empty element",
       extraSpaces: "Extra spaces",
+      principalNotMost: "The main character",
+      noGoal: "What a main character wants",
+      noEpisodes: "The episodes",
     },
     hints: {
       similarNames: "Probably the same name spelled two ways.",
@@ -700,6 +703,9 @@ export const en: Messages = {
       headingFormat: "A heading says INT. or EXT., the location, then the time (DAY, NIGHT…).",
       emptyElement: "A heading with no text, or a character with no line.",
       extraSpaces: "Two spaces in a row, or a space before a comma or a period.",
+      principalNotMost: "The one we follow most is often the one we think we follow. Not always.",
+      noGoal: "A main character pulls the story by what they want (the “Wants” box of their profile).",
+      noEpisodes: "A series pitch tells its episodes, a few sentences each.",
     },
     items: {
       similarNamesScript: "{where}: “{rare}” ({a}) looks like “{common}” ({b}).",
@@ -710,7 +716,13 @@ export const en: Messages = {
       emptyHeading: "{where}: empty heading",
       emptyCharacter: "{where}: {text}, with no line",
       extraSpaces: "{where}: {text}",
+      principalNotMost: "{name} is marked as main, but {other} is in more scenes ({b} to {a}). Who do we really follow?",
+      noGoal: "What does {name} want?",
+      noEpisodes: "The series has no episode yet: what does each one tell?",
     },
+    intended: "It’s intended",
+    openSheet: "Open the profile",
+    newEpisode: "New episode",
   },
   replace: {
     title: "Find and replace",

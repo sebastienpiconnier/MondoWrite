@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { useStoryFindings } from "./useStoryFindings";
 import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
@@ -135,7 +136,8 @@ export function Manuscript() {
 
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
-  const findings = useMemo(() => checkManuscript(manuscript, order, cards), [manuscript, order, cards]);
+  const storyFindings = useStoryFindings();
+  const findings = useMemo(() => [...checkManuscript(manuscript, order, cards), ...storyFindings], [manuscript, order, cards, storyFindings]);
   const openFindings = useOpenFindings(findings);
   const openReview = () => {
     setSideTab("review");

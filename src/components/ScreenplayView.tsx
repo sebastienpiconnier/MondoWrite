@@ -2,6 +2,7 @@
 // « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
+import { useStoryFindings } from "./useStoryFindings";
 import { usePageSpell } from "./usePageSpell";
 import { StatusDot } from "./SceneStatusPicker";
 import { EdgeHandle } from "./EdgeHandle";
@@ -483,7 +484,8 @@ export function ScreenplayView() {
   useEffect(() => {
     if (focusMode) setToolsOpen(false);
   }, [focusMode]);
-  const findings = useMemo(() => checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), [elements, paper, nodes, lang]);
+  const storyFindings = useStoryFindings();
+  const findings = useMemo(() => [...checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), ...storyFindings], [elements, paper, nodes, lang, storyFindings]);
   const openFindings = useOpenFindings(findings);
   const openReview = () => {
     setSideTab("review");

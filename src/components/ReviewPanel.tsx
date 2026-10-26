@@ -6,7 +6,7 @@ import { create } from "zustand";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
-import { groupFindings, type Finding } from "../review/checks";
+import { STORY_RULES, groupFindings, type Finding } from "../review/checks";
 import { titleCase } from "../screenplay/editor/autocomplete";
 
 /** Points ignorés pendant la session (jamais enregistrés). */
@@ -38,7 +38,7 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
   const replies = (n: number) => (n === 1 ? t.repliesOne : fmt(t.repliesMany, { n }));
 
   const label = (f: Finding): string => {
-    const w = where(f);
+    const w = STORY_RULES.includes(f.rule) ? "" : where(f);
     switch (f.rule) {
       case "similarNames":
         return kind === "script"
@@ -54,7 +54,20 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
         return f.text.trim() ? fmt(t.items.emptyCharacter, { where: w, text: f.text }) : fmt(t.items.emptyHeading, { where: w });
       case "extraSpaces":
         return fmt(t.items.extraSpaces, { where: w, text: f.text });
+      case "principalNotMost":
+        return fmt(t.items.principalNotMost, { name: f.names![0], other: f.names![1], a: f.counts![0], b: f.counts![1] });
+      case "noGoal":
+        return fmt(t.items.noGoal, { name: f.names![0] });
+      case "noEpisodes":
+        return t.items.noEpisodes;
     }
+  };
+  // Une question sur l'histoire mène à la fiche (ou à la Bible), pas à un passage du texte.
+  const go = (f: Finding) => {
+    if (!STORY_RULES.includes(f.rule)) return onGo(f);
+    const s = useCosmos.getState();
+    if (f.sceneId) s.openInBible(f.sceneId);
+    else s.setView("bible");
   };
 
   return (
@@ -71,7 +84,7 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
           <ul className="review-list">
             {g.items.map((f) => (
               <li key={f.key} className="review-item">
-                <button type="button" className="review-go" title={t.goTo} onClick={() => onGo(f)}>
+                <button type="button" className="review-go" title={STORY_RULES.includes(f.rule) ? t.openSheet : t.goTo} onClick={() => go(f)}>
                   {label(f)}
                 </button>
                 <div className="review-actions">
@@ -89,8 +102,20 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
                       {t.createCard}
                     </button>
                   )}
+                  {f.rule === "noEpisodes" && (
+                    <button
+                      type="button"
+                      className="review-primary"
+                      onClick={() => {
+                        const s = useCosmos.getState();
+                        s.openInBible(s.addTitledCard("episode", ""));
+                      }}
+                    >
+                      {t.newEpisode}
+                    </button>
+                  )}
                   <button type="button" className="review-ignore" onClick={() => ignore(f.key)}>
-                    {t.ignore}
+                    {STORY_RULES.includes(f.rule) ? t.intended : t.ignore}
                   </button>
                 </div>
               </li>

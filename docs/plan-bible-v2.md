@@ -199,9 +199,9 @@ Fait : deux champs de plus pour Questionner, `nestPas` (ce qu'elle n'est pas) et
 
 Toujours formulées en questions avec « C'est voulu » (review/checks.ts, RuleKey, textes fr et en).
 
-- [ ] Le personnage marqué principal n'est pas celui qui a le plus de scènes (statistiques existantes).
-- [ ] Un personnage principal n'a pas de « Veut » (objectif).
-- [ ] Aucun épisode renseigné : le dossier promet sans raconter (scénario).
+- [x] Le personnage marqué principal n'est pas celui qui a le plus de scènes (statistiques existantes).
+- [x] Un personnage principal n'a pas de « Veut » (objectif).
+- [x] Aucun épisode renseigné : le dossier promet sans raconter (scénario).
 
 ### 5. Roman : extrait
 - [ ] Option extract des réglages d'export, sur le modèle de pilot : les premières pages du manuscrit en annexe pour un éditeur (nombre borné, comme PILOT_PAGES).

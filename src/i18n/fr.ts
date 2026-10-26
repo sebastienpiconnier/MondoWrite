@@ -671,6 +671,9 @@ export const fr = {
       headingFormat: "En-tête incomplet",
       emptyElement: "Élément vide",
       extraSpaces: "Espaces en trop",
+      principalNotMost: "Le personnage principal",
+      noGoal: "Ce que veut un personnage principal",
+      noEpisodes: "Les épisodes",
     },
     hints: {
       similarNames: "Sans doute le même nom écrit de deux façons.",
@@ -679,6 +682,9 @@ export const fr = {
       headingFormat: "Un en-tête dit INT. ou EXT., le décor, puis le moment (JOUR, NUIT…).",
       emptyElement: "Un en-tête sans texte, ou un personnage sans réplique.",
       extraSpaces: "Deux espaces de suite, ou une espace avant une virgule ou un point.",
+      principalNotMost: "Celui qu’on suit le plus est souvent celui qu’on croit suivre. Pas toujours.",
+      noGoal: "Un personnage principal tire l’histoire par ce qu’il veut (case « Veut » de sa fiche).",
+      noEpisodes: "Un dossier de série raconte ses épisodes, en quelques phrases chacun.",
     },
     items: {
       similarNamesScript: "{where} : « {rare} » ({a}) ressemble à « {common} » ({b}).",
@@ -689,7 +695,13 @@ export const fr = {
       emptyHeading: "{where} : en-tête vide",
       emptyCharacter: "{where} : {text}, sans réplique",
       extraSpaces: "{where} : {text}",
+      principalNotMost: "{name} est le personnage principal, mais {other} est dans plus de scènes ({b} contre {a}). Qui suit-on vraiment ?",
+      noGoal: "Que veut {name} ?",
+      noEpisodes: "La série n’a pas encore d’épisode : que raconte chacun ?",
     },
+    intended: "C’est voulu",
+    openSheet: "Ouvrir la fiche",
+    newEpisode: "Nouvel épisode",
   },
   replace: {
     title: "Rechercher et remplacer",

@@ -8,6 +8,8 @@ import { buildBiblePack, type PackSource } from "../export/biblePack";
 import { cleanProfile } from "../profile";
 import { fr } from "../i18n/fr";
 import { en } from "../i18n/en";
+import { RULE_ORDER, STORY_RULES, checkStory } from "../review/checks";
+import type { CardData } from "../types";
 
 const source = (kind: "roman" | "scenario" = "scenario"): PackSource => ({
   title: "Veilleurs",
@@ -74,5 +76,42 @@ describe("destinataire et page « L'auteur »", () => {
     expect(cleanOptions({ recipient: 3 }).recipient).toBe("");
     expect(cleanOptions({ recipient: "x".repeat(500) }).recipient).toHaveLength(300);
     expect(cleanProfile({ bio: " Une\n\n deux ", works: 4 })).toMatchObject({ bio: "Une\ndeux", works: "" });
+  });
+});
+
+describe("Vérifier : trois questions sur l'histoire", () => {
+  const row = (id: string, name: string, scenes: number) => ({ id, name, gender: "", scenes, lines: 0, words: 0, share: 0, first: null, last: null });
+  const people: CardData[] = [
+    { id: "a", type: "personnage", title: "Inès", html: "", fiche: { principal: "oui" } },
+    { id: "b", type: "personnage", title: "Yann", html: "", fiche: { objectif: "Partir" } },
+  ];
+
+  it("le principal n'est pas le plus présent, et ne dit pas ce qu'il veut", () => {
+    const found = checkStory(people, [row("a", "Inès", 2), row("b", "Yann", 5)], "roman", {});
+    expect(found.map((f) => f.rule)).toEqual(["principalNotMost", "noGoal"]);
+    expect(found[0]).toMatchObject({ sceneId: "a", names: ["Inès", "Yann"], counts: [2, 5] });
+    // Le plus présent, avec un « Veut » : rien à dire.
+    const fine = checkStory([{ ...people[0], fiche: { principal: "oui", objectif: "Comprendre" } }, people[1]], [row("a", "Inès", 5), row("b", "Yann", 2)], "roman", {});
+    expect(fine).toEqual([]);
+    // Personne de marqué principal : aucune de ces questions.
+    expect(checkStory([people[1]], [row("b", "Yann", 5)], "roman", {})).toEqual([]);
+  });
+
+  it("une série sans épisode, seulement pour une série", () => {
+    expect(checkStory([], [], "scenario", { format: "Série, épisodes de 52 min" }).map((f) => f.rule)).toEqual(["noEpisodes"]);
+    expect(checkStory([], [], "scenario", { arene: "Un phare" }).map((f) => f.rule)).toEqual(["noEpisodes"]);
+    expect(checkStory([], [], "scenario", { format: "Long métrage" })).toEqual([]);
+    expect(checkStory([], [], "roman", { format: "Série" })).toEqual([]);
+    expect(checkStory([{ id: "e", type: "episode", title: "Un", html: "" }], [], "scenario", { format: "Série" })).toEqual([]);
+  });
+
+  it("chaque question a ses textes, dans les deux langues", () => {
+    for (const r of STORY_RULES) {
+      expect(RULE_ORDER).toContain(r);
+      for (const t of [fr, en]) {
+        expect(t.review.rules[r as keyof typeof t.review.rules]).toBeTruthy();
+        expect(t.review.hints[r as keyof typeof t.review.hints]).toBeTruthy();
+      }
+    }
   });
 });
