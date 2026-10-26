@@ -21,6 +21,12 @@ describe("couverture du projet, fonctions pures", () => {
     expect(readPitch({ genre: "x".repeat(500) }).genre).toHaveLength(120);
   });
 
+  it("garde les clés inconnues qui portent un texte (champs d'une version plus récente)", () => {
+    const p = readPitch({ logline: "x", nouveauChamp: "texte", vide: " ", "../x": "non", nombre: 3 });
+    expect(p).toEqual({ logline: "x", nouveauChamp: "texte" });
+    expect(pitchFilled(p)).toBe(1);
+  });
+
   it("modifier un champ : même objet si rien ne change, champ retiré quand on le vide", () => {
     const a = { genre: "Polar" };
     expect(setPitchField(a, "genre", "Polar")).toBe(a);

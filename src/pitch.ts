@@ -52,7 +52,7 @@ const MAX_FUTURE = 40;
 /**
  * Couverture lue dans cosmos.json : les clés connues et leurs textes non vides. Une clé inconnue (champ d'une
  * version plus récente) qui porte un texte est gardée telle quelle, pour être réécrite : ouvrir le projet ici
- * ne la perd pas. Les versions 1.3 et avant, elles, perdaient ces clés à l'enregistrement.
+ * ne la perd pas. La 1.3.0 et les versions d’avant, elles, perdaient ces clés à l’enregistrement.
  */
 export function readPitch(raw: unknown): Pitch {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
