@@ -289,6 +289,30 @@ await step("lieux", async () => {
   await wait(800);
   await shot("bible-lieux");
 });
+// Lot 7 : une carte Secret, sa fiche remplie (rubrique Secrets de la Structure).
+await step("secret", async () => {
+  await page.getByRole("button", { name: T(/^Secrets/, /^Secrets/) }).first().click();
+  await wait(600);
+  await page.getByRole("button", { name: T("Nouvelle fiche : Secret", "New entry: Secret") }).first().click();
+  await wait(600);
+  await page.keyboard.type(T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother"));
+  await page.keyboard.press("Enter");
+  // Fiche vide : repliée, on l'ouvre.
+  const entry = page.locator(".bible-entry").filter({ has: page.locator(`input[value="${T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother")}"]`) }).first();
+  await entry.locator(".sheet-toggle").first().click();
+  await wait(300);
+  const fill = async (label, text) => {
+    await page.getByLabel(label, { exact: true }).first().fill(text);
+    await wait(150);
+  };
+  await fill(T("La vérité", "The truth"), T("Ils se sont croisés jadis, quand elle chassait au bois.", "They met long ago, when she hunted in the woods."));
+  await fill(T("Enjeu", "Stakes"), T("L’enfant croirait-elle encore sa Mère-grand ?", "Would the child still trust her grandmother?"));
+  await fill(T("Quand et comment il éclate", "When and how it comes out"), T("Dans le lit, par une phrase de trop du Loup.", "In the bed, when the Wolf says one word too many."));
+  await page.getByLabel(T("Certitude", "Certainty"), { exact: true }).first().selectOption("provisoire");
+  await wait(400);
+  await entry.scrollIntoViewIfNeeded();
+  await shot("bible-secret");
+});
 await step("rubriques", async () => {
   await page.getByRole("button", { name: T("Choisir et ranger les rubriques", "Choose and order sections") }).click();
   await wait(400);
