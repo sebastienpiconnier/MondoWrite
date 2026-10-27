@@ -1,6 +1,8 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { isPhone } from "./components/usePhone";
+import { capturedCard, fileCards } from "./inbox";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
@@ -371,6 +373,10 @@ interface CosmosState {
   addCard: (pos: { x: number; y: number }, type?: CardType, height?: number) => string;
   /** Carte créée depuis une autre vue (Bible, scénario) : posée sur la première place libre, sans prendre le focus. */
   addTitledCard: (type: CardType, title: string) => string;
+  /** Carnet : une capture (première ligne = titre) devient une carte à ranger. Rend son identifiant, ou null si vide. */
+  captureCard: (type: CardType, text: string) => string | null;
+  /** Ces cartes sont rangées : elles quittent « À ranger ». */
+  fileInbox: (ids: string[]) => void;
   /** Tire un fil entre deux cartes s'il n'y en a pas, sinon retire celui (ou ceux) qui les relie. */
   toggleLink: (a: string, b: string) => void;
   /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
@@ -1582,6 +1588,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     redo: () => restore("future"),
     revealCard: (id) => {
       if (!get().nodes.some((n) => n.id === id)) return;
+      // Téléphone (Carnet) : pas de canevas, la carte s'ouvre dans la Bible.
+      if (isPhone()) return get().openInBible(id);
       // La carte est mise en avant (les autres s'estompent) jusqu'au prochain clic sur le fond ou Échap.
       set({ view: "toile", focusId: id, spotlightId: id, nodes: get().nodes.map((n) => ({ ...n, selected: n.id === id })) });
     },
@@ -1931,6 +1939,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
         cardChanges.filter((c) => c.type !== "remove"),
         trashed ? trashed.nodes : nodes,
       );
+      // Carnet : une carte posée à la main sur le canevas a trouvé sa place, elle quitte « À ranger ».
+      const placed = new Set(cardChanges.flatMap((c) => (c.type === "position" && c.dragging === false ? [c.id] : [])));
+      if (placed.size > 0) nextNodes = fileCards(nextNodes, placed);
       // Carte élargie par son bord : seule la largeur est retenue, la hauteur suit toujours le contenu.
       if (widened.size > 0) {
         nextNodes = nextNodes.map((n) => {
@@ -1954,7 +1965,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record();
       // Les fils sont "flottants" : on ignore les points de connexion utilisés pour les tirer.
       const edge = { source: c.source, target: c.target, sourceHandle: null, targetHandle: null };
-      set({ edges: addEdge({ ...edge, id: newId(), label: "", type: "floating" }, get().edges) });
+      // Carnet : une carte reliée a trouvé sa place, elle quitte « À ranger ».
+      set({ edges: addEdge({ ...edge, id: newId(), label: "", type: "floating" }, get().edges), nodes: fileCards(get().nodes, new Set([c.source, c.target])) });
       touch();
     },
 
@@ -1967,6 +1979,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ nodes: [...get().nodes.map((n) => ({ ...n, selected: false })), node], pendingFocusId: card.id });
       touch();
       return card.id;
+    },
+    captureCard: (type, text) => {
+      const card = capturedCard(newId(), type, text);
+      if (!card) return null;
+      record();
+      const spot = firstFreeCell(occupied());
+      set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
+      touch();
+      return card.id;
+    },
+    fileInbox: (ids) => {
+      const nodes = fileCards(get().nodes, new Set(ids));
+      if (nodes === get().nodes) return;
+      record();
+      set({ nodes });
+      touch();
     },
     addTitledCard: (type, title) => {
       record();
@@ -1990,7 +2018,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (linked || source === target) return;
       record();
       const edge = { source, target, sourceHandle: null, targetHandle: null };
-      set({ edges: addEdge({ ...edge, id: newId(), label, type: "floating" }, get().edges) });
+      set({ edges: addEdge({ ...edge, id: newId(), label, type: "floating" }, get().edges), nodes: fileCards(get().nodes, new Set([source, target])) });
       touch();
     },
     updateCard: (id, patch) => {

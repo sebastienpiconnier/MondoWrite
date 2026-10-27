@@ -78,6 +78,11 @@ export interface CardData {
    * frontmatter, champs de la fiche, type de carte. Gardé tel quel et réécrit, jamais affiché.
    */
   keep?: { front?: Record<string, string>; fiche?: Record<string, string>; type?: string };
+  /**
+   * Carnet (iPhone) : carte capturée en passant, encore à ranger. Elle attend dans « À ranger » du canevas jusqu'à
+   * ce qu'on la déplace, qu'on la relie ou qu'on la dise rangée. Écrit seulement quand c'est vrai.
+   */
+  inbox?: boolean;
   /** Carte dans la corbeille (fichier de corbeille/) : jour, place sur le canevas, fils, scène du scénario. */
   trashed?: import("./trash").TrashInfo;
   [key: string]: unknown; // requis par React Flow pour data

@@ -59,7 +59,8 @@ export const frameBox = (f: FrameNode): Box => ({
   width: f.width ?? f.measured?.width ?? FRAME_SIZE.width,
   height: f.height ?? f.measured?.height ?? FRAME_SIZE.height,
 });
-export type View = "toile" | "plan" | "bible" | "manuscrit";
+/** « carnet » : le Carnet du téléphone (capture, boîte de réception) ; sur un écran plus large, c'est le canevas. */
+export type View = "toile" | "plan" | "bible" | "manuscrit" | "carnet";
 export type SaveStatus = "enregistre" | "modifie" | "enregistrement" | "erreur";
 
 export const CARD_WIDTH = 240;

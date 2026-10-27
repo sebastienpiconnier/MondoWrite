@@ -19,6 +19,7 @@ import { heldCardIds, useCosmos } from "../store";
 import { filterActive, hiddenCards, hiddenFrames } from "../canvasFilter";
 import { boxes, frameBox } from "../projectState";
 import { CanvasFilterMenu } from "./CanvasFilterMenu";
+import { InboxMenu } from "./InboxMenu";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
@@ -753,6 +754,7 @@ export function Toile() {
           <span className="tool-label" aria-hidden="true">{t.organize.short}</span>
         </button>
         <CanvasFilterMenu />
+        <InboxMenu />
         <button
           type="button"
           className={`icon-button has-label${selecting ? " is-on" : ""}`}

@@ -159,6 +159,41 @@ export const fr = {
     plan: "Plan",
     bible: "Bible",
     manuscrit: "Manuscrit",
+    carnet: "Carnet",
+  },
+
+  // Carnet du téléphone : capturer en passant, ranger plus tard sur le canevas.
+  carnet: {
+    aria: "Carnet",
+    title: "Carnet",
+    intro: "Note ce qui te vient. Tout arrive dans « À ranger » : tu lui trouveras sa place sur le canevas, depuis l’iPad ou l’ordinateur.",
+    typesAria: "Type de la note",
+    placeholder: "Une idée, une question, un nom…",
+    fieldAria: "Ta note : la première ligne devient le titre",
+    hint: "La première ligne devient le titre. Une adresse web seule fait un lien.",
+    add: "Garder",
+    added: "Gardé dans « À ranger ».",
+    inbox: "À ranger",
+    inboxCount: "À ranger · {n}",
+    empty: "Rien à ranger pour l’instant.",
+    open: "Ouvrir la fiche de « {title} »",
+    filed: "C’est rangé",
+    filedAria: "« {title} » est rangé : retirer de la liste",
+    trash: "Mettre « {title} » à la corbeille",
+    untitled: "Sans titre",
+  },
+
+  // « À ranger » sur le canevas (iPad, ordinateur) : ce qui a été capturé sur le téléphone.
+  inbox: {
+    button: "À ranger · {n}",
+    buttonAria: "{n} cartes à ranger, capturées dans le Carnet",
+    title: "À ranger",
+    hint: "Déplace une carte sur le canevas ou relie-la : elle quitte cette liste.",
+    show: "Montrer « {title} » sur le canevas",
+    filed: "C’est rangé",
+    filedAria: "« {title} » est rangé",
+    allFiled: "Tout est rangé",
+    close: "Fermer",
   },
 
   status: {

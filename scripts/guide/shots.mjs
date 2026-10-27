@@ -553,4 +553,22 @@ await view(T("Manuscrit", "Manuscript"));
 await shot("sombre-manuscrit");
 await page.close();
 
+// iPhone : le Carnet, deux notes à ranger.
+await open({ viewport: { width: 390, height: 844 }, scale: 2, mobile: true, touch: true });
+await startExample();
+await closeTour();
+await step("carnet", async () => {
+  await page.getByRole("radio", { name: T("Question", "Question") }).tap();
+  await page.getByLabel(T(/Ta note/, /Your note/)).fill(T("Pourquoi le Loup ne mange-t-il pas l’enfant dans le bois ?\nÀ cause des bûcherons, mais pas seulement.", "Why doesn’t the Wolf eat the child in the woods?\nBecause of the woodcutters, but not only."));
+  await page.getByRole("button", { name: T("Garder", "Keep") }).tap();
+  await page.getByRole("radio", { name: T("Objet", "Object") }).tap();
+  await page.getByLabel(T(/Ta note/, /Your note/)).fill(T("Le petit pot de beurre", "The little pot of butter"));
+  await page.getByRole("button", { name: T("Garder", "Keep") }).tap();
+  await page.getByRole("radio", { name: T("Idée", "Idea") }).tap();
+  await page.getByLabel(T(/Ta note/, /Your note/)).fill(T("Et si le Loup racontait", "What if the Wolf told it"));
+  await page.locator(".carnet-field").blur();
+  await shot("iphone-carnet");
+});
+await page.close();
+
 await browser.close();

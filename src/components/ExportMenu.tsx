@@ -176,7 +176,7 @@ export function ExportMenu() {
   const failed = message === t.failed || message === x.emptyManuscript || message === x.emptyCanvas;
 
   return (
-    <div className="settings" ref={rootRef}>
+    <div className="settings export-menu" ref={rootRef}>
       <button
         ref={buttonRef}
         type="button"

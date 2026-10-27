@@ -21,12 +21,17 @@ import { fmt, useT } from "./i18n";
 import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
 import { ConflictNotice } from "./components/ConflictNotice";
+import { Carnet } from "./components/Carnet";
+import { shownView, usePhone } from "./components/usePhone";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 
 export function App() {
   const t = useT();
-  const view = useCosmos((s) => s.view);
+  const storedView = useCosmos((s) => s.view);
+  // Téléphone : Carnet à la place du canevas et du Plan (usePhone.ts).
+  const phone = usePhone();
+  const view = shownView(storedView, phone);
   const kind = useCosmos((s) => s.kind);
   const loaded = useCosmos((s) => s.loaded);
   const screen = useCosmos((s) => s.screen);
@@ -219,6 +224,7 @@ export function App() {
         <ConflictNotice />
         <main className="app-main">
           {view === "toile" && <Toile />}
+          {view === "carnet" && <Carnet />}
           {view === "bible" && <Bible />}
           {view === "plan" && (kind === "scenario" ? <Sequencier /> : <Plan />)}
           {/* Même vue, deux ateliers : prose pour un roman (à venir), format cinéma pour un scénario. */}

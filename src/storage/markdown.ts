@@ -133,6 +133,8 @@ export function cardToFile(card: CardData): string {
     ...(card.questions && card.questions.length > 0 ? [`questions: ${JSON.stringify(card.questions)}`] : []),
     ...(card.reponses && Object.keys(card.reponses).length > 0 ? [`reponses: ${JSON.stringify(card.reponses)}`] : []),
     ...(card.trashed ? [`corbeille: ${JSON.stringify(card.trashed)}`] : []),
+    // Carnet (iPhone) : carte capturée, encore à ranger sur le canevas.
+    ...(card.inbox ? ["inbox: true"] : []),
     // Ce qu'une version plus récente a écrit et que celle-ci ignore : réécrit tel quel.
     ...Object.entries(card.keep?.front ?? {}).map(([key, value]) => `${key}: ${value}`),
     "---",
@@ -182,6 +184,7 @@ export function fileToCard(text: string): CardData | null {
   if (reponses) card.reponses = reponses;
   const trashed = readTrashInfo(parseJson(fields.corbeille));
   if (trashed) card.trashed = trashed;
+  if (fields.inbox === "true") card.inbox = true;
   const keep = keepUnknown(fields, rawFiche, fiche);
   if (fields.type && fields.type !== type && KEY_RE.test(fields.type)) keep.type = fields.type;
   if (Object.keys(keep).length > 0) card.keep = keep;
@@ -189,7 +192,7 @@ export function fileToCard(text: string): CardData | null {
 }
 
 /** Lignes du frontmatter que cette version écrit elle-même. */
-const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille"]);
+const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille", "inbox"]);
 const KEY_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 
 /**

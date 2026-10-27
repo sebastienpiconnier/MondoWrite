@@ -384,7 +384,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [pendingFocus]);
 
   return (
-    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${lifted ? " is-lifted" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
+    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${lifted ? " is-lifted" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}${data.inbox ? " is-inbox" : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}

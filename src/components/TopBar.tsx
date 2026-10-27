@@ -9,13 +9,18 @@ import { Search } from "./Search";
 import { TodoPanel } from "./TodoPanel";
 import { useTopbarFit } from "./useTopbarFit";
 import { useSettings } from "../settings";
+import { shownView, usePhone } from "./usePhone";
 
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
+/** Téléphone (Carnet) : écrire, consulter, capturer. Le canevas et le Plan restent sur iPad et ordinateur. */
+const PHONE_VIEWS: View[] = ["manuscrit", "bible", "carnet"];
 
 export function TopBar() {
   const { t, views, kind } = useVocab();
   const lang = useSettings((s) => s.lang);
   const { view, setView, status, save, closeProject, title, setTitle } = useCosmos();
+  const phone = usePhone();
+  const current = shownView(view, phone);
 
   // Téléphone : les actions se rangent derrière « ⋯ » ; les vues passent en barre d'onglets en bas (CSS).
   const [more, setMore] = useState(false);
@@ -59,12 +64,12 @@ export function TopBar() {
       </div>
 
       <nav className="views" aria-label={t.views.aria}>
-        {VIEWS.map((v) => (
+        {(phone ? PHONE_VIEWS : VIEWS).map((v) => (
           <button
             key={v}
             type="button"
-            className={view === v ? "is-current" : ""}
-            aria-current={view === v ? "page" : undefined}
+            className={current === v ? "is-current" : ""}
+            aria-current={current === v ? "page" : undefined}
             onClick={() => {
               setView(v);
               setMore(false);

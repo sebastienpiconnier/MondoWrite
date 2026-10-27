@@ -4,6 +4,9 @@
 @media (max-width: 720px) {
   /* Fenêtre Statistiques : trop de colonnes pour un téléphone, son bouton n'y est pas. */
   .stats-button { display: none !important; }
+  /* Carnet : le téléphone sert à écrire, consulter et capturer. Les exports et le rangement des rubriques de la
+     Bible restent sur iPad et ordinateur, comme le canevas (« Voir sur le canevas » ouvrirait la Bible elle-même). */
+  .topbar .export-menu, .toc-tools, .bible-see-canvas { display: none !important; }
   /* Haut : le nom, le titre du projet et « ⋯ ». */
   .topbar { position: relative; display: flex; align-items: center; gap: 8px; padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
   .topbar > .brand { flex: 1; min-width: 0; }
