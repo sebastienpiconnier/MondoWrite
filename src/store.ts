@@ -329,6 +329,8 @@ interface CosmosState {
   importProjectZip: () => Promise<void>;
   /** Mobile : l'auteur choisit dans Fichiers le dossier cloud (OneDrive, Dropbox…) qui contient ses projets. */
   chooseCloudFolder: () => Promise<void>;
+  /** Range dans `projets` les projets restés dans un doublon créé par iCloud (« projets 2 »), puis relit la liste. */
+  gatherStrayProjects: () => Promise<void>;
   /** Mobile : revient à l'espace de l'app (le dossier cloud n'est pas touché). */
   leaveCloudFolder: () => Promise<void>;
   /** Case « Synchroniser les projets avec iCloud Drive » (iPhone, iPad, Mac), puis liste des projets relue. */
@@ -1653,6 +1655,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
     chooseCloudFolder: async () => {
       set({ importNotice: null, homeNotice: false, openFailed: false });
       if (await storage.cloud?.pick()) await refreshProjects();
+    },
+    gatherStrayProjects: async () => {
+      await storage.gatherStray?.().catch(() => 0);
+      await refreshProjects();
     },
     leaveCloudFolder: async () => {
       storage.cloud?.clear();

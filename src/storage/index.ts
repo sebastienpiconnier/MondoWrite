@@ -42,7 +42,13 @@ export interface Storage {
    * Projets synchronisés devenus inaccessibles : « icloud » (iCloud Drive coupé alors qu'il servait), « folder » (dossier
    * cloud introuvable : service arrêté, disque débranché, accès retiré), sinon null. Les fichiers ne sont pas perdus.
    */
-  cloudIssue?(): Promise<"icloud" | "folder" | null>;
+  cloudIssue?(): Promise<"icloud" | "folder" | "waiting" | null>;
+  /**
+   * Projets restés dans un doublon du dossier des projets iCloud (« projets 2 », créé par iCloud quand deux appareils
+   * créent le même dossier à la fois) : leur nombre. `gatherStray` les range dans `projets` et rend combien ont bougé.
+   */
+  strayProjects?(): Promise<number>;
+  gatherStray?(): Promise<number>;
   /** Le projet ouvert est-il synchronisé par iCloud (pour dire « celle d'iCloud » dans un conflit) ? Faux ailleurs. */
   inIcloud?(): boolean;
   /** Nom du dossier projet choisi (null dans le navigateur, sur mobile, ou si rien n'est choisi). */

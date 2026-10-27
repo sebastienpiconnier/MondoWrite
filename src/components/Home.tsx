@@ -20,16 +20,19 @@ export function Home() {
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
-  const { openProject, openFolder, createProject, tryExample, unlistProject, deleteProject, importFile, importProjectZip, chooseCloudFolder, leaveCloudFolder } = useCosmos.getState();
+  const { openProject, openFolder, createProject, tryExample, unlistProject, deleteProject, importFile, importProjectZip, chooseCloudFolder, leaveCloudFolder, gatherStrayProjects } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
   const [busy, setBusy] = useState(false);
   // Projets synchronisés devenus inaccessibles (iCloud coupé, dossier cloud introuvable) : on le dit, sans alarmer.
-  const [cloudIssue, setCloudIssue] = useState<"icloud" | "folder" | null>(null);
+  const [cloudIssue, setCloudIssue] = useState<"icloud" | "folder" | "waiting" | null>(null);
+  // Projets restés dans un doublon « projets 2 » créé par iCloud : on propose de les remettre avec les autres.
+  const [stray, setStray] = useState(0);
   useEffect(() => {
     let alive = true;
     void storage.cloudIssue?.().then((issue) => alive && setCloudIssue(issue));
+    void storage.strayProjects?.().then((n) => alive && setStray(n)).catch(() => undefined);
     return () => {
       alive = false;
     };
@@ -92,11 +95,41 @@ export function Home() {
 
         {cloudIssue && (
           <p className="home-alert" role="status">
-            {cloudIssue === "icloud"
-              ? storage.canPickFolder
-                ? h.icloudGonePc
-                : h.icloudGone
-              : fmt(h.cloudGone, { name: storage.cloud?.name() ?? "" })}
+            {cloudIssue === "waiting"
+              ? h.icloudWaitingPc
+              : cloudIssue === "icloud"
+                ? storage.canPickFolder
+                  ? h.icloudGonePc
+                  : h.icloudGone
+                : fmt(h.cloudGone, { name: storage.cloud?.name() ?? "" })}
+            {/* Le choix du dossier s'ouvre dans le dossier iCloud de l'app (syncFolderHint) : le geste qui dépanne. */}
+            {storage.cloud && storage.canPickFolder && (
+              <>
+                {" "}
+                <button type="button" className="link-button" disabled={busy} onClick={() => run(chooseCloudFolder)}>
+                  {h.cloudFind}
+                </button>
+              </>
+            )}
+          </p>
+        )}
+
+        {stray > 0 && (
+          <p className="home-alert" role="status">
+            {stray === 1 ? h.strayOne : fmt(h.strayMany, { n: stray })}{" "}
+            <button
+              type="button"
+              className="link-button"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  await gatherStrayProjects();
+                  setStray((await storage.strayProjects?.().catch(() => 0)) ?? 0);
+                })
+              }
+            >
+              {h.strayGather}
+            </button>
           </p>
         )}
 
