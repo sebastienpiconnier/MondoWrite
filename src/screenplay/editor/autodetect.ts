@@ -9,7 +9,21 @@ import { Extension, InputRule } from "@tiptap/react";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
 
-const UPPERCASE = new Set(["sceneHeading", "character", "transition"]);
+export const UPPERCASE = new Set(["sceneHeading", "character", "transition"]);
+
+/** Posée par un changement de type (Tab, barre d'éléments) : la casse d'avant est alors retenue. */
+export const RETYPE_META = "screenplayRetype";
+
+/**
+ * Texte d'avant les majuscules : une action passée en personnage (ou en-tête, transition) puis remise en
+ * action, sans avoir été retouchée, retrouve sa casse. Oublié dès que le texte de l'élément change.
+ */
+export interface CaseMemory {
+  pos: number;
+  original: string;
+  upper: string;
+}
+export const caseMemory = new PluginKey<CaseMemory | null>("screenplayCaseMemory");
 /** Éléments où « int. » ou « ext. » tapés en tête font un en-tête de scène. */
 const HEADING_FROM = new Set(["action", "character", "transition"]);
 
@@ -54,6 +68,20 @@ export const Autodetect = Extension.create<AutodetectOptions>({
     const locale = this.options.locale;
     let view: EditorView | null = null;
     return [
+      new Plugin<CaseMemory | null>({
+        key: caseMemory,
+        state: {
+          init: () => null,
+          apply(tr, value) {
+            const set = tr.getMeta(caseMemory) as CaseMemory | null | undefined;
+            if (set !== undefined) return set;
+            if (!value || !tr.docChanged) return value;
+            const pos = tr.mapping.map(value.pos, -1);
+            const node = tr.doc.nodeAt(pos);
+            return node && node.textContent === value.upper ? { ...value, pos } : null;
+          },
+        },
+      }),
       new Plugin({
         key: new PluginKey("screenplayAutodetect"),
         view(editorView) {
@@ -85,6 +113,8 @@ export const Autodetect = Extension.create<AutodetectOptions>({
 
           const start = $from.start(1);
           const tr = state.tr.insertText(upper, start, start + text.length);
+          // Changement de type : on retient le texte d'avant, rendu si l'élément revient à un type en casse libre.
+          if (transactions.some((t) => t.getMeta(RETYPE_META))) tr.setMeta(caseMemory, { pos: start - 1, original: text, upper });
           const keep = upper.length === text.length;
           return tr.setSelection(
             keep ? TextSelection.create(tr.doc, anchor, head) : TextSelection.create(tr.doc, start + upper.length),
