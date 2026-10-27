@@ -214,6 +214,68 @@ Plan des tomes d'une saga de romans, registre de continuité (mises en place et 
 
 Les critères habituels (tests, français et anglais, compatibilité avec main dans les deux sens, CLAUDE.md, guide et captures). Les nouvelles clés (saison, finSaison, épisodes, réglages bibleExport) sont à lister dans KNOWN_META et pitch, et à tester dans forward-compat.test.ts avec la 1.3.1.
 
+## Lot 7 : le modèle de Final Draft et les cartes du monde (proposé le 27 octobre 2026)
+
+Deux sources : le modèle de bible de série de Final Draft (*Untitled Series Bible*) et un échange avec ChatGPT sur les cartes d'une bible. Même principe que les lots précédents : des ajouts de format seulement, aucun champ obligatoire, rien ne bloque l'export.
+
+### Format (contrat)
+
+- Nouveaux types de carte `evenement`, `objet`, `regle`, `secret`, `groupe`. Dans la 1.3.x, une carte d'un type inconnu s'affiche en Idée et garde son type (`keep.type`).
+- Nouvelles clés de fiche (gardées par `keep.fiche` dans la 1.3.x) et nouvelles clés de `pitch` (gardées depuis la 1.3.1).
+- Fiche d'un fil : bloc facultatif `wires` de `cosmos.json` (`{ "<id du fil>": { "histoire": "…", "enjeu": "…", "evolution": "…" } }`), dans `KNOWN_META` ; gardé par `metaKeep` dans la 1.3.x. Un fil supprimé emporte sa fiche (relu : une fiche sans fil est oubliée).
+
+### 1. Cinq types de carte
+
+| Type | Partie | Fiche |
+|---|---|---|
+| Événement (`evenement`) | Univers | `quand`, `consequences`, `recit` (ce qu'on en raconte) |
+| Objet (`objet`) | Univers | `origine`, `usage`, `symbole`, `emplacement` |
+| Règle (`regle`) | Univers | `portee`, `exceptions`, `cout`, `transgression` |
+| Groupe (`groupe`) | Univers | `nature`, `but`, `fonctionnement`, `ressources` |
+| Secret (`secret`) | Structure | `verite`, `enjeu`, `indices`, `revelation` |
+
+Qui garde un secret, qui appartient à un groupe, qui porte un objet : les fils du canevas, comme les personnages d'un épisode. La fiche de la Bible les liste (« Reliés »).
+
+- [ ] `types.ts` (`CardType`, `CARD_TYPES`, `BIBLE_ORDER`), `bibleParts.ts`, `character.ts` (`SHEET_FIELDS`), i18n (`t.types`, `t.fiche`), couleurs `--type-*` (clair et sombre, test de contraste), mini-carte, « Organiser » (un cadre par type), filtres et menus.
+- [ ] Bible : rubriques et fiches, liste « Reliés » ; export PDF, Word, Markdown (génériques).
+- [ ] Tests : parties, fiches lues et réécrites, compatibilité (type inconnu gardé par la 1.3.x).
+
+### 2. Couverture d'une série (Final Draft)
+
+- [ ] Saisons : champ `saison` de la fiche Épisode ; épisodes triés par saison puis numéro, regroupés par saison dans la Bible et l'export ; colonnes « 2.3 » dans la grille dès deux saisons. Texte `suite` de la couverture : les saisons suivantes en quelques lignes.
+- [ ] Repères : champ `repere` de l'épisode, `milieu` (mi-saison) ou `final` (fin de saison), pastille dans la Bible et l'export.
+- [ ] `avantPilote` : ce qui s'est passé avant le pilote.
+- [ ] Pastilles `forme` (bouclée, feuilletonnante, hybride) et `pilote` (pilote d'installation, pilote type), valeurs libres comme les autres pastilles.
+- [ ] « La mécanique » : libellé et question plus nets (le conflit central, ce qui fabrique les épisodes).
+- [ ] Fiche personnage : `paradoxe` et `dilemme` ; texte `ensemble` de la couverture, « Ce qui les tient ensemble », en tête de la partie Personnages de l'export.
+- [ ] `supports` : « Autres supports » (podcast, roman graphique, jeu), imprimé pour un tiers seulement.
+
+### 3. Fiches
+
+- [ ] Sources (`lien`, `image`, `document`) : `retenir` (ce que j'en retiens) et `fiabilite`.
+- [ ] Question : `etat` (`ouverte`, `decidee`, `abandonnee`) et `decision`. Une question décidée ou abandonnée passe en fin de rubrique, en gris.
+- [ ] Certitude sur toutes les fiches : `certitude` (`etabli`, `provisoire`, `explorer`), choisie dans une liste ; jamais imprimée pour un tiers.
+- [ ] Scène : `but`, `obstacle`, `tournant`, `changement`.
+- [ ] Personnage, sous « Ajouter si utile » : `croyance` (croyance limitante), `valeur`, `angleMort`, `strategie` (et ce qu'elle lui coûte).
+- [ ] Fiche d'un fil entre deux cartes (`wires`) : leur histoire, ce qui se joue entre eux, comment ça évolue. Saisie dans la liste des relations de la Bible.
+
+### 4. Vérifier
+
+Toujours des questions, avec « C'est voulu ».
+
+- [ ] `pilotLength` : le pilote est hors de la longueur attendue pour le format de la couverture (une page par minute environ, de 0,9 à 1,15 fois la durée).
+- [ ] `secretNoReveal` : un secret sans révélation prévue.
+- [ ] `secretNoClue` : un secret qui éclate sans indice.
+- [ ] `objectOnce` : un objet cité dans une seule scène (posé sans servir, ou sert sans être posé).
+
+### 5. Fin du lot
+
+- [ ] Guide (fr, en) et captures ; `CLAUDE.md` ; tests de compatibilité dans `forward-compat.test.ts`.
+
+### Écarté
+
+Registre de continuité complet (qui sait quoi, scène par scène) : c'était le lot 5, retiré. Les règles de « Vérifier » ci-dessus s'en tiennent aux fiches et aux noms cités dans le texte.
+
 ## Compatibilité avec `main` (vérifiée le 26 octobre 2026, à la lecture du code de `main`)
 
 - Projet de la v2 ouvert puis enregistré par la version de `main` (1.3) : `bibleExport` est gardé (clé inconnue de `cosmos.json`, `metaKeep`), les nouveaux champs de fiche aussi (`accroche`, `debut`, `fin`, `principal`, enjeux, `ecriture` : `keep.fiche`). **Mais les nouvelles clés de la couverture sont perdues** (`statut`, `credits`, `dapres` et tout « Écrire la série ») : le `readPitch` de la 1.3 ne garde que ses clés.
