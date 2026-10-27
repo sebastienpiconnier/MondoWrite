@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Droits de l'app Mac : iCloud Drive (documents), même conteneur que l'iPhone et l'iPad. Utilisés seulement par la
+     Release, quand le secret APPLE_PROVISION_PROFILE est posé (release.yml) : TEAM_ID y est remplacé par l'équipe du
+     profil, et le profil est placé dans l'app. Sans profil, ces droits feraient refuser l'app au lancement par macOS :
+     la version de dev et une Release sans profil ne les reçoivent pas. Voir docs/icloud-mac.md. -->
+<plist version="1.0">
+<dict>
+  <key>com.apple.application-identifier</key>
+  <string>TEAM_ID.app.cosmos.ecriture</string>
+  <key>com.apple.developer.team-identifier</key>
+  <string>TEAM_ID</string>
+  <key>com.apple.developer.icloud-container-identifiers</key>
+  <array>
+    <string>iCloud.app.cosmos.ecriture</string>
+  </array>
+  <key>com.apple.developer.ubiquity-container-identifiers</key>
+  <array>
+    <string>iCloud.app.cosmos.ecriture</string>
+  </array>
+  <key>com.apple.developer.icloud-services</key>
+  <array>
+    <string>CloudDocuments</string>
+  </array>
+  <key>com.apple.developer.icloud-container-environment</key>
+  <string>Production</string>
+</dict>
+</plist>

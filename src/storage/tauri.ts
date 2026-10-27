@@ -120,9 +120,13 @@ async function mobileRoot() {
   return join(cloud ?? (await documentDir()), MOBILE_DIR);
 }
 
-/** Les fichiers iCloud pas encore téléchargés sont des repères « .nom.icloud » : on demande leur téléchargement. */
+/**
+ * Les fichiers iCloud pas encore téléchargés sont des repères « .nom.icloud » : on demande leur téléchargement. Sur
+ * iPhone et iPad dans le conteneur de l'app ; sur Mac aussi quand le dossier cloud est celui de l'iPhone (le système ne
+ * répond que si l'app porte le droit iCloud, et rien n'est parcouru hors du conteneur).
+ */
 async function ensureDownloaded(dir: string) {
-  if ((await cloudRoot()) || !(await activeIcloud())) return;
+  if (mobile ? (await cloudRoot()) || !(await activeIcloud()) : !macIcloudOn()) return;
   try {
     let first = 0;
     for (let i = 0; i < 12; i++) {
@@ -246,8 +250,23 @@ const MAC_ICLOUD = "Library/Mobile Documents/iCloud~app~cosmos~ecriture/Document
 const MAC_ICLOUD_OFF = "cosmos:icloud-pc-off";
 const MAC_ICLOUD_NAME = "iCloud Drive";
 
+let macContainer: string | null | undefined;
+
+/**
+ * Dossier Documents du conteneur iCloud vu du Mac. Demandé d'abord au système (`icloud_container`) : une app signée avec
+ * le droit iCloud fait ainsi connaître son conteneur au service iCloud, qui le télécharge dans chaque session (sans
+ * cela, un Mac ne recevait pas les projets créés sur l'iPhone). Sans ce droit (version de dev, Release sans profil),
+ * le système ne répond rien et l'on prend le chemin habituel sous ~/Library/Mobile Documents.
+ */
 async function macIcloudDocs() {
-  return join(await homeDir(), ...MAC_ICLOUD.split("/"));
+  if (macContainer === undefined) {
+    try {
+      macContainer = await invoke<string | null>("icloud_container");
+    } catch {
+      macContainer = null;
+    }
+  }
+  return macContainer ?? join(await homeDir(), ...MAC_ICLOUD.split("/"));
 }
 
 async function macIcloudProjects() {
@@ -560,7 +579,8 @@ export const tauriStorage: Storage = {
             if (!entry.isDirectory || entry.name.startsWith(".")) continue;
             const path = await join(cloud.path, entry.name);
             if (list.some((e) => e.id === path)) continue;
-            if (await exists(await join(path, META_FILE))) list.push({ id: path, name: entry.name, openedAt: 0 });
+            // isProjectDir : aussi un projet iCloud dont cosmos.json n'est pas encore téléchargé (repère « .cosmos.json.icloud »).
+            if (await isProjectDir(path)) list.push({ id: path, name: entry.name, openedAt: 0 });
           }
           // Un projet du dossier cloud supprimé sur un autre appareil quitte la liste (pas ceux d'un disque débranché ailleurs).
           const root = plainPath(cloud.path);

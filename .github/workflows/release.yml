@@ -139,6 +139,44 @@ jobs:
             echo "Signature Apple activée, sans notarisation (clé d'API absente)."
           fi
 
+      # iCloud dans l'app Mac (docs/icloud-mac.md), seulement si le secret APPLE_PROVISION_PROFILE (profil « Developer ID »
+      # qui porte iCloud, en base64) est posé ET que l'app est signée : les droits iCloud sans profil feraient refuser
+      # l'app au lancement. Le profil est placé dans l'app (Contents/embedded.provisionprofile) et les droits de
+      # src-tauri/macos/MondoWrite.entitlements reçoivent l'équipe du profil ; tauri.conf.json est modifié sur cette
+      # machine seulement, rien n'est poussé. Sans le secret, l'app Mac sort comme avant (sans iCloud déclaré).
+      - name: iCloud (macOS)
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_PROVISION_PROFILE: ${{ secrets.APPLE_PROVISION_PROFILE }}
+        run: |
+          if [ -z "$APPLE_PROVISION_PROFILE" ] || [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            echo "::notice::Pas de profil iCloud (ou app non signée) : l'app Mac sort sans iCloud déclaré."
+            exit 0
+          fi
+          profile="src-tauri/macos/embedded.provisionprofile"
+          printf '%s' "$APPLE_PROVISION_PROFILE" | tr -d '\r\n ' | base64 --decode > "$profile"
+          plist="$RUNNER_TEMP/profile.plist"
+          security cms -D -i "$profile" > "$plist"
+          team=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" "$plist")
+          app_id=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.application-identifier" "$plist")
+          if [ "$app_id" != "$team.app.cosmos.ecriture" ]; then
+            echo "::error::Le profil est fait pour « $app_id », pas pour « $team.app.cosmos.ecriture »."
+            exit 1
+          fi
+          if ! /usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.developer.icloud-container-identifiers" "$plist" | grep -q "iCloud.app.cosmos.ecriture"; then
+            echo "::error::Le profil ne porte pas le conteneur iCloud.app.cosmos.ecriture (capacité iCloud à cocher sur l'identifiant d'app)."
+            exit 1
+          fi
+          sed -i '' "s/TEAM_ID/$team/g" src-tauri/macos/MondoWrite.entitlements
+          node -e '
+            const fs = require("fs");
+            const file = "src-tauri/tauri.conf.json";
+            const conf = JSON.parse(fs.readFileSync(file, "utf8"));
+            conf.bundle.macOS = { ...(conf.bundle.macOS ?? {}), entitlements: "macos/MondoWrite.entitlements", files: { "embedded.provisionprofile": "macos/embedded.provisionprofile" } };
+            fs.writeFileSync(file, JSON.stringify(conf, null, 2));
+          '
+          echo "::notice::iCloud déclaré dans l'app Mac (équipe $team)."
+
       # Mises à jour dans l'app, seulement si les secrets du dépôt sont posés : TAURI_SIGNING_PRIVATE_KEY
       # (contenu du fichier de clé privée), TAURI_SIGNING_PRIVATE_KEY_PASSWORD (son mot de passe) et
       # TAURI_UPDATER_PUBKEY (contenu du fichier .pub). Les installeurs sont alors signés pour la mise à jour,
