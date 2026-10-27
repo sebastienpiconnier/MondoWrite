@@ -4,6 +4,7 @@
 
 import { isTauri } from "./platform";
 import { pageInfo } from "./research";
+import { APP_AGENT, viaWebView } from "./imageSources";
 
 const TIMEOUT_MS = 20_000;
 const MAX_BYTES = 2_000_000;
@@ -29,11 +30,16 @@ const IMAGE_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": 
 /** Image d'une page (og:image) : le fichier, s'il s'agit d'une vraie image de taille raisonnable. */
 export async function fetchImage(url: string): Promise<{ name: string; data: Uint8Array } | null> {
   if (!/^https?:\/\//i.test(url)) return null;
-  const doFetch: typeof fetch = isTauri() ? ((await import("@tauri-apps/plugin-http")).fetch as typeof fetch) : fetch;
+  const tauri = isTauri();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await doFetch(url, { method: "GET", headers: { accept: "image/*" }, signal: controller.signal });
+    // Vignette d'Openverse : par le navigateur intégré d'abord (voir imageSources.ts), sinon par le plugin HTTP.
+    let response = tauri && viaWebView(url) ? await fetch(url, { method: "GET", headers: { accept: "image/*" }, signal: controller.signal }).catch(() => null) : null;
+    if (!response?.ok) {
+      const doFetch: typeof fetch = tauri ? ((await import("@tauri-apps/plugin-http")).fetch as typeof fetch) : fetch;
+      response = await doFetch(url, { method: "GET", headers: tauri ? { accept: "image/*", "user-agent": APP_AGENT } : { accept: "image/*" }, signal: controller.signal });
+    }
     if (!response.ok) return null;
     const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
     const ext = IMAGE_TYPES[type];

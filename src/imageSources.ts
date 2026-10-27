@@ -176,13 +176,30 @@ export function parseUnsplash(raw: unknown, page = 1): PhotoPage {
 /** Langue de recherche pour la langue de l'interface (les mots-clés de l'auteur sont dans sa langue). */
 export const searchLang = (lang: string) => (/^[a-z]{2}$/.test(lang) ? lang : "en");
 
+/**
+ * Nom envoyé aux services par le plugin HTTP : Openverse demande aux applications de s'identifier, et son pare-feu
+ * refuse des requêtes anonymes (l'app iPhone recevait une erreur là où le Mac passait).
+ */
+export const APP_AGENT = "MondoWrite (+https://github.com/sebastienpiconnier/MondoWrite)";
+
+/**
+ * Openverse accepte les appels d'une page web (CORS ouvert) : dans l'app, on passe d'abord par le navigateur
+ * intégré (même client que Safari, adresse permise par `connect-src`), puis par le plugin HTTP s'il refuse.
+ */
+export const viaWebView = (url: string) => httpsOn(url, OPENVERSE_API);
+
 async function call(url: string, headers: Record<string, string>): Promise<Response> {
-  const doFetch: typeof fetch = isTauri() ? ((await import("@tauri-apps/plugin-http")).fetch as typeof fetch) : fetch;
+  const tauri = isTauri();
   // Sans réponse au bout de 20 s, on abandonne : la recherche ne reste pas suspendue.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20_000);
   try {
-    return await doFetch(url, { method: "GET", headers, signal: controller.signal });
+    if (tauri && viaWebView(url)) {
+      const direct = await fetch(url, { method: "GET", headers, signal: controller.signal }).catch(() => null);
+      if (direct && direct.status !== 401 && direct.status !== 403) return direct;
+    }
+    const doFetch: typeof fetch = tauri ? ((await import("@tauri-apps/plugin-http")).fetch as typeof fetch) : fetch;
+    return await doFetch(url, { method: "GET", headers: tauri ? { ...headers, "user-agent": APP_AGENT } : headers, signal: controller.signal });
   } catch {
     throw new Error("network" satisfies PhotoError);
   } finally {

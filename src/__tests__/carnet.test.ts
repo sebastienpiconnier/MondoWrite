@@ -77,3 +77,14 @@ describe("store", () => {
     expect(inbox()).toContain(d);
   });
 });
+
+import { viaWebView } from "../imageSources";
+describe("Openverse par le navigateur intégré", () => {
+  it("seulement l'API d'Openverse, en https", () => {
+    expect(viaWebView("https://api.openverse.org/v1/images/?q=phare")).toBe(true);
+    expect(viaWebView("https://api.openverse.org/v1/images/abc/thumb/")).toBe(true);
+    expect(viaWebView("http://api.openverse.org/v1/images/")).toBe(false);
+    expect(viaWebView("https://live.staticflickr.com/x.jpg")).toBe(false);
+    expect(viaWebView("https://api.openverse.org.evil.com/")).toBe(false);
+  });
+});
