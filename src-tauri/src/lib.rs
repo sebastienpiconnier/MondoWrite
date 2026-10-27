@@ -54,7 +54,10 @@ async fn icloud_container(app: tauri::AppHandle) -> Option<String> {
 async fn icloud_download(dir: String) -> usize {
   #[cfg(any(target_os = "ios", target_os = "macos"))]
   {
-    fn walk(dir: &std::path::Path, pending: &mut usize, depth: usize) {
+    // `count` : l'ouverture attend ces fichiers-là. Les images et PDF (medias/) sont demandés sans être attendus,
+    // ils s'affichent quand ils arrivent ; les copies Markdown (markdown/, versions du jour comprises) ne sont
+    // jamais relues par l'app : ni demandées ni attendues. Les compter faisait attendre l'ouverture jusqu'au bout.
+    fn walk(dir: &std::path::Path, pending: &mut usize, depth: usize, count: bool) {
       // Profondeur bornée, et jamais de lien symbolique suivi (pas de boucle).
       if depth > 8 {
         return;
@@ -64,9 +67,14 @@ async fn icloud_download(dir: String) -> usize {
         let Ok(kind) = entry.file_type() else { continue };
         let name = entry.file_name().to_string_lossy().to_string();
         if kind.is_dir() {
-          walk(&entry.path(), pending, depth + 1);
+          if depth == 0 && name == "markdown" {
+            continue;
+          }
+          walk(&entry.path(), pending, depth + 1, count && !(depth == 0 && name == "medias"));
         } else if let Some(real) = name.strip_prefix('.').and_then(|n| n.strip_suffix(".icloud")) {
-          *pending += 1;
+          if count {
+            *pending += 1;
+          }
           icloud::download(&dir.join(real).to_string_lossy());
         }
       }
@@ -77,7 +85,7 @@ async fn icloud_download(dir: String) -> usize {
       return 0;
     }
     let mut pending = 0;
-    walk(&dir, &mut pending, 0);
+    walk(&dir, &mut pending, 0, true);
     pending
   }
   #[cfg(not(any(target_os = "ios", target_os = "macos")))]

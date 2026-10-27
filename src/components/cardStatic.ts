@@ -16,13 +16,16 @@ export interface StaticBody {
 }
 
 const LIMIT = 4000;
-const cache = new Map<string, StaticBody>();
-let schema: Schema | null = null;
+const caches = { link: new Map<string, StaticBody>(), plain: new Map<string, StaticBody>() };
+const schemas: { link?: Schema; plain?: Schema } = {};
 
-export function cardStaticBody(html: string): StaticBody {
+/** `link` : le schéma des cartes (liens gardés) ; sans, celui de la Bible (`richTextExtensions({ link: false })`). */
+export function cardStaticBody(html: string, link = true): StaticBody {
+  const variant = link ? "link" : "plain";
+  const cache = caches[variant];
   const known = cache.get(html);
   if (known) return known;
-  schema ??= getSchema([...richTextExtensions(), MentionNode]);
+  const schema = (schemas[variant] ??= getSchema([...richTextExtensions({ link }), MentionNode]));
   // Document inerte (rien ne s'y charge ni ne s'y exécute), comme pour sanitizeHtml.
   const source = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html").body;
   const doc = PMDOMParser.fromSchema(schema).parse(source);

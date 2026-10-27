@@ -1,9 +1,9 @@
 // Texte d'une fiche de la Bible, modifiable sur place : c'est le corps de la carte, le même que sur le
 // canevas. Une fiche vide montre « À creuser… » en texte indicatif, et l'on écrit directement dedans.
 
-import { useStableEditor } from "./useStableEditor";
-import { useEffect, useRef } from "react";
-import { EditorContent } from "@tiptap/react";
+import { useEffect, useRef, useState } from "react";
+import type { Editor, UseEditorOptions } from "@tiptap/react";
+import { LiveBody, StaticBody, type FocusTarget } from "./lazyEditor";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -26,7 +26,12 @@ export function BibleBody({ card }: { card: CardData }) {
   const mentionsRef = useRef(mentions);
   mentionsRef.current = mentions;
   const seenHtml = useRef(card.html);
-  const editor = useStableEditor({
+  // L'éditeur n'est créé qu'au moment d'écrire dans la fiche (lazyEditor.tsx) : une rubrique de la Bible
+  // en montrait sinon des dizaines, toutes créées d'un coup.
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const [live, setLive] = useState<FocusTarget | null>(null);
+  const goLive = (at: FocusTarget) => setLive((prev) => prev ?? at);
+  const options: UseEditorOptions = {
     extensions: [
       ...richTextExtensions({ link: false }),
       // Fonction : relue à chaque rendu, donc suit le changement de langue.
@@ -44,7 +49,7 @@ export function BibleBody({ card }: { card: CardData }) {
     },
     onSelectionUpdate: ({ editor: ed }) => mentionsRef.current.detect(ed),
     onBlur: () => mentionsRef.current.onBlur(),
-  });
+  };
 
   // Texte changé ailleurs (annuler, réponse de l'assistant, synthèse ajoutée) : l'éditeur suit.
   useEffect(() => {
@@ -66,7 +71,11 @@ export function BibleBody({ card }: { card: CardData }) {
 
   return (
     <div className="bible-body">
-      <EditorContent editor={editor} />
+      {live ? (
+        <LiveBody options={options} at={live} onEditor={setEditor} />
+      ) : (
+        <StaticBody html={card.html} className="bible-editor" label={attributes(card.title)["aria-label"]} placeholder={getT().bible.toDig} link={false} onActivate={goLive} />
+      )}
       {mentions.menu}
       {editor && <FormatBar editor={editor} />}
     </div>
