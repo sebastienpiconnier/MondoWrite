@@ -16,10 +16,24 @@ import type { CharacterRow } from "./report";
 export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
-export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes";
-export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes"];
+export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce";
+export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "secretNoReveal", "secretNoClue", "objectOnce"];
 
-export const RULE_ORDER: RuleKey[] = ["similarNames", "unknownCharacter", "longAction", "headingFormat", "emptyElement", "extraSpaces", "principalNotMost", "noGoal", "noEpisodes"];
+export const RULE_ORDER: RuleKey[] = [
+  "similarNames",
+  "unknownCharacter",
+  "longAction",
+  "headingFormat",
+  "emptyElement",
+  "extraSpaces",
+  "principalNotMost",
+  "noGoal",
+  "noEpisodes",
+  "pilotLength",
+  "secretNoReveal",
+  "secretNoClue",
+  "objectOnce",
+];
 
 export interface Finding {
   /** Identifiant stable du point (pour « Ignorer » pendant la session). */
@@ -194,7 +208,29 @@ export const isSeries = (pitch: Pitch) => /s[ée]rie|series/i.test(pitch.format 
  * celui qu'on voit le plus (statistiques des personnages, `rows`) ; un principal ne dit pas ce qu'il veut ;
  * une série sans épisode. Jamais une erreur : l'auteur peut répondre « C'est voulu ».
  */
-export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman" | "scenario", pitch: Pitch): Finding[] {
+/**
+ * Longueur attendue d'un scénario, en pages, d'après le format de la couverture : une page par minute environ
+ * (de 0,9 à 1,15 fois la durée). Un long métrage : de 85 à 125 pages. Null : format inconnu ou court métrage.
+ */
+export function expectedPages(format: string | undefined): [number, number] | null {
+  const f = (format ?? "").toLowerCase();
+  let minutes = Number(/(\d{2,3})\s*-?\s*min/.exec(f)?.[1] ?? 0);
+  if (!minutes && /half[- ]hour|demi-heure/.test(f)) minutes = 30;
+  else if (!minutes && /\b(one[- ]hour|hour[- ]long|une heure)\b/.test(f)) minutes = 60;
+  if (minutes >= 10) return [Math.round(minutes * 0.9), Math.round(minutes * 1.15)];
+  if (/long[- ]m[ée]trage|feature/.test(f)) return [85, 125];
+  return null;
+}
+
+/** Ce que « Vérifier » sait du projet en plus des cartes (lot 7). */
+export interface StoryExtras {
+  /** Scénario : pages du pilote (estimation de la pagination). */
+  pages?: number;
+  /** Scènes où le texte nomme chaque carte Objet, par identifiant. */
+  named?: ReadonlyMap<string, number>;
+}
+
+export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman" | "scenario", pitch: Pitch, extras: StoryExtras = {}): Finding[] {
   const out: Finding[] = [];
   const principals = cards.filter(isPrincipal);
   const scenesOf = (id: string) => rows.find((r) => r.id === id)?.scenes ?? 0;
@@ -210,6 +246,23 @@ export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman
     if (!c.fiche?.objectif?.trim() && c.title.trim()) out.push({ key: `noGoal:${c.id}`, rule: "noGoal", at: -1, scene: 0, sceneId: c.id, text: "", names: [c.title.trim()] });
   }
   if (kind === "scenario" && isSeries(pitch) && !cards.some((c) => c.type === "episode")) out.push({ key: "noEpisodes", rule: "noEpisodes", at: -1, scene: 0, sceneId: null, text: "" });
+
+  // Lot 7. Longueur du pilote d'après le format de la couverture (repères de Final Draft).
+  const range = kind === "scenario" ? expectedPages(pitch.format) : null;
+  if (range && extras.pages && (extras.pages < range[0] || extras.pages > range[1])) {
+    out.push({ key: `pilotLength:${range.join("-")}`, rule: "pilotLength", at: -1, scene: 0, sceneId: null, text: pitch.format?.trim() ?? "", counts: [extras.pages, range[0], range[1]] });
+  }
+  for (const c of cards) {
+    const name = c.title.trim();
+    if (!name) continue;
+    // Un secret : quand éclate-t-il, et qu'est-ce qui le laisse deviner avant ?
+    if (c.type === "secret") {
+      if (!c.fiche?.revelation?.trim()) out.push({ key: `secretNoReveal:${c.id}`, rule: "secretNoReveal", at: -1, scene: 0, sceneId: c.id, text: "", names: [name] });
+      else if (!c.fiche?.indices?.trim()) out.push({ key: `secretNoClue:${c.id}`, rule: "secretNoClue", at: -1, scene: 0, sceneId: c.id, text: "", names: [name] });
+    }
+    // Un objet nommé dans une seule scène : posé sans servir, ou sert sans avoir été posé.
+    if (c.type === "objet" && extras.named?.get(c.id) === 1) out.push({ key: `objectOnce:${c.id}`, rule: "objectOnce", at: -1, scene: 0, sceneId: c.id, text: "", names: [name] });
+  }
   return out;
 }
 

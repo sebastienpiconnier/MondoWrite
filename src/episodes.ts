@@ -18,15 +18,37 @@ const numberOf = (c: CardData) => {
   return m ? Number(m[0]) : null;
 };
 
+/** Saison d'un épisode (lot 7) : celle de sa fiche, 1 sinon. */
+export const seasonOf = (c: CardData) => {
+  const m = /\d+/.exec(c.fiche?.saison ?? "");
+  return m && Number(m[0]) > 0 ? Number(m[0]) : 1;
+};
+
 /**
- * Épisodes dans l'ordre de la saison : par numéro, puis ceux sans numéro dans l'ordre reçu (celui du canevas).
+ * Épisodes dans l'ordre de la série : par saison, puis par numéro, puis ceux sans numéro dans l'ordre reçu
+ * (celui du canevas).
  */
 export function episodeOrder(cards: readonly CardData[]): CardData[] {
   const episodes = cards.filter((c) => c.type === "episode");
   return episodes
-    .map((c, i) => ({ c, i, n: numberOf(c) }))
-    .sort((a, b) => (a.n ?? Infinity) - (b.n ?? Infinity) || a.i - b.i)
+    .map((c, i) => ({ c, i, s: seasonOf(c), n: numberOf(c) }))
+    .sort((a, b) => a.s - b.s || (a.n ?? Infinity) - (b.n ?? Infinity) || a.i - b.i)
     .map((x) => x.c);
+}
+
+/** Plus d'une saison : les numéros s'écrivent « 2.3 » et la Bible regroupe les épisodes par saison. */
+export const manySeasons = (order: readonly CardData[]) => new Set(order.map(seasonOf)).size > 1;
+
+/** Épisodes regroupés par saison, dans l'ordre. */
+export function bySeason(order: readonly CardData[]): { season: number; episodes: CardData[] }[] {
+  const out: { season: number; episodes: CardData[] }[] = [];
+  for (const c of order) {
+    const s = seasonOf(c);
+    const last = out[out.length - 1];
+    if (last?.season === s) last.episodes.push(c);
+    else out.push({ season: s, episodes: [c] });
+  }
+  return out;
 }
 
 const neighbours = (id: string, edges: readonly Linked[]) => new Set(edges.flatMap((e) => (e.source === id ? [e.target] : e.target === id ? [e.source] : [])));
@@ -50,9 +72,19 @@ export function episodeCast(episode: CardData, cards: readonly CardData[], edges
   return [...(pivot ? [pivot] : []), ...cards.filter((c) => c.type === "personnage" && c !== pivot && near.has(c.id))];
 }
 
-/** Numéro affiché de chaque épisode : celui de sa fiche, sinon sa place dans la saison. */
+/**
+ * Numéro affiché de chaque épisode : celui de sa fiche, sinon sa place dans la saison. Dès deux saisons, la
+ * saison le précède (« 2.3 »).
+ */
 export function episodeNumbers(order: readonly CardData[]): Map<string, string> {
-  return new Map(order.map((c, i) => [c.id, (c.fiche?.numero ?? "").trim() || String(i + 1)]));
+  const many = manySeasons(order);
+  const out = new Map<string, string>();
+  for (const { season, episodes } of bySeason(order))
+    episodes.forEach((c, i) => {
+      const own = (c.fiche?.numero ?? "").trim() || String(i + 1);
+      out.set(c.id, many ? `${season}.${own}` : own);
+    });
+  return out;
 }
 
 /** Pour chaque personnage, les numéros des épisodes où il paraît (pivot ou relié), dans l'ordre de la saison. */

@@ -8,13 +8,15 @@
 import { useEffect, useId, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
-import { SHORT_FIELDS, WIDE_FIELDS, bandFields, sheetFields, type SheetField } from "../character";
+import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isChoiceField, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
 
 export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boolean }) {
   const all = useT();
   const t = all.character;
-  const labels: Record<string, string> = { ...all.character.fields, ...all.fiche.fields };
+  const typeLabels = all.fiche.typeLabels as Partial<Record<string, Record<string, string>>>;
+  const labels: Record<string, string> = { ...all.character.fields, ...all.fiche.fields, ...typeLabels[card.type] };
+  const values = all.fiche.values as Record<string, Record<string, string>>;
   const typePlaceholders = all.fiche.typePlaceholders as Partial<Record<string, Record<string, string>>>;
   const placeholders: Record<string, string> = { ...all.character.placeholders, ...all.fiche.placeholders, ...typePlaceholders[card.type] };
   const title = all.fiche.titles[card.type as keyof typeof all.fiche.titles] ?? t.sheet;
@@ -28,8 +30,9 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   const filled = fields.filter((key) => card.fiche?.[key]?.trim()).length;
   // Ouverte d'office quand quelque chose est rempli ; sinon un bouton invite à la compléter.
   const [open, setOpen] = useState(startOpen ?? filled > 0);
-  // Champs vides affichés. Une fiche vide les montre tous.
-  const [more, setMore] = useState(false);
+  // Champs vides affichés. Une fiche vide les montre tous, et les garde à l'écran pendant qu'on la remplit
+  // (sinon, le premier champ rempli faisait disparaître les autres).
+  const [more, setMore] = useState(filled === 0);
   // Un champ qu'on vient de vider reste à l'écran le temps de la saisie.
   const [touched, setTouched] = useState<Set<SheetField>>(new Set());
   const id = useId();
@@ -56,7 +59,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
       },
     };
     return (
-      <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}`}>
+      <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) || isChoiceField(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}`}>
         <label htmlFor={props.id}>{labels[key]}</label>
         {key === "pivot" ? (
           <select id={props.id} value={props.value} onChange={props.onChange}>
@@ -64,6 +67,16 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
             {people.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title.trim()}
+              </option>
+            ))}
+          </select>
+        ) : isChoiceField(key) ? (
+          // Champ à choix (certitude, état d'une question, repère d'un épisode) : la valeur écrite est la clé.
+          <select id={props.id} value={props.value} onChange={props.onChange}>
+            <option value="">{all.fiche.valueNone}</option>
+            {CHOICE_FIELDS[key].map((v) => (
+              <option key={v} value={v}>
+                {values[key][v]}
               </option>
             ))}
           </select>

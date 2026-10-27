@@ -1,6 +1,7 @@
 // Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
+import { readWires, wiresToMeta } from "./wires";
 import { foldNovelNodes, foldScreenplayNotes } from "./sceneNotes";
 import { renamedZone } from "./research";
 import { authorName, contactLines } from "./profile";
@@ -84,7 +85,9 @@ export function fromProject(p: Project) {
     const l = pos.get(c.id);
     return toNode(c, l?.x ?? 80 + (i % 5) * 280, l?.y ?? 80 + Math.floor(i / 5) * 220, l?.width);
   });
-  const edges: Edge[] = p.meta.links.map((l) => ({ id: l.id, source: l.source, target: l.target, label: l.label, type: "floating" }));
+  // Fiches des fils (lot 7), rangées dans le fil lui-même pendant le travail.
+  const wires = readWires((p.meta as { wires?: unknown }).wires, new Set(p.meta.links.map((l) => l.id)));
+  const edges: Edge[] = p.meta.links.map((l) => ({ id: l.id, source: l.source, target: l.target, label: l.label, type: "floating", ...(wires.has(l.id) ? { data: { fiche: wires.get(l.id) } } : {}) }));
   const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
   const paperChosen = isPaper(p.meta.paper);
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
@@ -95,7 +98,7 @@ export function fromProject(p: Project) {
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "wires", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -294,6 +297,7 @@ export function toProject(
       ...(printToMeta(s.print) ? { print: printToMeta(s.print) } : {}),
       ...(scriptPrintToMeta(s.scriptPdf) ? { scriptPdf: scriptPrintToMeta(s.scriptPdf) } : {}),
       ...(bibleExportToMeta(s.bibleExport) ? { bibleExport: bibleExportToMeta(s.bibleExport) } : {}),
+      ...(wiresToMeta(s.edges) ? { wires: wiresToMeta(s.edges) } : {}),
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,

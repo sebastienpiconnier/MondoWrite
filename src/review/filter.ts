@@ -108,3 +108,14 @@ export function speakingNames(elements: El[], locale = "fr"): string[] {
   }
   return [...seen.values()];
 }
+
+/** Index des en-têtes des scènes dont l'action ou les répliques nomment une chose (objet, lieu…), mot entier. */
+export function scenesNaming(elements: El[], name: string): number[] {
+  const out: number[] = [];
+  let heading = -1;
+  for (const [i, el] of elements.entries()) {
+    if (el.type === "sceneHeading") heading = i;
+    else if (heading >= 0 && out[out.length - 1] !== heading && (el.type === "action" || el.type === "dialogue") && names(el.text, name)) out.push(heading);
+  }
+  return out;
+}

@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { setWireField, wireFicheOf, type WireField } from "./wires";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
 import type { CharacterFilter } from "./review/filter";
@@ -399,6 +400,8 @@ interface CosmosState {
   /** Retire un fil (« Délier »), une étape d'historique. */
   removeLink: (id: string) => void;
   renameLink: (id: string, label: string) => void;
+  /** Fiche d'un fil (lot 7) : un champ, vidé pour le retirer. */
+  setWireFiche: (id: string, field: WireField, value: string) => void;
 
   setView: (view: View, focusId?: string | null) => void;
   /** Ouvre le projet sélectionné dans le stockage, ou démarre le projet d'exemple si l'emplacement est vide. */
@@ -2180,6 +2183,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
     renameLink: (id, label) => {
       record(`link:${id}`);
       set({ edges: get().edges.map((e) => (e.id === id ? { ...e, label } : e)) });
+      touch();
+    },
+    setWireFiche: (id, field, value) => {
+      const edge = get().edges.find((e) => e.id === id);
+      if (!edge || (wireFicheOf(edge)?.[field] ?? "") === value) return;
+      record(`link:${id}:fiche:${field}`);
+      const fiche = setWireField(wireFicheOf(edge), field, value);
+      set({ edges: get().edges.map((e) => (e.id === id ? { ...e, data: { ...(e.data ?? {}), fiche } } : e)) });
       touch();
     },
 

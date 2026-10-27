@@ -176,7 +176,7 @@ export function BibleExportDialog() {
         }
         file = { name: `${fileName(name, "bible")}.pdf`, extension: "pdf", mime: "application/pdf", data: pdfRef.current };
       } else {
-        const doc = bibleOf(useCosmos.getState(), { t, lang, author }, typesForParts(bibleOrder(sections), options.parts));
+        const doc = bibleOf(useCosmos.getState(), { t, lang, author }, typesForParts(bibleOrder(sections), options.parts), options.audience !== "moi");
         const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (n) => storage.mediaUrl(n));
         file = await exportDocument(full, format, { name, paper, contents: t.exports.contents });
       }

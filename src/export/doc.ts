@@ -203,6 +203,11 @@ export interface BibleStrings {
   arcTypes?: Record<string, string>;
   /** Couverture du projet : titre de la partie et libellés des champs (sans eux, elle n'est pas exportée). */
   cover?: { title: string; fields: Record<string, string> };
+  /**
+   * Document pour un tiers (lot 7) : sans la certitude des fiches ni l'état des questions, qui ne servent qu'à
+   * l'auteur ; avec les autres supports, qui ne servent qu'à vendre. Absent : la bible de travail.
+   */
+  forOther?: boolean;
 }
 
 /** « Inès (y travaille), Le phare » : les cartes reliées par un fil, chacune avec sa référence (lien dans les copies Markdown). */
@@ -263,6 +268,7 @@ export function bibleDoc(
           const value = key === "pivot" ? (raw ? cards.find((c) => c.id === raw)?.title.trim() : "") : raw;
           // « Personnage principal » sert à ranger (et au dossier), pas à lire : jamais écrit dans la fiche exportée.
           if (key === "principal") continue;
+          if (strings.forOther && (key === "certitude" || key === "etat")) continue;
           if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: ficheText(key, value, strings.arcTypes) }] });
         }
       }
@@ -272,6 +278,6 @@ export function bibleDoc(
     }
     return { title: strings.sections[type], blocks };
   }).filter((c) => c.blocks.length > 0);
-  const cover = strings.cover ? coverChapter(pitch, strings.cover) : null;
+  const cover = strings.cover ? coverChapter(strings.forOther ? pitch : { ...pitch, supports: undefined }, strings.cover) : null;
   return { ...info, chapters: cover ? [cover, ...chapters] : chapters };
 }

@@ -236,41 +236,41 @@ Deux sources : le modèle de bible de série de Final Draft (*Untitled Series Bi
 
 Qui garde un secret, qui appartient à un groupe, qui porte un objet : les fils du canevas, comme les personnages d'un épisode. La fiche de la Bible les liste (« Reliés »).
 
-- [ ] `types.ts` (`CardType`, `CARD_TYPES`, `BIBLE_ORDER`), `bibleParts.ts`, `character.ts` (`SHEET_FIELDS`), i18n (`t.types`, `t.fiche`), couleurs `--type-*` (clair et sombre, test de contraste), mini-carte, « Organiser » (un cadre par type), filtres et menus.
-- [ ] Bible : rubriques et fiches, liste « Reliés » ; export PDF, Word, Markdown (génériques).
-- [ ] Tests : parties, fiches lues et réécrites, compatibilité (type inconnu gardé par la 1.3.x).
+- [x] `types.ts` (`CardType`, `CARD_TYPES`, `BIBLE_ORDER`), `bibleParts.ts`, `character.ts` (`SHEET_FIELDS`), i18n (`t.types`, `t.fiche`), couleurs `--type-*` (clair et sombre, test de contraste), mini-carte, « Organiser » (un cadre par type), filtres et menus.
+- [x] Bible : rubriques et fiches, liste « Reliés » ; export PDF, Word, Markdown (génériques).
+- [x] Tests : parties, fiches lues et réécrites, compatibilité (type inconnu gardé par la 1.3.x).
 
 ### 2. Couverture d'une série (Final Draft)
 
-- [ ] Saisons : champ `saison` de la fiche Épisode ; épisodes triés par saison puis numéro, regroupés par saison dans la Bible et l'export ; colonnes « 2.3 » dans la grille dès deux saisons. Texte `suite` de la couverture : les saisons suivantes en quelques lignes.
-- [ ] Repères : champ `repere` de l'épisode, `milieu` (mi-saison) ou `final` (fin de saison), pastille dans la Bible et l'export.
-- [ ] `avantPilote` : ce qui s'est passé avant le pilote.
-- [ ] Pastilles `forme` (bouclée, feuilletonnante, hybride) et `pilote` (pilote d'installation, pilote type), valeurs libres comme les autres pastilles.
-- [ ] « La mécanique » : libellé et question plus nets (le conflit central, ce qui fabrique les épisodes).
-- [ ] Fiche personnage : `paradoxe` et `dilemme` ; texte `ensemble` de la couverture, « Ce qui les tient ensemble », en tête de la partie Personnages de l'export.
-- [ ] `supports` : « Autres supports » (podcast, roman graphique, jeu), imprimé pour un tiers seulement.
+- [x] Saisons : champ `saison` de la fiche Épisode ; épisodes triés par saison puis numéro, regroupés par saison dans la Bible et l'export ; colonnes « 2.3 » dans la grille dès deux saisons. Texte `suite` de la couverture : les saisons suivantes en quelques lignes.
+- [x] Repères : champ `repere` de l'épisode, `milieu` (mi-saison) ou `final` (fin de saison), pastille dans la Bible et l'export.
+- [x] `avantPilote` : ce qui s'est passé avant le pilote.
+- [x] Pastilles `forme` (bouclée, feuilletonnante, hybride) et `pilote` (pilote d'installation, pilote type), valeurs libres comme les autres pastilles.
+- [x] « La mécanique » : libellé et question plus nets (le conflit central, ce qui fabrique les épisodes).
+- [x] Fiche personnage : `paradoxe` et `dilemme` ; texte `ensemble` de la couverture, « Ce qui les tient ensemble », en tête de la partie Personnages de l'export.
+- [x] `supports` : « Autres supports » (podcast, roman graphique, jeu), imprimé pour un tiers seulement.
 
 ### 3. Fiches
 
-- [ ] Sources (`lien`, `image`, `document`) : `retenir` (ce que j'en retiens) et `fiabilite`.
-- [ ] Question : `etat` (`ouverte`, `decidee`, `abandonnee`) et `decision`. Une question décidée ou abandonnée passe en fin de rubrique, en gris.
-- [ ] Certitude sur toutes les fiches : `certitude` (`etabli`, `provisoire`, `explorer`), choisie dans une liste ; jamais imprimée pour un tiers.
-- [ ] Scène : `but`, `obstacle`, `tournant`, `changement`.
-- [ ] Personnage, sous « Ajouter si utile » : `croyance` (croyance limitante), `valeur`, `angleMort`, `strategie` (et ce qu'elle lui coûte).
-- [ ] Fiche d'un fil entre deux cartes (`wires`) : leur histoire, ce qui se joue entre eux, comment ça évolue. Saisie dans la liste des relations de la Bible.
+- [x] Sources (`lien`, `image`, `document`) : `retenir` (ce que j'en retiens) et `fiabilite`.
+- [x] Question : `etat` (`ouverte`, `decidee`, `abandonnee`) et `decision`. Une question décidée ou abandonnée passe en fin de rubrique, en gris.
+- [x] Certitude sur toutes les fiches : `certitude` (`etabli`, `provisoire`, `explorer`), choisie dans une liste ; jamais imprimée pour un tiers.
+- [x] Scène : `but`, `obstacle`, `tournant`, `changement`.
+- [x] Personnage, sous « Ajouter si utile » : `croyance` (croyance limitante), `valeur`, `angleMort`, `strategie` (et ce qu'elle lui coûte).
+- [x] Fiche d'un fil entre deux cartes (`wires`) : leur histoire, ce qui se joue entre eux, comment ça évolue. Saisie dans la liste « Relié à » de la Bible ; l'enjeu suit la relation dans le PDF.
 
 ### 4. Vérifier
 
 Toujours des questions, avec « C'est voulu ».
 
-- [ ] `pilotLength` : le pilote est hors de la longueur attendue pour le format de la couverture (une page par minute environ, de 0,9 à 1,15 fois la durée).
-- [ ] `secretNoReveal` : un secret sans révélation prévue.
-- [ ] `secretNoClue` : un secret qui éclate sans indice.
-- [ ] `objectOnce` : un objet cité dans une seule scène (posé sans servir, ou sert sans être posé).
+- [x] `pilotLength` : le pilote est hors de la longueur attendue pour le format de la couverture (une page par minute environ, de 0,9 à 1,15 fois la durée).
+- [x] `secretNoReveal` : un secret sans révélation prévue.
+- [x] `secretNoClue` : un secret qui éclate sans indice.
+- [x] `objectOnce` : un objet cité dans une seule scène (posé sans servir, ou sert sans être posé).
 
 ### 5. Fin du lot
 
-- [ ] Guide (fr, en) et captures ; `CLAUDE.md` ; tests de compatibilité dans `forward-compat.test.ts`.
+- [x] Guide (fr, en) et captures ; `CLAUDE.md` ; tests de compatibilité dans `forward-compat.test.ts`.
 
 ### Écarté
 

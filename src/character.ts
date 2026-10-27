@@ -40,6 +40,13 @@ export const CHARACTER_FIELDS = [
   "enjeuRel",
   "enjeuInt",
   "ecriture",
+  // Bible v2, lot 7 : profondeur (Final Draft, et l'échange sur les cartes d'une bible), sous « Ajouter si utile ».
+  "paradoxe",
+  "dilemme",
+  "croyance",
+  "valeur",
+  "angleMort",
+  "strategie",
 ] as const;
 export type CharacterField = (typeof CHARACTER_FIELDS)[number];
 
@@ -77,25 +84,34 @@ export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<
 
 /** Valeur d'un champ telle qu'on la lit (le type d'arc est une clé, montrée par son libellé). */
 export const ficheText = (key: string, value: string, arcLabels?: Record<string, string>) =>
-  key === "arcType" || key === "statut" ? (arcLabels?.[value] ?? value) : value;
+  key === "arcType" || key === "statut" || isChoiceField(key) ? (arcLabels?.[value] ?? value) : value;
 
 /** Fiche d'un lieu (idée reprise de la Bible du fork de NEO). */
 export const PLACE_FIELDS = ["epoque", "ambiance", "evenements", "importance"] as const;
 /** Fiche d'une intrigue : sa question dramatique et son parcours, du déclencheur à la résolution. */
 /** Fiche d'un lien ou d'une image collés : d'où vient l'information. */
-export const SOURCE_FIELDS = ["url", "auteur", "publication", "consulte"] as const;
+export const SOURCE_FIELDS = ["url", "auteur", "publication", "consulte", "retenir", "fiabilite"] as const;
 /** Fiche d'un document importé (PDF) : d'où il vient et sa longueur. */
-export const DOCUMENT_FIELDS = ["auteur", "publication", "pages"] as const;
+export const DOCUMENT_FIELDS = ["auteur", "publication", "pages", "retenir", "fiabilite"] as const;
 /**
  * Fiche d'un épisode de série : numéro (ordre de la saison), synopsis de trois ou quatre phrases, personnage
  * pivot (identifiant d'une carte Personnage). Les fils présents sont les fils du canevas vers les Intrigues.
  */
-export const EPISODE_FIELDS = ["numero", "synopsis", "pivot"] as const;
+export const EPISODE_FIELDS = ["numero", "saison", "repere", "synopsis", "pivot"] as const;
+
+// Lot 7 : les cartes du monde. Qui garde un secret, qui appartient à un groupe, qui porte un objet : les fils.
+export const EVENT_FIELDS = ["quand", "consequences", "recit"] as const;
+export const OBJECT_FIELDS = ["origine", "usage", "symbole", "emplacement"] as const;
+export const RULE_FIELDS = ["portee", "exceptions", "cout", "transgression"] as const;
+export const GROUP_FIELDS = ["nature", "but", "fonctionnement", "ressources"] as const;
+export const SECRET_FIELDS = ["verite", "enjeu", "indices", "revelation"] as const;
+/** Carte Question : où elle en est (`etat`) et ce qui a été décidé. */
+export const QUESTION_FIELDS = ["etat", "decision"] as const;
 export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution"] as const;
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
 /** Scène d'un roman : ce qui s'y passe, en une phrase (le scénario garde le sien dans le fichier Fountain). */
-export const SCENE_FIELDS = ["synopsis", "statut"] as const;
+export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement"] as const;
 
 /** Statut d'une scène : valeurs écrites dans le fichier (`fiche.statut`), jamais traduites. Libellés : `t.status.values`. */
 export const SCENE_STATUSES = ["brouillon", "revoir", "fini"] as const;
@@ -112,14 +128,54 @@ export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
   lien: SOURCE_FIELDS,
   image: SOURCE_FIELDS,
   document: DOCUMENT_FIELDS,
+  evenement: EVENT_FIELDS,
+  objet: OBJECT_FIELDS,
+  regle: RULE_FIELDS,
+  groupe: GROUP_FIELDS,
+  secret: SECRET_FIELDS,
+  question: QUESTION_FIELDS,
 };
-export type SheetField = CharacterField | (typeof PLACE_FIELDS)[number] | (typeof PLOT_FIELDS)[number] | (typeof SOURCE_FIELDS)[number] | (typeof DOCUMENT_FIELDS)[number] | (typeof SCENE_FIELDS)[number] | (typeof EPISODE_FIELDS)[number];
-export const sheetFields = (type: CardType): readonly SheetField[] => (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
+export type SheetField =
+  | CharacterField
+  | (typeof PLACE_FIELDS)[number]
+  | (typeof PLOT_FIELDS)[number]
+  | (typeof SOURCE_FIELDS)[number]
+  | (typeof DOCUMENT_FIELDS)[number]
+  | (typeof SCENE_FIELDS)[number]
+  | (typeof EPISODE_FIELDS)[number]
+  | (typeof EVENT_FIELDS)[number]
+  | (typeof OBJECT_FIELDS)[number]
+  | (typeof RULE_FIELDS)[number]
+  | (typeof GROUP_FIELDS)[number]
+  | (typeof SECRET_FIELDS)[number]
+  | (typeof QUESTION_FIELDS)[number]
+  | "certitude";
+
+/**
+ * Champs à choix : valeurs écrites dans le fichier, jamais traduites (libellés : `t.fiche.values`). Une valeur
+ * inconnue est ignorée à la lecture. `certitude` (lot 7) vaut pour toute fiche sauf celle d'une scène, qui a
+ * déjà son statut.
+ */
+export const CHOICE_FIELDS = {
+  certitude: ["etabli", "provisoire", "explorer"],
+  etat: ["ouverte", "decidee", "abandonnee"],
+  repere: ["milieu", "final"],
+} as const satisfies Partial<Record<SheetField, readonly string[]>>;
+export type ChoiceField = keyof typeof CHOICE_FIELDS;
+export const isChoiceField = (key: string): key is ChoiceField => key in CHOICE_FIELDS;
+
+export const sheetFields = (type: CardType): readonly SheetField[] => {
+  const own = (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
+  return own.length > 0 && type !== "scene" ? [...own, "certitude"] : own;
+};
+
+/** Question tranchée (décidée ou abandonnée) : elle passe en fin de rubrique, en gris. */
+export const isSettledQuestion = (card: Pick<CardData, "type" | "fiche">) => card.type === "question" && (card.fiche?.etat === "decidee" || card.fiche?.etat === "abandonnee");
 
 /** Champs courts (une ligne) ; les autres sont des zones de texte qui grandissent. */
 /** Textes longs : toute la largeur de la fiche (CardSheet). */
 export const WIDE_FIELDS: ReadonlySet<SheetField> = new Set(["synopsis"]);
-export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["numero", "role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature", "url", "auteur", "publication", "consulte", "pages"]);
+export const SHORT_FIELDS: ReadonlySet<SheetField> = new Set(["numero", "saison", "quand", "fiabilite", "role", "genre", "age", "metier", "surnoms", "origine", "epoque", "nature", "url", "auteur", "publication", "consulte", "pages"]);
 
 /** Adresse web d'une source, si elle en a une valide (http ou https). */
 export function sourceUrl(card: Pick<CardData, "type" | "fiche">): string | null {
@@ -147,6 +203,7 @@ export function readFiche(raw: unknown, type: CardType = "personnage"): Record<s
     if (key === "arcType" && !isArcType(value)) continue;
     if (key === "statut" && !isSceneStatus(value)) continue;
     if (key === "principal" && value !== PRINCIPAL) continue;
+    if (isChoiceField(key) && !(CHOICE_FIELDS[key] as readonly string[]).includes(value)) continue;
     out[key] = value.slice(0, MAX_VALUE);
   }
   return Object.keys(out).length > 0 ? out : undefined;

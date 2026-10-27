@@ -8,7 +8,7 @@ import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
-import { NOVEL_CHIPS, PITCH_CHIPS, SERIES_TEXTS, chipSuggestions, pitchFields, pitchFilled, type PitchChip, type PitchText } from "../pitch";
+import { SERIES_TEXTS, chipsFor, chipSuggestions, pitchFields, pitchFilled, type PitchChip, type PitchText } from "../pitch";
 import { CoverAssistant } from "./CoverAssistant";
 import { countWords } from "../manuscript";
 import { typeColor } from "../types";
@@ -201,7 +201,8 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
     [nodes, lang],
   );
   // Pas de point de vue ni de temps du récit pour un scénario (toujours au présent, caméra).
-  const chips = PITCH_CHIPS.filter((c) => kind === "roman" || !(NOVEL_CHIPS as readonly string[]).includes(c));
+  // Forme et type de pilote pour une série seulement (lot 7).
+  const chips = chipsFor(kind);
   const episodes = useMemo(() => episodeOrder(nodes.map((n) => n.data)), [nodes]);
   const seriesFilled = SERIES_TEXTS.some((k) => pitch[k]?.trim()) || episodes.length > 0;
   const tagId = useId();

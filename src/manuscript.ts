@@ -65,6 +65,13 @@ export function namesOf(card: CardData): string[] {
   return [...new Set(names)];
 }
 
+/** Nombre de scènes (dans `order`) dont le texte nomme la carte, par son titre entier ou ses autres noms. */
+export function scenesNaming(card: CardData, manuscript: Manuscript, order: string[]): number {
+  const names = namesOf(card);
+  if (names.length === 0) return 0;
+  return order.filter((id) => names.some((name) => hasWord(foldedText(manuscript[id]), name))).length;
+}
+
 /**
  * Présence d'une carte dans le manuscrit (idée reprise de la Bible du fork de NEO) : nombre de fois où le
  * texte la nomme, et première scène où elle apparaît, dans l'ordre du récit.

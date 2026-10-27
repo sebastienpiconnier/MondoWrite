@@ -4,6 +4,7 @@
 // Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
+import { BibleLinks } from "./BibleLinks";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { headingOf } from "../screenplay/sceneText";
 import { DraftPreview } from "./SceneDraft";
@@ -13,7 +14,7 @@ import { useCosmos } from "../store";
 import { typeColor, typesFor, type CardData, type CardType } from "../types";
 import { episodeOrder } from "../episodes";
 import { fmt, useT } from "../i18n";
-import { POSTER_FIELDS, PRINCIPAL, isPrincipal } from "../character";
+import { POSTER_FIELDS, PRINCIPAL, isPrincipal, isSettledQuestion } from "../character";
 import { mentionsIn } from "../manuscript";
 import { bookOrder } from "../book";
 import { toggleSection } from "../bibleSections";
@@ -167,7 +168,8 @@ export function Bible() {
           cards:
             type === "episode"
               ? episodeOrder(cards)
-              : cards.sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : Number(isPrincipal(b)) - Number(isPrincipal(a)) || a.title.localeCompare(b.title, lang))),
+              : // Une question tranchée (lot 7) passe en fin de rubrique.
+                cards.sort((a, b) => (a.id === fresh ? -1 : b.id === fresh ? 1 : Number(isSettledQuestion(a)) - Number(isSettledQuestion(b)) || Number(isPrincipal(b)) - Number(isPrincipal(a)) || a.title.localeCompare(b.title, lang))),
         };
       }),
     [nodes, lang, fresh, shownTypes],
@@ -274,7 +276,7 @@ export function Bible() {
           const name = card.title.trim() || t.bible.untitled;
           const bodyId = `bible-entry-body-${card.id}`;
           return (
-            <article key={card.id} data-entry={card.id} className={`bible-entry${type === "personnage" ? " is-character" : ""}${isFolded ? " is-folded" : ""}`} style={{ ["--type" as string]: typeColor(type) }}>
+            <article key={card.id} data-entry={card.id} className={`bible-entry${type === "personnage" ? " is-character" : ""}${isFolded ? " is-folded" : ""}${isSettledQuestion(card) ? " is-settled" : ""}`} style={{ ["--type" as string]: typeColor(type) }}>
               {type !== "personnage" && (
                 <EntryImage name={card.image} alt={card.title ? fmt(t.card.imageAlt, { title: card.title }) : t.card.imageAltUntitled} />
               )}
@@ -389,29 +391,7 @@ export function Bible() {
                 </>
               )}
               {type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}
-              {links.length > 0 && (
-                <div className="bible-links">
-                  <span className="eyebrow">{t.bible.linkedTo}</span>
-                  {links.map((e) => {
-                    const other = e.source === card.id ? e.target : e.source;
-                    return (
-                      <span key={e.id} className="chip link-chip">
-                        {titleOf(other)}
-                        {e.label ? ` · ${String(e.label)}` : ""}
-                        <button
-                          type="button"
-                          className="chip-remove"
-                          aria-label={fmt(t.bible.unlink, { title: titleOf(other) })}
-                          title={fmt(t.bible.unlink, { title: titleOf(other) })}
-                          onClick={() => useCosmos.getState().removeLink(e.id)}
-                        >
-                          <span aria-hidden="true">×</span>
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
+              <BibleLinks cardId={card.id} links={links} titleOf={titleOf} />
               {/* En bas de la fiche : dans l'en-tête, il prenait la place du titre sur téléphone. */}
               <button type="button" className="link-button bible-see-canvas" onClick={() => revealCard(card.id)}>
                 {t.bible.seeOnCanvas}

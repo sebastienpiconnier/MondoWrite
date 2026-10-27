@@ -41,6 +41,11 @@
   --type-image: #7a4bb0;
   --type-document: #7a5c2e;
   --type-episode: #436b0b;
+  --type-groupe: #2f5f9e;
+  --type-objet: #6d5d00;
+  --type-evenement: #9c3d0f;
+  --type-regle: #3d5a4a;
+  --type-secret: #7c1d45;
   --backdrop: rgb(20 22 34 / 0.6); /* fond derrière une photo agrandie */
   --revisit: #ffe58a; /* « à reprendre » */
   --page-ink-dim: #6f7584; /* texte hors focus (mode focus), estompé mais lisible : 4,5:1 au moins */
@@ -101,6 +106,11 @@
   --type-image: #c3a2ef;
   --type-document: #d6c47a;
   --type-episode: #a4d065;
+  --type-groupe: #8fb6ec;
+  --type-objet: #e3d064;
+  --type-evenement: #f59a6c;
+  --type-regle: #9fc7b0;
+  --type-secret: #e98aa9;
   --backdrop: rgb(0 0 0 / 0.7);
   --revisit: #6b5a12;
   --page-ink-dim: #848a98;

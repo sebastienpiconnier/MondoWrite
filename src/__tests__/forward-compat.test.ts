@@ -11,7 +11,7 @@ describe("compatibilité avec les versions futures", () => {
     const text = [
       "---",
       "id: k3x9a7bq2m",
-      "type: groupe",
+      "type: confrerie",
       'title: "Les gardiens"',
       'fiche: {"age":"34 ans","devise":"Tenir la lumière","nombre":3}',
       'membres: ["a","b"]',
@@ -23,9 +23,9 @@ describe("compatibilité avec les versions futures", () => {
     const card = fileToCard(text)!;
     // Affichée comme une Idée, sans perdre ce qu'elle était.
     expect(card.type).toBe("idee");
-    expect(card.keep).toEqual({ type: "groupe", front: { membres: '["a","b"]', couleur: "bleu" }, fiche: { age: "34 ans", devise: "Tenir la lumière" } });
+    expect(card.keep).toEqual({ type: "confrerie", front: { membres: '["a","b"]', couleur: "bleu" }, fiche: { age: "34 ans", devise: "Tenir la lumière" } });
     const again = cardToFile(card);
-    expect(again).toContain("type: groupe");
+    expect(again).toContain("type: confrerie");
     expect(again).toContain('membres: ["a","b"]');
     expect(again).toContain("couleur: bleu");
     expect(again).toContain('"devise":"Tenir la lumière"');
@@ -36,7 +36,7 @@ describe("compatibilité avec les versions futures", () => {
   it("une carte de cette version n'a rien à garder, et un type choisi remplace le type inconnu", () => {
     const card = { id: "p", type: "personnage" as const, title: "Inès", html: "", fiche: { age: "34 ans" } };
     expect(fileToCard(cardToFile(card))!.keep).toBeUndefined();
-    const moved = { ...card, type: "personnage" as const, keep: { type: "groupe" } };
+    const moved = { ...card, type: "personnage" as const, keep: { type: "confrerie" } };
     expect(cardToFile(moved)).toContain("type: personnage");
   });
 

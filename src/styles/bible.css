@@ -304,6 +304,13 @@
 
 /* Lien d'une fiche : « × » pour délier (le fil du canevas part, annulable). */
 .link-chip { display: inline-flex; align-items: center; gap: 4px; padding-right: 4px; }
+.link-chip-open { display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.link-chip.is-open { border-color: var(--accent); }
+.link-chip-mark { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.wire-sheet { margin-top: 8px; }
+.wire-sheet > .eyebrow { padding: 12px 14px 4px; }
+/* Question tranchée (décidée ou abandonnée) : en fin de rubrique, estompée. */
+.bible-entry.is-settled .bible-title { color: var(--muted); }
 .chip-remove { display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; }
 @media (any-hover: hover) { .chip-remove:hover { background: var(--hover); color: var(--danger); } }
 @media (pointer: coarse) { .chip-remove { width: 36px; height: 36px; } }

@@ -110,8 +110,11 @@ export function bookOf(s: ProjectDocSource, ctx: DocContext, year: number): Book
   return { ...info(s, ctx), year, sections: sections.map(({ key: _key, ...rest }) => rest as BookSection) };
 }
 
+/** Libellés des valeurs écrites dans les fiches (type d'arc, statut, champs à choix), par valeur. */
+export const valueLabels = (t: Messages): Record<string, string> => ({ ...t.character.arcTypes, ...t.sceneStatus.values, ...Object.assign({}, ...Object.values(t.fiche.values)) });
+
 /** Bible : couverture puis les rubriques données, dans leur ordre. */
-export function bibleOf(s: ProjectDocSource, ctx: DocContext, sections: CardType[]): ExportDoc {
+export function bibleOf(s: ProjectDocSource, ctx: DocContext, sections: CardType[], forOther = false): ExportDoc {
   const { t } = ctx;
   const base = info(s, ctx);
   return bibleDoc(
@@ -123,8 +126,9 @@ export function bibleOf(s: ProjectDocSource, ctx: DocContext, sections: CardType
       untitled: t.bible.untitled,
       linkedTo: t.bible.linkedTo,
       fields: { ...t.character.fields, ...t.fiche.fields },
-      arcTypes: { ...t.character.arcTypes, ...t.sceneStatus.values },
+      arcTypes: valueLabels(t),
       cover: { title: t.pitch.toc, fields: t.pitch.fields },
+      forOther,
     },
     s.pitch,
     sections,
@@ -148,7 +152,7 @@ export function canvasOf(s: ProjectDocSource, ctx: DocContext): ExportDoc {
       untitledFrame: t.exports.untitledFrame,
       linkedTo: t.bible.linkedTo,
       fields: { ...t.character.fields, ...t.fiche.fields },
-      arcTypes: { ...t.character.arcTypes, ...t.sceneStatus.values },
+      arcTypes: valueLabels(t),
     },
   );
 }

@@ -26,6 +26,11 @@
 .react-flow__minimap-node.type-image { fill: var(--type-image); }
 .react-flow__minimap-node.type-document { fill: var(--type-document); }
 .react-flow__minimap-node.type-episode { fill: var(--type-episode); }
+.react-flow__minimap-node.type-groupe { fill: var(--type-groupe); }
+.react-flow__minimap-node.type-objet { fill: var(--type-objet); }
+.react-flow__minimap-node.type-evenement { fill: var(--type-evenement); }
+.react-flow__minimap-node.type-regle { fill: var(--type-regle); }
+.react-flow__minimap-node.type-secret { fill: var(--type-secret); }
 .react-flow__minimap-node.type-question { fill: var(--type-question); }
 /* Haut du canevas : filtre actif, mise en avant, sélection multiple ou aide, l'un sous l'autre, centrés. */
 .canvas-top {

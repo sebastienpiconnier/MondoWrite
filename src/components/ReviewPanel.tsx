@@ -60,6 +60,14 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
         return fmt(t.items.noGoal, { name: f.names![0] });
       case "noEpisodes":
         return t.items.noEpisodes;
+      case "pilotLength":
+        return fmt(t.items.pilotLength, { n: f.counts![0], min: f.counts![1], max: f.counts![2], format: f.text });
+      case "secretNoReveal":
+        return fmt(t.items.secretNoReveal, { name: f.names![0] });
+      case "secretNoClue":
+        return fmt(t.items.secretNoClue, { name: f.names![0] });
+      case "objectOnce":
+        return fmt(t.items.objectOnce, { name: f.names![0] });
     }
   };
   // Une question sur l'histoire mène à la fiche (ou à la Bible), pas à un passage du texte.

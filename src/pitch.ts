@@ -22,26 +22,56 @@ export const PITCH_TEXTS = [
   "promesse",
   "nestPas",
   "arene",
+  // Lot 7 (modèle de Final Draft) : ce qui précède le pilote, ce qui tient la bande ensemble.
+  "avantPilote",
+  "ensemble",
   "mecanique",
   "episodeType",
   "episodes",
   "saison",
   "finSaison",
+  // Lot 7 : les saisons suivantes en quelques lignes.
+  "suite",
   "aFaire",
   "aEviter",
   "pistes",
+  // Lot 7 : autres supports (podcast, roman graphique, jeu…), imprimés pour un tiers seulement.
+  "supports",
 ] as const;
 /** Pastilles : une valeur courte, choisie dans une liste ou saisie librement. */
-export const PITCH_CHIPS = ["genre", "cible", "format", "pov", "temps", "ton", "statut", "credits", "dapres"] as const;
+export const PITCH_CHIPS = ["genre", "cible", "format", "forme", "pilote", "pov", "temps", "ton", "statut", "credits", "dapres"] as const;
 
 export type PitchText = (typeof PITCH_TEXTS)[number];
 /**
  * Textes propres à une série : sous-partie « Écrire la série » de la couverture d'un scénario. `episodes` n'y est
  * plus (lot 6) : chaque épisode est une carte Épisode, et la clé n'est relue que pour la reprise (episodes.ts).
  */
-export const SERIES_TEXTS = ["pourquoi", "pourquoiMoi", "promesse", "nestPas", "arene", "mecanique", "episodeType", "saison", "finSaison", "aFaire", "aEviter", "pistes"] as const satisfies readonly PitchText[];
+export const SERIES_TEXTS = [
+  "pourquoi",
+  "pourquoiMoi",
+  "promesse",
+  "nestPas",
+  "arene",
+  "avantPilote",
+  "ensemble",
+  "mecanique",
+  "episodeType",
+  "saison",
+  "finSaison",
+  "suite",
+  "aFaire",
+  "aEviter",
+  "pistes",
+  "supports",
+] as const satisfies readonly PitchText[];
 /** Pastilles d'un roman seulement (un scénario est toujours au présent, vu par la caméra). */
 export const NOVEL_CHIPS = ["pov", "temps"] as const satisfies readonly (typeof PITCH_CHIPS)[number][];
+/** Pastilles d'une série seulement (lot 7) : forme (bouclée, feuilletonnante, hybride) et type de pilote. */
+export const SERIES_CHIPS = ["forme", "pilote"] as const satisfies readonly (typeof PITCH_CHIPS)[number][];
+
+/** Pastilles de la couverture pour ce type de projet, dans l'ordre. */
+export const chipsFor = (kind: "roman" | "scenario"): PitchChip[] =>
+  PITCH_CHIPS.filter((c) => !((kind === "scenario" ? NOVEL_CHIPS : SERIES_CHIPS) as readonly string[]).includes(c));
 export type PitchChip = (typeof PITCH_CHIPS)[number];
 export type PitchField = PitchText | PitchChip;
 export type Pitch = Partial<Record<PitchField, string>>;
@@ -94,7 +124,9 @@ export const isEmptyPitch = (pitch: Pitch) => Object.keys(pitch).length === 0;
 const RETIRED: readonly string[] = ["episodes"];
 
 export const pitchFields = (kind: "roman" | "scenario" = "roman"): PitchField[] =>
-  FIELDS.filter((key) => !RETIRED.includes(key)).filter((key) => (kind === "scenario" ? !(NOVEL_CHIPS as readonly string[]).includes(key) : !(SERIES_TEXTS as readonly string[]).includes(key)));
+  FIELDS.filter((key) => !RETIRED.includes(key)).filter((key) =>
+    kind === "scenario" ? !(NOVEL_CHIPS as readonly string[]).includes(key) : !(SERIES_TEXTS as readonly string[]).includes(key) && !(SERIES_CHIPS as readonly string[]).includes(key),
+  );
 
 /** Champs remplis, pour le repère discret de la couverture. */
 export const pitchFilled = (pitch: Pitch, kind: "roman" | "scenario" = "roman") => pitchFields(kind).filter((key) => pitch[key]?.trim()).length;

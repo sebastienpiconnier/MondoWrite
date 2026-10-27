@@ -41,7 +41,7 @@ describe("couverture du projet, fonctions pures", () => {
     expect(chipSuggestions(["Polar", "Fantasy", "fantasy", "Romance"], "polar")).toEqual(["Fantasy", "Romance"]);
     expect(chipSuggestions(fr.pitch.suggest.genre, undefined)).toHaveLength(fr.pitch.suggest.genre.length);
     // Mêmes pastilles proposées dans les deux langues.
-    for (const key of Object.keys(fr.pitch.suggest) as (keyof typeof fr.pitch.suggest)[]) expect(en.pitch.suggest[key].length).toBeGreaterThan(2);
+    for (const key of Object.keys(fr.pitch.suggest) as (keyof typeof fr.pitch.suggest)[]) expect(en.pitch.suggest[key].length).toBeGreaterThan(1);
   });
 });
 

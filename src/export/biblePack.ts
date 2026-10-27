@@ -12,14 +12,16 @@ import { PLAN_TEMPLATES, chapterNumbers } from "../plan";
 import { bookOrder } from "../book";
 import type { Pitch } from "../pitch";
 import { NOVEL_CHIPS, readEpisodes } from "../pitch";
-import { appearances, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, pivotOf } from "../episodes";
+import { appearances, bySeason, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, manySeasons, pivotOf } from "../episodes";
 import { countWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
 import { listScenes, sceneSynopsis } from "../screenplay/scenes";
 import { beatOf, sectionLabel } from "../screenplay/template";
 import { screenplaySceneTexts, timeline } from "../timeline";
 import type { CardNode } from "../projectState";
-import { CHARACTER_FIELDS, CHARACTER_HEAD_FIELDS, isPrincipal, motorFields, nicknames } from "../character";
+import { CHARACTER_FIELDS, CHARACTER_HEAD_FIELDS, ficheText, isPrincipal, isSettledQuestion, motorFields, nicknames, sheetFields } from "../character";
+import { valueLabels } from "./projectDocs";
+import { wireFicheOf } from "../wires";
 import { PART_OF, partNumber, type PartKey } from "../bibleParts";
 import type { BibleExportOptions } from "../bibleExport";
 import { isMediaName } from "../media";
@@ -87,7 +89,7 @@ export interface PackSource {
   title: string;
   kind: ProjectKind;
   nodes: CardNode[];
-  edges: { source: string; target: string; label?: unknown }[];
+  edges: { source: string; target: string; label?: unknown; data?: Record<string, unknown> }[];
   plan: Plan;
   manuscript: Manuscript;
   pitch: Pitch;
@@ -170,7 +172,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       const p = s.pitch;
       if (clean(p.logline)) blocks.push({ kind: "label", text: t.pitch.fields.logline }, { kind: "lead", text: clean(p.logline) });
       // Pastilles : les valeurs seules ; statut, « d'après » et crédits avec leur libellé (une valeur seule serait obscure).
-      const chips = (["genre", "cible", "format", "pov", "temps", "ton"] as const)
+      const chips = (["genre", "cible", "format", "forme", "pilote", "pov", "temps", "ton"] as const)
         .filter((k) => (k !== "format" || s.kind !== "scenario") && (s.kind !== "scenario" || !(NOVEL_CHIPS as readonly string[]).includes(k)))
         .map((k) => clean(p[k]))
         .filter(Boolean);
@@ -193,6 +195,8 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         if (forMe) for (const th of themes) blocks.push({ kind: "h3", text: th.title.trim() || t.bible.untitled }, ...paras(th.html));
         else blocks.push({ kind: "para", runs: [{ text: themes.map((th) => th.title.trim()).filter(Boolean).join(" · ") }] });
       }
+      // Autres supports (lot 7) : un argument de vente, pour un tiers seulement.
+      if (!forMe && s.kind === "scenario") blocks.push(...pitchText("supports"));
       section(part, e.titles.presentation, blocks);
     }
 
@@ -211,6 +215,8 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         return [clean(c.fiche?.accroche), inEps].filter(Boolean).join(" · ");
       };
       const memo = all.filter((c) => c.title.trim() && memoNote(c));
+      // Ce qui tient la bande ensemble (lot 7, Final Draft) : en tête de la partie.
+      if (s.kind === "scenario") blocks.push(...pitchText("ensemble"));
       if (s.kind === "scenario" && options.memo && memo.length >= 2) {
         blocks.push({ kind: "label", text: e.memo }, { kind: "list", columns: 2, items: memo.map((c) => ({ mark: "", text: c.title.trim(), note: memoNote(c) })) }, { kind: "pageBreak" });
       }
@@ -227,7 +233,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 
     if (part === "univers") {
       const places = byType("lieu");
-      if (s.kind === "scenario") blocks.push(...pitchText("arene", false));
+      if (s.kind === "scenario") blocks.push(...pitchText("arene", false), ...pitchText("avantPilote"));
       if (options.places) {
         const thumbs = places.flatMap((c) => [c.image, ...(c.images ?? [])].filter((n): n is string => !!n && isMediaName(n)).map((image) => ({ image, caption: c.title.trim() })));
         // Une image par lieu d'abord, puis les autres.
@@ -242,12 +248,14 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         const rest = facts.filter((f) => f.label !== t.fiche.fields.epoque);
         if (rest.length > 0) blocks.push({ kind: "para", small: true, runs: rest.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
       }
+      // Les cartes du monde (lot 7) : groupes, objets, événements, règles.
+      for (const type of ["groupe", "objet", "evenement", "regle"] as const) blocks.push(...worldBlocks(type));
       section(part, s.kind === "scenario" ? e.titles.universeScript : e.titles.universe, blocks);
     }
 
     if (part === "structure") {
       if (s.kind === "scenario") {
-        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"), ...pitchText("saison"), ...pitchText("finSaison"), ...episodeBlocks());
+        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"), ...pitchText("saison"), ...pitchText("finSaison"), ...episodeBlocks(), ...pitchText("suite"));
       }
       for (const c of byType("intrigue")) {
         blocks.push({ kind: "h3", text: c.title.trim() || t.bible.untitled, sub: clean(c.fiche?.nature) });
@@ -255,6 +263,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         if (cells.length > 0) blocks.push({ kind: "cells", items: cells });
         if (forMe) blocks.push(...paras(c.html));
       }
+      blocks.push(...worldBlocks("secret"));
       if (s.kind === "scenario" && options.grid) {
         // Les fils de la saison (intrigues × épisodes) ; sans épisodes reliés, ceux du pilote.
         const season = seasonGrid();
@@ -275,8 +284,12 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     }
 
     if (part === "pourVous") {
+      // Questions ouvertes d'abord ; une question décidée dit ce qui a été décidé ; une abandonnée n'est plus listée.
+      const asked = byType("question").filter((c) => c.fiche?.etat !== "abandonnee");
       const questions = [
-        ...byType("question").map((c) => ({ mark: "?", text: c.title.trim() || firstSentence(c.html) })),
+        ...[...asked.filter((c) => !isSettledQuestion(c)), ...asked.filter(isSettledQuestion)].map((c) =>
+          isSettledQuestion(c) ? { mark: "✓", text: c.title.trim() || firstSentence(c.html), note: clean(c.fiche?.decision) } : { mark: "?", text: c.title.trim() || firstSentence(c.html) },
+        ),
         ...byType("personnage").flatMap((c) => (c.questions ?? []).map((q) => ({ mark: "?", text: `${c.title.trim()} : ${q}` }))),
       ].filter((q) => q.text);
       if (questions.length > 0) blocks.push({ kind: "label", text: v.types.question.section }, { kind: "list", columns: 1, items: questions });
@@ -288,7 +301,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       const sources = [...byType("lien"), ...byType("document"), ...byType("image")].filter((c) => c.title.trim() || c.fiche?.url);
       if (sources.length > 0) {
         blocks.push({ kind: "label", text: e.sources });
-        blocks.push({ kind: "list", columns: 1, items: sources.map((c) => ({ mark: "–", text: c.title.trim() || clean(c.fiche?.url), note: [clean(c.fiche?.auteur), clean(c.fiche?.publication), clean(c.fiche?.url)].filter(Boolean).join(" · ") })) });
+        blocks.push({ kind: "list", columns: 1, items: sources.map((c) => ({ mark: "–", text: c.title.trim() || clean(c.fiche?.url), note: [clean(c.fiche?.auteur), clean(c.fiche?.publication), clean(c.fiche?.url), clean(c.fiche?.retenir)].filter(Boolean).join(" · ") })) });
       }
       section(part, t.bible.parts.pourVous, blocks);
     }
@@ -327,7 +340,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   };
 
   /** Un texte de la couverture sous son libellé (un paragraphe par ligne). */
-  function pitchText(key: "arene" | "mecanique" | "episodeType" | "saison" | "finSaison" | "pistes" | "pourquoiMoi", withLabel = true): PackBlock[] {
+  function pitchText(key: "arene" | "mecanique" | "episodeType" | "saison" | "finSaison" | "pistes" | "pourquoiMoi" | "avantPilote" | "ensemble" | "suite" | "supports", withLabel = true): PackBlock[] {
     const text = (s.pitch[key] ?? "").trim();
     if (!text) return [];
     const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l): PackBlock => ({ kind: "para", runs: [{ text: l }] }));
@@ -350,14 +363,24 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       const pivot = pivotOf(c, cards);
       return pivot?.title.trim() ? `${t.fiche.fields.pivot} : ${pivot.title.trim()}` : "";
     };
+    // Repère de la saison (lot 7) : mi-saison, fin de saison.
+    const marker = (c: CardData) => (c.fiche?.repere === "milieu" || c.fiche?.repere === "final" ? t.fiche.values.repere[c.fiche.repere] : "");
+    // Dès deux saisons, un intertitre par saison.
+    const seasons = manySeasons(episodes) ? bySeason(episodes) : [{ season: 0, episodes }];
+    const seasonLabel = (n: number): PackBlock[] => (n > 0 ? [{ kind: "label", text: fmt(e.season, { n }) }] : []);
     if (!forMe)
       return [
         { kind: "label", text: v.types.episode.section },
-        { kind: "list", columns: 1, items: episodes.map((c) => ({ mark: numbers.get(c.id)!, text: named(c), note: [clean(c.fiche?.synopsis), pivotNote(c)].filter(Boolean).join(" · ") })) },
+        ...seasons.flatMap(({ season, episodes: list }): PackBlock[] => [
+          ...seasonLabel(season),
+          { kind: "list", columns: 1, items: list.map((c) => ({ mark: numbers.get(c.id)!, text: named(c), note: [marker(c), clean(c.fiche?.synopsis), pivotNote(c)].filter(Boolean).join(" · ") })) },
+        ]),
       ];
     const out: PackBlock[] = [{ kind: "h2", text: v.types.episode.section }];
     for (const c of episodes) {
-      out.push({ kind: "h3", text: `${numbers.get(c.id)}. ${named(c)}`, sub: pivotOf(c, cards)?.title.trim() });
+      const opens = seasons.find((g) => g.episodes[0] === c);
+      if (seasons.length > 1 && opens) out.push(...seasonLabel(opens.season));
+      out.push({ kind: "h3", text: `${numbers.get(c.id)}. ${named(c)}`, sub: [marker(c), pivotOf(c, cards)?.title.trim()].filter(Boolean).join(" · ") });
       if (clean(c.fiche?.synopsis)) out.push({ kind: "para", runs: [{ text: clean(c.fiche?.synopsis) }] });
       const facts = [
         { label: v.types.intrigue.section, value: episodeThreads(c, cards, s.edges).map(named).join(", ") },
@@ -365,6 +388,31 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       ].filter((f) => f.value);
       if (facts.length > 0) out.push({ kind: "para", small: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
       out.push(...paras(c.html));
+    }
+    return out;
+  }
+
+  /**
+   * Cartes du monde d'un type (lot 7) : titre (et sous-titre : la date d'un événement, la nature d'un groupe),
+   * texte, fiche en une ligne, cartes reliées par un fil. La certitude ne sert qu'à l'auteur.
+   */
+  function worldBlocks(type: "groupe" | "objet" | "evenement" | "regle" | "secret"): PackBlock[] {
+    const list = byType(type).filter((c) => c.title.trim() || c.html.replace(/<[^>]+>/g, "").trim());
+    if (list.length === 0) return [];
+    const subKey = type === "evenement" ? "quand" : type === "groupe" ? "nature" : "";
+    const labels = { ...t.fiche.fields, ...((t.fiche.typeLabels as Partial<Record<string, Record<string, string>>>)[type] ?? {}) } as Record<string, string>;
+    const values = valueLabels(t);
+    const out: PackBlock[] = [{ kind: "label", text: v.types[type].section }];
+    for (const c of list) {
+      out.push({ kind: "h3", text: c.title.trim() || t.bible.untitled, sub: subKey ? clean(c.fiche?.[subKey]) : undefined });
+      out.push(...paras(c.html));
+      const facts = sheetFields(type)
+        .filter((k) => k !== subKey && (forMe || k !== "certitude"))
+        .map((k) => ({ label: labels[k] ?? k, value: clean(c.fiche?.[k] ? ficheText(k, c.fiche[k], values) : "") }))
+        .filter((x) => x.value);
+      if (facts.length > 0) out.push({ kind: "para", small: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
+      const near = s.edges.flatMap((ed) => (ed.source === c.id ? [ed.target] : ed.target === c.id ? [ed.source] : [])).map(titleOf).filter(Boolean);
+      if (near.length > 0) out.push({ kind: "para", small: true, muted: true, runs: [{ text: `${t.bible.linkedTo} : `, bold: true }, { text: [...new Set(near)].join(", ") }] });
     }
     return out;
   }
@@ -433,10 +481,13 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     if (motor.length > 0) out.push({ kind: "cells", items: motor });
     const stakes = (["enjeuExt", "enjeuRel", "enjeuInt"] as const).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
     if (stakes.length > 0) out.push({ kind: "cells", items: stakes });
+    // Paradoxe et dilemme (lot 7, Final Draft) : aussi pour un tiers, ils disent le personnage en deux cases.
+    const depth = (["paradoxe", "dilemme"] as const).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
+    if (depth.length > 0) out.push({ kind: "cells", items: depth });
     if (clean(f.debut) || clean(f.fin)) out.push({ kind: "arc", from: { label: t.character.fields.debut, value: clean(f.debut) }, to: { label: t.character.fields.fin, value: clean(f.fin) } });
     else if (clean(f.arc)) out.push({ kind: "para", runs: [{ text: `${t.character.fields.arc} : `, bold: true }, { text: clean(f.arc) }] });
     // Le reste de la fiche : tout pour soi ; pour un tiers, seulement la voix.
-    const shown = new Set<string>([...motorFields(c), ...CHARACTER_HEAD_FIELDS, "role", "age", "metier", "relations", "surnoms", "enjeuExt", "enjeuRel", "enjeuInt"]);
+    const shown = new Set<string>([...motorFields(c), ...CHARACTER_HEAD_FIELDS, "role", "age", "metier", "relations", "surnoms", "enjeuExt", "enjeuRel", "enjeuInt", "paradoxe", "dilemme"]);
     const extra = CHARACTER_FIELDS.filter((k) => !shown.has(k) && forMe).map((k) => ({ label: t.character.fields[k], value: clean(f[k]) })).filter((x) => x.value);
     for (const x of extra) out.push({ kind: "para", small: true, runs: [{ text: `${x.label} : `, bold: true }, { text: x.value }] });
     // Relations : les fils vers les autres personnages, puis le champ de la fiche.
@@ -445,7 +496,9 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       .map((ed) => {
         const other = titleOf(ed.source === c.id ? ed.target : ed.source);
         const label = clean(String(ed.label ?? ""));
-        return label ? `${label} ${other}` : other;
+        // Fiche du fil (lot 7) : ce qui se joue entre eux, entre parenthèses.
+        const stake = clean(wireFicheOf(ed)?.enjeu);
+        return `${label ? `${label} ${other}` : other}${stake ? ` (${stake})` : ""}`;
       })
       .filter(Boolean);
     const relText = [...rel, clean(f.relations)].filter(Boolean).join(" · ");

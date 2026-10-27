@@ -240,7 +240,7 @@ function build({ cards, plan, sceneIds, labels }: OrganizeInput, perRow: number)
   };
 
   const rows: Layout[] = [
-    shelves([...typeFrame("personnage"), ...typeFrame("intrigue"), ...typeFrame("episode"), ...typeFrame("lieu"), ...typeFrame("theme"), ...typeFrame("question")]),
+    shelves([...typeFrame("personnage"), ...typeFrame("intrigue"), ...typeFrame("episode"), ...typeFrame("secret"), ...typeFrame("lieu"), ...typeFrame("groupe"), ...typeFrame("objet"), ...typeFrame("evenement"), ...typeFrame("regle"), ...typeFrame("theme"), ...typeFrame("question")]),
     // Les rangées du récit l'une sous l'autre (chacune de gauche à droite, voir inRows).
     storyLayout,
     // Idées en vrac, puis les images et les liens collés sur le canevas.

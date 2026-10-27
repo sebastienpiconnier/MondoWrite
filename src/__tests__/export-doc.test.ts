@@ -86,7 +86,7 @@ describe("documents", () => {
 
   it("bible : une partie par type, fiches triées, liens en clair, titres de fiche en gras", () => {
     const doc = bibleDoc(info, cards, [{ source: "p2", target: "l1", label: "y travaille" }, { source: "p1", target: "p2", label: "" }], {
-      sections: { personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", image: "Images", lien: "Liens", document: "Documents", idee: "Idées", episode: "Épisodes" },
+      sections: { personnage: "Personnages", lieu: "Lieux", scene: "Scènes", intrigue: "Intrigues", theme: "Thèmes", question: "Questions", image: "Images", lien: "Liens", document: "Documents", idee: "Idées", episode: "Épisodes", groupe: "Groupes", objet: "Objets", evenement: "Événements", regle: "Règles", secret: "Secrets" },
       untitled: "Sans titre",
       linkedTo: "Relié à",
     });

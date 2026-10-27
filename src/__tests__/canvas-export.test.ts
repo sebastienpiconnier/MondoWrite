@@ -9,7 +9,7 @@ import type { CardData } from "../types";
 const card = (id: string, type: CardData["type"], title: string, html = ""): CardData => ({ id, type, title, html });
 const box = (x: number, y: number, width = 240, height = 120) => ({ x, y, width, height });
 const strings = {
-  types: { idee: "Idée", personnage: "Personnage", lieu: "Lieu", scene: "Scène", intrigue: "Intrigue", theme: "Thème", question: "Question", image: "Image", lien: "Lien", document: "Document", episode: "Épisode" },
+  types: { idee: "Idée", personnage: "Personnage", lieu: "Lieu", scene: "Scène", intrigue: "Intrigue", theme: "Thème", question: "Question", image: "Image", lien: "Lien", document: "Document", episode: "Épisode", groupe: "Groupe", objet: "Objet", evenement: "Événement", regle: "Règle", secret: "Secret" },
   untitled: "Sans titre",
   loose: "Hors cadre",
   untitledFrame: "Cadre sans nom",
