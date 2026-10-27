@@ -133,18 +133,19 @@ describe("organiser le canevas", () => {
     expect(chapter.width).toBeGreaterThanOrEqual(Math.ceil(chapter.title.length * 8.5) + 120);
   });
 
-  it("en paysage : cases côte à côte, nouvelle rangée avant 9 scènes, ensemble plus large que haut", () => {
+  it("en paysage : cases côte à côte, à la ligne quand la rangée est pleine, scènes d'une case sur une ligne", () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ id: `s${i}`, type: "scene" as const, width: 240, height: 120 }));
     const ids = many.map((c) => c.id);
-    // Cinq cases : 3 + 3 + 2 scènes tiennent sur une rangée (8), puis 2 + 2 sur la suivante.
     const beats = { a_setup: ids.slice(0, 3), a_incident: ids.slice(3, 6), a_confrontation: ids.slice(6, 8), a_crisis: ids.slice(8, 10), a_climax: ids.slice(10) };
     const r = organize({ cards: many, plan: { template: "troisActes", beats }, sceneIds: ids, labels, origin: { x: 0, y: 0 }, newId });
     const frame = (title: string) => r.frames.find((f) => f.title === title)!;
-    expect(frame("a_incident").y).toBe(frame("a_setup").y);
-    expect(frame("a_confrontation").y).toBe(frame("a_setup").y);
-    expect(frame("a_incident").x).toBeGreaterThan(frame("a_setup").x);
+    // Lecture de gauche à droite, puis de haut en bas : chaque case après la précédente.
+    const keys = Object.keys(beats);
+    for (let k = 1; k < keys.length; k++) {
+      const [prev, next] = [frame(keys[k - 1]), frame(keys[k])];
+      expect(next.y > prev.y || (next.y === prev.y && next.x > prev.x)).toBe(true);
+    }
     expect(frame("a_crisis").y).toBeGreaterThan(frame("a_setup").y);
-    expect(frame("a_climax").y).toBe(frame("a_crisis").y);
     // Les scènes d'une case sont sur une même ligne.
     expect(new Set(ids.slice(0, 3).map((id) => r.positions.get(id)!.y)).size).toBe(1);
     const xs = [...r.positions.values()].map((p) => p.x);
@@ -152,6 +153,34 @@ describe("organiser le canevas", () => {
     expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(Math.max(...ys) - Math.min(...ys));
     // Un cadre de type : une rangée jusqu'à 4 cartes, puis plus large que haut.
     expect([1, 4, 5, 9, 20].map(typeColumns)).toEqual([1, 4, 4, 5, 7]);
+  });
+
+  it("répartition compacte : un bloc au format d'un écran, plus large quand il y a plus de cartes", () => {
+    const project = (scenes: number, sheets: number) => {
+      const types = ["personnage", "intrigue", "lieu", "theme", "question", "idee"] as const;
+      const list = [
+        ...Array.from({ length: scenes }, (_, i) => ({ id: `s${i}`, type: "scene" as const, width: 240, height: 120 })),
+        ...types.flatMap((type) => Array.from({ length: sheets }, (_, i) => ({ id: `${type}${i}`, type, width: 240, height: 160 }))),
+      ];
+      const r = organize({ cards: list, plan: EMPTY_PLAN, sceneIds: list.filter((c) => c.type === "scene").map((c) => c.id), labels, origin: { x: 0, y: 0 }, newId });
+      const boxes = list.map((c) => ({ ...r.positions.get(c.id)!, width: c.width, height: c.height }));
+      // Aucun chevauchement entre cartes.
+      for (const a of boxes) for (const b of boxes) if (a !== b) expect(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
+      const width = Math.max(...boxes.map((b) => b.x + b.width));
+      const height = Math.max(...boxes.map((b) => b.y + b.height));
+      const perRow = new Set(list.filter((c) => c.type === "scene").map((c) => r.positions.get(c.id)!.x)).size;
+      return { ratio: width / height, perRow };
+    };
+    const small = project(12, 3);
+    const big = project(100, 15);
+    // Ni longue bande, ni colonne : entre le carré et le très large.
+    for (const p of [small, big]) {
+      expect(p.ratio).toBeGreaterThan(1);
+      expect(p.ratio).toBeLessThan(2.2);
+    }
+    expect(big.perRow).toBeGreaterThan(small.perRow);
+    // Un petit récit reste sur une ligne.
+    expect(project(4, 0).perRow).toBe(4);
   });
 
   it("les pages du livre (épilogue…) ont leur cadre, à la fin, et ne restent pas en plan", () => {

@@ -552,10 +552,24 @@ export function ScreenplayView() {
   const goTo = (index: number) => {
     emit();
     const pos = posOf(editor.state.doc, index);
-    editor.chain().focus().setTextSelection(pos + 1).run();
+    editor.chain().setTextSelection(pos + 1).focus(undefined, { scrollIntoView: false }).run();
+    // Le volet de droite suit tout de suite la scène choisie, sans attendre l'éditeur.
+    track(editor);
+    // WebKit (app Mac, iPad) : le focus différé de l'éditeur peut relire l'ancienne position du
+    // curseur dans la page et la remettre. On repose la sélection sur la scène choisie.
+    window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() => {
+        if (editor.isDestroyed || editor.state.selection.$from.index(0) === index) return;
+        if (index >= editor.state.doc.childCount) return;
+        editor.commands.setTextSelection(posOf(editor.state.doc, index) + 1);
+      }),
+    );
     const dom = editor.view.nodeDOM(pos);
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
   };
+
+  /** Choisit une scène pour le volet de droite sans déplacer le curseur (clic sur son synopsis). */
+  const showScene = (index: number) => setCurrent((prev) => (prev.index === index ? prev : { index, type: null }));
 
   // Arrivée depuis la recherche ou « À faire » : la scène de cette carte.
   const target = useCosmos((s) => s.manuscriptTarget);
@@ -598,6 +612,8 @@ export function ScreenplayView() {
     if (!tr.docChanged) return;
     view.dispatch(tr);
     emit();
+    // L'éditeur vient de signaler sa scène (celle du curseur) : le volet reste sur celle du synopsis.
+    showScene(index);
   };
 
   /** Une carte Scène sans texte : on ouvre sa scène à la fin du scénario. */
@@ -787,12 +803,14 @@ export function ScreenplayView() {
                   })}
                 </span>
               )}
-              {/* Le synopsis s'écrit ici ; il apparaît dans le séquencier. */}
+              {/* Le synopsis s'écrit ici ; il apparaît dans le séquencier. Le toucher choisit aussi la scène. */}
+              <div className="sp-scene-synopsis" onFocusCapture={() => showScene(s.index)} onPointerDownCapture={() => showScene(s.index)}>
               <SynopsisField
                 value={sceneSynopsis(elements, s.index)}
                 scene={s.text || sp.untitledScene}
                 onSave={(text) => saveSynopsis(s.index, text)}
               />
+              </div>
             </li>
           ))}
         </ol>

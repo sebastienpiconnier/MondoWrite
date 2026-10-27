@@ -451,7 +451,12 @@ export function BookEditor({
     let frame = 0;
     const spy = () => {
       frame = 0;
-      if (Date.now() - lastGo.current < 800 || editor.isDestroyed) return;
+      if (editor.isDestroyed) return;
+      // Juste après un choix : le défilement qu'il provoque (et son inertie) ne change pas la scène.
+      if (Date.now() - lastGo.current < 800) {
+        lastGo.current = Date.now();
+        return;
+      }
       const top = (main ? main.getBoundingClientRect().top : 0) + 96;
       let found: string | null = null;
       for (const el of editor.view.dom.querySelectorAll<HTMLElement>("[data-scene-id]")) {
