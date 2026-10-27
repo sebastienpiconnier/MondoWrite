@@ -17,6 +17,7 @@ import { MISSING_FOLDER } from "../saveErrors";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 import { LOCK_DIR } from "../lock";
 import { downloadProgress, reportLoad } from "../loadProgress";
+import { freeName, macIcloudState, strayFolders } from "./icloudFolders";
 
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
@@ -158,6 +159,33 @@ async function migratePrivateProjects() {
 }
 
 /** Un dossier est un projet s'il contient cosmos.json (ou son repère iCloud, pas encore téléchargé). */
+/**
+ * Dossier iCloud de l'app et dossier de ses projets, quand les projets y sont rangés (iPhone et iPad sans dossier cloud
+ * choisi ; Mac dont le dossier cloud est celui de l'iPhone). Sinon null.
+ */
+async function icloudBase(): Promise<{ docs: string; projects: string } | null> {
+  try {
+    if (mobile) {
+      if (await cloudRoot()) return null;
+      const docs = await activeIcloud();
+      return docs ? { docs, projects: await join(docs, MOBILE_DIR) } : null;
+    }
+    return macIcloudOn() ? { docs: await macIcloudDocs(), projects: await macIcloudProjects() } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Doublons de `projets` créés par iCloud (« projets 2 »…), chemins complets. */
+async function strayDirs(docs: string): Promise<string[]> {
+  try {
+    const names = (await readDir(docs)).filter((e) => e.isDirectory).map((e) => e.name);
+    return Promise.all(strayFolders(names, MOBILE_DIR).map((n) => join(docs, n)));
+  } catch {
+    return [];
+  }
+}
+
 async function isProjectDir(dir: string) {
   try {
     return (await exists(await join(dir, META_FILE))) || (await exists(await join(dir, `.${META_FILE}.icloud`)));
@@ -244,7 +272,9 @@ function setDesktopCloud(path: string, name: string) {
 /**
  * Mac : si le conteneur iCloud de l'app existe (iCloud Drive actif, un autre appareil l'a créé) et que l'auteur n'a pas
  * choisi autre chose ni quitté la synchronisation, ses projets deviennent le dossier cloud par défaut : ceux de l'iPhone
- * et de l'iPad apparaissent à l'accueil, et un nouveau projet y est créé.
+ * et de l'iPad apparaissent à l'accueil, et un nouveau projet y est créé. Le dossier `projets` n'est jamais créé ici :
+ * s'il n'est pas encore arrivé, le créer vide ferait un doublon que iCloud renomme (« projets 2 », icloudFolders.ts).
+ * Il naît avec le premier projet créé sur ce Mac, ou arrive de l'iPhone.
  */
 async function adoptMacIcloud() {
   if (mobile) return;
@@ -255,7 +285,6 @@ async function adoptMacIcloud() {
     if (chosen && plainPath(chosen).endsWith(MAC_ICLOUD)) setDesktopCloud(projects, MAC_ICLOUD_NAME);
     if (desktopCloud() || localStorage.getItem(MAC_ICLOUD_OFF) === "1") return;
     if (!(await exists(await macIcloudDocs()))) return;
-    await mkdir(projects, { recursive: true });
     setDesktopCloud(projects, MAC_ICLOUD_NAME);
   } catch {
     /* pas de conteneur iCloud sur cet ordinateur */
@@ -457,10 +486,42 @@ export const tauriStorage: Storage = {
       }
       const cloud = desktopCloud();
       if (!cloud || (await exists(cloud.path).catch(() => true))) return null;
-      return macIcloudOn() ? "icloud" : "folder";
+      if (!macIcloudOn()) return "folder";
+      // Dossier iCloud de l'app présent, projets pas encore arrivés : on attend, sans rien créer.
+      return macIcloudState(await exists(await macIcloudDocs()).catch(() => false), false) === "waiting" ? "waiting" : "icloud";
     } catch {
       return null;
     }
+  },
+  async strayProjects() {
+    const base = await icloudBase();
+    if (!base) return 0;
+    let count = 0;
+    for (const dir of await strayDirs(base.docs)) for (const entry of await readDir(dir).catch(() => [])) if (entry.isDirectory && (await isProjectDir(await join(dir, entry.name)))) count++;
+    return count;
+  },
+  async gatherStray() {
+    const base = await icloudBase();
+    if (!base) return 0;
+    // Geste de l'auteur : le dossier des projets peut naître ici (les projets du doublon y entrent aussitôt).
+    await mkdir(base.projects, { recursive: true });
+    const taken = new Set((await readDir(base.projects)).map((e) => e.name));
+    let moved = 0;
+    for (const dir of await strayDirs(base.docs)) {
+      for (const entry of await readDir(dir).catch(() => [])) {
+        const from = await join(dir, entry.name);
+        if (!entry.isDirectory || !(await isProjectDir(from))) continue;
+        const name = freeName(entry.name, taken);
+        try {
+          await rename(from, await join(base.projects, name));
+          taken.add(name);
+          moved++;
+        } catch {
+          // Ce projet reste dans le doublon : rien n'est perdu, l'accueil le signale encore.
+        }
+      }
+    }
+    return moved;
   },
   location: () => (mobile || !current ? null : baseName(current)),
   // iCloud Drive range ses dossiers sous « Mobile Documents » (Mac comme iPhone) ; sur mobile sans dossier choisi,
