@@ -1,8 +1,9 @@
-/// Conteneur iCloud de l'app (déclaré dans les droits iOS et dans Info.ios.plist).
-#[cfg(target_os = "ios")]
+/// Conteneur iCloud de l'app (déclaré dans les droits iOS, et dans ceux du Mac quand la Release est signée avec un
+/// profil qui porte iCloud : voir docs/icloud-mac.md).
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 const ICLOUD_CONTAINER: &str = "iCloud.app.cosmos.ecriture";
 
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 mod icloud {
   use objc2_foundation::{NSFileManager, NSString, NSURL};
 
@@ -26,9 +27,12 @@ mod icloud {
 }
 
 /// Dossier Documents du conteneur iCloud (créé au besoin) et autorisé en lecture/écriture, ou None.
+/// Sur Mac, la demande fait connaître le conteneur au service iCloud du système, qui le télécharge alors dans chaque
+/// session ; sans le droit iCloud (version de dev, Release sans profil), la réponse est None et l'app retombe sur le
+/// chemin du conteneur sous ~/Library/Mobile Documents.
 #[tauri::command]
 async fn icloud_container(app: tauri::AppHandle) -> Option<String> {
-  #[cfg(target_os = "ios")]
+  #[cfg(any(target_os = "ios", target_os = "macos"))]
   {
     use tauri_plugin_fs::FsExt;
     let docs = format!("{}/Documents", icloud::container(ICLOUD_CONTAINER)?);
@@ -36,7 +40,7 @@ async fn icloud_container(app: tauri::AppHandle) -> Option<String> {
     app.fs_scope().allow_directory(&docs, true).ok()?;
     Some(docs)
   }
-  #[cfg(not(target_os = "ios"))]
+  #[cfg(not(any(target_os = "ios", target_os = "macos")))]
   {
     let _ = app;
     None
@@ -48,9 +52,12 @@ async fn icloud_container(app: tauri::AppHandle) -> Option<String> {
 /// ailleurs, rien n'est parcouru.
 #[tauri::command]
 async fn icloud_download(dir: String) -> usize {
-  #[cfg(target_os = "ios")]
+  #[cfg(any(target_os = "ios", target_os = "macos"))]
   {
-    fn walk(dir: &std::path::Path, pending: &mut usize, depth: usize) {
+    // `count` : l'ouverture attend ces fichiers-là. Les images et PDF (medias/) sont demandés sans être attendus,
+    // ils s'affichent quand ils arrivent ; les copies Markdown (markdown/, versions du jour comprises) ne sont
+    // jamais relues par l'app : ni demandées ni attendues. Les compter faisait attendre l'ouverture jusqu'au bout.
+    fn walk(dir: &std::path::Path, pending: &mut usize, depth: usize, count: bool) {
       // Profondeur bornée, et jamais de lien symbolique suivi (pas de boucle).
       if depth > 8 {
         return;
@@ -60,9 +67,14 @@ async fn icloud_download(dir: String) -> usize {
         let Ok(kind) = entry.file_type() else { continue };
         let name = entry.file_name().to_string_lossy().to_string();
         if kind.is_dir() {
-          walk(&entry.path(), pending, depth + 1);
+          if depth == 0 && name == "markdown" {
+            continue;
+          }
+          walk(&entry.path(), pending, depth + 1, count && !(depth == 0 && name == "medias"));
         } else if let Some(real) = name.strip_prefix('.').and_then(|n| n.strip_suffix(".icloud")) {
-          *pending += 1;
+          if count {
+            *pending += 1;
+          }
           icloud::download(&dir.join(real).to_string_lossy());
         }
       }
@@ -73,10 +85,10 @@ async fn icloud_download(dir: String) -> usize {
       return 0;
     }
     let mut pending = 0;
-    walk(&dir, &mut pending, 0);
+    walk(&dir, &mut pending, 0, true);
     pending
   }
-  #[cfg(not(target_os = "ios"))]
+  #[cfg(not(any(target_os = "ios", target_os = "macos")))]
   {
     let _ = dir;
     0

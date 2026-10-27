@@ -4,11 +4,13 @@
 // (souris, doigt, et sans clavier physique sur mobile).
 // « @ » dans le texte cite une autre carte : un menu propose les cartes du projet, et un fil est tiré.
 
+import { autosize } from "./autosize";
 import { documentExtension, imageExtension } from "../media";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useLifted } from "../lifted";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { type Editor, type UseEditorOptions } from "@tiptap/react";
+import { LiveBody, StaticBody, type FocusTarget } from "./lazyEditor";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
 import { sourceUrl } from "../character";
@@ -187,7 +189,14 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     return true;
   };
 
-  const editor = useEditor({
+  const seenHtml = useRef(data.html);
+  // L'éditeur n'est créé qu'au moment d'écrire dans la carte (clic, toucher, Tab, Entrée depuis le titre) :
+  // avant, la carte montre son texte tel que l'éditeur l'afficherait (StaticBody). Ouvrir un projet de
+  // plusieurs centaines de cartes ne crée donc plus des centaines d'éditeurs.
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const [live, setLive] = useState<FocusTarget | null>(null);
+  const goLive = (at: FocusTarget) => setLive((prev) => prev ?? at);
+  const editorOptions: UseEditorOptions = {
     extensions: [
       ...richTextExtensions(),
       // Fonction : relue à chaque rendu, donc suit le changement de langue.
@@ -242,7 +251,9 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       },
     },
     onUpdate: ({ editor: ed }) => {
-      updateCard(id, { html: ed.getHTML() });
+      const html = ed.getHTML();
+      seenHtml.current = html;
+      updateCard(id, { html });
       detectSlash(ed);
       detectMention(ed);
     },
@@ -256,7 +267,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       clearTimeout(blurTimer.current);
       blurTimer.current = setTimeout(() => setMention(null), 300);
     },
-  });
+  };
 
   // Carte soulevée = mode déplacement : le texte n'est plus modifiable (React Flow ne déplace pas une carte
   // saisie dans un champ éditable), donc on peut la saisir par n'importe quel endroit.
@@ -267,15 +278,21 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
 
   // Le texte a changé sans passer par cet éditeur (annuler, rétablir) : il se remet à jour.
   // Pendant la frappe, les deux sont égaux et rien ne se passe.
+  // Le texte reçu à la création (ou écrit par l'éditeur) n'est pas relu : à l'ouverture d'un gros projet,
+  // chaque carte refaisait sinon son contenu une seconde fois.
   useEffect(() => {
-    if (!editor || editor.isDestroyed || data.html === editor.getHTML()) return;
+    if (!editor || editor.isDestroyed || data.html === seenHtml.current) return;
+    seenHtml.current = data.html;
+    if (data.html === editor.getHTML()) return;
     if (data.html === "" && editor.isEmpty) return;
     editor.commands.setContent(data.html, { emitUpdate: false });
   }, [data.html, editor]);
 
-  // Changement de langue : on met à jour ce que TipTap a figé à la création.
+  // Changement de langue : on met à jour ce que TipTap a figé à la création (pas au montage, il est à jour).
+  const builtLang = useRef(lang);
   useEffect(() => {
-    if (!editor || editor.isDestroyed) return;
+    if (!editor || editor.isDestroyed || builtLang.current === lang) return;
+    builtLang.current = lang;
     editor.setOptions({
       editorProps: { ...editor.options.editorProps, attributes: { class: "card-editor", "aria-label": t.card.bodyAria } },
     });
@@ -303,10 +320,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge).
   const titleRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    const el = titleRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    autosize(titleRef.current);
     // La largeur compte : un titre sur deux lignes peut tenir sur une seule dans une carte élargie.
   }, [data.title, slugline, width]);
 
@@ -317,21 +331,27 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const [tall, setTall] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [writing, setWriting] = useState(false);
+  const [wrote, setWrote] = useState(false);
   useEffect(() => {
     const el = bodyRef.current?.querySelector<HTMLElement>(".card-editor");
     if (!el || typeof ResizeObserver === "undefined") return;
     const check = () => setTall(el.scrollHeight > CARD_BODY_MAX + 40);
     const observer = new ResizeObserver(check);
+    // L'observateur donne aussi la première mesure, après la mise en page (pas de calcul forcé par carte).
     observer.observe(el);
-    check();
     return () => observer.disconnect();
   }, [editor, novelScene]);
   useEffect(() => {
     if (!editor) return;
-    const on = () => setWriting(true);
+    const on = () => {
+      setWriting(true);
+      setWrote(true);
+    };
     const off = () => setWriting(false);
     editor.on("focus", on);
     editor.on("blur", off);
+    // Éditeur créé par un clic : il a déjà le focus quand on l'apprend.
+    if (editor.isFocused) on();
     return () => {
       editor.off("focus", on);
       editor.off("blur", off);
@@ -502,7 +522,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
             // Carte Lien sans adresse : l'adresse tapée dans le titre devient son lien.
             if (useCosmos.getState().linkFromTitle(id)) return;
             if (novelScene) useCosmos.getState().expandCard(id);
-            else editor?.commands.focus("start");
+            else if (editor) editor.commands.focus("start");
+            else goLive("start");
           }
         }}
         onBlur={() => {
@@ -518,8 +539,14 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         </div>
       ) : (
         <div ref={bodyRef} className={`card-body nodrag nowheel nopan${clamped ? " is-clamped" : ""}`}>
-          <EditorContent editor={editor} />
-          {editor && <FormatBar editor={editor} />}
+          {live ? (
+            <LiveBody options={editorOptions} at={live} onEditor={setEditor} />
+          ) : (
+            <StaticBody html={data.html} className="card-editor" label={t.card.bodyAria} placeholder={t.card.bodyPlaceholder} disabled={lifted} onActivate={goLive} />
+          )}
+          {/* La barre de mise en forme ne s'installe qu'à la première écriture dans la carte : posée sur chacune
+              à l'ouverture, elle redessinait tous les éditeurs du canevas (une extension par carte). */}
+          {editor && wrote && <FormatBar editor={editor} />}
         </div>
       )}
       {!novelScene && tall && !writing && (

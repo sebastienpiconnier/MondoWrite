@@ -6,6 +6,7 @@ import { Extension } from "@tiptap/react";
 import { Selection, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { isEditableType, type EditableType } from "./nodes";
+import { RETYPE_META, UPPERCASE, caseMemory } from "./autodetect";
 
 type Dispatch = ((tr: Transaction) => void) | undefined;
 
@@ -60,9 +61,15 @@ function retype(text: string, from: EditableType, to: EditableType, offset: numb
   return { text, offset };
 }
 
-function replaceElement(tr: Transaction, pos: number, node: PMNode, to: EditableType, offset: number): Transaction {
+function replaceElement(tr: Transaction, pos: number, node: PMNode, to: EditableType, offset: number, state?: EditorState): Transaction {
   const from = node.type.name as EditableType;
-  const next = retype(node.textContent, from, to, offset);
+  // Repassé en casse libre sans avoir été retouché : le texte retrouve sa casse d'avant les majuscules.
+  const memory = state ? caseMemory.getState(state) : null;
+  const restore =
+    memory && memory.pos === pos && UPPERCASE.has(from) && !UPPERCASE.has(to) && node.textContent === memory.upper ? memory.original : null;
+  const next = retype(restore ?? node.textContent, from, to, offset);
+  tr.setMeta(RETYPE_META, true);
+  if (restore !== null) tr.setMeta(caseMemory, null);
   const schema = tr.doc.type.schema;
   // Le lien vers la carte et le numéro appartiennent à l'en-tête : ils ne suivent pas un changement de type.
   const created = schema.nodes[to].create(null, next.text ? schema.text(next.text) : null);
@@ -77,7 +84,7 @@ export function setElementType(to: EditableType) {
     if (!current) return false;
     if (current.type === to) return true;
     if (dispatch) {
-      const tr = replaceElement(state.tr, current.pos, current.node, to, state.selection.$from.parentOffset);
+      const tr = replaceElement(state.tr, current.pos, current.node, to, state.selection.$from.parentOffset, state);
       dispatch(tr.scrollIntoView());
     }
     return true;

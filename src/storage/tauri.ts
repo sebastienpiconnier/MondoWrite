@@ -22,6 +22,8 @@ import { freeName, macIcloudState, strayFolders } from "./icloudFolders";
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
 const MOBILE_DIR = "projets";
+/** Fichiers lus en même temps à l'ouverture d'un projet. */
+const READ_PARALLEL = 16;
 const mobile = isMobileOS();
 const macOS = !mobile && typeof navigator !== "undefined" && /Mac/.test(navigator.platform || navigator.userAgent);
 
@@ -120,9 +122,13 @@ async function mobileRoot() {
   return join(cloud ?? (await documentDir()), MOBILE_DIR);
 }
 
-/** Les fichiers iCloud pas encore téléchargés sont des repères « .nom.icloud » : on demande leur téléchargement. */
+/**
+ * Les fichiers iCloud pas encore téléchargés sont des repères « .nom.icloud » : on demande leur téléchargement. Sur
+ * iPhone et iPad dans le conteneur de l'app ; sur Mac aussi quand le dossier cloud est celui de l'iPhone (le système ne
+ * répond que si l'app porte le droit iCloud, et rien n'est parcouru hors du conteneur).
+ */
 async function ensureDownloaded(dir: string) {
-  if ((await cloudRoot()) || !(await activeIcloud())) return;
+  if (mobile ? (await cloudRoot()) || !(await activeIcloud()) : !macIcloudOn()) return;
   try {
     let first = 0;
     for (let i = 0; i < 12; i++) {
@@ -246,8 +252,23 @@ const MAC_ICLOUD = "Library/Mobile Documents/iCloud~app~cosmos~ecriture/Document
 const MAC_ICLOUD_OFF = "cosmos:icloud-pc-off";
 const MAC_ICLOUD_NAME = "iCloud Drive";
 
+let macContainer: string | null | undefined;
+
+/**
+ * Dossier Documents du conteneur iCloud vu du Mac. Demandé d'abord au système (`icloud_container`) : une app signée avec
+ * le droit iCloud fait ainsi connaître son conteneur au service iCloud, qui le télécharge dans chaque session (sans
+ * cela, un Mac ne recevait pas les projets créés sur l'iPhone). Sans ce droit (version de dev, Release sans profil),
+ * le système ne répond rien et l'on prend le chemin habituel sous ~/Library/Mobile Documents.
+ */
 async function macIcloudDocs() {
-  return join(await homeDir(), ...MAC_ICLOUD.split("/"));
+  if (macContainer === undefined) {
+    try {
+      macContainer = await invoke<string | null>("icloud_container");
+    } catch {
+      macContainer = null;
+    }
+  }
+  return macContainer ?? join(await homeDir(), ...MAC_ICLOUD.split("/"));
 }
 
 async function macIcloudProjects() {
@@ -560,7 +581,8 @@ export const tauriStorage: Storage = {
             if (!entry.isDirectory || entry.name.startsWith(".")) continue;
             const path = await join(cloud.path, entry.name);
             if (list.some((e) => e.id === path)) continue;
-            if (await exists(await join(path, META_FILE))) list.push({ id: path, name: entry.name, openedAt: 0 });
+            // isProjectDir : aussi un projet iCloud dont cosmos.json n'est pas encore téléchargé (repère « .cosmos.json.icloud »).
+            if (await isProjectDir(path)) list.push({ id: path, name: entry.name, openedAt: 0 });
           }
           // Un projet du dossier cloud supprimé sur un autre appareil quitte la liste (pas ceux d'un disque débranché ailleurs).
           const root = plainPath(cloud.path);
@@ -713,15 +735,26 @@ export const tauriStorage: Storage = {
     for (const name of TEXT_DIRS) {
       const folder = await join(dir, name);
       if (!(await exists(folder))) continue;
-      for (const entry of await readDir(folder)) {
-        if (entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)) paths.push([`${name}/${entry.name}`, await join(folder, entry.name)]);
-      }
+      // join passe aussi par le système : les chemins se calculent ensemble.
+      const names = (await readDir(folder)).filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)).map((entry) => entry.name);
+      const fulls = await Promise.all(names.map((file) => join(folder, file)));
+      names.forEach((file, i) => paths.push([`${name}/${file}`, fulls[i]]));
     }
     reportLoad("read", 0, paths.length);
-    for (const [i, [key, full]] of paths.entries()) {
-      files[key] = await readTextFile(full);
-      reportLoad("read", i + 1, paths.length);
-    }
+    // Plusieurs lectures à la fois : un aller-retour vers le système par fichier, l'un après l'autre, faisait
+    // attendre plusieurs secondes un projet de quelques centaines de cartes. Les clés gardent l'ordre de la liste.
+    const texts: string[] = new Array(paths.length);
+    let done = 0;
+    let next = 0;
+    const reader = async () => {
+      while (next < paths.length) {
+        const i = next++;
+        texts[i] = await readTextFile(paths[i][1]);
+        reportLoad("read", ++done, paths.length);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(READ_PARALLEL, paths.length) }, reader));
+    paths.forEach(([key], i) => (files[key] = texts[i]));
     const screenplayPath = await join(dir, SCREENPLAY_FILE);
     if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);
     return files;

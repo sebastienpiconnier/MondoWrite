@@ -164,6 +164,9 @@
 .card-editor, .card-editor:focus-visible { padding: 4px 12px 12px; min-height: 28px; outline: none; font: 15px/1.5 var(--font-text); color: var(--ink); cursor: text; }
 /* Mention d'une autre carte (@), dans une carte, dans la Bible et dans le panneau du scénario. */
 [data-mention] { background: var(--accent-soft); border-radius: 4px; padding: 0 3px; font-weight: 500; white-space: nowrap; }
+/* Texte d'une carte sans éditeur (créé au premier clic) : mêmes règles que ProseMirror, rien n'y réagit. */
+.card-static { white-space: pre-wrap; word-wrap: break-word; }
+.card-static input { pointer-events: none; }
 .card-editor p { margin: 0 0 6px; }
 .card-editor p:last-child { margin-bottom: 0; }
 .card-editor h2, .card-editor h3 { font-family: var(--font-display); font-weight: 500; margin: 8px 0 4px; }
@@ -186,6 +189,8 @@
 .card-questions-count { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border: 2px solid var(--type); border-radius: 999px; background: var(--surface); color: var(--ink); font-weight: 700; font-size: 12px; }
 /* Mise en avant : une carte nette, avec un halo d'accent ; le reste (cartes, cadres, fils, étiquettes) s'estompe. */
 .toile .react-flow__node, .toile .react-flow__edge, .toile .react-flow__edgelabel-renderer > * { transition: opacity 0.2s ease; }
+/* Gros canevas : sans transition (Safari créait une couche par carte, fil et étiquette pendant l'animation). */
+.toile.is-large .react-flow__node, .toile.is-large .react-flow__edge, .toile.is-large .react-flow__edgelabel-renderer > * { transition: none; }
 .toile.has-spotlight .react-flow__node:not(.is-spotlit),
 .toile.has-spotlight .react-flow__edge,
 .toile.has-spotlight .react-flow__edgelabel-renderer > * { opacity: 0.2; }

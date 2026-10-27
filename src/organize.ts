@@ -2,12 +2,13 @@
 // Fonction pure : elle calcule des positions et des cadres, le store les applique en une seule étape
 // d'historique (Ctrl/Cmd+Z remet tout comme avant).
 //
-//   Personnages · Intrigues · Lieux · Thèmes · Questions   (une rangée de cadres)
-//   Récit : [case du gabarit [chapitre [scènes]]]   (côte à côte, rangées de 8 scènes au plus)
+//   Personnages · Intrigues · Lieux · Thèmes · Questions   (cadres côte à côte, à la ligne si besoin)
+//   Récit : [case du gabarit [chapitre [scènes]]]   (côte à côte, en rangées de N scènes au plus)
 //   Idées en vrac · Images · Liens · Documents · Pages du livre
 //
-// En paysage de préférence : un écran est plus large que haut. Les cases du gabarit (ou les chapitres,
-// sans gabarit) se suivent de gauche à droite, et l'on passe à la rangée suivante avant 9 scènes.
+// Un bloc compact, au format d'un écran : la largeur des rangées (N scènes, de 4 à 20) dépend du nombre de
+// cartes. On essaie chaque N et l'on garde l'ensemble le plus proche du format 16/10, sans place perdue.
+// Les cases du gabarit (ou les chapitres, sans gabarit) se suivent de gauche à droite.
 //
 // Les scènes sont reliées dans l'ordre du récit (un fil « puis » entre deux scènes qui se suivent).
 
@@ -60,8 +61,12 @@ const GAP = 32; // entre deux cartes
 const GROUP_GAP = 56; // entre deux cadres
 const ROW_GAP = 96; // entre deux rangées de l'ensemble
 const PAD = { side: 32, top: 64, bottom: 32 }; // marge intérieure d'un cadre (titre en haut)
-/** Scènes au plus sur une rangée du récit. */
-export const SCENES_PER_ROW = 8;
+/** Une rangée du récit compte au moins 4 scènes (un petit récit reste sur une ligne)… */
+const MIN_SCENES_PER_ROW = 4;
+/** … et au plus 20. */
+export const MAX_SCENES_PER_ROW = 20;
+/** Format visé pour l'ensemble rangé : celui d'un écran. */
+const TARGET_RATIO = 16 / 10;
 
 /** Colonnes d'un cadre de type : une seule rangée jusqu'à 4 cartes, puis plus large que haut. */
 export const typeColumns = (n: number) => (n <= 4 ? Math.max(1, n) : Math.ceil(Math.sqrt(n * 2)));
@@ -132,19 +137,22 @@ function place(layout: Layout, x: number, y: number, out: OrganizeResult, newId:
   });
 }
 
-export function organize({ cards, plan, sceneIds, labels, origin, newId }: OrganizeInput): OrganizeResult {
+/** Rangées de l'ensemble pour N scènes par rangée, et l'ordre des scènes à relier. */
+function build({ cards, plan, sceneIds, labels }: OrganizeInput, perRow: number): { rows: Layout[]; told: string[] } {
   const byId = new Map(cards.map((c) => [c.id, c]));
   const cardItem = (id: string): Item[] => {
     const c = byId.get(id);
     return c ? [{ kind: "card", id: c.id, width: c.width, height: c.height }] : [];
   };
   const ofType = (type: CardType) => cards.filter((c) => c.type === type).map((c) => c.id);
+  // Un cadre de type n'est jamais plus large qu'une rangée de scènes.
+  const columnsFor = (n: number) => Math.max(1, Math.min(typeColumns(n), perRow));
   const typeFrame = (type: CardType): Item[] => {
     const ids = ofType(type);
-    return ids.length > 0 ? [{ kind: "frame", title: labels.groups[type], body: { items: ids.flatMap(cardItem), columns: typeColumns(ids.length), gap: GAP } }] : [];
+    return ids.length > 0 ? [{ kind: "frame", title: labels.groups[type], body: { items: ids.flatMap(cardItem), columns: columnsFor(ids.length), gap: GAP } }] : [];
   };
   /**
-   * Groupes du récit (cases ou chapitres) de gauche à droite, en rangées de SCENES_PER_ROW scènes au plus.
+   * Groupes du récit (cases ou chapitres) de gauche à droite, en rangées de perRow scènes au plus.
    * Un groupe plus long que la limite occupe une rangée à lui seul (ses scènes passent à la ligne).
    */
   const inRows = (groups: { item: Item; count: number }[]): Item[] => {
@@ -152,7 +160,7 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
     let current: { item: Item; count: number }[] = [];
     let total = 0;
     for (const g of groups) {
-      if (current.length > 0 && total + g.count > SCENES_PER_ROW) {
+      if (current.length > 0 && total + g.count > perRow) {
         rows.push(current);
         current = [];
         total = 0;
@@ -163,7 +171,7 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
     if (current.length > 0) rows.push(current);
     return rows.map((row): Item => ({ kind: "box", body: { items: row.map((g) => g.item), columns: row.length, gap: GROUP_GAP } }));
   };
-  const sceneColumns = (n: number) => Math.max(1, Math.min(SCENES_PER_ROW, n));
+  const sceneColumns = (n: number) => Math.max(1, Math.min(perRow, n));
 
   // Récit : les scènes dans les cases du gabarit, regroupées par chapitre.
   const scenes = sceneIds.filter((id) => byId.get(id)?.type === "scene");
@@ -209,37 +217,85 @@ export function organize({ cards, plan, sceneIds, labels, origin, newId }: Organ
     }
   }
 
+  // Les cadres de type se rangent sur la largeur du récit (ou de perRow cartes), à la ligne si besoin.
+  const widest = Math.max(240, ...cards.map((c) => c.width));
+  const storyLayout: Layout = { items: story, columns: 1, gap: GROUP_GAP };
+  const width = Math.max(story.length > 0 ? layoutSize(storyLayout).width : 0, perRow * (widest + GAP) - GAP);
+  const shelves = (items: Item[]): Layout => {
+    const lines: Item[][] = [];
+    let line: Item[] = [];
+    let used = 0;
+    for (const item of items) {
+      const w = size(item).width;
+      if (line.length > 0 && used + GROUP_GAP + w > width) {
+        lines.push(line);
+        line = [];
+        used = 0;
+      }
+      used += (line.length > 0 ? GROUP_GAP : 0) + w;
+      line.push(item);
+    }
+    if (line.length > 0) lines.push(line);
+    return { items: lines.map((l): Item => ({ kind: "box", body: { items: l, columns: l.length, gap: GROUP_GAP } })), columns: 1, gap: GROUP_GAP };
+  };
+
   const rows: Layout[] = [
-    {
-      items: [...typeFrame("personnage"), ...typeFrame("intrigue"), ...typeFrame("episode"), ...typeFrame("lieu"), ...typeFrame("theme"), ...typeFrame("question")],
-      columns: 6,
-      gap: GROUP_GAP,
-    },
+    shelves([...typeFrame("personnage"), ...typeFrame("intrigue"), ...typeFrame("episode"), ...typeFrame("lieu"), ...typeFrame("theme"), ...typeFrame("question")]),
     // Les rangées du récit l'une sous l'autre (chacune de gauche à droite, voir inRows).
-    { items: story, columns: 1, gap: GROUP_GAP },
+    storyLayout,
     // Idées en vrac, puis les images et les liens collés sur le canevas.
-    {
-      items: [
-        ...typeFrame("idee"),
-        ...typeFrame("image"),
-        ...typeFrame("lien"),
-        ...typeFrame("document"),
-        ...(pages.length > 0 ? [{ kind: "frame" as const, title: labels.pages, body: { items: pages.flatMap(cardItem), columns: typeColumns(pages.length), gap: GAP } }] : []),
-      ],
-      columns: 4,
-      gap: GROUP_GAP,
-    },
+    shelves([
+      ...typeFrame("idee"),
+      ...typeFrame("image"),
+      ...typeFrame("lien"),
+      ...typeFrame("document"),
+      ...(pages.length > 0 ? [{ kind: "frame" as const, title: labels.pages, body: { items: pages.flatMap(cardItem), columns: columnsFor(pages.length), gap: GAP } }] : []),
+    ]),
   ].filter((r) => r.items.length > 0);
+
+  return { rows, told: free ? order : beats.flatMap((b) => b.ids) };
+}
+
+/** Taille de l'ensemble : les rangées l'une sous l'autre. */
+function bounds(rows: Layout[]): Sized {
+  const sizes = rows.map(layoutSize);
+  return {
+    width: Math.max(0, ...sizes.map((s) => s.width)),
+    height: sizes.reduce((a, s) => a + s.height, 0) + ROW_GAP * Math.max(0, sizes.length - 1),
+  };
+}
+
+/** Écart au bloc idéal : loin du format d'un écran, ou de la place perdue autour des cartes. */
+function spread(rows: Layout[], cards: OrganizeCard[]): number {
+  const { width, height } = bounds(rows);
+  if (width <= 0 || height <= 0) return 0;
+  const filled = cards.reduce((a, c) => a + (c.width + GAP) * (c.height + GAP), 0) || 1;
+  return Math.abs(Math.log(width / height / TARGET_RATIO)) + 0.5 * Math.log(Math.max(1, (width * height) / filled));
+}
+
+export function organize(input: OrganizeInput): OrganizeResult {
+  const { origin, newId, cards } = input;
+  // On essaie chaque largeur de rangée et l'on garde le bloc le plus compact (à égalité, la plus étroite).
+  let best = build(input, MIN_SCENES_PER_ROW);
+  let score = spread(best.rows, cards);
+  for (let perRow = MIN_SCENES_PER_ROW + 1; perRow <= MAX_SCENES_PER_ROW; perRow++) {
+    const next = build(input, perRow);
+    const s = spread(next.rows, cards);
+    if (s < score - 1e-9) {
+      best = next;
+      score = s;
+    }
+  }
 
   const out: OrganizeResult = { positions: new Map(), frames: [], sequence: [] };
   let y = origin.y;
-  for (const row of rows) {
+  for (const row of best.rows) {
     place(row, origin.x, y, out, newId);
     y += layoutSize(row).height + ROW_GAP;
   }
 
   // Les scènes rangées se suivent : un fil de chacune à la suivante.
-  const told = free ? order : beats.flatMap((b) => b.ids);
+  const told = best.told;
   for (let i = 1; i < told.length; i++) out.sequence.push([told[i - 1], told[i]]);
   return out;
 }

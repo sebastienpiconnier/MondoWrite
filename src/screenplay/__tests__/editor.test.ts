@@ -327,6 +327,29 @@ describe("détection à la frappe", () => {
     expect(shape()).toEqual(["character: ZOÉ (H.C.)", "dialogue: Ça va ?"]);
   });
 
+  it("une action passée en personnage puis remise en action retrouve sa casse", () => {
+    open([{ type: "action", text: "Élise entre, essoufflée." }]);
+    cursorAtEnd(0);
+    press("Tab");
+    expect(shape()).toEqual(["character: ÉLISE ENTRE, ESSOUFFLÉE."]);
+    press("Tab", { shiftKey: true });
+    expect(shape()).toEqual(["action: Élise entre, essoufflée."]);
+    // Par la barre d'éléments, et en passant par la transition (aussi en majuscules).
+    editor.commands.command(({ state, dispatch }) => setElementType("character")(state, dispatch));
+    editor.commands.command(({ state, dispatch }) => setElementType("transition")(state, dispatch));
+    editor.commands.command(({ state, dispatch }) => setElementType("dialogue")(state, dispatch));
+    expect(shape()).toEqual(["dialogue: Élise entre, essoufflée."]);
+  });
+
+  it("un personnage retouché garde ses majuscules en redevenant action", () => {
+    open([{ type: "action", text: "Élise" }]);
+    cursorAtEnd(0);
+    press("Tab");
+    type(" b");
+    press("Tab");
+    expect(shape()).toEqual(["action: ÉLISE B"]);
+  });
+
   it("une action en majuscules finissant par « : » devient une transition à la validation", () => {
     open();
     type("FONDU AU NOIR :");

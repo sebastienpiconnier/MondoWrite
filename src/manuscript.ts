@@ -18,6 +18,23 @@ export function countWords(html: string | undefined): number {
 export const totalWords = (manuscript: Manuscript, ids: string[]) => ids.reduce((sum, id) => sum + countWords(manuscript[id]), 0);
 
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/**
+ * Texte brut replié (sans balises, casse ni accents) d'un HTML, gardé : la Bible le demande pour chaque fiche
+ * et chaque scène (400 fiches × 60 scènes recalculaient sinon le même texte 24 000 fois).
+ */
+const folded = new Map<string, string>();
+const FOLDED_LIMIT = 2000;
+function foldedText(html: string | undefined): string {
+  if (!html) return "";
+  let text = folded.get(html);
+  if (text === undefined) {
+    text = fold(plainText(html));
+    if (folded.size >= FOLDED_LIMIT) folded.delete(folded.keys().next().value!);
+    folded.set(html, text);
+  }
+  return text;
+}
 /** Articles qu'on ne prend jamais pour un prénom (titre « The Mother », « Les Thénardier »…). */
 const ARTICLES = new Set(["the", "les", "une", "des", "aux", "der", "die", "das", "los", "las", "una", "uno", "gli"]);
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -29,7 +46,7 @@ const hasWord = (text: string, word: string) => new RegExp(`(?<![\\p{L}\\p{N}]-?
  * par son prénom (premier mot du titre, s'il fait au moins trois lettres). Sans casse ni accents.
  */
 export function detectCards(html: string | undefined, cards: CardData[]): CardData[] {
-  const text = fold(html ? plainText(html) : "");
+  const text = foldedText(html);
   if (!text) return [];
   return cards.filter((card) => (card.type === "personnage" || card.type === "lieu") && namesOf(card).some((name) => hasWord(text, name)));
 }
@@ -60,7 +77,7 @@ export function mentionsIn(card: CardData, manuscript: Manuscript, order: string
   let count = 0;
   let first: string | null = null;
   for (const id of order) {
-    const n = fold(plainText(manuscript[id] ?? "")).match(re)?.length ?? 0;
+    const n = foldedText(manuscript[id]).match(re)?.length ?? 0;
     if (n > 0 && first === null) first = id;
     count += n;
   }
