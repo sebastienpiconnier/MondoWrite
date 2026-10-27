@@ -121,6 +121,8 @@ export const fr = {
     folderHintCloud: "Le projet sera créé dans le dossier cloud « {name} », dans un dossier à son nom.",
     create: "Créer le projet",
     example: "Essayer avec un exemple",
+    paths: "Par où commencer ?",
+    pathsHint: "Sept façons de travailler avec MondoWrite, selon ta manière d’écrire (guide de l’utilisateur)",
     // Profil de l'auteur : saisi une fois, repris par chaque nouveau projet, gardé sur l'appareil.
     profile: {
       title: "Toi, l’auteur",

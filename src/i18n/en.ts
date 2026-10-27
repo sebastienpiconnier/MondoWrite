@@ -119,6 +119,8 @@ export const en: Messages = {
     folderHintCloud: "The project will be created in the “{name}” cloud folder, in a folder named after it.",
     create: "Create project",
     example: "Try with an example",
+    paths: "Where to start?",
+    pathsHint: "Seven ways to work with MondoWrite, depending on how you write (user guide)",
     // Author profile: entered once, reused by every new project, kept on the device.
     profile: {
       title: "You, the writer",

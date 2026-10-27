@@ -1,6 +1,7 @@
 // Écran d'accueil : on choisit le projet sur lequel travailler, ou on en crée un.
 // Affiché à chaque lancement et depuis le bouton « Projets » de la barre du haut.
 
+import { openGuide } from "../help";
 import { LoadingProject } from "./LoadingProject";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { fmt, useT } from "../i18n";
@@ -246,6 +247,10 @@ export function Home() {
               </button>
               <button type="button" className="ghost-button" disabled={busy} onClick={() => run(tryExample)}>
                 {h.example}
+              </button>
+              {/* Les parcours du guide (architecte, jardinier, dossier…) : pour savoir par quoi commencer. */}
+              <button type="button" className="link-button" title={h.pathsHint} onClick={() => void openGuide("paths")}>
+                {h.paths}
               </button>
             </div>
           </form>

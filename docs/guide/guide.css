@@ -68,6 +68,9 @@ th, td { text-align: left; vertical-align: top; padding: 1.6mm 2mm; border-botto
 th { font-family: "Grotesk", sans-serif; font-weight: 700; color: var(--navy); background: #f5f6fa; }
 tr { break-inside: avoid; }
 td.keys { white-space: nowrap; width: 38%; }
+/* Tableau des parcours : une pastille par vue, centrée. */
+table.paths th:not(:first-child), table.paths td:not(:first-child) { text-align: center; }
+table.paths td:not(:first-child) { color: var(--accent); font-size: 11pt; }
 
 .steps { counter-reset: s; list-style: none; padding-left: 0; }
 .steps > li { counter-increment: s; position: relative; padding-left: 8mm; }

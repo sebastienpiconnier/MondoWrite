@@ -11,6 +11,7 @@ const SITE = "https://sebastienpiconnier.github.io/MondoWrite";
 /** Chapitres du guide, avec l'ancre de chaque langue (identifiants des titres de docs/guide/guide.<langue>.html). */
 export const GUIDE_SECTIONS = {
   start: { fr: "premiers-pas", en: "first-steps" },
+  paths: { fr: "parcours", en: "paths" },
   canvas: { fr: "canevas", en: "canvas" },
   bible: { fr: "bible", en: "bible" },
   plan: { fr: "plan", en: "outline" },
