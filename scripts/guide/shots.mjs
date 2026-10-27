@@ -302,13 +302,13 @@ await step("secret", async () => {
   await entry.locator(".sheet-toggle").first().click();
   await wait(300);
   const fill = async (label, text) => {
-    await page.getByLabel(label, { exact: true }).first().fill(text);
+    await entry.getByLabel(label, { exact: true }).first().fill(text);
     await wait(150);
   };
   await fill(T("La vérité", "The truth"), T("Ils se sont croisés jadis, quand elle chassait au bois.", "They met long ago, when she hunted in the woods."));
   await fill(T("Enjeu", "Stakes"), T("L’enfant croirait-elle encore sa Mère-grand ?", "Would the child still trust her grandmother?"));
   await fill(T("Quand et comment il éclate", "When and how it comes out"), T("Dans le lit, par une phrase de trop du Loup.", "In the bed, when the Wolf says one word too many."));
-  await page.getByLabel(T("Certitude", "Certainty"), { exact: true }).first().selectOption("provisoire");
+  await entry.getByLabel(T("Certitude", "Certainty"), { exact: true }).first().selectOption("provisoire");
   await wait(400);
   await entry.scrollIntoViewIfNeeded();
   await shot("bible-secret");
