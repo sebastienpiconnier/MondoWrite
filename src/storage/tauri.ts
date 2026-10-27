@@ -22,6 +22,8 @@ import { freeName, macIcloudState, strayFolders } from "./icloudFolders";
 /** D'avant l'écran d'accueil : le seul dossier mémorisé. Il rejoint la liste des projets. */
 const LAST_FOLDER_KEY = "cosmos:dernier-dossier";
 const MOBILE_DIR = "projets";
+/** Fichiers lus en même temps à l'ouverture d'un projet. */
+const READ_PARALLEL = 16;
 const mobile = isMobileOS();
 const macOS = !mobile && typeof navigator !== "undefined" && /Mac/.test(navigator.platform || navigator.userAgent);
 
@@ -733,15 +735,26 @@ export const tauriStorage: Storage = {
     for (const name of TEXT_DIRS) {
       const folder = await join(dir, name);
       if (!(await exists(folder))) continue;
-      for (const entry of await readDir(folder)) {
-        if (entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)) paths.push([`${name}/${entry.name}`, await join(folder, entry.name)]);
-      }
+      // join passe aussi par le système : les chemins se calculent ensemble.
+      const names = (await readDir(folder)).filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)).map((entry) => entry.name);
+      const fulls = await Promise.all(names.map((file) => join(folder, file)));
+      names.forEach((file, i) => paths.push([`${name}/${file}`, fulls[i]]));
     }
     reportLoad("read", 0, paths.length);
-    for (const [i, [key, full]] of paths.entries()) {
-      files[key] = await readTextFile(full);
-      reportLoad("read", i + 1, paths.length);
-    }
+    // Plusieurs lectures à la fois : un aller-retour vers le système par fichier, l'un après l'autre, faisait
+    // attendre plusieurs secondes un projet de quelques centaines de cartes. Les clés gardent l'ordre de la liste.
+    const texts: string[] = new Array(paths.length);
+    let done = 0;
+    let next = 0;
+    const reader = async () => {
+      while (next < paths.length) {
+        const i = next++;
+        texts[i] = await readTextFile(paths[i][1]);
+        reportLoad("read", ++done, paths.length);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(READ_PARALLEL, paths.length) }, reader));
+    paths.forEach(([key], i) => (files[key] = texts[i]));
     const screenplayPath = await join(dir, SCREENPLAY_FILE);
     if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);
     return files;

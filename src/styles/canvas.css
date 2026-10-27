@@ -163,6 +163,9 @@
 .card-editor, .card-editor:focus-visible { padding: 4px 12px 12px; min-height: 28px; outline: none; font: 15px/1.5 var(--font-text); color: var(--ink); cursor: text; }
 /* Mention d'une autre carte (@), dans une carte, dans la Bible et dans le panneau du scénario. */
 [data-mention] { background: var(--accent-soft); border-radius: 4px; padding: 0 3px; font-weight: 500; white-space: nowrap; }
+/* Texte d'une carte sans éditeur (créé au premier clic) : mêmes règles que ProseMirror, rien n'y réagit. */
+.card-static { white-space: pre-wrap; word-wrap: break-word; }
+.card-static input { pointer-events: none; }
 .card-editor p { margin: 0 0 6px; }
 .card-editor p:last-child { margin-bottom: 0; }
 .card-editor h2, .card-editor h3 { font-family: var(--font-display); font-weight: 500; margin: 8px 0 4px; }

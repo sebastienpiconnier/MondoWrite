@@ -2,6 +2,7 @@
 // « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
+import { useStableEditor } from "./useStableEditor";
 import { usePageSpell } from "./usePageSpell";
 import { StatusDot } from "./SceneStatusPicker";
 import { EdgeHandle } from "./EdgeHandle";
@@ -30,7 +31,7 @@ import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
 import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { useCosmos } from "../store";
@@ -251,7 +252,7 @@ export function ScreenplayView() {
     [setFocusMode],
   );
 
-  const editor = useEditor({
+  const editor = useStableEditor({
     extensions,
     content: screenplay ? toDoc(screenplay) : undefined,
     immediatelyRender: true,

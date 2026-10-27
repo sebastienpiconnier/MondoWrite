@@ -2,8 +2,9 @@
 // Les scènes se suivent sans coupure ; le volet de gauche mène à une scène ou à un chapitre (on y défile).
 // Chaque scène garde son fichier : ce qu'on écrit est rangé dans la scène où se trouve le curseur.
 
+import { useStableEditor } from "./useStableEditor";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { EditorContent, createDocument, getHTMLFromFragment, useEditor, type Editor } from "@tiptap/react";
+import { EditorContent, createDocument, getHTMLFromFragment, type Editor } from "@tiptap/react";
 import { Fragment, type Node as PMNode } from "@tiptap/pm/model";
 import Placeholder from "@tiptap/extension-placeholder";
 import { EditorState, Selection, TextSelection } from "@tiptap/pm/state";
@@ -149,7 +150,7 @@ export function BookEditor({
     if (ed && !ed.isDestroyed) onPlaceRef.current(placeOf(ed));
   };
 
-  const editor = useEditor({
+  const editor = useStableEditor({
     extensions: [
       ...richTextExtensions({ link: false }),
       SceneMark,

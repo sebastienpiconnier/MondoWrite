@@ -2,9 +2,10 @@
 // Scénario (Tab, Entrée, majuscules, éléments conservés), limité au corps de cette scène. L'en-tête est le
 // titre de la carte, le synopsis s'écrit au-dessus. Le texte vit dans scenario.fountain, rien n'est recopié.
 
+import { useStableEditor } from "./useStableEditor";
 import { usePageSpell } from "./usePageSpell";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { EditorContent, useEditor, type Editor, type JSONContent } from "@tiptap/react";
+import { EditorContent, type Editor, type JSONContent } from "@tiptap/react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { getT, useT } from "../i18n";
@@ -74,7 +75,7 @@ export function ScriptSceneEditor({ card }: { card: CardData }) {
     [],
   );
 
-  const editor = useEditor({
+  const editor = useStableEditor({
     extensions,
     content: bodyDoc(body),
     immediatelyRender: true,

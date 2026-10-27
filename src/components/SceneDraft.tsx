@@ -2,9 +2,10 @@
 // canevas reste léger même avec un long manuscrit), et un éditeur dans la carte agrandie. C'est le même
 // texte que dans la vue Manuscrit (manuscrit/<id>.md) : rien n'est recopié.
 
+import { useStableEditor } from "./useStableEditor";
 import { usePageSpell } from "./usePageSpell";
 import { useEffect, useMemo, useRef } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
 import { richTextExtensions } from "./editorKit";
 import { FormatBar } from "./FormatBar";
@@ -81,7 +82,7 @@ export function DraftEditor({ card, autofocus = false }: { card: CardData; autof
   const cardRef = useRef(card);
   cardRef.current = card;
   const title = card.title.trim() || getT().manuscript.untitled;
-  const editor = useEditor({
+  const editor = useStableEditor({
     extensions: [
       ...richTextExtensions({ link: false }),
       // Fonction : relue à chaque rendu (langue, synopsis modifié à côté).
