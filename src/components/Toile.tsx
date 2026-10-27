@@ -86,6 +86,8 @@ const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2;
 /** Zoom quand on montre une carte (recherche, « Voir sur le canevas ») : elle et ses voisines. */
 const REVEAL_ZOOM = 0.5;
+/** Au-delà de ce nombre de cartes, la mise en avant et le recentrage se font sans animation. */
+const LARGE_CANVAS = 150;
 
 /** Cartes visées par Copier ou Dupliquer : celles choisies, sinon celle qui a le focus. */
 function chosenCards(target: HTMLElement | Element | null): string[] {
@@ -143,6 +145,8 @@ export function Toile() {
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
   const { screenToFlowPosition, fitView, getViewport, setViewport, setCenter, getInternalNode } = useReactFlow();
+  // Carte à montrer dès l'ouverture du canevas : lue une fois, au montage.
+  const [arrivedFor] = useState(() => !!useCosmos.getState().focusId);
   const wrapper = useRef<HTMLDivElement>(null);
   // Molette et trackpad : un seul gestionnaire (canvasWheel.ts). Pincement = zoom, même sur une carte ;
   // glissement à deux doigts = déplacement, sauf dans un contenu qui défile vraiment.
@@ -204,7 +208,10 @@ export function Toile() {
         return;
       }
       const { x, y } = node.internals.positionAbsolute;
-      void setCenter(x + w / 2, y + h / 2, { zoom: REVEAL_ZOOM, duration: 400 });
+      // Gros canevas : un saut, sans animation. Safari (app Mac) redessinait toutes les cartes à chaque image
+      // du zoom, en même temps que l'estompage de la mise en avant, et pouvait manquer de mémoire.
+      const large = useCosmos.getState().nodes.length > LARGE_CANVAS;
+      void setCenter(x + w / 2, y + h / 2, { zoom: REVEAL_ZOOM, duration: large ? 0 : 400 });
       setView("toile", null);
     };
     frame = requestAnimationFrame(center);
@@ -593,7 +600,7 @@ export function Toile() {
 
   return (
     <div
-      className={`toile${selectedCards + selectedFrames > 1 ? " has-multi" : ""}${spotlightId ? " has-spotlight" : ""}`}
+      className={`toile${selectedCards + selectedFrames > 1 ? " has-multi" : ""}${spotlightId ? " has-spotlight" : ""}${nodes.length > LARGE_CANVAS ? " is-large" : ""}`}
       ref={wrapper}
       onDoubleClick={onDoubleClick}
       onPointerMove={(e) => {
@@ -658,7 +665,9 @@ export function Toile() {
         deleteKeyCode={["Delete", "Backspace"]}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
-        fitView
+        // Arrivée pour montrer une carte (Bible, Plan, recherche depuis une autre vue) : pas de « tout voir »
+        // initial, qui passait après le centrage sur un gros projet (toutes les cartes mesurées plus tard).
+        fitView={!arrivedFor}
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
         defaultEdgeOptions={{
           type: "floating",
