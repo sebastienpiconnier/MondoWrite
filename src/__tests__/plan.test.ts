@@ -11,6 +11,7 @@ import {
   EMPTY_PLAN,
   PLAN_TEMPLATES,
   PLAN_TEMPLATE_KEYS,
+  BEAT_TARGETS,
   NOVEL_TEMPLATES,
   arrange,
   isEmptyPlan,
@@ -27,8 +28,19 @@ const scenes = ["s1", "s2", "s3", "s4"];
 const three = (beats: Plan["beats"]): Plan => ({ template: "troisActes", beats });
 
 describe("gabarits", () => {
-  it("quatre gabarits, des clés de case uniques d'un gabarit à l'autre", () => {
-    expect(NOVEL_TEMPLATES).toEqual(["libre", "troisActes", "saveTheCat", "voyageHeros"]);
+  it("gabarits du roman, des clés de case uniques d'un gabarit à l'autre, une position attendue pour chaque case", () => {
+    expect(NOVEL_TEMPLATES).toEqual(["libre", "troisActes", "saveTheCat", "voyageHeros", "cercleHarmon", "freytag", "hauge", "septPoints", "kishotenketsu", "romance", "polar"]);
+    for (const [template, keys] of Object.entries(PLAN_TEMPLATES)) {
+      if (template === "libre") continue;
+      for (const key of keys) {
+        const at = BEAT_TARGETS[key as keyof typeof BEAT_TARGETS];
+        expect(at !== undefined && at >= 0 && at < 1, key).toBe(true);
+      }
+      expect(BEAT_TARGETS[keys[0] as keyof typeof BEAT_TARGETS]).toBe(0);
+      // Dans l'ordre du récit : chaque case commence après la précédente.
+      const at = keys.map((k) => BEAT_TARGETS[k as keyof typeof BEAT_TARGETS]!);
+      expect(at.every((v, i) => i === 0 || v > at[i - 1]), template).toBe(true);
+    }
     const all = Object.values(PLAN_TEMPLATES).flat();
     expect(new Set(all).size).toBe(all.length);
     expect(PLAN_TEMPLATES.saveTheCat).toHaveLength(15);

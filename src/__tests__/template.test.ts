@@ -45,13 +45,14 @@ const outline = (elements: ReturnType<typeof parse>["elements"]) =>
   blocks(elements).map((b) => (b.kind === "section" ? `# ${beatOf(b.text) ?? sectionLabel(b.text)}` : b.text));
 
 describe("gabarits de scénario", () => {
-  it("quatre gabarits, tous traduits", () => {
-    expect(SCREENPLAY_TEMPLATES).toEqual(["troisActes", "saveTheCat", "huitSequences", "episode"]);
+  it("gabarits du scénario, tous traduits (le voyage du héros et les structures d'octobre 2026 compris)", () => {
+    expect(SCREENPLAY_TEMPLATES.slice(0, 4)).toEqual(["troisActes", "saveTheCat", "huitSequences", "episode"]);
     for (const template of SCREENPLAY_TEMPLATES) {
       expect(fr.plan.templates[template] && en.plan.templates[template]).toBeTruthy();
       for (const key of PLAN_TEMPLATES[template]) expect(fr.plan.beats[key].label && en.plan.beats[key].label).toBeTruthy();
     }
-    expect(isScreenplayTemplate("voyageHeros")).toBe(false);
+    expect(isScreenplayTemplate("voyageHeros")).toBe(true);
+    expect(isScreenplayTemplate("libre")).toBe(false);
     expect(isScreenplayTemplate("")).toBe(false);
   });
 

@@ -9,7 +9,7 @@ import { blocks, moveBlock } from "./sequence";
 import { EMPTY_PLAN, PLAN_TEMPLATES, type Plan, type PlanTemplate } from "../plan";
 
 /** Gabarits proposés pour un scénario, dans l'ordre du menu. */
-export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences", "episode"] as const satisfies readonly PlanTemplate[];
+export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences", "episode", "voyageHeros", "cercleHarmon", "freytag", "hauge", "septPoints", "kishotenketsu", "romance", "polar"] as const satisfies readonly PlanTemplate[];
 export type ScreenplayTemplate = (typeof SCREENPLAY_TEMPLATES)[number];
 export const isScreenplayTemplate = (v: unknown): v is ScreenplayTemplate => SCREENPLAY_TEMPLATES.includes(v as ScreenplayTemplate);
 

@@ -11,7 +11,20 @@
 // Un chapitre regroupe des scènes ; son numéro vient de sa place dans le récit (ordre du plan), il n'est
 // jamais écrit. Les chapitres ne dépendent pas du gabarit : on peut en changer sans rien perdre.
 
-export type PlanTemplate = "libre" | "troisActes" | "saveTheCat" | "voyageHeros" | "huitSequences" | "episode";
+export type PlanTemplate =
+  | "libre"
+  | "troisActes"
+  | "saveTheCat"
+  | "voyageHeros"
+  | "huitSequences"
+  | "episode"
+  | "cercleHarmon"
+  | "freytag"
+  | "hauge"
+  | "septPoints"
+  | "kishotenketsu"
+  | "romance"
+  | "polar";
 
 /** Cases de chaque gabarit, dans l'ordre du récit. Ces clés sont écrites dans le fichier : ne jamais les renommer. */
 export const PLAN_TEMPLATES = {
@@ -28,7 +41,37 @@ export const PLAN_TEMPLATES = {
   // Gabarits de scénario (séquencier, voir screenplay/template.ts).
   huitSequences: ["q_1", "q_2", "q_3", "q_4", "q_5", "q_6", "q_7", "q_8"],
   episode: ["e_teaser", "e_act1", "e_act2", "e_act3", "e_act4", "e_tag"],
+  // Octobre 2026 : structures ajoutées, pour le roman comme pour le scénario.
+  cercleHarmon: ["d_you", "d_need", "d_go", "d_search", "d_find", "d_take", "d_return", "d_change"],
+  freytag: ["f_exposition", "f_rising", "f_climax", "f_falling", "f_denouement"],
+  hauge: ["g_setup", "g_new", "g_progress", "g_complications", "g_final", "g_aftermath"],
+  septPoints: ["w_hook", "w_turn1", "w_pinch1", "w_midpoint", "w_pinch2", "w_turn2", "w_resolution"],
+  kishotenketsu: ["k_ki", "k_sho", "k_ten", "k_ketsu"],
+  romance: ["r_meet", "r_falling", "r_retreat", "r_return"],
+  polar: ["p_crime", "p_investigation", "p_falseLead", "p_twist", "p_confrontation", "p_resolution"],
 } as const satisfies Record<PlanTemplate, readonly string[]>;
+
+/**
+ * Où chaque case commence d'ordinaire, en part du récit (0 à 1) : un repère pour le ruban du récit et les
+ * questions de « Vérifier », jamais une règle. Les valeurs suivent les auteurs de chaque structure (Snyder,
+ * Vogler, Hauge…) ; une structure sans proportions reconnues partage le récit à parts égales.
+ */
+export const BEAT_TARGETS: Partial<Record<PlanBeat, number>> = {
+  a_setup: 0, a_incident: 0.1, a_confrontation: 0.25, a_midpoint: 0.5, a_crisis: 0.7, a_climax: 0.8, a_resolution: 0.95,
+  c_opening: 0, c_theme: 0.04, c_setup: 0.06, c_catalyst: 0.1, c_debate: 0.12, c_act2: 0.2, c_bstory: 0.22, c_fun: 0.25,
+  c_midpoint: 0.5, c_badguys: 0.55, c_lost: 0.75, c_darknight: 0.77, c_act3: 0.8, c_finale: 0.82, c_final: 0.98,
+  h_ordinary: 0, h_call: 0.08, h_refusal: 0.12, h_mentor: 0.17, h_threshold: 0.25, h_tests: 0.3, h_approach: 0.45,
+  h_ordeal: 0.5, h_reward: 0.6, h_road: 0.75, h_resurrection: 0.85, h_return: 0.95,
+  q_1: 0, q_2: 0.125, q_3: 0.25, q_4: 0.375, q_5: 0.5, q_6: 0.625, q_7: 0.75, q_8: 0.875,
+  e_teaser: 0, e_act1: 0.05, e_act2: 0.28, e_act3: 0.5, e_act4: 0.73, e_tag: 0.96,
+  d_you: 0, d_need: 0.1, d_go: 0.25, d_search: 0.35, d_find: 0.5, d_take: 0.6, d_return: 0.75, d_change: 0.9,
+  f_exposition: 0, f_rising: 0.15, f_climax: 0.45, f_falling: 0.6, f_denouement: 0.85,
+  g_setup: 0, g_new: 0.1, g_progress: 0.25, g_complications: 0.5, g_final: 0.75, g_aftermath: 0.95,
+  w_hook: 0, w_turn1: 0.2, w_pinch1: 0.37, w_midpoint: 0.5, w_pinch2: 0.62, w_turn2: 0.8, w_resolution: 0.95,
+  k_ki: 0, k_sho: 0.25, k_ten: 0.5, k_ketsu: 0.75,
+  r_meet: 0, r_falling: 0.25, r_retreat: 0.5, r_return: 0.75,
+  p_crime: 0, p_investigation: 0.1, p_falseLead: 0.4, p_twist: 0.65, p_confrontation: 0.8, p_resolution: 0.92,
+};
 
 export type PlanBeat = (typeof PLAN_TEMPLATES)[PlanTemplate][number];
 const ALL_BEATS = new Set<string>(Object.values(PLAN_TEMPLATES).flat());
@@ -36,7 +79,7 @@ export const isBeat = (key: string): key is PlanBeat => ALL_BEATS.has(key);
 
 export const PLAN_TEMPLATE_KEYS = Object.keys(PLAN_TEMPLATES) as PlanTemplate[];
 /** Gabarits proposés pour un roman, dans l'ordre du menu. */
-export const NOVEL_TEMPLATES = ["libre", "troisActes", "saveTheCat", "voyageHeros"] as const satisfies readonly PlanTemplate[];
+export const NOVEL_TEMPLATES = ["libre", "troisActes", "saveTheCat", "voyageHeros", "cercleHarmon", "freytag", "hauge", "septPoints", "kishotenketsu", "romance", "polar"] as const satisfies readonly PlanTemplate[];
 export const isPlanTemplate = (v: unknown): v is PlanTemplate => typeof v === "string" && v in PLAN_TEMPLATES;
 
 export interface Chapter {
