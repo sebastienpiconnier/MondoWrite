@@ -87,7 +87,8 @@ interface LabelEditor {
 const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2;
 /** Zoom quand on montre une carte (recherche, « Voir sur le canevas ») : elle et ses voisines. */
-const REVEAL_ZOOM = 0.5;
+/** Zoom d'une carte montrée (recherche, « Voir sur le canevas ») : lisible ; jamais moins que le zoom en cours. */
+const REVEAL_ZOOM = 1;
 /** Au-delà de ce nombre de cartes, la mise en avant et le recentrage se font sans animation. */
 const LARGE_CANVAS = 150;
 
@@ -198,7 +199,8 @@ export function Toile() {
     return () => clearTimeout(timer);
   }, [fitRequest, fitView]);
 
-  // Carte demandée (recherche, Bible, « Voir sur le canevas ») : la toile se centre sur elle, à 50 %.
+  // Carte demandée (recherche, Bible, « Voir sur le canevas ») : la toile se centre sur elle et s'en approche
+  // (100 %, ou le zoom en cours s'il est plus fort : on ne recule jamais pour montrer une carte).
   // En arrivant d'une autre vue, les cartes ne sont pas encore mesurées : on attend quelques images.
   useEffect(() => {
     if (!focusId) return;
@@ -217,12 +219,12 @@ export function Toile() {
       // Gros canevas : un saut, sans animation. Safari (app Mac) redessinait toutes les cartes à chaque image
       // du zoom, en même temps que l'estompage de la mise en avant, et pouvait manquer de mémoire.
       const large = useCosmos.getState().nodes.length > LARGE_CANVAS;
-      void setCenter(x + w / 2, y + h / 2, { zoom: REVEAL_ZOOM, duration: large ? 0 : 400 });
+      void setCenter(x + w / 2, y + h / 2, { zoom: Math.max(REVEAL_ZOOM, getViewport().zoom), duration: large ? 0 : 400 });
       setView("toile", null);
     };
     frame = requestAnimationFrame(center);
     return () => cancelAnimationFrame(frame);
-  }, [focusId, getInternalNode, setCenter, setView]);
+  }, [focusId, getInternalNode, getViewport, setCenter, setView]);
 
   const createAt = (clientX: number, clientY: number) => {
     const pos = screenToFlowPosition({ x: clientX, y: clientY });

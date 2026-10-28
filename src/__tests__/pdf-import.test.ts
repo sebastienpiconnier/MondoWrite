@@ -103,3 +103,28 @@ describe("roman en PDF", () => {
     expect(book.chapters.map((c) => c.title)).toContain("La tempête");
   }, 60000);
 });
+
+describe("PDF de scénario fait ailleurs", () => {
+  it("mot composé coupé en fin de ligne recollé ; nom coupé par la mise en page ramené à sa graphie habituelle", async () => {
+    const { screenplayFromPdf } = await import("../import/pdf");
+    const item = (x: number, y: number, text: string) => ({ x, y, width: text.length * 7.2, size: 12, text });
+    const items = [
+      item(108, 80, "INT. HOUSE - NIGHT"),
+      item(108, 104, "He's decent-"),
+      item(108, 116, "looking but shy."),
+      item(252, 140, "NICKY"),
+      item(180, 152, "Hello."),
+      item(108, 176, "INT. SHOP - DAY"),
+      item(252, 200, "NIC"),
+      item(281, 200, "KY"),
+      item(180, 212, "Hi again."),
+      item(252, 236, "NICKY"),
+      item(180, 248, "Bye."),
+    ];
+    // « NIC » et « KY » : deux morceaux un peu écartés, comme pdf.js les rend parfois.
+    items[6].width = 3 * 7.2;
+    const sp = screenplayFromPdf([{ width: 612, height: 792, items }]);
+    expect(sp.elements[1]).toEqual({ type: "action", text: "He's decent-looking but shy." });
+    expect(sp.elements.filter((e) => e.type === "character").map((e) => e.text)).toEqual(["NICKY", "NICKY", "NICKY"]);
+  });
+});

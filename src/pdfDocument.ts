@@ -67,6 +67,24 @@ export async function readPdf(data: Uint8Array): Promise<PdfInfo> {
  * Le texte d'un PDF, page par page, avec la position de chaque bout (import d'un manuscrit ou d'un scénario,
  * lu ensuite par import/pdf.ts). Position de la ligne de base depuis le haut de la page, en points.
  */
+/**
+ * Texte d'une page, lu morceau par morceau. Pas `getTextContent()` : pdf.js y parcourt un ReadableStream
+ * avec `for await`, que WebKit (app Mac, iPad) ne sait pas faire ; l'import échouait alors sur « pas de
+ * texte lisible » alors qu'il marchait dans Chrome.
+ */
+type TextContent = Awaited<ReturnType<pdfjs.PDFPageProxy["getTextContent"]>>;
+
+async function textItems(page: pdfjs.PDFPageProxy): Promise<TextContent["items"]> {
+  const reader = (page.streamTextContent() as ReadableStream<TextContent>).getReader();
+  const items: TextContent["items"] = [];
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    items.push(...value.items);
+  }
+  return items;
+}
+
 export async function readPdfText(data: Uint8Array): Promise<import("./import/pdf").PdfPageText[]> {
   const doc = await openPdf(data);
   try {
@@ -74,9 +92,8 @@ export async function readPdfText(data: Uint8Array): Promise<import("./import/pd
     for (let n = 1; n <= doc.numPages; n++) {
       const page = await doc.getPage(n);
       const viewport = page.getViewport({ scale: 1 });
-      const content = await page.getTextContent();
       const items: import("./import/pdf").PdfItem[] = [];
-      for (const raw of content.items) {
+      for (const raw of await textItems(page)) {
         if (!("str" in raw) || raw.str === "") continue;
         // Coordonnées du PDF (origine en bas à gauche) ramenées à la page affichée (origine en haut à gauche).
         const [x, y] = viewport.convertToViewportPoint(raw.transform[4], raw.transform[5]);

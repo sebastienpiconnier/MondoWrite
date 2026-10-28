@@ -251,7 +251,9 @@ export function screenplayFromPdf(pages: PdfPageText[]): Screenplay {
         // Didascalie sur plusieurs lignes.
         (close && last.type === "parenthetical" && !last.text.includes(")")));
     if (continues) {
-      last.text = `${last.text} ${line.text}`.replace(/\s+/g, " ");
+      // Mot composé coupé en fin de ligne (« decent- » puis « looking ») : recollé sans espace, trait d'union gardé.
+      const joint = /\p{L}-$/u.test(last.text) && /^\p{L}/u.test(line.text) ? "" : " ";
+      last.text = `${last.text}${joint}${line.text}`.replace(/\s+/g, " ");
     } else {
       // (SUITE) / (CONT'D) après un nom : ajouté par le logiciel qui a fait le PDF, MondoWrite le remet lui-même (réglage).
       const el: ScreenplayElement = { type: line.kind, text: line.kind === "character" ? line.text.replace(CONTD, "").trim() : line.text };
@@ -262,6 +264,26 @@ export function screenplayFromPdf(pages: PdfPageText[]): Screenplay {
       elements.push(el);
     }
     previous = line;
+  }
+  // Nom coupé par la mise en page du PDF (« NIC KY » pour « NICKY ») : la graphie la plus employée l'emporte,
+  // à espaces près.
+  const cue = (text: string) => /^([^(]*?)(\s*\(.*)?$/.exec(text)!;
+  const spellings = new Map<string, Map<string, number>>();
+  for (const el of elements) {
+    if (el.type !== "character") continue;
+    const name = cue(el.text)[1].trim();
+    const key = name.replace(/\s+/g, "");
+    const counts = spellings.get(key) ?? new Map<string, number>();
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+    spellings.set(key, counts);
+  }
+  for (const el of elements) {
+    if (el.type !== "character") continue;
+    const [, raw, ext = ""] = cue(el.text);
+    const counts = spellings.get(raw.trim().replace(/\s+/g, ""));
+    if (!counts || counts.size < 2) continue;
+    const best = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0][0];
+    el.text = `${best}${ext}`;
   }
   // Un personnage sans réplique derrière lui n'en est pas un : de l'action.
   elements.forEach((el, i) => {
