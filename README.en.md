@@ -201,7 +201,7 @@ A project is a novel or a screenplay, and you can switch at any time. The canvas
 
 For a screenplay project, the Screenplay view is an editor in standard film format, linked to the canvas: each scene heading is tied to its Scene card, and what you write in one shows up in the other.
 
-![The screenplay editor (French interface): scene list, standard-format page and “In this scene” panel](docs/images/scenario-fr.png)
+![The screenplay editor: scene list, standard-format page and “In this scene” panel](docs/guide/images/en/scenario.jpg)
 
 <details>
 <summary><strong>Everything the screenplay editor does</strong></summary>

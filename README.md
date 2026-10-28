@@ -266,7 +266,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Hors ligne :** polices embarquées, aucun compte, aucun serveur.
 - **Mises à jour d'un clic** (ordinateur) : une vérification par jour au plus, désactivable ; rien n'est installé sans votre accord.
 
-![Le même canevas en mode sombre, interface en anglais](docs/images/canvas-dark-en.png)
+![Le même canevas en mode sombre](docs/guide/images/fr/sombre-canevas.jpg)
 
 ## Prise en main
 
