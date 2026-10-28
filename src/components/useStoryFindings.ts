@@ -12,6 +12,7 @@ import { scenesNaming as scriptScenesNaming } from "../review/filter";
 import { paginate } from "../screenplay/paginate";
 import { LAYOUTS } from "../screenplay/layout";
 import { scenesNaming } from "../manuscript";
+import { useRibbon } from "./useRibbon";
 
 export function useStoryFindings(): Finding[] {
   const kind = useCosmos((s) => s.kind);
@@ -22,6 +23,7 @@ export function useStoryFindings(): Finding[] {
   const manuscript = useCosmos((s) => s.manuscript);
   const pitch = useCosmos((s) => s.pitch);
   const lang = useSettings((s) => s.lang);
+  const drifts = useRibbon()?.drifts;
   return useMemo(() => {
     const cards = nodes.map((n) => n.data);
     const order = kind === "scenario" ? [] : bookOrder(nodes, plan);
@@ -35,6 +37,6 @@ export function useStoryFindings(): Finding[] {
       if (kind === "scenario") named.set(c.id, scriptScenesNaming(elements, c.title.trim()).length);
       else named.set(c.id, scenesNaming(c, manuscript, order));
     }
-    return checkStory(cards, rows, kind, pitch, { pages, named });
-  }, [kind, screenplay, paper, nodes, plan, manuscript, pitch, lang]);
+    return checkStory(cards, rows, kind, pitch, { pages, named, drifts });
+  }, [kind, screenplay, paper, nodes, plan, manuscript, pitch, lang, drifts]);
 }

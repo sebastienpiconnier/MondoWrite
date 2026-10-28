@@ -761,6 +761,7 @@ export const en: Messages = {
       secretNoReveal: "A secret that never comes out",
       secretNoClue: "A secret with no clue",
       objectOnce: "An object used only once",
+      beatDrift: "A beat far from its usual place",
     },
     hints: {
       similarNames: "Probably the same name spelled two ways.",
@@ -776,6 +777,7 @@ export const en: Messages = {
       secretNoReveal: "A secret weighs when we know it will come out (the “When and how it comes out” box).",
       secretNoClue: "A secret that comes out with no clue planted before surprises without convincing.",
       objectOnce: "An object that is set up should pay off; one that pays off should have been set up.",
+      beatDrift: "The story ribbon compares where each beat begins with its usual place in this structure. A gap can be intended.",
     },
     items: {
       similarNamesScript: "{where}: “{rare}” ({a}) looks like “{common}” ({b}).",
@@ -793,6 +795,7 @@ export const en: Messages = {
       secretNoReveal: "“{name}”: when does this secret come out, and who finds out?",
       secretNoClue: "“{name}” comes out, but what hints at it before?",
       objectOnce: "“{name}” is named in only one scene: where is it set up, where does it pay off?",
+      beatDrift: "“{beat}” begins at {at}% of the story, usually around {target}%.",
     },
     intended: "It’s intended",
     openSheet: "Open the profile",
@@ -1122,6 +1125,20 @@ export const en: Messages = {
       p_confrontation: { label: "Confrontation", hint: "Facing the culprit." },
       p_resolution: { label: "Resolution", hint: "The truth, and what it leaves behind." },
     },
+  },
+
+  ribbon: {
+    aria: "Story ribbon",
+    beforeFirst: "Before the first beat",
+    scene: "{title} ({beat}, scene {n})",
+    expected: "{beat}: usually around {n}% of the story",
+    caption: "{beat} · at {n}% of the story",
+    hint: "Each beat takes the room its scenes take; the thin marks show where it usually begins.",
+    byCount: "one share per scene while little is written",
+    showPlots: "Show plotlines",
+    hidePlots: "Hide plotlines",
+    plotsHint: "One row per Plot card: scenes linked by a thread (solid) or that mention it (light).",
+    laneAria: "{title}: in {n} scenes",
   },
 
   kinds: {

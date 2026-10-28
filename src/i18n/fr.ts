@@ -742,6 +742,7 @@ export const fr = {
       secretNoReveal: "Un secret qui n’éclate pas",
       secretNoClue: "Un secret sans indice",
       objectOnce: "Un objet qui ne sert qu’une fois",
+      beatDrift: "Une case loin de sa place",
     },
     hints: {
       similarNames: "Sans doute le même nom écrit de deux façons.",
@@ -757,6 +758,7 @@ export const fr = {
       secretNoReveal: "Un secret pèse quand on sait qu’il éclatera (case « Quand et comment il éclate »).",
       secretNoClue: "Un secret qui éclate sans indice semé avant surprend sans convaincre.",
       objectOnce: "Un objet posé doit servir ; un objet qui sert doit avoir été posé.",
+      beatDrift: "Le ruban du récit compare où chaque case commence à sa place habituelle dans cette structure. Un écart peut être voulu.",
     },
     items: {
       similarNamesScript: "{where} : « {rare} » ({a}) ressemble à « {common} » ({b}).",
@@ -774,6 +776,7 @@ export const fr = {
       secretNoReveal: "« {name} » : quand ce secret éclate-t-il, et qui le découvre ?",
       secretNoClue: "« {name} » éclate, mais qu’est-ce qui le laisse deviner avant ?",
       objectOnce: "« {name} » n’est nommé que dans une scène : où le pose-t-on, où sert-il ?",
+      beatDrift: "« {beat} » commence à {at} % du récit, d’ordinaire vers {target} %.",
     },
     intended: "C’est voulu",
     openSheet: "Ouvrir la fiche",
@@ -1105,6 +1108,21 @@ export const fr = {
       p_confrontation: { label: "Confrontation", hint: "Face au coupable." },
       p_resolution: { label: "Résolution", hint: "La vérité, et ce qu’elle laisse." },
     },
+  },
+
+  // Ruban du récit (Manuscrit, Scénario) : la longueur réelle de chaque case du gabarit, et sa place habituelle.
+  ribbon: {
+    aria: "Ruban du récit",
+    beforeFirst: "Avant la première case",
+    scene: "{title} ({beat}, scène {n})",
+    expected: "{beat} : d’ordinaire vers {n} % du récit",
+    caption: "{beat} · à {n} % du récit",
+    hint: "Chaque case prend la place de ses scènes ; les traits fins marquent où elle commence d’ordinaire.",
+    byCount: "une part par scène tant que le récit est peu écrit",
+    showPlots: "Voir les intrigues",
+    hidePlots: "Masquer les intrigues",
+    plotsHint: "Une ligne par carte Intrigue : les scènes reliées par un fil (plein) ou qui la citent (clair).",
+    laneAria: "{title} : présente dans {n} scènes",
   },
 
   kinds: {

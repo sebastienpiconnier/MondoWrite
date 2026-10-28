@@ -29,6 +29,7 @@ import { setCharacterFilter } from "../screenplay/editor/characterFilter";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
 import { useCommand } from "../commands";
 import { ReaderBar } from "./ReaderBar";
+import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { screenplayUtterances, type ReadNode } from "../reading";
 import { PRESERVED } from "../screenplay/editor/nodes";
@@ -374,6 +375,9 @@ export function ScreenplayView() {
 
   const elements = useMemo(() => screenplay?.elements ?? [], [screenplay]);
   const scenes = useMemo(() => listScenes(elements), [elements]);
+  // Scène en cours pour le ruban : la dernière dont l'en-tête est avant le curseur.
+  const ribbonScene = scenes.filter((s) => s.index <= current.index).pop();
+  const ribbonCurrent = ribbonScene ? (ribbonScene.cardId ?? `@${ribbonScene.index}`) : null;
   const sceneCards = useMemo<SceneCard[]>(
     () => nodes.filter((n) => n.data.type === "scene").map((n) => ({ id: n.id, title: n.data.title })),
     [nodes],
@@ -954,6 +958,16 @@ export function ScreenplayView() {
           {menu && menu.active >= 0 ? `${menu.items[menu.active].label}, ${menu.items[menu.active].hint}` : ""}
         </div>
 
+        {/* Ruban du récit : chaque case du gabarit à la place que ses scènes prennent (caché en mode focus). */}
+        {!focusMode && (
+          <StoryRibbon
+            currentId={ribbonCurrent}
+            onGo={(id) => {
+              const s = scenes.find((x) => (x.cardId ?? `@${x.index}`) === id);
+              if (s) goTo(s.index);
+            }}
+          />
+        )}
         <div className="sp-scroll">
           {!focusMode && !charFilter && <TitlePage paper={paper} onChange={setTitleField} />}
           <div

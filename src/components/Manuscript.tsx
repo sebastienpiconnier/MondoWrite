@@ -26,6 +26,7 @@ import { checkManuscript, type Finding } from "../review/checks";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
 import { useCommand } from "../commands";
 import { ReaderBar } from "./ReaderBar";
+import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
@@ -589,6 +590,9 @@ export function Manuscript() {
           <div className="ms-meta-anchor">
           {panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
+            {/* Ruban du récit, en tête de la barre (il reste en vue en défilant) : chaque case du gabarit à la place
+                que ses scènes prennent. */}
+            <StoryRibbon currentId={current} onGo={go} />
             <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
               <span aria-hidden="true">←</span>
             </button>

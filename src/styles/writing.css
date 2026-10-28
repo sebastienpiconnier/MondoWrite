@@ -791,3 +791,31 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .reader-speakers { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 .reader-hint, .reader-empty { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
 .is-reading { background: var(--accent-soft); box-shadow: 0 0 0 0.25em var(--accent-soft); border-radius: 0.2em; }
+
+/* ---------- Ruban du récit (Manuscrit, Scénario) ---------- */
+.ribbon { flex: none; width: 100%; max-width: 980px; margin: 6px auto 4px; padding: 10px 16px 0; box-sizing: border-box; }
+.ms-meta > .ribbon { flex-basis: 100%; max-width: none; margin: 2px 0 6px; padding: 0 4px; }
+.ribbon-track { position: relative; height: 12px; margin-top: 6px; border-radius: 6px; background: var(--ground); }
+.ribbon-beat { position: absolute; top: 0; bottom: 0; background: var(--accent-soft); box-shadow: inset -1px 0 0 var(--surface); }
+.ribbon-beat.is-odd { background: var(--line); }
+.ribbon-beat.is-free { background: var(--ground); }
+.ribbon-beat:first-child { border-radius: 6px 0 0 6px; }
+.ribbon-beat:last-of-type { border-radius: 0 6px 6px 0; }
+.ribbon-scene { position: absolute; top: 0; bottom: 0; min-width: 3px; margin: 0; padding: 0; border: 0; border-right: 2px solid var(--surface); background: transparent; cursor: pointer; }
+/* La scène se touche sur toute la hauteur d'une cible tactile, la bande reste fine. */
+.ribbon-scene::after { content: ""; position: absolute; inset: -10px 0; }
+.ribbon-scene.is-current { background: var(--accent); border-radius: 2px; }
+.ribbon-scene:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (any-hover: hover) { .ribbon-scene:hover { background: var(--accent-ink); opacity: 0.5; } .ribbon-scene.is-current:hover { opacity: 1; } }
+@media (pointer: coarse) { .ribbon-scene::after { inset: -16px 0; } }
+.ribbon-mark { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink-2); opacity: 0.55; pointer-events: none; }
+.ribbon-caption { margin: 8px 0 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.4; }
+.ribbon-note { font-style: italic; }
+.ribbon-toggle { padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+@media (pointer: coarse) { .ribbon-toggle { min-height: 44px; } }
+/* Chaque intrigue a toute la largeur, pour que ses scènes tombent sous celles du ruban ; son nom au-dessus. */
+.ribbon-lane { margin-top: 4px; }
+.ribbon-lane-name { display: block; overflow: hidden; color: var(--ink-2); font-size: 0.75rem; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--ground); }
+.ribbon-lane-mark { position: absolute; top: 0; bottom: 0; min-width: 3px; border-right: 2px solid var(--surface); background: var(--type-intrigue); }
+.ribbon-lane-mark.is-cited { opacity: 0.45; }

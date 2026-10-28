@@ -16,8 +16,8 @@ import type { CharacterRow } from "./report";
 export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
-export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce";
-export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "secretNoReveal", "secretNoClue", "objectOnce"];
+export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift";
+export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "secretNoReveal", "secretNoClue", "objectOnce", "beatDrift"];
 
 export const RULE_ORDER: RuleKey[] = [
   "similarNames",
@@ -33,6 +33,7 @@ export const RULE_ORDER: RuleKey[] = [
   "secretNoReveal",
   "secretNoClue",
   "objectOnce",
+  "beatDrift",
 ];
 
 export interface Finding {
@@ -228,6 +229,8 @@ export interface StoryExtras {
   pages?: number;
   /** Scènes où le texte nomme chaque carte Objet, par identifiant. */
   named?: ReadonlyMap<string, number>;
+  /** Cases du gabarit loin de leur place habituelle (ruban du récit). */
+  drifts?: readonly { key: string; at: number; target: number; sceneId: string }[];
 }
 
 export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman" | "scenario", pitch: Pitch, extras: StoryExtras = {}): Finding[] {
@@ -262,6 +265,10 @@ export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman
     }
     // Un objet nommé dans une seule scène : posé sans servir, ou sert sans avoir été posé.
     if (c.type === "objet" && extras.named?.get(c.id) === 1) out.push({ key: `objectOnce:${c.id}`, rule: "objectOnce", at: -1, scene: 0, sceneId: c.id, text: "", names: [name] });
+  }
+  // Une case du gabarit qui commence loin de sa place habituelle : on y va par sa première scène.
+  for (const d of extras.drifts ?? []) {
+    out.push({ key: `beatDrift:${d.key}`, rule: "beatDrift", at: -1, scene: 0, sceneId: d.sceneId, text: d.key, counts: [Math.round(d.at * 100), Math.round(d.target * 100)] });
   }
   return out;
 }

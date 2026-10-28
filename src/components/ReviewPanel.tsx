@@ -7,6 +7,7 @@ import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { STORY_RULES, groupFindings, type Finding } from "../review/checks";
+import type { PlanBeat } from "../plan";
 import { titleCase } from "../screenplay/editor/autocomplete";
 
 /** Points ignorés pendant la session (jamais enregistrés). */
@@ -29,7 +30,9 @@ interface Props {
 }
 
 export function ReviewPanel({ findings, kind, where, onGo }: Props) {
-  const t = useT().review;
+  const all = useT();
+  const t = all.review;
+  const beats = all.plan.beats;
   const lang = useSettings((s) => s.lang);
   const ignored = useIgnored((s) => s.keys);
   const groups = groupFindings(findings, ignored);
@@ -68,12 +71,16 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
         return fmt(t.items.secretNoClue, { name: f.names![0] });
       case "objectOnce":
         return fmt(t.items.objectOnce, { name: f.names![0] });
+      case "beatDrift":
+        return fmt(t.items.beatDrift, { beat: beats[f.text as PlanBeat]?.label ?? f.text, at: f.counts![0], target: f.counts![1] });
     }
   };
   // Une question sur l'histoire mène à la fiche (ou à la Bible), pas à un passage du texte.
   const go = (f: Finding) => {
     if (!STORY_RULES.includes(f.rule)) return onGo(f);
     const s = useCosmos.getState();
+    // Une case loin de sa place : on va à sa première scène, dans le texte.
+    if (f.rule === "beatDrift" && f.sceneId) return s.openInManuscript(f.sceneId);
     if (f.sceneId) s.openInBible(f.sceneId);
     else s.setView("bible");
   };
