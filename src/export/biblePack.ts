@@ -220,8 +220,10 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       if (s.kind === "scenario" && options.memo && memo.length >= 2) {
         blocks.push({ kind: "label", text: e.memo }, { kind: "list", columns: 2, items: memo.map((c) => ({ mark: "", text: c.title.trim(), note: memoNote(c) })) }, { kind: "pageBreak" });
       }
+      // Les fiches s'enchaînent, séparées d'un filet (roman comme scénario) : une page par personnage
+      // laissait des pages presque vides.
       full.forEach((c, i) => {
-        if (i > 0) blocks.push(isPrincipal(c) || !forMe ? { kind: "pageBreak" } : { kind: "rule" });
+        if (i > 0) blocks.push({ kind: "rule" });
         blocks.push(...characterBlocks(c));
       });
       if (others.length > 0) {

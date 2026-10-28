@@ -25,7 +25,7 @@
 .toc-label { display: flex; align-items: center; gap: 10px; }
 .toc-count { font-size: 0.8125rem; color: var(--ink-2); }
 
-.bible-main { flex: 3 1 400px; min-width: 0; max-width: 820px; display: flex; flex-direction: column; gap: 16px; }
+.bible-main { flex: 3 1 400px; min-width: 0; max-width: 1160px; display: flex; flex-direction: column; gap: 16px; }
 /* Rubriques l'une sous l'autre : un titre par rubrique, l'espace marque le passage à la suivante. */
 .bible-group { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 24px; }
 .bible-group + .bible-group { margin-top: 28px; }

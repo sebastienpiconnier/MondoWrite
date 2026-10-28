@@ -275,7 +275,8 @@ export function layoutBible({ pack, theme, accent, paper, metrics, imageSize }: 
         const nameLines = wrap([{ text: b.name, font: F("display") }], textW, S.h1, metrics);
         const hookLines = b.hook ? wrap([{ text: b.hook, font: F("textItalic") }], textW, S.lead, metrics) : [];
         const h = Math.max(boxH, nameLines.length * S.h1 * 1.2 + 20 + hookLines.length * S.lead * 1.4);
-        ensure(h + 16);
+        // Les fiches s'enchaînent : l'en-tête d'un personnage ne reste pas seul en bas de page (trois lignes avec lui).
+        ensure(h + 16 + (next ? S.body * theme.leading * 3 : 0));
         const top = y + 6;
         if (b.image && imageSize(b.image)) page.ops.push({ op: "image", name: b.image, x: left, y: top, w: boxW, h: boxH, crop: true });
         else {
