@@ -62,13 +62,13 @@ export function demoProject(): Project {
   // Le canevas : les personnages à gauche, les lieux au milieu, les scènes en bas, ce qui reste en vrac à droite.
   const at = (key: keyof typeof id, x: number, y: number): CardLayout => ({ id: id[key], x, y });
   const layout: CardLayout[] = [
-    at("chaperon", 40, 40), at("loup", 360, 40), at("mereGrand", 680, 40), at("mere", 40, 540),
-    at("village", 360, 540), at("bois", 680, 540), at("maison", 1000, 540),
-    at("intrigue", 1000, 40), at("naivete", 1000, 260), at("apparences", 1320, 260),
-    at("idee", 1320, 40), at("question", 1640, 40), at("source", 1640, 260), at("gravure", 1960, 40),
-    at("galette", 40, 860), at("rencontre", 360, 860), at("chemins", 680, 860),
-    at("toctoc", 1000, 860), at("porte", 1320, 860), at("dents", 1640, 860),
-    at("moral", 1960, 860),
+    at("chaperon", 40, 40), at("loup", 360, 40), at("mereGrand", 680, 40), at("mere", 40, 580),
+    at("village", 360, 580), at("bois", 680, 580), at("maison", 1000, 580),
+    at("intrigue", 1000, 40), at("naivete", 1000, 330), at("apparences", 1320, 330),
+    at("idee", 1320, 40), at("question", 1640, 40), at("source", 1640, 330), at("gravure", 1960, 40),
+    at("galette", 40, 920), at("rencontre", 360, 920), at("chemins", 680, 920),
+    at("toctoc", 1000, 920), at("porte", 1320, 920), at("dents", 1640, 920),
+    at("moral", 1960, 920),
   ];
 
   const l = d.links;

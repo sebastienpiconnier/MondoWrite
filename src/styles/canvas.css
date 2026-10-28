@@ -192,6 +192,25 @@
 .card-questions { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); min-height: 32px; margin: 0 12px 12px; padding: 4px 10px 4px 4px; border: 1px dashed var(--type); border-radius: 999px; background: transparent; color: var(--ink-2); font: 500 13px var(--font-ui); text-align: left; cursor: pointer; }
 @media (any-hover: hover) { .card-questions:hover { background: var(--ground); color: var(--ink); } }
 .card-questions-count { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border: 2px solid var(--type); border-radius: 999px; background: var(--surface); color: var(--ink); font-weight: 700; font-size: 12px; }
+/* Au pied de la carte : « Relié à » et les noms des cartes reliées. Fils visibles, une ligne discrète, coupée
+   au bout, qui se déplie au toucher ; fils masqués, la liste est dépliée (c'est le seul repère) et « Relié à »
+   rallume les fils de la carte. */
+.card-links { display: block; width: calc(100% - 24px); margin: 0 12px 10px; padding: 0; border: 0; background: transparent; color: var(--muted); font: 500 12px/1.5 var(--font-ui); text-align: left; }
+.card-links-line { min-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.card-links-label { margin-right: 2px; }
+.card-links.is-open { color: var(--ink-2); }
+.card-link { display: inline; padding: 0; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.card-links.is-open .card-link.card-links-label { color: var(--muted); }
+.card-links-toggle { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; margin-right: 4px; padding: 2px 8px; border: 1px dashed var(--line); border-radius: 999px; background: transparent; color: var(--ink-2); font: 600 12px var(--font-ui); vertical-align: middle; cursor: pointer; }
+.card-links-toggle.is-on { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.card-link.is-more { margin-left: 4px; color: var(--muted); }
+@media (any-hover: hover) {
+  .card-link:hover, .card-links-line:hover { color: var(--ink); text-decoration: underline; }
+  .card-links-toggle:hover { background: var(--ground); color: var(--ink); }
+  .card-links-toggle.is-on:hover { background: var(--accent-soft); color: var(--accent-ink); }
+}
+/* Au doigt : les noms se touchent sur toute la hauteur de la ligne, le bouton sur 44 px. */
+@media (pointer: coarse) { .card-links { line-height: 2; } .card-links-line, .card-links-toggle { min-height: 44px; } }
 /* Mise en avant : une carte nette, avec un halo d'accent ; le reste (cartes, cadres, fils, étiquettes) s'estompe. */
 .toile .react-flow__node, .toile .react-flow__edge, .toile .react-flow__edgelabel-renderer > * { transition: opacity 0.2s ease; }
 /* Gros canevas : sans transition (Safari créait une couche par carte, fil et étiquette pendant l'animation). */

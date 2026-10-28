@@ -63,11 +63,28 @@ async function scrollToText(text, offset = 70) {
     return true;
   }, [text, offset]);
 }
-const step = async (name, fn) => { try { await fn(); } catch (e) { console.log("ÉCHEC", name, e.message.split("\n")[0]); } };
+const step = async (name, fn) => { try { await fn(); } catch (e) { console.log("ÉCHEC", name, e.message.split("\n").slice(0, 3).join(" | ")); } };
 const view = async (v) => { await page.locator("nav button, [aria-label] button", { hasText: v }).first().click(); await wait(1000); };
 // Les fenêtres d'export ont leur propre « Fermer », à côté du bouton d'export.
 const closeDialog = () => page.locator("dialog[open] .app-dialog-actions button, dialog[open] .spdf-close, dialog[open] .paperback-row button:not(.is-primary)").first().click();
 const bg = async () => { await page.mouse.click(900, 200); await wait(200); };
+// Zoom au pincement (molette + Ctrl) : la molette seule déplace le canevas.
+async function zoomAt(x, y, steps) {
+  await page.mouse.move(x, y);
+  await page.keyboard.down("Control");
+  for (let i = 0; i < steps; i++) await page.mouse.wheel(0, -100);
+  await page.keyboard.up("Control");
+  await wait(500);
+}
+// Amène une carte en haut à gauche du canevas, puis zoome sur elle (son coin reste en place).
+async function zoomOnCard(text, steps = 2) {
+  const box = await node(text).boundingBox();
+  if (!box) return;
+  await page.mouse.move(700, 500);
+  await page.mouse.wheel(box.x - 40, box.y - 130);
+  await wait(400);
+  await zoomAt(40, 130, steps);
+}
 const fit = async () => { await page.getByRole("button", { name: "Fit View" }).click(); await wait(400); };
 const node = (text) => page.locator(".react-flow__node", { hasText: text }).first();
 async function cardButton(text, label) { const n = node(text); await n.hover(); await n.getByRole("button", { name: label }).click(); }
@@ -153,10 +170,20 @@ await step("nouvelle carte", async () => {
   await page.keyboard.press("Escape");
 });
 await step("fils", async () => {
-  await page.mouse.move(300, 250);
-  await page.mouse.wheel(0, -300);
-  await wait(500);
-  await shot("canevas-fils", { clip: { x: 0, y: 70, width: 1000, height: 600 } });
+  await zoomOnCard(T("La plus jolie petite fille", "The prettiest little girl"));
+  await shot("canevas-fils", { clip: { x: 0, y: 70, width: 1200, height: 700 } });
+  await fit();
+});
+await step("fils masqués", async () => {
+  await page.getByRole("button", { name: T("Masquer les fils", "Hide threads") }).click();
+  await wait(300);
+  // La carte du personnage (son nom figure aussi dans d'autres cartes) : celle dont le titre est exactement ce nom.
+  const name = T("Le Petit Chaperon rouge", "Little Red Riding Hood");
+  const id = await page.evaluate((n) => [...document.querySelectorAll(".react-flow__node")].find((el) => [...el.querySelectorAll("textarea, input")].some((f) => f.value.trim() === n))?.getAttribute("data-id"), name);
+  await page.locator(`.react-flow__node[data-id="${id}"] .card-links-toggle`).click();
+  await zoomOnCard(T("La plus jolie petite fille", "The prettiest little girl"));
+  await shot("fils-masques", { clip: { x: 0, y: 70, width: 1200, height: 700 } });
+  await page.getByRole("button", { name: T("Masquer les fils", "Hide threads") }).click();
   await fit();
 });
 await step("menu carte", async () => {

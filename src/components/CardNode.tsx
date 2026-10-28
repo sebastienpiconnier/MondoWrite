@@ -23,6 +23,7 @@ import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { CardActions } from "./CardActions";
+import { CardLinks } from "./CardLinks";
 import { SceneCardBody } from "./SceneDraft";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { useMediaUrl } from "./useMediaUrl";
@@ -582,6 +583,9 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           {fmt(data.questions!.length === 1 ? t.character.pendingOne : t.character.pendingMany, { n: data.questions!.length })}
         </button>
       )}
+
+      {/* À quoi la carte est reliée : lisible même fils masqués. */}
+      <CardLinks id={id} />
 
       {mention && mentionCount > 0 && !slash && (
         <SuggestionMenu

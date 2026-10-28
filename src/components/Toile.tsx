@@ -23,6 +23,7 @@ import { InboxMenu } from "./InboxMenu";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FloatingEdge } from "./FloatingEdge";
+import { wireShown } from "../cardLinks";
 import { NewCardMenu } from "./NewCardMenu";
 import type { CardData, CardType } from "../types";
 import { fmt, useT } from "../i18n";
@@ -139,10 +140,14 @@ export function Toile() {
       }),
     ];
   }, [frames, shownFrames, nodes, hidden, spotlightId]);
-  const shownEdges = useMemo(
-    () => (hidden.size === 0 ? edges : edges.map((e) => (hidden.has(e.source) || hidden.has(e.target) ? { ...e, hidden: true } : e))),
-    [edges, hidden],
-  );
+  // Fils masqués (réglage du projet) : seuls restent ceux des cartes dont on a rallumé les fils.
+  const hideWires = useCosmos((s) => s.hideWires);
+  const wiresShown = useCosmos((s) => s.wiresShown);
+  const shownEdges = useMemo(() => {
+    if (hidden.size === 0 && !hideWires) return edges;
+    const lit = new Set(wiresShown);
+    return edges.map((e) => (hidden.has(e.source) || hidden.has(e.target) || !wireShown(e, hideWires, lit) ? { ...e, hidden: true } : e));
+  }, [edges, hidden, hideWires, wiresShown]);
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
   const { screenToFlowPosition, fitView, getViewport, setViewport, setCenter, getInternalNode } = useReactFlow();
@@ -754,6 +759,22 @@ export function Toile() {
           <span className="tool-label" aria-hidden="true">{t.organize.short}</span>
         </button>
         <CanvasFilterMenu />
+        <button
+          type="button"
+          className={`icon-button has-label${hideWires ? " is-on" : ""}`}
+          aria-label={t.toile.hideWires}
+          aria-pressed={hideWires}
+          title={t.toile.hideWiresHint}
+          onClick={() => useCosmos.getState().setHideWires(!hideWires)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="5.5" cy="7" r="2.5" />
+            <circle cx="18.5" cy="17" r="2.5" />
+            <path d="M8 7.5c5 0 3 9 8 9" strokeDasharray={hideWires ? "2 3" : undefined} />
+            {hideWires && <path d="M4 20L20 4" />}
+          </svg>
+          <span className="tool-label" aria-hidden="true">{t.toile.wiresShort}</span>
+        </button>
         <InboxMenu />
         <button
           type="button"

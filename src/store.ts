@@ -274,6 +274,12 @@ interface CosmosState {
   /** Scénario : souligner les en-têtes de scène dans l'éditeur et les exports. */
   underlineHeadings: boolean;
   setUnderlineHeadings: (on: boolean) => void;
+  /** Fils du canevas masqués : réglage du projet, enregistré dans cosmos.json, hors historique. */
+  hideWires: boolean;
+  setHideWires: (on: boolean) => void;
+  /** Fils masqués : cartes dont on a rallumé les fils (affichage, jamais enregistré). */
+  wiresShown: string[];
+  toggleCardWires: (id: string) => void;
   /** Copies Markdown du projet dans markdown/ (réglage du projet, oui par défaut). */
   markdownCopies: boolean;
   setMarkdownCopies: (on: boolean) => void;
@@ -692,6 +698,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       saveError: null,
       spotlightId: null,
       charFilter: null,
+      wiresShown: [],
       filter: NO_FILTER,
       expandedId: null,
       cardMenu: null,
@@ -1524,6 +1531,17 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ underlineHeadings });
       touch();
     },
+    hideWires: false,
+    setHideWires: (hideWires) => {
+      // Masquer de nouveau repart de zéro : aucune carte n'a ses fils rallumés.
+      set({ hideWires, wiresShown: [] });
+      touch();
+    },
+    wiresShown: [],
+    toggleCardWires: (id) => {
+      const shown = get().wiresShown;
+      set({ wiresShown: shown.includes(id) ? shown.filter((x) => x !== id) : [...shown, id] });
+    },
     markdownCopies: true,
     setMarkdownCopies: (markdownCopies) => {
       set({ markdownCopies });
@@ -1652,6 +1670,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         saveError: null,
         spotlightId: null,
         charFilter: null,
+        wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,
@@ -1766,6 +1785,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         saveError: null,
         spotlightId: null,
         charFilter: null,
+        wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,
@@ -2252,6 +2272,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         saveError: null,
         spotlightId: null,
         charFilter: null,
+        wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,

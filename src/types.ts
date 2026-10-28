@@ -131,6 +131,8 @@ export interface ProjectMeta {
   sceneNumbers?: boolean;
   /** Scénario : en-têtes de scène soulignés (éditeur, PDF, FDX). Absent : non. */
   underlineHeadings?: boolean;
+  /** Fils du canevas masqués (chaque carte dit à quoi elle est reliée). Absent : visibles. */
+  hideWires?: boolean;
   /** Copies Markdown (manuscrit, bible, canevas) dans markdown/. Absent : oui ; false : arrêtées. */
   markdownCopies?: boolean;
   layout: CardLayout[];
