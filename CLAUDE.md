@@ -466,7 +466,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - Accessibilité : vrais `<button>`, `aria-label` sur les boutons icône, cibles tactiles ≥ 44 px pour les actions principales, contraste AA. Viser la conformité RGAA.
 - Couleurs et polices : uniquement via les variables de `src/styles.css` (repris de la maquette MondoWrite), valables en clair et en sombre.
 - Pas de dépendance lourde sans raison : vérifier d'abord si React Flow ou TipTap le font déjà.
-- **Licences** : toute dépendance, police ou image ajoutée doit avoir une licence compatible avec la GPL v3 (MIT, BSD, ISC, Apache-2.0, OFL, domaine public) et entre dans `THIRD-PARTY-NOTICES.md` avec son copyright ; tout code repris ou adapté d'un autre projet aussi (dire d'où en commentaire, comme pour NEO). Jamais de dépendance GPL d'un tiers : elle empêcherait la diffusion dans les boutiques d'applications (voir `CONTRIBUTING.md`).
+- **Licences** : MondoWrite est sous **AGPL v3.0 ou ultérieure** depuis octobre 2026 (GPL v3 avant ; `LICENSE`, `package.json`, `Cargo.toml`, README, CONTRIBUTING, À propos, guide). Toute dépendance, police ou image ajoutée doit avoir une licence compatible avec l'AGPL v3 (MIT, BSD, ISC, Apache-2.0, MPL-2.0, OFL, domaine public) et entre dans `THIRD-PARTY-NOTICES.md` avec son copyright ; tout code repris ou adapté d'un autre projet aussi (dire d'où en commentaire, comme pour NEO). Jamais de dépendance GPL ou AGPL d'un tiers : elle empêcherait la diffusion dans les boutiques d'applications (voir `CONTRIBUTING.md`).
 
 ## Feuille de route
 

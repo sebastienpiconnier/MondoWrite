@@ -41,7 +41,7 @@ MondoWrite brings it all into one place, from the first fragment to the printed 
 - **The character sheet as a dramatic engine.** Wants, Needs, Wound, in three readable boxes, and an assistant that asks you the right questions.
 - **From first draft to printed book.** Manuscript-format PDF, Word, EPUB, and a paperback ready for Amazon KDP. And the other way round, import your Word manuscript or your existing screenplay.
 - **Your work belongs to you.** No account, no cloud, no subscription: your projects are plain Markdown files on your own machine.
-- **Free and open source, for good.** MondoWrite is free software, released under the GPL-3.0: you can use it, study it, change it and share it.
+- **Free and open source, for good.** MondoWrite is free software, released under the AGPL-3.0: you can use it, study it, change it and share it.
 
 **AI will not write your story.** If you choose to turn it on (including a 100% local model on your computer), it spots inconsistencies, puts your notes back in order and asks you sharp questions. You remain the author.
 
@@ -307,7 +307,7 @@ Architecture, conventions and detailed roadmap: see [CLAUDE.md](CLAUDE.md) (in F
 
 ## License
 
-MondoWrite is free software, released under the [GNU GPL v3.0 or later](LICENSE). You can use, study, change and redistribute it; any modified version you distribute must stay under the same license.
+MondoWrite is free software, released under the [GNU AGPL v3.0 or later](LICENSE) (GNU Affero General Public License). You can use, study, change and redistribute it; any modified version you distribute must stay under the same license. The AGPL adds one rule to the GPL: a modified version offered to others over a network (an online service, for example) must also give them access to its source code.
 
 The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets/fonts/OFL.txt)), and the paperback the Crimson Text font (SIL OFL license, see [OFL-CrimsonText.txt](src/assets/fonts/OFL-CrimsonText.txt)). Hyphenation uses TeX patterns from the `hyphen` package.
 

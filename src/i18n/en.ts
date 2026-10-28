@@ -2060,7 +2060,7 @@ export const en: Messages = {
     creditsTitle: "Credits",
     author: "Designed by Sébastien Piconnier.",
     credits: "Built with Tauri, React, React Flow, TipTap and pdf-lib. Fonts IBM Plex, Space Grotesk, Playfair Display, Courier Prime and Crimson Text (SIL Open Font License). Manuscript import and the paperback export reuse rules from Hugh Howey’s NEO (MIT license).",
-    license: "GNU GPL 3.0 or later.",
+    license: "GNU AGPL 3.0 or later.",
     source: "Source code:",
   },
 

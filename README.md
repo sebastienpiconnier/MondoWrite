@@ -41,7 +41,7 @@ MondoWrite rassemble tout au même endroit, du premier fragment jusqu'au livre i
 - **La fiche personnage comme moteur dramatique.** Veut, A besoin de, Blessure, en trois cases lisibles, et un assistant qui vous pose les bonnes questions.
 - **Du premier jet au livre imprimé.** PDF au format manuscrit, Word, EPUB, livre broché prêt pour Amazon KDP. Et dans l'autre sens, importez votre manuscrit Word ou votre scénario existant.
 - **Votre œuvre vous appartient.** Pas de compte, pas de cloud, pas d'abonnement : vos projets sont de simples fichiers Markdown sur votre machine.
-- **Libre et gratuit, et ça le restera.** MondoWrite est un logiciel libre, distribué sous licence GPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
+- **Libre et gratuit, et ça le restera.** MondoWrite est un logiciel libre, distribué sous licence AGPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
 
 **L'IA n'écrira pas votre histoire.** Si vous choisissez de l'activer (y compris un modèle 100 % local sur votre ordinateur), elle relève vos incohérences, remet vos notes en ordre et vous pose des questions pointues. Vous restez l'auteur.
 
@@ -306,7 +306,7 @@ Architecture, conventions et feuille de route détaillée : voir [CLAUDE.md](CLA
 
 ## Licence
 
-MondoWrite est un logiciel libre, distribué sous licence [GNU GPL v3.0 ou ultérieure](LICENSE). Vous pouvez l'utiliser, l'étudier, le modifier et le redistribuer ; toute version modifiée que vous distribuez doit rester sous la même licence.
+MondoWrite est un logiciel libre, distribué sous licence [GNU AGPL v3.0 ou ultérieure](LICENSE) (GNU Affero General Public License). Vous pouvez l'utiliser, l'étudier, le modifier et le redistribuer ; toute version modifiée que vous distribuez doit rester sous la même licence. L'AGPL ajoute une règle à la GPL : une version modifiée proposée à d'autres à travers un réseau (un service en ligne, par exemple) doit aussi leur donner accès à son code source.
 
 Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/assets/fonts/OFL.txt)), et le livre broché la police Crimson Text (licence SIL OFL, voir [OFL-CrimsonText.txt](src/assets/fonts/OFL-CrimsonText.txt)). La césure utilise les motifs de TeX du paquet `hyphen`.
 

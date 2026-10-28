@@ -1,8 +1,8 @@
 # Mentions tierces / Third-party notices
 
-MondoWrite est distribué sous licence [GNU GPL v3.0 ou ultérieure](LICENSE). Il reprend ou embarque des éléments d'autres auteurs, publiés sous des licences compatibles. Ce fichier regroupe leurs mentions de copyright et le texte de leurs licences, comme celles-ci l'exigent.
+MondoWrite est distribué sous licence [GNU AGPL v3.0 ou ultérieure](LICENSE). Il reprend ou embarque des éléments d'autres auteurs, publiés sous des licences compatibles. Ce fichier regroupe leurs mentions de copyright et le texte de leurs licences, comme celles-ci l'exigent.
 
-MondoWrite is released under the [GNU GPL v3.0 or later](LICENSE). It reuses or bundles work by other authors, released under compatible licenses. This file gathers their copyright notices and license texts, as those licenses require.
+MondoWrite is released under the [GNU AGPL v3.0 or later](LICENSE). It reuses or bundles work by other authors, released under compatible licenses. This file gathers their copyright notices and license texts, as those licenses require.
 
 ## Sommaire / Contents
 

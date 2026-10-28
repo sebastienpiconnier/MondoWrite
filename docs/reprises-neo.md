@@ -1,6 +1,6 @@
 # Ce que MondoWrite peut reprendre de NEO
 
-[NEO](https://github.com/hughhowey/neo) (Hugh Howey) est un traitement de texte pour romanciers, sous licence **MIT**. Son code peut être repris dans MondoWrite (GPL-3.0) à condition de garder la mention de copyright et la licence MIT des fichiers copiés (dans `licenses/` et en tête du fichier repris).
+[NEO](https://github.com/hughhowey/neo) (Hugh Howey) est un traitement de texte pour romanciers, sous licence **MIT**. Son code peut être repris dans MondoWrite (AGPL-3.0) à condition de garder la mention de copyright et la licence MIT des fichiers copiés (dans `licenses/` et en tête du fichier repris).
 
 Les deux outils se complètent : NEO est centré sur la page (on écrit le livre), MondoWrite sur le chaos des idées (canevas, bible, plan). Ce qui suit, ce sont les idées de NEO qui serviraient la vue Manuscrit de MondoWrite sans alourdir le reste.
 

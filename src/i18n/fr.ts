@@ -2057,7 +2057,7 @@ export const fr = {
     creditsTitle: "Crédits",
     author: "Conçu par Sébastien Piconnier.",
     credits: "Construit avec Tauri, React, React Flow, TipTap et pdf-lib. Polices IBM Plex, Space Grotesk, Playfair Display, Courier Prime et Crimson Text (licence SIL Open Font). L’import des manuscrits et le livre broché reprennent des règles de NEO, de Hugh Howey (licence MIT).",
-    license: "Licence GNU GPL 3.0 ou ultérieure.",
+    license: "Licence GNU AGPL 3.0 ou ultérieure.",
     source: "Code source :",
   },
 
