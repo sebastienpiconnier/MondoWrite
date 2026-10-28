@@ -53,7 +53,7 @@ MondoWrite rassemble tout au même endroit, du premier fragment jusqu'au livre i
 
 Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases).
 
-> **Premier lancement.** Sur macOS, l'app est signée et vérifiée par Apple : elle s'ouvre normalement. Sur Windows, si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ». Signature du code gratuite fournie par [SignPath.io](https://about.signpath.io), certificat de la [SignPath Foundation](https://signpath.org) : voir la [politique de signature du code](CODE_SIGNING.md).
+> **Premier lancement.** Sur macOS, l'app est signée et vérifiée par Apple : elle s'ouvre normalement. Sur Windows, si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
@@ -294,7 +294,7 @@ npm test        # tests (Vitest)
 git tag v0.1.0 && git push --tags
 ```
 
-GitHub fabrique les installeurs des trois systèmes et les dépose dans un brouillon de Release, qu'il reste à publier. Les secrets nécessaires pour signer les apps (compte développeur Apple, clé de signature des mises à jour, SignPath pour Windows) sont listés dans `release.yml` ; la signature Windows suit la [politique de signature du code](CODE_SIGNING.md). Une Release publiée normalement (pas en préversion) est celle que l'app trouve et installe.
+GitHub fabrique les installeurs des trois systèmes et les dépose dans un brouillon de Release, qu'il reste à publier. Les secrets nécessaires pour signer les apps (compte développeur Apple, clé de signature des mises à jour) sont listés dans `release.yml`. Les installeurs Windows ne sont pas signés. Une Release publiée normalement (pas en préversion) est celle que l'app trouve et installe.
 
 ### Travailler sur plusieurs ordinateurs
 

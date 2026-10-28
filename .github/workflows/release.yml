@@ -36,12 +36,10 @@ jobs:
 
           **Installer**
           - macOS : ouvre le .dmg (aarch64 pour un Mac Apple Silicon, x64 pour un Mac Intel) et glisse MondoWrite dans Applications. L'app est signée et vérifiée par Apple.
-          - Windows : lance le .exe (ou le .msi). Si SmartScreen s'affiche (version récente encore peu téléchargée), « Informations complémentaires » puis « Exécuter quand même ».
+          - Windows : lance le .exe (ou le .msi). Si SmartScreen s'affiche (installeur non signé), « Informations complémentaires » puis « Exécuter quand même ».
           - Linux : AppImage, .deb ou .rpm.
 
           Mises à jour : MondoWrite te prévient d'une nouvelle version (Réglages, « Mises à jour ») et l'installe d'un clic. Tes projets restent des dossiers de fichiers Markdown, lisibles hors de l'app.
-
-          [Politique de signature du code](https://github.com/sebastienpiconnier/MondoWrite/blob/main/CODE_SIGNING.md)
 
           ---
 
@@ -49,12 +47,10 @@ jobs:
 
           **Install**
           - macOS: open the .dmg (aarch64 for an Apple Silicon Mac, x64 for an Intel Mac) and drag MondoWrite to Applications. The app is signed and verified by Apple.
-          - Windows: run the .exe (or the .msi). If SmartScreen appears (a recent version not yet downloaded much), click “More info”, then “Run anyway”.
+          - Windows: run the .exe (or the .msi). If SmartScreen appears (unsigned installer), click “More info”, then “Run anyway”.
           - Linux: AppImage, .deb or .rpm.
 
           Updates: MondoWrite tells you when a new version is out (Settings, “Updates”) and installs it in one click. Your projects remain folders of Markdown files, readable outside the app.
-
-          [Code signing policy](https://github.com/sebastienpiconnier/MondoWrite/blob/main/CODE_SIGNING.md#english)
           BODY
           id=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=30" --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id" | head -n 1)
           if [ -z "$id" ]; then
@@ -224,73 +220,6 @@ jobs:
           # fabrications l'écrivaient en même temps et la dernière effaçait les autres plateformes.
           includeUpdaterJson: false
           args: ${{ matrix.args }}
-
-      # Signature Windows par la SignPath Foundation (voir CODE_SIGNING.md), seulement quand le projet est
-      # accepté et que le dépôt porte le secret SIGNPATH_API_TOKEN et la variable SIGNPATH_ORGANIZATION_ID
-      # (Settings › Secrets and variables › Actions ; variables facultatives : SIGNPATH_PROJECT_SLUG, par défaut
-      # MondoWrite, et SIGNPATH_POLICY_SLUG, par défaut release-signing). Les installeurs fabriqués ci-dessus
-      # partent chez SignPath, qui attend l'approbation à la main (sur signpath.io, deux heures au plus), puis
-      # remplacent ceux de la Release. Les .sig de mise à jour portaient sur les fichiers non signés : ils sont
-      # refaits avant que la tâche latest-json ne les lise. Sans secret, rien ne change (installeurs non signés).
-      - name: SignPath, installeurs à signer (Windows)
-        id: signpath
-        if: matrix.platform == 'windows-latest'
-        shell: bash
-        env:
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-        run: |
-          if [ -z "$SIGNPATH_API_TOKEN" ] || [ -z "$SIGNPATH_ORGANIZATION_ID" ]; then
-            echo "::notice::Pas de SignPath : installeurs Windows non signés."
-            exit 0
-          fi
-          mkdir -p "$RUNNER_TEMP/unsigned"
-          cp src-tauri/target/release/bundle/msi/*.msi src-tauri/target/release/bundle/nsis/*-setup.exe "$RUNNER_TEMP/unsigned/"
-          ls "$RUNNER_TEMP/unsigned"
-          echo "enabled=true" >> "$GITHUB_OUTPUT"
-
-      - name: SignPath, envoi des installeurs (Windows)
-        id: unsigned
-        if: steps.signpath.outputs.enabled == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-unsigned
-          path: ${{ runner.temp }}/unsigned/*
-          if-no-files-found: error
-
-      - name: SignPath, signature (Windows)
-        if: steps.signpath.outputs.enabled == 'true'
-        uses: signpath/github-action-submit-signing-request@v1
-        with:
-          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'MondoWrite' }}
-          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
-          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
-          wait-for-completion: true
-          wait-for-completion-timeout-in-seconds: 7200
-          output-artifact-directory: ${{ runner.temp }}/signed
-
-      - name: SignPath, installeurs signés dans la Release (Windows)
-        if: steps.signpath.outputs.enabled == 'true'
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-        run: |
-          if [ -z "$RELEASE_TAG" ]; then RELEASE_TAG="v$(node -p 'require("./package.json").version')"; fi
-          signed="$RUNNER_TEMP/signed"
-          files=("$signed"/*.msi "$signed"/*-setup.exe)
-          sigs=()
-          # Clé de mise à jour posée par l'étape « Signature des mises à jour » : nouveaux .sig.
-          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
-            for f in "${files[@]}"; do
-              rm -f "$f.sig"
-              npx tauri signer sign "$f"
-              sigs+=("$f.sig")
-            done
-          fi
-          RELEASE_TAG="$RELEASE_TAG" node scripts/release-assets.mjs "${files[@]}" "${sigs[@]}"
 
   # Mises à jour dans l'app : latest.json pour toutes les plateformes, d'après les .sig de la Release.
   latest-json:
