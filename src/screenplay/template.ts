@@ -6,7 +6,7 @@
 
 import type { Screenplay, ScreenplayElement } from "./model";
 import { blocks, moveBlock } from "./sequence";
-import { EMPTY_PLAN, PLAN_TEMPLATES, type Plan, type PlanTemplate } from "../plan";
+import { EMPTY_PLAN, PLAN_TEMPLATES, isCustomBeat, type CustomTemplate, type Plan, type PlanTemplate } from "../plan";
 
 /** Gabarits proposés pour un scénario, dans l'ordre du menu. */
 export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences", "episode", "voyageHeros", "cercleHarmon", "freytag", "hauge", "septPoints", "kishotenketsu", "romance", "polar"] as const satisfies readonly PlanTemplate[];
@@ -23,15 +23,77 @@ export const sectionLabel = (text: string): string => text.replace(BEAT_RE, "").
 
 const isBeat = (el: ScreenplayElement) => el.type === "section" && beatOf(el.text) !== null;
 
-/** Gabarit en place dans ce scénario, d'après ses sections. */
-export function currentTemplate(elements: ScreenplayElement[]): ScreenplayTemplate | null {
+/** Gabarit en place dans ce scénario, d'après ses sections (« perso » : un gabarit de l'auteur). */
+export function currentTemplate(elements: ScreenplayElement[]): ScreenplayTemplate | "perso" | null {
   for (const el of elements) {
     const key = el.type === "section" ? beatOf(el.text) : null;
     if (!key) continue;
+    if (isCustomBeat(key)) return "perso";
     const found = SCREENPLAY_TEMPLATES.find((t) => (PLAN_TEMPLATES[t] as readonly string[]).includes(key));
     if (found) return found;
   }
   return null;
+}
+
+/** Gabarit de l'auteur en place : ses cases lues dans les sections (nom de la section = nom de la case). */
+export function customOf(elements: ScreenplayElement[]): CustomTemplate | undefined {
+  const beats = elements.flatMap((el) => {
+    const key = el.type === "section" ? beatOf(el.text) : null;
+    return key && isCustomBeat(key) ? [{ key, label: sectionLabel(el.text) || key }] : [];
+  });
+  return beats.length > 0 ? { name: "", beats } : undefined;
+}
+
+/**
+ * Pose (ou met à jour) un gabarit de l'auteur. Déjà en place : chaque case garde sa section, qui prend son
+ * nouveau nom ; une case retirée perd sa section (ses scènes rejoignent la case d'avant) ; une case nouvelle
+ * arrive à la fin. Sinon, comme `applyTemplate` : la première case avant la première scène, les autres à la fin.
+ */
+export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from: ReadonlyMap<string, string> = new Map()): Screenplay {
+  const section = (b: { key: string; label: string }): ScreenplayElement => ({ type: "section", depth: 1, text: `${b.label} [[cosmos:beat:${b.key}]]` });
+  // Gabarit né d'un autre (`from` : case d'avant → case nouvelle) : chaque section devient la nouvelle sur place,
+  // ses scènes restent dessous ; une case retirée perd sa section, une case ajoutée arrive à la fin.
+  if (from.size > 0 && currentTemplate(screenplay.elements) !== "perso") {
+    const byKey = new Map(custom.beats.map((b) => [b.key, b]));
+    const placed = new Set<string>();
+    const elements = screenplay.elements.flatMap((el) => {
+      if (!isBeat(el)) return [el];
+      const key = from.get(beatOf(el.text)!);
+      const b = key ? byKey.get(key) : undefined;
+      if (!b || placed.has(b.key)) return [];
+      placed.add(b.key);
+      return [section(b)];
+    });
+    return { ...screenplay, elements: [...elements, ...custom.beats.filter((b) => !placed.has(b.key)).map(section)] };
+  }
+  if (currentTemplate(screenplay.elements) !== "perso") {
+    const kept = screenplay.elements.filter((el) => !isBeat(el));
+    if (custom.beats.length === 0) return { ...screenplay, elements: kept };
+    const sections = custom.beats.map(section);
+    const first = kept.findIndex((el) => el.type === "sceneHeading" || el.type === "section");
+    const at = first === -1 ? kept.length : first;
+    return { ...screenplay, elements: [...kept.slice(0, at), sections[0], ...kept.slice(at), ...sections.slice(1)] };
+  }
+  const byKey = new Map(custom.beats.map((b) => [b.key, b]));
+  const present = new Set<string>();
+  let changed = false;
+  const elements = screenplay.elements.flatMap((el) => {
+    const key = el.type === "section" ? beatOf(el.text) : null;
+    if (!key || !isCustomBeat(key)) return [el];
+    const b = byKey.get(key);
+    if (!b) {
+      changed = true;
+      return [];
+    }
+    present.add(key);
+    const next = section(b);
+    if (next.text === el.text) return [el];
+    changed = true;
+    return [{ ...el, text: next.text }];
+  });
+  const added = custom.beats.filter((b) => !present.has(b.key)).map(section);
+  if (!changed && added.length === 0) return screenplay;
+  return { ...screenplay, elements: [...elements, ...added] };
 }
 
 /**
@@ -80,7 +142,8 @@ export function sectionOf(elements: ScreenplayElement[], block: number): number 
 export function screenplayPlan(elements: ScreenplayElement[]): Plan {
   const template = currentTemplate(elements);
   if (!template) return EMPTY_PLAN;
-  const keys = new Set<string>(PLAN_TEMPLATES[template]);
+  const custom = template === "perso" ? customOf(elements) : undefined;
+  const keys = new Set<string>(custom ? custom.beats.map((b) => b.key) : PLAN_TEMPLATES[template]);
   const beats: Record<string, string[]> = {};
   let beat: string | null = null;
   for (const el of elements) {
@@ -91,7 +154,7 @@ export function screenplayPlan(elements: ScreenplayElement[]): Plan {
       (beats[beat] ??= []).push(el.cardId);
     }
   }
-  return { template, beats };
+  return { template, beats, ...(custom ? { custom } : {}) };
 }
 
 /**

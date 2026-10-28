@@ -24,7 +24,10 @@ export type PlanTemplate =
   | "septPoints"
   | "kishotenketsu"
   | "romance"
-  | "polar";
+  | "polar"
+  // Gabarit de l'auteur (« Mes gabarits ») : ses cases sont dans `plan.custom` (roman) ou dans les sections
+  // du scénario, avec des clés `u1`, `u2`…
+  | "perso";
 
 /** Cases de chaque gabarit, dans l'ordre du récit. Ces clés sont écrites dans le fichier : ne jamais les renommer. */
 export const PLAN_TEMPLATES = {
@@ -49,7 +52,54 @@ export const PLAN_TEMPLATES = {
   kishotenketsu: ["k_ki", "k_sho", "k_ten", "k_ketsu"],
   romance: ["r_meet", "r_falling", "r_retreat", "r_return"],
   polar: ["p_crime", "p_investigation", "p_falseLead", "p_twist", "p_confrontation", "p_resolution"],
+  // Les cases d'un gabarit de l'auteur ne sont pas connues d'avance (templateBeats).
+  perso: [],
 } as const satisfies Record<PlanTemplate, readonly string[]>;
+
+/** Une case d'un gabarit de l'auteur : clé stable (`u1`, `u2`…, écrite dans le fichier), nom et aide. */
+export interface CustomBeat {
+  key: string;
+  label: string;
+  hint?: string;
+}
+export interface CustomTemplate {
+  name: string;
+  beats: CustomBeat[];
+}
+/** Clé d'une case de l'auteur : jamais réutilisée pour une autre case (les scènes rangées la suivent). */
+export const isCustomBeat = (key: string) => /^u[1-9]\d{0,2}$/.test(key);
+export const MAX_CUSTOM_BEATS = 40;
+const MAX_LABEL = 120;
+const MAX_HINT = 300;
+
+/** Cases du gabarit, dans l'ordre du récit : celles du gabarit, ou celles de l'auteur. */
+export const templateBeats = (template: PlanTemplate, custom?: CustomTemplate): readonly string[] =>
+  template === "perso" ? (custom?.beats.map((b) => b.key) ?? []) : PLAN_TEMPLATES[template];
+
+/** Première clé libre après celles déjà prises (`u` + nombre). */
+export function nextCustomKey(used: Iterable<string>): string {
+  let max = 0;
+  for (const key of used) if (isCustomBeat(key)) max = Math.max(max, Number(key.slice(1)));
+  return `u${max + 1}`;
+}
+
+/** Gabarit de l'auteur relu (cosmos.json, réglages de l'appareil) : ce qui n'a pas la bonne forme est ignoré. */
+export function readCustom(raw: unknown): CustomTemplate | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const { name, beats } = raw as { name?: unknown; beats?: unknown };
+  if (!Array.isArray(beats)) return undefined;
+  const seen = new Set<string>();
+  const list: CustomBeat[] = [];
+  for (const b of beats.slice(0, MAX_CUSTOM_BEATS)) {
+    if (!b || typeof b !== "object") continue;
+    const { key, label, hint } = b as { key?: unknown; label?: unknown; hint?: unknown };
+    if (typeof key !== "string" || !isCustomBeat(key) || seen.has(key) || typeof label !== "string" || !label.trim()) continue;
+    seen.add(key);
+    list.push({ key, label: label.trim().slice(0, MAX_LABEL), ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, MAX_HINT) } : {}) });
+  }
+  if (list.length === 0) return undefined;
+  return { name: typeof name === "string" ? name.trim().slice(0, MAX_LABEL) : "", beats: list };
+}
 
 /**
  * Où chaque case commence d'ordinaire, en part du récit (0 à 1) : un repère pour le ruban du récit et les
@@ -96,6 +146,8 @@ export interface Plan {
   beats: Record<string, string[]>;
   /** Chapitres. Absent : aucun. */
   chapters?: Chapter[];
+  /** Gabarit de l'auteur (template « perso ») : ses cases. Gardé quand on change de gabarit, pour y revenir. */
+  custom?: CustomTemplate;
 }
 
 export const EMPTY_PLAN: Plan = { template: "libre", beats: {} };
@@ -113,7 +165,10 @@ export function readPlan(raw: unknown): Plan {
     }
   }
   const chapters = readChapters((raw as { chapters?: unknown }).chapters);
-  const next: Plan = { template: isPlanTemplate(template) ? template : "libre", beats: clean, ...(chapters.length > 0 ? { chapters } : {}) };
+  const custom = readCustom((raw as { custom?: unknown }).custom);
+  // Un gabarit de l'auteur sans cases relues redevient libre.
+  const kind = isPlanTemplate(template) && (template !== "perso" || custom) ? template : "libre";
+  const next: Plan = { template: kind, beats: clean, ...(chapters.length > 0 ? { chapters } : {}), ...(custom ? { custom } : {}) };
   return isEmptyPlan(next) ? EMPTY_PLAN : next;
 }
 
@@ -136,7 +191,7 @@ function readChapters(raw: unknown): Chapter[] {
 
 /** Rien à écrire dans le fichier : gabarit par défaut, aucune scène rangée, aucun chapitre. */
 export const isEmptyPlan = (plan: Plan) =>
-  plan.template === "libre" && Object.values(plan.beats).every((ids) => ids.length === 0) && (plan.chapters ?? []).length === 0;
+  plan.template === "libre" && Object.values(plan.beats).every((ids) => ids.length === 0) && (plan.chapters ?? []).length === 0 && !plan.custom;
 
 /**
  * Plan à écrire : sans les cartes qui n'existent plus, ni les cases vides, ni les chapitres vides et
@@ -183,7 +238,7 @@ export interface Arranged {
 export function arrange(plan: Plan, sceneIds: string[]): Arranged {
   const scenes = new Set(sceneIds);
   const seen = new Set<string>();
-  const beats = PLAN_TEMPLATES[plan.template].map((key) => ({
+  const beats = templateBeats(plan.template, plan.custom).map((key) => ({
     key,
     ids: (plan.beats[key] ?? []).filter((id) => scenes.has(id) && !seen.has(id) && !!seen.add(id)),
   }));
@@ -433,4 +488,31 @@ export function stepSceneInBook(plan: Plan, sceneIds: string[], id: string, way:
   const theirs = chapterOf(plan, other)?.id ?? null;
   if (mine !== theirs) return assignChapter(plan, id, theirs);
   return moveSceneTo(plan, sceneIds, id, other, way === "up" ? "before" : "after");
+}
+
+/** Nom et aide d'une case : celle de l'auteur, sinon celle du gabarit (dictionnaire de la langue). */
+export function beatText(key: string, dict: Readonly<Record<string, { label: string; hint: string }>>, custom?: CustomTemplate): { label: string; hint: string } {
+  const own = custom?.beats.find((b) => b.key === key);
+  if (own) return { label: own.label, hint: own.hint ?? "" };
+  return dict[key] ?? { label: key, hint: "" };
+}
+
+/**
+ * Cases saisies par l'auteur (éditeur de gabarit) → cases du projet : une case qui avait déjà sa clé la garde
+ * (ses scènes la suivent), une case nouvelle en reçoit une jamais prise. Les cases sans nom sont laissées.
+ */
+export function withKeys(rows: readonly { key?: string; label: string; hint?: string }[], used: Iterable<string>): CustomBeat[] {
+  const taken = new Set(used);
+  const out: CustomBeat[] = [];
+  for (const row of rows.slice(0, MAX_CUSTOM_BEATS)) {
+    const label = row.label.trim();
+    if (!label) continue;
+    let key = row.key && isCustomBeat(row.key) && !out.some((b) => b.key === row.key) ? row.key : "";
+    if (!key) {
+      key = nextCustomKey([...taken, ...out.map((b) => b.key)]);
+    }
+    taken.add(key);
+    out.push({ key, label: label.slice(0, 120), ...(row.hint?.trim() ? { hint: row.hint.trim().slice(0, 300) } : {}) });
+  }
+  return out;
 }

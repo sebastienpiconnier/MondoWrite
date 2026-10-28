@@ -4,7 +4,7 @@
 // Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
-import { isBeat, type PlanBeat } from "../plan";
+import type { PlanBeat } from "../plan";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SCENE_AT, useCosmos } from "../store";
@@ -19,7 +19,9 @@ import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
-import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
+import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
+import { TemplatePicker } from "./TemplatePicker";
+import { useBeatText } from "./useBeatText";
 import { StoryCircle } from "./StoryCircle";
 
 const MODES: SequencerMode[] = ["outline", "cards"];
@@ -84,6 +86,7 @@ export function Sequencier() {
 
   // Gabarit : ses cases sont des sections du scénario. Une section écrite par l'auteur garde son texte.
   const template = currentTemplate(screenplay.elements);
+  const beatInfo = useBeatText();
   const labelOf = (text: string) => {
     const key = beatOf(text);
     return key && key in t.plan.beats ? t.plan.beats[key as PlanBeat].label : sectionLabel(text);
@@ -135,17 +138,7 @@ export function Sequencier() {
               {t.plan.timeline}
             </button>
           </div>
-          <label className="plan-template">
-            {t.plan.template}
-            <select value={template ?? ""} onChange={(e) => setTemplate(e.target.value)}>
-              <option value="">{t.plan.noTemplate}</option>
-              {SCREENPLAY_TEMPLATES.map((key) => (
-                <option key={key} value={key}>
-                  {t.plan.templates[key]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />
           {pagination.pages > 0 && (
             <p className="sq-total">
               <strong>{fmt(sp.minutes, { n: minutesFor(pagination.pages) })}</strong> ·{" "}
@@ -190,7 +183,7 @@ export function Sequencier() {
                   <span className="sq-section-name">
                     <span>{labelOf(block.text)}</span>
                     {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}
-                    {beatOf(block.text) && isBeat(beatOf(block.text)!) && <span className="sq-section-hint">{t.plan.beats[beatOf(block.text) as PlanBeat].hint}</span>}
+                    {beatOf(block.text) && beatInfo(beatOf(block.text)!).hint && <span className="sq-section-hint">{beatInfo(beatOf(block.text)!).hint}</span>}
                   </span>
                   {(sectionPages.get(i) ?? 0) > 0 && (
                     <span className="sq-section-length">

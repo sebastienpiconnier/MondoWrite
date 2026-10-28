@@ -12,10 +12,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, planScenes } from "../store";
 import { useSettings, type SequencerMode } from "../settings";
 import { fmt, useT } from "../i18n";
-import { NOVEL_TEMPLATES, arrange, chapterNumbers, chapterOf, groupByChapter, isPlanTemplate, type Chapter, type PlanBeat, type PlanTemplate } from "../plan";
+import { NOVEL_TEMPLATES, arrange, chapterNumbers, chapterOf, groupByChapter, isPlanTemplate, type Chapter, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
 import { Timeline } from "./Timeline";
 import { StoryCircle } from "./StoryCircle";
+import { TemplatePicker } from "./TemplatePicker";
+import { useBeatText } from "./useBeatText";
 
 /** Valeur du menu « Ranger dans » pour une scène sortie du plan. */
 const UNPLACED = "";
@@ -84,7 +86,8 @@ export function Plan() {
     button?.focus();
   }, [plan]);
 
-  const beatLabel = (key: string) => p.beats[key as PlanBeat].label;
+  const beatInfo = useBeatText();
+  const beatLabel = (key: string) => beatInfo(key).label;
   const titleOf = (id: string) => cards.get(id)?.title.trim() || p.untitled;
 
   /** Annonce la nouvelle place d'une scène (lecteurs d'écran), d'après l'état à jour du store. */
@@ -254,16 +257,12 @@ export function Plan() {
       <div className={`sq-inner${asCards || timeline ? " is-cards" : ""}`}>
         <header className="sq-head">
           <h1>{p.title}</h1>
-          <label className="plan-template">
-            {p.template}
-            <select value={plan.template} onChange={(e) => isPlanTemplate(e.target.value) && setPlanTemplate(e.target.value)}>
-              {(NOVEL_TEMPLATES.includes(plan.template as (typeof NOVEL_TEMPLATES)[number]) ? NOVEL_TEMPLATES : ([...NOVEL_TEMPLATES, plan.template] as PlanTemplate[])).map((key) => (
-                <option key={key} value={key}>
-                  {p.templates[key]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TemplatePicker
+            value={plan.template}
+            options={NOVEL_TEMPLATES.includes(plan.template as (typeof NOVEL_TEMPLATES)[number]) || plan.template === "perso" ? NOVEL_TEMPLATES : ([...NOVEL_TEMPLATES, plan.template] as PlanTemplate[])}
+            custom={plan.custom}
+            onBuiltin={(key) => key && isPlanTemplate(key) && setPlanTemplate(key)}
+          />
           <p className="plan-about">{p.templateAbout[plan.template]}</p>
           <div className="sq-modes" role="group" aria-label={p.modeAria}>
             {MODES.map((m) => (
@@ -312,7 +311,7 @@ export function Plan() {
               {beatLabel(beat.key)}
               {beat.ids.length > 0 && <span className="plan-count">{beat.ids.length}</span>}
             </h2>
-            <p className="plan-beat-hint">{p.beats[beat.key as PlanBeat].hint}</p>
+            {beatInfo(beat.key).hint && <p className="plan-beat-hint">{beatInfo(beat.key).hint}</p>}
             {groupByChapter(plan, beat.ids).map((group) => {
               const list = <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{group.ids.map((id) => scene(id, beat.key, beat.ids.indexOf(id)))}</ol>;
               if (!group.chapter) return <div key={`loose-${group.ids[0]}`}>{list}</div>;

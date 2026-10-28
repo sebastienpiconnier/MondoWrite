@@ -33,8 +33,8 @@ import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
 import { isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type SheetField } from "./character";
-import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
-import { placeSceneInBeat, screenplayPlan } from "./screenplay/template";
+import { EMPTY_PLAN, beatText, withKeys, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
+import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
@@ -70,6 +70,11 @@ interface CosmosState {
   setPlanTemplate: (template: PlanTemplate) => void;
   /** Range une scène dans une case du plan (à la fin, ou à la position donnée) ; `beat` null la sort du plan. */
   placeInPlan: (id: string, beat: string | null, index?: number) => void;
+  /**
+   * Pose un gabarit de l'auteur (« Mes gabarits ») ou met à jour celui en place : `rows` dans l'ordre du récit,
+   * avec la clé d'une case déjà là (ses scènes la suivent) ou sans clé pour une case nouvelle. Annulable.
+   */
+  setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[]) => void;
   /** Range une scène dans une case du gabarit, roman (plan) ou scénario (section du Fountain). Annulable. */
   placeInBeat: (id: string, beat: string, index?: number) => void;
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
@@ -591,15 +596,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const t = getT();
     const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
     const sizes = boxes(arranged);
+    // Un scénario a son plan dans le fichier Fountain : ses sections de gabarit font les cases.
+    const story = kind === "scenario" ? screenplayPlan(get().screenplay?.elements ?? []) : plan;
     const result = organize({
       cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
-      // Un scénario n'a pas de plan dans cosmos.json : ses scènes suivent le fichier Fountain, d'un seul tenant.
-      // Un scénario a son plan dans le fichier Fountain : ses sections de gabarit font les cases.
-      plan: kind === "scenario" ? screenplayPlan(get().screenplay?.elements ?? []) : plan,
+      plan: story,
       sceneIds: kind === "scenario" ? storyOrder(arranged) : planScenes(arranged),
       labels: {
         groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
-        beat: (key) => t.plan.beats[key as keyof typeof t.plan.beats]?.label ?? key,
+        beat: (key) => beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, story.custom).label,
         chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
         continued: (label) => fmt(t.organize.continued, { label }),
         unplaced: t.plan.unplaced,
@@ -650,8 +655,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
     });
     const pattern = (s: string) => new RegExp(`^${s.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{n\}/g, "\\d+").replace(/\{title\}/g, ".+")}$`);
     const chapterTitle = [pattern(t.chapters.numbered), pattern(t.chapters.numberedTitle), pattern(fmt(t.organize.continued, { label: t.chapters.numbered }))];
+    const own = get().kind === "scenario" ? customOf(get().screenplay?.elements ?? []) : get().plan.custom;
     const known = new Set([
       ...Object.values(t.plan.beats).map((b) => b.label),
+      ...(own?.beats ?? []).map((b) => b.label),
       t.plan.unplaced,
       t.types.scene.section,
       t.scenario.types.scene?.section ?? t.types.scene.section,
@@ -666,6 +673,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     );
     if (moved.size === 0) return;
     set({ nodes: nodes.map((n) => (moved.has(n.id) ? { ...n, position: moved.get(n.id)! } : n)) });
+  };
+  /** Case d'avant → case nouvelle, pour les cases d'un gabarit de l'auteur nées d'un gabarit en place. */
+  const fromMap = (rows: { from?: string; label: string }[], beats: CustomTemplate["beats"]): Map<string, string> => {
+    const named = rows.filter((r) => r.label.trim());
+    return new Map(named.flatMap((r, i) => (r.from && beats[i] ? [[r.from, beats[i].key] as [string, string]] : [])));
   };
   /**
    * Scènes lâchées à la main sur le canevas : celle qui tombe dans le cadre d'une case (posé par « Organiser »)
@@ -1413,6 +1425,28 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (plan === get().plan) return;
       record();
       set({ plan });
+      followStory();
+      touch();
+    },
+    setCustomTemplate: (name, rows) => {
+      const { kind, screenplay, plan } = get();
+      if (kind === "scenario") {
+        if (!screenplay) return;
+        // Clés déjà prises dans le fichier : une case nouvelle n'en reprend jamais une.
+        const used = screenplay.elements.flatMap((el) => (el.type === "section" ? [beatOf(el.text) ?? ""] : []));
+        const beats = withKeys(rows, used);
+        const next = applyCustom(screenplay, { name, beats }, fromMap(rows, beats));
+        if (next !== screenplay) get().setScreenplay(next, true);
+        return;
+      }
+      const used = [...Object.keys(plan.beats), ...(plan.custom?.beats.map((b) => b.key) ?? [])].filter(isCustomBeat);
+      const custom: CustomTemplate = { name: name.trim(), beats: withKeys(rows, used) };
+      if (custom.beats.length === 0) return;
+      // Né du gabarit en place : chaque case nouvelle reprend les scènes de la case dont elle vient.
+      const beatsOf = { ...plan.beats };
+      for (const [old, key] of fromMap(rows, custom.beats)) if (plan.beats[old]?.length && !beatsOf[key]?.length) beatsOf[key] = [...plan.beats[old]];
+      record();
+      set({ plan: { ...plan, template: "perso", custom, beats: beatsOf } });
       followStory();
       touch();
     },

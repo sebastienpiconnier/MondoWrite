@@ -8,7 +8,7 @@ import { fmt, type Messages } from "../i18n";
 import { vocab } from "../vocab";
 import type { CardData, ProjectKind } from "../types";
 import type { Plan } from "../plan";
-import { PLAN_TEMPLATES, chapterNumbers } from "../plan";
+import { beatText, chapterNumbers, templateBeats } from "../plan";
 import { bookOrder } from "../book";
 import type { Pitch } from "../pitch";
 import { NOVEL_CHIPS, readEpisodes } from "../pitch";
@@ -537,13 +537,13 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       out.push({ kind: "label", text: e.plan }, { kind: "list", columns: 2, items });
       return out;
     }
-    const beats = PLAN_TEMPLATES[s.plan.template] as readonly string[];
+    const beats = templateBeats(s.plan.template, s.plan.custom);
     if (s.plan.template !== "libre" && beats.some((b) => (s.plan.beats[b] ?? []).length > 0)) {
       const beatLabels = t.plan.beats as Record<string, { label: string }>;
       for (const b of beats) {
         const ids = (s.plan.beats[b] ?? []).filter((id) => order.includes(id));
         if (ids.length === 0) continue;
-        out.push({ kind: "label", text: beatLabels[b]?.label ?? b });
+        out.push({ kind: "label", text: beatText(b, beatLabels as Record<string, { label: string; hint: string }>, s.plan.custom).label });
         out.push({ kind: "list", columns: 1, items: ids.map((id) => ({ mark: String(order.indexOf(id) + 1), text: sceneTitle(id), note: synopsis(id) })) });
       }
       return out;

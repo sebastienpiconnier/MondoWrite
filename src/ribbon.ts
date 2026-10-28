@@ -2,7 +2,7 @@
 // ses scènes occupent vraiment (mots d'un roman, pages d'un scénario), avec, en fantôme, la position où cette
 // case commence d'ordinaire (BEAT_TARGETS). Rien n'est enregistré : tout se relit dans le projet. Fonctions pures.
 
-import { BEAT_TARGETS, PLAN_TEMPLATES, arrange, type Plan, type PlanBeat, type PlanTemplate } from "./plan";
+import { BEAT_TARGETS, PLAN_TEMPLATES, arrange, templateBeats, type Plan, type PlanBeat, type PlanTemplate } from "./plan";
 import { blocks } from "./screenplay/sequence";
 import { beatOf, screenplayPlan } from "./screenplay/template";
 import type { ScreenplayElement } from "./screenplay/model";
@@ -100,8 +100,8 @@ export function novelGroups(plan: Plan, sceneIds: string[], words: (id: string) 
  * d'avant la première case forment un groupe sans case. `pages(start, end)` mesure un bloc.
  */
 export function screenplayGroups(elements: ScreenplayElement[], pages: (start: number, end: number) => number): { template: PlanTemplate; groups: RibbonGroup[] } {
-  const { template } = screenplayPlan(elements);
-  const keys = new Set<string>(template === "libre" ? [] : PLAN_TEMPLATES[template]);
+  const { template, custom } = screenplayPlan(elements);
+  const keys = new Set<string>(templateBeats(template, custom));
   const groups: RibbonGroup[] = [{ key: null, scenes: [] }];
   for (const b of blocks(elements)) {
     if (b.kind === "section") {

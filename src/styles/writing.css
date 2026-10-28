@@ -840,3 +840,23 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .story-circle-count { fill: var(--ink-2); font: 12px var(--font-ui); text-anchor: middle; }
 .story-circle-step.is-empty .story-circle-count { fill: var(--muted); }
 .story-circle-legend { display: grid; grid-template-columns: repeat(2, auto); gap: 4px 18px; color: var(--ink-2); font-size: 0.8125rem; }
+
+/* ---------- Éditeur de gabarit (« Mes gabarits ») ---------- */
+.tpl-editor { width: min(720px, calc(100vw - 32px)); }
+.tpl-intro { margin: 4px 0 14px; color: var(--ink-2); font-size: 0.875rem; line-height: 1.45; }
+.tpl-name { display: grid; gap: 4px; margin-bottom: 14px; font-size: 0.875rem; color: var(--ink-2); }
+.tpl-name input, .tpl-row input { min-height: 40px; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.9375rem; }
+.tpl-beats-title { margin: 0 0 6px; font-size: 0.9375rem; }
+.tpl-rows { display: grid; gap: 6px; margin: 0 0 8px; padding: 0; list-style: none; }
+.tpl-row { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) minmax(0, 1.4fr) auto; align-items: center; gap: 6px; }
+.tpl-num { color: var(--muted); font-size: 0.8125rem; text-align: right; }
+.tpl-row-actions { display: flex; gap: 2px; }
+.tpl-add { margin: 4px 0 12px; }
+.tpl-keep { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.875rem; }
+.tpl-library { margin-bottom: 12px; font-size: 0.875rem; }
+.tpl-library summary { cursor: pointer; color: var(--ink-2); }
+.tpl-library ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.tpl-library li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tpl-count, .tpl-empty { color: var(--muted); }
+.tpl-actions { justify-content: flex-end; }
+@media (max-width: 600px) { .tpl-row { grid-template-columns: 1.6em minmax(0, 1fr) auto; } .tpl-row .tpl-hint { grid-column: 2 / -1; } }

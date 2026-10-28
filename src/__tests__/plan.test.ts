@@ -31,7 +31,7 @@ describe("gabarits", () => {
   it("gabarits du roman, des clés de case uniques d'un gabarit à l'autre, une position attendue pour chaque case", () => {
     expect(NOVEL_TEMPLATES).toEqual(["libre", "troisActes", "saveTheCat", "voyageHeros", "cercleHarmon", "freytag", "hauge", "septPoints", "kishotenketsu", "romance", "polar"]);
     for (const [template, keys] of Object.entries(PLAN_TEMPLATES)) {
-      if (template === "libre") continue;
+      if (template === "libre" || template === "perso") continue;
       for (const key of keys) {
         const at = BEAT_TARGETS[key as keyof typeof BEAT_TARGETS];
         expect(at !== undefined && at >= 0 && at < 1, key).toBe(true);

@@ -10,7 +10,7 @@ import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useRibbon } from "./useRibbon";
 import { fortuneCurve } from "../ribbon";
-import type { PlanBeat } from "../plan";
+import { useBeatText } from "./useBeatText";
 
 interface Props {
   /** Scène en cours (carte, ou `@<index>` pour une scène de scénario sans carte). */
@@ -22,6 +22,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   const { t, kind } = useVocab();
   const r = t.ribbon;
   const ribbon = useRibbon();
+  const beatInfo = useBeatText();
   const nodes = useCosmos((s) => s.nodes);
   const titles = useMemo(() => new Map(nodes.map((n) => [n.id, n.data.title.trim()])), [nodes]);
   // Piste des intrigues (dépliée à la demande) : où paraît chaque carte Intrigue, par fil ou citée dans la scène.
@@ -56,7 +57,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   }, [ribbon, nodes]);
   if (!ribbon) return null;
   const pct = (v: number) => Math.round(v * 100);
-  const beatLabel = (key: string | null) => (key ? (t.plan.beats[key as PlanBeat]?.label ?? key) : kind === "scenario" ? r.beforeFirst : t.plan.unplaced);
+  const beatLabel = (key: string | null) => (key ? beatInfo(key).label : kind === "scenario" ? r.beforeFirst : t.plan.unplaced);
   const here = ribbon.segments.flatMap((seg) => seg.scenes.map((s) => ({ seg, s }))).find((x) => x.s.id === currentId);
 
   return (

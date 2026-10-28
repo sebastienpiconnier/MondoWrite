@@ -13,7 +13,7 @@
 // Les scènes sont reliées dans l'ordre du récit (un fil « puis » entre deux scènes qui se suivent).
 
 import type { CardType, Frame } from "./types";
-import { PLAN_TEMPLATES, arrange, chapterNumbers, groupByChapter, type Plan } from "./plan";
+import { arrange, chapterNumbers, groupByChapter, templateBeats, type Plan } from "./plan";
 
 export interface OrganizeCard {
   id: string;
@@ -196,7 +196,7 @@ function build({ cards, plan, sceneIds, labels }: OrganizeInput, perRow: number)
       }
       return { item, count: g.ids.length };
     });
-  const free = plan.template === "libre" || PLAN_TEMPLATES[plan.template].length <= 1;
+  const free = plan.template === "libre" || templateBeats(plan.template, plan.custom).length <= 1;
   let story: Item[];
   if (free) {
     const groups = chaptered(beats[0]?.ids ?? []);
