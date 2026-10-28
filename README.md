@@ -29,21 +29,74 @@ MondoWrite rassemble tout au même endroit, du premier fragment jusqu'au livre i
                                      │
            ┌─────────────────────────┼─────────────────────────┐
            ▼                         ▼                         ▼
-   [ BIBLE DU RÉCIT ]       [ PLAN & GABARITS ]      [ MANUSCRIT OU SCÉNARIO ]
-   Fiches synchronisées     3 actes, Save the Cat    Fichiers Markdown
-   sans aucune retape       ou Voyage du héros       et Fountain, chez vous
+   [ BIBLE DU RÉCIT ]       [ PLAN & STRUCTURES ]    [ MANUSCRIT OU SCÉNARIO ]
+   Fiches synchronisées     Save the Cat, Harmon,    Fichiers Markdown
+   sans aucune retape       Hauge… ou les vôtres     et Fountain, chez vous
 ```
 
 - **4 vues, 1 seul contenu.** Canevas, Bible, Plan et Manuscrit restent synchronisés : modifiez un trait de caractère sur le Canevas, la Bible se met à jour. Vous ne recopiez jamais la même information.
 - **La scène là où vous l'avez imaginée.** Chaque carte Scène porte son texte, son synopsis et son statut (brouillon, à revoir, terminée). Écrivez-la dans la carte agrandie ou dans le Manuscrit.
 - **Un vrai éditeur de scénario.** Format cinéma, pages et minutes en temps réel, séquencier, complétion des personnages et des décors, import et export Fountain et Final Draft.
-- **Des gabarits de structure éprouvés.** Voyage du héros, Save the Cat! ou trois actes, et une chronologie par intrigue pour repérer d'un coup d'œil où un sous-fil s'estompe.
+- **Des structures éprouvées, ou les vôtres.** Trois actes, Save the Cat!, voyage du héros, cercle de Dan Harmon, Freytag, Hauge, sept points, kishōtenketsu, romance, polar, huit séquences, épisode de série, et vos propres gabarits. Le ruban du récit montre la place réelle de chaque case, et une chronologie par intrigue repère d'un coup d'œil où un sous-fil s'estompe.
 - **La fiche personnage comme moteur dramatique.** Veut, A besoin de, Blessure, en trois cases lisibles, et un assistant qui vous pose les bonnes questions.
 - **Du premier jet au livre imprimé.** PDF au format manuscrit, Word, EPUB, livre broché prêt pour Amazon KDP. Et dans l'autre sens, importez votre manuscrit Word ou votre scénario existant.
+- **Relire en auteur.** Aller à, lecture à voix haute avec une voix par personnage, statistiques des personnages et des décors, et un onglet « Vérifier » qui pose des questions sans jamais corriger à votre place.
+- **Sur ordinateur, iPad et iPhone.** Sur iPhone, MondoWrite devient un carnet : on y écrit, on consulte la Bible, on note ce qui vient en passant, et tout se retrouve sur le canevas du Mac et de l'iPad par iCloud.
 - **Votre œuvre vous appartient.** Pas de compte, pas de cloud, pas d'abonnement : vos projets sont de simples fichiers Markdown sur votre machine.
 - **Libre et gratuit, et ça le restera.** MondoWrite est un logiciel libre, distribué sous licence AGPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
 
 **L'IA n'écrira pas votre histoire.** Si vous choisissez de l'activer (y compris un modèle 100 % local sur votre ordinateur), elle relève vos incohérences, remet vos notes en ordre et vous pose des questions pointues. Vous restez l'auteur.
+
+## 🖼️ En images
+
+Toutes les captures viennent du projet d'exemple, « Le Petit Chaperon rouge » de Perrault, que l'app crée en un clic.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/guide/images/fr/canevas.jpg" alt="Le canevas : cartes Personnage, Lieu, Scène et Intrigue reliées par des fils étiquetés"><br><b>Le canevas.</b> Les idées en vrac, reliées par des fils nommés.</td>
+<td width="50%"><img src="docs/guide/images/fr/organiser.jpg" alt="Le canevas rangé en cadres par « Organiser »"><br><b>Organiser.</b> Un clic range tout en cadres : personnages, lieux, actes, chapitres.</td>
+</tr>
+<tr>
+<td><img src="docs/guide/images/fr/bible-personnage.jpg" alt="Fiche d'un personnage dans la Bible : moteur, arc, fiche d'identité"><br><b>La Bible.</b> La fiche d'un personnage : ce qu'il veut, ce dont il a besoin, sa blessure, son arc.</td>
+<td><img src="docs/guide/images/fr/bible-couverture.jpg" alt="Couverture du projet : logline, résumé, comparables, pastilles"><br><b>La couverture.</b> Logline, résumé, comparables : la Bible s'ouvre comme un dossier.</td>
+</tr>
+<tr>
+<td><img src="docs/guide/images/fr/manuscrit.jpg" alt="Le manuscrit mis en page comme un livre, avec le ruban du récit en haut"><br><b>Le manuscrit.</b> Une scène à la fois, en pages de livre, sous le ruban du récit.</td>
+<td><img src="docs/guide/images/fr/scenario.jpg" alt="L'éditeur de scénario au format standard"><br><b>Le scénario.</b> Format standard, pages et minutes, scènes reliées à leurs cartes.</td>
+</tr>
+<tr>
+<td><img src="docs/guide/images/fr/sequencier-fiches.jpg" alt="Le séquencier en fiches, rangé par actes"><br><b>Le séquencier.</b> Les scènes en fiches, rangées dans les cases de la structure.</td>
+<td><img src="docs/guide/images/fr/plan-chronologie.jpg" alt="Chronologie : une ligne par intrigue, personnage et lieu, une colonne par scène"><br><b>La chronologie.</b> Où paraît chaque intrigue, chaque personnage, chaque lieu.</td>
+</tr>
+</table>
+
+<details>
+<summary><strong>Plus de captures</strong></summary>
+
+<table>
+<tr>
+<td width="50%"><img src="docs/guide/images/fr/ruban.jpg" alt="Le ruban du récit avec la ligne d'une intrigue"><br><b>Le ruban du récit.</b> La place réelle de chaque case, ses repères, et la ligne de chaque intrigue.</td>
+<td width="50%"><img src="docs/guide/images/fr/plan-cercle.jpg" alt="Le cercle de Dan Harmon dessiné en huit étapes"><br><b>Le cercle de Dan Harmon.</b> Les huit étapes en cercle, avec leurs scènes.</td>
+</tr>
+<tr>
+<td><img src="docs/guide/images/fr/fils-masques.jpg" alt="Canevas aux fils masqués, avec « Relié à » au pied des cartes"><br><b>Fils masqués.</b> « Relié à » au pied de chaque carte, et les fils d'une seule carte rallumés.</td>
+<td><img src="docs/guide/images/fr/gabarit-editeur.jpg" alt="L'éditeur de gabarit : les cases, leur aide, leur ordre"><br><b>Mes gabarits.</b> Vos propres cases, gardées pour tous vos projets.</td>
+</tr>
+<tr>
+<td><img src="docs/guide/images/fr/scenario-verifier.jpg" alt="L'onglet Vérifier à côté du scénario"><br><b>Vérifier.</b> Des points à regarder (noms presque identiques, répliques…), jamais une correction.</td>
+<td><img src="docs/guide/images/fr/stats-personnages.jpg" alt="Statistiques des personnages : scènes, mots, présence"><br><b>Statistiques.</b> Présence des personnages, décors, qui croise qui.</td>
+</tr>
+<tr>
+<td><img src="docs/guide/images/fr/bible-relations.jpg" alt="Carte des relations entre personnages"><br><b>Les relations.</b> Les personnages reliés par les fils du canevas.</td>
+<td><img src="docs/guide/images/fr/sombre-manuscrit.jpg" alt="Le manuscrit en mode sombre"><br><b>Mode sombre.</b> Partout, ou comme le système.</td>
+</tr>
+<tr>
+<td><img src="docs/guide/images/fr/iphone-carnet.jpg" width="260" alt="Le Carnet sur iPhone"><br><b>Sur iPhone, le Carnet.</b> Une note prise en passant devient une carte du projet.</td>
+<td><img src="docs/guide/images/fr/livre-broche.jpg" width="320" alt="Fenêtre Livre broché (KDP)"><br><b>Livre broché.</b> Intérieur et couverture prêts pour Amazon KDP.</td>
+</tr>
+</table>
+
+</details>
 
 ## 🧱 Prêts à écrire votre prochain monde ?
 
@@ -81,7 +134,8 @@ MondoWrite est en cours de développement (version 1.6.0). **Guide de l’utilis
 - **Largeur des cartes :** tirez la poignée du coin bas droit d'une carte sélectionnée, ou Alt+→ et Alt+←.
 - **Nouvelle carte :** le bouton crée une Idée (touche N) ; sa flèche propose tous les types de carte (Personnage, Lieu, Scène, Intrigue, Thème, Question, Lien, Image, Document PDF). Un Lien attend son adresse dans son titre ; une Image propose une photo libre ou une image de l'appareil.
 - **Cadres :** un rectangle nommé (« Acte 1 ? », « Le phare ») pour regrouper des cartes. Bouton ou touche C ; avec des cartes sélectionnées, le cadre les entoure. Le déplacer emmène ses cartes et les cadres qu'il contient. Le cadenas de son en-tête le **verrouille** : le cadre et ses cartes ne bougent plus, ni à la main ni par « Organiser » (les cartes restent modifiables).
-- **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac, images, liens, documents, pages du livre) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit, sous les cadres verrouillés qu'il laisse en place. Un bloc compact au format de l’écran : les cases se suivent de gauche à droite, en rangées de scènes plus ou moins longues selon le nombre de cartes. Ctrl/Cmd+Z remet tout comme avant.
+- **Organiser le canevas :** un bouton range toutes les cartes en cadres (personnages, lieux, thèmes, questions, idées en vrac, images, liens, documents, pages du livre) et les scènes par case du gabarit et par chapitre, reliées dans l'ordre du récit, sous les cadres verrouillés qu'il laisse en place. Chaque case de la structure a son cadre, même vide, pour un roman comme pour un scénario ; une scène déposée dans un cadre est rangée dans cette case. Un bloc compact au format de l’écran : les cases se suivent de gauche à droite, en rangées de scènes plus ou moins longues selon le nombre de cartes. Ctrl/Cmd+Z remet tout comme avant.
+- **Fils masqués et « Relié à » :** quand les fils deviennent trop nombreux, le bouton « Fils » les masque tous (le choix est gardé dans le projet). Au pied de chaque carte, « Relié à » dit à quoi elle est reliée : toucher la mention rallume les fils de cette carte, toucher un nom centre le canevas sur elle.
 - **Corbeille :** une carte supprimée (sur le canevas, dans le plan, le séquencier ou le manuscrit) part à la corbeille avec ses fils, et dans un scénario avec le texte de sa scène. Un message propose d'annuler ; la corbeille (dans les Réglages) remet chaque carte à sa place ou la supprime pour de bon. Elle vit dans le dossier `corbeille/` du projet.
 - **Annuler et rétablir :** Ctrl/Cmd+Z et Ctrl/Cmd+Maj+Z, ou les deux boutons du canevas. Cartes, fils, déplacements et textes.
 - **Recherche :** la loupe de la barre du haut, ou Ctrl/Cmd+F, retrouve une carte par son titre ou son texte et la met en avant sur le canevas. Elle cherche aussi dans le texte des scènes (manuscrit ou scénario) et ouvre la scène trouvée.
@@ -96,7 +150,9 @@ MondoWrite est en cours de développement (version 1.6.0). **Guide de l’utilis
 
 ### La Bible
 
-La Bible s'ouvre sur **la couverture du projet**, comme une quatrième de couverture : titre, tagline, logline, résumé, comparables et note d'intention, avec des pastilles à toucher pour le genre, le public, le format, le point de vue, le temps du récit et le ton (une liste de choix courants, ou votre propre formulation). Le volume vient de votre objectif de mots, les thèmes de vos cartes Thème. Rien n'est obligatoire.
+La Bible a la forme d'une bible professionnelle, en cinq parties : Présentation, Personnages, Univers, Structure, et « Pour vous » (questions, idées en vrac, sources). Ce que vous y remplissez est déjà le document : à l'export, vous choisissez seulement pour qui et dans quel rendu.
+
+Elle s'ouvre sur **la couverture du projet**, comme une quatrième de couverture : titre, tagline, logline, résumé, comparables et note d'intention, avec des pastilles à toucher pour le genre, le public, le format, le point de vue, le temps du récit et le ton (une liste de choix courants, ou votre propre formulation). Le volume vient de votre objectif de mots, les thèmes de vos cartes Thème. Rien n'est obligatoire.
 
 La rubrique Personnages propose une **carte des relations** : les portraits reliés par les fils du canevas, avec leurs étiquettes (« sœur de », « trahit »).
 
@@ -104,7 +160,9 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 
 ### Le plan
 
-- **Quatre gabarits :** libre, trois actes, Save the Cat, voyage du héros. Chaque case rappelle en une ligne ce qu'on y attend.
+- **Des structures au choix :** libre, trois actes, Save the Cat, voyage du héros, cercle de Dan Harmon, pyramide en cinq actes (Freytag), six étapes (Hauge), sept points (Dan Wells), kishōtenketsu, romance, polar. Chaque case rappelle en une ligne ce qu'on y attend. Le cercle de Harmon se dessine en cercle, avec les scènes de chaque étape.
+- **Mes gabarits :** « Créer un gabarit… » donne vos propres cases (un nom et une aide pour chacune), à partir de rien ou de la structure en place, dont les scènes suivent. Ils sont gardés sur l'appareil et proposés dans tous vos projets.
+- **Ruban du récit :** en haut du Manuscrit et du Scénario, chaque case prend la place que ses scènes occupent vraiment (mots ou pages), avec un repère là où elle commence d'ordinaire. « Voir les intrigues » ajoute une ligne par intrigue, « Voir la courbe » dessine la fortune du héros scène après scène (d'après « Pour le héros, la scène finit » de chaque fiche de scène). « Vérifier » signale une case très loin de sa place habituelle.
 - **Ranger les scènes :** glissez une scène dans une case, déplacez-la avec les flèches ou choisissez sa case dans un menu. Les scènes du canevas qui n'ont pas encore leur place attendent dans « À placer ».
 - **Écrire depuis le plan :** une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés. Chaque scène a son **synopsis** (ce qui s'y passe, en une phrase), écrit directement dans le plan.
 - **Chapitres :** dans chaque case, les scènes se regroupent par chapitre. « Nouveau chapitre à partir d'ici » coupe le récit à une scène ; le numéro suit tout seul, le titre est facultatif.
@@ -125,12 +183,15 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 - **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Chaque coupure s'annonce en bas de page avec un bouton « Annuler » ; Retour arrière dans la scène vide l'annule aussi. Le numéro et le titre du chapitre s'écrivent en tête de page, comme dans un livre.
 - **Les pages du livre :** une scène peut devenir page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements ou « à propos de l'auteur ». Elles se placent d'elles-mêmes avant ou après le récit, et chacune dit ce qu'on y écrit (« À qui dédies-tu ce livre ? »).
 - **Une scène à la fois, en pages :** vous écrivez le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre ; un chapitre se déplace en le glissant dans la colonne de gauche, ou avec ses flèches. Une scène aussi : glissez-la (au-dessus ou au-dessous d'une autre), ou utilisez ses flèches, ou Alt+↑ / Alt+↓ ; elle prend le chapitre de sa nouvelle voisine.
-- **Importer un manuscrit :** depuis la page des projets, « Importer un manuscrit ou un scénario… » fait d'un fichier Word (`.docx`), Markdown ou texte un projet roman. Les chapitres viennent des titres, des sauts de page et des lignes « Chapitre 3 » ; les séparateurs (`***`, `#`, `* * *`) coupent les scènes, chacune avec sa carte ; le gras et l'italique sont gardés, un prologue et un épilogue deviennent des pages du livre (règles reprises de NEO).
+- **Importer un manuscrit :** depuis la page des projets, « Importer un manuscrit ou un scénario… » fait d'un fichier Word (`.docx`), PDF, Markdown ou texte un projet roman (un PDF de scénario est reconnu à sa mise en page et devient un projet scénario). Les chapitres viennent des titres, des sauts de page et des lignes « Chapitre 3 » ; les séparateurs (`***`, `#`, `* * *`) coupent les scènes, chacune avec sa carte ; le gras et l'italique sont gardés, un prologue et un épilogue deviennent des pages du livre (règles reprises de NEO).
 - **Statut de scène :** brouillon, à revoir ou terminée, une pastille de couleur sur la carte, dans le Plan, le séquencier et la liste des scènes. Les statistiques comptent les scènes terminées.
 - **Le synopsis en filigrane :** une scène encore vide affiche son synopsis en gris, comme une note de plan, jusqu'à ce que vous écriviez. Au-dessus de la page, une barre discrète : le titre de la scène, le type de page, le mode focus et la corbeille.
 - **Mode focus :** la page seule à l'écran, en machine à écrire si vous le souhaitez (la ligne en cours reste à hauteur d'yeux), avec la phrase, la ligne ou le paragraphe en pleine encre et le reste estompé. Ctrl/Cmd+Maj+X marque un passage « à reprendre ».
 - **Statistiques et objectifs :** mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
 - **Dans cette scène :** les personnages et les lieux cités dans le texte s'affichent à côté, avec le synopsis de la scène, modifiable sur place.
+- **Aller à** (Ctrl/Cmd+G) : une page, une scène, un chapitre, un passage à reprendre ou une note.
+- **Écouter :** le texte lu à voix haute par les voix de l'appareil, une voix par personnage et un narrateur, le passage lu surligné.
+- **Vérifier et Statistiques :** à côté du texte, l'onglet « Vérifier » pose des questions (un personnage principal sans « Veut », un secret jamais révélé, une case loin de sa place), et la fenêtre Statistiques compte la présence des personnages et des lieux.
 - **Vos fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte : elle va à la corbeille et en revient avec lui.
 
 ### Romans et scénarios
@@ -155,10 +216,11 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma, re
 - **Relié au canevas :** renommer un en-tête de scène renomme sa carte, et inversement. Une scène, son décor ou un personnage que vous écrivez dans le scénario reçoit sa carte sur le canevas ; une carte Scène créée sur le canevas entre dans le scénario.
 - **Pages et minutes :** le nombre de pages et la durée estimée (une page pour une minute environ) s'affichent en permanence.
 - **Séquencier :** les scènes dans l'ordre, en liste ou en fiches, avec leur synopsis, leurs personnages et leur longueur. On les réordonne en les glissant ou avec les flèches, et le texte de la scène suit dans le fichier. Dans la vue Scénario aussi, la liste des scènes de gauche se réordonne : glisser une scène, les flèches de la scène en cours ou Alt+↑ / Alt+↓.
-- **Gabarits du séquencier :** trois actes, Save the Cat, huit séquences ou épisode de série (pré-générique, quatre actes, épilogue). Chaque gabarit et chaque case expliquent ce qu'on y met. Les cases sont des sections du fichier Fountain, lisibles dans les autres logiciels, avec la durée de chacune.
+- **Gabarits du séquencier :** trois actes, Save the Cat, huit séquences, épisode de série (pré-générique, quatre actes, épilogue), voyage du héros, les structures du Plan et vos propres gabarits. Chaque gabarit et chaque case expliquent ce qu'on y met. Les cases sont des sections du fichier Fountain, lisibles dans les autres logiciels, avec la durée de chacune.
 - **Supprimer une scène :** depuis le séquencier, la scène part à la corbeille avec son texte.
 - **Synopsis :** une phrase par scène, écrite depuis le volet des scènes ou le séquencier, enregistrée comme synopsis Fountain.
-- **Import :** un fichier `.fountain` ou Final Draft (`.fdx`) existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
+- **Import :** un fichier `.fountain`, Final Draft (`.fdx`) ou PDF existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
+- **(À SUIVRE) et (SUITE) :** pour une réplique coupée par la page, dans le PDF et à l'écran.
 - **Numéros de scène, en-têtes soulignés et mode focus :** deux boutons de la barre numérotent les scènes dans la marge et soulignent les en-têtes (à l'écran, dans le PDF et dans Final Draft), et un mode ne garde que la feuille à l'écran.
 - **Un format ouvert :** le texte est enregistré dans `scenario.fountain`, au format Fountain, lisible par les autres logiciels de scénario.
 
@@ -188,7 +250,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Manuscrit :** les scènes d'un même chapitre forment un chapitre, séparées par « * * * ». PDF au format manuscrit « Shunn », celui qu'attendent agents et éditeurs (Courier 12, double interligne, en-tête « Nom / TITRE / page », nombre de mots arrondi sur la page de garde, chaque chapitre sur une nouvelle page, « # » entre deux scènes, signets par chapitre), Word (.docx), EPUB pour liseuse, ou un seul fichier Markdown.
 - **Livre broché (KDP) :** un PDF d'intérieur prêt pour l'impression à la demande d'Amazon KDP et un gabarit de couverture à sa mesure. Quatre formats (5 × 8 à 6 × 9 pouces), marges en miroir et grand fond selon le nombre de pages, chapitres en belle page, page 1 au début du récit, titres courants et folios aux coins extérieurs, texte justifié et césuré (français, anglais), veuves et orphelines évitées, lettrine. Page de copyright par défaut (droits réservés, mention de fiction, ISBN) si le livre n'a pas la sienne, table des matières avec numéros de page, mot au lecteur avec tes liens, « Du même auteur », signets par chapitre. Le gabarit de couverture donne le dos selon le papier, le fond perdu, les zones sûres et la place du code-barres. Réglages gardés dans le projet.
 - **Scénario :** PDF au format standard (Courier 12, marges normalisées, répliques coupées proprement entre deux pages), Fountain et Final Draft (FDX).
-- **Bible :** PDF, Word ou Markdown, la couverture du projet en tête, puis les rubriques choisies dans la Bible, dans son ordre, avec les images de chaque fiche et leurs liens.
+- **Bible :** PDF, Word ou Markdown, la couverture du projet en tête, puis les rubriques choisies dans la Bible, dans son ordre, avec les images de chaque fiche et leurs liens. Pour vous seul, ou pour un tiers (dossier de présentation, bible de série), en trois rendus ; les fiches des personnages s'enchaînent.
 - **Canevas :** image PNG du tableau entier, PDF standard (A4, à envoyer) ou grand format (A1, à imprimer), et le texte des cartes en Word ou Markdown, un cadre par partie.
 - **Sans rien installer :** tout est fabriqué par l'app elle-même.
 
@@ -246,15 +308,16 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 | Étape | Contenu |
 |---|---|
 | Scénario | Durées cibles par acte dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
-| Mobile | Apps iOS et Android |
-| Synchronisation | Entre appareils, puis collaboration |
+| Mobile | iPad et iPhone sur l'App Store, puis Android |
+| Synchronisation | Au-delà d'iCloud, puis collaboration |
 
 ## Plateformes
 
 | Système | État |
 |---|---|
 | macOS (Apple Silicon et Intel), Windows, Linux | Prêt : installeurs fabriqués par GitHub Actions |
-| iOS, iPadOS, Android | Code prêt (tactile, stockage), projet natif à initialiser |
+| iPadOS, iOS | En test (TestFlight) ; sur iPhone, l'app devient un Carnet ; projets partagés avec le Mac par iCloud |
+| Android | Code prêt (tactile, stockage), pas encore publié |
 | Navigateur | Pour le développement uniquement (stockage dans le navigateur) |
 
 ---
