@@ -191,10 +191,13 @@ export function Toile() {
     return () => clearTimeout(timer);
   }, [focusFrame, fitView]);
 
-  // Après « Organiser le canevas » : on cadre tout le projet.
+  // Après « Organiser le canevas » : on cadre tout le projet. Seulement pour une demande arrivée canevas
+  // ouvert : la dernière demande reste dans le store, et la rejouer au retour sur le canevas défaisait le
+  // centrage sur une carte (« Voir sur le canevas » depuis le Séquencier).
   const fitRequest = useCosmos((s) => s.fitRequest);
+  const [fitAtMount] = useState(fitRequest);
   useEffect(() => {
-    if (!fitRequest) return;
+    if (!fitRequest || fitRequest === fitAtMount) return;
     const timer = setTimeout(() => fitView({ padding: 0.12, duration: 500 }), 60);
     return () => clearTimeout(timer);
   }, [fitRequest, fitView]);
