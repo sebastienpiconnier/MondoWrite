@@ -326,6 +326,7 @@
 
 <h3>Organize the canvas</h3>
 <p>When everything overflows, <span class="ui">Organize</span> puts every card in a frame: characters, places, plots, themes, questions, images, links, loose ideas, and scenes by template beat and by chapter, linked in story order by “then” threads. The whole forms a compact block, shaped like the screen: the more cards there are, the longer the rows of scenes, and the frames line up on that width instead of stretching into a long strip. A chapter spread over several beats carries its title in the first one and “(continued)” in the others. Locked frames stay in place. A single undo (<kbd>Ctrl</kbd> <kbd>Z</kbd>) puts everything back.</p>
+<p>Every beat of the template gets its frame, even an empty one (“Nothing here yet”): the gaps in the structure show at a glance. Drop a scene in a beat’s frame to put it in that beat, at the spot where you let go (hold the card by its header); the Outline, the sequencer and the Manuscript follow at once. In a screenplay, the beats are those of the template chosen in the sequencer.</p>
 <p>After that, the canvas follows the story on its own: moving a scene or a chapter in the Outline, the Manuscript or the Screenplay’s scene list moves it on the canvas too, without going back to <span class="ui">Organize</span>. An organized canvas is organized again; otherwise the scenes just swap places and nothing else moves.</p>
 <figure><img src="images/en/organiser.jpg"><figcaption>The canvas after “Organize”.</figcaption></figure>
 
@@ -430,10 +431,23 @@
   <li><span class="ui">Free</span>: a single list, in the order you arrange the scenes;</li>
   <li><span class="ui">Three acts</span>: setup, inciting incident, confrontation, midpoint, crisis, climax, resolution;</li>
   <li><span class="ui">Save the Cat</span>: Blake Snyder’s fifteen beats, from the opening image to the final image;</li>
-  <li><span class="ui">Hero’s journey</span>: Christopher Vogler’s twelve stages, after Joseph Campbell.</li>
+  <li><span class="ui">Hero’s journey</span>: Christopher Vogler’s twelve stages, after Joseph Campbell;</li>
+  <li><span class="ui">Dan Harmon’s story circle</span>: eight steps in a circle, from comfort to change;</li>
+  <li><span class="ui">Five-act pyramid</span>: Gustav Freytag’s pyramid, from exposition to denouement;</li>
+  <li><span class="ui">Six stages (Hauge)</span>: six stages and five turning points around the hero’s visible goal;</li>
+  <li><span class="ui">Seven points</span>: Dan Wells’s structure, built from the end;</li>
+  <li><span class="ui">Kishōtenketsu</span>: four movements with no conflict required (introduction, development, twist, reconciliation);</li>
+  <li><span class="ui">Romance</span>: meeting, falling, breaking apart, coming back;</li>
+  <li><span class="ui">Mystery</span>: the crime, the investigation, the false lead, the revelation, the confrontation, the resolution.</li>
 </ul>
-<p>Each beat has a name and a hint. Changing templates loses no arrangement: each template keeps its own.</p>
+<p>Each beat has a name, a hint, and a usual place in the story, shown by the story ribbon (see the Manuscript). Changing templates loses no arrangement: each template keeps its own.</p>
 <figure><img src="images/en/plan-gabarit.jpg"><figcaption>The Save the Cat template, its beats and their hints.</figcaption></figure>
+<p><span class="ui">Dan Harmon’s story circle</span> is also drawn as a circle: the known world at the top, the unknown below, and the number of scenes in each step. An empty step is dashed; touch a step to go to its beat.</p>
+<figure class="medium"><img src="images/en/plan-cercle.jpg"><figcaption>Dan Harmon’s story circle, and its steps still empty.</figcaption></figure>
+
+<h3>My templates</h3>
+<p>In the <span class="ui">Template</span> menu, <span class="ui">Create a template…</span> opens the list of beats, filled in with those of the current template: rename them, write what goes in them, change their order, remove some, add others. Scenes follow their beat, even renamed. <span class="ui">Keep in my templates</span> then offers it in all your projects, novel or screenplay; <span class="ui">Edit the beats…</span> brings it back later. A removed beat sends its scenes to “To place” (in a screenplay, into the beat before it).</p>
+<figure class="medium"><img src="images/en/gabarit-editeur.jpg"><figcaption>A template of your own, born from the three acts.</figcaption></figure>
 
 <h3>Arrange scenes</h3>
 <p>In the <span class="ui">List</span> layout, each scene shows its title, synopsis, status and chapter. To move it:</p>
@@ -465,6 +479,14 @@
 
 <p class="lead">The Manuscript is where you write, one scene at a time, in outline order, on a page laid out like a book’s.</p>
 <figure><img src="images/en/manuscrit.jpg"><figcaption>The Manuscript view: scenes on the left, the page in the middle, statistics and the current scene on the right.</figcaption></figure>
+
+<h3>The story ribbon</h3>
+<p>Once a template is chosen, a thin band at the top of the bar (and under the Screenplay’s bar) shows the structure of your text as it is: each beat takes the room its scenes really take, in words (pages in a screenplay). A thin mark shows where each beat usually begins in that structure: the gap shows without anything being imposed. Touch a scene on the ribbon to go there; the line below says which beat you are in and where in the story. While little is written, each scene counts as an equal share.</p>
+<ul>
+  <li><span class="ui">Show plotlines</span> adds one row per Plot card: solid for scenes linked by a thread, light for scenes that mention it.</li>
+  <li><span class="ui">Show the curve</span> appears as soon as two scenes have filled in <span class="ui">For the hero, the scene ends</span> (better, worse, neither) in their sheet: the curve rises and falls with the hero’s fortune, scene by scene.</li>
+</ul>
+<figure><img src="images/en/ruban.jpg"><figcaption>The story ribbon and the plotline row.</figcaption></figure>
 
 <h3>The scenes column</h3>
 <p>On the left, all the book’s scenes, by chapter, with their word count. A click opens a scene. To move one, drag it (onto the top half of another scene to put it before, the bottom half to put it after), or use its arrows or <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. It takes the chapter and beat of its new neighbour. A whole chapter moves too, by dragging its title or with its arrows.</p>
@@ -528,7 +550,7 @@
 
 <h3>Check the text</h3>
 <p>The <span class="ui">Check</span> button in the bar (with the number of items found) opens the tab of the same name in the right column, next to <span class="ui">In this scene</span>. It points out what deserves a look, without ever correcting anything: a name spelled almost like an entry’s (“Inés” for “Inès”), two spaces in a row, a space before a comma or a period. Touch an item to go to the passage, selected in the text. <span class="ui">Rename everywhere…</span> opens “Find and replace” with the right name; <span class="ui">Ignore</span> removes the item from the list until the app is closed.</p>
-<p>It also asks questions about the story, never errors: the character marked as main is not the one seen in the most scenes (“Who do we really follow?”); a main character has not filled in their “Wants” box; a series has no episode yet; a secret has no planned reveal, or comes out with no clue planted before; an object is named in only one scene (set up without paying off, or paying off without being set up). Touch the question to open the profile; <span class="ui">It’s intended</span> sets it aside.</p>
+<p>It also asks questions about the story, never errors: the character marked as main is not the one seen in the most scenes (“Who do we really follow?”); a main character has not filled in their “Wants” box; a series has no episode yet; a secret has no planned reveal, or comes out with no clue planted before; an object is named in only one scene (set up without paying off, or paying off without being set up); a template beat begins more than ten points from its usual place (from six scenes on, according to the story ribbon: the question leads to its first scene). Touch the question to open the profile; <span class="ui">It’s intended</span> sets it aside.</p>
 
 <h3>Project statistics</h3>
 <p>The <span class="ui">Statistics</span> button in the bar (also in the Screenplay’s bar, and in the Mac <span class="ui">View</span> menu) opens a window that counts, in your text, what you can’t see while writing. Nothing is typed in or saved there.</p>
@@ -601,7 +623,7 @@
 
 <h3>The outline of a screenplay</h3>
 <p>The outline lists the scenes in screenplay order, with their synopsis, characters, length and status. Drag a scene or use its arrows to change the order of the screenplay itself. On each scene, ↗ shows its card on the canvas and ✎ opens it in the Screenplay.</p>
-<p>The <span class="ui">Template</span> menu offers: none, three acts, Save the Cat, eight sequences (the film in eight sequences of about fifteen minutes) and TV episode (teaser, four acts, tag). The template’s beats are sections of the Fountain file, which other software sees as plain sections; place scenes with <span class="ui">Move to</span>, the arrows or by dragging. Each beat shows its hint and its length.</p>
+<p>The <span class="ui">Template</span> menu offers: none, three acts, Save the Cat, eight sequences (the film in eight sequences of about fifteen minutes), TV episode (teaser, four acts, tag), and the Outline’s structures (hero’s journey, Dan Harmon’s story circle, five-act pyramid, six stages, seven points, kishōtenketsu, romance, mystery), plus your own templates (see the Outline). The template’s beats are sections of the Fountain file, which other software sees as plain sections; place scenes with <span class="ui">Move to</span>, the arrows or by dragging. Each beat shows its hint and its length.</p>
 <div class="pair">
   <figure><img src="images/en/sequencier.jpg"><figcaption>The outline of a screenplay, as a list.</figcaption></figure>
   <figure><img src="images/en/sequencier-fiches.jpg"><figcaption>As index cards, with the three-act template.</figcaption></figure>

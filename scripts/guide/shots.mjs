@@ -357,6 +357,17 @@ await step("plan", async () => {
   await sel.selectOption({ label: "Save the Cat" });
   await wait(800);
   await shot("plan-gabarit");
+  await sel.selectOption("cercleHarmon");
+  await wait(800);
+  await shot("plan-cercle", { clip: await union([".story-circle"], 24) });
+  // L'éditeur de « Mes gabarits », prérempli avec les cases en place.
+  await sel.selectOption({ label: T("Trois actes", "Three acts") });
+  await wait(500);
+  await sel.selectOption("__new");
+  await wait(600);
+  await shot("gabarit-editeur", { clip: await union(["dialog[open]"], 16) });
+  await page.keyboard.press("Escape");
+  await wait(300);
   await sel.selectOption({ label: T("Trois actes", "Three acts") });
   await wait(600);
   await page.getByRole("button", { name: T("Fiches", "Index cards"), exact: true }).click();
@@ -369,6 +380,12 @@ await step("plan", async () => {
 });
 await view(T("Manuscrit", "Manuscript"));
 await shot("manuscrit");
+await step("ruban", async () => {
+  await page.getByRole("button", { name: T("Voir les intrigues", "Show plotlines") }).click();
+  await wait(500);
+  await shot("ruban", { clip: await union([".ms-meta"], 12) });
+  await page.getByRole("button", { name: T("Masquer les intrigues", "Hide plotlines") }).click();
+});
 await shot("manuscrit-colonne", { clip: { x: 0, y: 64, width: 360, height: 836 } });
 await shot("manuscrit-stats", { clip: { x: 1080, y: 64, width: 360, height: 836 } });
 await step("remplacer", async () => {
