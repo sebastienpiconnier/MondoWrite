@@ -6,7 +6,7 @@
 
 **Du chaos au monde ordonné : un canevas pour les romanciers et les scénaristes qui construisent leur histoire avant de l'écrire.**
 
-<img width="1389" height="868" alt="preview (3)" src="https://github.com/user-attachments/assets/05dfbce7-cc79-433a-bb5a-b9e2ab889e2b" />
+![Le canevas de MondoWrite sur le projet d'exemple : cartes Personnage, Lieu, Scène et Intrigue reliées par des fils étiquetés](docs/guide/images/fr/canevas.jpg)
 
 <a href="https://youtu.be/HW7D9uyo8l8"><img src="docs/images/video-poster-fr.jpg" width="640" alt="Voir la vidéo de présentation de MondoWrite (1 min 20)"></a>
 
