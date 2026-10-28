@@ -237,6 +237,9 @@ export function Plan() {
         <button type="button" className="icon-button" aria-label={fmt(p.show, { title })} title={fmt(p.show, { title })} onClick={() => revealCard(id)}>
           <span aria-hidden="true">↗</span>
         </button>
+        <button type="button" className="icon-button" aria-label={fmt(p.openText, { title })} title={fmt(p.openText, { title })} onClick={() => useCosmos.getState().openInManuscript(id)}>
+          <span aria-hidden="true">✎</span>
+        </button>
         <button type="button" className="icon-button sq-trash" aria-label={fmt(t.trash.removeAria, { title })} title={fmt(t.trash.removeAria, { title })} onClick={() => useCosmos.getState().deleteCard(id)}>
           <TrashIcon />
         </button>

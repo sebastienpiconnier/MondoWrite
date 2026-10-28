@@ -35,7 +35,7 @@ import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { useCosmos } from "../store";
+import { SCENE_AT, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -581,7 +581,9 @@ export function ScreenplayView() {
   useEffect(() => {
     if (!target) return;
     useCosmos.getState().clearManuscriptTarget();
-    const index = (useCosmos.getState().screenplay?.elements ?? []).findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
+    const elements = useCosmos.getState().screenplay?.elements ?? [];
+    const at = target.startsWith(SCENE_AT) ? Number(target.slice(SCENE_AT.length)) : -1;
+    const index = at >= 0 ? (elements[at]?.type === "sceneHeading" ? at : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
     if (index >= 0) requestAnimationFrame(() => goToRef.current(index));
   }, [target]);
 

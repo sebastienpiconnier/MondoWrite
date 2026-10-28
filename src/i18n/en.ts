@@ -114,7 +114,7 @@ export const en: Messages = {
     novel: "A novel",
     novelHint: "Canvas, bible, outline and a manuscript written scene by scene.",
     screenplay: "A screenplay",
-    screenplayHint: "Step outline, standard film format, pages and minutes.",
+    screenplayHint: "Outline, standard film format, pages and minutes.",
     folderHint: "You’ll then choose the folder where the project is saved.",
     folderHintCloud: "The project will be created in the “{name}” cloud folder, in a folder named after it.",
     create: "Create project",
@@ -978,6 +978,7 @@ export const en: Messages = {
     moved: "Scene “{title}”: {beat}, position {n}.",
     removed: "Scene “{title}” moved back to “To place”.",
     show: "Show the card “{title}” on the canvas",
+    openText: "Open “{title}” in the Manuscript",
     beats: {
       libre: { label: "Scenes", hint: "The order of the story, no template." },
       a_setup: { label: "Act I · Setup", hint: "The world, the character, what they lack." },
@@ -1047,7 +1048,7 @@ export const en: Messages = {
   },
 
   scenario: {
-    views: { plan: "Step outline", manuscrit: "Screenplay" },
+    views: { plan: "Outline", manuscrit: "Screenplay" },
     types: {
       lieu: { label: "Location", section: "Locations", titlePlaceholder: "Location name" },
       scene: { label: "Scene", section: "Scenes", titlePlaceholder: "INT. LIGHTHOUSE - NIGHT" },
@@ -1188,12 +1189,14 @@ export const en: Messages = {
       placeholder: "What happens in the scene, in one sentence…",
     },
     sequencer: {
-      modeAria: "Step outline layout",
+      modeAria: "Outline layout",
       outline: "List",
       cards: "Index cards",
       charactersAria: "Characters in the scene",
       showCharacter: "Show {name}’s card on the canvas",
-      title: "Step outline",
+      show: "Show the card “{title}” on the canvas",
+      openText: "Open “{title}” in the Screenplay",
+      title: "Outline",
       listAria: "Scenes in screenplay order",
       empty: "No scene yet. Write a first scene heading in the Screenplay view.",
       hint: "Drag a scene, or use the arrows, to change the order of the screenplay.",
@@ -2159,7 +2162,7 @@ export const en: Messages = {
       files: { title: "Your words are yours", body: "Everything saves on its own, as Markdown files you can read outside MondoWrite. Ctrl or Cmd + / shows every shortcut, and this tour stays in Settings." },
     },
     scenario: {
-      plan: { title: "Give the story a shape", body: "The step outline lists your scenes in screenplay order. Lay down a template (three acts, Save the Cat, eight sequences) and move scenes from one beat to another." },
+      plan: { title: "Give the story a shape", body: "The outline lists your scenes in screenplay order. Lay down a template (three acts, Save the Cat, eight sequences) and move scenes from one beat to another." },
       write: { title: "Write in screenplay format", body: "Tab changes the element type (action, character, dialogue…), Enter moves to the next one. Characters and locations from the Bible are suggested as you type." },
     },
   },

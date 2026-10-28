@@ -388,9 +388,14 @@ export function BibleExportDialog() {
           <p className="spdf-status" role="status">
             {message}
           </p>
-          <button type="submit" className="is-primary" disabled={busy || (format === "pdf" && preview.status !== "ready")}>
-            {e.export}
-          </button>
+          <div className="spdf-buttons">
+            <button type="button" className="spdf-close" onClick={() => useCosmos.getState().setDialog(null)}>
+              {t.gallery.close}
+            </button>
+            <button type="submit" className="is-primary" disabled={busy || (format === "pdf" && preview.status !== "ready")}>
+              {e.export}
+            </button>
+          </div>
         </div>
       </form>
       <section className="spdf-preview bexp-preview" aria-label={e.preview}>

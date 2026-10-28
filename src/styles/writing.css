@@ -18,6 +18,9 @@
 .sq-body { flex: 1; min-width: 0; }
 .sq-title { font-size: 0.875rem; overflow-wrap: anywhere; }
 .sq-desc { margin: 2px 0 0; font-size: 0.8125rem; line-height: 1.45; color: var(--ink-2); }
+.sq-go { display: flex; gap: 4px; flex-shrink: 0; }
+.sq-go .icon-button { width: 32px; height: 32px; }
+@media (pointer: coarse) { .sq-go .icon-button { width: 44px; height: 44px; } }
 .sq-length { flex-shrink: 0; text-align: right; font-size: 0.8125rem; line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
 /* Sélecteur de présentation : liste ou fiches */
 .sq-modes { display: flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: 12px; }
@@ -264,6 +267,7 @@
 .sq-list.is-cards .sq-scene { flex-direction: column; align-items: stretch; gap: 8px; min-height: 170px; padding: 14px; border-top: 4px solid var(--type-scene); box-shadow: var(--shadow-card); }
 .sq-list.is-cards .sq-body { order: 1; }
 .sq-list.is-cards .sq-moves { order: 3; }
+.sq-list.is-cards .sq-go { order: 3; }
 .sq-list.is-cards .sq-length { order: 2; display: flex; gap: 10px; text-align: left; margin-top: auto; }
 
 .sq-section { margin-top: 10px; padding: 4px; font-family: var(--font-display); font-weight: 500; font-size: 1.125rem; border-radius: 8px; }
@@ -573,6 +577,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .paperback-options label { min-height: 36px; }
 .paperback-warning { color: var(--danger); font-weight: 600; }
 .paperback-panel .replace-actions { flex-wrap: wrap; }
+.paperback-panel .paperback-actions { flex-direction: column; align-items: flex-end; }
+.paperback-panel .paperback-row { align-self: stretch; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 
 
 /* ---------- Le livre en pages (un seul éditeur pour tout le manuscrit) ---------- */
@@ -678,6 +684,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .spdf-status { margin: 0; min-height: 1.2em; font-size: 0.8125rem; color: var(--ink-2); }
 .spdf-actions button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--strong-bg); color: var(--strong-fg); font: 600 0.9375rem var(--font-ui); cursor: pointer; }
 .spdf-actions button:disabled { opacity: 0.5; cursor: default; }
+/* Fermer à gauche, le bouton d'export à droite, sur la même ligne. */
+.spdf-buttons { align-self: stretch; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.spdf-actions button.spdf-close { border: 1px solid var(--line-2); background: transparent; color: var(--ink); font-weight: 400; }
+@media (any-hover: hover) { .spdf-actions button.spdf-close:hover { background: var(--surface); } }
 .spdf-preview { flex: 1 1 360px; min-width: 0; padding: 16px; border-radius: 12px; background: var(--ground); container-type: inline-size; display: flex; align-items: flex-start; justify-content: center; }
 .spdf-page { position: relative; flex: none; width: calc(var(--w) * 1em); height: calc(var(--h) * 1em); font: calc(100cqw / (var(--w) + 2)) / 1 var(--font-script); background: var(--page); color: var(--page-ink); box-shadow: var(--shadow-card); overflow: hidden; }
 .spdf-line { position: absolute; white-space: pre; line-height: 1; }
@@ -686,7 +696,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .spdf-line.is-underline { text-decoration: underline; }
 .spdf-line.is-lit { background: var(--revisit); color: var(--page-ink); }
 .spdf-watermark { position: absolute; left: 50%; top: 50%; white-space: nowrap; font-family: var(--font-ui); font-weight: 700; letter-spacing: 0.06em; text-transform: none; color: var(--line-2); opacity: 0.7; pointer-events: none; }
-.app-dialog.is-script-pdf .app-dialog-actions { justify-content: flex-start; }
 
 /* Fenêtre « Exporter la Bible » (BibleExportDialog.tsx) : le formulaire de .spdf, l'aperçu en pages du vrai PDF. */
 .bexp-reader span { display: flex; flex-direction: column; gap: 2px; }

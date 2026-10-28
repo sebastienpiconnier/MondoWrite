@@ -126,10 +126,10 @@ export function Dialogs() {
           </p>
         </div>
       )}
-      {/* La liseuse a son bouton « Fermer » en haut : la place en bas va aux pages. */}
-      {dialog !== "document" && (
+      {/* La liseuse a son bouton « Fermer » en haut : la place en bas va aux pages. Les fenêtres d'export ont le leur, à côté du bouton d'export. */}
+      {dialog !== "document" && dialog !== "paperback" && dialog !== "scriptPdf" && dialog !== "bibleExport" && (
         <div className="assistant-actions app-dialog-actions">
-          <button type="button" className={dialog === "replace" || dialog === "paperback" || dialog === "scriptPdf" || dialog === "bibleExport" ? "" : "is-primary"} onClick={() => setDialog(null)} autoFocus={dialog !== "replace" && dialog !== "paperback" && dialog !== "scriptPdf" && dialog !== "bibleExport"}>
+          <button type="button" className={dialog === "replace" ? "" : "is-primary"} onClick={() => setDialog(null)} autoFocus={dialog !== "replace"}>
             {t.gallery.close}
           </button>
         </div>

@@ -961,6 +961,7 @@ export const fr = {
     moved: "Scène « {title} » : {beat}, position {n}.",
     removed: "Scène « {title} » remise dans « À placer ».",
     show: "Voir la carte « {title} » sur le canevas",
+    openText: "Ouvrir « {title} » dans le Manuscrit",
     beats: {
       libre: { label: "Scènes", hint: "L’ordre du récit, sans gabarit." },
       a_setup: { label: "Acte I · Exposition", hint: "Le monde, le personnage, ce qui lui manque." },
@@ -1177,6 +1178,8 @@ export const fr = {
       cards: "Fiches",
       charactersAria: "Personnages de la scène",
       showCharacter: "Voir la carte de {name} sur le canevas",
+      show: "Voir la carte « {title} » sur le canevas",
+      openText: "Ouvrir « {title} » dans le Scénario",
       title: "Séquencier",
       listAria: "Scènes dans l’ordre du scénario",
       empty: "Pas encore de scène. Écris un premier en-tête dans la vue Scénario.",

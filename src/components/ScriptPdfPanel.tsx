@@ -155,9 +155,14 @@ export function ScriptPdfPanel() {
           <p className="spdf-status" role="status">
             {message}
           </p>
-          <button type="submit" className="is-primary" disabled={!screenplay || saving}>
-            {k.save}
-          </button>
+          <div className="spdf-buttons">
+            <button type="button" className="spdf-close" onClick={() => useCosmos.getState().setDialog(null)}>
+              {t.gallery.close}
+            </button>
+            <button type="submit" className="is-primary" disabled={!screenplay || saving}>
+              {k.save}
+            </button>
+          </div>
         </div>
       </form>
       <section className="spdf-preview" aria-label={k.preview}>

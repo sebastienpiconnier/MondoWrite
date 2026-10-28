@@ -7,7 +7,7 @@ import { SceneStatusPicker } from "./SceneStatusPicker";
 import { isBeat, type PlanBeat } from "../plan";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useCosmos } from "../store";
+import { SCENE_AT, useCosmos } from "../store";
 import { useSettings, type SequencerMode } from "../settings";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
@@ -296,6 +296,23 @@ export function Sequencier() {
                   <div>{fmt(sp.lengthShort, { n: number.format(pages) })}</div>
                   {/* Sous la demi-page, une durée arrondie à la minute ne voudrait rien dire. */}
                   {pages >= 0.5 && <div>{fmt(sp.minutes, { n: minutesFor(pages) })}</div>}
+                </div>
+                {/* Aller ailleurs : la carte de la scène sur le canevas, ou la scène dans le Scénario. */}
+                <div className="sq-go">
+                  {block.cardId && (
+                    <button type="button" className="icon-button" aria-label={fmt(sq.show, { title })} title={fmt(sq.show, { title })} onClick={() => revealCard(block.cardId!)}>
+                      <span aria-hidden="true">↗</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label={fmt(sq.openText, { title })}
+                    title={fmt(sq.openText, { title })}
+                    onClick={() => useCosmos.getState().openInManuscript(block.cardId ?? `${SCENE_AT}${block.start}`)}
+                  >
+                    <span aria-hidden="true">✎</span>
+                  </button>
                 </div>
                 <button
                   type="button"

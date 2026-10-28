@@ -206,7 +206,7 @@ interface CosmosState {
   /** Carte dont le menu (⋯, clic droit) est ouvert. */
   cardMenu: string | null;
   setCardMenu: (id: string | null) => void;
-  /** Ouvre une scène dans le manuscrit. */
+  /** Ouvre une scène dans le manuscrit (ou le scénario) : identifiant de sa carte, ou `SCENE_AT` + rang de son en-tête. */
   openInManuscript: (id: string) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
   manuscriptTarget: string | null;
@@ -459,6 +459,9 @@ const insideBox = (x: number, y: number, b: { x: number; y: number; width: numbe
  * Cartes tenues par un cadre verrouillé (leur centre est dedans) : elles ne bougent plus, ni à la main
  * ni par « Organiser ». On peut toujours les modifier, les relier ou les supprimer.
  */
+/** Scène du scénario sans carte : « @12 » vise l'en-tête au rang 12 (un identifiant de carte n'a jamais de @). */
+export const SCENE_AT = "@";
+
 export function heldCardIds(nodes: CardNode[], frames: FrameNode[]): Set<string> {
   const locked = frames.filter((f) => f.data.locked).map(frameBox);
   if (locked.length === 0) return new Set();

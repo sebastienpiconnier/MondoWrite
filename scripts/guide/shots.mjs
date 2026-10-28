@@ -65,7 +65,8 @@ async function scrollToText(text, offset = 70) {
 }
 const step = async (name, fn) => { try { await fn(); } catch (e) { console.log("ÉCHEC", name, e.message.split("\n")[0]); } };
 const view = async (v) => { await page.locator("nav button, [aria-label] button", { hasText: v }).first().click(); await wait(1000); };
-const closeDialog = () => page.locator("dialog[open] .app-dialog-actions button").first().click();
+// Les fenêtres d'export ont leur propre « Fermer », à côté du bouton d'export.
+const closeDialog = () => page.locator("dialog[open] .app-dialog-actions button, dialog[open] .spdf-close, dialog[open] .paperback-row button:not(.is-primary)").first().click();
 const bg = async () => { await page.mouse.click(900, 200); await wait(200); };
 const fit = async () => { await page.getByRole("button", { name: "Fit View" }).click(); await wait(400); };
 const node = (text) => page.locator(".react-flow__node", { hasText: text }).first();
@@ -495,7 +496,7 @@ await step("page de titre", async () => {
   await shot("scenario-page-titre");
 });
 await step("séquencier", async () => {
-  await view(T("Séquencier", "Step outline"));
+  await view(T("Séquencier", "Outline"));
   await shot("sequencier");
   await page.locator("select").first().selectOption({ index: 1 });
   await wait(800);

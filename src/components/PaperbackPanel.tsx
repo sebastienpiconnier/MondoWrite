@@ -156,13 +156,19 @@ export function PaperbackPanel() {
           {message}
         </p>
       )}
-      <div className="assistant-actions replace-actions">
+      {/* Le gabarit de couverture au-dessus ; Fermer et l'export de l'intérieur sur la même ligne. */}
+      <div className="assistant-actions replace-actions paperback-actions">
         <button type="button" disabled={state.kind !== "ready" || saving} onClick={() => void save("cover")}>
           {k.saveCover}
         </button>
-        <button type="button" className="is-primary" disabled={state.kind !== "ready" || saving} onClick={() => void save("interior")}>
-          {k.saveInterior}
-        </button>
+        <div className="paperback-row">
+          <button type="button" onClick={() => useCosmos.getState().setDialog(null)}>
+            {t.gallery.close}
+          </button>
+          <button type="button" className="is-primary" disabled={state.kind !== "ready" || saving} onClick={() => void save("interior")}>
+            {k.saveInterior}
+          </button>
+        </div>
       </div>
     </form>
   );

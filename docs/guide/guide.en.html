@@ -37,7 +37,7 @@
   <tr><td><span class="ui">Canvas</span></td><td>The free board where ideas are born: cards you drop, connect with threads and gather in frames.</td></tr>
   <tr><td><span class="ui">Bible</span></td><td>The entries of your world (characters, places, plots, themes…), sorted by type on their own, with the project cover at the top.</td></tr>
   <tr><td><span class="ui">Outline</span></td><td>The order of the story: templates (three acts, Save the Cat…) to place scenes in, chapters and a timeline.</td></tr>
-  <tr><td><span class="ui">Manuscript</span></td><td>The text, scene by scene, laid out like a book. In a screenplay project this view becomes <span class="ui">Screenplay</span> and the Outline becomes the <span class="ui">Step outline</span>.</td></tr>
+  <tr><td><span class="ui">Manuscript</span></td><td>The text, scene by scene, laid out like a book. In a screenplay project this view becomes <span class="ui">Screenplay</span>, and the <span class="ui">Outline</span> lists the scenes in screenplay order.</td></tr>
 </table>
 <p>A scene created in the Outline immediately has its card on the canvas; a character written in the screenplay has its entry in the Bible; the text written in a Scene card is the text of the Manuscript.</p>
 
@@ -184,7 +184,7 @@
   <li>Create a <span class="ui">Screenplay</span> project, then fill in the cover and <span class="ui">Writing the series</span>: arena, before the pilot, engine, the season’s question.</li>
   <li>Create one Episode card per episode (season, marker, pivot character) and link it to the plots that run through it.</li>
   <li>The thread grid, in the Bible export, shows which plots live in which episodes.</li>
-  <li>Write the pilot in the <a href="#screenplay">Screenplay</a> view, with the step outline’s “TV episode” template.</li>
+  <li>Write the pilot in the <a href="#screenplay">Screenplay</a> view, with the Outline’s “TV episode” template.</li>
   <li><span class="ui">Check</span> tells you if the pilot is too short or too long for its format.</li>
   <li>Export the series bible for a producer, with the first pages of the pilot as an appendix.</li>
 </ol>
@@ -322,7 +322,7 @@
 
 <h3>Organize the canvas</h3>
 <p>When everything overflows, <span class="ui">Organize</span> puts every card in a frame: characters, places, plots, themes, questions, images, links, loose ideas, and scenes by template beat and by chapter, linked in story order by “then” threads. The whole forms a compact block, shaped like the screen: the more cards there are, the longer the rows of scenes, and the frames line up on that width instead of stretching into a long strip. A chapter spread over several beats carries its title in the first one and “(continued)” in the others. Locked frames stay in place. A single undo (<kbd>Ctrl</kbd> <kbd>Z</kbd>) puts everything back.</p>
-<p>After that, the canvas follows the story on its own: moving a scene or a chapter in the Outline, the Manuscript, the step outline or the Screenplay’s scene list moves it on the canvas too, without going back to <span class="ui">Organize</span>. An organized canvas is organized again; otherwise the scenes just swap places and nothing else moves.</p>
+<p>After that, the canvas follows the story on its own: moving a scene or a chapter in the Outline, the Manuscript or the Screenplay’s scene list moves it on the canvas too, without going back to <span class="ui">Organize</span>. An organized canvas is organized again; otherwise the scenes just swap places and nothing else moves.</p>
 <figure><img src="images/en/organiser.jpg"><figcaption>The canvas after “Organize”.</figcaption></figure>
 
 <h3>Filter and search</h3>
@@ -437,7 +437,7 @@
   <li>drag it into another beat or to another place;</li>
   <li>or use its arrows, or the <span class="ui">Move to</span> menu.</li>
 </ul>
-<p>Scenes not yet placed wait in <span class="ui">To place</span>, in canvas order. <span class="ui">New scene…</span> at the bottom of each beat creates a scene right there (and its card on the canvas). The arrow button shows the card on the canvas, the trash button deletes it.</p>
+<p>Scenes not yet placed wait in <span class="ui">To place</span>, in canvas order. <span class="ui">New scene…</span> at the bottom of each beat creates a scene right there (and its card on the canvas). The arrow button (↗) shows the card on the canvas, the pencil (✎) opens the scene in the Manuscript, the trash button deletes it.</p>
 <figure><img src="images/en/plan-liste.jpg"><figcaption>The three-act outline, as a list, with chapters.</figcaption></figure>
 
 <h3>Chapters</h3>
@@ -539,7 +539,7 @@
 <!-- ===================================================================================== -->
 <h2 id="screenplay"><span class="num">Chapter 9</span>The Screenplay</h2>
 
-<p class="lead">In a screenplay project, the Manuscript becomes the <span class="ui">Screenplay</span> view: an editor in standard film format, which saves the text as Fountain, an open format read by Highland, Fade In, WriterSolo, Slugline or Trelby. The Outline becomes the <span class="ui">Step outline</span>.</p>
+<p class="lead">In a screenplay project, the Manuscript becomes the <span class="ui">Screenplay</span> view: an editor in standard film format, which saves the text as Fountain, an open format read by Highland, Fade In, WriterSolo, Slugline or Trelby. The <span class="ui">Outline</span> lists the scenes in screenplay order.</p>
 
 <h3>Switch to screenplay</h3>
 <p>Create a project with <span class="ui">A screenplay</span>, import a Fountain or Final Draft file, or switch an existing project in <span class="ui">Settings</span> › <span class="ui">This project</span> › <span class="ui">Project type</span>. The vocabulary follows: Places are called Locations, a Scene card’s title is its heading (“INT. LIGHTHOUSE - NIGHT”), and length is counted in pages and minutes (one page is about one minute), shown in the top bar.</p>
@@ -588,11 +588,11 @@
 <p>The <span class="ui">Int./Ext. and Day/Night</span> tab counts across the whole screenplay. A “LATER”, “CONTINUOUS” or “SAME TIME” scene, or one with no time, carries over the day or night of the previous scene: it is counted as “carried over”, without touching the text. An INT./EXT. scene counts on both sides.</p>
 <figure class="medium"><img src="images/en/stats-int-ext.jpg"><figcaption>Interior or exterior, day or night, across the screenplay.</figcaption></figure>
 
-<h3>The step outline</h3>
-<p>The step outline lists the scenes in screenplay order, with their synopsis, characters, length and status. Drag a scene or use its arrows to change the order of the screenplay itself.</p>
+<h3>The outline of a screenplay</h3>
+<p>The outline lists the scenes in screenplay order, with their synopsis, characters, length and status. Drag a scene or use its arrows to change the order of the screenplay itself. On each scene, ↗ shows its card on the canvas and ✎ opens it in the Screenplay.</p>
 <p>The <span class="ui">Template</span> menu offers: none, three acts, Save the Cat, eight sequences (the film in eight sequences of about fifteen minutes) and TV episode (teaser, four acts, tag). The template’s beats are sections of the Fountain file, which other software sees as plain sections; place scenes with <span class="ui">Move to</span>, the arrows or by dragging. Each beat shows its hint and its length.</p>
 <div class="pair">
-  <figure><img src="images/en/sequencier.jpg"><figcaption>The step outline as a list.</figcaption></figure>
+  <figure><img src="images/en/sequencier.jpg"><figcaption>The outline of a screenplay, as a list.</figcaption></figure>
   <figure><img src="images/en/sequencier-fiches.jpg"><figcaption>As index cards, with the three-act template.</figcaption></figure>
 </div>
 
