@@ -299,7 +299,10 @@ await step("secret", async () => {
   await page.keyboard.type(T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother"));
   await page.keyboard.press("Enter");
   // Fiche vide : repliée, on l'ouvre.
-  const entry = page.locator(".bible-entry").filter({ has: page.locator(`input[value="${T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother")}"]`) }).first();
+  // Le titre d'une fiche est une zone de texte (il passe à la ligne) : on la reconnaît à sa valeur.
+  const title = T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother");
+  const id = await page.locator("textarea.bible-title").evaluateAll((els, t) => els.find((el) => el.value === t)?.getAttribute("data-card"), title);
+  const entry = page.locator(`.bible-entry[data-entry="${id}"]`);
   await entry.locator(".sheet-toggle").first().click();
   await wait(300);
   const fill = async (label, text) => {

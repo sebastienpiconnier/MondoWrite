@@ -4,6 +4,7 @@
 // Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
+import { autosize } from "./autosize";
 import { BibleLinks } from "./BibleLinks";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { headingOf } from "../screenplay/sceneText";
@@ -87,6 +88,10 @@ function Portrait({ name, alt }: { name: string | undefined; alt: string }) {
 
 const TOC_KEY = "mondowrite.bible.toc";
 
+
+/** Un titre reste sur une ligne dans le fichier : un retour collé devient une espace. */
+const oneLine = (text: string) => text.replace(/\s*\n\s*/g, " ");
+
 export function Bible() {
   const { t, types, kind } = useVocab();
   const screenplay = useCosmos((s) => s.screenplay);
@@ -143,8 +148,16 @@ export function Bible() {
   // sans sauter dans l'ordre alphabétique à chaque lettre tapée.
   const [fresh, setFresh] = useState<string | null>(null);
   const mainRef = useRef<HTMLElement>(null);
+  // Largeur changée (iPhone tourné, colonne élargie) : les titres qui passent à la ligne se remesurent
+  // (WebKit n'a pas `field-sizing`, voir autosize.ts).
   useEffect(() => {
-    if (fresh) mainRef.current?.querySelector<HTMLInputElement>(`input[data-card="${fresh}"]`)?.focus();
+    const remeasure = () => mainRef.current?.querySelectorAll<HTMLTextAreaElement>(".bible-title, .bible-hook").forEach(autosize);
+    window.addEventListener("resize", remeasure);
+    return () => window.removeEventListener("resize", remeasure);
+  }, []);
+
+  useEffect(() => {
+    if (fresh) mainRef.current?.querySelector<HTMLTextAreaElement>(`textarea[data-card="${fresh}"]`)?.focus();
   }, [fresh]);
 
   // Rubriques : toutes affichées (même vides, pour y créer une fiche), rangées dans les cinq parties de la
@@ -293,34 +306,49 @@ export function Bible() {
                   ))}
                 <div className="bible-heading">
                 <h3>
-                  {/* Le titre se change ici comme sur le canevas : c'est la même carte. */}
-                  <input
-                    type="text"
+                  {/* Le titre se change ici comme sur le canevas : c'est la même carte. Un champ qui passe à la
+                      ligne (jamais tronqué, même sur iPhone), mais sans retour à la ligne : Entrée quitte le champ. */}
+                  <textarea
+                    rows={1}
+                    ref={autosize}
                     data-card={card.id}
                     className={`bible-title${kind === "scenario" && type === "scene" ? " is-slugline" : ""}`}
                     value={card.title}
                     placeholder={types[type].titlePlaceholder}
                     aria-label={t.bible.titleAria}
                     autoComplete="off"
-                    onChange={(e) => updateCard(card.id, { title: e.target.value })}
+                    onChange={(e) => {
+                      autosize(e.currentTarget);
+                      updateCard(card.id, { title: oneLine(e.target.value) });
+                    }}
                     onBlur={() => card.id === fresh && setFresh(null)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                      if (e.key === "Enter" || e.key === "Escape") {
+                        e.preventDefault();
+                        e.currentTarget.blur();
+                      }
                     }}
                   />
                 </h3>
                 {/* L'accroche : le personnage en une phrase, sous son nom, comme dans un dossier. */}
                 {type === "personnage" && (
-                  <input
-                    type="text"
+                  <textarea
+                    rows={1}
+                    ref={autosize}
                     className="bible-hook"
                     value={card.fiche?.accroche ?? ""}
                     placeholder={t.character.placeholders.accroche}
                     aria-label={t.character.hookAria}
                     autoComplete="off"
-                    onChange={(e) => useCosmos.getState().setFiche(card.id, "accroche", e.target.value)}
+                    onChange={(e) => {
+                      autosize(e.currentTarget);
+                      useCosmos.getState().setFiche(card.id, "accroche", oneLine(e.target.value));
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+                      if (e.key === "Enter" || e.key === "Escape") {
+                        e.preventDefault();
+                        e.currentTarget.blur();
+                      }
                     }}
                   />
                 )}
