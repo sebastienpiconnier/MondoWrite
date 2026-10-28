@@ -6,7 +6,7 @@
 
 **From chaos to an ordered world: a canvas for novelists and screenwriters who build their story before writing it.**
 
-![The MondoWrite canvas: four cards (idea, character, place, scene) connected by labeled threads](docs/images/canvas-en.png)
+![The MondoWrite canvas on the sample project: Character, Place, Scene and Plot cards connected by labeled threads](docs/guide/images/en/canevas.jpg)
 
 <a href="https://youtu.be/o6AGiJrQib4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the MondoWrite presentation video (1 min 20)"></a>
 
@@ -219,6 +219,7 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **Deleting a scene:** from the step outline, the scene goes to the trash with its text.
 - **Synopsis:** one sentence per scene, written from the scene panel or the step outline, saved as a Fountain synopsis.
 - **Import:** an existing `.fountain`, Final Draft (`.fdx`) or PDF file becomes a project, with its Scene, Character and Location cards already created and linked.
+- **Target lengths per act** in the Outline, **emphasis** (italic, bold) on screen and in the PDF, and side-by-side **dual dialogue**.
 - **(MORE) and (CONT'D):** for dialogue split by a page break, in the PDF and on screen.
 - **Scene numbers, underlined headings and focus mode:** two buttons in the bar number the scenes in the margin and underline the headings (on screen, in the PDF and in Final Draft), and a mode keeps only the page on screen.
 - **An open format:** the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
@@ -308,7 +309,6 @@ Stand-in keeper. Can’t stand **silence**.
 
 | Step | Content |
 |---|---|
-| Screenplay | Target lengths per act in the step outline, emphasis (italic, bold) on screen and in the PDF, side-by-side dual dialogue |
 | Mobile | iPad and iPhone on the App Store, then Android |
 | Sync | Beyond iCloud, then collaboration |
 

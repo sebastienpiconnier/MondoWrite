@@ -220,6 +220,7 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma, re
 - **Supprimer une scène :** depuis le séquencier, la scène part à la corbeille avec son texte.
 - **Synopsis :** une phrase par scène, écrite depuis le volet des scènes ou le séquencier, enregistrée comme synopsis Fountain.
 - **Import :** un fichier `.fountain`, Final Draft (`.fdx`) ou PDF existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
+- **Durées cibles par acte** dans le séquencier, **emphase** (italique, gras) à l'écran et dans le PDF, et **dialogue double** côte à côte.
 - **(À SUIVRE) et (SUITE) :** pour une réplique coupée par la page, dans le PDF et à l'écran.
 - **Numéros de scène, en-têtes soulignés et mode focus :** deux boutons de la barre numérotent les scènes dans la marge et soulignent les en-têtes (à l'écran, dans le PDF et dans Final Draft), et un mode ne garde que la feuille à l'écran.
 - **Un format ouvert :** le texte est enregistré dans `scenario.fountain`, au format Fountain, lisible par les autres logiciels de scénario.
@@ -307,7 +308,6 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 
 | Étape | Contenu |
 |---|---|
-| Scénario | Durées cibles par acte dans le séquencier, emphase (italique, gras) à l'écran et dans le PDF, dialogue double côte à côte |
 | Mobile | iPad et iPhone sur l'App Store, puis Android |
 | Synchronisation | Au-delà d'iCloud, puis collaboration |
 
