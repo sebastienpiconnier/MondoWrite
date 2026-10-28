@@ -111,7 +111,9 @@ describe("organiser le canevas", () => {
   it("cadres par type, chapitres dans les cases du gabarit, scènes reliées dans l'ordre", () => {
     const plan: Plan = { template: "troisActes", beats: { a_setup: ["s1", "s2"], a_climax: ["s3"] }, chapters: [{ id: "c1", title: "Arrivée", scenes: ["s1", "s2"] }] };
     const r = organize({ cards, plan, sceneIds: ["s1", "s2", "s3"], labels, origin: { x: 0, y: 0 }, newId });
-    expect(r.frames.map((f) => f.title)).toEqual(["Personnages", "a_setup", "Chapitre 1 · Arrivée", "a_climax", "Idées"]);
+    // Toutes les cases ont leur cadre, même vides (la structure entière se voit), et le cadre porte sa case.
+    expect(r.frames.map((f) => f.title)).toEqual(["Personnages", "a_setup", "Chapitre 1 · Arrivée", "a_incident", "a_confrontation", "a_midpoint", "a_crisis", "a_climax", "a_resolution", "Idées"]);
+    expect(r.frames.filter((f) => f.beat).map((f) => f.beat)).toEqual(["a_setup", "a_incident", "a_confrontation", "a_midpoint", "a_crisis", "a_climax", "a_resolution"]);
     expect(r.positions.size).toBe(5);
     expect(r.sequence).toEqual([["s1", "s2"], ["s2", "s3"]]);
     // Le chapitre est dans sa case, ses scènes dans le chapitre.
@@ -128,7 +130,7 @@ describe("organiser le canevas", () => {
   it("un chapitre sur deux cases : son titre une fois, « (suite) » ensuite ; un cadre étroit laisse lire son titre", () => {
     const plan: Plan = { template: "troisActes", beats: { a_setup: ["s1"], a_climax: ["s2", "s3"] }, chapters: [{ id: "c1", title: "Une très longue arrivée au phare", scenes: ["s1", "s2", "s3"] }] };
     const r = organize({ cards, plan, sceneIds: ["s1", "s2", "s3"], labels, origin: { x: 0, y: 0 }, newId });
-    expect(r.frames.map((f) => f.title)).toEqual(["Personnages", "a_setup", "Chapitre 1 · Une très longue arrivée au phare", "a_climax", "Chapitre 1 (suite)", "Idées"]);
+    expect(r.frames.map((f) => f.title).filter((t) => !["a_incident", "a_confrontation", "a_midpoint", "a_crisis", "a_resolution"].includes(t))).toEqual(["Personnages", "a_setup", "Chapitre 1 · Une très longue arrivée au phare", "a_climax", "Chapitre 1 (suite)", "Idées"]);
     const chapter = r.frames[2];
     expect(chapter.width).toBeGreaterThanOrEqual(Math.ceil(chapter.title.length * 8.5) + 120);
   });

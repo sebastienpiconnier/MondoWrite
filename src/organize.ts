@@ -73,7 +73,7 @@ export const typeColumns = (n: number) => (n <= 4 ? Math.max(1, n) : Math.ceil(M
 
 type Item =
   | { kind: "card"; id: string; width: number; height: number }
-  | { kind: "frame"; title: string; body: Layout }
+  | { kind: "frame"; title: string; body: Layout; beat?: string }
   | { kind: "box"; body: Layout }; // groupe sans cadre
 
 interface Layout {
@@ -131,7 +131,7 @@ function place(layout: Layout, x: number, y: number, out: OrganizeResult, newId:
     } else {
       const s = size(item);
       // Le cadre extérieur d'abord : il se dessine derrière ceux qu'il contient.
-      out.frames.push({ id: newId(), title: item.title, x: Math.round(ix), y: Math.round(iy), width: Math.round(s.width), height: Math.round(s.height) });
+      out.frames.push({ id: newId(), title: item.title, x: Math.round(ix), y: Math.round(iy), width: Math.round(s.width), height: Math.round(s.height), ...(item.beat ? { beat: item.beat } : {}) });
       place(item.body, ix + PAD.side, iy + PAD.top, out, newId);
     }
   });
@@ -204,13 +204,13 @@ function build({ cards, plan, sceneIds, labels }: OrganizeInput, perRow: number)
     story =
       groups.length === 0 ? [] : anyChapter ? inRows(groups) : [{ kind: "frame", title: labels.story, body: { items: groups.map((g) => g.item), columns: 1, gap: GAP } }];
   } else {
-    const placed = beats
-      .filter((b) => b.ids.length > 0)
-      .map((b) => {
-        const inner = chaptered(b.ids);
-        const item: Item = { kind: "frame", title: labels.beat(b.key), body: { items: inner.map((g) => g.item), columns: Math.max(1, inner.length), gap: GROUP_GAP } };
-        return { item, count: b.ids.length };
-      });
+    // Toutes les cases, même vides : le canevas montre la structure entière, trous compris, et l'on dépose
+    // une scène dans une case vide. Une case vide compte pour une scène dans la rangée.
+    const placed = beats.map((b) => {
+      const inner = chaptered(b.ids);
+      const item: Item = { kind: "frame", title: labels.beat(b.key), beat: b.key, body: { items: inner.map((g) => g.item), columns: Math.max(1, inner.length), gap: GROUP_GAP } };
+      return { item, count: Math.max(1, b.ids.length) };
+    });
     story = inRows(placed);
     if (unplaced.length > 0) {
       story.push({ kind: "frame", title: labels.unplaced, body: { items: unplaced.flatMap(cardItem), columns: sceneColumns(unplaced.length), gap: GAP } });

@@ -68,6 +68,7 @@
 /* Zone Recherche : le cadre où atterrissent les sources collées ou déposées. */
 .frame.is-research { border-color: var(--type-lien); border-style: solid; }
 .frame.is-research .frame-title { color: var(--type-lien); font-weight: 600; }
+.frame-empty { margin: 0 18px; color: var(--muted); font: italic 14px/1.4 var(--font-ui); }
 .frame-handle { pointer-events: all; display: flex; align-items: center; gap: 6px; width: max-content; max-width: 100%; padding: 8px 10px; cursor: grab; }
 .frame-handle:active { cursor: grabbing; }
 .frame-title { min-width: 10ch; max-width: 100%; min-height: 32px; padding: 0 8px; field-sizing: content; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: 500 16px var(--font-display); text-overflow: ellipsis; }

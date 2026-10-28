@@ -17,7 +17,7 @@ import { adoptPitchEpisodes } from "./episodes";
 import { type Manuscript } from "./manuscript";
 import { readGoals, readProgress, type Goals, type Progress } from "./stats";
 import { addQuestion, legacyParkedCards } from "./character";
-import { isEmptyPlan, prunePlan, readPlan, type Plan } from "./plan";
+import { isBeat, isEmptyPlan, prunePlan, readPlan, type Plan } from "./plan";
 import { storyScenes } from "./book";
 import { isEmptyPitch, readPitch, type Pitch } from "./pitch";
 import { readChutier, type Passage } from "./chutier";
@@ -31,7 +31,7 @@ import { allQuestionTexts, extractAnswers } from "./assistant";
 
 export type CardNode = Node<CardData, "card">;
 /** Cadre de regroupement sur le canevas. Tenu à part des cartes : toutes les vues lisent `nodes` sans s'en soucier. */
-export type FrameNode = Node<{ title: string; kind?: "research"; locked?: boolean }, "frame">;
+export type FrameNode = Node<{ title: string; kind?: "research"; locked?: boolean; beat?: string }, "frame">;
 
 export const FRAME_SIZE = { width: 520, height: 360 };
 /** Marge autour des cartes qu'un cadre entoure (plus haute en tête, pour son titre). */
@@ -41,7 +41,7 @@ export const toFrameNode = (frame: Frame): FrameNode => ({
   id: frame.id,
   type: "frame",
   position: { x: frame.x, y: frame.y },
-  data: { title: frame.title, ...(frame.kind === "research" ? { kind: "research" as const } : {}), ...(frame.locked ? { locked: true } : {}) },
+  data: { title: frame.title, ...(frame.kind === "research" ? { kind: "research" as const } : {}), ...(frame.locked ? { locked: true } : {}), ...(frame.beat ? { beat: frame.beat } : {}) },
   width: frame.width,
   height: frame.height,
   // Derrière les cartes ; l'intérieur laisse passer les clics (voir styles.css).
@@ -94,7 +94,7 @@ export function fromProject(p: Project) {
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
-    .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true }));
+    .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true, beat: typeof f.beat === "string" && isBeat(f.beat) ? f.beat : undefined }));
   return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
@@ -287,6 +287,7 @@ export function toProject(
                 height: Math.round(box.height),
                 ...(f.data.kind === "research" ? { kind: "research" as const } : {}),
                 ...(f.data.locked ? { locked: true } : {}),
+                ...(f.data.beat ? { beat: f.data.beat } : {}),
               };
             }),
           }

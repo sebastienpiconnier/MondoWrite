@@ -109,6 +109,8 @@ export interface Frame {
   /** Verrouillé : « Organiser » n'y touche pas (ni au cadre, ni aux cartes qu'il contient), et il ne se déplace,
    *  ne se redimensionne ni ne se supprime par mégarde. Écrit seulement quand il est vrai. */
   locked?: boolean;
+  /** Case du gabarit que ce cadre représente (posé par « Organiser ») : y déposer une scène l'y range. */
+  beat?: string;
 }
 
 /** Fil entre deux cartes, avec une étiquette libre ("soupçonne", "se passe à"…). */

@@ -7,6 +7,7 @@ import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { useCosmos, type FrameNode as FrameNodeT } from "../store";
 import { useT } from "../i18n";
 import { useLifted } from "../lifted";
+import { boxes, frameBox } from "../projectState";
 
 function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const t = useT().toile;
@@ -14,6 +15,19 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const deleteFrame = useCosmos((s) => s.deleteFrame);
   const toggleFrameLock = useCosmos((s) => s.toggleFrameLock);
   const locked = data.locked === true;
+  // Case du gabarit : vide tant qu'aucune carte n'a son centre dedans.
+  const empty = useCosmos((s) => {
+    if (!data.beat) return false;
+    const frame = s.frames.find((f) => f.id === id);
+    if (!frame) return false;
+    const box = frameBox(frame);
+    const sizes = boxes(s.nodes);
+    return !sizes.some((b) => {
+      const cx = b.x + b.width / 2;
+      const cy = b.y + b.height / 2;
+      return cx >= box.x && cx <= box.x + box.width && cy >= box.y && cy <= box.y + box.height;
+    });
+  });
   // Soulevé par un appui long dans la toile (Toile.tsx) ; perdre la sélection le repose, comme une carte.
   const lifted = useLifted((s) => s.id === id) && !!selected;
   useEffect(() => {
@@ -59,6 +73,8 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
           </button>
         )}
       </div>
+      {/* Case du gabarit encore vide : on voit le trou dans la structure, et où déposer une scène. */}
+      {empty && <p className="frame-empty">{t.beatEmpty}</p>}
     </div>
   );
 }

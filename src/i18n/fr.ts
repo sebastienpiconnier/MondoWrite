@@ -316,6 +316,7 @@ export const fr = {
     frameShort: "Cadre",
     addFrameHint: "Nouveau cadre, autour des cartes sélectionnées (touche C)",
     frameTitle: "Nom du cadre",
+    beatEmpty: "Rien encore ici. Dépose une scène dans ce cadre pour la ranger dans cette case.",
     frameTitleAria: "Nom du cadre",
     lockFrame: "Verrouiller le cadre",
     lockFrameHint: "Verrouiller : ce cadre et ses cartes ne bougent plus, même avec « Organiser »",

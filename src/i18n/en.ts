@@ -312,6 +312,7 @@ export const en: Messages = {
     frameShort: "Frame",
     addFrameHint: "New frame, around the selected cards (C key)",
     frameTitle: "Frame name",
+    beatEmpty: "Nothing here yet. Drop a scene in this frame to put it in this beat.",
     frameTitleAria: "Frame name",
     lockFrame: "Lock frame",
     lockFrameHint: "Lock: this frame and its cards stay put, even with “Organize”",

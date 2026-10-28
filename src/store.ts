@@ -34,6 +34,7 @@ import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./
 import { isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type SheetField } from "./character";
 import { EMPTY_PLAN, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
+import { placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
 import { setPitchField, type Pitch, type PitchField } from "./pitch";
@@ -69,6 +70,8 @@ interface CosmosState {
   setPlanTemplate: (template: PlanTemplate) => void;
   /** Range une scène dans une case du plan (à la fin, ou à la position donnée) ; `beat` null la sort du plan. */
   placeInPlan: (id: string, beat: string | null, index?: number) => void;
+  /** Range une scène dans une case du gabarit, roman (plan) ou scénario (section du Fountain). Annulable. */
+  placeInBeat: (id: string, beat: string, index?: number) => void;
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Scénario : le corps d'une scène (après son en-tête et son synopsis), écrit depuis sa carte agrandie. */
@@ -591,7 +594,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const result = organize({
       cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
       // Un scénario n'a pas de plan dans cosmos.json : ses scènes suivent le fichier Fountain, d'un seul tenant.
-      plan: kind === "scenario" ? EMPTY_PLAN : plan,
+      // Un scénario a son plan dans le fichier Fountain : ses sections de gabarit font les cases.
+      plan: kind === "scenario" ? screenplayPlan(get().screenplay?.elements ?? []) : plan,
       sceneIds: kind === "scenario" ? storyOrder(arranged) : planScenes(arranged),
       labels: {
         groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
@@ -662,6 +666,38 @@ export const useCosmos = create<CosmosState>((set, get) => {
     );
     if (moved.size === 0) return;
     set({ nodes: nodes.map((n) => (moved.has(n.id) ? { ...n, position: moved.get(n.id)! } : n)) });
+  };
+  /**
+   * Scènes lâchées à la main sur le canevas : celle qui tombe dans le cadre d'une case (posé par « Organiser »)
+   * y est rangée, à la place que donne sa position parmi les scènes de la case (lecture de gauche à droite,
+   * puis de haut en bas). Rien ne change si elle y était déjà à cette place.
+   */
+  const dropIntoBeats = (ids: Set<string>) => {
+    const { nodes, frames, kind, screenplay, plan } = get();
+    const beatFrames = frames.filter((f) => f.data.beat && !f.data.locked);
+    if (beatFrames.length === 0) return;
+    const held = heldCardIds(nodes, frames);
+    const story = new Set(planScenes(nodes));
+    const current = kind === "scenario" ? screenplayPlan(screenplay?.elements ?? []) : plan;
+    const sizes = boxes(nodes);
+    const center = new Map(nodes.map((n, i) => [n.id, { x: sizes[i].x + sizes[i].width / 2, y: sizes[i].y + sizes[i].height / 2, h: sizes[i].height, top: sizes[i].y + Math.min(40, sizes[i].height / 2) }]));
+    for (const id of ids) {
+      const c = center.get(id);
+      if (!c || !story.has(id) || held.has(id)) continue;
+      // On tient une carte par son en-tête : c'est lui qui dit dans quelle case elle tombe (une case vide
+      // est moins haute qu'une scène).
+      const frame = beatFrames.find((f) => insideBox(c.x, c.top, frameBox(f)));
+      const beat = frame?.data.beat;
+      if (!beat) continue;
+      const before = (o: { x: number; y: number }) => (Math.abs(o.y - c.y) > c.h / 2 ? o.y < c.y : o.x < c.x);
+      const others = (current.beats[beat] ?? []).filter((s) => s !== id && story.has(s));
+      const index = others.filter((s) => {
+        const o = center.get(s);
+        return o ? before(o) : false;
+      }).length;
+      if ((current.beats[beat] ?? []).filter((s) => story.has(s)).indexOf(id) === index) continue;
+      get().placeInBeat(id, beat, index);
+    }
   };
   /** Cartes et cadres du canevas : une nouvelle carte ne se pose sur aucun d'eux. */
   const occupied = (nodes: CardNode[] = get().nodes, frames: FrameNode[] = get().frames): Occupied => ({ cards: boxes(nodes), frames: frames.map(frameBox) });
@@ -1380,6 +1416,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       followStory();
       touch();
     },
+    placeInBeat: (id, beat, index) => {
+      const { kind, screenplay } = get();
+      if (kind !== "scenario") return get().placeInPlan(id, beat, index);
+      if (!screenplay) return;
+      const elements = placeSceneInBeat(screenplay.elements, id, beat, index);
+      if (elements === screenplay.elements) return;
+      get().setScreenplay({ ...screenplay, elements }, true);
+    },
     placeInPlan: (id, beat, index) => {
       const plan = placeScene(get().plan, planScenes(get().nodes), id, beat, index);
       if (plan === get().plan) return;
@@ -1978,6 +2022,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (carried.size > 0) nextFrames = nextFrames.map((f) => (carried.has(f.id) ? { ...f, position: carried.get(f.id)! } : f));
       set({ nodes: nextNodes, frames: nextFrames, screenplay, ...(trashed ? { edges: trashed.edges, trash: trashed.trash, trashNotice: trashed.trashNotice } : {}) });
       if (changed) touch();
+      // Une scène déposée dans le cadre d'une case du gabarit y est rangée, à la place où on l'a lâchée.
+      if (placed.size > 0) dropIntoBeats(placed);
     },
     onEdgesChange: (changes) => {
       if (changes.some((c) => c.type === "remove")) record();

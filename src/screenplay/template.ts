@@ -6,7 +6,7 @@
 
 import type { Screenplay, ScreenplayElement } from "./model";
 import { blocks, moveBlock } from "./sequence";
-import { PLAN_TEMPLATES, type PlanTemplate } from "../plan";
+import { EMPTY_PLAN, PLAN_TEMPLATES, type Plan, type PlanTemplate } from "../plan";
 
 /** Gabarits proposés pour un scénario, dans l'ordre du menu. */
 export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences", "episode"] as const satisfies readonly PlanTemplate[];
@@ -69,4 +69,50 @@ export function sectionOf(elements: ScreenplayElement[], block: number): number 
   const list = blocks(elements);
   for (let i = Math.min(block, list.length - 1); i >= 0; i--) if (list[i].kind === "section") return i;
   return -1;
+}
+
+/**
+ * Plan d'un scénario lu dans ses sections, comme celui d'un roman : le gabarit en place et, pour chaque case,
+ * les cartes de ses scènes dans l'ordre du fichier. Une scène placée avant la première case n'est dans
+ * aucune (elle sera « À placer ») ; une section de l'auteur ne change pas de case. Sans gabarit : plan libre.
+ * Sert au canevas (« Organiser », cadres des cases), jamais écrit dans cosmos.json.
+ */
+export function screenplayPlan(elements: ScreenplayElement[]): Plan {
+  const template = currentTemplate(elements);
+  if (!template) return EMPTY_PLAN;
+  const keys = new Set<string>(PLAN_TEMPLATES[template]);
+  const beats: Record<string, string[]> = {};
+  let beat: string | null = null;
+  for (const el of elements) {
+    if (el.type === "section") {
+      const key = beatOf(el.text);
+      if (key && keys.has(key)) beat = key;
+    } else if (el.type === "sceneHeading" && el.cardId && beat) {
+      (beats[beat] ??= []).push(el.cardId);
+    }
+  }
+  return { template, beats };
+}
+
+/**
+ * Range la scène de la carte `cardId` dans la case `beat` (section du gabarit), à la place `index` parmi les
+ * scènes de cette case (à la fin sans index). Les sections de l'auteur à l'intérieur de la case sont
+ * enjambées. Même tableau si rien ne bouge ou si la scène ou la case n'existent pas.
+ */
+export function placeSceneInBeat(elements: ScreenplayElement[], cardId: string, beat: string, index?: number): ScreenplayElement[] {
+  const list = blocks(elements);
+  const from = list.findIndex((b) => b.kind === "scene" && b.cardId === cardId);
+  const section = list.findIndex((b) => b.kind === "section" && beatOf(b.text) === beat);
+  if (from < 0 || section < 0) return elements;
+  const isBeatSection = (i: number) => list[i].kind === "section" && beatOf(list[i].text) !== null;
+  let next = section + 1;
+  while (next < list.length && !isBeatSection(next)) next++;
+  const inside: number[] = [];
+  for (let i = section + 1; i < next; i++) if (list[i].kind === "scene" && i !== from) inside.push(i);
+  const order = list.map((_, i) => i).filter((i) => i !== from);
+  const at = index !== undefined && index >= 0 && index < inside.length ? order.indexOf(inside[index]) : next < list.length ? order.indexOf(next) : order.length;
+  order.splice(at, 0, from);
+  if (order.every((v, i) => v === i)) return elements;
+  const head = elements.slice(0, list[0].start);
+  return head.concat(...order.map((i) => elements.slice(list[i].start, list[i].end)));
 }
