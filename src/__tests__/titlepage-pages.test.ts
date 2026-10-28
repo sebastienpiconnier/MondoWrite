@@ -132,6 +132,15 @@ describe("découpage en pages", () => {
     expect(LAYOUTS.letter.linesPerPage + 6).toBeLessThanOrEqual(LAYOUTS.letter.pageLines);
   });
 
+  it("une suite de réplique qui ouvre une page y prend une ligne de plus (le nom et SUITE)", () => {
+    const cont: PageItem = { height: 6, margin: 0, keep: 0, cont: true };
+    expect(layoutPages([item(50), cont, item(2)], 55)).toEqual({
+      breaks: [{ index: 1, rest: 5, page: 2 }],
+      tail: 55 - (1 + 6 + 1 + 2),
+      pages: 2,
+    });
+  });
+
   it("tout tient sur une page : pas de coupure, le bas de page reste", () => {
     expect(layoutPages([item(1), item(3), item(2)], 55)).toEqual({ breaks: [], tail: 47, pages: 1 });
     expect(layoutPages([], 55)).toEqual({ breaks: [], tail: 55, pages: 1 });

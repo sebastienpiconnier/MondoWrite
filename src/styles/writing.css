@@ -759,3 +759,35 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .carnet-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; font-size: 1rem; line-height: 1.3; }
 .carnet-item-actions { display: flex; align-items: center; gap: 2px; flex: none; }
 .carnet-item-actions .ghost-button { min-height: 44px; }
+
+/* Fenêtre « Aller à » (GoToPanel) : un champ, puis la liste des endroits trouvés. */
+.app-dialog.is-goto { width: min(560px, calc(100vw - 32px)); }
+.goto h2 { margin: 0 0 12px; }
+.goto-input { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 1rem var(--font-ui); }
+.goto-input::placeholder { color: var(--placeholder); }
+.goto-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.goto-hint, .goto-empty { margin: 6px 0 0; font-size: 0.8125rem; color: var(--ink-2); }
+.goto-list { list-style: none; margin: 10px 0 0; padding: 0; max-height: min(50dvh, 420px); overflow: auto; }
+.goto-item { display: grid; grid-template-columns: 7.5em minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.goto-item.is-active { background: var(--accent-soft); }
+.goto-kind { font-size: 0.75rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.goto-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goto-detail { grid-column: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; color: var(--ink-2); }
+.goto-page { grid-column: 3; grid-row: 1; font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
+
+/* Lecture à voix haute (ReaderBar) : boutons dans la barre, panneau des voix, bloc lu surligné. */
+.reader { position: relative; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.reader .reader-voices { min-width: 0; padding-inline: 10px; }
+@media (pointer: coarse) { .reader .reader-voices { min-width: 44px; } }
+.reader-panel { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: min(340px, calc(100vw - 32px)); max-height: min(70dvh, 520px); overflow: auto; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; gap: 10px; text-align: left; font: 0.875rem var(--font-ui); }
+.reader-title { margin: 0; font-size: 1rem; }
+.reader-row { display: flex; align-items: flex-end; gap: 6px; }
+.reader-field { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.reader-field select { min-height: 44px; width: 100%; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.reader-field input[type="range"] { width: 100%; min-height: 32px; accent-color: var(--accent); }
+.reader-try { flex: none; width: 44px; height: 44px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.reader-try:disabled { opacity: 0.45; cursor: default; }
+.reader-check { display: flex; gap: 8px; align-items: center; min-height: 32px; }
+.reader-speakers { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.reader-hint, .reader-empty { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
+.is-reading { background: var(--accent-soft); box-shadow: 0 0 0 0.25em var(--accent-soft); border-radius: 0.2em; }

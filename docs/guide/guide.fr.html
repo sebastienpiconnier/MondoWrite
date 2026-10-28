@@ -113,6 +113,7 @@
 <ul>
   <li><strong>Word (<code>.docx</code>), Markdown (<code>.md</code>) ou texte (<code>.txt</code>)</strong> : un projet roman. Les chapitres sont reconnus (titres Word, « Chapitre 3 », numéros seuls, sauts de page), les séparateurs comme <code>* * *</code> coupent les scènes, et le titre et « par Untel » en tête deviennent le titre du projet. Un prologue ou un épilogue d’une seule scène devient une page du livre.</li>
   <li><strong>Fountain (<code>.fountain</code>) ou Final Draft (<code>.fdx</code>)</strong> : un projet scénario, avec ses cartes Scène, Personnage et Décor. Un fichier texte qui contient au moins deux en-têtes de scène (INT., EXT.) est aussi lu comme un scénario.</li>
+  <li><strong>PDF (<code>.pdf</code>)</strong> : un scénario s’il contient des en-têtes de scène, sinon un roman. Pour un scénario, chaque élément est reconnu à son retrait (en-tête, action, personnage, didascalie, dialogue, transition) ; les numéros de page, les (À SUIVRE) et (SUITE) ajoutés par le logiciel d’origine sont retirés, et une réplique coupée par la page est recollée. Pour un roman, les paragraphes sont retrouvés à leurs alinéas, les titres à leur corps plus grand, et les titres courants, folios et lettrines sont mis de côté. Un PDF scanné (des images, sans texte) ne peut pas être importé. Relis le résultat : un PDF ne garde pas la structure d’origine, seulement sa mise en page.</li>
 </ul>
 <p>L’import se fait toujours dans un dossier vide : il ne remplace jamais un projet existant.</p>
 
@@ -515,6 +516,13 @@
 <p><span class="ui">Renommer partout…</span> (menu ⋯ d’une carte) ne remplace que le nom tel que tu l’as écrit, ou en capitales : un personnage nommé Rose ne change jamais « la rose ». Si le nom est aussi un mot de ton texte (Will, Hope, Pierre…), MondoWrite le signale et décoche les occurrences en début de phrase, où le mot et le nom s’écrivent pareil : relis-les avant de renommer.</p>
 <figure class="small"><img src="images/fr/remplacer.jpg"><figcaption>Rechercher et remplacer.</figcaption></figure>
 
+<h3>Aller à une page, une scène, un chapitre</h3>
+<p><span class="ui">Aller à…</span> (<kbd>Ctrl</kbd> <kbd>G</kbd>, dans la barre du Manuscrit et du Scénario, et depuis n’importe quelle vue) ouvre une petite fenêtre : tape un numéro pour aller à cette page, ou à la scène qui porte ce numéro dans un scénario (au chapitre de ce numéro dans un roman), ou un mot du titre d’une scène, d’un chapitre, d’un synopsis. Les passages « à reprendre » du manuscrit et les notes <code>[[…]]</code> du scénario y sont aussi. <kbd>Entrée</kbd> emmène au premier endroit trouvé, les flèches en choisissent un autre.</p>
+
+<h3>Écouter son texte</h3>
+<p><span class="ui">Écouter</span> lit le texte à voix haute à partir de l’endroit où tu es, avec les voix installées sur l’appareil (rien ne part en ligne) : dans un scénario, le narrateur lit les en-têtes, l’action et les transitions, et chaque personnage dit ses répliques avec sa propre voix ; dans un roman, le narrateur lit tout, jusqu’à la fin du livre. Le passage lu est surligné et la page le suit. <span class="ui">Pause</span>, <span class="ui">Reprendre</span> et <span class="ui">Arrêter</span> remplacent le bouton pendant la lecture ; taper dans le texte l’arrête aussi.</p>
+<p>La flèche à côté d’<span class="ui">Écouter</span> ouvre le choix des voix : celle du narrateur, celle de chaque personnage (sinon une voix est choisie pour lui, toujours la même), la vitesse, et, pour un scénario, la lecture des didascalies. Ces choix restent sur l’appareil, puisque les voix ne sont pas les mêmes d’un appareil à l’autre.</p>
+
 <h3>Vérifier le texte</h3>
 <p>Le bouton <span class="ui">Vérifier</span> de la barre (avec le nombre de points trouvés) ouvre l’onglet du même nom dans la colonne de droite, à côté de <span class="ui">Dans cette scène</span>. Il signale ce qui mérite un coup d’œil, sans jamais rien corriger : un nom écrit presque comme celui d’une fiche (« Inés » pour « Inès »), deux espaces de suite, une espace avant une virgule ou un point. Touche un point pour aller au passage, sélectionné dans le texte. <span class="ui">Renommer partout…</span> ouvre « Rechercher et remplacer » avec le bon nom ; <span class="ui">Ignorer</span> retire le point de la liste jusqu’à la fermeture de l’app.</p>
 <p>Il pose aussi des questions sur l’histoire, jamais des erreurs : le personnage marqué principal n’est pas celui qu’on voit dans le plus de scènes (« Qui suit-on vraiment ? ») ; un personnage principal n’a pas rempli sa case « Veut » ; une série n’a pas encore d’épisode ; un secret n’a pas de révélation prévue, ou éclate sans indice semé avant ; un objet n’est nommé que dans une seule scène (posé sans servir, ou qui sert sans avoir été posé). Touche la question pour ouvrir la fiche ; <span class="ui">C’est voulu</span> l’écarte.</p>
@@ -677,6 +685,7 @@
 <ul>
   <li><span class="ui">Contenu</span> : <span class="ui">Tout le scénario</span>, ou <span class="ui">Le texte d’un personnage</span>. Pour un comédien : seulement ses scènes, ses répliques surlignées, et les scènes gardent leur numéro du scénario entier (pour parler de « la 12 » avec l’équipe).</li>
   <li><span class="ui">Imprimer aussi</span> : la page de titre, les synopsis des scènes, les sections et cases du gabarit, tes notes <code>[[…]]</code>, en gris. Tout décoché (sauf la page de titre), c’est le format standard, celui qu’on envoie.</li>
+  <li><span class="ui">(À SUIVRE) et (SUITE)</span> : quand une réplique passe à la page suivante (coché par défaut), et quand un personnage reprend la parole après une action, dans la même scène (« HUGO (SUITE) »). Ces deux réglages valent aussi pour la feuille à l’écran, et se retrouvent dans <span class="ui">Réglages</span> › <span class="ui">Ce projet</span>. À l’écran, un nom n’est jamais laissé seul en bas d’une page : il passe à la suivante avec sa réplique.</li>
   <li><span class="ui">Sur chaque page</span> : un <span class="ui">En-tête</span> en haut à gauche, où <code>{date}</code>, <code>{titre}</code> et <code>{auteur}</code> sont remplacés à l’export (« Version 3 · {date} »), et un <span class="ui">Filigrane</span> en travers de la page (« Confidentiel »). Le numéro de page reste en haut à droite.</li>
 </ul>
 <p>Ces choix sont gardés dans le projet : la prochaine fois, la fenêtre s’ouvre telle que tu l’as laissée.</p>
@@ -792,6 +801,7 @@
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>F</kbd></td><td>Rechercher une carte ou un passage</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></td><td>Zoom de la page (Manuscrit, Scénario) : agrandir, réduire, taille normale</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>H</kbd></td><td>Rechercher et remplacer dans le texte</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>G</kbd></td><td>Aller à une page, une scène, un chapitre</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>L</kbd></td><td>À faire</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>S</kbd></td><td>Enregistrer</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Z</kbd> · <kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>Z</kbd></td><td>Annuler · Rétablir</td></tr>

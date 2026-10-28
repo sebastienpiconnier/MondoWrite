@@ -16,6 +16,7 @@ import { ExpandedCard } from "./ExpandedCard";
 import { ReplacePanel } from "./ReplacePanel";
 import { PaperbackPanel } from "./PaperbackPanel";
 import { StatsPanel } from "./StatsPanel";
+import { GoToPanel } from "./GoToPanel";
 import { ScriptPdfPanel } from "./ScriptPdfPanel";
 import { BibleExportDialog } from "./BibleExportDialog";
 
@@ -48,7 +49,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -91,6 +92,7 @@ export function Dialogs() {
       {dialog === "replace" && <ReplacePanel />}
       {dialog === "paperback" && <PaperbackPanel />}
       {dialog === "stats" && <StatsPanel />}
+      {dialog === "goto" && <GoToPanel />}
       {dialog === "scriptPdf" && <ScriptPdfPanel />}
       {dialog === "bibleExport" && <BibleExportDialog />}
       {dialog === "document" && <DocumentViewer />}

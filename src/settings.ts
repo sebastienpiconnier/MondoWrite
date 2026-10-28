@@ -1,6 +1,7 @@
 // Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
+import { readReading, type ReadingSettings } from "./reading";
 import { applyWritingAids, isSpellcheckMode, type SpellcheckMode } from "./writingAids";
 import { isTypographySetting, type TypographySetting } from "./typography";
 import { isFocusHighlight, type FocusHighlight } from "./focusText";
@@ -133,6 +134,9 @@ interface SettingsState {
   photos: PhotoSettings;
   setPhotoKey: (source: "pixabay" | "unsplash", key: string) => void;
   setPhotoSource: (source: PhotoSourceId) => void;
+  /** Lecture à voix haute : voix du narrateur et des personnages (voix de cet appareil), vitesse. */
+  reading: ReadingSettings;
+  setReading: (patch: Partial<ReadingSettings>) => void;
   /** Mises à jour de l'app : vérification au lancement (une fois par jour au plus), dernière vérification. */
   updates: UpdateSettings;
   setUpdates: (updates: Partial<UpdateSettings>) => void;
@@ -164,7 +168,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -211,6 +215,8 @@ export const useSettings = create<SettingsState>((set) => ({
   photos: readPhotos(saved.photos),
   setPhotoKey: (source, key) => set((s) => ({ photos: { ...s.photos, keys: { ...s.photos.keys, [source]: cleanKey(key) } } })),
   setPhotoSource: (source) => set((s) => ({ photos: { ...s.photos, source } })),
+  reading: readReading(saved.reading),
+  setReading: (patch) => set((s) => ({ reading: readReading({ ...s.reading, ...patch }) })),
   updates: readUpdates(saved.updates),
   setUpdates: (updates) => set((s) => ({ updates: { ...s.updates, ...updates } })),
 }));
@@ -226,7 +232,7 @@ const contrastQuery = () => (typeof window !== "undefined" ? window.matchMedia?.
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -238,7 +244,7 @@ export function initSettings() {
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

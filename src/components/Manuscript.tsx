@@ -25,6 +25,10 @@ import { fmt, useT } from "../i18n";
 import { checkManuscript, type Finding } from "../review/checks";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
 import { useCommand } from "../commands";
+import { ReaderBar } from "./ReaderBar";
+import { startReading } from "./useReader";
+import { proseUtterances, type ReadNode } from "../reading";
+import { sceneAt, sceneGroups } from "../bookDoc";
 import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
@@ -199,6 +203,20 @@ export function Manuscript() {
   const chapterName = (chapter: Chapter) => {
     const n = numbers.get(chapter.id) ?? 0;
     return chapter.title.trim() ? fmt(t.chapters.numberedTitle, { n, title: chapter.title.trim() }) : fmt(t.chapters.numbered, { n });
+  };
+
+  // Lecture à voix haute : à partir du curseur s'il est dans la scène en cours, sinon du début de cette scène,
+  // et jusqu'à la fin du livre.
+  const startListening = () => {
+    const ed = bookApi.current?.editor();
+    if (!ed) return;
+    const nodes: ReadNode[] = [];
+    ed.state.doc.forEach((node) => nodes.push({ type: node.type.name, text: node.textContent }));
+    const groups = sceneGroups(ed.state.doc);
+    const scene = groups.find((g) => g.id === current);
+    const here = sceneAt(groups, ed.state.selection.from);
+    const from = here && here.id === current ? ed.state.selection.$from.index(0) : (scene?.first ?? 0);
+    startReading(ed, proseUtterances(nodes, from));
   };
 
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
@@ -607,6 +625,10 @@ export function Manuscript() {
             <button type="button" className="ghost-button ms-start-chapter" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onClick={() => useCosmos.getState().openReplace({ sceneId: current })}>
               {t.replace.button}
             </button>
+            <button type="button" className="ghost-button ms-start-chapter" title={t.goto.buttonHint} aria-keyshortcuts="Control+G Meta+G" onClick={() => useCosmos.getState().setDialog("goto")}>
+              {t.goto.button}
+            </button>
+            <ReaderBar buttonClass="ghost-button ms-start-chapter" onStart={startListening} />
             <button type="button" className="ghost-button ms-start-chapter" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onClick={openReview}>
               {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
             </button>

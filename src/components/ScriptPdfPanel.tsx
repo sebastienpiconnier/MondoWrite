@@ -54,9 +54,11 @@ export function ScriptPdfPanel() {
         sections: options.sections,
         notes: options.notes,
         character: options.character,
+        breaks: options.breaks,
+        resumes: options.resumes,
       })[0] ?? null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [elements, layout, lang, sceneNumbers, underlineHeadings, options.synopsis, options.sections, options.notes, options.character],
+    [elements, layout, lang, sceneNumbers, underlineHeadings, options.synopsis, options.sections, options.notes, options.character, options.breaks, options.resumes],
   );
 
   const set = (patch: Partial<ScriptPrint>) => {
@@ -137,6 +139,19 @@ export function ScriptPdfPanel() {
             </label>
           ))}
           <p className="spdf-hint">{k.standardHint}</p>
+        </fieldset>
+        {/* (À SUIVRE) et (SUITE) : aussi sur la feuille à l'écran, même réglage. */}
+        <fieldset>
+          <legend>{k.continued}</legend>
+          <label className="spdf-choice">
+            <input type="checkbox" checked={options.breaks} onChange={(e) => set({ breaks: e.target.checked })} />
+            {k.breaks}
+          </label>
+          <label className="spdf-choice">
+            <input type="checkbox" checked={options.resumes} onChange={(e) => set({ resumes: e.target.checked })} />
+            {k.resumes}
+          </label>
+          <p className="spdf-hint">{k.continuedHint}</p>
         </fieldset>
         <fieldset>
           <legend>{k.onEachPage}</legend>

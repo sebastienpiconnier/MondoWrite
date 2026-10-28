@@ -113,6 +113,7 @@
 <ul>
   <li><strong>Word (<code>.docx</code>), Markdown (<code>.md</code>) or text (<code>.txt</code>)</strong>: a novel project. Chapters are recognised (Word headings, “Chapter 3”, bare numbers, page breaks), separators such as <code>* * *</code> split scenes, and a title and “by So-and-so” at the top become the project title. A prologue or epilogue of a single scene becomes a book page.</li>
   <li><strong>Fountain (<code>.fountain</code>) or Final Draft (<code>.fdx</code>)</strong>: a screenplay project, with its Scene, Character and Location cards. A text file with at least two scene headings (INT., EXT.) is also read as a screenplay.</li>
+  <li><strong>PDF (<code>.pdf</code>)</strong>: a screenplay if it holds scene headings, otherwise a novel. For a screenplay, each element is recognised by its indent (scene heading, action, character, parenthetical, dialogue, transition); page numbers, and the (MORE) and (CONT’D) added by the original software, are removed, and a speech split by a page break is joined again. For a novel, paragraphs are found by their first-line indents, headings by their larger size, and running heads, page numbers and drop caps are set aside. A scanned PDF (images, no text) cannot be imported. Read the result through: a PDF keeps the layout, not the original structure.</li>
 </ul>
 <p>An import always goes into an empty folder: it never replaces an existing project.</p>
 
@@ -515,6 +516,13 @@
 <p><span class="ui">Rename everywhere…</span> (a card’s ⋯ menu) only replaces the name as you wrote it, or in capitals: a character called Rose never changes “the sun rose”. If the name is also an ordinary word in your text (Will, Hope, Grace…), MondoWrite says so and unchecks the matches at the start of a sentence, where the word and the name look the same: read them before renaming.</p>
 <figure class="small"><img src="images/en/remplacer.jpg"><figcaption>Find and replace.</figcaption></figure>
 
+<h3>Go to a page, a scene, a chapter</h3>
+<p><span class="ui">Go to…</span> (<kbd>Ctrl</kbd> <kbd>G</kbd>, in the Manuscript and Screenplay bars, and from any view) opens a small window: type a number to go to that page, or to the scene with that number in a screenplay (the chapter with that number in a novel), or a word from the title of a scene, a chapter or a synopsis. The manuscript’s “to revisit” passages and the screenplay’s <code>[[…]]</code> notes are there too. <kbd>Enter</kbd> takes you to the first place found; the arrows pick another one.</p>
+
+<h3>Listen to your text</h3>
+<p><span class="ui">Listen</span> reads the text aloud from where you are, with the voices installed on the device (nothing goes online): in a screenplay, the narrator reads scene headings, action and transitions, and each character speaks their lines in their own voice; in a novel, the narrator reads everything, to the end of the book. The passage being read is highlighted and the page follows it. <span class="ui">Pause</span>, <span class="ui">Resume</span> and <span class="ui">Stop</span> replace the button while reading; typing in the text stops it too.</p>
+<p>The arrow next to <span class="ui">Listen</span> opens the choice of voices: the narrator’s, each character’s (otherwise a voice is picked for them, always the same one), the speed and, for a screenplay, whether to read parentheticals. These choices stay on the device, since voices differ from one device to another.</p>
+
 <h3>Check the text</h3>
 <p>The <span class="ui">Check</span> button in the bar (with the number of items found) opens the tab of the same name in the right column, next to <span class="ui">In this scene</span>. It points out what deserves a look, without ever correcting anything: a name spelled almost like an entry’s (“Inés” for “Inès”), two spaces in a row, a space before a comma or a period. Touch an item to go to the passage, selected in the text. <span class="ui">Rename everywhere…</span> opens “Find and replace” with the right name; <span class="ui">Ignore</span> removes the item from the list until the app is closed.</p>
 <p>It also asks questions about the story, never errors: the character marked as main is not the one seen in the most scenes (“Who do we really follow?”); a main character has not filled in their “Wants” box; a series has no episode yet; a secret has no planned reveal, or comes out with no clue planted before; an object is named in only one scene (set up without paying off, or paying off without being set up). Touch the question to open the profile; <span class="ui">It’s intended</span> sets it aside.</p>
@@ -677,6 +685,7 @@
 <ul>
   <li><span class="ui">Content</span>: <span class="ui">The whole screenplay</span>, or <span class="ui">One character’s part</span>. For an actor: only their scenes, their lines highlighted, and the scenes keep their number from the whole screenplay (to talk about “scene 12” with the crew).</li>
   <li><span class="ui">Also print</span>: the title page, scene synopses, sections and template beats, your <code>[[…]]</code> notes, in gray. All unchecked (except the title page), it’s the standard format, the one you send.</li>
+  <li><span class="ui">(MORE) and (CONT’D)</span>: when a speech runs onto the next page (checked by default), and when a character speaks again after action in the same scene (“HUGO (CONT’D)”). Both settings also apply to the on-screen page, and are in <span class="ui">Settings</span> › <span class="ui">This project</span> too. On screen, a character name is never left alone at the bottom of a page: it moves to the next one with its speech.</li>
   <li><span class="ui">On every page</span>: a <span class="ui">Header</span> at the top left, where <code>{date}</code>, <code>{title}</code> and <code>{author}</code> are filled in on export (“Draft 3 · {date}”), and a <span class="ui">Watermark</span> across the page (“Confidential”). The page number stays at the top right.</li>
 </ul>
 <p>These choices are kept in the project: next time, the window opens as you left it.</p>
@@ -792,6 +801,7 @@
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>F</kbd></td><td>Search for a card or a passage</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></td><td>Page zoom (Manuscript, Screenplay): in, out, normal size</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>H</kbd></td><td>Find and replace in the text</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>G</kbd></td><td>Go to a page, a scene, a chapter</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd></td><td>To do</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>S</kbd></td><td>Save</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Z</kbd> · <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd></td><td>Undo · Redo</td></tr>

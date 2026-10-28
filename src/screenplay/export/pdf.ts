@@ -38,6 +38,9 @@ export interface PdfOptions {
   header?: string;
   /** Grand texte en travers de chaque page. */
   watermark?: string;
+  /** (À SUIVRE) / (SUITE) aux coupures de réplique (oui par défaut), et (SUITE) quand un personnage reprend. */
+  breaks?: boolean;
+  resumes?: boolean;
 }
 
 const GRAY = rgb(0.38, 0.38, 0.38);
@@ -108,6 +111,8 @@ export async function buildPdf(
     sections: options.sections,
     notes: options.notes,
     character: options.character,
+    breaks: options.breaks,
+    resumes: options.resumes,
   });
   for (const page of pages) draw(page.lines, page.number);
   // Un PDF sans page n'est pas valide : scénario vide, une feuille blanche.

@@ -15,6 +15,7 @@ import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
 import { BookKeys, BookUndo, BookStructure, SceneMark, type BookHandlers } from "./bookExtensions";
 import { Pages } from "../screenplay/editor/pages";
+import { ReadingMark } from "./readingMark";
 import { SCENE_MARK, bookBlocks, changedRange, composeBook, sceneAt, sceneGroups, structureSignature } from "../bookDoc";
 import { isBlank } from "../manuscript";
 import { isPageKind } from "../book";
@@ -45,6 +46,8 @@ export interface BookApi {
   putBack: (passage: Passage, fallback: string | null) => "exact" | "near" | "elsewhere" | null;
   /** Sélectionne un passage du texte d'une scène (onglet « Vérifier ») ; faux s'il n'est pas trouvé tel quel. */
   selectText: (id: string, needle: string) => boolean;
+  /** L'éditeur du livre (lecture à voix haute). */
+  editor: () => Editor | null;
 }
 
 /** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
@@ -154,6 +157,7 @@ export function BookEditor({
     extensions: [
       ...richTextExtensions({ link: false }),
       SceneMark,
+      ReadingMark,
       BookStructure,
       // Texte indicatif dans une scène encore vide, selon la scène (dédicace, prologue, synopsis…).
       Placeholder.configure({
@@ -366,6 +370,7 @@ export function BookEditor({
   // Interface demandée par Manuscript : défiler jusqu'à une scène, y placer le curseur.
   useEffect(() => {
     api.current = {
+      editor: () => (editorRef.current && !editorRef.current.isDestroyed ? editorRef.current : null),
       scrollToScene: (id) => {
         lastGo.current = Date.now();
         editorRef.current?.view.dom.querySelector(`[data-scene-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "start" });

@@ -173,8 +173,8 @@ interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -459,7 +459,7 @@ const insideBox = (x: number, y: number, b: { x: number; y: number; width: numbe
  * Cartes tenues par un cadre verrouillé (leur centre est dedans) : elles ne bougent plus, ni à la main
  * ni par « Organiser ». On peut toujours les modifier, les relier ou les supprimer.
  */
-/** Scène du scénario sans carte : « @12 » vise l'en-tête au rang 12 (un identifiant de carte n'a jamais de @). */
+/** Endroit du scénario sans carte : « @12 » vise l'élément au rang 12 (en-tête, note, page) ; un identifiant de carte n'a jamais de @. */
 export const SCENE_AT = "@";
 
 export function heldCardIds(nodes: CardNode[], frames: FrameNode[]): Set<string> {

@@ -10,7 +10,7 @@ import { parse } from "../parse";
 import { exportScreenplay, fileName } from "../export";
 import { buildFdx } from "../export/fdx";
 import { buildPdf } from "../export/pdf";
-import { printable, typeset, typesetTitlePage } from "../export/typeset";
+import { hasContd, printable, resumedCues, typeset, typesetTitlePage } from "../export/typeset";
 import courtFr from "./fixtures/court-fr.fountain?raw";
 import torture from "./fixtures/torture.fountain?raw";
 
@@ -99,6 +99,40 @@ describe("composition en pages", () => {
     expect(first[first.length - 1]).toEqual({ row: 54, column: 22, text: "(À SUIVRE)" });
     expect(pages[1].lines[0]).toEqual({ row: 0, column: 22, text: "HUGO (SUITE)" });
     expect(pages[1].lines.map((l) => l.text).slice(1)).toEqual(["Ligne 5.", "Ligne 6.", "Ligne 7.", "Ligne 8.", "Ligne 9.", "Ligne 10."]);
+  });
+
+  it("(À SUIVRE) et (SUITE) décochés : la réplique coupée garde son nom en haut, sans mention", () => {
+    const speech: ScreenplayElement[] = [
+      { type: "character", text: "Hugo" },
+      { type: "dialogue", text: Array.from({ length: 10 }, (_, i) => `Ligne ${i + 1}.`).join("\n") },
+    ];
+    const pages = typeset([block(48), ...speech], letter, "fr", strings, { breaks: false });
+    const all = pages.flatMap((p) => p.lines.map((l) => l.text));
+    expect(all).not.toContain("(À SUIVRE)");
+    expect(pages[1].lines[0]).toEqual({ row: 0, column: 22, text: "HUGO" });
+  });
+
+  it("un personnage qui reprend après une action dans la même scène : (SUITE) après son nom", () => {
+    const els: ScreenplayElement[] = [
+      { type: "sceneHeading", text: "INT. PHARE - NUIT" },
+      { type: "character", text: "INÈS" },
+      { type: "dialogue", text: "Tu entends ?" },
+      { type: "action", text: "Le vent." },
+      { type: "character", text: "INÈS" },
+      { type: "dialogue", text: "Encore." },
+      { type: "character", text: "YANN" },
+      { type: "dialogue", text: "Rien." },
+      { type: "character", text: "INÈS (SUITE)" },
+      { type: "dialogue", text: "Déjà écrit." },
+      { type: "sceneHeading", text: "EXT. CÔTE - NUIT" },
+      { type: "character", text: "YANN" },
+      { type: "dialogue", text: "Viens." },
+    ];
+    expect([...resumedCues(els)]).toEqual([4]);
+    const names = (o: Parameters<typeof typeset>[4]) => typeset(els, letter, "fr", strings, o).flatMap((p) => p.lines.filter((l) => l.column === 22).map((l) => l.text));
+    expect(names({})).toEqual(["INÈS", "INÈS", "YANN", "INÈS (SUITE)", "YANN"]);
+    expect(names({ resumes: true })).toEqual(["INÈS", "INÈS (SUITE)", "YANN", "INÈS (SUITE)", "YANN"]);
+    expect(hasContd("HUGO (CONT'D)", "(SUITE)")).toBe(true);
   });
 
   it("pas la place de commencer une réplique : elle passe entière à la page suivante", () => {

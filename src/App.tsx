@@ -142,6 +142,12 @@ export function App() {
         setWriting({ ...writing, zoom: nextZoom(writing.zoom, zoomStep) });
         return;
       }
+      // Cmd/Ctrl + G : aller à une page, une scène, un chapitre (Manuscrit ou Scénario), depuis n'importe quelle vue.
+      if (key === "g" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        useCosmos.getState().setDialog("goto");
+        return;
+      }
       if (digit && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         useCosmos.getState().setView(views[Number(digit) - 1]);

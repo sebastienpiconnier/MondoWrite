@@ -85,6 +85,8 @@ async function buildMenu() {
         enabled: inProject,
         action: () => replayShortcut("H", "KeyH", true),
       }),
+      // Aller à une page, une scène, un chapitre (fenêtre « Aller à »).
+      await MenuItem.new({ id: "goto", text: m.goto, accelerator: "CmdOrCtrl+G", enabled: inProject, action: () => useCosmos.getState().setDialog("goto") }),
       // Onglet « Vérifier » du Manuscrit ou du Scénario.
       await MenuItem.new({ id: "review", text: m.review, enabled: inProject && currentView === "manuscrit", action: () => sendCommand("review") }),
     ],

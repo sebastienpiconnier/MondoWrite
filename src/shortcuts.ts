@@ -10,6 +10,7 @@ export const SHORTCUT_GROUPS = {
     ["views", ["Mod", "1…4"]],
     ["search", ["Mod", "F"]],
     ["replace", ["Mod", "Shift", "H"]],
+    ["goto", ["Mod", "G"]],
     ["todos", ["Mod", "Shift", "L"]],
     ["save", ["Mod", "S"]],
     ["undo", ["Mod", "Z"]],

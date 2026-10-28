@@ -64,6 +64,34 @@ export interface TypesetOptions {
    * scènes numérotées comme dans le scénario entier (le comédien parle de « la 12 » avec l'équipe).
    */
   character?: string;
+  /** (À SUIVRE) et (SUITE) quand une réplique passe d'une page à l'autre (vrai par défaut). */
+  breaks?: boolean;
+  /** (SUITE) après le nom quand le même personnage reprend la parole après une action, dans la même scène. */
+  resumes?: boolean;
+}
+
+/** Le nom porte déjà une suite (« (SUITE) », « (CONT'D) », « (CONT.) ») : on n'en ajoute pas. */
+export const hasContd = (cue: string, contd: string) =>
+  cue.toLocaleUpperCase().includes(contd.toLocaleUpperCase()) || /\((CONT['’.]?D?|SUITE)\.?\)/i.test(cue);
+
+/**
+ * Personnages qui reprennent la parole après une action dans la même scène (rangs des éléments `character`).
+ * Une autre réplique, un en-tête ou une section entre les deux remet à zéro. Fonction pure, partagée par le
+ * PDF et la feuille à l'écran.
+ */
+export function resumedCues(elements: ScreenplayElement[]): Set<number> {
+  const out = new Set<number>();
+  let last: string | null = null;
+  elements.forEach((el, index) => {
+    if (el.type === "sceneHeading" || el.type === "section" || el.type === "pageBreak") last = null;
+    else if (el.type === "character") {
+      const name = foldName(characterName(el.text));
+      const dual = el.dual || elements[index + 1]?.dual;
+      if (!dual && name && name === last) out.add(index);
+      last = dual ? null : name;
+    }
+  });
+  return out;
 }
 
 export function typeset(
@@ -112,6 +140,8 @@ export function typeset(
     }
   };
   const notes = !!options.notes;
+  const breaks = options.breaks !== false;
+  const resumed = options.resumes ? resumedCues(elements) : new Set<number>();
 
   let i = 0;
   for (i = 0; i < elements.length; i++) {
@@ -166,6 +196,7 @@ export function typeset(
         break;
       case "character": {
         // La réplique entière : le nom, puis les didascalies et le dialogue qui suivent.
+        const cueIndex = i;
         const first = collect(el, layout.columns.character, layout.columns, layout.indent);
         // Dialogue simultané (« ^ » sur le second nom) : les deux répliques côte à côte.
         if (elements[i + 1]?.type === "character" && elements[i + 1].dual) {
@@ -181,6 +212,10 @@ export function typeset(
           speech(left.cue, left.body, left.lit);
           speech(right.cue, right.body, right.lit);
           break;
+        }
+        // Le même personnage reprend après une action : (SUITE) après son nom.
+        if (resumed.has(cueIndex) && !hasContd(el.text, strings.contd)) {
+          first.cue = wrap(upper(`${printable(el.text, notes)} ${strings.contd}`), layout.columns.character);
         }
         speech(first.cue, first.body, first.lit);
         break;
@@ -264,9 +299,11 @@ export function typeset(
       for (const line of name) put(line, layout.indent.character, false, false, mark);
       const fits = Math.max(1, perPage - used - 1);
       for (const line of rest.slice(0, fits)) put(line.text, line.column, false, false, mark);
-      put(strings.more, layout.indent.character);
+      if (breaks) put(strings.more, layout.indent.character);
       rest = rest.slice(fits);
-      name = wrap(`${cue.join(" ")} ${strings.contd}`, layout.columns.character);
+      // Le nom revient en haut de la page suivante, avec (SUITE) s'il ne l'a pas déjà.
+      const base = cue.join(" ");
+      name = breaks && !hasContd(base, strings.contd) ? wrap(`${base} ${strings.contd}`, layout.columns.character) : cue;
       newPage();
     }
   }

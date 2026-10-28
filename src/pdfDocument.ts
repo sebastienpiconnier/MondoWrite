@@ -62,3 +62,32 @@ export async function readPdf(data: Uint8Array): Promise<PdfInfo> {
     void doc.loadingTask.destroy();
   }
 }
+
+/**
+ * Le texte d'un PDF, page par page, avec la position de chaque bout (import d'un manuscrit ou d'un scénario,
+ * lu ensuite par import/pdf.ts). Position de la ligne de base depuis le haut de la page, en points.
+ */
+export async function readPdfText(data: Uint8Array): Promise<import("./import/pdf").PdfPageText[]> {
+  const doc = await openPdf(data);
+  try {
+    const pages: import("./import/pdf").PdfPageText[] = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+      const page = await doc.getPage(n);
+      const viewport = page.getViewport({ scale: 1 });
+      const content = await page.getTextContent();
+      const items: import("./import/pdf").PdfItem[] = [];
+      for (const raw of content.items) {
+        if (!("str" in raw) || raw.str === "") continue;
+        // Coordonnées du PDF (origine en bas à gauche) ramenées à la page affichée (origine en haut à gauche).
+        const [x, y] = viewport.convertToViewportPoint(raw.transform[4], raw.transform[5]);
+        const size = Math.hypot(raw.transform[2], raw.transform[3]) || Math.abs(raw.transform[0]) || 12;
+        items.push({ x, y, width: raw.width, size, text: raw.str });
+      }
+      pages.push({ width: viewport.width, height: viewport.height, items });
+      page.cleanup();
+    }
+    return pages;
+  } finally {
+    void doc.loadingTask.destroy();
+  }
+}

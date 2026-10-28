@@ -17,9 +17,13 @@ export interface ScriptPrint {
   header: string;
   /** Grand texte en travers de chaque page (« Confidentiel »). */
   watermark: string;
+  /** Réplique coupée par la page : (À SUIVRE) en bas, (SUITE) après le nom en haut de la suivante. Aussi à l'écran. */
+  breaks: boolean;
+  /** Le même personnage reprend après une action, dans la même scène : (SUITE) après son nom. Aussi à l'écran. */
+  resumes: boolean;
 }
 
-export const DEFAULT_SCRIPT_PRINT: ScriptPrint = { character: "", titlePage: true, synopsis: false, sections: false, notes: false, header: "", watermark: "" };
+export const DEFAULT_SCRIPT_PRINT: ScriptPrint = { character: "", titlePage: true, synopsis: false, sections: false, notes: false, header: "", watermark: "", breaks: true, resumes: false };
 
 const line = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 const flag = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
@@ -36,6 +40,8 @@ export function cleanScriptPrint(raw: unknown): ScriptPrint {
     notes: flag(p.notes, d.notes),
     header: line(p.header, 120),
     watermark: line(p.watermark, 60),
+    breaks: flag(p.breaks, d.breaks),
+    resumes: flag(p.resumes, d.resumes),
   };
 }
 

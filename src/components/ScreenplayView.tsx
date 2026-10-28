@@ -28,6 +28,10 @@ import { keptScenes as keptBy, speakingNames } from "../review/filter";
 import { setCharacterFilter } from "../screenplay/editor/characterFilter";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
 import { useCommand } from "../commands";
+import { ReaderBar } from "./ReaderBar";
+import { startReading } from "./useReader";
+import { screenplayUtterances, type ReadNode } from "../reading";
+import { PRESERVED } from "../screenplay/editor/nodes";
 import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
@@ -235,7 +239,10 @@ export function ScreenplayView() {
           // Pas de pages en mode focus (comme dans le manuscrit) : le texte seul, sans coupures de page.
           // Filtre par personnage : des scènes sont cachées, la feuille passe en continu (les pages mentiraient).
           enabled: (dom) => !useCosmos.getState().focusMode && !useCosmos.getState().charFilter && (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
+          // Réplique coupée par la page : (À SUIVRE) et (SUITE), comme dans le PDF (réglage du projet).
+          continued: () => (useCosmos.getState().scriptPdf.breaks ? { more: getT().screenplay.more, contd: getT().screenplay.contd } : null),
         },
+        continued: { resumes: () => useCosmos.getState().scriptPdf.resumes, contd: () => getT().screenplay.contd },
         // Mode focus : Échap le quitte, comme dans le manuscrit. Sinon il rend la main à la barre d'éléments.
         onEscape: () => {
           if (useCosmos.getState().focusMode) return setFocusMode(false);
@@ -574,6 +581,22 @@ export function ScreenplayView() {
   /** Choisit une scène pour le volet de droite sans déplacer le curseur (clic sur son synopsis). */
   const showScene = (index: number) => setCurrent((prev) => (prev.index === index ? prev : { index, type: null }));
 
+  // Lecture à voix haute : à partir de l'élément où est le curseur, chaque réplique par la voix de son personnage.
+  const readerSpeakers = useMemo(() => speakingNames(screenplay?.elements ?? [], lang), [screenplay, lang]);
+  const startListening = () => {
+    if (editor.isDestroyed) return;
+    const nodes: ReadNode[] = [];
+    editor.state.doc.forEach((node) => nodes.push(node.type.name === PRESERVED ? { type: String(node.attrs.kind), text: "" } : { type: node.type.name, text: node.textContent }));
+    const { lang: language, reading } = useSettings.getState();
+    startReading(editor, screenplayUtterances(nodes, editor.state.selection.$from.index(0), language, reading.parentheticals));
+  };
+
+  // (À SUIVRE) / (SUITE) changés dans les réglages : la feuille se redessine (rien n'est écrit dans le texte).
+  const continuedKey = useCosmos((s) => `${s.scriptPdf.breaks}|${s.scriptPdf.resumes}`);
+  useEffect(() => {
+    if (!editor.isDestroyed) editor.view.dispatch(editor.state.tr.setMeta("addToHistory", false));
+  }, [editor, continuedKey]);
+
   // Arrivée depuis la recherche ou « À faire » : la scène de cette carte.
   const target = useCosmos((s) => s.manuscriptTarget);
   const goToRef = useRef(goTo);
@@ -583,7 +606,7 @@ export function ScreenplayView() {
     useCosmos.getState().clearManuscriptTarget();
     const elements = useCosmos.getState().screenplay?.elements ?? [];
     const at = target.startsWith(SCENE_AT) ? Number(target.slice(SCENE_AT.length)) : -1;
-    const index = at >= 0 ? (elements[at]?.type === "sceneHeading" ? at : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
+    const index = at >= 0 ? (at < elements.length ? at : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
     if (index >= 0) requestAnimationFrame(() => goToRef.current(index));
   }, [target]);
 
@@ -904,6 +927,10 @@ export function ScreenplayView() {
           <button type="button" className="sp-option" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onPointerDown={(e) => e.preventDefault()} onClick={openReplace}>
             {t.replace.button}
           </button>
+          <button type="button" className="sp-option" title={t.goto.buttonHint} aria-keyshortcuts="Control+G Meta+G" onPointerDown={(e) => e.preventDefault()} onClick={() => useCosmos.getState().setDialog("goto")}>
+            {t.goto.button}
+          </button>
+          <ReaderBar buttonClass="sp-option" screenplay speakers={readerSpeakers} onStart={startListening} />
           <button type="button" className="sp-option" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onPointerDown={(e) => e.preventDefault()} onClick={openReview}>
             {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
           </button>

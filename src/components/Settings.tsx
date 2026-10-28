@@ -65,6 +65,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const paper = useCosmos((s) => s.paper);
   const setPaper = useCosmos((s) => s.setPaper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
+  const scriptPdf = useCosmos((s) => s.scriptPdf);
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
   const markdownCopies = useCosmos((s) => s.markdownCopies);
   const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
@@ -202,6 +203,15 @@ export function Settings({ project = true }: { project?: boolean }) {
               <label className="settings-check">
                 <input type="checkbox" checked={underlineHeadings} onChange={(e) => useCosmos.getState().setUnderlineHeadings(e.target.checked)} />
                 {t.kinds.underlineHeadings}
+              </label>
+              {/* (À SUIVRE) et (SUITE) : les mêmes réglages que la fenêtre PDF (scriptPdf), écran et PDF. */}
+              <label className="settings-check">
+                <input type="checkbox" checked={scriptPdf.breaks} onChange={(e) => useCosmos.getState().setScriptPdf({ breaks: e.target.checked })} />
+                {t.scriptPdf.breaks}
+              </label>
+              <label className="settings-check">
+                <input type="checkbox" checked={scriptPdf.resumes} onChange={(e) => useCosmos.getState().setScriptPdf({ resumes: e.target.checked })} />
+                {t.scriptPdf.resumes}
               </label>
             </>
           )}

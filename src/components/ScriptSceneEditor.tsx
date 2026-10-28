@@ -71,6 +71,7 @@ export function ScriptSceneEditor({ card }: { card: CardData }) {
         placeholder: (kind) => getT().screenplay.placeholders[kind],
         // Échap rend la main au clavier : sur la barre des éléments.
         onEscape: () => document.querySelector<HTMLButtonElement>(".script-scene .sp-bar button[aria-pressed='true'], .script-scene .sp-bar button")?.focus(),
+        continued: { resumes: () => useCosmos.getState().scriptPdf.resumes, contd: () => getT().screenplay.contd },
       }),
     [],
   );

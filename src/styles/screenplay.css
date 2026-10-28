@@ -92,6 +92,8 @@
 .sp-pagebreak { position: relative; user-select: none; pointer-events: none; }
 .sp-pagebreak-gap { position: absolute; left: -9em; right: -6em; background: var(--ground); border-block: 1px solid var(--line); }
 .sp-pagebreak-number { position: absolute; right: 0; color: var(--page-ink); }
+/* Réplique coupée par la page : (À SUIVRE) sous la réplique, le nom et (SUITE) en haut de la page suivante (au retrait du nom). */
+.sp-pagebreak-speech { position: absolute; left: 22ch; white-space: nowrap; text-transform: uppercase; color: var(--page-ink); }
 
 /* Page de titre : la page de garde, aux mêmes dimensions. Titre au tiers de la page, contact en bas à gauche. */
 .sp-titlepage { height: calc(var(--sp-height) * 1em); display: flex; flex-direction: column; padding: 6em 6em 5em 9em; }
@@ -105,6 +107,8 @@
 .sp-editor > :first-child { margin-top: 0; }
 .sp-sceneHeading { font-weight: 700; text-transform: uppercase; }
 .sp-character { margin-left: 22ch; max-width: 38ch; text-transform: uppercase; }
+/* Le personnage reprend après une action (réglage du projet) : (SUITE) affiché, pas écrit dans le texte. */
+.sp-character.has-contd::after { content: " " attr(data-contd); }
 .sp-parenthetical { margin-top: 0; margin-left: 16ch; max-width: 25ch; }
 .sp-dialogue { margin-top: 0; margin-left: 10ch; max-width: 35ch; }
 .sp-transition { text-align: right; text-transform: uppercase; }

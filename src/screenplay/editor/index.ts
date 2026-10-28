@@ -9,6 +9,8 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { Autodetect } from "./autodetect";
 import { ScreenplayKeymap } from "./keymap";
 import { Pages, type PagesOptions } from "./pages";
+import { Continued, type ContinuedOptions } from "./continued";
+import { ReadingMark } from "../../components/readingMark";
 import {
   Action,
   Character,
@@ -35,6 +37,8 @@ export interface ScreenplayEditorOptions {
   pages?: PagesOptions;
   /** Mode focus : mise en valeur de la phrase ou du paragraphe, machine à écrire (mêmes réglages que le manuscrit). */
   focus?: { mode: () => FocusHighlight; typewriter: () => boolean };
+  /** (SUITE) quand un personnage reprend après une action (réglage du projet, relu à chaque mise à jour). */
+  continued?: ContinuedOptions;
 }
 
 export function screenplayExtensions(options: ScreenplayEditorOptions): Extensions {
@@ -77,6 +81,8 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     Autodetect.configure({ locale: options.locale }),
     ...(options.pages ? [Pages.configure(options.pages)] : []),
     ...(options.focus ? [FocusWriting.configure(options.focus)] : []),
+    ...(options.continued ? [Continued.configure(options.continued)] : []),
     CharacterFilterExtension,
+    ReadingMark,
   ];
 }

@@ -7,6 +7,7 @@ import { Extension } from "@tiptap/react";
 import { Plugin, PluginKey, Selection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { Node as PMNode } from "@tiptap/pm/model";
+import { hasContd } from "../export/typeset";
 
 export interface PageItem {
   /** Hauteur de l'élément, en lignes. */
@@ -17,6 +18,8 @@ export interface PageItem {
   keep: number;
   /** Vrai : l'élément ouvre toujours une nouvelle page (début de chapitre, page de titre…). */
   before?: boolean;
+  /** Suite d'une réplique : s'il ouvre une page, le nom du personnage (SUITE) y prend une ligne avant lui. */
+  cont?: boolean;
 }
 
 export interface PageBreak {
@@ -44,7 +47,7 @@ export function layoutPages(items: PageItem[], lines: number, offset = 0): { bre
     if (used > start && (item.before || used + margin + item.height + item.keep > lines + 0.1)) {
       breaks.push({ index, rest: Math.max(0, lines - used), page: ++page });
       start = 0;
-      used = item.height;
+      used = item.height + (item.cont ? 1 : 0);
     } else {
       used += margin + item.height;
     }
@@ -67,6 +70,8 @@ export interface PagesOptions {
   label?: (page: number) => string;
   /** Place du numéro : en haut à droite de chaque page (scénario, par défaut) ou centré en bas (livre). */
   numberAt?: "top" | "bottom";
+  /** Réplique coupée par la page : « (À SUIVRE) » en bas, le nom et « (SUITE) » en haut (null : rien). */
+  continued?: () => { more: string; contd: string } | null;
   /** Appelé après chaque découpage : le nombre de pages et la position (dans le document) de l'élément qui ouvre chacune des suivantes. */
   onLayout?: (pages: number, breaks: number[]) => void;
 }
@@ -89,7 +94,7 @@ export const pagesKey = new PluginKey<DecorationSet>("screenplayPages");
  * `top` : place du numéro dans l'espace (en em) ; `bottom` : numéro centré en bas de la page qu'on quitte (livre),
  * sinon en haut à droite de la page qui commence (scénario).
  */
-function spacer(height: number, gapTop: number | null, label: string, top: number, bottom = false): () => HTMLElement {
+function spacer(height: number, gapTop: number | null, label: string, top: number, bottom = false, speech?: { more: string; cue: string; cueTop: number }): () => HTMLElement {
   return () => {
     const el = document.createElement("div");
     el.className = "sp-pagebreak";
@@ -109,6 +114,21 @@ function spacer(height: number, gapTop: number | null, label: string, top: numbe
       number.style.top = `${top}em`;
       number.textContent = label;
       el.append(number);
+    }
+    // Réplique coupée : (À SUIVRE) sur la première ligne libre, le nom et (SUITE) sur la dernière ligne de l'espace.
+    if (speech) {
+      if (speech.more) {
+        const more = document.createElement("span");
+        more.className = "sp-pagebreak-speech";
+        more.style.top = "0em";
+        more.textContent = speech.more;
+        el.append(more);
+      }
+      const cue = document.createElement("span");
+      cue.className = "sp-pagebreak-speech";
+      cue.style.top = `${speech.cueTop}em`;
+      cue.textContent = speech.cue;
+      el.append(cue);
     }
     return el;
   };
@@ -168,10 +188,26 @@ export const Pages = Extension.create<PagesOptions>({
             if (line > 0 && options.enabled(view.dom as HTMLElement)) {
               const items: PageItem[] = [];
               const positions: number[] = [];
+              const continued = options.continued?.() ?? null;
+              // Pour chaque suite de réplique, le nom de celui qui parle (pour le répéter en haut de page).
+              const cues = new Map<number, string>();
+              let cue = "";
+              let previous = "";
               doc.forEach((node, offset) => {
                 const dom = view.nodeDOM(offset);
-                items.push({ height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1, ...itemOf(node.type.name, node) });
+                const type = node.type.name;
+                if (type === "character") cue = node.textContent.trim();
+                // Une réplique ne se coupe qu'entre deux de ses éléments (dialogue, didascalie) : un paragraphe ne se coupe pas à l'écran.
+                const cont = !!continued && TIGHT.has(type) && TIGHT.has(previous) && cue !== "";
+                if (cont) cues.set(items.length, cue);
+                items.push({ height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1, ...itemOf(type, node), ...(cont ? { cont } : {}) });
                 positions.push(offset);
+                // Le nom ne reste jamais seul en bas de page : il garde avec lui le premier élément de sa réplique entier.
+                if (TIGHT.has(type) && previous === "character") {
+                  const name = items[items.length - 2];
+                  name.keep = Math.max(name.keep, Math.min(lines, items[items.length - 1].height));
+                }
+                previous = type;
               });
               // Marge haute plus grande que celle de la page (page de titre, dédicace…) : la première page commence plus bas.
               const top = parseFloat(getComputedStyle(view.dom).paddingTop) / line;
@@ -184,14 +220,18 @@ export const Pages = Extension.create<PagesOptions>({
               const bottomTop = (rest: number) => rest + bottom / 2 - 0.45;
               for (const b of layout.breaks) {
                 // L'élément garde sa marge du dessus (CSS) : on la retire de l'espace ajouté.
-                const height = b.rest + bottom + GAP + marginTop - items[b.index].margin;
+                const base = b.rest + bottom + GAP + marginTop - items[b.index].margin;
+                // Réplique coupée : une ligne de plus en haut de la page pour le nom et (SUITE).
+                const who = continued && items[b.index].cont ? cues.get(b.index) : undefined;
+                const speech = who && continued ? { more: continued.more, cue: hasContd(who, continued.contd) ? who : `${who} ${continued.contd}`, cueTop: base } : undefined;
+                const height = base + (speech ? 1 : 0);
                 decorations.push(
-                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, label(atBottom ? b.page - 1 + first : b.page + first), atBottom ? bottomTop(b.rest) : b.rest + bottom + GAP + 2.5, atBottom), {
+                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, label(atBottom ? b.page - 1 + first : b.page + first), atBottom ? bottomTop(b.rest) : b.rest + bottom + GAP + 2.5, atBottom, speech), {
                     side: -1,
-                    key: `page-${b.page + first}-${height.toFixed(2)}`,
+                    key: `page-${b.page + first}-${height.toFixed(2)}-${speech ? `${speech.more}|${speech.cue}` : ""}`,
                   }),
                 );
-                next += `${positions[b.index]}:${height.toFixed(2)};`;
+                next += `${positions[b.index]}:${height.toFixed(2)}:${speech?.cue ?? ""};`;
               }
               // La dernière page va jusqu'en bas, marge comprise.
               const tail = layout.tail + bottom;

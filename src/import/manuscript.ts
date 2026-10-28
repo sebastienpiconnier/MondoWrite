@@ -205,7 +205,8 @@ export function chapterize(paras: ImportedPara[], fileName = ""): ImportedBook {
 
 /** Titre d'une carte Scène : le début de sa première phrase, en quelques mots. */
 export function sceneTitle(html: string, max = 6): string {
-  const text = html.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+  // Fin de paragraphe : une espace (sinon « LE BOIS » et « par Untel » se collent en « LE BOISpar »).
+  const text = html.replace(/<\/(p|h[1-6]|li|blockquote)>/gi, " ").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
   const sentence = text.split(/(?<=[.!?…])\s/)[0].replace(/^[\s«»“”"'—–-]+|[\s«»“”"'—–:;,.-]+$/g, "");
   const list = sentence.split(/\s+/).filter(Boolean);
   return list.length > max ? `${list.slice(0, max).join(" ")}…` : list.join(" ");
