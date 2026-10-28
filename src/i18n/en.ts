@@ -1127,6 +1127,14 @@ export const en: Messages = {
     },
   },
 
+  circle: {
+    aria: "Dan Harmon’s story circle: the eight steps and their scenes",
+    known: "Known world",
+    unknown: "Unknown world",
+    stepOne: "{step}: {n} scene",
+    stepMany: "{step}: {n} scenes",
+  },
+
   ribbon: {
     aria: "Story ribbon",
     beforeFirst: "Before the first beat",
@@ -1139,6 +1147,10 @@ export const en: Messages = {
     hidePlots: "Hide plotlines",
     plotsHint: "One row per Plot card: scenes linked by a thread (solid) or that mention it (light).",
     laneAria: "{title}: in {n} scenes",
+    showCurve: "Show the curve",
+    hideCurve: "Hide the curve",
+    curveHint: "The hero’s fortune, scene by scene: it rises when a scene ends better for them, falls when it ends worse (the “For the hero, the scene ends” box of the sheet).",
+    curveAria: "Story curve: the hero’s fortune, scene by scene",
   },
 
   kinds: {
@@ -2143,6 +2155,7 @@ export const en: Messages = {
       revelation: "When and how it comes out",
       obstacle: "Obstacle",
       changement: "What changed by the end",
+      issue: "For the hero, the scene ends",
       retenir: "What I take from it",
       fiabilite: "Reliability",
       etat: "Status",
@@ -2152,7 +2165,7 @@ export const en: Messages = {
     values: {
       certitude: { etabli: "Settled", provisoire: "Tentative", explorer: "To explore" },
       etat: { ouverte: "Open", decidee: "Decided", abandonnee: "Dropped" },
-      repere: { milieu: "Midseason", final: "Season finale" },
+      repere: { milieu: "Midseason", final: "Season finale" },      issue: { mieux: "Better", pire: "Worse", pareil: "Neither better nor worse" },
     },
     valueNone: "Not set",
     typeLabels: {

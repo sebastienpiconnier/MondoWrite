@@ -78,3 +78,16 @@ describe("ruban", () => {
     ]);
   });
 });
+
+describe("courbe du récit", () => {
+  it("monte d'un cran pour « mieux », descend pour « moins bien », reste à plat sinon ; bornée entre −1 et 1", async () => {
+    const { fortuneCurve } = await import("../ribbon");
+    const scenes = ["a", "b", "c", "d"].map((id, i) => ({ id, start: i / 4, length: 1 / 4 }));
+    const issue: Record<string, string> = { a: "mieux", b: "mieux", c: "pire" };
+    const curve = fortuneCurve(scenes, (id) => issue[id])!;
+    expect(curve.map((p) => p.y)).toEqual([0.5, 1, 0.5, 0.5]);
+    expect(curve.map((p) => p.set)).toEqual([true, true, true, false]);
+    expect(curve[0].x).toBe(0.125);
+    expect(fortuneCurve(scenes, (id) => (id === "a" ? "pire" : undefined))).toBeNull();
+  });
+});

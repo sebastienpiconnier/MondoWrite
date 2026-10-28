@@ -1110,6 +1110,15 @@ export const fr = {
     },
   },
 
+  // Cercle de Dan Harmon dessiné en cercle (Plan, séquencier).
+  circle: {
+    aria: "Cercle de Dan Harmon : les huit étapes et leurs scènes",
+    known: "Monde connu",
+    unknown: "Monde inconnu",
+    stepOne: "{step} : {n} scène",
+    stepMany: "{step} : {n} scènes",
+  },
+
   // Ruban du récit (Manuscrit, Scénario) : la longueur réelle de chaque case du gabarit, et sa place habituelle.
   ribbon: {
     aria: "Ruban du récit",
@@ -1123,6 +1132,10 @@ export const fr = {
     hidePlots: "Masquer les intrigues",
     plotsHint: "Une ligne par carte Intrigue : les scènes reliées par un fil (plein) ou qui la citent (clair).",
     laneAria: "{title} : présente dans {n} scènes",
+    showCurve: "Voir la courbe",
+    hideCurve: "Masquer la courbe",
+    curveHint: "La fortune du héros, scène après scène : elle monte quand une scène finit mieux pour lui, descend quand elle finit moins bien (case « Pour le héros, la scène finit » de la fiche).",
+    curveAria: "Courbe du récit : la fortune du héros, scène après scène",
   },
 
   kinds: {
@@ -2175,6 +2188,7 @@ export const fr = {
       revelation: "Quand et comment il éclate",
       obstacle: "Obstacle",
       changement: "Ce qui a changé à la fin",
+      issue: "Pour le héros, la scène finit",
       retenir: "Ce que j’en retiens",
       fiabilite: "Fiabilité",
       etat: "État",
@@ -2186,6 +2200,7 @@ export const fr = {
       certitude: { etabli: "Établi", provisoire: "Provisoire", explorer: "À explorer" },
       etat: { ouverte: "Ouverte", decidee: "Décidée", abandonnee: "Abandonnée" },
       repere: { milieu: "Mi-saison", final: "Fin de saison" },
+      issue: { mieux: "Mieux", pire: "Moins bien", pareil: "Ni mieux ni moins bien" },
     },
     valueNone: "Non précisé",
     // Libellés propres à un type, quand la clé est partagée (« but » d'un groupe ou d'une scène).

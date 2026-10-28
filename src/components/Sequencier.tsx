@@ -19,7 +19,8 @@ import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
-import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, isScreenplayTemplate, moveToSection, sectionLabel } from "../screenplay/template";
+import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
+import { StoryCircle } from "./StoryCircle";
 
 const MODES: SequencerMode[] = ["outline", "cards"];
 
@@ -159,6 +160,12 @@ export function Sequencier() {
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
         {template && <p className="plan-about">{t.plan.templateAbout[template]}</p>}
         {template && <p className="sp-empty">{sq.templateHint}</p>}
+        {template === "cercleHarmon" && (
+          <StoryCircle
+            counts={Object.fromEntries(Object.entries(screenplayPlan(screenplay.elements).beats).map(([k, ids]) => [k, ids.length]))}
+            onPick={(key) => listRef.current?.querySelector(`[data-beat="${key}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          />
+        )}
 
         <ol className={`sq-list${cards ? " is-cards" : ""}`} ref={listRef} aria-label={sq.listAria}>
           {list.map((block, i) => {
@@ -179,7 +186,7 @@ export function Sequencier() {
 
             if (block.kind === "section") {
               return (
-                <li key={`section-${block.start}`} className={`sq-section${dropClass}`} {...drop}>
+                <li key={`section-${block.start}`} className={`sq-section${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
                   <span className="sq-section-name">
                     <span>{labelOf(block.text)}</span>
                     {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}

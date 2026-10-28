@@ -15,6 +15,7 @@ import { fmt, useT } from "../i18n";
 import { NOVEL_TEMPLATES, arrange, chapterNumbers, chapterOf, groupByChapter, isPlanTemplate, type Chapter, type PlanBeat, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
 import { Timeline } from "./Timeline";
+import { StoryCircle } from "./StoryCircle";
 
 /** Valeur du menu « Ranger dans » pour une scène sortie du plan. */
 const UNPLACED = "";
@@ -297,6 +298,13 @@ export function Plan() {
         ) : (
           <>
         <p className="sp-empty">{sceneIds.length === 0 ? p.empty : p.hint}</p>
+        {/* Le cercle de Dan Harmon se lit en cercle : ses huit étapes, et les trous. */}
+        {plan.template === "cercleHarmon" && (
+          <StoryCircle
+            counts={Object.fromEntries(arranged.beats.map((b) => [b.key, b.ids.length]))}
+            onPick={(key) => document.getElementById(`plan-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          />
+        )}
 
         {arranged.beats.map((beat) => (
           <section key={beat.key} className={`plan-beat${over === beat.key ? " is-over" : ""}`} aria-labelledby={`plan-${beat.key}`} {...dropOn(beat.key, beat.key)}>

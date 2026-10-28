@@ -819,3 +819,24 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--ground); }
 .ribbon-lane-mark { position: absolute; top: 0; bottom: 0; min-width: 3px; border-right: 2px solid var(--surface); background: var(--type-intrigue); }
 .ribbon-lane-mark.is-cited { opacity: 0.45; }
+.ribbon-curve { position: relative; height: 44px; margin-top: 6px; }
+.ribbon-curve svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ribbon-curve-mid { stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.ribbon-curve-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.ribbon-curve-dot { position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--accent); pointer-events: none; }
+.ribbon-curve-dot.is-current { width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; box-shadow: 0 0 0 2px var(--surface); }
+
+/* ---------- Cercle de Dan Harmon (Plan, séquencier) ---------- */
+.story-circle { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; margin: 8px 0 20px; }
+.story-circle svg { width: min(320px, 100%); height: auto; }
+.story-circle-axis { stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 4 4; }
+.story-circle-world { fill: var(--muted); font: 600 11px var(--font-ui); letter-spacing: 0.06em; text-anchor: middle; text-transform: uppercase; }
+.story-circle-step { cursor: pointer; outline: none; }
+.story-circle-step path { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.story-circle-step.is-empty path { fill: transparent; stroke: var(--line-2); stroke-dasharray: 5 4; }
+.story-circle-step:focus-visible path { stroke: var(--accent-ink); stroke-width: 3; }
+@media (any-hover: hover) { .story-circle-step:hover path { fill: var(--hover); } }
+.story-circle-num { fill: var(--ink); font: 700 14px var(--font-ui); text-anchor: middle; }
+.story-circle-count { fill: var(--ink-2); font: 12px var(--font-ui); text-anchor: middle; }
+.story-circle-step.is-empty .story-circle-count { fill: var(--muted); }
+.story-circle-legend { display: grid; grid-template-columns: repeat(2, auto); gap: 4px 18px; color: var(--ink-2); font-size: 0.8125rem; }

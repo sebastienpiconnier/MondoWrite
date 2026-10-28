@@ -111,7 +111,7 @@ export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obsta
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
 /** Scène d'un roman : ce qui s'y passe, en une phrase (le scénario garde le sien dans le fichier Fountain). */
-export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement"] as const;
+export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement", "issue"] as const;
 
 /** Statut d'une scène : valeurs écrites dans le fichier (`fiche.statut`), jamais traduites. Libellés : `t.status.values`. */
 export const SCENE_STATUSES = ["brouillon", "revoir", "fini"] as const;
@@ -160,6 +160,8 @@ export const CHOICE_FIELDS = {
   certitude: ["etabli", "provisoire", "explorer"],
   etat: ["ouverte", "decidee", "abandonnee"],
   repere: ["milieu", "final"],
+  // Scène : finit-elle mieux ou moins bien pour le héros ? Dessine la courbe du récit (ruban).
+  issue: ["mieux", "pire", "pareil"],
 } as const satisfies Partial<Record<SheetField, readonly string[]>>;
 export type ChoiceField = keyof typeof CHOICE_FIELDS;
 export const isChoiceField = (key: string): key is ChoiceField => key in CHOICE_FIELDS;

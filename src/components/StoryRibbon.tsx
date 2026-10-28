@@ -9,6 +9,7 @@ import { screenplaySceneTexts, timeline } from "../timeline";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useRibbon } from "./useRibbon";
+import { fortuneCurve } from "../ribbon";
 import type { PlanBeat } from "../plan";
 
 interface Props {
@@ -43,6 +44,16 @@ export function StoryRibbon({ currentId, onGo }: Props) {
     ).find((g) => g.type === "intrigue");
     return (plots?.rows ?? []).map((row) => ({ id: row.card.id, title: row.card.title.trim(), cells: row.cells.map((presence, i) => ({ presence, scene: scenes[i] })) }));
   }, [lanesOpen, ribbon, hasPlots, kind, screenplay, manuscript, nodes, edges, lang]);
+  // Courbe du récit : d'après « Pour le héros, la scène finit » des fiches de scène.
+  const [curveOpen, setCurveOpen] = useState(false);
+  const curve = useMemo(() => {
+    if (!ribbon) return null;
+    const fiche = new Map(nodes.map((n) => [n.id, n.data.fiche?.issue]));
+    return fortuneCurve(
+      ribbon.segments.flatMap((seg) => seg.scenes),
+      (id) => fiche.get(id),
+    );
+  }, [ribbon, nodes]);
   if (!ribbon) return null;
   const pct = (v: number) => Math.round(v * 100);
   const beatLabel = (key: string | null) => (key ? (t.plan.beats[key as PlanBeat]?.label ?? key) : kind === "scenario" ? r.beforeFirst : t.plan.unplaced);
@@ -76,6 +87,17 @@ export function StoryRibbon({ currentId, onGo }: Props) {
           <span key={m.key} className="ribbon-mark" style={{ left: `${m.at * 100}%` }} title={fmt(r.expected, { beat: beatLabel(m.key), n: pct(m.at) })} aria-hidden="true" />
         ))}
       </div>
+      {curveOpen && curve && (
+        <div className="ribbon-curve" role="img" aria-label={r.curveAria}>
+          <svg viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="22" x2="1000" y2="22" className="ribbon-curve-mid" />
+            <polyline points={curve.map((p) => `${p.x * 1000},${22 - p.y * 18}`).join(" ")} className="ribbon-curve-line" />
+          </svg>
+          {curve.map((p) =>
+            p.set ? <span key={p.id} className={`ribbon-curve-dot${p.id === currentId ? " is-current" : ""}`} style={{ left: `${p.x * 100}%`, top: `${((22 - p.y * 18) / 44) * 100}%` }} /> : null,
+          )}
+        </div>
+      )}
       {lanes.map((lane) => (
         <div key={lane.id} className="ribbon-lane">
           <span className="ribbon-lane-name">{lane.title}</span>
@@ -91,6 +113,14 @@ export function StoryRibbon({ currentId, onGo }: Props) {
       <p className="ribbon-caption">
         {here ? fmt(r.caption, { beat: beatLabel(here.seg.key), n: pct(here.s.start) }) : r.hint}
         {!ribbon.measured && <span className="ribbon-note"> · {r.byCount}</span>}
+        {curve && (
+          <>
+            {" · "}
+            <button type="button" className="ribbon-toggle" aria-expanded={curveOpen} title={r.curveHint} onClick={() => setCurveOpen(!curveOpen)}>
+              {curveOpen ? r.hideCurve : r.showCurve}
+            </button>
+          </>
+        )}
         {hasPlots && (
           <>
             {" · "}

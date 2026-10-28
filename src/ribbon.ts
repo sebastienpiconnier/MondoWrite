@@ -113,3 +113,33 @@ export function screenplayGroups(elements: ScreenplayElement[], pages: (start: n
   }
   return { template, groups: groups.filter((g, i) => i > 0 || g.scenes.length > 0) };
 }
+
+/** Un point de la courbe du récit : milieu de la scène (0 à 1) et fortune du héros (−1 à 1). */
+export interface CurvePoint {
+  id: string;
+  x: number;
+  y: number;
+  /** Faux quand la scène n'a pas dit comment elle finit (la courbe reste à plat). */
+  set: boolean;
+}
+
+/**
+ * Courbe du récit (formes de récit de Vonnegut) : chaque scène qui finit « mieux » pour le héros fait monter
+ * la courbe d'un cran, « moins bien » la fait descendre ; sans réponse, elle reste à plat. Mise à l'échelle
+ * pour tenir entre −1 et 1. Null tant que moins de deux scènes ont répondu.
+ */
+export function fortuneCurve(scenes: readonly { id: string; start: number; length: number }[], issueOf: (id: string) => string | undefined): CurvePoint[] | null {
+  let level = 0;
+  let answered = 0;
+  const raw = scenes.map((s) => {
+    const issue = issueOf(s.id);
+    if (issue === "mieux") level++;
+    else if (issue === "pire") level--;
+    const set = issue === "mieux" || issue === "pire" || issue === "pareil";
+    if (set) answered++;
+    return { id: s.id, x: s.start + s.length / 2, y: level, set };
+  });
+  if (answered < 2) return null;
+  const top = Math.max(1, ...raw.map((p) => Math.abs(p.y)));
+  return raw.map((p) => ({ ...p, y: p.y / top }));
+}
