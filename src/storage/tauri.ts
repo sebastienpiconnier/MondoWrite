@@ -312,6 +312,13 @@ async function adoptMacIcloud() {
   }
 }
 
+/** Ce que MondoWrite écrit dans un dossier projet (fichiers et dossiers, copies de conflit et repères iCloud compris). */
+const PROJECT_DIRS = new Set([...TEXT_DIRS, MEDIA_DIR, COPIES_DIR, LOCK_DIR]);
+function isProjectEntry(name: string) {
+  const plain = name.startsWith(".") && name.endsWith(".icloud") ? name.slice(1, -".icloud".length) : name;
+  return PROJECT_DIRS.has(plain) || plain === META_FILE || plain === SCREENPLAY_FILE || (isConflictCopy(plain) && (plain.startsWith("cosmos") || plain.startsWith("scenario")));
+}
+
 function desktopCloud(): { path: string; name: string } | null {
   try {
     const raw = JSON.parse(localStorage.getItem(DESKTOP_CLOUD_KEY) ?? "null") as { path?: unknown; name?: unknown } | null;
@@ -666,17 +673,28 @@ export const tauriStorage: Storage = {
     touchRecent({ id: current, name: mobile ? info.title || current : baseName(current), ...info, openedAt: Date.now(), ...(mobile && cloudCache ? { cloud: true } : {}) });
   },
   unlist: dropRecent,
-  deleteProject: mobile
-    ? async (id) => {
-        // Le dossier cloud choisi lui-même n'est jamais effacé : on le quitte depuis l'accueil.
-        if (id === CLOUD_SELF || id.includes("/") || id.includes("\\") || id.startsWith(".")) return;
-        const path = await join(await mobileRoot(), id);
-        // Jamais un dossier qui n'est pas un projet (sécurité : un sous-dossier d'un projet listé par erreur).
-        if (await isProjectDir(path)) await remove(path, { recursive: true });
-        dropRecent(id);
-        if (current === id) current = null;
+  async deleteProject(id) {
+    if (mobile) {
+      // Le dossier cloud choisi lui-même n'est jamais effacé : on le quitte depuis l'accueil.
+      if (id === CLOUD_SELF || id.includes("/") || id.includes("\\") || id.startsWith(".")) return;
+      const path = await join(await mobileRoot(), id);
+      // Jamais un dossier qui n'est pas un projet (sécurité : un sous-dossier d'un projet listé par erreur).
+      if (await isProjectDir(path)) await remove(path, { recursive: true });
+    } else {
+      // Ordinateur : le dossier a été choisi par l'auteur et peut contenir autre chose que le projet. On n'efface
+      // que ce que MondoWrite y a écrit, puis le dossier s'il est resté vide. Jamais le dossier cloud lui-même.
+      const cloud = desktopCloud();
+      if (cloud && plainPath(cloud.path) === plainPath(id)) return;
+      if (!(await isProjectDir(id))) return;
+      for (const entry of await readDir(id)) {
+        if (!isProjectEntry(entry.name)) continue;
+        await remove(await join(id, entry.name), entry.isDirectory ? { recursive: true } : undefined);
       }
-    : undefined,
+      if ((await readDir(id)).length === 0) await remove(id);
+    }
+    dropRecent(id);
+    if (current === id) current = null;
+  },
   async pickTextFile(label, extensions) {
     // Le fichier choisi dans le dialogue du système est autorisé en lecture par Tauri.
     const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions }] });

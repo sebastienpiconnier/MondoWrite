@@ -58,6 +58,15 @@ export const browserStorage: Storage = {
     touchRecent(entry);
   },
   unlist: dropRecent,
+  async deleteProject(id) {
+    try {
+      localStorage.removeItem(keyOf(id));
+      localStorage.removeItem(`cosmos:medias:${id}`);
+    } catch {
+      /* rien à effacer */
+    }
+    dropRecent(id);
+  },
   pickTextFile(_label, extensions) {
     // Sélecteur de fichier du navigateur, ouvert par un champ invisible.
     return new Promise((resolve) => {

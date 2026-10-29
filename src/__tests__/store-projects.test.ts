@@ -290,10 +290,38 @@ describe("liste de l'accueil", () => {
     await state().closeProject();
     const id = state().projects[0].id;
 
-    await state().unlistProject(id);
+    await state().hideProject(id);
     expect(state().projects).toEqual([]);
+    expect(state().hiddenProjects.map((p) => p.id)).toEqual([id]);
     storage.select(id);
     expect(JSON.parse((await files())[META_FILE]).title).toBe("Roman");
+  });
+
+  it("un projet masqué revient dans la liste, et aussi quand on le rouvre", async () => {
+    await state().start();
+    await state().createProject({ title: "Roman", kind: "roman" });
+    await state().closeProject();
+    const id = state().projects[0].id;
+    await state().hideProject(id);
+    await state().showProject(id);
+    expect(state().projects.map((p) => p.id)).toEqual([id]);
+    expect(state().hiddenProjects).toEqual([]);
+    await state().hideProject(id);
+    await state().openProject(id);
+    await state().closeProject();
+    expect(state().projects.map((p) => p.id)).toEqual([id]);
+  });
+
+  it("supprimer un projet efface ses fichiers et le retire de la liste", async () => {
+    await state().start();
+    await state().createProject({ title: "Roman", kind: "roman" });
+    await state().closeProject();
+    const id = state().projects[0].id;
+    expect(await state().deleteProject(id)).toBe(true);
+    expect(state().projects).toEqual([]);
+    expect(state().hiddenProjects).toEqual([]);
+    storage.select(id);
+    expect(await storage.readAll()).toBeNull();
   });
 
   it("projet introuvable (dossier vidé ou déplacé) : on reste à l'accueil avec un message", async () => {

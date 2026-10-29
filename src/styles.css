@@ -212,6 +212,17 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 .home-buttons .ghost-button { min-height: 44px; }
 /* Profil de l'auteur : une grille de champs (deux par ligne quand la place le permet), puis un résumé. */
 .home-panel.profile-panel { max-width: 944px; flex-basis: 100%; }
+/* Colonne de droite : nouveau projet puis profil. Une longue liste de projets ne les repousse plus vers le bas. */
+.home-side { flex: 1 1 340px; max-width: 460px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+.home-side > .home-panel, .home-side > .home-panel.profile-panel { flex: none; max-width: none; width: 100%; box-sizing: border-box; }
+/* La liste défile au-delà d'une dizaine de projets, la page reste à sa taille. */
+.home-panel > .home-list { max-height: min(60vh, 34rem); max-height: min(60dvh, 34rem); overflow: auto; overscroll-behavior: contain; }
+.home-hidden { width: 100%; }
+.home-hidden summary { cursor: pointer; padding: 12px 0; min-height: 44px; box-sizing: border-box; display: list-item; color: var(--muted); font-size: 0.875rem; }
+.home-hidden .home-list { margin-top: 6px; }
+.home-list li.is-hidden .home-project { opacity: 0.75; }
+.home-show { flex-shrink: 0; min-height: 44px; }
+.icon-button.is-danger { color: var(--danger); }
 .profile-form { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; }
 .profile-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .profile-field label { font-size: 0.8125rem; font-weight: 600; }

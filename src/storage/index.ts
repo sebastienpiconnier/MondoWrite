@@ -68,7 +68,11 @@ export interface Storage {
   remember(info: { title: string; kind: ProjectKind }): void;
   /** Retire un projet de la liste, sans toucher à ses fichiers. */
   unlist(id: string): void;
-  /** Mobile : efface pour de bon le dossier d'un projet (et, dans iCloud, sur tous les appareils), puis le retire de la liste. */
+  /**
+   * Efface pour de bon un projet (après confirmation de l'auteur), puis le retire de la liste. Mobile : son dossier
+   * (et, dans iCloud, sur tous les appareils). Ordinateur : seulement ce que MondoWrite a écrit dans le dossier,
+   * puis le dossier s'il est vide. Navigateur : ses clés. Jamais le dossier cloud lui-même.
+   */
   deleteProject?(id: string): Promise<void>;
   /**
    * Import : l'auteur choisit un fichier texte, qui est lu sans être modifié.

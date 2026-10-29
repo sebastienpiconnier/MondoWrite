@@ -15,6 +15,7 @@ import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
 import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
 import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
+import { hideProject, showProject, splitHidden } from "./storage/recents";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
 import { classifySaveError, type SaveErrorKind } from "./saveErrors";
@@ -327,8 +328,10 @@ interface CosmosState {
   loaded: boolean;
   /** Accueil (choix du projet) ou projet ouvert. */
   screen: "home" | "project";
-  /** Projets connus de cet appareil, pour l'accueil. */
+  /** Projets connus de cet appareil, pour l'accueil (sans les projets masqués). */
   projects: ProjectEntry[];
+  /** Projets masqués de l'accueil : toujours là, réaffichables (réglage de l'appareil). */
+  hiddenProjects: ProjectEntry[];
   /** Le dossier choisi à l'accueil ne contient pas de projet. */
   homeNotice: boolean;
   /** Au lancement : liste les projets et affiche l'accueil. */
@@ -361,10 +364,12 @@ interface CosmosState {
   setTour: (step: number | null) => void;
   /** Enregistre et revient à l'accueil. `force` : y revenir même si l'enregistrement a échoué. */
   closeProject: (force?: boolean) => Promise<void>;
-  /** Retire un projet de la liste de l'accueil, sans toucher à ses fichiers. */
-  unlistProject: (id: string) => Promise<void>;
-  /** Mobile : supprime un projet (son dossier), après confirmation à l'accueil. */
-  deleteProject: (id: string) => Promise<void>;
+  /** Masque un projet de la liste de l'accueil, sans toucher à ses fichiers. */
+  hideProject: (id: string) => Promise<void>;
+  /** Réaffiche un projet masqué. */
+  showProject: (id: string) => Promise<void>;
+  /** Supprime un projet pour de bon, après confirmation à l'accueil. Rend faux si la suppression a échoué. */
+  deleteProject: (id: string) => Promise<boolean>;
   /** Le dossier du projet n'a pas pu être ouvert : un message, à l'accueil, invite à le choisir à nouveau. */
   openFailed: boolean;
   dismissOpenFailed: () => void;
@@ -802,7 +807,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
   /** Une relecture demandée pendant un enregistrement attend sa fin. */
   let syncing = false;
   let syncAgain = false;
-  const refreshProjects = async () => set({ projects: await storage.list().catch(() => []) });
+  const refreshProjects = async () => {
+    const { shown, hidden } = splitHidden(await storage.list().catch(() => []));
+    set({ projects: shown, hiddenProjects: hidden });
+  };
 
   return {
     title: "",
@@ -1700,6 +1708,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     loaded: false,
     screen: "home",
     projects: [],
+    hiddenProjects: [],
     homeNotice: false,
 
     start: async () => {
@@ -1919,17 +1928,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       await claimLock();
     },
 
-    unlistProject: async (id) => {
-      storage.unlist(id);
+    hideProject: async (id) => {
+      hideProject(id);
+      await refreshProjects();
+    },
+    showProject: async (id) => {
+      showProject(id);
       await refreshProjects();
     },
     deleteProject: async (id) => {
+      let ok = true;
       try {
         await storage.deleteProject?.(id);
+        showProject(id);
       } catch (err) {
         console.error(err);
+        ok = false;
       }
       await refreshProjects();
+      return ok;
     },
     openFailed: false,
     dismissOpenFailed: () => set({ openFailed: false }),
