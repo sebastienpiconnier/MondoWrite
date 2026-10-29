@@ -13,7 +13,7 @@ export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences"
 export type ScreenplayTemplate = (typeof SCREENPLAY_TEMPLATES)[number];
 export const isScreenplayTemplate = (v: unknown): v is ScreenplayTemplate => SCREENPLAY_TEMPLATES.includes(v as ScreenplayTemplate);
 
-const BEAT_RE = /\s*\[\[cosmos:beat:([a-z0-9_]+)\]\]/;
+const BEAT_RE = /\s*\[\[cosmos:beat:([A-Za-z0-9_]+)\]\]/;
 
 /** Clé de case portée par une section, sinon null. */
 export const beatOf = (text: string): string | null => BEAT_RE.exec(text)?.[1] ?? null;

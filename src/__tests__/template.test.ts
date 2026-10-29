@@ -147,3 +147,20 @@ describe("ranger une scène dans une section", () => {
     expect(sectionOf(parse(source).elements, 0)).toBe(-1);
   });
 });
+
+describe("clés de case avec majuscules", () => {
+  // p_falseLead (Polar) n'était pas reconnu : la note restait visible et la case n'était plus une case.
+  it("reconnaît toutes les clés des gabarits du séquencier", () => {
+    for (const template of SCREENPLAY_TEMPLATES) {
+      for (const key of PLAN_TEMPLATES[template]) {
+        const text = `Case [[cosmos:beat:${key}]]`;
+        expect(beatOf(text)).toBe(key);
+        expect(sectionLabel(text)).toBe("Case");
+      }
+    }
+  });
+  it("retrouve le gabarit Polar posé dans un scénario", () => {
+    const sp = parse("# Fausse piste [[cosmos:beat:p_falseLead]]\n\nINT. LANDE - NUIT\n\nAction.\n");
+    expect(currentTemplate(sp.elements)).toBe("polar");
+  });
+});

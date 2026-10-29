@@ -219,7 +219,10 @@
 /* Sections du séquencier : libellé et longueur des scènes qu'elles contiennent. */
 .sq-section { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .sq-section-length { font: 13px var(--font-ui); color: var(--ink-2); }
-.sq-scene .plan-to { flex-shrink: 0; }
+/* Le menu « Ranger dans » ne prend jamais la place du titre : il se borne et coupe un nom de case trop long. */
+.sq-scene .plan-to { flex: 0 1 auto; min-width: 0; }
+.sq-scene .plan-to select { width: 100%; max-width: 13rem; min-width: 6rem; text-overflow: ellipsis; }
+.sq-list.is-cards .sq-scene .plan-to select { max-width: none; }
 /* Actions d'une scène du Plan : chapitre, étape, voir la fiche, corbeille, sur une seule ligne compacte. */
 .plan-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; flex-wrap: wrap; }
 .plan-actions .plan-to { flex: 0 1 auto; min-width: 0; gap: 4px; }
