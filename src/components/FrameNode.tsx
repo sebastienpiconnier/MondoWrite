@@ -3,14 +3,23 @@
 // Son intérieur laisse passer les clics : on peut toujours créer une carte dedans.
 
 import { memo, useEffect } from "react";
-import { NodeResizer, type NodeProps } from "@xyflow/react";
+import { NodeResizer, useStore, type NodeProps } from "@xyflow/react";
 import { useCosmos, type FrameNode as FrameNodeT } from "../store";
-import { useT } from "../i18n";
+import { fmt, useT } from "../i18n";
 import { useLifted } from "../lifted";
 import { boxes, frameBox } from "../projectState";
+import { frameDepth, frameLevel, titleBoost } from "../frameLevels";
+import { beatKeys, zoomStep } from "./FrameLabels";
 
 function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const t = useT().toile;
+  // Niveau du cadre : dans combien d'autres cadres il est posé. Il donne la taille du titre.
+  const level = useCosmos((s) => frameLevel(frameDepth(id, s.frames.map((f) => ({ id: f.id, ...frameBox(f) })))));
+  // De loin, le titre passe dans la couche des titres, au-dessus des cartes (FrameLabels) : l'en-tête le cache.
+  const far = useStore((s) => titleBoost(zoomStep(s), level) > 1);
+  // Case du gabarit : sa place dans la structure (« Case 3 sur 15 »), 0 si la clé n'est plus dans le gabarit.
+  const rank = useCosmos((s) => (data.beat ? beatKeys(s).indexOf(data.beat) + 1 : 0));
+  const total = useCosmos((s) => (data.beat ? beatKeys(s).length : 0));
   const updateFrame = useCosmos((s) => s.updateFrame);
   const deleteFrame = useCosmos((s) => s.deleteFrame);
   const toggleFrameLock = useCosmos((s) => s.toggleFrameLock);
@@ -35,7 +44,9 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   }, [selected, id]);
 
   return (
-    <div className={`frame${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}${locked ? " is-locked" : ""}${lifted ? " is-lifted" : ""}`}>
+    <div
+      className={`frame is-level-${level}${data.beat ? " is-beat" : ""}${far && data.title.trim() ? " is-far" : ""}${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}${locked ? " is-locked" : ""}${lifted ? " is-lifted" : ""}`}
+    >
       <NodeResizer minWidth={220} minHeight={140} isVisible={selected && !locked} lineClassName="frame-resize-line" handleClassName="frame-resize-handle" />
       <div className="frame-handle">
         <input
@@ -46,13 +57,19 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
           title={data.title || undefined}
           size={Math.max(10, data.title.length)}
           placeholder={t.frameTitle}
-          aria-label={t.frameTitleAria}
+          aria-label={rank > 0 ? fmt(t.beatTitleAria, { n: rank, total }) : t.frameTitleAria}
           autoComplete="off"
           onChange={(e) => updateFrame(id, { title: e.target.value })}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
           }}
         />
+        {/* Rang de la case, à côté du titre : l'en-tête garde la hauteur d'une ligne (les cases déjà rangées n'ont que 64 px). */}
+        {rank > 0 && (
+          <span className="frame-kicker" aria-hidden="true">
+            {fmt(t.beatRank, { n: rank, total })}
+          </span>
+        )}
         {/* Verrou : « Organiser » laisse ce cadre et ses cartes à leur place ; il ne bouge plus par mégarde. */}
         <button
           type="button"

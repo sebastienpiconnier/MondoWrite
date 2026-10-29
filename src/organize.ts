@@ -61,6 +61,9 @@ const GAP = 32; // entre deux cartes
 const GROUP_GAP = 56; // entre deux cadres
 const ROW_GAP = 96; // entre deux rangées de l'ensemble
 const PAD = { side: 32, top: 64, bottom: 32 }; // marge intérieure d'un cadre (titre en haut)
+/** Marge du haut d'une case de gabarit : son titre est plus grand et porte son rang (« Case 3 sur 15 », FrameNode). */
+const BEAT_TOP = 96;
+const padTop = (item: { beat?: string }) => (item.beat ? BEAT_TOP : PAD.top);
 /** Une rangée du récit compte au moins 4 scènes (un petit récit reste sur une ligne)… */
 const MIN_SCENES_PER_ROW = 4;
 /** … et au plus 20. */
@@ -89,13 +92,14 @@ interface Sized {
 }
 
 /** Largeur du titre d'un cadre (police de 16 px, environ 8,5 px par caractère, marges de l'en-tête et ses boutons). */
-const titleWidth = (title: string) => Math.ceil(title.length * 8.5) + 120;
+/** Largeur que demande le titre d'un cadre : 26 px pour un cadre de premier niveau, 30 px pour une case (canvas.css). */
+const titleWidth = (title: string, beat?: string) => Math.ceil(title.length * (beat ? 17 : 14.5)) + 120;
 
 function size(item: Item): Sized {
   if (item.kind === "card") return { width: item.width, height: item.height };
   const inner = layoutSize(item.body);
   // Un cadre étroit (une seule carte) s'élargit pour que son titre se lise en entier.
-  return item.kind === "box" ? inner : { width: Math.max(inner.width + PAD.side * 2, titleWidth(item.title)), height: inner.height + PAD.top + PAD.bottom };
+  return item.kind === "box" ? inner : { width: Math.max(inner.width + PAD.side * 2, titleWidth(item.title, item.beat)), height: inner.height + padTop(item) + PAD.bottom };
 }
 
 /** Largeur de chaque colonne et hauteur de chaque ligne d'une grille. */
@@ -132,7 +136,7 @@ function place(layout: Layout, x: number, y: number, out: OrganizeResult, newId:
       const s = size(item);
       // Le cadre extérieur d'abord : il se dessine derrière ceux qu'il contient.
       out.frames.push({ id: newId(), title: item.title, x: Math.round(ix), y: Math.round(iy), width: Math.round(s.width), height: Math.round(s.height), ...(item.beat ? { beat: item.beat } : {}) });
-      place(item.body, ix + PAD.side, iy + PAD.top, out, newId);
+      place(item.body, ix + PAD.side, iy + padTop(item), out, newId);
     }
   });
 }

@@ -68,10 +68,36 @@
 /* Zone Recherche : le cadre où atterrissent les sources collées ou déposées. */
 .frame.is-research { border-color: var(--type-lien); border-style: solid; }
 .frame.is-research .frame-title { color: var(--type-lien); font-weight: 600; }
-.frame-empty { margin: 0 18px; color: var(--muted); font: italic 14px/1.4 var(--font-ui); }
-.frame-handle { pointer-events: all; display: flex; align-items: center; gap: 6px; width: max-content; max-width: 100%; padding: 8px 10px; cursor: grab; }
+.frame-empty { margin: 0 18px; color: var(--muted); font: italic calc(14px * var(--frame-boost, 1))/1.4 var(--font-ui); }
+/* Hiérarchie des cadres (frameLevels.ts) : niveau 0 = cadre de premier niveau, 1 = posé dans un cadre, 2 = plus profond.
+   La taille de l'en-tête est celle du titre (--frame-title), multipliée de loin par --frame-boost (posé par FrameNode) :
+   tout l'en-tête est en em, il grandit d'un bloc. */
+/* Tailles reprises par titleSize (frameLevels.ts) pour borner l'agrandissement : les changer ensemble. */
+.frame, .frame-label { --frame-title: 16px; }
+.frame.is-level-0, .frame-label.is-level-0 { --frame-title: 26px; }
+.frame.is-level-1, .frame-label.is-level-1 { --frame-title: 20px; }
+.frame.is-level-0 { border-style: solid; }
+.frame.is-level-2 { background: transparent; }
+/* Case d'un gabarit de structure : trait d'accent, son rang dans la structure au-dessus du titre. */
+.frame.is-beat { border-color: var(--accent); border-style: solid; }
+.frame.is-beat.is-level-0 { border-width: 3px; }
+.frame.is-beat.is-level-0, .frame-label.is-beat.is-level-0 { --frame-title: 30px; }
+.frame-handle { pointer-events: all; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25em 0.4em; width: max-content; max-width: 100%; box-sizing: border-box; padding: 0.35em 0.6em; border-radius: 14px; font-size: var(--frame-title); cursor: grab; }
+/* De loin, le titre est dans la couche des titres (FrameLabels), au-dessus des cartes : l'en-tête garde sa place sans texte. */
+.frame.is-far .frame-title, .frame.is-far .frame-kicker { visibility: hidden; }
+.frame-labels { position: absolute; inset: 0; z-index: 900; pointer-events: none; }
+.frame-label { position: absolute; top: 0; left: 0; box-sizing: border-box; padding: 6px; font-size: calc(var(--frame-title) * var(--frame-boost, 1)); }
+.frame-label-text { display: inline-flex; flex-direction: column; gap: 0.15em; max-width: 100%; box-sizing: border-box; padding: 0.25em 0.5em 0.3em; border-radius: 0.35em; background: color-mix(in srgb, var(--surface) 90%, transparent); box-shadow: var(--shadow-card); }
+.frame-label-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; color: var(--ink); font: 700 1em/1.15 var(--font-display); }
+.frame-label.is-level-1 .frame-label-title { font-weight: 600; }
+.frame-label.is-level-2 .frame-label-title { font-weight: 500; color: var(--ink-2); }
+.frame-label .frame-kicker { padding: 0; }.frame.is-far:not(.is-selected) .frame-lock:not([aria-pressed="true"]), .frame.is-far:not(.is-selected) .card-delete { display: none; }
+.frame-kicker { padding: 0 0.2em; white-space: nowrap; color: var(--accent-ink); font: 600 0.42em/1.2 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
 .frame-handle:active { cursor: grabbing; }
-.frame-title { min-width: 10ch; max-width: 100%; min-height: 32px; padding: 0 8px; field-sizing: content; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: 500 16px var(--font-display); text-overflow: ellipsis; }
+.frame-title { min-width: 10ch; max-width: 100%; min-height: 1.4em; padding: 0 0.3em; field-sizing: content; border: 1px solid transparent; border-radius: 0.3em; background: transparent; color: var(--ink); font: 700 1em/1.2 var(--font-display); text-overflow: ellipsis; }
+.frame-title:not(:placeholder-shown) { min-width: 2ch; }
+.frame.is-level-1 .frame-title { font-weight: 600; }
+.frame.is-level-2 .frame-title { font-weight: 500; color: var(--ink-2); }
 @media (any-hover: hover) { .frame-title:hover { border-color: var(--line-2); } }
 .frame-title:focus-visible { border-color: var(--line-2); background: var(--surface); color: var(--ink); }
 .frame-title::placeholder { color: var(--placeholder); }

@@ -22,6 +22,7 @@ import { CanvasFilterMenu } from "./CanvasFilterMenu";
 import { InboxMenu } from "./InboxMenu";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
+import { FrameLabels } from "./FrameLabels";
 import { FloatingEdge } from "./FloatingEdge";
 import { wireShown } from "../cardLinks";
 import { NewCardMenu } from "./NewCardMenu";
@@ -694,6 +695,7 @@ export function Toile() {
         proOptions={{ hideAttribution: false }}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} />
+        <FrameLabels />
         <Controls showInteractive={false} position="bottom-right" />
         <MiniMap
           position="top-right"

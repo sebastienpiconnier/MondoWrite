@@ -319,6 +319,8 @@ export const en: Messages = {
     frameTitle: "Frame name",
     beatEmpty: "Nothing here yet. Drop a scene in this frame to put it in this beat.",
     frameTitleAria: "Frame name",
+    beatRank: "Beat {n} of {total}",
+    beatTitleAria: "Name of beat {n} of {total} in the template",
     lockFrame: "Lock frame",
     lockFrameHint: "Lock: this frame and its cards stay put, even with “Organize”",
     unlockFrameHint: "Locked frame: its cards stay put. Click to unlock",

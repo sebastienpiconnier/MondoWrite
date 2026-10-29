@@ -323,6 +323,8 @@ export const fr = {
     frameTitle: "Nom du cadre",
     beatEmpty: "Rien encore ici. Dépose une scène dans ce cadre pour la ranger dans cette case.",
     frameTitleAria: "Nom du cadre",
+    beatRank: "Case {n} sur {total}",
+    beatTitleAria: "Nom de la case {n} sur {total} du gabarit",
     lockFrame: "Verrouiller le cadre",
     lockFrameHint: "Verrouiller : ce cadre et ses cartes ne bougent plus, même avec « Organiser »",
     unlockFrameHint: "Cadre verrouillé : ses cartes ne bougent plus. Toucher pour déverrouiller",
