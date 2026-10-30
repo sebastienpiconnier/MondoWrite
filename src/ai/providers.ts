@@ -193,9 +193,33 @@ export function readModels(json: unknown): string[] {
 export type AiErrorCode = "network" | "auth" | "model" | "limit" | "empty" | "other";
 
 export class AiError extends Error {
+  /** Raison donnée par le service lui-même (son message d'erreur), montrée à l'auteur à côté du nôtre. */
+  reason = "";
   constructor(public code: AiErrorCode, detail = "") {
     super(detail || code);
   }
+}
+
+/**
+ * Message d'erreur du service, lu dans sa réponse : `{"error": {"message": …}}` (Claude, OpenAI, OpenRouter,
+ * LM Studio) ou `{"error": "…"}` (Ollama). Vide si la réponse n'en a pas.
+ */
+export function serviceReason(body: string): string {
+  try {
+    const data = JSON.parse(body) as { error?: unknown; message?: unknown };
+    const err = data?.error;
+    const text = typeof err === "string" ? err : err && typeof err === "object" ? (err as { message?: unknown }).message : data?.message;
+    return typeof text === "string" ? text.replace(/\s+/g, " ").trim().slice(0, 240) : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Texte d'erreur pour l'auteur : notre explication, puis celle du service s'il en a donné une. */
+export function aiErrorText(err: unknown, errors: Record<AiErrorCode, string>): string {
+  const code = err instanceof AiError ? err.code : "other";
+  const reason = err instanceof AiError ? err.reason : "";
+  return reason ? `${errors[code]} (${reason})` : errors[code];
 }
 
 export const errorCode = (status: number): AiErrorCode =>
@@ -232,7 +256,14 @@ async function send(request: HttpRequest, local = false): Promise<unknown> {
   }
   // Un serveur local qui répond 403 refuse l'origine de l'app, ce n'est pas une affaire de clé.
   const code = local && response.status === 403 ? "network" : errorCode(response.status);
-  if (!response.ok) throw new AiError(code, `${response.status} ${await response.text().catch(() => "")}`.slice(0, 300));
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    const reason = serviceReason(body);
+    // Claude répond 400 quand le crédit du compte est épuisé : c'est une limite, pas un modèle inconnu.
+    const error = new AiError(/credit balance|billing|quota/i.test(reason) ? "limit" : code, `${response.status} ${body}`.slice(0, 300));
+    error.reason = reason;
+    throw error;
+  }
   return response.json().catch(() => {
     throw new AiError("other", "réponse illisible");
   });

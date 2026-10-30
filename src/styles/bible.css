@@ -390,9 +390,11 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 .char-stats td .char-stats-sub { display: block; font-size: 0.75rem; }
 .cross-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .cross-head p { margin: 0; font-size: 0.875rem; max-width: 60ch; }
-.cross-layout { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-.cross-main { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-.cross-side { flex: 1 1 240px; display: flex; flex-direction: column; gap: 10px; }
+.cross-layout { display: flex; flex-direction: column; gap: 16px; }
+.cross-main { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+/* Encadrés sous la matrice, côte à côte tant qu'il y a la place : la matrice garde toute la largeur. */
+.cross-side { display: flex; flex-wrap: wrap; gap: 10px; }
+.cross-side > section { flex: 1 1 240px; min-width: 0; }
 .cross-side section { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 0.875rem; }
 .app-dialog .cross-side h3 { margin: 0 0 6px; }
 .cross-side p { margin: 4px 0 0; }
@@ -401,7 +403,9 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 .cross-table { overflow-x: auto; }
 .cross table { width: auto; border-collapse: separate; border-spacing: 4px; }
 .cross th, .cross td { border: 0; padding: 0; }
-.cross tbody th { padding-right: 10px; white-space: nowrap; }
+/* Noms des personnages tenus à gauche quand la matrice défile de côté. */
+.cross tbody th { position: sticky; left: 0; z-index: 1; padding-right: 10px; white-space: nowrap; background: var(--surface); }
+.cross thead td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
 .cross thead th { vertical-align: bottom; font-size: 0.75rem; font-weight: 600; color: var(--ink-2); padding: 0 2px 4px; }
 .cross thead th { width: 6.5em; }
 .cross thead th span { display: block; max-width: 7.5em; overflow: hidden; text-overflow: ellipsis; text-align: center; }

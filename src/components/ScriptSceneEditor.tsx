@@ -80,7 +80,8 @@ export function ScriptSceneEditor({ card }: { card: CardData }) {
     extensions,
     content: bodyDoc(body),
     immediatelyRender: true,
-    autofocus: "end",
+    // Curseur à la fin seulement pour une scène encore vide : sur un long texte, la fenêtre descendrait tout en bas.
+    autofocus: body.some((el) => el.text.trim()) ? false : "end",
     editorProps: { attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": sp.editorAria } },
     onCreate: ({ editor: ed }) => setType(currentElement(ed.state)?.type ?? null),
     onSelectionUpdate: ({ editor: ed }) => setType(currentElement(ed.state)?.type ?? null),

@@ -91,7 +91,8 @@ export function DraftEditor({ card, autofocus = false }: { card: CardData; autof
     ],
     content: useCosmos.getState().manuscript[card.id] ?? "",
     immediatelyRender: true,
-    autofocus: autofocus ? "end" : false,
+    // Curseur à la fin seulement pour une scène encore vide : sur un long texte, la fenêtre descendrait tout en bas.
+    autofocus: autofocus && !plainText(useCosmos.getState().manuscript[card.id] ?? "") ? "end" : false,
     editorProps: { attributes: attributes(title) },
     onUpdate: ({ editor: ed }) => useCosmos.getState().setManuscriptText(card.id, ed.getHTML()),
   });

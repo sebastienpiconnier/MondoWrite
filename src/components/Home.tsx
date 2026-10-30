@@ -111,7 +111,7 @@ export function Home() {
         </button>
       )}
       {asking === p.id && (
-        <div className="home-confirm" role="alert">
+        <div className="home-confirm" role="alert" ref={(el) => el?.scrollIntoView({ block: "nearest" })}>
           <p>{storage.canPickFolder ? fmt(h.removeAskPc, { title: nameOf(p), folder: p.id }) : fmt(h.removeAsk, { title: nameOf(p) })}</p>
           <div className="home-buttons">
             <button

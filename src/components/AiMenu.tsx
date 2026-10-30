@@ -10,7 +10,7 @@ import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { typeColor } from "../types";
-import { AiError, complete, isReady } from "../ai/providers";
+import { aiErrorText, complete, isReady } from "../ai/providers";
 import { plainText } from "../search";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
@@ -93,7 +93,7 @@ export function AiMenu() {
       }
     } catch (err) {
       console.error(err);
-      setMessage(t.errors[err instanceof AiError ? err.code : "other"]);
+      setMessage(aiErrorText(err, t.errors));
     } finally {
       setBusy(false);
     }

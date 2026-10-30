@@ -14,7 +14,7 @@ import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
-import { AI_PROVIDERS, AiError, PROVIDERS, isAiProvider, listModels } from "../ai/providers";
+import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, listModels } from "../ai/providers";
 import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
 import { SOURCE_INFO } from "../imageSources";
@@ -55,7 +55,7 @@ export function Settings({ project = true }: { project?: boolean }) {
       if (!config.model.trim() && list[0]) patchAi("models", list[0]);
     } catch (err) {
       console.error(err);
-      setAiStatus(t.ai.errors[err instanceof AiError ? err.code : "other"]);
+      setAiStatus(aiErrorText(err, t.ai.errors));
     } finally {
       setTesting(false);
     }

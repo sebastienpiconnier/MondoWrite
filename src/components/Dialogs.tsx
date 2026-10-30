@@ -131,7 +131,8 @@ export function Dialogs() {
         </div>
       )}
       {/* La liseuse a son bouton « Fermer » en haut : la place en bas va aux pages. Les fenêtres d'export ont le leur, à côté du bouton d'export. */}
-      {dialog !== "document" && dialog !== "paperback" && dialog !== "scriptPdf" && dialog !== "bibleExport" && dialog !== "profile" && (
+      {/* La carte agrandie et les statistiques ont leur croix en haut : un bouton en bas, focalisé à l'ouverture, faisait descendre la fenêtre tout en bas. */}
+      {dialog !== "document" && dialog !== "paperback" && dialog !== "scriptPdf" && dialog !== "bibleExport" && dialog !== "profile" && dialog !== "card" && dialog !== "stats" && (
         <div className="assistant-actions app-dialog-actions">
           <button type="button" className={dialog === "replace" ? "" : "is-primary"} onClick={() => setDialog(null)} autoFocus={dialog !== "replace"}>
             {t.gallery.close}

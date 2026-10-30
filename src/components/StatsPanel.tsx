@@ -45,6 +45,12 @@ export function StatsPanel() {
 
   return (
     <div className="stats-panel">
+      {/* Fermer sans descendre au bas d'un long tableau. */}
+      <button type="button" className="expanded-close" aria-label={t.gallery.close} title={t.gallery.close} onClick={close}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
       <h2 id="app-dialog-title">{s.title}</h2>
       <div className="sq-modes stats-tabs" role="group" aria-label={s.tabsAria}>
         {tabs.map(([key, label]) => (

@@ -13,7 +13,12 @@ import { splitAnswers, type Answered } from "../assistant";
 const MAX_CARDS = 80;
 const MAX_TEXT = 500;
 
-const clip = (text: string, max = MAX_TEXT) => (text.length > max ? `${text.slice(0, max)}…` : text);
+/** Texte abrégé, sans couper un caractère en deux (une moitié d'emoji seule rend la requête invalide pour Claude). */
+const clip = (text: string, max = MAX_TEXT) => {
+  if (text.length <= max) return text;
+  const end = /[\ud800-\udbff]/.test(text[max - 1]) ? max - 1 : max;
+  return `${text.slice(0, end)}…`;
+};
 /** Une carte telle que l'IA la lit : identifiant, type, titre, texte (abrégé) et fiche d'identité s'il y en a une. */
 const brief = (card: CardData) => ({
   id: card.id,

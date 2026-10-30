@@ -12,7 +12,7 @@ import { aiConfig, useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import type { CardData } from "../types";
 import { QUESTION_FIELD, THEMES, THEME_KEYS, allQuestionTexts, bankQuestions, customKey, nextOpen, questionText, type Theme } from "../assistant";
-import { AiError, complete, isReady } from "../ai/providers";
+import { AiError, aiErrorText, complete, isReady } from "../ai/providers";
 import { useVocab } from "../vocab";
 import { interviewPrompt, parseQuestion, parseSynthesis, synthesisPrompt } from "../ai/tasks";
 
@@ -111,7 +111,7 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
       setAnswer("");
     } catch (err) {
       console.error(err);
-      setError(all.ai.errors[err instanceof AiError ? err.code : "other"]);
+      setError(aiErrorText(err, all.ai.errors));
     } finally {
       setBusy("");
     }
@@ -139,7 +139,7 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
       setSynthesis(paragraphs);
     } catch (err) {
       console.error(err);
-      setError(all.ai.errors[err instanceof AiError ? err.code : "other"]);
+      setError(aiErrorText(err, all.ai.errors));
     } finally {
       setBusy("");
     }

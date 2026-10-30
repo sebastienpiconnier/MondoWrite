@@ -3,6 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig, OLLAMA_CONTEXT, stripThinking } from "../ai/providers";
+import { aiErrorText, AiError as AiErr, serviceReason } from "../ai/providers";
 import { coherencePrompt, extractJson, interviewPrompt, nameCards, parseCoherence, parseQuestion, parseTidy, tidyCandidates, tidyPrompt } from "../ai/tasks";
 import { aiConfig } from "../settings";
 import { useCosmos } from "../store";
@@ -265,5 +266,18 @@ describe("alerte gardée pour plus tard", () => {
     state().undo();
     expect(state().nodes).toHaveLength(2);
     expect(state().edges).toHaveLength(0);
+  });
+});
+
+describe("message d'erreur du service", () => {
+  it("la raison donnée par le service est montrée", () => {
+    expect(serviceReason(JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "Your credit balance is too low to access the Anthropic API." } }))).toMatch(/credit balance/);
+    expect(serviceReason(JSON.stringify({ error: "model not found" }))).toBe("model not found");
+    expect(serviceReason("<html>")).toBe("");
+    const err = new AiErr("model");
+    err.reason = "max_tokens: too big";
+    const errors = { network: "N", auth: "A", model: "M", limit: "L", empty: "E", other: "O" };
+    expect(aiErrorText(err, errors)).toBe("M (max_tokens: too big)");
+    expect(aiErrorText(new Error("x"), errors)).toBe("O");
   });
 });
