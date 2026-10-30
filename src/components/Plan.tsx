@@ -305,10 +305,12 @@ export function Plan() {
           />
         )}
 
-        {arranged.beats.map((beat) => (
-          <section key={beat.key} className={`plan-beat${over === beat.key ? " is-over" : ""}`} aria-labelledby={`plan-${beat.key}`} {...dropOn(beat.key, beat.key)}>
+        {arranged.beats.map((beat, rank) => (
+          <section key={beat.key} className={`plan-beat${free ? "" : " is-beat"}${over === beat.key ? " is-over" : ""}`} aria-labelledby={`plan-${beat.key}`} {...dropOn(beat.key, beat.key)}>
+            {/* Case du gabarit : son rang dans la structure au-dessus d'un grand titre (comme son cadre sur le canevas). */}
             <h2 id={`plan-${beat.key}`}>
-              {beatLabel(beat.key)}
+              {!free && <span className="beat-rank">{fmt(p.beatRank, { n: rank + 1, total: arranged.beats.length })}</span>}
+              <span className="beat-title">{beatLabel(beat.key)}</span>
               {beat.ids.length > 0 && <span className="plan-count">{beat.ids.length}</span>}
             </h2>
             {beatInfo(beat.key).hint && <p className="plan-beat-hint">{beatInfo(beat.key).hint}</p>}

@@ -4,7 +4,7 @@
 // Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
-import type { PlanBeat } from "../plan";
+import { templateBeats, type PlanBeat } from "../plan";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SCENE_AT, useCosmos } from "../store";
@@ -87,6 +87,11 @@ export function Sequencier() {
   // Gabarit : ses cases sont des sections du scénario. Une section écrite par l'auteur garde son texte.
   const template = currentTemplate(screenplay.elements);
   const beatInfo = useBeatText();
+  // Cases du gabarit en place, dans l'ordre : le rang d'une case (« Case 3 sur 15 ») au-dessus de son titre.
+  const beatKeys = useMemo(() => {
+    const plan = screenplayPlan(screenplay.elements);
+    return plan.template === "libre" ? [] : templateBeats(plan.template, plan.custom);
+  }, [screenplay.elements]);
   const labelOf = (text: string) => {
     const key = beatOf(text);
     return key && key in t.plan.beats ? t.plan.beats[key as PlanBeat].label : sectionLabel(text);
@@ -179,9 +184,12 @@ export function Sequencier() {
 
             if (block.kind === "section") {
               return (
-                <li key={`section-${block.start}`} className={`sq-section${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
+                <li key={`section-${block.start}`} className={`sq-section${beatOf(block.text) ? " is-beat" : ""}${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
                   <span className="sq-section-name">
-                    <span>{labelOf(block.text)}</span>
+                    {beatKeys.indexOf(beatOf(block.text) ?? "") >= 0 && (
+                      <span className="beat-rank">{fmt(t.plan.beatRank, { n: beatKeys.indexOf(beatOf(block.text)!) + 1, total: beatKeys.length })}</span>
+                    )}
+                    <span className="beat-title">{labelOf(block.text)}</span>
                     {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}
                     {beatOf(block.text) && beatInfo(beatOf(block.text)!).hint && <span className="sq-section-hint">{beatInfo(beatOf(block.text)!).hint}</span>}
                   </span>

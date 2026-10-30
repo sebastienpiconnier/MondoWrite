@@ -990,6 +990,7 @@ export const en: Messages = {
   },
 
   plan: {
+    beatRank: "Beat {n} of {total}",
     title: "Outline",
     template: "Template",
     templates: { libre: "Free", troisActes: "Three acts", saveTheCat: "Save the Cat", voyageHeros: "Hero’s journey", huitSequences: "Eight sequences", episode: "TV episode", cercleHarmon: "Dan Harmon’s story circle", freytag: "Five-act pyramid", hauge: "Six stages (Hauge)", septPoints: "Seven points", kishotenketsu: "Kishōtenketsu", romance: "Romance", polar: "Mystery", perso: "My template" },

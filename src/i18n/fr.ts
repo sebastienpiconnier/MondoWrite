@@ -972,6 +972,7 @@ export const fr = {
 
   // Plan d'un roman : gabarits et cases où ranger les scènes.
   plan: {
+    beatRank: "Case {n} sur {total}",
     title: "Plan",
     template: "Gabarit",
     templates: { libre: "Libre", troisActes: "Trois actes", saveTheCat: "Save the Cat", voyageHeros: "Voyage du héros", huitSequences: "Huit séquences", episode: "Épisode de série", cercleHarmon: "Cercle de Dan Harmon", freytag: "Pyramide en cinq actes", hauge: "Six étapes (Hauge)", septPoints: "Sept points", kishotenketsu: "Kishōtenketsu", romance: "Romance", polar: "Polar", perso: "Mon gabarit" },
