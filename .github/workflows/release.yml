@@ -23,6 +23,12 @@ jobs:
       id: ${{ steps.release.outputs.id }}
     steps:
       - uses: actions/checkout@v4
+      # L'étiquette doit être la version de l'app, la même aux six endroits : sinon latest.json annonce une version
+      # que l'installeur n'apporte pas, et l'app la propose à chaque lancement (scripts/check-version.mjs).
+      - name: Numéro de version
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: node scripts/check-version.mjs "$RELEASE_TAG"
       - name: Brouillon de la Release
         id: release
         env:

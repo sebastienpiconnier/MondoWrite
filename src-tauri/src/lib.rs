@@ -79,9 +79,14 @@ async fn icloud_download(dir: String) -> usize {
         }
       }
     }
-    let Some(root) = icloud::container(ICLOUD_CONTAINER) else { return 0 };
-    let (Ok(root), Ok(dir)) = (std::fs::canonicalize(root), std::fs::canonicalize(&dir)) else { return 0 };
-    if !dir.starts_with(&root) {
+    // Seulement dans iCloud : le conteneur de l'app, ou (Mac) un dossier d'iCloud Drive choisi par l'auteur
+    // (« Mobile Documents »), où « Optimiser le stockage » peut retirer des fichiers de l'appareil.
+    let Ok(dir) = std::fs::canonicalize(&dir) else { return 0 };
+    let in_container = icloud::container(ICLOUD_CONTAINER)
+      .and_then(|root| std::fs::canonicalize(root).ok())
+      .is_some_and(|root| dir.starts_with(&root));
+    let in_drive = cfg!(target_os = "macos") && dir.components().any(|c| c.as_os_str() == "Mobile Documents");
+    if !in_container && !in_drive {
       return 0;
     }
     let mut pending = 0;

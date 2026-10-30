@@ -115,6 +115,12 @@ export interface Storage {
   locks?: LockStore;
   /** Copies Markdown du dossier projet (markdown/) : absent dans le navigateur, où il n'y a pas de dossier à lire. */
   copies?: CopyStore;
+  /**
+   * Fichiers du projet présents seulement comme repères iCloud (« .nom.md.icloud » : pas encore téléchargés, ou
+   * retirés de l'appareil par « Optimiser le stockage »), vus à la dernière lecture. Ils existent : ce n'est pas une
+   * suppression, et l'app ne les écrit ni ne les efface tant qu'ils ne sont pas arrivés (absent hors iCloud).
+   */
+  pending?(): string[];
 }
 
 /** Fichiers de markdown/ du projet sélectionné. Chemins relatifs à markdown/ (« bible.md », « versions/2026-10-11/bible.md »). */
@@ -165,15 +171,39 @@ export function serialize(project: Project): FileMap {
   return files;
 }
 
+/**
+ * Deux fichiers de cartes/ qui portent le même identifiant (une carte dupliquée dans le Finder ou Obsidian pour en
+ * faire une variante) : celui dont le nom est l'identifiant le garde, les autres reçoivent un identifiant neuf. Sans
+ * cela, un seul des deux était réécrit et l'autre fichier effacé au prochain enregistrement (1.7.2).
+ */
+export function distinctIds<C extends { id: string }>(read: { path: string; card: C }[]): C[] {
+  const owner = new Map<string, string>();
+  for (const { path, card } of read) {
+    if (path === cardPath(card.id) || !owner.has(card.id)) owner.set(card.id, path);
+  }
+  return read.map(({ path, card }) => (owner.get(card.id) === path ? card : { ...card, id: `${card.id}-${pathHash(path)}` }));
+}
+
+/** Empreinte courte et stable d'un chemin (FNV-1a, base 36) : le même fichier garde le même identifiant d'une lecture à l'autre. */
+function pathHash(path: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < path.length; i++) {
+    h ^= path.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
 export function deserialize(files: FileMap): Project | null {
   const raw = files[META_FILE];
   if (!raw) return null;
   const meta = JSON.parse(raw) as ProjectMeta;
-  const cards = Object.entries(files)
+  const read = Object.entries(files)
     // Une copie de conflit (« … (MondoWrite).md ») n'est jamais une carte : elle porte le même identifiant.
     .filter(([path]) => path.startsWith(`${CARDS_DIR}/`) && path.endsWith(".md") && !isConflictCopy(path))
-    .map(([, text]) => fileToCard(text))
-    .filter((c): c is NonNullable<typeof c> => c !== null);
+    .map(([path, text]) => ({ path, card: fileToCard(text) }))
+    .filter((r): r is { path: string; card: NonNullable<ReturnType<typeof fileToCard>> } => r.card !== null);
+  const cards = distinctIds(read);
   const live = new Set(cards.map((c) => c.id));
   const trash = Object.entries(files)
     .filter(([path]) => path.startsWith(`${TRASH_DIR}/`) && path.endsWith(".md") && !isConflictCopy(path))

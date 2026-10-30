@@ -71,16 +71,26 @@ let queue: Promise<void> = Promise.resolve();
  * Met à jour markdown/ après un enregistrement réussi. `enabled` : réglage du projet. Les erreurs ne
  * remontent pas : une copie manquée ne doit jamais faire échouer l'enregistrement du projet.
  */
-export function syncCopies(build: () => Partial<Record<CopyName, string>>, enabled: boolean, now = new Date()): Promise<void> {
-  queue = queue.then(() => run(build, enabled, now)).catch((err) => console.error("Copies Markdown", err));
+export function syncCopies(
+  build: () => Partial<Record<CopyName, string>>,
+  enabled: boolean,
+  now = new Date(),
+  forKey: string | null | undefined = storage.copies?.key(),
+): Promise<void> {
+  queue = queue.then(() => run(build, enabled, now, forKey)).catch((err) => console.error("Copies Markdown", err));
   return queue;
 }
 
-async function run(build: () => Partial<Record<CopyName, string>>, enabled: boolean, now: Date) {
+async function run(build: () => Partial<Record<CopyName, string>>, enabled: boolean, now: Date, forKey: string | null | undefined) {
   const store = storage.copies;
   const key = store?.key();
   if (!store || !key || !enabled) return;
+  // La passe a été demandée pour un projet ; si un autre est ouvert depuis, elle n'écrit rien. Les copies vont
+  // dans le dossier du projet sélectionné : sans cette garde, celles du projet A partaient dans le dossier de B.
+  const still = () => store.key() === forKey;
+  if (key !== forKey) return;
   if (known?.key !== key) known = { key, files: await store.read([...COPY_NAMES]) };
+  if (!still()) return;
   const files: FileMap = build();
   const changed = Object.entries(files).filter(([name, text]) => known!.files[name] !== text);
   const stale = COPY_NAMES.filter((name) => name in known!.files && !(name in files));
@@ -91,7 +101,9 @@ async function run(build: () => Partial<Record<CopyName, string>>, enabled: bool
   for (const [name, text] of Object.entries(files)) writes[`${VERSIONS_DIR}/${today}/${name}`] = versionText(text);
   await store.write(writes, [...stale, ...stale.map((name) => `${VERSIONS_DIR}/${today}/${name}`)]);
   known = { key, files };
-  await store.removeVersions(versionsToRemove(await store.versions(), today));
+  const versions = await store.versions();
+  if (!still()) return;
+  await store.removeVersions(versionsToRemove(versions, today));
 }
 
 /** Oublie les copies connues (tests, changement de projet sans clé distincte). */

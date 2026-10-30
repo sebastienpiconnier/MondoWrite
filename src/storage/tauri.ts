@@ -36,6 +36,11 @@ const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? 
 const ICLOUD_KEY = "cosmos:icloud";
 /** iCloud a déjà servi sur cet appareil : s'il disparaît, ses projets ne s'affichent plus (on le signale). */
 const ICLOUD_SEEN_KEY = "cosmos:icloud-vu";
+/** Repères iCloud vus à la dernière lecture du projet (voir `pending`). */
+let pendingPaths: { dir: string; paths: string[] } | null = null;
+/** « .nom.md.icloud » → « nom.md » (fichier iCloud pas encore téléchargé), sinon null. */
+export const icloudPlaceholder = (name: string): string | null =>
+  name.startsWith(".") && name.endsWith(".icloud") && name.length > ".icloud".length + 1 ? name.slice(1, -".icloud".length) : null;
 let icloudDocs: string | null | undefined;
 
 /** Dossier Documents du conteneur iCloud de l'app, ou null (hors iOS, session iCloud absente, droit non accordé). */
@@ -128,7 +133,9 @@ async function mobileRoot() {
  * répond que si l'app porte le droit iCloud, et rien n'est parcouru hors du conteneur).
  */
 async function ensureDownloaded(dir: string) {
-  if (mobile ? (await cloudRoot()) || !(await activeIcloud()) : !macIcloudOn()) return;
+  // Sur Mac, aussi un projet rangé ailleurs dans iCloud Drive : « Optimiser le stockage du Mac » retire de l'appareil
+  // les fichiers peu ouverts, qui restaient sinon des repères (1.7.2).
+  if (mobile ? (await cloudRoot()) || !(await activeIcloud()) : !macIcloudOn() && !plainPath(dir).includes("/Mobile Documents/")) return;
   try {
     let first = 0;
     for (let i = 0; i < 12; i++) {
@@ -744,6 +751,7 @@ export const tauriStorage: Storage = {
     const dir = await projectFolder();
     if (!dir) return null;
     await ensureDownloaded(dir);
+    const placeholders: string[] = [];
     const metaPath = await join(dir, META_FILE);
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
@@ -754,7 +762,13 @@ export const tauriStorage: Storage = {
       const folder = await join(dir, name);
       if (!(await exists(folder))) continue;
       // join passe aussi par le système : les chemins se calculent ensemble.
-      const names = (await readDir(folder)).filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)).map((entry) => entry.name);
+      const entries = await readDir(folder);
+      const names = entries.filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)).map((entry) => entry.name);
+      // Pas encore téléchargé (ou retiré de l'appareil par iCloud) : présent, mais illisible pour l'instant.
+      for (const entry of entries) {
+        const real = icloudPlaceholder(entry.name);
+        if (real && real.endsWith(".md") && !isConflictCopy(real) && !names.includes(real)) placeholders.push(`${name}/${real}`);
+      }
       const fulls = await Promise.all(names.map((file) => join(folder, file)));
       names.forEach((file, i) => paths.push([`${name}/${file}`, fulls[i]]));
     }
@@ -775,7 +789,13 @@ export const tauriStorage: Storage = {
     paths.forEach(([key], i) => (files[key] = texts[i]));
     const screenplayPath = await join(dir, SCREENPLAY_FILE);
     if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);
+    else if (await exists(await join(dir, `.${SCREENPLAY_FILE}.icloud`))) placeholders.push(SCREENPLAY_FILE);
+    pendingPaths = { dir, paths: placeholders };
     return files;
+  },
+
+  pending() {
+    return pendingPaths?.paths ?? [];
   },
 
   async write(files, removed) {
@@ -802,10 +822,16 @@ export const tauriStorage: Storage = {
     const dir = await projectFolder();
     if (!dir) return {};
     const out: FileMap = {};
+    const placeholders = new Set(pendingPaths?.dir === dir ? pendingPaths.paths : []);
     for (const path of paths) {
-      const full = await join(dir, ...path.split("/"));
-      if (await exists(full)) out[path] = await readTextFile(full);
+      const parts = path.split("/");
+      const full = await join(dir, ...parts);
+      if (await exists(full)) {
+        out[path] = await readTextFile(full);
+        placeholders.delete(path);
+      } else if (await exists(await join(dir, ...parts.slice(0, -1), `.${parts[parts.length - 1]}.icloud`))) placeholders.add(path);
     }
+    pendingPaths = { dir, paths: [...placeholders] };
     return out;
   },
 

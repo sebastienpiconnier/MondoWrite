@@ -107,6 +107,20 @@ describe("écriture dans markdown/", () => {
     expect(Object.keys(writes[1]).filter((n) => n.startsWith("versions/"))).toHaveLength(3);
   });
 
+  it("une passe demandée pour un projet n'écrit rien si un autre projet est ouvert entre-temps (1.7.2)", async () => {
+    let current = "projetA";
+    storage.copies = { ...storage.copies!, key: () => current };
+    const now = new Date(2026, 9, 30, 20);
+    // Demandée pour A, mais B est ouvert avant que la file ne l'exécute.
+    const pending = syncCopies(() => buildCopies(state(), ctx(), BIBLE_ORDER), true, now, "projetA");
+    current = "projetB";
+    await pending;
+    expect(writes).toHaveLength(0);
+    // Pour B, elle écrit normalement.
+    await syncCopies(() => buildCopies(state(), ctx(), BIBLE_ORDER), true, now, "projetB");
+    expect(writes).toHaveLength(1);
+  });
+
   it("réglage du projet arrêté, ou pas de dossier (navigateur) : rien n'est écrit", async () => {
     await syncCopies(() => buildCopies(state(), ctx(), BIBLE_ORDER), false);
     storage.copies = undefined;

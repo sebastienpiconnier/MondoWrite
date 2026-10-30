@@ -26,6 +26,7 @@ import { initAppMenu } from "./appMenu";
 import { watchKeyboard } from "./keyboard";
 import { watchTextScale } from "./textScale";
 import { watchFullscreen } from "./fullscreen";
+import { watchClosing } from "./closing";
 
 // App de bureau : comportements d'app du système (curseur flèche sur les commandes, voir styles.css).
 if (isTauri() && !isMobileOS()) {
@@ -43,6 +44,8 @@ initSettings();
 initAppMenu();
 // Écran tactile : la hauteur du clavier virtuel (--keyboard-h) laisse le texte défiler au-dessus.
 watchKeyboard();
+// Fenêtre fermée, Cmd+Q, app passée en arrière-plan : le projet ouvert est enregistré avant.
+watchClosing();
 // iPad et iPhone : les textes de l'interface suivent la taille de texte du système (Dynamic Type).
 watchTextScale();
 

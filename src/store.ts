@@ -14,7 +14,7 @@ import { foldNovelNodes, foldNovelNotes, foldScreenplayNotes } from "./sceneNote
 import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
-import { type CardData, type CardType, type Frame, type ProjectKind } from "./types";
+import { type CardData, type CardLayout, type CardType, type Frame, type ProjectKind } from "./types";
 import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { hideProject, showProject, splitHidden } from "./storage/recents";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
@@ -63,7 +63,7 @@ export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
 
 
-interface CosmosState {
+export interface CosmosState {
   title: string;
   kind: ProjectKind;
   setKind: (kind: ProjectKind) => void;
@@ -243,6 +243,8 @@ interface CosmosState {
   removePassage: (id: string) => void;
   /** Clés de cosmos.json écrites par une version plus récente et inconnues ici : réécrites telles quelles. */
   metaKeep: Record<string, unknown>;
+  /** Place des cartes dont le fichier n'est pas encore arrivé d'iCloud (projectState, `awaitingLayout`). */
+  awaitingLayout: CardLayout[];
   setPitch: (key: PitchField, value: string) => void;
   /** Réglages du livre broché (fenêtre « Livre broché »), hors historique comme la couverture. */
   print: PrintOptions;
@@ -772,12 +774,23 @@ export const useCosmos = create<CosmosState>((set, get) => {
     touch();
   };
   /** Adopte un projet lu sur disque. Rend faux si ces fichiers ne forment pas un projet. */
+  /** Place des cartes dont le fichier n'est pas encore arrivé d'iCloud (voir `awaitingLayout`). */
+  const awaitingFrom = (layout: readonly CardLayout[], present: ReadonlySet<string>): CardLayout[] => {
+    const waiting = new Set(
+      (storage.pending?.() ?? []).flatMap((path) => {
+        const m = /^cartes\/(.+)\.md$/.exec(path);
+        return m ? [m[1]] : [];
+      }),
+    );
+    return layout.filter((l) => waiting.has(l.id) && !present.has(l.id));
+  };
   const openFiles = (files: FileMap): boolean => {
     const project = deserialize(files);
     if (!project) return false;
     const { state, dirty } = openProject(project);
     set({
       ...state,
+      awaitingLayout: awaitingFrom(project.meta.layout, new Set(state.nodes.map((n) => n.id))),
       lastFiles: files,
       conflicts: [],
       saveError: null,
@@ -818,9 +831,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const project = deserialize(patchFiles(currentFiles(), patch));
     if (!project) return;
     const { state } = openProject(project);
-    const { screenplay, savedScreenplay, lastFiles } = get();
+    const { screenplay, savedScreenplay, lastFiles, awaitingLayout } = get();
+    const present = new Set(state.nodes.map((n) => n.id));
     set({
       ...state,
+      awaitingLayout: awaitingLayout.filter((l) => !present.has(l.id)),
       // Scénario non repris : on garde l'objet à l'écran, et ce qu'il reste à enregistrer.
       ...(SCREENPLAY_FILE in patch ? {} : { screenplay, savedScreenplay }),
       lastFiles: patchFiles(lastFiles, patch),
@@ -839,6 +854,88 @@ export const useCosmos = create<CosmosState>((set, get) => {
   /** Une relecture demandée pendant un enregistrement attend sa fin. */
   let syncing = false;
   let syncAgain = false;
+  // Enregistrements en cours : un seul à la fois (voir `save`).
+  let saving: Promise<void> | null = null;
+  let saveAgain = false;
+  /** Un enregistrement : écrit sur disque ce qui a changé depuis `lastFiles`. Toujours appelé par `save`. */
+  const saveOnce = async () => {
+      // Projet ouvert sur un autre appareil : on ne touche à rien sur le disque.
+      if (get().lockedBy) return;
+      if (storage.canPickFolder && !storage.location()) {
+        if (!(await storage.pickFolder())) return;
+        // Le dossier choisi contient déjà un projet : on l'ouvre, on ne l'écrase jamais
+        // avec ce qui est à l'écran (le projet d'exemple, le plus souvent).
+        const existing = await storage.readAll().catch(() => null);
+        if (existing && openFiles(existing)) return;
+      }
+      const { screenplay } = get();
+      const files = currentFiles();
+      const prev = get().lastFiles;
+      // Fichiers en conflit : la version du disque n'est pas touchée tant que l'auteur n'a pas choisi. Un fichier
+      // encore dans iCloud (repère « .nom.icloud ») non plus : l'écrire ou l'effacer ferait une seconde version.
+      const held = new Set([...get().conflicts.map((c) => c.path), ...(storage.pending?.() ?? [])]);
+      const changed: FileMap = {};
+      for (const [path, content] of Object.entries(files)) if (prev[path] !== content && !held.has(path)) changed[path] = content;
+      let removed = Object.keys(prev).filter((path) => !(path in files) && !held.has(path));
+      set({ status: "enregistrement" });
+      try {
+        // Garde-fou : juste avant d'écrire, on relit ce qu'on va remplacer ou supprimer. Un fichier changé
+        // hors de l'app depuis notre dernière lecture n'est jamais écrasé.
+        let conflicts = get().conflicts;
+        if (storage.readFiles) {
+          const targets = [...Object.keys(changed), ...removed];
+          const disk = targets.length > 0 ? await storage.readFiles(targets) : {};
+          // Retiré de l'appareil par iCloud depuis la dernière lecture : on n'y touche pas non plus.
+          const away = new Set(storage.pending?.() ?? []);
+          for (const path of targets) if (away.has(path)) disk[path] = prev[path] ?? "";
+          for (const path of away) delete changed[path];
+          removed = removed.filter((path) => !away.has(path));
+          const diff = diffDisk(targets, prev, files, disk);
+          const skip = new Set([...Object.keys(diff.settled), ...diff.conflicts]);
+          for (const path of skip) delete changed[path];
+          removed = removed.filter((path) => !skip.has(path));
+          const added: FileConflict[] = diff.conflicts.map((path) => ({ path, copy: path in files ? conflictCopyPath(path) : null, mine: files[path] ?? null }));
+          // La version de l'app, à côté de celle du disque ; tenue à jour si l'auteur continue d'écrire.
+          conflicts = [...conflicts, ...added].map((c) => {
+            const mine = files[c.path] ?? null;
+            if (!c.copy || mine === null || (mine === c.mine && !added.includes(c))) return c;
+            changed[c.copy] = mine;
+            return { ...c, mine };
+          });
+        }
+        await storage.write(changed, removed);
+        // Ce que le disque contient maintenant. Un fichier en conflit garde sa dernière version connue.
+        let known = files;
+        for (const c of conflicts) known = patchFiles(known, { [c.path]: prev[c.path] ?? null });
+        // Si l'auteur a modifié quelque chose pendant l'écriture, on reste "modifié".
+        set({
+          lastFiles: known,
+          savedScreenplay: screenplay,
+          conflicts,
+          saveError: null,
+          status: get().status === "enregistrement" ? "enregistre" : get().status,
+        });
+        storage.remember({ title: get().title, kind: get().kind });
+        // Copies Markdown (markdown/) : après l'enregistrement, sans jamais le retarder ni le faire échouer.
+        if (storage.copies) {
+          const snapshot = get();
+          // Le projet dont ce sont les copies, retenu tout de suite : l'import ci-dessous peut finir après
+          // l'ouverture d'un autre projet.
+          const forKey = storage.copies.key();
+          const { lang, author, bibleSections } = useSettings.getState();
+          void import("./markdownCopies").then((m) =>
+            m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, bibleOrder(bibleSections)), snapshot.markdownCopies, new Date(), forKey),
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        set({ status: "erreur", saveError: classifySaveError(err) });
+      }
+      if (syncAgain) {
+        syncAgain = false;
+        void get().syncFromDisk();
+      }
+  };
   const refreshProjects = async () => {
     const { shown, hidden } = splitHidden(await storage.list().catch(() => []));
     set({ projects: shown, hiddenProjects: hidden });
@@ -1412,6 +1509,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     metaKeep: {},
+    awaitingLayout: [],
     setPitch: (key, value) => {
       const next = setPitchField(get().pitch, key, value);
       if (next === get().pitch) return;
@@ -2078,8 +2176,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
         if (c.type === "dimensions" && c.resizing !== undefined && c.dimensions) widened.set(c.id, c.dimensions.width);
       }
       const resized = widened.size > 0 || frameChanges.some((c) => c.type === "dimensions" && c.resizing !== undefined);
-      const changed =
-        resized || changes.some((c) => c.type === "position" || c.type === "remove") || cardChanges.some((c) => c.type === "dimensions");
+      // Une simple mesure (React Flow mesure chaque carte à l'ouverture et quand une image arrive) n'écrit rien :
+      // seule la largeur choisie à la main est enregistrée. Avant, un projet tout juste ouvert passait « modifié ».
+      const changed = resized || changes.some((c) => c.type === "position" || c.type === "remove");
       // Suppr au clavier : React Flow retire d'abord les fils des cartes (onEdgesChange), puis les cartes. Les fils
       // qu'il vient de retirer reviennent avec elles dans la corbeille, et le tout ne fait qu'une étape d'historique.
       const justCut = removed.length > 0 ? edgesCut : null;
@@ -2484,74 +2583,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
     },
 
-    save: async () => {
-      // Projet ouvert sur un autre appareil : on ne touche à rien sur le disque.
-      if (get().lockedBy) return;
-      if (storage.canPickFolder && !storage.location()) {
-        if (!(await storage.pickFolder())) return;
-        // Le dossier choisi contient déjà un projet : on l'ouvre, on ne l'écrase jamais
-        // avec ce qui est à l'écran (le projet d'exemple, le plus souvent).
-        const existing = await storage.readAll().catch(() => null);
-        if (existing && openFiles(existing)) return;
+    // Un seul enregistrement à la fois. Demandé pendant qu'un autre tourne (sauvegarde auto, Cmd/Ctrl+S,
+    // « Projets »), il est refait une fois à la fin, et l'appelant attend la fin des deux. Sans cela, deux
+    // enregistrements qui se chevauchaient voyaient trois versions d'un fichier et annonçaient un faux conflit.
+    save: () => {
+      if (saving) {
+        saveAgain = true;
+        return saving;
       }
-      const { screenplay } = get();
-      const files = currentFiles();
-      const prev = get().lastFiles;
-      // Fichiers en conflit : la version du disque n'est pas touchée tant que l'auteur n'a pas choisi.
-      const held = new Set(get().conflicts.map((c) => c.path));
-      const changed: FileMap = {};
-      for (const [path, content] of Object.entries(files)) if (prev[path] !== content && !held.has(path)) changed[path] = content;
-      let removed = Object.keys(prev).filter((path) => !(path in files) && !held.has(path));
-      set({ status: "enregistrement" });
-      try {
-        // Garde-fou : juste avant d'écrire, on relit ce qu'on va remplacer ou supprimer. Un fichier changé
-        // hors de l'app depuis notre dernière lecture n'est jamais écrasé.
-        let conflicts = get().conflicts;
-        if (storage.readFiles) {
-          const targets = [...Object.keys(changed), ...removed];
-          const disk = targets.length > 0 ? await storage.readFiles(targets) : {};
-          const diff = diffDisk(targets, prev, files, disk);
-          const skip = new Set([...Object.keys(diff.settled), ...diff.conflicts]);
-          for (const path of skip) delete changed[path];
-          removed = removed.filter((path) => !skip.has(path));
-          const added: FileConflict[] = diff.conflicts.map((path) => ({ path, copy: path in files ? conflictCopyPath(path) : null, mine: files[path] ?? null }));
-          // La version de l'app, à côté de celle du disque ; tenue à jour si l'auteur continue d'écrire.
-          conflicts = [...conflicts, ...added].map((c) => {
-            const mine = files[c.path] ?? null;
-            if (!c.copy || mine === null || (mine === c.mine && !added.includes(c))) return c;
-            changed[c.copy] = mine;
-            return { ...c, mine };
-          });
+      saving = (async () => {
+        try {
+          do {
+            saveAgain = false;
+            await saveOnce();
+          } while (saveAgain);
+        } finally {
+          saving = null;
         }
-        await storage.write(changed, removed);
-        // Ce que le disque contient maintenant. Un fichier en conflit garde sa dernière version connue.
-        let known = files;
-        for (const c of conflicts) known = patchFiles(known, { [c.path]: prev[c.path] ?? null });
-        // Si l'auteur a modifié quelque chose pendant l'écriture, on reste "modifié".
-        set({
-          lastFiles: known,
-          savedScreenplay: screenplay,
-          conflicts,
-          saveError: null,
-          status: get().status === "enregistrement" ? "enregistre" : get().status,
-        });
-        storage.remember({ title: get().title, kind: get().kind });
-        // Copies Markdown (markdown/) : après l'enregistrement, sans jamais le retarder ni le faire échouer.
-        if (storage.copies) {
-          const snapshot = get();
-          const { lang, author, bibleSections } = useSettings.getState();
-          void import("./markdownCopies").then((m) =>
-            m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, bibleOrder(bibleSections)), snapshot.markdownCopies),
-          );
-        }
-      } catch (err) {
-        console.error(err);
-        set({ status: "erreur", saveError: classifySaveError(err) });
-      }
-      if (syncAgain) {
-        syncAgain = false;
-        void get().syncFromDisk();
-      }
+      })();
+      return saving;
     },
 
     saveError: null,
@@ -2622,6 +2672,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
         // Dossier disparu (disque débranché) : rien à reprendre ; l'enregistrement suivant le signalera.
         if (!disk) return;
         const known = get().lastFiles;
+        // Un fichier retiré de l'appareil par iCloud (« Optimiser le stockage ») n'est qu'un repère : il existe
+        // toujours. On le tient pour inchangé, sinon sa carte disparaissait de l'écran puis du projet.
+        for (const path of storage.pending?.() ?? []) if (!(path in disk) && path in known) disk[path] = known[path];
         const held = new Set(get().conflicts.map((c) => c.path));
         // Les copies de conflit ne font pas partie du projet : elles attendent le choix de l'auteur.
         const paths = [...new Set([...Object.keys(known), ...Object.keys(disk)])].filter((p) => !held.has(p) && !isConflictCopy(p));

@@ -8,7 +8,7 @@ import { authorName, contactLines } from "./profile";
 import type { TrashedCard } from "./trash";
 import { type Edge, type Node } from "@xyflow/react";
 import { nanoid } from "nanoid";
-import { isProjectKind, type CardData, type Frame, type Project, type ProjectKind } from "./types";
+import { isProjectKind, type CardData, type CardLayout, type Frame, type Project, type ProjectKind } from "./types";
 import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
@@ -245,7 +245,7 @@ export function openProject(p: Project) {
   const paperChosen = base.paperChosen || base.kind === "scenario";
   return {
     // Un projet qu'on ouvre repart d'un historique vide.
-    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, past: [], future: [] },
+    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, past: [], future: [], awaitingLayout: [] as CardLayout[] },
     dirty: renamed || !!episodes || screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
   };
 }
@@ -253,8 +253,10 @@ export function openProject(p: Project) {
 export function toProject(
   s: ProjectSlice,
 ): Project {
-  // Le plan écrit ne cite que des cartes qui existent encore.
-  const plan = prunePlan(s.plan, new Set(s.nodes.map((n) => n.id)));
+  // Le plan écrit ne cite que des cartes qui existent encore (ou dont le fichier arrive d'iCloud).
+  const present = new Set(s.nodes.map((n) => n.id));
+  const awaiting = (s.awaitingLayout ?? []).filter((l) => !present.has(l.id));
+  const plan = prunePlan(s.plan, new Set([...present, ...awaiting.map((l) => l.id)]));
   return {
     meta: {
       // Ce qu'une version plus récente a écrit et que celle-ci ignore, d'abord : les clés connues l'emportent.
@@ -267,12 +269,15 @@ export function toProject(
       ...(s.underlineHeadings ? { underlineHeadings: true } : {}),
       ...(s.hideWires ? { hideWires: true } : {}),
       ...(s.markdownCopies ? {} : { markdownCopies: false }),
-      layout: s.nodes.map((n) => ({
-        id: n.id,
-        x: Math.round(n.position.x),
-        y: Math.round(n.position.y),
-        width: typeof n.style?.width === "number" ? n.style.width : undefined,
-      })),
+      layout: [
+        ...s.nodes.map((n) => ({
+          id: n.id,
+          x: Math.round(n.position.x),
+          y: Math.round(n.position.y),
+          width: typeof n.style?.width === "number" ? n.style.width : undefined,
+        })),
+        ...awaiting,
+      ],
       links: s.edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: String(e.label ?? "") })),
       ...(s.frames.length > 0
         ? {
@@ -337,4 +342,10 @@ export interface ProjectSlice {
   bibleExport: BibleExportState;
   metaKeep: Record<string, unknown>;
   trash: TrashedCard[];
+  /**
+   * Place des cartes dont le fichier n'est pas encore arrivé d'iCloud (`storage.pending`). Réécrite telle quelle dans
+   * cosmos.json, et leurs scènes gardent leur rang dans le plan : sinon la carte revenait sans place ni case. Jamais
+   * enregistré à part ; vidé dès que la carte est là.
+   */
+  awaitingLayout?: CardLayout[];
 }

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { sendCommand } from "./commands";
 import { nextZoom, useSettings } from "./settings";
 import { ReactFlowProvider } from "@xyflow/react";
-import { useCosmos } from "./store";
+import { useCosmos, type CosmosState } from "./store";
 import { TopBar } from "./components/TopBar";
 import { Toile } from "./components/Toile";
 import { Bible } from "./components/Bible";
@@ -25,6 +25,11 @@ import { Carnet } from "./components/Carnet";
 import { shownView, usePhone } from "./components/usePhone";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
+/** Ce qui s'écrit dans le projet : toute modification de l'un d'eux relance le délai de la sauvegarde auto. */
+const SAVED_KEYS = [
+  "nodes", "frames", "edges", "screenplay", "title", "kind", "paper", "sceneNumbers", "underlineHeadings",
+  "manuscript", "plan", "pitch", "trash", "goals", "progress", "print", "scriptPdf", "bibleExport", "hideWires", "markdownCopies", "chutier",
+] as const satisfies readonly (keyof CosmosState)[];
 
 export function App() {
   const t = useT();
@@ -88,11 +93,16 @@ export function App() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = useCosmos.subscribe((s, prev) => {
       if (!s.loaded || s.screen !== "project" || s.status !== "modifie") return;
-      const same =
-        s.nodes === prev.nodes && s.frames === prev.frames && s.edges === prev.edges && s.screenplay === prev.screenplay && s.title === prev.title && s.kind === prev.kind && s.paper === prev.paper && s.sceneNumbers === prev.sceneNumbers && s.underlineHeadings === prev.underlineHeadings;
+      // Tout ce qui s'enregistre relance le délai, y compris la frappe dans le Manuscrit (sinon on enregistrait
+      // toutes les 800 ms en pleine saisie, copies Markdown et version du jour comprises).
+      const same = SAVED_KEYS.every((k) => s[k] === prev[k]);
       if (same && s.status === prev.status) return;
       clearTimeout(timer);
-      timer = setTimeout(() => useCosmos.getState().save(), AUTOSAVE_DELAY);
+      timer = setTimeout(() => {
+        // Le projet a pu être fermé entre-temps (« Projets » enregistre déjà) : rien à faire.
+        const now = useCosmos.getState();
+        if (now.screen === "project" && now.status === "modifie") void now.save();
+      }, AUTOSAVE_DELAY);
     });
     return () => {
       clearTimeout(timer);

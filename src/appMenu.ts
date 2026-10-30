@@ -18,6 +18,7 @@ import { REPO } from "./updates";
 import { replayShortcut, sendCommand } from "./commands";
 import { storage } from "./storage";
 import { vocab } from "./vocab";
+import { quitApp } from "./closing";
 
 async function buildMenu() {
   const { Menu, Submenu, PredefinedMenuItem, MenuItem } = await import("@tauri-apps/api/menu");
@@ -41,7 +42,8 @@ async function buildMenu() {
       await PredefinedMenuItem.new({ item: "HideOthers", text: m.hideOthers }),
       await PredefinedMenuItem.new({ item: "ShowAll", text: m.showAll }),
       await sep(),
-      await PredefinedMenuItem.new({ item: "Quit", text: m.quit }),
+      // Pas l'élément « Quitter » du système : il fermait l'app sans laisser enregistrer la dernière frappe.
+      await MenuItem.new({ id: "quit", text: m.quit, accelerator: "CmdOrCtrl+Q", action: () => void quitApp() }),
     ],
   });
   const file = await Submenu.new({
