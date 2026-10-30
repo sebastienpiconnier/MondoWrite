@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
 import { isPhone } from "./components/usePhone";
 import { capturedCard, fileCards } from "./inbox";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
@@ -347,6 +348,8 @@ interface CosmosState {
   importFile: () => Promise<void>;
   /** Mobile : ouvre un projet exporté en .zip (« Exporter une copie ») depuis Fichiers, en le copiant dans l'app. */
   importProjectZip: () => Promise<void>;
+  /** Exemple du site (examples.ts) : téléchargé, vérifié, importé comme un .zip, puis ouvert. */
+  openExample: (entry: ExampleEntry) => Promise<void>;
   /** Mobile : l'auteur choisit dans Fichiers le dossier cloud (OneDrive, Dropbox…) qui contient ses projets. */
   chooseCloudFolder: () => Promise<void>;
   /** Range dans `projets` les projets restés dans un doublon créé par iCloud (« projets 2 »), puis relit la liste. */
@@ -810,6 +813,44 @@ export const useCosmos = create<CosmosState>((set, get) => {
   const refreshProjects = async () => {
     const { shown, hidden } = splitHidden(await storage.list().catch(() => []));
     set({ projects: shown, hiddenProjects: hidden });
+  };
+
+  /**
+   * Un projet en .zip (« Importer un projet », exemple téléchargé, examples.ts) devient un nouveau projet, puis
+   * s'ouvre. Jamais par-dessus un projet existant ; seuls les fichiers d'un projet, aux noms sûrs, sont repris.
+   */
+  const importZipData = async (zipped: Uint8Array) => {
+    const { unzipSync, strFromU8 } = await import("fflate");
+    const entries = Object.entries(unzipSync(zipped)).filter(([path]) => !path.endsWith("/") && !path.split("/").some((part) => part.startsWith(".") || part === "__MACOSX"));
+    // Un dossier zippé depuis le Finder ou l'Explorateur contient un dossier racine : on l'enlève.
+    const roots = new Set(entries.map(([path]) => path.split("/")[0]));
+    const prefix = roots.size === 1 && entries.every(([path]) => path.includes("/")) ? `${[...roots][0]}/` : "";
+    const files: FileMap = {};
+    const medias: [string, Uint8Array][] = [];
+    for (const [path, data] of entries) {
+      const name = path.slice(prefix.length);
+      // Un .zip vient de n'importe où : seuls les fichiers d'un projet, aux noms sûrs, sont repris (jamais de « .. »).
+      if (name.startsWith(`${MEDIA_DIR}/`)) {
+        const media = name.slice(MEDIA_DIR.length + 1);
+        if (isMediaName(media) || isDocumentName(media)) medias.push([media, data]);
+      } else if (isProjectFilePath(name)) files[name] = strFromU8(data);
+    }
+    const imported = deserialize(files);
+    if (!imported) {
+      set({ homeNotice: true });
+      return;
+    }
+    if (!(await storage.create(imported.meta.title))) return;
+    // Ordinateur : le dossier choisi contient déjà un projet, on ne l'écrase jamais.
+    if (await storage.readAll().catch(() => null)) {
+      storage.forget();
+      set({ importNotice: "taken" });
+      return;
+    }
+    await storage.write(files, []);
+    for (const [name, data] of medias) await storage.writeMedia(name, data);
+    const written = await storage.readAll();
+    if (!written || !openFiles(written)) set({ homeNotice: true });
   };
 
   return {
@@ -1793,37 +1834,27 @@ export const useCosmos = create<CosmosState>((set, get) => {
       try {
         const picked = await storage.pickFile("ZIP", ["zip"]);
         if (!picked) return;
-        const { unzipSync, strFromU8 } = await import("fflate");
-        const entries = Object.entries(unzipSync(picked.data)).filter(([path]) => !path.endsWith("/") && !path.split("/").some((part) => part.startsWith(".") || part === "__MACOSX"));
-        // Un dossier zippé depuis le Finder ou l'Explorateur contient un dossier racine : on l'enlève.
-        const roots = new Set(entries.map(([path]) => path.split("/")[0]));
-        const prefix = roots.size === 1 && entries.every(([path]) => path.includes("/")) ? `${[...roots][0]}/` : "";
-        const files: FileMap = {};
-        const medias: [string, Uint8Array][] = [];
-        for (const [path, data] of entries) {
-          const name = path.slice(prefix.length);
-          // Un .zip vient de n'importe où : seuls les fichiers d'un projet, aux noms sûrs, sont repris (jamais de « .. »).
-          if (name.startsWith(`${MEDIA_DIR}/`)) {
-            const media = name.slice(MEDIA_DIR.length + 1);
-            if (isMediaName(media) || isDocumentName(media)) medias.push([media, data]);
-          } else if (isProjectFilePath(name)) files[name] = strFromU8(data);
-        }
-        const imported = deserialize(files);
-        if (!imported) {
-          set({ homeNotice: true });
-          return;
-        }
-        if (!(await storage.create(imported.meta.title))) return;
-        // Ordinateur : le dossier choisi contient déjà un projet, on ne l'écrase jamais.
-        if (await storage.readAll().catch(() => null)) {
-          storage.forget();
-          set({ importNotice: "taken" });
-          return;
-        }
-        await storage.write(files, []);
-        for (const [name, data] of medias) await storage.writeMedia(name, data);
-        const written = await storage.readAll();
-        if (!written || !openFiles(written)) set({ homeNotice: true });
+        await importZipData(picked.data);
+      } catch (err) {
+        console.error(err);
+        storage.forget();
+        set({ openFailed: true });
+      }
+    },
+
+    openExample: async (entry) => {
+      set({ importNotice: null, homeNotice: false, openFailed: false });
+      useExamples.setState({ busy: { id: entry.id, share: 0 }, error: null });
+      let data: Uint8Array;
+      try {
+        data = await downloadExample(entry, (share) => useExamples.setState({ busy: { id: entry.id, share } }));
+      } catch (err) {
+        useExamples.setState({ busy: null, error: { id: entry.id, reason: err instanceof ExampleError ? err.reason : "network" } });
+        return;
+      }
+      useExamples.setState({ busy: null });
+      try {
+        await importZipData(data);
       } catch (err) {
         console.error(err);
         storage.forget();

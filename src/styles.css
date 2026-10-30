@@ -223,6 +223,13 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 .home-list li.is-hidden .home-project { opacity: 0.75; }
 .home-show { flex-shrink: 0; min-height: 44px; }
 .icon-button.is-danger { color: var(--danger); }
+/* Grands exemples téléchargés depuis mondowrite.app (ExamplesPanel). */
+.home-example-list { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.home-example-list li { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.home-example-cover { flex: none; width: 48px; height: 64px; border-radius: 6px; object-fit: cover; background: var(--ground); }
+.home-example-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.home-example-error { font-size: 0.8125rem; color: var(--danger); }
+.home-example-open { flex: none; min-height: 44px; }
 .profile-form { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; }
 .profile-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .profile-field label { font-size: 0.8125rem; font-weight: 600; }

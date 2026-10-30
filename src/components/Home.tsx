@@ -12,6 +12,7 @@ import { PROJECT_KINDS, type ProjectKind } from "../types";
 import { Settings } from "./Settings";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { ProfilePanel } from "./ProfilePanel";
+import { ExamplesPanel } from "./ExamplesPanel";
 import { TrashIcon } from "./TrashIcon";
 
 export function Home() {
@@ -295,6 +296,8 @@ export function Home() {
               </div>
             </form>
           </section>
+
+          <ExamplesPanel disabled={busy} />
 
           <ProfilePanel />
         </div>
