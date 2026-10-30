@@ -11,6 +11,9 @@ import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { typeColor } from "../types";
 import { AiError, complete, isReady } from "../ai/providers";
+import { plainText } from "../search";
+import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
+import { sceneSynopsis } from "../screenplay/scenes";
 import { coherencePrompt, parseCoherence, type CardNames, parseTidy, tidyCandidates, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
 
 type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | null;
@@ -61,7 +64,7 @@ export function AiMenu() {
 
   const run = async (task: "tidy" | "coherence") => {
     if (busy) return;
-    const { nodes: now, edges } = useCosmos.getState();
+    const { nodes: now, edges, manuscript, screenplay } = useCosmos.getState();
     const cards = now.map((n) => n.data);
     setResult(null);
     if (task === "tidy" && tidyCandidates(cards).length === 0) return setMessage(t.tidyNone);
@@ -74,7 +77,16 @@ export function AiMenu() {
         setResult({ kind: "tidy", items });
         setMessage(items.length === 0 ? t.tidyEmpty : "");
       } else {
-        const prompt = coherencePrompt(cards, edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })), lang);
+        // Le texte des scènes vit dans le manuscrit ou le scénario, pas dans leur carte.
+        const sceneTexts: Record<string, string> = {};
+        for (const card of cards) {
+          if (card.type !== "scene") continue;
+          if (kind === "scenario" && screenplay) {
+            const at = headingOf(screenplay.elements, card.id);
+            if (at >= 0) sceneTexts[card.id] = [sceneSynopsis(screenplay.elements, at), sceneText(sceneBody(screenplay.elements, at), lang)].filter(Boolean).join(" ");
+          } else if (manuscript[card.id]) sceneTexts[card.id] = plainText(manuscript[card.id]);
+        }
+        const prompt = coherencePrompt(cards, edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })), lang, sceneTexts);
         const items = parseCoherence(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards, names);
         setResult({ kind: "coherence", items });
         setMessage(items.length === 0 ? t.coherenceNone : "");

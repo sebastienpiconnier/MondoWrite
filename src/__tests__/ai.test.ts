@@ -199,6 +199,29 @@ describe("cohérence", () => {
     expect(parseCoherence(reply, cards)).toEqual([{ cards: ["p1", "s1"], question: "Inès a-t-elle 34 ou 41 ans ?" }]);
     expect(parseCoherence("[]", cards)).toEqual([]);
   });
+
+  it("carte donnée par son titre (malgré la consigne) : reconnue", () => {
+    const reply = JSON.stringify({ items: [{ cards: ["Inès (personnage)", "arrivée"], question: "Inès a-t-elle 34 ou 41 ans ?" }, { cards: [], question: "Quel âge a Inès ?" }, { cards: ["Personne"], question: "Rien ?" }] });
+    expect(parseCoherence(reply, cards)).toEqual([
+      { cards: ["p1", "s1"], question: "Inès a-t-elle 34 ou 41 ans ?" },
+      { cards: ["p1"], question: "Quel âge a Inès ?" },
+    ]);
+  });
+
+  it("le texte d'une scène (manuscrit, scénario) est lu, et la bible passe avant les images", () => {
+    const scene = card("s2", "scene", "Retour", "");
+    const image = card("im", "image", "Photo", "<p>Un phare.</p>");
+    const sent = JSON.parse(coherencePrompt([image, scene, ...cards], [], "fr", { s2: "Inès, 41 ans, revient au phare." }).user);
+    expect(sent.cards.map((c: { id: string }) => c.id)).toEqual(["p1", "s2", "s1", "im"]);
+    expect(sent.cards[1].text).toBe("Inès, 41 ans, revient au phare.");
+  });
+
+  it("un gros projet reste dans la fenêtre de contexte", () => {
+    const many = Array.from({ length: 200 }, (_, i) => card(`c${i}`, "personnage", `Perso ${i}`, `<p>${"x".repeat(450)}</p>`));
+    const prompt = coherencePrompt(many, [], "fr");
+    expect(prompt.user.length).toBeLessThan(32_000);
+    expect(JSON.parse(prompt.user).cards.length).toBeGreaterThan(40);
+  });
 });
 
 describe("cartes nommées, jamais par leur identifiant", () => {

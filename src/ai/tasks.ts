@@ -50,7 +50,8 @@ export function extractJson(text: string): unknown {
 
 /** Consigne commune : dans le texte écrit pour l'auteur, une carte se nomme par son titre et son type, jamais par son identifiant. */
 const nameRule = (lang: string) =>
-  `In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into ${language(lang)} (for example: Inès Morvan (${lang === "fr" ? "personnage" : "character"})). `;
+  `In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into ${language(lang)} (for example: Inès Morvan (${lang === "fr" ? "personnage" : "character"})). ` +
+  `Card ids belong only in the JSON fields meant for them ("id", "cards"). `;
 
 /** Libellés pour nommer une carte dans un texte : type affiché dans la langue de l'interface, titre d'une carte sans titre. */
 export interface CardNames {
@@ -305,25 +306,81 @@ export interface CoherenceAlert {
   question: string;
 }
 
-export function coherencePrompt(cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string): Prompt {
-  const kept = cards.filter((c) => c.title.trim() || plainText(c.html)).slice(0, MAX_CARDS);
+/** Cartes de la bible d'abord (ce qui peut se contredire), puis le reste ; images, liens et documents en dernier. */
+const COHERENCE_ORDER: CardType[] = ["personnage", "lieu", "evenement", "scene", "intrigue", "episode", "groupe", "objet", "regle", "secret", "theme", "idee", "question"];
+const coherenceRank = (type: CardType) => {
+  const i = COHERENCE_ORDER.indexOf(type);
+  return i < 0 ? COHERENCE_ORDER.length : i;
+};
+/** Taille du projet envoyé, en caractères : tient dans la fenêtre de contexte d'un modèle local (OLLAMA_CONTEXT). */
+const COHERENCE_BUDGET = 30_000;
+const SCENE_TEXT = 900;
+
+/**
+ * Consigne de cohérence. `sceneTexts` donne le texte d'une carte Scène (synopsis et début du manuscrit ou du
+ * scénario) : depuis octobre 2026 le corps d'une carte Scène est vide, son texte vit dans le manuscrit.
+ */
+export function coherencePrompt(cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, sceneTexts: Record<string, string> = {}): Prompt {
+  const briefs = cards
+    .map((card, index) => {
+      const b = brief(card);
+      const own = card.type === "scene" ? sceneTexts[card.id]?.replace(/\s+/g, " ").trim() : "";
+      return { index, rank: coherenceRank(card.type), b: own ? { ...b, text: clip([b.text, own].filter(Boolean).join(" "), SCENE_TEXT) } : b };
+    })
+    .filter(({ b }) => b.title || b.text || b.sheet)
+    .sort((a, b) => a.rank - b.rank || a.index - b.index);
+  const kept: ReturnType<typeof brief>[] = [];
+  let size = 0;
+  for (const { b } of briefs) {
+    const length = JSON.stringify(b).length;
+    if (kept.length >= MAX_CARDS || (kept.length > 0 && size + length > COHERENCE_BUDGET)) break;
+    kept.push(b);
+    size += length;
+  }
   const ids = new Set(kept.map((c) => c.id));
   return {
     system:
       `You are a continuity reader for a writer's story bible. Find statements in the notes that contradict each other (ages, dates, places, relationships, who knows what, physical details). ` +
       `Report only real contradictions between what is written, never missing information, style, or opinions. Do not propose fixes and do not rewrite anything: phrase each one as a short question to the writer, in ${language(lang)}. ` +
       nameRule(lang) +
-      `Answer with a JSON object only: {"items": [{"cards": ["<id>", "<id>"], "question": "<question>"}]}. Use the card ids exactly as given. If nothing contradicts, answer {"items": []}.`,
-    user: JSON.stringify({ cards: kept.map(brief), links: links.filter((l) => ids.has(l.source) && ids.has(l.target)).map(({ source, target, label }) => ({ source, target, label })) }),
+      `Answer with a JSON object only: {"items": [{"cards": ["<id>", "<id>"], "question": "<question>"}]}, where "cards" lists the ids of the cards involved, exactly as given. If nothing contradicts, answer {"items": []}.`,
+    user: JSON.stringify({ cards: kept, links: links.filter((l) => ids.has(l.source) && ids.has(l.target)).map(({ source, target, label }) => ({ source, target, label })) }),
   };
 }
 
+/** Titre replié (casse, accents, type entre parenthèses retiré), pour reconnaître une carte citée par son nom. */
+const foldTitle = (text: string) =>
+  text
+    .replace(/\s*\([^()]*\)\s*$/, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’']/g, "'")
+    .trim()
+    .toLowerCase();
+
 export function parseCoherence(reply: string, cards: CardData[], names?: CardNames): CoherenceAlert[] {
   const known = new Set(cards.map((c) => c.id));
+  // Malgré la consigne, un modèle donne souvent le titre de la carte (« Inès (personnage) ») au lieu de son identifiant.
+  const byTitle = new Map<string, string>();
+  for (const c of cards) {
+    const key = foldTitle(c.title);
+    if (key && !byTitle.has(key)) byTitle.set(key, c.id);
+  }
+  const resolve = (value: unknown): string => {
+    const text = typeof value === "string" ? value.trim() : value && typeof value === "object" ? str((value as Record<string, unknown>).id) || str((value as Record<string, unknown>).title) : "";
+    if (known.has(text)) return text;
+    return byTitle.get(foldTitle(text)) ?? "";
+  };
   return asList(extractJson(reply))
     .flatMap((item) => {
-      const ids = [...new Set((Array.isArray(item.cards) ? item.cards : []).map(str).filter((id) => known.has(id)))];
-      const raw = clip(str(item.question), 400);
+      const listed = item.cards ?? item.ids ?? item.card ?? item.id;
+      const raw = clip(str(item.question) || str(item.text) || str(item.issue), 400);
+      let ids = [...new Set((Array.isArray(listed) ? listed : [listed]).map(resolve).filter(Boolean))];
+      // Aucune carte reconnue : celles que la question nomme par leur titre.
+      if (ids.length === 0 && raw) {
+        const folded = foldTitle(raw);
+        ids = cards.filter((c) => c.title.trim().length >= 3 && folded.includes(foldTitle(c.title))).map((c) => c.id);
+      }
       const question = names ? nameCards(raw, cards, names) : raw;
       return ids.length > 0 && question ? [{ cards: ids, question }] : [];
     })
