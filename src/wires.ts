@@ -12,6 +12,17 @@ export type WireFiche = Partial<Record<WireField, string>>;
 
 const MAX_VALUE = 2000;
 
+/** Une fiche de fil lue d'ailleurs (corbeille, presse-papiers) : seulement les champs connus, en texte. */
+export function readWireFiche(value: unknown): WireFiche | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const fiche: WireFiche = {};
+  for (const key of WIRE_FIELDS) {
+    const v = (value as Record<string, unknown>)[key];
+    if (typeof v === "string" && v.trim()) fiche[key] = v.slice(0, MAX_VALUE);
+  }
+  return Object.keys(fiche).length > 0 ? fiche : undefined;
+}
+
 /** Fiches lues dans cosmos.json, pour les fils qui existent encore (un fil supprimé emporte sa fiche). */
 export function readWires(raw: unknown, linkIds: ReadonlySet<string>): Map<string, WireFiche> {
   const out = new Map<string, WireFiche>();

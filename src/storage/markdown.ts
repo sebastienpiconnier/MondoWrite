@@ -22,7 +22,7 @@ import { marked } from "marked";
 import TurndownService from "turndown";
 import { CARD_TYPES, type CardData, type CardType } from "../types";
 import { isDocumentName, isMediaName } from "../media";
-import { MENTION_SCHEME, mentionTarget } from "../mentions";
+import { MENTION_SCHEME, isCardId, mentionTarget } from "../mentions";
 import { readFiche, readQuestions } from "../character";
 import { isPageKind } from "../book";
 
@@ -152,10 +152,13 @@ export function fileToCard(text: string): CardData | null {
     const i = line.indexOf(":");
     if (i > 0) fields[line.slice(0, i).trim()] = line.slice(i + 1).trim();
   }
-  if (!fields.id) return null;
+  // L'identifiant donne des noms de fichiers (cartes/<id>.md, manuscrit/<id>.md) : jamais de chemin.
+  if (!isCardId(fields.id)) return null;
   let title = fields.title ?? "";
   try {
-    title = JSON.parse(title);
+    // Un titre édité à la main peut être « 1984 » ou « null » : seul un texte entre guillemets est relu en JSON.
+    const parsed: unknown = JSON.parse(title);
+    if (typeof parsed === "string") title = parsed;
   } catch {
     /* titre non quoté : on le garde tel quel */
   }

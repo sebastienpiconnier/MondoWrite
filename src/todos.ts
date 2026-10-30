@@ -7,6 +7,7 @@
 
 import type { CardData } from "./types";
 import type { Manuscript } from "./manuscript";
+import { isSettledQuestion } from "./character";
 
 export type TodoKind = "task" | "revisit" | "question" | "open";
 
@@ -24,12 +25,19 @@ export interface Todo {
 const decode = (s: string) =>
   s.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "’").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 
-const TASK_RE = /<li\b[^>]*data-type="taskItem"[^>]*>([\s\S]*?)<\/li>/gi;
+// Une case par balise ouvrante, dans l'ordre du texte : les cases imbriquées (TipTap, `nested`) comptent comme
+// les autres. `toggleTask` compte les mêmes balises, donc le n-ième de la liste est bien la n-ième case cochée.
+const TASK_TAG_RE = /<li\b([^>]*data-type="taskItem"[^>]*)>/gi;
 
-/** Cases à cocher d'un texte, dans l'ordre, avec leur état. */
+/** Cases à cocher d'un texte, dans l'ordre, avec leur état (sous-cases comprises). */
 export function tasksIn(html: string | undefined): { text: string; done: boolean }[] {
   if (!html) return [];
-  return [...html.matchAll(TASK_RE)].map((m) => ({ text: decode(m[1].replace(/<ul[\s\S]*$/i, "")), done: /data-checked="true"/.test(m[0].slice(0, m[0].indexOf(">"))) }));
+  return [...html.matchAll(TASK_TAG_RE)].map((m) => {
+    const after = html.slice(m.index! + m[0].length);
+    // Le texte de la case s'arrête à sa liste de sous-cases, à la case suivante ou à sa fin.
+    const end = after.search(/<ul\b|<li\b|<\/li>/i);
+    return { text: decode(end === -1 ? after : after.slice(0, end)), done: /data-checked="true"/.test(m[1]) };
+  });
 }
 
 /** Coche ou décoche la n-ième case d'un texte. Même chaîne si elle n'existe pas. */
@@ -52,7 +60,8 @@ export function collectTodos(cards: CardData[], manuscript: Manuscript): Todo[] 
   for (const card of cards) {
     tasksIn(card.html).forEach((t, index) => !t.done && t.text && out.push({ kind: "task", cardId: card.id, where: "card", text: t.text, index }));
     (card.questions ?? []).forEach((q, index) => out.push({ kind: "question", cardId: card.id, where: "card", text: q, index }));
-    if (card.type === "question" && (card.title.trim() || decode(card.html))) out.push({ kind: "open", cardId: card.id, where: "card", text: card.title.trim() || decode(card.html), index: 0 });
+    // Une question décidée ou abandonnée (lot 7) n'est plus à faire.
+    if (card.type === "question" && !isSettledQuestion(card) && (card.title.trim() || decode(card.html))) out.push({ kind: "open", cardId: card.id, where: "card", text: card.title.trim() || decode(card.html), index: 0 });
   }
   const known = new Set(cards.map((c) => c.id));
   for (const [id, html] of Object.entries(manuscript)) {

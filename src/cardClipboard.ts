@@ -5,6 +5,7 @@
 
 import type { CardData, Link } from "./types";
 import type { ScreenplayElement } from "./screenplay/model";
+import type { WireFiche } from "./wires";
 import { plainText } from "./search";
 
 export interface CopiedCard {
@@ -22,7 +23,7 @@ export interface CopiedCard {
 
 export interface CardCopy {
   cards: CopiedCard[];
-  links: { source: string; target: string; label?: string }[];
+  links: { source: string; target: string; label?: string; fiche?: WireFiche }[];
   /** Texte mis dans le presse-papiers du système : le collage le reconnaît. */
   text: string;
 }
@@ -39,8 +40,10 @@ export function copyText(cards: CopiedCard[]): string {
 }
 
 /** Fils dont les deux bouts sont copiés. */
-export function linksWithin(links: Link[], ids: Set<string>): CardCopy["links"] {
-  return links.filter((l) => ids.has(l.source) && ids.has(l.target)).map((l) => ({ source: l.source, target: l.target, ...(l.label ? { label: l.label } : {}) }));
+export function linksWithin(links: (Link & { fiche?: WireFiche })[], ids: Set<string>): CardCopy["links"] {
+  return links
+    .filter((l) => ids.has(l.source) && ids.has(l.target))
+    .map((l) => ({ source: l.source, target: l.target, ...(l.label ? { label: l.label } : {}), ...(l.fiche ? { fiche: l.fiche } : {}) }));
 }
 
 /** Le texte collé est-il celui de la dernière copie de cartes ? (fins de ligne et espaces ignorés) */

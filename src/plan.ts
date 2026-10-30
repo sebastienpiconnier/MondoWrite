@@ -268,6 +268,28 @@ function withBeats(plan: Plan, beats: Arranged["beats"]): Plan {
  * Même objet si rien ne change.
  */
 export function placeScene(plan: Plan, sceneIds: string[], id: string, beat: string | null, index?: number): Plan {
+  return followChapter(plan, placeInBeat(plan, sceneIds, id, beat, index), sceneIds, id);
+}
+
+/**
+ * Après un déplacement dans le Plan, une scène qui n'est plus à côté d'aucune scène de son chapitre prend celui
+ * de sa nouvelle voisine (celle d'avant, sinon celle d'après), comme dans le volet du Manuscrit (`moveSceneTo`).
+ * Sans cela, glisser une scène d'un chapitre au milieu d'un autre faisait paraître son chapitre deux fois.
+ */
+function followChapter(before: Plan, after: Plan, sceneIds: string[], id: string): Plan {
+  if (after === before || !after.chapters?.length) return after;
+  const order = planOrder(after, sceneIds);
+  const i = order.indexOf(id);
+  if (i < 0) return after;
+  const mine = chapterOf(after, id)?.id ?? null;
+  const prev = i > 0 ? (chapterOf(after, order[i - 1])?.id ?? null) : undefined;
+  const next = i < order.length - 1 ? (chapterOf(after, order[i + 1])?.id ?? null) : undefined;
+  if (prev === mine || next === mine) return after;
+  if (prev === undefined && next === undefined) return after;
+  return assignChapter(after, id, prev !== undefined ? prev : next!);
+}
+
+function placeInBeat(plan: Plan, sceneIds: string[], id: string, beat: string | null, index?: number): Plan {
   if (!sceneIds.includes(id)) return plan;
   const current = arrange(plan, sceneIds);
   if (beat !== null && !current.beats.some((b) => b.key === beat)) return plan;
@@ -295,6 +317,11 @@ export function placeScene(plan: Plan, sceneIds: string[], id: string, beat: str
  * voisine (à la fin de la précédente, au début de la suivante). Même objet si elle ne peut pas bouger.
  */
 export function stepScene(plan: Plan, sceneIds: string[], id: string, way: "up" | "down"): Plan {
+  return followChapter(plan, stepInBeats(plan, sceneIds, id, way), sceneIds, id);
+}
+
+function stepInBeats(plan: Plan, sceneIds: string[], id: string, way: "up" | "down"): Plan {
+  const placeScene = placeInBeat;
   const { beats } = arrange(plan, sceneIds);
   const b = beats.findIndex((beat) => beat.ids.includes(id));
   if (b < 0) return plan;
@@ -405,14 +432,10 @@ export function removeChapter(plan: Plan, order: string[], id: string): Plan {
   const chapter = plan.chapters?.find((c) => c.id === id);
   if (!chapter) return plan;
   const first = order.findIndex((s) => chapter.scenes.includes(s));
-  let previous: Chapter | null = null;
-  for (let i = first - 1; i >= 0 && first > 0; i--) {
-    const c = chapterOf(plan, order[i]);
-    if (c && c.id !== id) {
-      previous = c;
-      break;
-    }
-  }
+  // Ses scènes rejoignent le chapitre qui la précède immédiatement. S'il y a entre les deux des scènes sans
+  // chapitre, elles restent sans chapitre comme elles : sinon le chapitre d'avant paraîtrait deux fois.
+  const before = first > 0 ? chapterOf(plan, order[first - 1]) : null;
+  const previous: Chapter | null = before && before.id !== id ? before : null;
   return withChapters(
     plan,
     plan.chapters!.filter((c) => c.id !== id).map((c) => (c.id === previous?.id ? { ...c, scenes: [...c.scenes, ...chapter.scenes] } : c)),

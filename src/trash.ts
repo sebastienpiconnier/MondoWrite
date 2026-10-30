@@ -4,6 +4,7 @@
 // scénario, la scène entière (en-tête et texte) part avec sa carte et revient avec elle.
 
 import type { CardData } from "./types";
+import { readWireFiche, type WireFiche } from "./wires";
 import type { Screenplay } from "./screenplay/model";
 import { parse } from "./screenplay/parse";
 import { serialize } from "./screenplay/serialize";
@@ -15,6 +16,8 @@ export interface TrashLink {
   /** La carte était la source du fil. */
   out: boolean;
   label: string;
+  /** Fiche du fil (histoire, enjeu, évolution), qui revient avec lui. */
+  fiche?: WireFiche;
 }
 
 export interface TrashInfo {
@@ -44,7 +47,12 @@ export function readTrashInfo(raw: unknown): TrashInfo | undefined {
     x: num(r.x),
     y: num(r.y),
     ...(typeof r.width === "number" && Number.isFinite(r.width) ? { width: r.width } : {}),
-    links: Array.isArray(r.links) ? r.links.filter(isLink) : [],
+    links: Array.isArray(r.links)
+      ? r.links.filter(isLink).map((l) => {
+          const fiche = readWireFiche(l.fiche);
+          return { id: l.id, other: l.other, out: l.out, label: l.label, ...(fiche ? { fiche } : {}) };
+        })
+      : [],
     ...(typeof r.scene === "string" && r.scene.trim() ? { scene: r.scene } : {}),
   };
 }
@@ -68,13 +76,16 @@ function sceneRange(screenplay: Screenplay, cardId: string): [number, number] | 
 export function trashCard(
   card: CardData,
   place: { x: number; y: number; width?: number },
-  edges: { id: string; source: string; target: string; label?: unknown }[],
+  edges: { id: string; source: string; target: string; label?: unknown; data?: Record<string, unknown> }[],
   screenplay: Screenplay | null,
   date: string,
 ): { entry: TrashedCard; screenplay: Screenplay | null } {
   const links = edges
     .filter((e) => e.source === card.id || e.target === card.id)
-    .map((e) => ({ id: e.id, other: e.source === card.id ? e.target : e.source, out: e.source === card.id, label: String(e.label ?? "") }));
+    .map((e) => {
+      const fiche = readWireFiche(e.data?.fiche);
+      return { id: e.id, other: e.source === card.id ? e.target : e.source, out: e.source === card.id, label: String(e.label ?? ""), ...(fiche ? { fiche } : {}) };
+    });
   const range = screenplay ? sceneRange(screenplay, card.id) : null;
   let scene: string | undefined;
   let next = screenplay;
@@ -97,11 +108,11 @@ export function restoreCard(
   entry: TrashedCard,
   existing: Set<string>,
   screenplay: Screenplay | null,
-): { card: CardData; links: { id: string; source: string; target: string; label: string }[]; screenplay: Screenplay | null } {
+): { card: CardData; links: { id: string; source: string; target: string; label: string; fiche?: WireFiche }[]; screenplay: Screenplay | null } {
   const { trashed, ...card } = entry;
   const links = trashed.links
     .filter((l) => existing.has(l.other))
-    .map((l) => ({ id: l.id, source: l.out ? card.id : l.other, target: l.out ? l.other : card.id, label: l.label }));
+    .map((l) => ({ id: l.id, source: l.out ? card.id : l.other, target: l.out ? l.other : card.id, label: l.label, ...(l.fiche ? { fiche: l.fiche } : {}) }));
   let next = screenplay;
   if (screenplay && trashed.scene && !sceneRange(screenplay, card.id)) {
     const elements = parse(trashed.scene).elements;

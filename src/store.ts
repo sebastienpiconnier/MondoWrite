@@ -466,6 +466,32 @@ export interface Snapshot {
   screenplay: Screenplay | null;
   plan: Plan;
   trash: TrashedCard[];
+  /** Texte du manuscrit au moment de l'étape. Rendu seulement pour les cartes dont l'annulation change le statut
+   * de Scène (`manuscriptAfterUndo`) : le reste du manuscrit a son propre historique, celui de l'éditeur. */
+  manuscript: Record<string, string>;
+}
+
+const isScene = (nodes: CardNode[]) => new Set(nodes.filter((n) => n.data.type === "scene").map((n) => n.id));
+
+/** Manuscrit après une annulation : une carte qui redevient Scène (ou cesse de l'être) retrouve le texte qu'elle
+ * avait à cette étape. Sans cela, changer le type d'une Scène de roman puis annuler perdait son texte. */
+export function manuscriptAfterUndo(
+  current: Record<string, string>,
+  here: CardNode[],
+  target: Pick<Snapshot, "nodes" | "manuscript">,
+): Record<string, string> {
+  const before = isScene(here);
+  const after = isScene(target.nodes);
+  let next = current;
+  for (const id of new Set([...before, ...after])) {
+    if (before.has(id) === after.has(id)) continue;
+    const text = target.manuscript[id];
+    if (text === current[id]) continue;
+    if (next === current) next = { ...current };
+    if (text === undefined) delete next[id];
+    else next[id] = text;
+  }
+  return next;
 }
 
 /** Hauteur réservée pour l'image d'une carte créée par dépôt (voir .card-image dans styles.css). */
@@ -566,14 +592,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
   // appelle record() AVANT de modifier l'état.
   let lastTag = "";
   let lastAt = 0;
+  /** Fils tels qu'ils étaient avant le dernier retrait de fils, le temps d'une tâche (voir onEdgesChange). */
+  let edgesCut: Edge[] | null = null;
   const record = (tag = "") => {
     const now = Date.now();
     const merge = tag !== "" && tag === lastTag && now - lastAt < HISTORY_MERGE_MS;
     lastTag = tag;
     lastAt = now;
     if (merge) return;
-    const { nodes, frames, edges, screenplay, plan, trash, past } = get();
-    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay, plan, trash }], future: [] });
+    const { nodes, frames, edges, screenplay, plan, trash, manuscript, past } = get();
+    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay, plan, trash, manuscript }], future: [] });
   };
   const forgetHistory = () => {
     lastTag = "";
@@ -722,12 +750,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
   /** Cartes et cadres du canevas : une nouvelle carte ne se pose sur aucun d'eux. */
   const occupied = (nodes: CardNode[] = get().nodes, frames: FrameNode[] = get().frames): Occupied => ({ cards: boxes(nodes), frames: frames.map(frameBox) });
   const restore = (from: "past" | "future") => {
-    const { past, future, nodes, frames, edges, screenplay, plan, trash } = get();
+    const { past, future, nodes, frames, edges, screenplay, plan, trash, manuscript } = get();
     const stack = from === "past" ? past : future;
     const target = stack[stack.length - 1];
     if (!target) return;
     lastTag = "";
-    const here: Snapshot = { nodes, frames, edges, screenplay, plan, trash };
+    const here: Snapshot = { nodes, frames, edges, screenplay, plan, trash, manuscript };
     set({
       past: from === "past" ? past.slice(0, -1) : [...past, here],
       future: from === "past" ? [...future, here] : future.slice(0, -1),
@@ -737,6 +765,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       screenplay: target.screenplay,
       plan: target.plan,
       trash: target.trash,
+      manuscript: manuscriptAfterUndo(manuscript, nodes, target),
       trashNotice: null,
       pendingFocusId: null,
     });
@@ -1200,7 +1229,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
           return copied;
         });
       if (cards.length === 0) return "";
-      const copy: CardCopy = { cards, links: linksWithin(edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: typeof e.label === "string" ? e.label : "" })), chosen), text: copyText(cards) || cards.map((c) => c.data.type).join(" ") };
+      const copy: CardCopy = { cards, links: linksWithin(edges.map((e) => ({ id: e.id, source: e.source, target: e.target, label: typeof e.label === "string" ? e.label : "", fiche: wireFicheOf(e) })), chosen), text: copyText(cards) || cards.map((c) => c.data.type).join(" ") };
       set({ cardCopy: copy });
       return copy.text;
     },
@@ -1230,7 +1259,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         }
       }
       let edges = get().edges;
-      for (const l of links) edges = addEdge({ id: newId(), source: l.source, target: l.target, sourceHandle: null, targetHandle: null, label: l.label ?? "", type: "floating" }, edges);
+      for (const l of links) edges = addEdge({ id: newId(), source: l.source, target: l.target, sourceHandle: null, targetHandle: null, label: l.label ?? "", type: "floating", ...(l.fiche ? { data: { fiche: l.fiche } } : {}) }, edges);
       set({
         nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), ...cards.map((c) => ({ ...toNode(c.data, c.x, c.y, c.width), selected: true }))],
         edges,
@@ -1429,7 +1458,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const spot = placeCard({ x: entry.trashed.x, y: entry.trashed.y }, occupied(nodes, frames), { width, height: CARD_SIZE.height });
       set({
         nodes: [...nodes, toNode(out.card, spot.x, spot.y, entry.trashed.width)],
-        edges: [...edges, ...out.links.filter((l) => !edges.some((e) => e.id === l.id)).map((l) => ({ ...l, type: "floating" }))],
+        edges: [
+          ...edges,
+          ...out.links
+            .filter((l) => !edges.some((e) => e.id === l.id))
+            .map(({ fiche, ...l }) => ({ ...l, type: "floating", ...(fiche ? { data: { fiche } } : {}) })),
+        ],
         screenplay: out.screenplay,
         trash: get().trash.filter((c) => c.id !== id),
         focusId: id,
@@ -2046,8 +2080,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const resized = widened.size > 0 || frameChanges.some((c) => c.type === "dimensions" && c.resizing !== undefined);
       const changed =
         resized || changes.some((c) => c.type === "position" || c.type === "remove") || cardChanges.some((c) => c.type === "dimensions");
-      if (changes.some((c) => c.type === "remove")) record();
-      else if (resized) record("resize");
+      // Suppr au clavier : React Flow retire d'abord les fils des cartes (onEdgesChange), puis les cartes. Les fils
+      // qu'il vient de retirer reviennent avec elles dans la corbeille, et le tout ne fait qu'une étape d'historique.
+      const justCut = removed.length > 0 ? edgesCut : null;
+      edgesCut = null;
+      if (changes.some((c) => c.type === "remove")) {
+        if (!justCut) record();
+      } else if (resized) record("resize");
       else if (changes.some((c) => c.type === "position")) record("move");
 
       // Un cadre qu'on déplace emmène les cartes qu'il contient (leur centre est dedans).
@@ -2082,7 +2121,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
 
       // Carte supprimée au clavier (Suppr) : même règle que le bouton ×, elle part à la corbeille.
-      const trashed = removed.length > 0 ? toTrash(removed, { nodes, edges: get().edges, screenplay: get().screenplay }) : null;
+      let trashed = removed.length > 0 ? toTrash(removed, { nodes, edges: justCut ?? get().edges, screenplay: get().screenplay }) : null;
+      if (trashed && justCut) {
+        // Un fil choisi à part (sans lien avec les cartes retirées) reste retiré.
+        const kept = new Set(get().edges.map((e) => e.id));
+        const gone = new Set(removed);
+        trashed = { ...trashed, edges: trashed.edges.filter((e) => kept.has(e.id) || gone.has(e.source) || gone.has(e.target)) };
+      }
       const { screenplay } = trashed ?? get();
       let nextNodes = applyNodeChanges(
         cardChanges.filter((c) => c.type !== "remove"),
@@ -2108,11 +2153,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (placed.size > 0) dropIntoBeats(placed);
     },
     onEdgesChange: (changes) => {
-      if (changes.some((c) => c.type === "remove")) record();
+      if (changes.some((c) => c.type === "remove")) {
+        record();
+        // Gardés jusqu'à la fin de la tâche : si des cartes sont retirées juste après (Suppr), leurs fils les suivent.
+        const before = get().edges;
+        edgesCut = before;
+        queueMicrotask(() => {
+          if (edgesCut === before) edgesCut = null;
+        });
+      }
       set({ edges: applyEdgeChanges(changes, get().edges) });
       if (changes.some((c) => c.type === "remove")) touch();
     },
     onConnect: (c) => {
+      // Ni fil d'une carte vers elle-même, ni second fil entre deux cartes déjà reliées (dans un sens ou l'autre).
+      if (!c.source || !c.target || c.source === c.target) return;
+      if (get().edges.some((e) => (e.source === c.source && e.target === c.target) || (e.source === c.target && e.target === c.source))) return;
       record();
       // Les fils sont "flottants" : on ignore les points de connexion utilisés pour les tirer.
       const edge = { source: c.source, target: c.target, sourceHandle: null, targetHandle: null };
