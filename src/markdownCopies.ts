@@ -74,8 +74,9 @@ let queue: Promise<void> = Promise.resolve();
 export function syncCopies(
   build: () => Partial<Record<CopyName, string>>,
   enabled: boolean,
-  now = new Date(),
-  forKey: string | null | undefined = storage.copies?.key(),
+  now: Date,
+  // Le projet pour lequel la passe est demandée, lu par l'appelant au moment de l'enregistrement.
+  forKey: string | null | undefined,
 ): Promise<void> {
   queue = queue.then(() => run(build, enabled, now, forKey)).catch((err) => console.error("Copies Markdown", err));
   return queue;

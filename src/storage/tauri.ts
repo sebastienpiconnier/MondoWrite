@@ -36,8 +36,8 @@ const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? 
 const ICLOUD_KEY = "cosmos:icloud";
 /** iCloud a déjà servi sur cet appareil : s'il disparaît, ses projets ne s'affichent plus (on le signale). */
 const ICLOUD_SEEN_KEY = "cosmos:icloud-vu";
-/** Repères iCloud vus à la dernière lecture du projet (voir `pending`). */
-let pendingPaths: { dir: string; paths: string[] } | null = null;
+/** Repères iCloud vus à la dernière lecture du projet (voir `pending`), avec le projet sélectionné à ce moment. */
+let pendingPaths: { key: string | null; paths: string[] } | null = null;
 /** « .nom.md.icloud » → « nom.md » (fichier iCloud pas encore téléchargé), sinon null. */
 export const icloudPlaceholder = (name: string): string | null =>
   name.startsWith(".") && name.endsWith(".icloud") && name.length > ".icloud".length + 1 ? name.slice(1, -".icloud".length) : null;
@@ -748,6 +748,9 @@ export const tauriStorage: Storage = {
   },
 
   async readAll() {
+    // Ce qui a été vu pour un autre projet (ou avant cette lecture) ne vaut plus.
+    pendingPaths = null;
+    const key = current;
     const dir = await projectFolder();
     if (!dir) return null;
     await ensureDownloaded(dir);
@@ -790,12 +793,13 @@ export const tauriStorage: Storage = {
     const screenplayPath = await join(dir, SCREENPLAY_FILE);
     if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);
     else if (await exists(await join(dir, `.${SCREENPLAY_FILE}.icloud`))) placeholders.push(SCREENPLAY_FILE);
-    pendingPaths = { dir, paths: placeholders };
+    pendingPaths = { key, paths: placeholders };
     return files;
   },
 
   pending() {
-    return pendingPaths?.paths ?? [];
+    // Seulement pour le projet sélectionné : un repère vu dans un autre projet ne doit rien bloquer ici.
+    return pendingPaths && pendingPaths.key === current ? pendingPaths.paths : [];
   },
 
   async write(files, removed) {
@@ -822,7 +826,8 @@ export const tauriStorage: Storage = {
     const dir = await projectFolder();
     if (!dir) return {};
     const out: FileMap = {};
-    const placeholders = new Set(pendingPaths?.dir === dir ? pendingPaths.paths : []);
+    const key = current;
+    const placeholders = new Set(pendingPaths?.key === key ? pendingPaths.paths : []);
     for (const path of paths) {
       const parts = path.split("/");
       const full = await join(dir, ...parts);
@@ -831,7 +836,7 @@ export const tauriStorage: Storage = {
         placeholders.delete(path);
       } else if (await exists(await join(dir, ...parts.slice(0, -1), `.${parts[parts.length - 1]}.icloud`))) placeholders.add(path);
     }
-    pendingPaths = { dir, paths: [...placeholders] };
+    pendingPaths = { key, paths: [...placeholders] };
     return out;
   },
 

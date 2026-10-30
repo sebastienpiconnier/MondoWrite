@@ -89,6 +89,17 @@ describe("M3 : fichiers iCloud pas encore téléchargés (repères « .nom.iclou
     expect(removedPaths).not.toContain(evicted);
     expect(written).not.toContain(evicted);
     expect(written).toContain(`cartes/${a}.md`);
+    // Pas écrit : le projet reste « modifié » tant que le fichier n'est pas arrivé.
+    expect(state().status).toBe("modifie");
+
+    // Le fichier redescend d'iCloud avec son ancien texte : ce que l'auteur a écrit entre-temps l'emporte et s'écrit.
+    Object.assign(storage, { readAll: real.readAll, readFiles: real.readFiles, pending: () => [] });
+    await state().syncFromDisk();
+    expect(state().nodes.find((n) => n.id === b)!.data.title).toBe("Le phare de Kerlaouen");
+    expect(written).toContain(evicted);
+    const files = await storage.readAll();
+    expect(files?.[evicted]).toContain("Le phare de Kerlaouen");
+    expect(state().status).toBe("enregistre");
   });
 
   it("une carte qui attend son fichier garde sa place et son rang dans le plan dans cosmos.json", async () => {

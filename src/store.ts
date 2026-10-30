@@ -873,7 +873,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const prev = get().lastFiles;
       // Fichiers en conflit : la version du disque n'est pas touchée tant que l'auteur n'a pas choisi. Un fichier
       // encore dans iCloud (repère « .nom.icloud ») non plus : l'écrire ou l'effacer ferait une seconde version.
-      const held = new Set([...get().conflicts.map((c) => c.path), ...(storage.pending?.() ?? [])]);
+      const waiting = new Set(storage.pending?.() ?? []);
+      const held = new Set([...get().conflicts.map((c) => c.path), ...waiting]);
       const changed: FileMap = {};
       for (const [path, content] of Object.entries(files)) if (prev[path] !== content && !held.has(path)) changed[path] = content;
       let removed = Object.keys(prev).filter((path) => !(path in files) && !held.has(path));
@@ -887,6 +888,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
           const disk = targets.length > 0 ? await storage.readFiles(targets) : {};
           // Retiré de l'appareil par iCloud depuis la dernière lecture : on n'y touche pas non plus.
           const away = new Set(storage.pending?.() ?? []);
+          for (const path of away) waiting.add(path);
           for (const path of targets) if (away.has(path)) disk[path] = prev[path] ?? "";
           for (const path of away) delete changed[path];
           removed = removed.filter((path) => !away.has(path));
@@ -907,13 +909,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
         // Ce que le disque contient maintenant. Un fichier en conflit garde sa dernière version connue.
         let known = files;
         for (const c of conflicts) known = patchFiles(known, { [c.path]: prev[c.path] ?? null });
+        // Un fichier qui attend iCloud n'a pas été écrit : le disque en a toujours la version connue. Il sera écrit
+        // quand il sera arrivé (le projet reste « modifié ») ; sinon son arrivée passait pour un changement fait
+        // ailleurs et effaçait ce que l'auteur avait écrit entre-temps.
+        let unwritten = false;
+        for (const path of waiting) {
+          if ((files[path] ?? null) !== (prev[path] ?? null)) unwritten = true;
+          known = patchFiles(known, { [path]: prev[path] ?? null });
+        }
         // Si l'auteur a modifié quelque chose pendant l'écriture, on reste "modifié".
         set({
           lastFiles: known,
-          savedScreenplay: screenplay,
+          // Scénario qui attend iCloud : pas écrit, donc pas « enregistré » (il le sera à son arrivée).
+          savedScreenplay: waiting.has(SCREENPLAY_FILE) ? get().savedScreenplay : screenplay,
           conflicts,
           saveError: null,
-          status: get().status === "enregistrement" ? "enregistre" : get().status,
+          status: get().status === "enregistrement" ? (unwritten ? "modifie" : "enregistre") : get().status,
         });
         storage.remember({ title: get().title, kind: get().kind });
         // Copies Markdown (markdown/) : après l'enregistrement, sans jamais le retarder ni le faire échouer.
@@ -930,10 +941,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
       } catch (err) {
         console.error(err);
         set({ status: "erreur", saveError: classifySaveError(err) });
-      }
-      if (syncAgain) {
-        syncAgain = false;
-        void get().syncFromDisk();
       }
   };
   const refreshProjects = async () => {
@@ -2600,6 +2607,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
         } finally {
           saving = null;
         }
+        // Relecture du dossier demandée pendant l'enregistrement : seulement quand plus rien ne s'écrit.
+        if (syncAgain) {
+          syncAgain = false;
+          void get().syncFromDisk();
+        }
       })();
       return saving;
     },
@@ -2662,7 +2674,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
     syncFromDisk: async () => {
       if (get().screen !== "project") return;
-      if (syncing || get().status === "enregistrement") {
+      if (syncing || saving || get().status === "enregistrement") {
         syncAgain = true;
         return;
       }
@@ -2681,8 +2693,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const diff = diffDisk(paths, known, currentFiles(), disk);
         if (Object.keys(diff.settled).length > 0) set({ lastFiles: patchFiles(get().lastFiles, diff.settled) });
         adoptDisk(diff.adopt);
-        // Changé des deux côtés : l'enregistrement met la version de l'app à côté et prévient l'auteur.
-        if (diff.conflicts.length > 0) {
+        // Changé des deux côtés : l'enregistrement met la version de l'app à côté et prévient l'auteur. Et un
+        // fichier arrivé d'iCloud que l'auteur avait modifié pendant l'attente s'écrit maintenant.
+        if (diff.conflicts.length > 0 || get().status === "modifie") {
           set({ status: "modifie" });
           syncing = false;
           await get().save();

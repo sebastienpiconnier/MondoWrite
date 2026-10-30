@@ -29,6 +29,7 @@ const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 const SAVED_KEYS = [
   "nodes", "frames", "edges", "screenplay", "title", "kind", "paper", "sceneNumbers", "underlineHeadings",
   "manuscript", "plan", "pitch", "trash", "goals", "progress", "print", "scriptPdf", "bibleExport", "hideWires", "markdownCopies", "chutier",
+  "paperChosen", "metaKeep", "awaitingLayout",
 ] as const satisfies readonly (keyof CosmosState)[];
 
 export function App() {

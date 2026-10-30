@@ -65,7 +65,7 @@ describe("écriture dans markdown/", () => {
   let writes: FileMap[];
   let removedDays: string[];
   beforeEach(async () => {
-    await syncCopies(() => ({}), false); // file d'attente vide avant de compter
+    await syncCopies(() => ({}), false, new Date(), "projet"); // file d'attente vide avant de compter
     disk = {};
     writes = [];
     removedDays = [];
@@ -91,18 +91,18 @@ describe("écriture dans markdown/", () => {
     disk["versions/2026-08-31/bible.md"] = "fin août";
     const now = new Date(2026, 9, 11, 14);
     const build = () => buildCopies(state(), ctx(), BIBLE_ORDER);
-    await syncCopies(build, true, now);
+    await syncCopies(build, true, now, "projet");
     expect(Object.keys(writes[0]).sort()).toEqual(["bible.md", "canevas.md", "manuscrit.md", "versions/2026-10-11/bible.md", "versions/2026-10-11/canevas.md", "versions/2026-10-11/manuscrit.md"]);
     expect(writes[0]["versions/2026-10-11/bible.md"]).toContain("](../../../medias/");
     expect(removedDays).toEqual(["2026-08-01"]);
 
-    await syncCopies(build, true, now);
+    await syncCopies(build, true, now, "projet");
     expect(writes).toHaveLength(1);
 
     // Une fiche change : sa copie et la version du jour (complète) sont réécrites, pas les autres copies.
     const id = state().nodes.find((n) => n.data.type === "lieu")!.id;
     state().updateCard(id, { html: "<p>Un bois plus sombre.</p>" });
-    await syncCopies(build, true, now);
+    await syncCopies(build, true, now, "projet");
     expect(Object.keys(writes[1]).filter((n) => !n.startsWith("versions/")).sort()).toEqual(["bible.md", "canevas.md"]);
     expect(Object.keys(writes[1]).filter((n) => n.startsWith("versions/"))).toHaveLength(3);
   });
@@ -122,9 +122,9 @@ describe("écriture dans markdown/", () => {
   });
 
   it("réglage du projet arrêté, ou pas de dossier (navigateur) : rien n'est écrit", async () => {
-    await syncCopies(() => buildCopies(state(), ctx(), BIBLE_ORDER), false);
+    await syncCopies(() => buildCopies(state(), ctx(), BIBLE_ORDER), false, new Date(), "projet");
     storage.copies = undefined;
-    await syncCopies(() => buildCopies(state(), ctx(), BIBLE_ORDER), true);
+    await syncCopies(() => buildCopies(state(), ctx(), BIBLE_ORDER), true, new Date(), undefined);
     expect(writes).toHaveLength(0);
   });
 
