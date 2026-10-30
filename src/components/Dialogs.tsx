@@ -19,6 +19,7 @@ import { StatsPanel } from "./StatsPanel";
 import { GoToPanel } from "./GoToPanel";
 import { ScriptPdfPanel } from "./ScriptPdfPanel";
 import { BibleExportDialog } from "./BibleExportDialog";
+import { ProfileDialog } from "./ProfileDialog";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
@@ -49,7 +50,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -95,6 +96,7 @@ export function Dialogs() {
       {dialog === "goto" && <GoToPanel />}
       {dialog === "scriptPdf" && <ScriptPdfPanel />}
       {dialog === "bibleExport" && <BibleExportDialog />}
+      {dialog === "profile" && <ProfileDialog onDone={() => setDialog(null)} />}
       {dialog === "document" && <DocumentViewer />}
       {dialog === "photos" && <PhotoSearch />}
       {dialog === "about" && (
@@ -129,7 +131,7 @@ export function Dialogs() {
         </div>
       )}
       {/* La liseuse a son bouton « Fermer » en haut : la place en bas va aux pages. Les fenêtres d'export ont le leur, à côté du bouton d'export. */}
-      {dialog !== "document" && dialog !== "paperback" && dialog !== "scriptPdf" && dialog !== "bibleExport" && (
+      {dialog !== "document" && dialog !== "paperback" && dialog !== "scriptPdf" && dialog !== "bibleExport" && dialog !== "profile" && (
         <div className="assistant-actions app-dialog-actions">
           <button type="button" className={dialog === "replace" ? "" : "is-primary"} onClick={() => setDialog(null)} autoFocus={dialog !== "replace"}>
             {t.gallery.close}

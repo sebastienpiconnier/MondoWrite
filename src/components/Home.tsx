@@ -3,7 +3,7 @@
 
 import { openGuide } from "../help";
 import { LoadingProject } from "./LoadingProject";
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
@@ -11,15 +11,19 @@ import { storage, type ProjectEntry } from "../storage";
 import { PROJECT_KINDS, type ProjectKind } from "../types";
 import { Settings } from "./Settings";
 import { BrandMark, Wordmark } from "./BrandMark";
-import { ProfilePanel } from "./ProfilePanel";
 import { ExamplesPanel } from "./ExamplesPanel";
+import { greeting } from "../greeting";
+import { hasProfile } from "../profile";
 import { TrashIcon } from "./TrashIcon";
 
 export function Home() {
   const t = useT();
   const h = t.home;
   const lang = useSettings((s) => s.lang);
+  const profile = useSettings((s) => s.profile);
   const projects = useCosmos((s) => s.projects);
+  // Calculée à l'affichage de la page (l'heure du moment) ; la tournure ne change pas d'un rendu à l'autre.
+  const welcome = useMemo(() => greeting(t.home.greeting, new Date(), profile.firstName, projects), [t, profile.firstName, projects]);
   const hiddenProjects = useCosmos((s) => s.hiddenProjects);
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
@@ -155,6 +159,8 @@ export function Home() {
       </header>
 
       <main className="home-main">
+        {/* Phrase d'accueil (greeting.ts) : bonjour selon l'heure, le prénom, le dernier projet ouvert. */}
+        <h1 className="home-greeting">{welcome}</h1>
         {(openFailed || notice || importNotice) && (
           <p className="home-alert" role="alert">
             {importNotice === "taken"
@@ -210,7 +216,7 @@ export function Home() {
         )}
 
         <section className="home-panel" aria-labelledby={ids.recent}>
-          <h1 id={ids.recent}>{h.title}</h1>
+          <h2 id={ids.recent}>{h.title}</h2>
           {projects.length === 0 ? (
             <p className="sp-empty">{h.empty}</p>
           ) : (
@@ -295,11 +301,18 @@ export function Home() {
                 </button>
               </div>
             </form>
+            {/* Profil encore vide : une ligne pour le remplir (fenêtre « Toi, l'auteur », aussi dans les Réglages). */}
+            {!hasProfile(profile) && (
+              <p className="settings-hint home-profile-nudge">
+                {h.profile.nudge}{" "}
+                <button type="button" className="link-button" onClick={() => useCosmos.getState().setDialog("profile")}>
+                  {h.profile.nudgeLink}
+                </button>
+              </p>
+            )}
           </section>
 
           <ExamplesPanel disabled={busy} />
-
-          <ProfilePanel />
         </div>
       </main>
     </div>

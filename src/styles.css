@@ -211,7 +211,12 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 @media (any-hover: hover) { .home-create:hover { background: var(--accent-ink); } }
 .home-buttons .ghost-button { min-height: 44px; }
 /* Profil de l'auteur : une grille de champs (deux par ligne quand la place le permet), puis un résumé. */
-.home-panel.profile-panel { max-width: 944px; flex-basis: 100%; }
+/* Phrase d'accueil (greeting.ts) : grande, en tête, sur toute la largeur des deux colonnes. */
+.home-greeting { flex: 0 0 100%; max-width: none; box-sizing: border-box; padding-inline: max(0px, calc((100% - 944px) / 2)); margin: 8px 0 0; text-align: center; font: 400 clamp(1.625rem, 2.6vw, 2.25rem)/1.25 var(--font-text); color: var(--ink); text-wrap: balance; overflow-wrap: break-word; }
+.home-profile-nudge { margin: 4px 0 0; }
+.app-dialog.is-profile { width: min(720px, calc(100vw - 32px)); }
+.profile-dialog { display: flex; flex-direction: column; gap: 12px; }
+.profile-dialog h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; }
 /* Colonne de droite : nouveau projet puis profil. Une longue liste de projets ne les repousse plus vers le bas. */
 .home-side { flex: 1 1 340px; max-width: 460px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
 .home-side > .home-panel, .home-side > .home-panel.profile-panel { flex: none; max-width: none; width: 100%; box-sizing: border-box; }

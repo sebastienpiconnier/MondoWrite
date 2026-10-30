@@ -272,10 +272,20 @@ export function Settings({ project = true }: { project?: boolean }) {
               </select>
             </>
           )}
-          {/* Le nom d'auteur vient du profil, qui se remplit sur la page des projets. */}
+          {/* Le nom d'auteur vient du profil (fenêtre « Toi, l'auteur », ProfileDialog). */}
           <div className="settings-label" id={ids.author}>{t.settings.author}</div>
           <p className="settings-value" aria-labelledby={ids.author}>{author || t.settings.authorNone}</p>
           <p className="settings-hint">{t.settings.authorHint}</p>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              setOpen(false);
+              useCosmos.getState().setDialog("profile");
+            }}
+          >
+            {t.settings.profileEdit}
+          </button>
           {/* Mises à jour : app de bureau seulement (rien dans le navigateur ni sur mobile). */}
           <UpdateSettings checkboxId={ids.updates} />
           </section>

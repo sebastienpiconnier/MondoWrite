@@ -93,6 +93,9 @@ async function startExample(profile = true) {
   await page.goto(URL);
   await wait(600);
   if (profile) {
+    // Le profil se remplit dans la fenêtre « Toi, l'auteur », ouverte sous « Nouveau projet » tant qu'il est vide.
+    await page.getByRole("button", { name: T("Renseigner mon profil", "Fill in my profile") }).click();
+    await wait(300);
     await page.getByLabel(T("Prénom", "First name"), { exact: true }).fill("Charles");
     await page.getByLabel(T("Nom", "Last name"), { exact: true }).fill("Perrault");
     await page.getByLabel(T("Courriel", "Email")).fill(T("charles.perrault@exemple.fr", "charles.perrault@example.com"));
@@ -130,6 +133,14 @@ await open();
 await page.goto(URL);
 await wait(800);
 await shot("accueil-vide");
+// La fenêtre du profil, à moitié remplie.
+await page.getByRole("button", { name: T("Renseigner mon profil", "Fill in my profile") }).click();
+await wait(300);
+await page.getByLabel(T("Prénom", "First name"), { exact: true }).fill("Charles");
+await page.getByLabel(T("Nom", "Last name"), { exact: true }).fill("Perrault");
+await shot("profil", { el: "dialog[open]" });
+await page.keyboard.press("Escape");
+await wait(300);
 await startExample();
 await shot("visite");
 await closeTour();

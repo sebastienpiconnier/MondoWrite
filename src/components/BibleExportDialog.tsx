@@ -228,6 +228,15 @@ export function BibleExportDialog() {
               <small className="spdf-hint">{e.recipientHint}</small>
             </label>
           )}
+          {options.audience === "tiers" && (
+            // La page « L'auteur » vient du profil de l'appareil : on peut le compléter sans quitter le projet.
+            <p className="spdf-hint bexp-profile">
+              {e.profileNote}{" "}
+              <button type="button" className="link-button" onClick={() => useCosmos.getState().setDialog("profile")}>
+                {e.profileEdit}
+              </button>
+            </p>
+          )}
         </fieldset>
         <fieldset>
           <legend>{e.parts}</legend>
