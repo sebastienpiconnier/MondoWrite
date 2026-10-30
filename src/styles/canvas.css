@@ -477,3 +477,12 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 @media (any-hover: hover) {
   .inbox-show:hover { background: var(--accent-soft); }
 }
+
+/* « Transformer en… » ouvert depuis l'étiquette du type : accroché à l'étiquette, posé dans <body> (CardNode).
+   Taille de l'interface (rem), pas celle du canevas : lisible même quand on a beaucoup dézoomé. */
+.type-menu-float { position: fixed; z-index: 2000; display: flex; overflow: auto; border-radius: 12px; box-shadow: var(--shadow-pop); font-family: var(--font-ui); }
+.type-menu-float.is-up { transform: translateY(-100%); }
+.type-menu-float .slash-menu.is-floating { position: static; width: 15rem; max-height: none; box-shadow: none; }
+.type-menu-float .slash-title { font-size: 0.6875rem; }
+.type-menu-float .slash-item { font-size: 0.9375rem; padding: 0.55rem 0.65rem; }
+@media (pointer: coarse) { .type-menu-float .slash-item { min-height: 44px; } }

@@ -7,7 +7,8 @@
 import { formOf } from "../pitch";
 import { autosize } from "./autosize";
 import { documentExtension, imageExtension } from "../media";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLifted } from "../lifted";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
 import { type Editor, type UseEditorOptions } from "@tiptap/react";
@@ -311,14 +312,48 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       if (e.key === "Escape") setSlash(null);
     };
     const onDown = (e: PointerEvent) => {
-      if (!cardRef.current?.contains(e.target as Node)) setSlash(null);
+      const target = e.target as Node;
+      if (cardRef.current?.contains(target) || floatingRef.current?.contains(target)) return;
+      setSlash(null);
     };
+    // Le menu est posé dans <body> : on le ferme dès que le canevas bouge sous lui (molette, pincement,
+    // fenêtre redimensionnée) plutôt que de le laisser loin de son étiquette.
+    const close = () => setSlash(null);
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onDown);
+    window.addEventListener("resize", close);
+    window.addEventListener("wheel", close, { passive: true, capture: true });
     return () => {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("wheel", close, { capture: true });
     };
+  }, [labelMenuOpen]);
+
+  // Menu ouvert depuis l'étiquette (ou « / » dans le titre) : accroché à l'étiquette du type, au-dessus d'elle
+  // s'il y a la place, sinon dessous. Posé dans <body>, il garde sa taille normale même quand le canevas est
+  // dézoomé, et ne s'ouvre plus au-dessus de toute la carte (loin de l'étiquette sur une carte Image).
+  const typeButtonRef = useRef<HTMLButtonElement>(null);
+  const floatingRef = useRef<HTMLDivElement>(null);
+  const [floatAt, setFloatAt] = useState<{ left: number; top: number; up: boolean; maxHeight: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!labelMenuOpen || !typeButtonRef.current) {
+      setFloatAt(null);
+      return;
+    }
+    const r = typeButtonRef.current.getBoundingClientRect();
+    const margin = 8;
+    const above = r.top - margin * 2;
+    const below = window.innerHeight - r.bottom - margin * 2;
+    const wanted = floatingRef.current?.scrollHeight ?? 0;
+    const up = wanted > 0 ? wanted <= above || above >= below : above >= below;
+    setFloatAt({
+      left: Math.max(margin, Math.min(r.left, window.innerWidth - 240 - margin)),
+      top: up ? r.top - 6 : r.bottom + 6,
+      up,
+      maxHeight: Math.max(160, up ? above : below),
+    });
   }, [labelMenuOpen]);
 
   // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge).
@@ -433,6 +468,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
 
       <div className="card-handle">
         <button
+          ref={typeButtonRef}
           type="button"
           className="card-type nodrag"
           aria-haspopup="listbox"
@@ -605,7 +641,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         />
       )}
 
-      {slash && options.length > 0 && (
+      {slash?.via === "slash" && options.length > 0 && (
         <SuggestionMenu
           title={t.card.menuTitle}
           className={menuUp ? "opens-up" : ""}
@@ -614,6 +650,24 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           onPick={(i) => pick(options[i])}
         />
       )}
+      {labelMenuOpen &&
+        options.length > 0 &&
+        createPortal(
+          <div
+            ref={floatingRef}
+            className={`type-menu-float${floatAt?.up ? " is-up" : ""}`}
+            style={floatAt ? { left: floatAt.left, top: floatAt.top, maxHeight: floatAt.maxHeight } : { visibility: "hidden" }}
+          >
+            <SuggestionMenu
+              title={t.card.menuTitle}
+              className="is-floating"
+              items={options.map((type) => ({ key: type, label: types[type].label, color: typeColor(type) }))}
+              active={active}
+              onPick={(i) => pick(options[i])}
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
