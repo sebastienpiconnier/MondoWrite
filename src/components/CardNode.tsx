@@ -4,6 +4,7 @@
 // (souris, doigt, et sans clavier physique sur mobile).
 // « @ » dans le texte cite une autre carte : un menu propose les cartes du projet, et un fil est tiré.
 
+import { formOf } from "../pitch";
 import { autosize } from "./autosize";
 import { documentExtension, imageExtension } from "../media";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
@@ -58,6 +59,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [selected, id]);
   const imageUrl = useMediaUrl(data.image);
   const { t, types, kind } = useVocab();
+  // Pas de carte Épisode proposée dans un film (pastille Format).
+  const film = useCosmos((s) => formOf(kind, s.pitch) === "film");
   // Scénario : le titre d'une scène est un en-tête de scène (INT./EXT. DÉCOR - MOMENT).
   const slugline = kind === "scenario" && data.type === "scene";
   // Le corps d'une carte Scène est son texte (manuscrit d'un roman, scène du scénario) : un aperçu ici, on
@@ -77,8 +80,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
     setSlash(menu);
   };
   const options = useMemo(
-    () => (slash ? typesFor(kind, data.type === "episode").filter((type) => norm(types[type].label).includes(norm(slash.query))) : []),
-    [slash, types, kind, data.type],
+    () => (slash ? typesFor(kind, data.type === "episode", film).filter((type) => norm(types[type].label).includes(norm(slash.query))) : []),
+    [slash, types, kind, data.type, film],
   );
 
   const [mention, setMention] = useState<MentionState | null>(null);
@@ -436,7 +439,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           aria-expanded={slash?.via === "label"}
           aria-label={fmt(t.card.changeType, { type: types[data.type].label })}
           onClick={() => {
-            setActive(Math.max(0, typesFor(kind, data.type === "episode").indexOf(data.type)));
+            setActive(Math.max(0, typesFor(kind, data.type === "episode", film).indexOf(data.type)));
             openMenu(slash?.via === "label" ? null : { via: "label", query: "" });
           }}
         >
@@ -514,7 +517,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           // plus un éditeur, c'est le chemin clavier qui reste pour toutes les cartes).
           if (e.key === "/" && !data.title) {
             e.preventDefault();
-            setActive(Math.max(0, typesFor(kind, data.type === "episode").indexOf(data.type)));
+            setActive(Math.max(0, typesFor(kind, data.type === "episode", film).indexOf(data.type)));
             openMenu({ via: "label", query: "" });
             return;
           }

@@ -42,9 +42,11 @@ export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "i
 
 /**
  * Types proposés dans un projet (menus, filtres, rubriques) : l'Épisode (lot 6 de la Bible v2) ne sert qu'à une
- * série. Un roman qui a déjà des cartes Épisode (scénario rebasculé en roman) les garde visibles.
+ * série, donc ni à un roman ni à un film (`film` : pastille Format d'un long métrage, d'un court ou d'un
+ * téléfilm, formOf). Un projet qui a déjà des cartes Épisode (scénario rebasculé, format changé) les garde visibles.
  */
-export const typesFor = (kind: ProjectKind, present = false): CardType[] => (kind === "scenario" || present ? CARD_TYPES : CARD_TYPES.filter((t) => t !== "episode"));
+export const typesFor = (kind: ProjectKind, present = false, film = false): CardType[] =>
+  (kind === "scenario" && !film) || present ? CARD_TYPES : CARD_TYPES.filter((t) => t !== "episode");
 
 /** Ordre des parties de la bible : les personnages d'abord, les idées en vrac à la fin. */
 export const BIBLE_ORDER: CardType[] = ["personnage", "intrigue", "lieu", "groupe", "objet", "evenement", "regle", "episode", "secret", "scene", "theme", "question", "image", "lien", "document", "idee"];

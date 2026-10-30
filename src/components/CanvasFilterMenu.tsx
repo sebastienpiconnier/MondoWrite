@@ -2,6 +2,7 @@
 // Les cartes des types décochés sont masquées, avec les fils qui les touchent. État d'affichage :
 // rien n'est enregistré, rien n'entre dans l'historique d'annulation.
 
+import { formOf } from "../pitch";
 import { useEffect, useId, useRef, useState } from "react";
 import { useT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -12,7 +13,8 @@ import { typesFor, typeColor } from "../types";
 export function CanvasFilterMenu() {
   const t = useT().filter;
   const { types: labels, kind } = useVocab();
-  const menuTypes = typesFor(kind);
+  const film = useCosmos((s) => formOf(kind, s.pitch) === "film");
+  const menuTypes = typesFor(kind, false, film);
   const filter = useCosmos((s) => s.filter);
   const setFilterTypes = useCosmos((s) => s.setFilterTypes);
   const clearFilter = useCosmos((s) => s.clearFilter);

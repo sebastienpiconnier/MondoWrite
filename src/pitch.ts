@@ -37,6 +37,10 @@ export const PITCH_TEXTS = [
   "pistes",
   // Lot 7 : autres supports (podcast, roman graphique, jeu…), imprimés pour un tiers seulement.
   "supports",
+  // Octobre 2026 : un film (long, court, téléfilm) a ses rubriques à lui (`FILM_TEXTS`).
+  "noteRealisation",
+  "traitement",
+  "faisabilite",
 ] as const;
 /** Pastilles : une valeur courte, choisie dans une liste ou saisie librement. */
 export const PITCH_CHIPS = ["genre", "cible", "format", "forme", "pilote", "pov", "temps", "ton", "statut", "credits", "dapres"] as const;
@@ -64,14 +68,71 @@ export const SERIES_TEXTS = [
   "pistes",
   "supports",
 ] as const satisfies readonly PitchText[];
+/**
+ * Textes d'un film (long métrage, court métrage, téléfilm) : sous-partie « Écrire le film ». Ceux d'une série
+ * qui valent aussi pour un film y sont repris ; le traitement est en option (un bouton l'ajoute), la faisabilité
+ * part des statistiques du scénario (feasibility.ts) et reste modifiable.
+ */
+export const FILM_TEXTS = [
+  "pourquoi",
+  "pourquoiMoi",
+  "nestPas",
+  "noteRealisation",
+  "traitement",
+  "faisabilite",
+  "aFaire",
+  "aEviter",
+  "pistes",
+] as const satisfies readonly PitchText[];
+
+/**
+ * Forme d'un projet, lue dans la pastille Format (aucun réglage de plus) : un roman ; un film ; une série ;
+ * une mini-série (une saison, sans suite) ; ou un scénario dont le format n'est pas encore choisi. Sans format,
+ * une couverture qui a déjà des rubriques de série (projet d'avant octobre 2026) reste une série.
+ */
+export type ProjectForm = "roman" | "film" | "serie" | "miniserie" | "libre";
+
+const SERIES_ONLY: readonly string[] = ["promesse", "arene", "avantPilote", "ensemble", "mecanique", "episodeType", "saison", "finSaison", "suite", "supports", "episodes", "forme", "pilote"];
+
+export function formOf(kind: "roman" | "scenario", pitch: Pitch): ProjectForm {
+  if (kind !== "scenario") return "roman";
+  const format = (pitch.format ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  if (/mini/.test(format)) return "miniserie";
+  if (/serie|episode|saison|season/.test(format)) return "serie";
+  if (/metrage|telefilm|film|feature|short|movie|court|long/.test(format)) return "film";
+  return SERIES_ONLY.some((k) => (pitch as Record<string, string | undefined>)[k]?.trim()) ? "serie" : "libre";
+}
+
+export const isSeriesForm = (form: ProjectForm) => form === "serie" || form === "miniserie";
+
+/** Rubriques d'écriture de la couverture pour cette forme (« Écrire la série » ou « Écrire le film »). */
+export function writingTexts(form: ProjectForm): readonly PitchText[] {
+  if (form === "serie") return SERIES_TEXTS;
+  if (form === "miniserie") return SERIES_TEXTS.filter((k) => k !== "suite");
+  if (form === "film") return FILM_TEXTS;
+  return [];
+}
+
+/** Rubriques remplies qui ne sont pas celles de la forme (un film qui était une série) : montrées à part, jamais perdues. */
+export function otherTexts(pitch: Pitch, form: ProjectForm): PitchText[] {
+  if (form === "roman") return [];
+  const own: readonly string[] = writingTexts(form);
+  return [...new Set<PitchText>([...SERIES_TEXTS, ...FILM_TEXTS])].filter((k) => !own.includes(k) && !!pitch[k]?.trim());
+}
+
 /** Pastilles d'un roman seulement (un scénario est toujours au présent, vu par la caméra). */
 export const NOVEL_CHIPS = ["pov", "temps"] as const satisfies readonly (typeof PITCH_CHIPS)[number][];
 /** Pastilles d'une série seulement (lot 7) : forme (bouclée, feuilletonnante, hybride) et type de pilote. */
 export const SERIES_CHIPS = ["forme", "pilote"] as const satisfies readonly (typeof PITCH_CHIPS)[number][];
 
-/** Pastilles de la couverture pour ce type de projet, dans l'ordre. */
-export const chipsFor = (kind: "roman" | "scenario"): PitchChip[] =>
-  PITCH_CHIPS.filter((c) => !((kind === "scenario" ? NOVEL_CHIPS : SERIES_CHIPS) as readonly string[]).includes(c));
+/**
+ * Pastilles de la couverture pour ce type de projet, dans l'ordre. Forme et pilote pour une série seulement
+ * (sans forme donnée, un scénario est lu comme une série, comme avant octobre 2026).
+ */
+export const chipsFor = (kind: "roman" | "scenario", form: ProjectForm = kind === "scenario" ? "serie" : "roman"): PitchChip[] =>
+  PITCH_CHIPS.filter((c) => !((kind === "scenario" ? NOVEL_CHIPS : SERIES_CHIPS) as readonly string[]).includes(c)).filter(
+    (c) => kind !== "scenario" || isSeriesForm(form) || !(SERIES_CHIPS as readonly string[]).includes(c),
+  );
 export type PitchChip = (typeof PITCH_CHIPS)[number];
 export type PitchField = PitchText | PitchChip;
 export type Pitch = Partial<Record<PitchField, string>>;
@@ -123,13 +184,19 @@ export const isEmptyPitch = (pitch: Pitch) => Object.keys(pitch).length === 0;
 /** Clés relues mais plus saisies sur la couverture (les épisodes sont des cartes depuis le lot 6). */
 const RETIRED: readonly string[] = ["episodes"];
 
-export const pitchFields = (kind: "roman" | "scenario" = "roman"): PitchField[] =>
-  FIELDS.filter((key) => !RETIRED.includes(key)).filter((key) =>
-    kind === "scenario" ? !(NOVEL_CHIPS as readonly string[]).includes(key) : !(SERIES_TEXTS as readonly string[]).includes(key) && !(SERIES_CHIPS as readonly string[]).includes(key),
+/** Rubriques d'écriture (série ou film), qui ne valent que pour la forme qui les montre. */
+const WRITING: readonly string[] = [...new Set<string>([...SERIES_TEXTS, ...FILM_TEXTS])];
+
+export const pitchFields = (kind: "roman" | "scenario" = "roman", form: ProjectForm = kind === "scenario" ? "serie" : "roman"): PitchField[] => {
+  const own: readonly string[] = writingTexts(form);
+  const chips: readonly string[] = chipsFor(kind, form);
+  return FIELDS.filter((key) => !RETIRED.includes(key)).filter((key) =>
+    (PITCH_CHIPS as readonly string[]).includes(key) ? chips.includes(key) : !WRITING.includes(key) || own.includes(key),
   );
+};
 
 /** Champs remplis, pour le repère discret de la couverture. */
-export const pitchFilled = (pitch: Pitch, kind: "roman" | "scenario" = "roman") => pitchFields(kind).filter((key) => pitch[key]?.trim()).length;
+export const pitchFilled = (pitch: Pitch, kind: "roman" | "scenario" = "roman", form?: ProjectForm) => pitchFields(kind, form).filter((key) => pitch[key]?.trim()).length;
 
 /** Épisodes d'une série : une ligne par épisode, « Titre : synopsis » (le titre seul est permis). */
 export function readEpisodes(text: string | undefined): { title: string; synopsis: string }[] {
@@ -158,15 +225,20 @@ export function chipSuggestions(list: readonly string[], current: string | undef
 }
 
 /** Champs que « Questionner » peut remplir, dans l'ordre des questions. */
-export const askableFields = (kind: "roman" | "scenario"): PitchText[] =>
-  PITCH_TEXTS.filter((key) => !RETIRED.includes(key)).filter((key) => kind === "scenario" || !(SERIES_TEXTS as readonly string[]).includes(key));
+/** Le traitement (long, en option) et la faisabilité (tirée des statistiques) ne se demandent pas. */
+const NOT_ASKED: readonly string[] = ["traitement", "faisabilite"];
+
+export const askableFields = (kind: "roman" | "scenario", form: ProjectForm = kind === "scenario" ? "serie" : "roman"): PitchText[] => {
+  const own: readonly string[] = writingTexts(form);
+  return PITCH_TEXTS.filter((key) => !RETIRED.includes(key) && !NOT_ASKED.includes(key)).filter((key) => !WRITING.includes(key) || own.includes(key));
+};
 
 /**
  * Prochaine question de « Questionner » : le premier champ vide qui n'a pas été passé. Quand tous les champs
  * vides ont été passés, on reprend celui qui a été passé il y a le plus longtemps (`skipped` est dans l'ordre
  * des passages : le dernier passé à la fin). Null : tout est rempli.
  */
-export function nextAsk(pitch: Pitch, kind: "roman" | "scenario", skipped: readonly string[]): PitchText | null {
-  const empty = askableFields(kind).filter((key) => !pitch[key]?.trim());
+export function nextAsk(pitch: Pitch, kind: "roman" | "scenario", skipped: readonly string[], form?: ProjectForm): PitchText | null {
+  const empty = askableFields(kind, form).filter((key) => !pitch[key]?.trim());
   return empty.find((key) => !skipped.includes(key)) ?? [...empty].sort((a, b) => skipped.indexOf(a) - skipped.indexOf(b))[0] ?? null;
 }

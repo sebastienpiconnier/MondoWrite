@@ -8,7 +8,8 @@ import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
-import { SERIES_TEXTS, chipsFor, chipSuggestions, pitchFields, pitchFilled, type PitchChip, type PitchText } from "../pitch";
+import { SERIES_CHIPS, chipsFor, chipSuggestions, formOf, isSeriesForm, otherTexts, pitchFields, pitchFilled, writingTexts, type PitchChip, type PitchText } from "../pitch";
+import { feasibilityText, pitchLabels } from "../feasibility";
 import { CoverAssistant } from "./CoverAssistant";
 import { countWords } from "../manuscript";
 import { typeColor } from "../types";
@@ -120,19 +121,24 @@ function Chip({ field }: { field: PitchChip }) {
 }
 
 /** Texte de la couverture : une zone qui grandit avec ce qu'on écrit. */
-function PitchArea({ field, className, hint }: { field: PitchText; className?: string; hint?: string }) {
-  const { t } = useVocab();
-  const value = useCosmos((s) => s.pitch[field] ?? "");
+function PitchArea({ field, className, hint, fallback, children }: { field: PitchText; className?: string; hint?: string; fallback?: string; children?: React.ReactNode }) {
+  const { t, kind } = useVocab();
+  // Libellés selon la forme du projet (« Ce qu'il n'est pas » pour un film, « Ce qu'elle n'est pas » pour une série).
+  const form = useCosmos((s) => formOf(kind, s.pitch));
+  const labels = pitchLabels(t.pitch, form);
+  const stored = useCosmos((s) => s.pitch[field] ?? "");
+  // Valeur de départ proposée (faisabilité tirée du scénario) : montrée tant que le champ n'a pas de texte.
+  const value = stored.trim() ? stored : (fallback ?? stored);
   const setPitch = useCosmos((s) => s.setPitch);
   const id = useId();
   return (
     <div className={`pitch-field ${className ?? ""}`}>
-      <label htmlFor={id}>{t.pitch.fields[field]}</label>
+      <label htmlFor={id}>{labels.fields[field]}</label>
       <textarea
         id={id}
         rows={1}
         value={value}
-        placeholder={t.pitch.placeholders[field]}
+        placeholder={labels.placeholders[field]}
         aria-describedby={hint ? `${id}-hint` : undefined}
         onChange={(e) => setPitch(field, e.target.value)}
       />
@@ -141,7 +147,33 @@ function PitchArea({ field, className, hint }: { field: PitchText; className?: s
           {hint}
         </p>
       )}
+      {children}
     </div>
+  );
+}
+
+/** Faisabilité d'un film : proposée d'après le scénario, modifiable ; « Reprendre les chiffres » la recalcule. */
+function Feasibility() {
+  const { t } = useVocab();
+  const p = t.pitch;
+  const lang = useSettings((s) => s.lang);
+  const screenplay = useCosmos((s) => s.screenplay);
+  const nodes = useCosmos((s) => s.nodes);
+  const stored = useCosmos((s) => s.pitch.faisabilite ?? "");
+  const pagination = usePagination();
+  const computed = useMemo(
+    () => feasibilityText(screenplay?.elements ?? [], nodes.map((n) => n.data), pagination, p, lang),
+    [screenplay, nodes, pagination, p, lang],
+  );
+  const edited = !!stored.trim() && stored !== computed;
+  return (
+    <PitchArea field="faisabilite" fallback={computed} hint={computed ? p.feasibilityAuto : p.feasibilityEmpty}>
+      {edited && computed && (
+        <button type="button" className="link-button" onClick={() => useCosmos.getState().setPitch("faisabilite", computed)}>
+          {p.feasibilityRefresh}
+        </button>
+      )}
+    </PitchArea>
   );
 }
 
@@ -200,11 +232,18 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
         .sort((a, b) => a.title.localeCompare(b.title, lang)),
     [nodes, lang],
   );
+  // Forme du projet, lue dans la pastille Format : film, série, mini-série, ou format pas encore choisi.
+  const form = formOf(kind, pitch);
+  const labels = pitchLabels(p, form);
   // Pas de point de vue ni de temps du récit pour un scénario (toujours au présent, caméra).
-  // Forme et type de pilote pour une série seulement (lot 7).
-  const chips = chipsFor(kind);
+  // Forme et type de pilote pour une série seulement (lot 7) ; une pastille déjà remplie reste visible.
+  const chips = [...chipsFor(kind, form), ...(kind === "scenario" ? SERIES_CHIPS.filter((c) => pitch[c]?.trim() && !chipsFor(kind, form).includes(c)) : [])];
   const episodes = useMemo(() => episodeOrder(nodes.map((n) => n.data)), [nodes]);
-  const seriesFilled = SERIES_TEXTS.some((k) => pitch[k]?.trim()) || episodes.length > 0;
+  const writing = writingTexts(form);
+  const others = otherTexts(pitch, form);
+  const writingFilled = writing.some((k) => pitch[k]?.trim()) || (isSeriesForm(form) && episodes.length > 0);
+  // Traitement en option : un bouton l'ajoute ; rempli, il reste affiché.
+  const [showTreatment, setShowTreatment] = useState(false);
   const tagId = useId();
 
   // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge, WebKit).
@@ -254,7 +293,7 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
             <Chip key={c} field={c} />
           ))}
         </div>
-        <div className="cover-filled">{fmt(p.filled, { n: pitchFilled(pitch, kind), total: pitchFields(kind).length })}</div>
+        <div className="cover-filled">{fmt(p.filled, { n: pitchFilled(pitch, kind, form), total: pitchFields(kind, form).length })}</div>
       </div>
 
       <div className="cover-back">
@@ -285,17 +324,19 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
           </div>
         </div>
         <details className="pitch-intention" open={!!pitch.intention}>
-          <summary>{p.fields.intention}</summary>
+          <summary>{labels.fields.intention}</summary>
           {/* Repère discret de longueur (lot 6) : une note d'intention tient en une page environ. */}
           <PitchArea field="intention" className="is-bare" hint={pitch.intention?.trim() ? fmt(p.intentionLength, { n: countWords(pitch.intention), page: INTENTION_PAGE }) : undefined} />
         </details>
+        {/* Format pas encore choisi : la couverture ne devine pas entre film et série. */}
+        {form === "libre" && <p className="pitch-hint pitch-format-first">{p.formatFirst}</p>}
         {/* Bible de série : ce qui aide un producteur à y croire et un scénariste à rejoindre l'écriture. */}
-        {kind === "scenario" && (
-          <details className="pitch-intention pitch-series" open={seriesFilled}>
+        {isSeriesForm(form) && (
+          <details className="pitch-intention pitch-series" open={writingFilled}>
             <summary>{p.seriesTitle}</summary>
             <div className="pitch-series-body">
               <p className="pitch-hint">{p.seriesHint}</p>
-              {SERIES_TEXTS.map((k) => (
+              {writing.map((k) => (
                 <div key={k} className="pitch-series-field">
                   <PitchArea field={k} />
                   {/* Les épisodes sont des cartes (lot 6) : la couverture dit où les trouver, après l'épisode type. */}
@@ -316,6 +357,47 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
                       </div>
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+        {/* Film (long, court, téléfilm) : ce qui aide à y croire, la mise en scène, et ce que demandera le tournage. */}
+        {form === "film" && (
+          <details className="pitch-intention pitch-series" open={writingFilled}>
+            <summary>{p.filmTitle}</summary>
+            <div className="pitch-series-body">
+              <p className="pitch-hint">{p.filmHint}</p>
+              {writing.map((k) =>
+                k === "faisabilite" ? (
+                  <div key={k} className="pitch-series-field">
+                    <Feasibility />
+                  </div>
+                ) : k === "traitement" && !pitch.traitement?.trim() && !showTreatment ? (
+                  <div key={k} className="pitch-series-field pitch-optional">
+                    <button type="button" className="link-button" onClick={() => setShowTreatment(true)}>
+                      + {p.addTraitement}
+                    </button>
+                    <p className="pitch-hint">{p.traitementHint}</p>
+                  </div>
+                ) : (
+                  <div key={k} className="pitch-series-field">
+                    <PitchArea field={k} hint={k === "traitement" ? p.traitementHint : undefined} />
+                  </div>
+                ),
+              )}
+            </div>
+          </details>
+        )}
+        {/* Rubriques remplies qui ne sont pas celles du format choisi (un film qui était une série) : jamais perdues. */}
+        {others.length > 0 && (
+          <details className="pitch-intention pitch-series" open>
+            <summary>{p.otherTitle}</summary>
+            <div className="pitch-series-body">
+              <p className="pitch-hint">{p.otherHint}</p>
+              {others.map((k) => (
+                <div key={k} className="pitch-series-field">
+                  <PitchArea field={k} />
                 </div>
               ))}
             </div>

@@ -4,6 +4,7 @@
 // (`bibleExport` de cosmos.json), avec des réglages nommés. Word et Markdown gardent les parties choisies et
 // leur ordre, pas le rendu.
 
+import { formOf } from "../pitch";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
@@ -71,8 +72,8 @@ export function BibleExportDialog() {
   const canvases = useRef<HTMLDivElement>(null);
 
   const source: PackSource = useMemo(
-    () => ({ title: title.trim() || t.home.untitled, kind, nodes, edges, plan, manuscript, pitch, screenplay, goals }),
-    [title, t, kind, nodes, edges, plan, manuscript, pitch, screenplay, goals],
+    () => ({ title: title.trim() || t.home.untitled, kind, nodes, edges, plan, manuscript, pitch, screenplay, goals, paper }),
+    [title, t, kind, nodes, edges, plan, manuscript, pitch, screenplay, goals, paper],
   );
   const profile = useSettings((s) => s.profile);
   const ctx = useMemo(() => ({ t, lang, author, date: new Date(), profile }), [t, lang, author, profile]);
@@ -190,9 +191,11 @@ export function BibleExportDialog() {
     }
   };
 
+  // Un film (pastille Format) n'a pas de pilote : « les premières pages du scénario ».
+  const film = formOf(kind, pitch) === "film";
   const reader: Record<BibleAudience, [string, string]> = {
     moi: [e.me, e.meHint],
-    tiers: kind === "scenario" ? [e.producer, e.producerHint] : [e.publisher, e.publisherHint],
+    tiers: kind === "scenario" ? [e.producer, film ? e.producerHintFilm : e.producerHint] : [e.publisher, e.publisherHint],
   };
   const ordered: PartKey[] = [...options.parts, ...BIBLE_PARTS.filter((p) => !options.parts.includes(p))];
   const publicChecked: PartKey[] = options.parts.filter((p) => !isPrivatePart(p));
@@ -294,7 +297,7 @@ export function BibleExportDialog() {
             <label className="spdf-choice bexp-reader">
               <input type="checkbox" checked={options.pilot} onChange={(ev) => set({ ...options, pilot: ev.target.checked })} />
               <span>
-                {e.pilot}
+                {film ? e.pilotFilm : e.pilot}
                 <small>{e.pilotHint}</small>
               </span>
             </label>
@@ -313,7 +316,7 @@ export function BibleExportDialog() {
               <input type="checkbox" checked={options.grid} onChange={(ev) => set({ ...options, grid: ev.target.checked })} />
               <span>
                 {e.gridOption}
-                <small>{e.gridHint}</small>
+                <small>{film ? e.gridHintFilm : e.gridHint}</small>
               </span>
             </label>
           )}

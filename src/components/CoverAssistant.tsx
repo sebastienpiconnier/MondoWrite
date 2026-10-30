@@ -7,7 +7,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
-import { nextAsk } from "../pitch";
+import { formOf, nextAsk } from "../pitch";
+import { pitchLabels } from "../feasibility";
 
 export function CoverAssistant() {
   const { t, kind } = useVocab();
@@ -19,7 +20,10 @@ export function CoverAssistant() {
   const [draft, setDraft] = useState("");
   const id = useId();
   const answerRef = useRef<HTMLTextAreaElement>(null);
-  const field = nextAsk(pitch, kind, skipped);
+  // Les questions suivent la forme du projet : celles d'un film pour un long métrage, d'une série sinon.
+  const form = formOf(kind, pitch);
+  const labels = pitchLabels(p, form);
+  const field = nextAsk(pitch, kind, skipped, form);
 
   useEffect(() => {
     if (open) answerRef.current?.focus();
@@ -52,10 +56,10 @@ export function CoverAssistant() {
           }}
         >
           <label className="cover-asker-question" htmlFor={`${id}-answer`}>
-            {p.questions[field]}
+            {labels.questions[field]}
           </label>
           <textarea id={`${id}-answer`} ref={answerRef} rows={3} value={draft} placeholder={p.askAnswer} onChange={(e) => setDraft(e.target.value)} />
-          <p className="pitch-hint">{fmt(p.askGoesTo, { field: p.fields[field] })}</p>
+          <p className="pitch-hint">{fmt(p.askGoesTo, { field: labels.fields[field] })}</p>
           <div className="cover-asker-actions">
             <button type="submit" className="ghost-button is-primary" disabled={!draft.trim()}>
               {p.askSave}

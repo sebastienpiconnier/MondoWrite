@@ -3,6 +3,8 @@
 // scénario). Image ouvre la fenêtre Photos (photo libre ou image de l'appareil), Document le choix d'un PDF.
 // Menu au clavier (flèches, Début, Fin, Échap), à la souris et au doigt.
 
+import { useCosmos } from "../store";
+import { formOf } from "../pitch";
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -14,7 +16,8 @@ const ASKS: CardType[] = ["image", "document"];
 export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }) {
   const t = useT().toile;
   const { types, kind } = useVocab();
-  const menuTypes = typesFor(kind);
+  const film = useCosmos((s) => formOf(kind, s.pitch) === "film");
+  const menuTypes = typesFor(kind, false, film);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);

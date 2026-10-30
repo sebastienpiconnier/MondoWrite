@@ -4,6 +4,7 @@
 // Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
+import { formOf } from "../pitch";
 import { autosize } from "./autosize";
 import { BibleLinks } from "./BibleLinks";
 import { SceneStatusPicker } from "./SceneStatusPicker";
@@ -167,10 +168,12 @@ export function Bible() {
   const setPrefs = useSettings((s) => s.setBibleSections);
   const [arranging, setArranging] = useState(false);
   // Rubriques du projet : pas d'Épisodes dans un roman (sauf s'il en a déjà).
+  // Ni Épisodes pour un film (pastille Format).
+  const film = useCosmos((s) => formOf(kind, s.pitch) === "film");
   const shownTypes = useMemo(() => {
-    const allowed = typesFor(kind, nodes.some((n) => n.data.type === "episode"));
+    const allowed = typesFor(kind, nodes.some((n) => n.data.type === "episode"), film);
     return bibleOrder(prefs).filter((type) => allowed.includes(type));
-  }, [prefs, kind, nodes]);
+  }, [prefs, kind, nodes, film]);
   const sections = useMemo(
     () =>
       shownTypes.map((type) => {

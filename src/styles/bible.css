@@ -222,6 +222,8 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 .pitch-field.is-bare > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .pitch-series-body { display: flex; flex-direction: column; gap: 16px; }
 .pitch-series-field { display: flex; flex-direction: column; gap: 16px; }
+/* Traitement en option : un lien aligné sur les champs, son aide dessous. */
+.pitch-series-field.pitch-optional { align-items: flex-start; gap: 2px; }
 .pitch-episodes { display: flex; flex-direction: column; gap: 6px; }
 .pitch-episodes .pitch-hint { margin: 0; }
 /* « Questionner » (CoverAssistant) : un bouton discret en tête du dos de la couverture, puis une question à la fois. */

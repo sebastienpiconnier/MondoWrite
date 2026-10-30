@@ -9,7 +9,7 @@ import { wrap } from "../screenplay/paginate";
 import type { CardData } from "../types";
 import { foldName, similarNames } from "./names";
 import { isPrincipal } from "../character";
-import { SERIES_TEXTS, type Pitch } from "../pitch";
+import { formOf, isSeriesForm, type Pitch } from "../pitch";
 import type { CharacterRow } from "./report";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
@@ -202,7 +202,8 @@ export function checkManuscript(manuscript: Record<string, string>, order: strin
 }
 
 /** Un scénario est une série si la couverture le dit (format) ou si « Écrire la série » est commencée. */
-export const isSeries = (pitch: Pitch) => /s[ée]rie|series/i.test(pitch.format ?? "") || SERIES_TEXTS.some((k) => pitch[k]?.trim()) || !!pitch.episodes?.trim();
+/** Série ou mini-série, d'après le format de la couverture (formOf) : un film n'attend pas d'épisodes. */
+export const isSeries = (pitch: Pitch) => isSeriesForm(formOf("scenario", pitch));
 
 /**
  * Questions sur l'histoire, pour le roman comme pour le scénario : le personnage marqué principal n'est pas

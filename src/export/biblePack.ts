@@ -11,7 +11,10 @@ import type { Plan } from "../plan";
 import { beatText, chapterNumbers, templateBeats } from "../plan";
 import { bookOrder } from "../book";
 import type { Pitch } from "../pitch";
-import { NOVEL_CHIPS, readEpisodes } from "../pitch";
+import { NOVEL_CHIPS, formOf, isSeriesForm, readEpisodes, type PitchText } from "../pitch";
+import { feasibilityText, pitchLabels } from "../feasibility";
+import { paginate } from "../screenplay/paginate";
+import { LAYOUTS, type Paper } from "../screenplay/layout";
 import { appearances, bySeason, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, manySeasons, pivotOf } from "../episodes";
 import { countWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
@@ -95,6 +98,8 @@ export interface PackSource {
   pitch: Pitch;
   screenplay: Screenplay | null;
   goals?: { total?: number };
+  /** Format de page du scénario, pour les pages de la faisabilité d'un film (Letter par défaut). */
+  paper?: Paper;
 }
 
 export interface PackContext {
@@ -150,7 +155,12 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   const cards = s.nodes.map((n) => n.data);
   const byType = (type: CardData["type"]) => cards.filter((c) => c.type === type).sort((a, b) => a.title.localeCompare(b.title, lang));
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() ?? "";
-  const kindLabel = forMe ? e.kinds.work : s.kind === "scenario" ? e.kinds.series : e.kinds.pitch;
+  // Forme du projet (pastille Format) : un film n'a ni saison ni épisodes, une série n'a pas de faisabilité.
+  const form = formOf(s.kind, s.pitch);
+  const film = form === "film";
+  const series = s.kind === "scenario" && !film;
+  const labels = pitchLabels(t.pitch, form);
+  const kindLabel = forMe ? e.kinds.work : film ? e.kinds.film : s.kind === "scenario" && isSeriesForm(form) ? e.kinds.series : e.kinds.pitch;
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
   // Épisodes de la série (cartes Épisode, lot 6), dans l'ordre de la saison.
   const episodes = s.kind === "scenario" ? episodeOrder(cards) : [];
@@ -158,7 +168,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 
   // Ligne de couverture : roman ou série, genre, volume (mots écrits, ou objectif).
   const volume = s.kind === "scenario" ? "" : s.goals?.total ? fmt(e.wordsTarget, { n: num(s.goals.total) }) : words > 0 ? fmt(e.words, { n: num(words) }) : "";
-  const meta = [s.kind === "scenario" ? clean(s.pitch.format) || e.series : e.novel, clean(s.pitch.genre), volume].filter(Boolean).join(" · ");
+  const meta = [s.kind === "scenario" ? clean(s.pitch.format) || (film ? "" : e.series) : e.novel, clean(s.pitch.genre), volume].filter(Boolean).join(" · ");
 
   const sections: PackSection[] = [];
   const section = (part: PartKey, title: string, blocks: PackBlock[]) => {
@@ -173,19 +183,23 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       if (clean(p.logline)) blocks.push({ kind: "label", text: t.pitch.fields.logline }, { kind: "lead", text: clean(p.logline) });
       // Pastilles : les valeurs seules ; statut, « d'après » et crédits avec leur libellé (une valeur seule serait obscure).
       const chips = (["genre", "cible", "format", "forme", "pilote", "pov", "temps", "ton"] as const)
-        .filter((k) => (k !== "format" || s.kind !== "scenario") && (s.kind !== "scenario" || !(NOVEL_CHIPS as readonly string[]).includes(k)))
+        .filter((k) => (k !== "format" || s.kind !== "scenario") && (s.kind !== "scenario" || !(NOVEL_CHIPS as readonly string[]).includes(k)) && ((k !== "forme" && k !== "pilote") || !film))
         .map((k) => clean(p[k]))
         .filter(Boolean);
       if (chips.length > 0) blocks.push({ kind: "chips", items: chips });
       const facts = (["dapres", "credits", "statut"] as const).map((k) => ({ label: t.pitch.fields[k], value: clean(p[k]) })).filter((f) => f.value);
       if (facts.length > 0) blocks.push({ kind: "para", small: true, muted: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
-      const presentationTexts = s.kind === "scenario" ? (["resume", "pourquoi", "promesse", "nestPas", "comps", "intention"] as const) : (["resume", "comps", "intention"] as const);
+      const presentationTexts: readonly PitchText[] = film
+        ? ["resume", "pourquoi", "nestPas", "comps", "intention", "noteRealisation"]
+        : s.kind === "scenario"
+          ? ["resume", "pourquoi", "promesse", "nestPas", "comps", "intention"]
+          : ["resume", "comps", "intention"];
       // Pour un tiers, une phrase sur le destinataire termine la note d'intention (réglage de l'export).
       const recipient = forMe ? "" : clean(options.recipient);
       for (const key of presentationTexts) {
         const text = (p[key] ?? "").trim();
         if (!text && !(key === "intention" && recipient)) continue;
-        blocks.push({ kind: "label", text: t.pitch.fields[key] });
+        blocks.push({ kind: "label", text: labels.fields[key] });
         for (const line of text.split(/\n+/).map((l) => l.trim()).filter(Boolean)) blocks.push({ kind: "para", runs: [{ text: line }] });
         if (key === "intention" && recipient) blocks.push({ kind: "para", runs: [{ text: recipient }] });
       }
@@ -196,7 +210,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         else blocks.push({ kind: "para", runs: [{ text: themes.map((th) => th.title.trim()).filter(Boolean).join(" · ") }] });
       }
       // Autres supports (lot 7) : un argument de vente, pour un tiers seulement.
-      if (!forMe && s.kind === "scenario") blocks.push(...pitchText("supports"));
+      if (!forMe && series) blocks.push(...pitchText("supports"));
       section(part, e.titles.presentation, blocks);
     }
 
@@ -208,7 +222,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       const others = full === principals ? all.filter((c) => !isPrincipal(c)) : [];
       // Bible de série : tout le monde en une page, d'un coup d'œil, avant les fiches.
       // Avec des épisodes, le mémo dit aussi où chacun paraît (pivot ou relié par un fil).
-      const seen = s.kind === "scenario" ? appearances(cards, s.edges) : new Map<string, string[]>();
+      const seen = series ? appearances(cards, s.edges) : new Map<string, string[]>();
       const memoNote = (c: CardData) => {
         const where = seen.get(c.id) ?? [];
         const inEps = where.length === 0 ? "" : where.length === 1 ? fmt(e.inEpisode, { n: where[0] }) : fmt(e.inEpisodes, { list: where.join(", ") });
@@ -216,7 +230,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       };
       const memo = all.filter((c) => c.title.trim() && memoNote(c));
       // Ce qui tient la bande ensemble (lot 7, Final Draft) : en tête de la partie.
-      if (s.kind === "scenario") blocks.push(...pitchText("ensemble"));
+      if (series) blocks.push(...pitchText("ensemble"));
       if (s.kind === "scenario" && options.memo && memo.length >= 2) {
         blocks.push({ kind: "label", text: e.memo }, { kind: "list", columns: 2, items: memo.map((c) => ({ mark: "", text: c.title.trim(), note: memoNote(c) })) }, { kind: "pageBreak" });
       }
@@ -235,7 +249,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 
     if (part === "univers") {
       const places = byType("lieu");
-      if (s.kind === "scenario") blocks.push(...pitchText("arene", false), ...pitchText("avantPilote"));
+      if (series) blocks.push(...pitchText("arene", false), ...pitchText("avantPilote"));
       if (options.places) {
         const thumbs = places.flatMap((c) => [c.image, ...(c.images ?? [])].filter((n): n is string => !!n && isMediaName(n)).map((image) => ({ image, caption: c.title.trim() })));
         // Une image par lieu d'abord, puis les autres.
@@ -256,9 +270,11 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     }
 
     if (part === "structure") {
-      if (s.kind === "scenario") {
-        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"), ...pitchText("saison"), ...pitchText("finSaison"), ...episodeBlocks(), ...pitchText("suite"));
+      if (series) {
+        blocks.push(...pitchText("mecanique"), ...pitchText("episodeType"), ...pitchText("saison"), ...pitchText("finSaison"), ...episodeBlocks(), ...(form === "miniserie" ? [] : pitchText("suite")));
       }
+      // Film : le traitement (en option), le récit en entier avant les intrigues.
+      if (film) blocks.push(...pitchText("traitement"));
       for (const c of byType("intrigue")) {
         blocks.push({ kind: "h3", text: c.title.trim() || t.bible.untitled, sub: clean(c.fiche?.nature) });
         const cells = (["question", "enjeu", "declencheur", "tournant", "resolution"] as const).map((k) => ({ label: t.fiche.fields[k], value: clean(c.fiche?.[k]) })).filter((x) => x.value);
@@ -272,12 +288,17 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
         blocks.push(...(season.length > 0 ? season : threadGrid()));
       }
       blocks.push(...planBlocks());
+      // Film : ce que demandera le tournage, d'après le scénario tant que l'auteur ne l'a pas écrit lui-même.
+      if (film) {
+        const feasibility = (s.pitch.faisabilite ?? "").trim() || feasibilityFromScript();
+        if (feasibility) blocks.push({ kind: "h2", text: labels.fields.faisabilite }, ...feasibility.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l): PackBlock => ({ kind: "para", runs: [{ text: l }] })));
+      }
       if (s.kind === "scenario") {
-        // Écrire la série : ce qu'un scénariste qui rejoint l'écriture doit savoir.
-        const rules = (["aFaire", "aEviter"] as const).map((k) => ({ label: t.pitch.fields[k], value: clean(s.pitch[k]) })).filter((x) => x.value);
+        // Écrire la série (ou le film) : ce qu'un scénariste qui rejoint l'écriture doit savoir.
+        const rules = (["aFaire", "aEviter"] as const).map((k) => ({ label: labels.fields[k], value: clean(s.pitch[k]) })).filter((x) => x.value);
         const pistes = pitchText("pistes");
         if (rules.length > 0 || pistes.length > 0) {
-          blocks.push({ kind: "h2", text: t.pitch.seriesTitle });
+          blocks.push({ kind: "h2", text: film ? t.pitch.filmTitle : t.pitch.seriesTitle });
           if (rules.length > 0) blocks.push({ kind: "cells", items: rules });
           blocks.push(...pistes);
         }
@@ -324,7 +345,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 
   // Annexe : les premières pages du pilote (scénario), annoncées par une page ; biblePdf.ts les ajoute après.
   const pilotPages = options.pilot && s.kind === "scenario" && listScenes(s.screenplay?.elements ?? []).length > 0 ? PILOT_PAGES : 0;
-  if (pilotPages > 0) sections.push({ part: "structure", kicker: e.annex, title: e.pilotTitle, blocks: [{ kind: "para", runs: [{ text: e.pilotNote }] }] });
+  if (pilotPages > 0) sections.push({ part: "structure", kicker: e.annex, title: film ? e.firstPagesTitle : e.pilotTitle, blocks: [{ kind: "para", runs: [{ text: e.pilotNote }] }] });
   // Roman : le début du manuscrit au format Shunn, pour un éditeur (dialogue : PDF du menu Exporter).
   const extractPages = options.extract && s.kind === "roman" && words > 0 ? EXTRACT_PAGES : 0;
   if (extractPages > 0) sections.push({ part: "structure", kicker: e.annex, title: e.extractTitle, blocks: [{ kind: "para", runs: [{ text: e.extractNote }] }] });
@@ -342,11 +363,17 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   };
 
   /** Un texte de la couverture sous son libellé (un paragraphe par ligne). */
-  function pitchText(key: "arene" | "mecanique" | "episodeType" | "saison" | "finSaison" | "pistes" | "pourquoiMoi" | "avantPilote" | "ensemble" | "suite" | "supports", withLabel = true): PackBlock[] {
+  function pitchText(key: PitchText, withLabel = true): PackBlock[] {
     const text = (s.pitch[key] ?? "").trim();
     if (!text) return [];
     const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l): PackBlock => ({ kind: "para", runs: [{ text: l }] }));
-    return withLabel ? [{ kind: "label", text: t.pitch.fields[key] }, ...lines] : lines;
+    return withLabel ? [{ kind: "label", text: labels.fields[key] }, ...lines] : lines;
+  }
+
+  /** Faisabilité d'un film lue dans le scénario (feasibility.ts), comme la couverture la propose. */
+  function feasibilityFromScript(): string {
+    const elements = s.screenplay?.elements ?? [];
+    return feasibilityText(elements, cards, paginate(elements, LAYOUTS[s.paper ?? "letter"]), t.pitch, lang);
   }
 
   /**
@@ -467,7 +494,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       });
     if (grid.length === 0) return [];
     return [
-      { kind: "label", text: e.grid },
+      { kind: "label", text: film ? e.gridFilm : e.grid },
       { kind: "grid", cols: parts.map((c, i) => c.label || String(i + 1)), rows: grid },
     ];
   }
