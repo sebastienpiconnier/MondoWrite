@@ -5,6 +5,7 @@ import { useVocab } from "../vocab";
 import { Settings } from "./Settings";
 import { ExportMenu } from "./ExportMenu";
 import { AiMenu } from "./AiMenu";
+import { AtelierBadge } from "./Atelier";
 import { Search } from "./Search";
 import { TodoPanel } from "./TodoPanel";
 import { useTopbarFit } from "./useTopbarFit";
@@ -133,6 +134,7 @@ export function TopBar() {
             <path d="M8 4v5h7V4M8 20v-6h8v6" />
           </svg>
         </button>
+        <AtelierBadge />
         <AiMenu />
         <ExportMenu />
         <TodoPanel />

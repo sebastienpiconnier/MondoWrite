@@ -50,15 +50,20 @@ export function sceneSynopsis(elements: ScreenplayElement[], headingIndex: numbe
     .join(" ");
 }
 
+/** Le synopsis de la scène vient-il de l'IA (note [[ia]], mode Atelier) ? */
+export const synopsisIsIa = (elements: ScreenplayElement[], headingIndex: number) =>
+  elements.slice(headingIndex + 1, synopsisEnd(elements, headingIndex)).some((el) => el.ia === true);
+
 /**
  * Écrit le synopsis d'une scène (une ligne « = … » sous l'en-tête, lisible par les autres logiciels
  * Fountain) ; un texte vide le retire. Rend le même tableau si rien ne change.
  */
-export function setSceneSynopsis(elements: ScreenplayElement[], headingIndex: number, text: string): ScreenplayElement[] {
+export function setSceneSynopsis(elements: ScreenplayElement[], headingIndex: number, text: string, ia = false): ScreenplayElement[] {
   if (elements[headingIndex]?.type !== "sceneHeading") return elements;
   const next = text.replace(/\s+/g, " ").trim();
-  if (next === sceneSynopsis(elements, headingIndex)) return elements;
-  const lines: ScreenplayElement[] = next ? [{ type: "synopsis", text: next }] : [];
+  if (next === sceneSynopsis(elements, headingIndex) && ia === synopsisIsIa(elements, headingIndex)) return elements;
+  // `ia` : synopsis proposé par l'IA (mode Atelier), note [[ia]] ; l'auteur qui le retouche l'écrit sans.
+  const lines: ScreenplayElement[] = next ? [{ type: "synopsis", text: next, ...(ia ? { ia: true } : {}) }] : [];
   return [...elements.slice(0, headingIndex + 1), ...lines, ...elements.slice(synopsisEnd(elements, headingIndex))];
 }
 

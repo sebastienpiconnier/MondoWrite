@@ -437,6 +437,52 @@ const scenarios = [
     },
   },
   {
+    name: "IA : du vrac aux cartes, propositions cochées, création en une étape, Ctrl+Z",
+    async run(h) {
+      const { page } = h;
+      // Un service branché (Claude) et une réponse fabriquée : rien ne sort vers Internet.
+      await page.addInitScript(() => localStorage.setItem("cosmos:reglages", JSON.stringify({ ai: { provider: "anthropic", keys: { anthropic: "sk-test" }, models: {}, urls: {} } })));
+      let asked = null;
+      await page.route("https://api.anthropic.com/**", async (route) => {
+        asked = JSON.parse(route.request().postData() ?? "{}");
+        const text = JSON.parse(asked.messages[0].content).text;
+        const yann = JSON.parse(asked.messages[0].content).existing[0]?.id;
+        const cards = [
+          { key: "n1", type: "personnage", title: "Inès Morvan", text: "Inès Morvan, gardienne remplaçante, ne supporte pas le silence." },
+          { key: "n2", type: "lieu", title: "Le phare de Kerbrat", text: "Le phare de Kerbrat : une tour blanche battue par le vent." },
+          { key: "n3", type: "question", title: "La lanterne", text: "Qui a éteint la lanterne ?" },
+          { key: "n4", type: "idee", title: "Inventée", text: "Une phrase que l'auteur n'a jamais écrite." },
+        ];
+        const links = [{ from: "n1", to: "n2", label: "garde" }, { from: "n3", to: "n1" }, { from: "n1", to: yann, label: "remplace" }];
+        if (!text.includes("Kerbrat")) throw new Error("texte absent de la requête");
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ cards, links }) }] }) });
+      });
+      await h.create("Vrac");
+      await h.newCard("Yann Le Goff");
+      await h.pane();
+      await page.getByRole("button", { name: "IA", exact: true }).click();
+      await page.getByRole("button", { name: "Du vrac aux cartes…" }).click();
+      const field = page.getByRole("textbox", { name: "Texte à découper en cartes" });
+      await field.fill("Inès Morvan, gardienne remplaçante, ne supporte pas le silence.\nLe phare de Kerbrat : une tour blanche battue par le vent.\nQui a éteint la lanterne ?");
+      await page.getByRole("button", { name: "Découper en cartes" }).click();
+      await until(() => page.getByText("Cartes proposées · 3").isVisible(), "les propositions n'apparaissent pas");
+      assert(asked?.max_tokens > 1500, "limite de longueur trop courte");
+      await until(() => page.getByText(/Passages écartés.*1/).isVisible(), "le passage inventé n'est pas signalé comme écarté");
+      // Décocher la Question retire son fil.
+      await page.getByRole("checkbox", { name: "Garder la carte « La lanterne »" }).uncheck();
+      await until(() => page.getByText("Fils proposés · 2").isVisible(), "le fil de la carte décochée reste proposé");
+      const before = await h.cards().count();
+      await page.getByRole("button", { name: "Créer les cartes · 2" }).click();
+      await until(async () => (await h.cards().count()) === before + 2, "les cartes ne sont pas créées");
+      const list = await h.cardList();
+      assert(list.some((c) => c.type === "personnage" && c.title === "Inès Morvan") && list.some((c) => c.type === "lieu" && c.title === "Le phare de Kerbrat"), `cartes : ${JSON.stringify(list)}`);
+      await until(async () => (await h.edges().count()) === 2, "les deux fils ne sont pas tirés");
+      await h.pane();
+      await page.keyboard.press("Control+z");
+      await until(async () => (await h.cards().count()) === before && (await h.edges().count()) === 0, "Ctrl+Z ne retire pas tout en une fois");
+    },
+  },
+  {
     name: "tactile (iPad 834 × 1194) : exemple ouvert, « Nouvelle carte » crée une carte",
     context: { viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
     async run(h) {
@@ -463,6 +509,50 @@ const scenarios = [
       await until(async () => (await h.cards().count()) >= 21, "moins de 21 cartes dans l'exemple anglais");
       await until(() => page.getByRole("button", { name: "New card", exact: true }).isVisible(), "libellés anglais absents");
       for (const n of [2, 3, 4, 1]) await h.view(n);
+    },
+  },
+  {
+    name: "atelier : réglage du projet, trois variantes, passage marqué et journalisé",
+    async run(h) {
+      const { page } = h;
+      // Une IA « branchée » (Claude) dont la réponse est fabriquée ici : rien ne sort vers Internet.
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
+      });
+      await page.route("https://api.anthropic.com/**", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        const text = JSON.stringify({ variants: ["La mer rugissait", "La mer tonnait", "Elle grondait"] });
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text }] }) });
+      });
+      await h.create("Atelier");
+      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await page.getByLabel("Activer le mode Atelier pour ce projet").check();
+      await page.keyboard.press("Escape");
+      await until(() => page.locator(".atelier-badge").isVisible(), "le repère « Atelier » n'apparaît pas dans la barre du haut");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("La tempête");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      await page.locator(".ms-page .ProseMirror").click();
+      await page.keyboard.type("La mer grondait sous le phare.");
+      // Sélectionne « La mer grondait » : la barre de mise en forme propose « Trois variantes ».
+      await page.evaluate(() => {
+        const text = document.querySelector(".ms-page .ProseMirror p").firstChild;
+        const range = document.createRange();
+        range.setStart(text, 0);
+        range.setEnd(text, "La mer grondait".length);
+        getSelection().removeAllRanges();
+        getSelection().addRange(range);
+      });
+      await page.locator(".format-bar").getByRole("button", { name: "Trois variantes" }).click();
+      await page.getByRole("button", { name: "Prendre la variante 2" }).click();
+      await until(() => page.locator(".ms-page .ia-mark").count(), "la variante prise n'est pas marquée");
+      await h.saved((f) => {
+        const meta = JSON.parse(f["cosmos.json"] ?? "{}");
+        const scene = Object.entries(f).find(([k]) => k.startsWith("manuscrit/"))?.[1] ?? "";
+        return meta.aiMode === "atelier" && /<span data-ia="[\w-]+">La mer tonnait<\/span> sous le phare\./.test(scene) && /· Variante · «\s?La tempête\s?» · anthropic, claude-test · 3 mots/.test(f["ia-journal.md"] ?? "");
+      }, "réglage, passage marqué ou ligne du journal non enregistrés");
     },
   },
 ];

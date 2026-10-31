@@ -135,3 +135,134 @@ You are a continuity reader for a writer's story bible. Find statements in the n
 ```
 
 **Ce que MondoWrite garde** : au plus douze questions, chacune avec au moins une carte connue (par son identifiant ou, si le modèle l'a donnée ainsi, par son titre ; à défaut, les cartes que la question nomme). L'auteur peut en faire une carte Question reliée aux cartes concernées.
+
+## 6. Interroger le personnage (1.8.0)
+
+Bible › fiche d'un personnage › assistant › onglet « Interroger » (seulement si un service d'IA est branché). L'entretien inversé : l'auteur pose ses questions, le personnage répond à la première personne. Source : `src/ai/interrogate.ts`.
+
+**Consigne** (`{nom}` le titre de la carte, `{kind}` vaut `novel` ou `screenplay`, `{langue}` la langue de l'interface) :
+
+```
+You are {nom}, a character in a writer's {kind}. The writer is interviewing you to understand you better. Answer the writer's question in the first person, in your own voice (follow the "voice" of your sheet if there is one), in {langue}, in one to four short sentences, at most 80 words. Everything you know about yourself is in the material below, all written by the writer: your sheet, your notes, your earlier answers, your links to other people and places, and the scenes where you appear. Never go beyond it. If the material does not answer the question, say in character that you do not know, or that you would rather not say. Never invent a fact: no age, past event, place, date, name, relationship or feeling that the material does not state. Never mention a person or place whose name is not in the material. Do not give the writer advice, do not narrate, do not talk about yourself in the third person, never mention cards, ids or types. Reply with your answer only: no quotation marks, no name before it, no stage directions.
+```
+
+**Données** : aucun identifiant de carte.
+
+```json
+{"you":{"name":"Inès Morvan","sheet":{"Voix":"Phrases courtes."},"notes":"…","earlierAnswers":[{"question":"Tu as peur de quoi ?","answer":"Du noir."}]},
+ "links":[{"from":"Inès Morvan","link":"remplace","to":"Yann Le Goff","type":"personnage","about":"Ancien gardien."}],
+ "scenes":[{"scene":"Arrivée","passages":["Inès monte l’escalier."]}],
+ "conversation":[{"writer":"…","you":"…"}],
+ "question":"Qui es-tu ?"}
+```
+
+- `sheet` : les champs remplis de la fiche (moteur, arc et voix compris, libellés de l'interface, l'étoile « principal » exceptée), 600 caractères chacun ; `notes` : le texte de la carte, 2 500 caractères ; `earlierAnswers` : ses `reponses` (questions en clair, `q:` et `i:` compris), 30 au plus, 400 caractères chacune.
+- `links` : les fils vers des cartes titrées, avec leur sens et leur étiquette, et le début du texte de l'autre carte (200 caractères), 20 au plus.
+- `scenes` : roman, les paragraphes du manuscrit qui le nomment (titre, prénom, surnoms, comme la Bible), deux par scène, 420 caractères chacun ; scénario, les scènes où il parle ou est nommé dans l'action (lecture du filtre par personnage), avec l'action et ses propres répliques, 900 caractères par scène. Dans l'ordre du récit, au plus 14 scènes et environ 7 000 caractères.
+- `conversation` : les six derniers échanges de la conversation en cours (réponses abrégées à 500 caractères), qui n'est jamais enregistrée.
+- Longueur demandée : 350 jetons (plus la marge de raisonnement hors Claude).
+
+**Ce que MondoWrite garde** (`parseInterrogation`) : du texte brut seulement (balises et Markdown retirés, préfixe « Nom : » ou « Réponse : », guillemets autour de la réponse et didascalie de tête retirés), 700 caractères au plus, coupé à une fin de phrase. Les noms propres de la réponse (mot à majuscule qui ne commence pas une phrase) qu'aucun texte du projet ne contient (consigne envoyée, titres et textes de toutes les cartes, question de l'auteur) sont signalés sous la réponse : « Ce nom n’existe pas encore dans ton projet ». Rien n'entre dans le projet sans « Garder » : la réponse va alors dans `reponses` du personnage sous la clé `i:<question de l'auteur>` (à la suite d'une réponse déjà gardée pour la même question), et paraît repliée sous la fiche avec la question en clair. L'interview, la synthèse et la cohérence la reçoivent comme les autres réponses.
+
+## 7. Du vrac aux cartes (1.8.0)
+
+Bouton IA › Du vrac aux cartes… (sur téléphone : Carnet › Découper avec l'IA, pour une note longue). Code : `src/ai/vrac.ts`, fenêtre `VracDialog`.
+
+L'auteur colle un texte en vrac (notes, compte rendu de brainstorm, dictée), au plus 8 000 caractères (au-delà, la fenêtre le dit et demande de le coller en plusieurs fois : la réponse recopie le texte, plus long elle dépasserait le délai des services). L'IA propose de le découper en cartes reliées par des fils. Le texte des cartes est celui de l'auteur, découpé, jamais réécrit : seul le titre vient de l'IA.
+
+**Consigne** (exemple pour un roman ; `{types}` est la liste des types du projet, sans Image, Lien ni Document, avec l'Épisode seulement pour une série) :
+
+```
+You help a writer turn raw notes for a novel (a brainstorm, a dictation, a list) into cards. Split the text into passages, one per card. Each card gets a type, a short title and its text. Types (use these keys only): idee (a loose idea that fits no other type); personnage (a character); lieu (a place or location); scene (a scene: something that happens at a given moment, only if the text really describes one); intrigue (a plot line or subplot running through several scenes); groupe (a group, family, organisation or faction); objet (an object that matters to the story); evenement (an event of the story world, past or offstage); regle (a rule of the story world: magic, society, technology); secret (a secret someone keeps); theme (a theme); question (an open question the writer asks themself). The "text" of a card MUST be copied word for word from the writer's text: an exact, continuous excerpt. Never rewrite, rephrase, summarise, correct, translate or complete it, and never add words. A passage goes in one card only. Leave out filler that belongs in no card. The "title" is the only thing you write: at most 6 words, in the language of the text, taken from the passage (for a character or a place, its name). Then suggest links between cards that the text itself connects (a character lives in a place, a secret is kept by someone), with an optional "label" of 1 to 4 words in {langue}. A link may also point to an existing card of the project, by its "id" from the list "existing" (for example when the text names a character who already has a card); do not create a new card for something that already has one, link to it instead. Answer with a JSON object only: {"cards": [{"key": "n1", "type": "<type>", "title": "<title>", "text": "<exact excerpt>"}], "links": [{"from": "<key or existing id>", "to": "<key or existing id>", "label": "<label>"}]}. Keys are "n1", "n2"… Use existing ids exactly as given. At most 40 cards. If nothing in the text makes a card, answer {"cards": [], "links": []}.
+```
+
+**Données** : le texte collé, et les cartes du projet qui ont un titre (identifiant, type, titre ; au plus 150), pour que l'IA puisse y tirer des fils.
+
+```json
+{"text":"Brainstorm du 12 mars.\nInès Morvan, gardienne remplaçante du phare…",
+ "existing":[{"id":"k3x9a7bq2m","type":"personnage","title":"Yann Le Goff"}]}
+```
+
+Réponse en JSON (`format: "json"` pour Ollama), limite de longueur `1500 + longueur du texte / 2` jetons (au plus 8 000), délai de 240 s pour un service en ligne.
+
+**Ce que MondoWrite garde** (`parseVrac`) :
+
+- chaque passage est cherché dans le texte collé, espaces, ponctuation, casse et accents repliés ; trouvé, c'est le passage d'origine, tel que l'auteur l'a écrit (avec sa ponctuation et sa marque de liste en tête de ligne), qui entre dans la carte, jamais le texte rendu par l'IA ; un mot changé au milieu est rattrapé en alignant le début et la fin du passage (longueur voisine), et c'est encore le texte d'origine qui est gardé ; sinon le passage est écarté, et la fenêtre dit combien ;
+- un passage déjà pris (ou contenu dans un autre) ne fait pas une seconde carte ; au plus 40 cartes ;
+- un type hors de la liste du projet (Image, Lien, Document, type inconnu) devient Idée : le texte reste à l'auteur ;
+- le titre est coupé à une ligne de 80 caractères ; vide, les premiers mots du passage ;
+- un fil relie deux cartes connues (clé d'une carte gardée, ou identifiant d'une carte du projet), dont au moins une nouvelle, sans boucle ni doublon ; son étiquette est coupée à 40 caractères, et un identifiant qui s'y glisserait devient « Titre (type) » (`nameCards`).
+
+L'auteur voit la liste : chaque carte cochée (case), son type et son titre modifiables, l'aperçu du texte ; les fils cochés, retirés d'office si une de leurs cartes est décochée. « Créer les cartes » les pose en une seule étape d'annulation (`createVracCards`), en grille, dans un espace libre près du centre de la vue, jamais sur une carte ni sur un cadre. Sur téléphone, elles vont dans « À ranger ». Une Scène range son texte comme toute carte qui devient Scène (manuscrit d'un roman, Fountain d'un scénario). Rien n'est créé sans ce clic.
+
+## 8. Mode Atelier (1.8.0)
+
+L'exception choisie par projet : Réglages › Ce projet › « Activer le mode Atelier pour ce projet » (seulement quand un service d'IA est branché ; `aiMode: "atelier"` dans cosmos.json, absent sinon). Le principe reste le même ailleurs : l'IA questionne, elle n'écrit pas. Dans l'Atelier, elle peut proposer du texte, mais rien n'entre sans un clic de l'auteur, et ce qu'il accepte reste marqué (soulignement pointillé ; `<span data-ia>` dans le Markdown, note `[[ia]]` dans le Fountain, liste `ia` d'une carte ou de la couverture) et noté dans `ia-journal.md` (date et heure, action, carte ou scène par son titre, service et modèle, mots insérés), jusqu'à « Je l'ai repris ». Consignes et lecteurs : `src/ai/atelier.ts`. Chaque réponse est relue en texte brut (balises, Markdown, puces et guillemets autour retirés, longueur bornée), jamais insérée comme HTML. Toutes les consignes finissent par la même règle :
+
+```
+Write in {langue}. Plain text only: no Markdown, no HTML, no quotation marks around your answer, no commentary. Never mention a card id.
+```
+
+### A1. Trois variantes
+
+Barre de mise en forme (cartes, Bible, manuscrit) sur une sélection de 600 caractères au plus ; barre du scénario sur l'action, la réplique ou la didascalie où est le curseur.
+
+```
+You help a writer who asked, for this project, for alternative wordings of {a sentence or short passage from a novel | a line of dialogue from a screenplay | a line of action (scene description) from a screenplay} they wrote. Give exactly three rewordings of the passage. Keep its meaning, its point of view, its tense, its person and the voice of the text; do not add events, names or information, and do not explain. Each rewording is about as long as the passage. {règle commune} Answer with a JSON object only: {"variants": ["<rewording 1>", "<rewording 2>", "<rewording 3>"]}.
+```
+
+**Données** : `{"passage": "…", "speaker": "INÈS", "textBefore": "…", "textAfter": "…"}` (le personnage d'une réplique ; 600 caractères avant, 400 après, dans le même paragraphe).
+
+**Ce que MondoWrite garde** (`parseVariants`) : trois textes au plus, distincts entre eux et du passage, au plus trois fois sa longueur. La variante prise remplace la sélection en une transaction de l'éditeur (une étape d'annulation), marquée, ligne au journal.
+
+### A2. Synopsis d'une scène
+
+À côté d'un synopsis vide (volet des scènes du Scénario, séquencier, Plan, volet du Manuscrit, carte agrandie d'une scène de scénario), quand la scène a au moins huit mots de texte.
+
+```
+You help a writer keep track of their {novel | screenplay}. Summarise the scene below in one or two sentences, present tense, at most 40 words: what happens and what changes. Use only what the text says; do not interpret, judge or add anything. {règle commune}
+```
+
+**Données** : `{"scene": "<titre>", "text": "<texte de la scène, 12 000 caractères au plus>"}`.
+
+**Ce que MondoWrite garde** (`parseSynopsis`) : le premier paragraphe, sans « Synopsis : » devant, 400 caractères au plus. Gardé : roman, `fiche.synopsis` et `ia: ["synopsis"]` dans la carte ; scénario, ligne `= … [[ia]]`. Retouché par l'auteur, la marque part.
+
+### A3. Trois directions
+
+Barre de la page du Manuscrit et barre du Scénario (scène où est le curseur).
+
+```
+You help a writer who is stuck at the end of a scene of their {novel | screenplay}. Suggest exactly three different directions for what could happen next, each in one short line (at most 25 words): a lead, not prose for the book. Make them genuinely different (for example: an escalation, a reversal, a quiet turn). Use the characters and places the writer already has when they fit; do not invent backstory. {règle commune} Answer with a JSON object only: {"directions": ["<line 1>", "<line 2>", "<line 3>"]}.
+```
+
+**Données** : titre, synopsis, les 3 000 derniers caractères de la scène, et au plus 40 cartes Personnage, Lieu, Intrigue, Objet, Secret (type et titre seulement).
+
+**Ce que MondoWrite garde** (`parseDirections`) : trois lignes de 200 caractères au plus. « En faire une carte » : une carte Idée à ce titre (`ia: ["title"]`), reliée à la scène par un fil « piste ». Rien n'est écrit dans le manuscrit.
+
+### A4. Brouillon de la couverture
+
+Couverture du projet (Bible), sous « Questionner » : « Proposer un brouillon » pour l'accroche, la logline, le résumé, les comparables et la note d'intention restés vides.
+
+```
+You help a writer draft the cover page of their {novel | screenplay} project, which they will rework. Draft only the fields asked for, from what the cards and the fields already filled say. Do not invent characters, events or an ending the cards do not give. Leave out a field you cannot draft honestly. {règle commune} Answer with a JSON object only, with these keys: {"logline": "one sentence: who wants what, against what obstacle, with what at stake", …}.
+```
+
+Repères donnés par champ : tagline « a one-line hook for the cover, at most 15 words » ; logline ci-dessus ; résumé « a summary of the story in one or two short paragraphs, in the present tense, ending included if the cards say it » ; comparables « two or three comparable published works or films, as "Title (Author or director)", separated by commas » ; note d'intention « a short statement of intent, in the first person, about why this story and what it is about, using only what the cards say ».
+
+**Données** : titre du projet, champs déjà remplis, au plus 80 cartes (type, titre, 300 caractères de texte).
+
+**Ce que MondoWrite garde** (`parsePitchDraft`) : seulement les champs demandés, bornés (160, 400, 2 500, 400, 2 500 caractères), paragraphes gardés pour le résumé et la note. Chaque champ s'accepte à part (Ajouter, ou Remplacer avec la valeur actuelle sous les yeux, ou Ignorer). Accepté : `pitch.ia` (« logline,resume »), retiré quand l'auteur retouche le champ ou dit « Je l'ai repris ».
+
+### A5. Fiche d'un personnage secondaire
+
+Bible, fiche d'un personnage presque vide (au plus deux champs remplis, 120 mots de notes au plus) qui a des notes ou des fils : « Proposer une fiche ».
+
+```
+You help a writer flesh out a minor character of their story, from the few notes they wrote and the character's links to other cards. Suggest a short value for some of the sheet fields below (a few words, at most two sentences each), consistent with the notes and links. Never invent or guess ethnicity, origin, religion, health, disability or sexual orientation, and do not change what the notes already say. Leave out a field you have no basis for. {règle commune} Answer with a JSON object only: {"fields": {<key>: "<value>"}}, keys among: {"metier": "Métier", …}.
+```
+
+Champs permis (`SHEET_DRAFT_FIELDS`), parmi les vides : accroche, rôle, âge, métier, surnoms, apparence, personnalité, voix, objectif, peur, secret, relations. Jamais le genre ni l'origine, ni les champs à choix (arc, principal, certitude).
+
+**Données** : nom, notes (1 500 caractères), fiche, au plus 30 fils (étiquette, titre et type de la carte au bout).
+
+**Ce que MondoWrite garde** (`parseSheetDraft`) : seulement les champs permis et demandés, 400 caractères au plus (60 pour l'âge). Acceptés un à un comme la description d'une photo ; marqués par `ia` dans la carte, retirés au premier changement de l'auteur.

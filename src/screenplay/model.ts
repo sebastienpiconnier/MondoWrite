@@ -32,6 +32,8 @@ export interface ScreenplayElement {
   depth?: number;
   /** L'élément était forcé dans le source (., @, !, >). */
   forced?: boolean;
+  /** Mode Atelier : texte proposé par l'IA et accepté, note [[ia]] en fin d'élément (action, réplique, didascalie, synopsis). */
+  ia?: boolean;
 }
 
 export interface Screenplay {

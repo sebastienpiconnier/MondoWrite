@@ -12,6 +12,8 @@ export const TRASH_DIR = "corbeille";
 export const trashPath = (id: string) => `${TRASH_DIR}/${id}.md`;
 /** Dossiers de fichiers Markdown lus à l'ouverture d'un projet. */
 export const TEXT_DIRS = [CARDS_DIR, MANUSCRIPT_DIR, TRASH_DIR];
+/** Journal de l'IA (mode Atelier) : une ligne par texte proposé et accepté, lisible hors de l'app. */
+export const JOURNAL_FILE = "ia-journal.md";
 /** Images des cartes, copiées dans le projet. */
 export const MEDIA_DIR = "medias";
 /** Texte du scénario (Fountain). Absent des projets roman. */
@@ -46,4 +48,4 @@ export const isTempFile = (path: string) => path.endsWith(TEMP_SUFFIX);
  * ne doit rien écrire hors du projet.
  */
 export const isProjectFilePath = (path: string) =>
-  path === META_FILE || path === SCREENPLAY_FILE || (!isTempFile(path) && TEXT_DIRS.some((dir) => new RegExp(`^${dir}/[^/\\\\.][^/\\\\]*\\.md$`).test(path) && !path.includes("..")));
+  path === META_FILE || path === SCREENPLAY_FILE || path === JOURNAL_FILE || (!isTempFile(path) && TEXT_DIRS.some((dir) => new RegExp(`^${dir}/[^/\\\\.][^/\\\\]*\\.md$`).test(path) && !path.includes("..")));

@@ -99,6 +99,8 @@ export interface ChatOptions {
   json?: boolean;
   /** Annulation par l'auteur (bouton « Annuler » pendant que l'IA réfléchit). */
   signal?: AbortSignal;
+  /** Délai d'un service en ligne, si la réponse attendue est longue (« Du vrac aux cartes ») ; sinon TIMEOUT_MS. */
+  timeoutMs?: number;
 }
 
 /**
@@ -264,13 +266,13 @@ async function httpFetch(): Promise<typeof fetch> {
   }
 }
 
-async function send(request: HttpRequest, local = false, signal?: AbortSignal): Promise<unknown> {
+async function send(request: HttpRequest, local = false, signal?: AbortSignal, timeoutMs = TIMEOUT_MS): Promise<unknown> {
   const controller = new AbortController();
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
     controller.abort();
-  }, local ? LOCAL_TIMEOUT_MS : TIMEOUT_MS);
+  }, local ? Math.max(LOCAL_TIMEOUT_MS, timeoutMs) : timeoutMs);
   // Annulation par l'auteur : elle coupe la même requête.
   const cancel = () => controller.abort();
   if (signal?.aborted) controller.abort();
@@ -309,7 +311,8 @@ async function send(request: HttpRequest, local = false, signal?: AbortSignal): 
 export async function complete(config: AiConfig, system: string, user: string, options?: ChatOptions | number): Promise<string> {
   const local = PROVIDERS[config.provider].local;
   const signal = typeof options === "object" ? options.signal : undefined;
-  const text = readReply(config.provider, await send(chatRequest(config, system, user, options), local, signal));
+  const timeout = typeof options === "object" ? options.timeoutMs : undefined;
+  const text = readReply(config.provider, await send(chatRequest(config, system, user, options), local, signal, timeout));
   if (!text) throw new AiError("empty");
   return text;
 }

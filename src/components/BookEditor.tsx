@@ -558,7 +558,7 @@ export function BookEditor({
           onPick={pickCreate}
         />
       )}
-      {editor && <FormatBar editor={editor} revisit onChutier={() => handlers.current?.onChutier()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
+      {editor && <FormatBar editor={editor} atelier={cards.find((c) => c.id === current)?.title ?? ""} revisit onChutier={() => handlers.current?.onChutier()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
       {veil && (
         <>
           <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />

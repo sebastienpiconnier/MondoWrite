@@ -28,7 +28,7 @@ const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 /** Ce qui s'écrit dans le projet : toute modification de l'un d'eux relance le délai de la sauvegarde auto. */
 const SAVED_KEYS = [
   "nodes", "frames", "edges", "screenplay", "title", "kind", "paper", "sceneNumbers", "underlineHeadings",
-  "manuscript", "plan", "pitch", "trash", "goals", "progress", "print", "scriptPdf", "bibleExport", "hideWires", "markdownCopies", "chutier",
+  "manuscript", "plan", "pitch", "trash", "goals", "progress", "print", "scriptPdf", "bibleExport", "hideWires", "aiMode", "journal", "markdownCopies", "chutier",
   "paperChosen", "metaKeep", "awaitingLayout",
 ] as const satisfies readonly (keyof CosmosState)[];
 

@@ -13,7 +13,8 @@ import { EDITABLE_TYPES, type ScreenplayElement } from "../screenplay/model";
 import { currentElement, fromDoc, screenplayExtensions, setElementType, toDoc, type EditableType } from "../screenplay/editor";
 import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { headingOf, sceneBody } from "../screenplay/sceneText";
-import { sceneSynopsis } from "../screenplay/scenes";
+import { sceneSynopsis, synopsisIsIa } from "../screenplay/scenes";
+import { screenplaySceneText } from "./Atelier";
 import { SynopsisField } from "./SynopsisField";
 import type { CardData } from "../types";
 
@@ -113,7 +114,13 @@ export function ScriptSceneEditor({ card }: { card: CardData }) {
 
   return (
     <div className="script-scene">
-      <SynopsisField value={synopsis} scene={card.title.trim() || sp.untitledScene} onSave={(text) => useCosmos.getState().setCardSceneSynopsis(card.id, text)} />
+      <SynopsisField
+        value={synopsis}
+        scene={card.title.trim() || sp.untitledScene}
+        onSave={(text) => useCosmos.getState().setCardSceneSynopsis(card.id, text)}
+        ia={!!elements && synopsisIsIa(elements, at)}
+        atelier={{ sceneId: card.id, text: screenplaySceneText(at) }}
+      />
       <div className="sp-bar" role="toolbar" aria-label={sp.barAria}>
         {EDITABLE_TYPES.filter((kind) => kind !== "sceneHeading").map((kind) => (
           <button

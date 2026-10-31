@@ -5,7 +5,7 @@
 import { useId, useMemo, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
-import { allQuestionTexts, questionText } from "../assistant";
+import { allQuestionTexts, isInterviewKey, questionText } from "../assistant";
 import type { CardData } from "../types";
 
 export function CharacterAnswers({ card }: { card: CardData }) {
@@ -30,7 +30,11 @@ export function CharacterAnswers({ card }: { card: CardData }) {
             const question = questionText(key, texts);
             return (
               <div key={key} className="sheet-field answer-item">
-                <label htmlFor={`${id}-${key}`}>{question}</label>
+                <label htmlFor={`${id}-${key}`}>
+                  {question}
+                  {/* Réponse de « Interroger le personnage » : dite par lui, gardée par l'auteur. */}
+                  {isInterviewKey(key) && <span className="answer-tag"> · {all.interrogate.answerTag}</span>}
+                </label>
                 <textarea id={`${id}-${key}`} rows={1} value={value} onChange={(e) => setReponse(card.id, key, e.target.value)} />
               </div>
             );

@@ -85,6 +85,11 @@ export interface CardData {
    * ce qu'on la déplace, qu'on la relie ou qu'on la dise rangée. Écrit seulement quand c'est vrai.
    */
   inbox?: boolean;
+  /**
+   * Mode Atelier : champs de la carte dont la valeur a été proposée par l'IA et acceptée (« title » d'une piste,
+   * « synopsis » ou une clé de la fiche). Un champ en sort dès que l'auteur le retouche. Frontmatter `ia: [...]`.
+   */
+  ia?: string[];
   /** Carte dans la corbeille (fichier de corbeille/) : jour, place sur le canevas, fils, scène du scénario. */
   trashed?: import("./trash").TrashInfo;
   [key: string]: unknown; // requis par React Flow pour data
@@ -137,6 +142,8 @@ export interface ProjectMeta {
   underlineHeadings?: boolean;
   /** Fils du canevas masqués (chaque carte dit à quoi elle est reliée). Absent : visibles. */
   hideWires?: boolean;
+  /** Mode de l'IA pour ce projet : « atelier » (l'IA peut proposer du texte, marqué et journalisé). Absent : « gardienne ». */
+  aiMode?: "atelier";
   /** Copies Markdown (manuscrit, bible, canevas) dans markdown/. Absent : oui ; false : arrêtées. */
   markdownCopies?: boolean;
   layout: CardLayout[];
@@ -172,4 +179,6 @@ export interface Project {
   manuscript?: Record<string, string>;
   /** Cartes de la corbeille (corbeille/<id>.md). Absent : corbeille vide. */
   trash?: CardData[];
+  /** Journal de l'IA (ia-journal.md, mode Atelier) : texte tel quel. Absent : aucun. */
+  journal?: string;
 }

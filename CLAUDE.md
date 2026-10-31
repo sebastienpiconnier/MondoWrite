@@ -23,6 +23,7 @@ Fichiers de mise à jour Mac : leur nom suit `productName` (`MondoWrite_aarch64.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
 - **Trois gestes** : taper (double-clic, clic droit, bouton « + » ou touche N), tirer un fil, déposer. Un cadre (bouton ou touche C) regroupe des cartes sans rien leur imposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. La synthèse d'un personnage remet seulement en ordre ce que l'auteur a écrit, et n'entre dans la fiche que sur son clic. L'IA reste optionnelle. Les consignes complètes sont dans `docs/prompts-ia.md`.
+- **Mode Atelier, l'exception choisie par projet** (1.8.0) : le principe ci-dessus reste le défaut (« gardienne »). Pour le seul projet où l'auteur l'active (Réglages › Ce projet, IA branchée), l'IA peut proposer du texte (trois variantes, synopsis d'une scène, trois directions, brouillon de la couverture, fiche d'un personnage secondaire). Rien n'entre sans un clic ; ce qui est accepté est **toujours marqué** (pointillé, jusqu'à « Je l'ai repris ») et **journalisé** (`ia-journal.md`). Aucune autre action IA ne change de règle.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
 - **Multiplateforme dès le départ** : voir la section dédiée, c'est une règle, pas une option.
 - **Multilingue et mode sombre dès le départ** : aucun texte ni aucune couleur en dur dans les composants (voir les sections dédiées).
@@ -137,6 +138,7 @@ src/
   tour.ts               Visite guidée : étapes et vue de chacune (données pures)
   platform.ts           isTauri, isTouch, isMobileOS
   keyboard.ts           Clavier virtuel : hauteur masquée (hiddenByKeyboard, pure, testée) et variable --keyboard-h sur <html> (watchKeyboard)
+  canvasCenter.ts       Centre de la vue du canevas (Toile s'y inscrit), pour une fenêtre ouverte hors de lui
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents) et dans le texte des scènes, fonction pure
   replace.ts            Rechercher et remplacer : texte d'un HTML d'éditeur (hors balises et mentions), éléments du scénario, projet entier (applyReplace), garde la casse (fonctions pures)
@@ -188,6 +190,7 @@ src/
   markdownCopies.ts     Copies Markdown du projet (markdown/ : manuscrit, bible, canevas), liens vers les fiches, versions du jour et nettoyage
   review/               Outils de relecture (fonctions pures, testées) : names.ts (noms presque identiques), checks.ts (points de l'onglet « Vérifier », scénario et roman), filter.ts (filtre par personnage), report.ts (Statistiques des personnages, CSV), places.ts (Statistiques des lieux et décors, moment repris), crossings.ts (qui croise qui)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
+  atelier.ts            Mode Atelier : réglage `aiMode`, marque `ia` dans le HTML (passages, mots, unmarkIa), champs `ia` d'une carte, journal ia-journal.md (ligne, ajout seul), note [[ia]] du Fountain, part de l'IA (fonctions pures)
   i18n/
     fr.ts               Textes de référence (type Messages)
     en.ts               Traduction anglaise
@@ -222,6 +225,8 @@ src/
     FormatBar.tsx       Barre de mise en forme au-dessus d'un texte sélectionné (gras, italique, listes, case, à reprendre)
     focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
+    Atelier.tsx         Mode Atelier : repère de la barre du haut, `useAtelier` (Annuler, erreurs), propositions champ par champ, variantes (barre de mise en forme, barre du scénario), synopsis, directions, brouillon de la couverture, fiche d'un secondaire
+    iaMark.ts           Marque TipTap `ia` (<span data-ia>), commande `unsetIa`, `selectionHasIa`
     Updates.tsx         Bandeau « MondoWrite x.y.z est disponible », vérification au lancement (useLaunchUpdateCheck), réglage et bouton « Rechercher les mises à jour » (Réglages, À propos)
     Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/), « À propos de MondoWrite », corbeille, liseuse, photos libres
     GoToPanel.tsx       Fenêtre « Aller à » (dialogue `goto`) : champ, liste des endroits, Entrée et flèches
@@ -247,6 +252,7 @@ src/
     TrashList.tsx       Fenêtre « Corbeille » (remettre, supprimer pour de bon, vider) et message « … est dans la corbeille · Annuler »
     TrashIcon.tsx       Icône des boutons « Mettre à la corbeille »
     CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois, questions « À creuser », synthèse par l'IA
+    CharacterInterrogation.tsx  Onglet « Interroger » de l'assistant (IA branchée) : conversation d'affichage, « Garder » une réponse (`keepInterviewAnswer`)
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
@@ -256,6 +262,7 @@ src/
     TemplatePicker.tsx  Choix du gabarit (Plan, séquencier) et éditeur de « Mes gabarits » (<dialog> natif) ; useBeatText.ts donne nom et aide d'une case, gabarit livré ou de l'auteur
     Timeline.tsx        Chronologie par intrigue (troisième présentation du Plan) : scènes en colonnes, cartes en lignes
     Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : gabarit, synopsis, personnages, longueur, réordonnancement
+    VracDialog.tsx      Fenêtre « Du vrac aux cartes » (dialogue `vrac`) : texte collé, propositions à cocher, « Créer les cartes »
     AiMenu.tsx          Bouton « IA » (si un service est branché) : Ranger les idées, Vérifier la cohérence
     StatsPanel.tsx      Fenêtre « Statistiques » : personnages, lieux, qui croise qui, int./ext. et jour/nuit (useProjectStats)
     BibleExportDialog.tsx Fenêtre « Exporter la Bible » : pour qui, parties (cocher, ranger), rendu, réglages nommés, PDF / Word / Markdown, aperçu du vrai PDF (pdf.js)
@@ -290,9 +297,12 @@ src/
       continued.ts      (SUITE) affiché après le nom d'un personnage qui reprend après une action (décoration, réglage `scriptPdf.resumes`)
       index.ts          screenplayExtensions() : l'assemblage
   ai/                   IA facultative (rien n'est appelé tant que l'auteur n'a pas choisi un service)
+    atelier.ts          Mode Atelier : consignes et lecteurs (variantes, synopsis, directions, brouillon de la couverture, fiche d'un secondaire), réponses relues en texte brut
     providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes (plugin HTTP de Tauri, API native d'Ollama), lecture des réponses, erreurs
     image.ts            Photo préparée pour une IA qui lit les images (réduite, JPEG, base64)
+    vrac.ts             « Du vrac aux cartes » : consigne, relecture (passages retrouvés dans le texte de l'auteur, `locate`), fils gardés, grille (fonctions pures)
     tasks.ts            Consignes et relecture des réponses : Ranger, interview, synthèse, description d'un lieu, cohérence (fonctions pures), recopiées dans docs/prompts-ia.md
+    interrogate.ts      « Interroger le personnage » : extraits bornés des scènes où il paraît, consigne en personnage, relecture (texte brut, noms propres inconnus du projet) (fonctions pures)
   export/               Exports du manuscrit et de la bible, fabriqués dans l'app (aucun outil externe)
     doc.ts              Modèle de document commun (chapitres, blocs) ; HTML des cartes et du manuscrit → blocs
     text.ts             Markdown, Word (.docx) et EPUB 3
@@ -339,6 +349,7 @@ MonRoman/
   medias/<nom>.jpg     images des cartes (copiées dans le projet), et PDF des cartes Document (medias/<nom>.pdf)
   corbeille/<id>.md    cartes supprimées, même format plus une ligne `corbeille:` (jour, place, fils, scène du scénario)
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
+  ia-journal.md        mode Atelier : une ligne par texte de l'IA accepté (date, action, carte, service et modèle, mots), seulement ajouté
   markdown/            copies lisibles hors de l'app (manuscrit.md pour un roman, bible.md, canevas.md), jamais relues ; versions/AAAA-MM-JJ/ une par jour
 ```
 
@@ -364,6 +375,9 @@ Types possibles : `idee`, `personnage`, `lieu`, `scene`, `intrigue`, `episode`, 
 Le format est un contrat : toute évolution doit rester lisible par les versions précédentes ou passer par `version` dans `cosmos.json` avec une migration. Depuis octobre 2026, ce qu'une version ne connaît pas est gardé et réécrit tel quel (voir « Versions futures » dans les pièges) ; les versions d'avant, elles, perdent à l'enregistrement les champs qu'elles ignorent.
 
 ## Pièges connus (déjà résolus, ne pas réintroduire)
+
+- **Mode Atelier, marques** (1.8.0, `atelier.ts`) : un passage de l'IA est `<span data-ia="<id>">` dans le HTML et le Markdown (règle turndown `ia`, `sanitizeHtml` ne le garde qu'avec `isIaId`) ; un champ (titre d'une piste, synopsis, clé de fiche) est dans `ia: [...]` de la carte (`KNOWN_FRONT`), retiré par `setFiche` et `updateCard` dès que l'auteur y touche (`iaAfterPatch`) ; la couverture a `pitch.ia` (« logline,resume », un texte pour que les versions d'avant le gardent) ; le Fountain, ` [[ia]]` en fin d'action, de réplique, de didascalie ou de synopsis (`ia` de l'élément, attribut `keepOnSplit: false` dans l'éditeur, jamais dans le texte, donc jamais imprimé). **Une version d'avant la 1.8.0 perd la marque `<span data-ia>` en réenregistrant** (turndown ne garde que le texte) : accepté par l'auteur ; elle garde la ligne `ia:` d'une carte et `pitch.ia` (clés inconnues), et montre la note ` [[ia]]` du Fountain dans le texte de l'élément. `aiMode` (KNOWN_META) est écrit seulement s'il vaut « atelier », hors historique comme `hideWires`.
+- **Journal de l'IA** : `ia-journal.md` à la racine (`JOURNAL_FILE`, lu par `readAll`, emporté par `isProjectEntry`, accepté dans un .zip). On n'y fait qu'ajouter (`appendJournal`, `logAtelier`), jamais dans l'historique : une ligne reste si l'auteur annule ce qu'il avait accepté. Le journal dit ce qui a été proposé et accepté, pas ce qui reste ; ce qui reste se lit dans les marques (« À faire », Statistiques).
 
 - **Fils flottants** : `onConnect` enregistre les fils avec `sourceHandle: null, targetHandle: null`, sinon React Flow cherche le point d'accroche temporaire (`drop`) qui n'existe plus et n'affiche pas le fil. Il refuse aussi un fil d'une carte vers elle-même ou un second fil entre deux cartes déjà reliées, dans un sens ou l'autre (1.7.1).
 - **Suppr au clavier** : React Flow retire d'abord les fils des cartes (`onEdgesChange`), puis les cartes (`onNodesChange`). Le store garde les fils d'avant le temps d'une tâche (`edgesCut`) : les cartes partent à la corbeille avec leurs fils (et leur fiche, `TrashLink.fiche`), en une seule étape d'historique (1.7.1).
@@ -411,6 +425,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **IA : réponses jamais crues sur parole** : tout ce qui revient d'un modèle passe par un `parse…` qui ne garde que des identifiants de cartes connus et des types valides. Ne jamais insérer une réponse comme HTML.
 - **IA : réglage de l'appareil** : service, clés, modèles et adresses vivent dans `settings.ai` (localStorage), jamais dans le projet. Une clé est donc lisible par qui a accès au profil de l'appareil : pas de trousseau système pour l'instant. Une adresse saisie ne vaut que pour les services locaux, jamais pour un service en ligne (la clé partirait ailleurs).
 - **IA : appels directs depuis l'app** : `fetch` vers le service, sans serveur intermédiaire. Tout nouveau service doit être ajouté à `connect-src` dans la CSP de `tauri.conf.json`, sinon l'exe refuse l'appel alors que le navigateur l'accepte. Les serveurs locaux ne sont autorisés que sur `localhost` et `127.0.0.1`.
+- **Du vrac aux cartes** (1.8.0, `ai/vrac.ts`) : le texte d'une carte n'est jamais celui que rend l'IA, toujours le passage d'origine retrouvé par `locate` (texte replié) ; introuvable, il est écarté. Au plus `VRAC_MAX` caractères (refusé au-delà, pas découpé en silence). Création par `createVracCards`, une étape, bloc posé par `placeFrame` (jamais sur un cadre), `inbox: true` sur téléphone ; une Scène passe par `updateCard` pour ranger son texte.
 - **IA : limite de longueur et adresse** (1.7.4) : tout service reçoit une limite (`max_completion_tokens` chez OpenAI, `max_tokens` ailleurs, `num_predict` chez Ollama), plus `THINKING_MARGIN` hors Claude, sinon un modèle qui raisonne rend une réponse vide ; un `/v1` final de l'adresse locale est retiré (`base`). Délai dépassé = code `timeout`, annulation = `cancelled` (signal de `ChatOptions`) : bouton « Annuler » dans le menu IA, la Galerie et l'assistant personnage, et requête arrêtée si le composant disparaît.
 - **Sélecteur Zustand** : `aiConfig(s.ai)` crée un objet à chaque appel. Sélectionner `s.ai` puis calculer dans un `useMemo`, sinon React boucle. Même règle pour tout sélecteur passé à `useCosmos` : il rend le même objet tant que rien ne change (constante pour un tableau vide, cache `WeakMap` sinon). `beatKeys` (FrameLabels) rendait un `[]` neuf pour un roman en gabarit libre : de la 1.7.0 à la 1.7.2, la fenêtre restait vide à l'ouverture d'un tel roman sur le canevas (test `selecteurs-stables`).
 - **Exports sans Pandoc** : le manuscrit et la bible sortent en Markdown, Word, EPUB et PDF par du code maison (`src/export/`), pour marcher aussi dans le navigateur et sur mobile. Un .docx et un .epub sont des ZIP de fichiers XML : `zip.ts` les écrit sans compression. Dans un EPUB, `mimetype` doit rester le premier fichier de l'archive.
@@ -475,6 +490,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Séparateur décor / moment** : « - », « – » (Word, donc tout import) ou « — », entouré d'espaces (`timeCut`, scenes.ts), aussi pour la complétion ; préfixe `EXT./INT.` reconnu comme `INT./EXT.` (1.7.3). Ne jamais revenir à `lastIndexOf(" - ")`.
 - **Dialogue à tirets collé** (`dialogueLines`, `protectDialogue`, markdownText.ts, 1.7.3) : une suite de « - … » suivie de narration sans ligne vide, ou dont une ligne sonne comme une parole (? ! … guillemets), est une suite de répliques, jamais une liste, même citée (`> - …` : un texte collé sur le canevas devient une Idée qui le cite) ; une case à cocher reste une liste. Tout Markdown collé passe par `markdownSource`, jamais `markHighlights` seul.
 - **Tiret de dialogue tapé dans une scène** (1.7.3) : le texte d'une scène (manuscrit, carte Scène agrandie : `richTextExtensions({ prose: true })`) n'ouvre une liste qu'avec « * » ou « + » suivis d'une espace (`PROSE_BULLET_RE`), jamais « - », qui commence une réplique ; les cartes gardent « - ». Raccourcis et collage du canevas lisent leur cible par `eventElement` (eventTarget.ts : WebKit vise parfois le nœud de texte, et le champ qui a le focus l'emporte) et ignorent un collage déjà pris (`defaultPrevented`) : sinon un collage dans une carte agrandie créait aussi une carte Idée. N et C ne font rien quand une fenêtre est ouverte (`dialog` du store).
+- **Interroger le personnage** (1.8.0, `ai/interrogate.ts`) : le personnage répond seulement avec ce que l'auteur a écrit (fiche, notes, `reponses`, fils, extraits bornés des scènes) ; ne jamais assouplir « ne sait pas / ne veut pas le dire ». La conversation n'est jamais enregistrée ; « Garder » écrit `reponses["i:<question>"]` (`interviewKey`, une étape, étiquette vide) ; `questionText` lit `i:` comme `q:`, en clair pour l'interview, la synthèse et la cohérence.
 - **Réponses de l'auteur envoyées à l'IA** (1.7.3) : interview et cohérence joignent `answers` (`reponses`, question en clair par `allQuestionTexts`) ; l'interview met aussi ces questions dans `alreadyAsked`.
 - **Téléphone** (1.7.3) : pas de visite guidée (elle passe par le canevas et le Plan) : ni au lancement de l'exemple, ni dans les Réglages, et fermée si l'écran devient étroit. Réglages visibles à l'accueil (`.home-actions`), message de corbeille au-dessus des onglets ou du clavier.
 - **Espaces insécables de fr.ts** (1.7.4) : fine insécable (U+202F) avant `; ? !`, insécable (U+00A0) avant `:` et dans « », vérifié par un test ; tout texte d'un ancien projet comparé à une chaîne de fr.ts se compare espaces repliées (`adoptTextAnswers`), et un PDF dont la police n'a pas U+202F la remplace (`noThinSpace`, `printable`, PDF du scénario).

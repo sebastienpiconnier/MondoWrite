@@ -9,7 +9,7 @@ import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, 
 import { appDataDir, documentDir, homeDir, join } from "@tauri-apps/api/path";
 import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
-import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
+import { COPIES_DIR, JOURNAL_FILE, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
@@ -371,7 +371,7 @@ function isProjectEntry(name: string) {
   const shown = name.startsWith(".") && name.endsWith(".icloud") ? name.slice(1, -".icloud".length) : name;
   // Temporaire d'écriture laissé par une coupure (« cosmos.json.mondowrite-tmp ») : il part avec le projet.
   const plain = isTempFile(shown) ? shown.slice(0, -TEMP_SUFFIX.length) : shown;
-  return PROJECT_DIRS.has(plain) || plain === META_FILE || plain === SCREENPLAY_FILE || (isConflictCopy(plain) && (plain.startsWith("cosmos") || plain.startsWith("scenario")));
+  return PROJECT_DIRS.has(plain) || plain === META_FILE || plain === SCREENPLAY_FILE || plain === JOURNAL_FILE || (isConflictCopy(plain) && (plain.startsWith("cosmos") || plain.startsWith("scenario") || plain.startsWith("ia-journal")));
 }
 
 function desktopCloud(): { path: string; name: string } | null {
@@ -843,6 +843,10 @@ export const tauriStorage: Storage = {
     const screenplayPath = await join(dir, SCREENPLAY_FILE);
     if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);
     else if (await hasPlaceholder(dir, SCREENPLAY_FILE)) placeholders.push(SCREENPLAY_FILE);
+    // Journal de l'IA (mode Atelier), à la racine comme le scénario.
+    const journalPath = await join(dir, JOURNAL_FILE);
+    if (await exists(journalPath)) files[JOURNAL_FILE] = await readTextFile(journalPath);
+    else if (await hasPlaceholder(dir, JOURNAL_FILE)) placeholders.push(JOURNAL_FILE);
     pendingPaths = { key, paths: placeholders };
     return files;
   },

@@ -8,9 +8,10 @@ import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
-import { SERIES_CHIPS, chipsFor, chipSuggestions, formOf, isSeriesForm, otherTexts, pitchFields, pitchFilled, writingTexts, type PitchChip, type PitchText } from "../pitch";
+import { SERIES_CHIPS, chipsFor, chipSuggestions, formOf, isSeriesForm, otherTexts, pitchFields, pitchFilled, pitchIaKeys, writingTexts, type PitchChip, type PitchText } from "../pitch";
 import { feasibilityText, pitchLabels } from "../feasibility";
 import { CoverAssistant } from "./CoverAssistant";
+import { IaFieldNote, PitchDraft } from "./Atelier";
 import { bookWords, countWords } from "../manuscript";
 import { typeColor } from "../types";
 import { episodeOrder } from "../episodes";
@@ -130,9 +131,11 @@ function PitchArea({ field, className, hint, fallback, children }: { field: Pitc
   // Valeur de départ proposée (faisabilité tirée du scénario) : montrée tant que le champ n'a pas de texte.
   const value = stored.trim() ? stored : (fallback ?? stored);
   const setPitch = useCosmos((s) => s.setPitch);
+  // Mode Atelier : texte proposé par l'IA et accepté, jusqu'à ce que l'auteur le retouche ou dise « Je l'ai repris ».
+  const ia = useCosmos((s) => pitchIaKeys(s.pitch).includes(field));
   const id = useId();
   return (
-    <div className={`pitch-field ${className ?? ""}`}>
+    <div className={`pitch-field ${className ?? ""}${ia ? " is-ia" : ""}`}>
       <label htmlFor={id}>{labels.fields[field]}</label>
       <textarea
         id={id}
@@ -147,6 +150,7 @@ function PitchArea({ field, className, hint, fallback, children }: { field: Pitc
           {hint}
         </p>
       )}
+      {ia && <IaFieldNote onRework={() => useCosmos.getState().reworkIaPitch(field)} />}
       {children}
     </div>
   );
@@ -289,6 +293,7 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
           placeholder={p.placeholders.tagline}
           onChange={(e) => useCosmos.getState().setPitch("tagline", e.target.value)}
         />
+        {pitchIaKeys(pitch).includes("tagline") && <IaFieldNote onCover onRework={() => useCosmos.getState().reworkIaPitch("tagline")} />}
         {author.trim() && <div className="cover-author">{fmt(p.byAuthor, { author: author.trim() })}</div>}
         <div className="cover-chips">
           {chips.map((c) => (
@@ -300,6 +305,7 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
 
       <div className="cover-back">
         <CoverAssistant />
+        <PitchDraft pitch={pitch} kind={kind} form={form} />
         <PitchArea field="logline" className="is-logline" hint={p.loglineHint} />
         <PitchArea field="resume" />
         <PitchArea field="comps" />
