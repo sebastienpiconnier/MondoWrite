@@ -693,6 +693,46 @@ const scenarios = [
     },
   },
   {
+    name: "atelier : image de référence générée (OpenAI simulé), gardée en portrait, créditée et journalisée (1.10.0)",
+    async run(h) {
+      const { page } = h;
+      // PNG de 1 × 1 pixel, rendu par une API Images d'OpenAI fabriquée ici : rien ne sort vers Internet.
+      const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "openai", keys: { openai: "test" }, models: { openai: "gpt-test" }, urls: {} } }));
+      });
+      let sent = null;
+      await page.route("https://api.openai.com/**", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        sent = { url: route.request().url(), body: JSON.parse(route.request().postData() ?? "{}") };
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ created: 1, data: [{ b64_json: PNG }, { b64_json: PNG }] }) });
+      });
+      await h.create("Images");
+      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await page.getByLabel("Activer le mode Atelier pour ce projet").check();
+      await page.keyboard.press("Escape");
+      const id = await h.newCard("Inès Morvan");
+      await h.node(id).locator(".card-type").click();
+      await page.getByRole("option", { name: "Personnage", exact: true }).click();
+      // Sa fiche dans la Bible, puis « Générer une image » dans la galerie.
+      await h.node(id).locator(".card-bible").click();
+      await page.getByRole("button", { name: "Générer une image" }).first().click();
+      await page.getByLabel("Ce que l’image doit montrer").fill("Inès Morvan, une femme de 34 ans, cheveux courts, ciré jaune.");
+      await page.getByRole("button", { name: "Générer", exact: true }).click();
+      await page.getByRole("button", { name: "Garder l’image proposée 1" }).waitFor();
+      assert(sent?.url === "https://api.openai.com/v1/images/generations", `requête : ${sent?.url}`);
+      assert(!/Inès|Morvan/.test(sent.body.prompt) && /34 ans/.test(sent.body.prompt) && /fictional/.test(sent.body.prompt), `consigne envoyée : ${sent.body.prompt}`);
+      await page.getByRole("button", { name: "Garder l’image proposée 1" }).click();
+      await until(() => page.locator(".ia-image-badge").count(), "l'image gardée n'est pas marquée dans la galerie");
+      await h.saved((f) => {
+        const card = f[`cartes/${id}.md`] ?? "";
+        const image = /^image: ([\w-]+\.png)$/m.exec(card)?.[1];
+        return image && card.includes(`iaImages: {"${image}":"openai, gpt-image-2"}`) && /· Image · «\s?Inès Morvan\s?» · openai, gpt-image-2 · 1 × 1 px/.test(f["ia-journal.md"] ?? "");
+      }, "image principale, marque ou ligne du journal non enregistrées");
+    },
+  },
+  {
     name: "atelier : synopsis gardé juste après une frappe dans la vue Scénario, rien n'est perdu (1.8.1)",
     async run(h) {
       const { page } = h;

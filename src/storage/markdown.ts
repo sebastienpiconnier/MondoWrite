@@ -13,6 +13,7 @@
 // images: ["a.jpg","b.png"] (facultatif : photos supplémentaires de la fiche)
 // page: dedicace            (facultatif, carte Scène : page hors récit du livre, voir book.ts)
 // ia: ["synopsis"]          (facultatif, mode Atelier : champs proposés par l'IA et acceptés, voir atelier.ts)
+// iaImages: {"a.png":"openai, gpt-image-2"}  (facultatif, mode Atelier : images générées gardées, voir ai/imageGen.ts)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
 // Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).     (mention d'une autre carte)
@@ -27,6 +28,7 @@ import { MENTION_SCHEME, isCardId, mentionTarget } from "../mentions";
 import { readFiche, readQuestions } from "../character";
 import { isPageKind } from "../book";
 import { isIaId, readIaFields } from "../atelier";
+import { iaImagesOf, readIaImages } from "../ai/imageGen";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
 // Une mention s'écrit comme un lien Markdown vers la carte citée.
@@ -150,6 +152,8 @@ export function cardToFile(card: CardData): string {
     ...(card.inbox ? ["inbox: true"] : []),
     // Mode Atelier : champs dont la valeur vient de l'IA (« title », « synopsis », clés de la fiche).
     ...(card.ia && card.ia.length > 0 ? [`ia: ${JSON.stringify(card.ia)}`] : []),
+    // Mode Atelier : images générées gardées, seulement celles que la carte porte encore.
+    ...(iaImagesOf(card) ? [`iaImages: ${JSON.stringify(iaImagesOf(card))}`] : []),
     // Ce qu'une version plus récente a écrit et que celle-ci ignore : réécrit tel quel.
     ...Object.entries(card.keep?.front ?? {}).map(([key, value]) => `${key}: ${value}`),
     "---",
@@ -205,6 +209,8 @@ export function fileToCard(text: string): CardData | null {
   if (fields.inbox === "true") card.inbox = true;
   const ia = readIaFields(parseJson(fields.ia));
   if (ia) card.ia = ia;
+  const iaImages = readIaImages(parseJson(fields.iaImages));
+  if (iaImages) card.iaImages = iaImages;
   const keep = keepUnknown(fields, rawFiche, fiche);
   if (fields.type && fields.type !== type && KEY_RE.test(fields.type)) keep.type = fields.type;
   if (Object.keys(keep).length > 0) card.keep = keep;
@@ -212,7 +218,7 @@ export function fileToCard(text: string): CardData | null {
 }
 
 /** Lignes du frontmatter que cette version écrit elle-même. */
-const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille", "inbox", "ia"]);
+const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille", "inbox", "ia", "iaImages"]);
 const KEY_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 
 /**

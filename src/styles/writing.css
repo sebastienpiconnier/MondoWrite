@@ -967,3 +967,25 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 }
 .sp-bar .atelier-panel .assistant-actions button, .sp-bar .atelier-pop .assistant-actions button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); }
 .sp-bar .atelier-panel .atelier-choice, .sp-bar .atelier-pop .atelier-choice { border: 1px solid var(--line-2); }
+
+/* ---------- Images de référence générées (1.10.0, mode Atelier) ---------- */
+.image-gen-entry { margin: 0 0 8px; }
+.image-gen-button { min-height: 44px; border-style: dotted; border-color: var(--ia-mark); }
+.gallery-add.image-gen-button { border-style: dotted; border-color: var(--ia-mark); }
+.image-gen-unavailable { margin: 0 0 8px; }
+.image-gen-form { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.image-gen-form label { font-weight: 600; }
+.image-gen-form textarea { min-height: 7.5em; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; line-height: 1.45; resize: vertical; }
+.image-gen-form textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.image-gen-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.image-gen-count { margin: 0; }
+.image-gen-count button { min-width: 44px; padding: 0 12px; }
+.image-gen-run { min-height: 44px; }
+.image-gen-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.image-gen-image { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; background: var(--ground); border: 2px dotted var(--ia-mark); }
+.image-gen-grid .ghost-button { min-height: 44px; }
+/* Image générée gardée : toujours marquée (repère « IA » sur la vignette, crédit sous l'image agrandie). */
+.gallery-thumb-wrap { position: relative; display: inline-flex; }
+.ia-image-badge { position: absolute; left: 4px; bottom: 4px; padding: 1px 6px; border: 1px dotted var(--ia-mark); border-radius: 999px; background: var(--surface); color: var(--ia-mark); font: 600 0.6875rem/1.4 var(--font-ui); letter-spacing: 0.04em; pointer-events: none; }
+.ia-image-credit { margin: 8px 0 0; font-size: 0.8125rem; color: var(--ink-2); text-align: center; }
+.image-gen .ghost-button.is-primary { border-color: transparent; background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }

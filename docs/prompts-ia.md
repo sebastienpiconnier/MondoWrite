@@ -399,3 +399,28 @@ You help a screenwriter break down a screenplay for production. For each scene, 
 **Données** (`breakdownScenes`, `breakdownBatches`) : les scènes reliées à une carte, en-tête et lignes d'action seulement (jamais les répliques), en lots de 8 000 caractères et douze scènes au plus (« Lecture des scènes : lot 2 sur 4… », Annuler).
 
 **Ce que MondoWrite garde** (`parseBreakdown`) : une scène du lot, une des cinq catégories, une entrée d'une ligne (80 caractères) qui n'est pas déjà dans la fiche de la scène ni proposée deux fois (casse et accents ignorés), la citation retrouvée dans les lignes d'action de cette scène. Propositions cochées d'office ; « Ajouter les éléments cochés » les met dans les champs `accessoires`, `costumes`, `figurants`, `vehicules`, `effets` de la fiche (une entrée par ligne, `addBreakdown`, une étape d'historique).
+
+## 12. Images de référence générées (1.10.0)
+
+Mode Atelier seulement, et seulement avec un service qui génère des images par API (`src/ai/imageGen.ts`) : **OpenAI** (API Images, `POST /v1/images/generations`, modèle par défaut `gpt-image-2`) et **OpenRouter** (`POST /api/v1/images`, modèle par défaut `openai/gpt-image-2`). Claude ne génère pas d'images ; Ollama ne le fait qu'en essai sur macOS, sans API documentée ; LM Studio pas du tout : pour ces services, la fonction est absente et une phrase le dit (fenêtre Photos, Réglages). Le modèle d'image est un réglage de l'appareil, facultatif (`ai.imageModels`, champ « Modèle d'image » des Réglages ; vide : celui par défaut).
+
+Points d'entrée : « Générer une image » dans la fenêtre Photos (nouvelle carte Image du canevas, image d'une carte, portrait de la Bible) et dans la galerie d'une fiche. Sujet selon la carte (`subjectOf`) : personnage = portrait (1024 × 1536, 2:3), lieu = décor (1536 × 1024, 3:2), objet = objet (carré), carte Image ou canevas = ambiance (3:2). De 1 à 4 images (`IMAGE_MAX`).
+
+**Description** (`describeCard`) : préremplie dans un champ que l'auteur voit et retouche avant l'envoi. Personnage : genre, âge, apparence, métier (jamais l'origine, le rôle ni le caractère) ; lieu : époque, ambiance ; objet : usage, emplacement, origine ; carte Image : titre et « À retenir » ; puis le début des notes (600 caractères). Total borné à 1 200 caractères.
+
+**Noms propres** (`properNames`, `stripNames`) : retirés de la description préremplie et de nouveau à l'envoi. Titres des lieux, groupes, objets et évènements (sans tenir compte de la casse) ; pour un personnage, son nom entier, chaque prénom ou nom et ses surnoms, seulement tels qu'écrits (« Rose » part, « une broche rose » reste) ; le nom de l'auteur (profil de l'appareil).
+
+**Consigne** (`imagePrompt`, en anglais, la langue que les modèles d'image suivent le mieux ; la description reste dans la langue de l'auteur) :
+
+```
+{sujet, par exemple : A reference portrait of a fictional character for a novelist's notes: one person, head and shoulders, natural light, realistic illustration.}
+
+Rules: every person shown is fictional and must not resemble any real person, celebrity or public figure. No text, letters, numbers, captions, signatures, watermarks or logos anywhere in the image.
+
+Description (written by the author, follow it faithfully, do not add names):
+{description sans noms propres}
+```
+
+**Ce que MondoWrite garde** (`readImages`, `sniffImage`) : `data[].b64_json` décodé, reconnu à sa signature (PNG, JPEG, WebP ; jamais au type annoncé, un SVG est refusé), 15 Mo au plus ; une adresse `data[].url` seulement en https sur un hôte d'OpenAI, téléchargée puis vérifiée de même. Délai : 3 minutes, « Annuler » arrête la requête.
+
+**Rien n'entre sans clic** : les images proposées s'affichent (adresses `blob:` rendues à la fermeture) ; « Garder » (`keepGeneratedImage`) copie l'image dans `medias/` sous un nom neuf, en image principale (image d'une carte, galerie encore vide) ou dans la galerie, ou en nouvelle carte Image, en une étape d'historique. **Marque** : `iaImages` de la carte (`{"<fichier>": "<service>, <modèle>"}`, écrit seulement pour les images qu'elle porte encore), repère « IA » sur la vignette de la galerie et crédit « Image générée · OpenAI, gpt-image-2 » sous l'image agrandie ; une carte Image reçoit aussi ce crédit dans « Publication », comme une photo libre. **Journal** : une ligne `Image` dans `ia-journal.md`, avec le modèle d'image et la taille à la place des mots (« 1024 × 1536 px »). Statistiques : nombre d'images générées encore gardées.

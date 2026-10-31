@@ -62,6 +62,7 @@ import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
+import { IMAGE_EXT, iaImageSource, iaImagesOf, readIaImageSource, type GeneratedImage } from "./ai/imageGen";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, headingRenames, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
@@ -305,7 +306,7 @@ export interface CosmosState {
   /** Journal de l'IA (ia-journal.md), tel quel. On n'y fait qu'ajouter des lignes, hors historique. */
   journal: string;
   /** Ajoute une ligne au journal (texte proposé par l'IA et accepté), avec le service et le modèle de l'appareil. */
-  logAtelier: (action: AtelierAction, target: string, words: number) => void;
+  logAtelier: (action: AtelierAction, target: string, words: number, extra?: { model?: string; detail?: string }) => void;
   /** « Je l'ai repris » : retire la marque de l'IA d'un passage (ou de tous) d'une carte ou d'une scène du roman. */
   unmarkIaPassage: (id: string, where: "card" | "manuscript", markId?: string) => void;
   /** « Je l'ai repris » sur un élément du scénario (note [[ia]]) : l'élément d'index donné. */
@@ -322,6 +323,16 @@ export interface CosmosState {
   reworkIaField: (id: string, key: string) => void;
   /** Champ de la fiche d'une carte proposé et accepté. Une étape. */
   acceptIaFiche: (id: string, key: SheetField, text: string) => void;
+  // ---------- Images de référence générées (1.10.0, mode Atelier, voir ai/imageGen.ts) ----------
+  /** Fenêtre Photos ouverte sur la génération d'image (lu une fois par PhotoSearch à l'ouverture). */
+  photoGenerate: boolean;
+  /** Ouvre la fenêtre Photos sur « Générer une image », pour la cible donnée (comme openPhotos). */
+  openImageGen: (target: NonNullable<CosmosState["photoTarget"]>) => void;
+  /**
+   * « Garder » une image générée : copiée dans medias/ sous un nom neuf, posée comme image principale (ou dans la
+   * galerie, ou en nouvelle carte Image), marquée (`iaImages`, et crédit d'une carte Image) et journalisée. Une étape.
+   */
+  keepGeneratedImage: (image: GeneratedImage, source: { provider: string; model: string; detail: string; title?: string }) => Promise<boolean>;
   /** Copies Markdown du projet dans markdown/ (réglage du projet, oui par défaut). */
   markdownCopies: boolean;
   setMarkdownCopies: (on: boolean) => void;
@@ -3007,11 +3018,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     journal: "",
-    logAtelier: (action, target, words) => {
+    logAtelier: (action, target, words, extra) => {
       const t = getT().atelier.journal;
       const config = aiConfig(useSettings.getState().ai);
       const line = journalLine(
-        { at: new Date(), action, target: target.trim() || getT().bible.untitled, service: config ? config.provider : "", model: config?.model ?? "", words },
+        { at: new Date(), action, target: target.trim() || getT().bible.untitled, service: config ? config.provider : "", model: extra?.model ?? config?.model ?? "", words, detail: extra?.detail },
         { header: t.header, actions: t.actions, words: t.words, quoted: t.quoted },
       );
       set({ journal: appendJournal(get().journal, line, t.header) });
@@ -3109,6 +3120,48 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ia: withIaField(n.data.ia, key) } } : n)) });
       touch();
       get().logAtelier("sheet", card.title, countWords(value));
+    },
+    // ---------- Images de référence générées (1.10.0) ----------
+    // L'image n'entre que sur « Garder » : fichier écrit d'abord, puis une seule action (updateCard, ou la carte
+    // Image dans une transaction), donc une étape d'historique. Le journal reçoit sa ligne, hors historique.
+    photoGenerate: false,
+    openImageGen: (target) => set({ photoTarget: target, photoGenerate: true, dialog: "photos" }),
+    keepGeneratedImage: async (image, source) => {
+      const target = get().photoTarget;
+      const ext = IMAGE_EXT[image.mime];
+      if (!target || !ext) return false;
+      const name = `${newId()}.${ext}`;
+      try {
+        await storage.writeMedia(name, image.data);
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+      const t = getT();
+      const mark = iaImageSource(source.provider, source.model);
+      const credit = fmt(t.imageGen.credit, { source: readIaImageSource(mark, t.ai.providers) });
+      const extra = { model: source.model, detail: source.detail };
+      if (target.kind === "canvas") {
+        const title = (source.title ?? "").replace(/\s+/g, " ").trim().slice(0, 80) || t.imageGen.cardTitle;
+        const id = transaction("", () => {
+          const id = get().addResearchCard({ type: "image", title, html: "", image: name, fiche: { publication: credit } }, target.at);
+          set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, iaImages: { [name]: mark } } } : n)) });
+          return id;
+        });
+        set({ focusId: id });
+        get().logAtelier("image", title, 0, extra);
+        return true;
+      }
+      const card = get().nodes.find((n) => n.id === target.id)?.data;
+      if (!card) return false;
+      const iaImages = { ...(iaImagesOf(card) ?? {}), [name]: mark };
+      // Image d'une carte, ou galerie sans image principale : elle devient l'image principale. Sinon, la galerie.
+      const main = target.kind === "card" || !card.image;
+      // Une carte Image sans référence reçoit le crédit, au même endroit que celui d'une photo libre.
+      const fiche = card.type === "image" && main && !card.fiche?.url ? { fiche: { ...card.fiche, publication: credit } } : {};
+      get().updateCard(card.id, main ? { image: name, iaImages, ...fiche } : { images: [...(card.images ?? []), name], iaImages });
+      get().logAtelier("image", card.title, 0, extra);
+      return true;
     },
   };
   // Toute action est une transaction : quoi qu'elle appelle, elle fait au plus une étape d'historique.

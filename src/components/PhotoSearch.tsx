@@ -3,17 +3,19 @@
 // sans clé explique comment en obtenir une. Les résultats sont une grille de vrais boutons (souris, doigt,
 // clavier) ; la photo choisie devient une carte Image créditée, ou rejoint une galerie.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { openExternal } from "../platform";
 import { PHOTO_SOURCES, SOURCE_INFO, type Photo, type PhotoError, type PhotoSourceId } from "../imageSources";
+import { ImageGenButton, ImageGenPanel, ImageGenUnavailable, useImageGen } from "./ImageGen";
 
 const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
 
 export function PhotoSearch() {
   const t = useT().photos;
+  const tg = useT().imageGen;
   const source = useSettings((s) => s.photos.source);
   const keys = useSettings((s) => s.photos.keys);
   const key = source === "openverse" ? "" : keys[source];
@@ -81,6 +83,12 @@ export function PhotoSearch() {
 
   // Nouvelle carte Image, image d'une carte ou galerie d'une fiche : un fichier de l'appareil reste possible.
   const target = useCosmos((st) => st.photoTarget);
+  // Mode Atelier (1.10.0) : « Générer une image » à côté des sources libres. Ouverte par la galerie sur ce mode.
+  const gen = useImageGen();
+  const [generating, setGenerating] = useState(() => useCosmos.getState().photoGenerate);
+  useEffect(() => {
+    if (useCosmos.getState().photoGenerate) useCosmos.setState({ photoGenerate: false });
+  }, []);
   const fromDevice =
     target ? (
       <button
@@ -110,6 +118,18 @@ export function PhotoSearch() {
 
   const needKey = info.needsKey && (!key || editingKey);
 
+  if (generating && gen.ready) {
+    const g = useCosmos.getState().photoTarget?.kind;
+    return (
+      <div className="photos">
+        <div className="photos-head">
+          <h2 id="app-dialog-title">{g === "card" ? tg.titleCard : g === "gallery" ? tg.titleGallery : tg.title}</h2>
+        </div>
+        <ImageGenPanel onBack={() => setGenerating(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="photos">
       <div className="photos-head">
@@ -117,6 +137,12 @@ export function PhotoSearch() {
         {fromDevice}
       </div>
       {sources}
+      {target && gen.ready && (
+        <div className="image-gen-entry">
+          <ImageGenButton target={target} onOpen={() => setGenerating(true)} />
+        </div>
+      )}
+      {gen.atelier && <ImageGenUnavailable provider={gen.provider} />}
       <p className="settings-hint">{t.about[source]}</p>
       {needKey && source !== "openverse" ? (
         <>
