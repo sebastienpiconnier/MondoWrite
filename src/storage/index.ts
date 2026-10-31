@@ -14,7 +14,7 @@ import { cardToFile, fileToCard, htmlToMarkdown, markdownToHtml } from "./markdo
 import { isCardId } from "../mentions";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
-import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, isConflictCopy, manuscriptPath, trashPath, type FileMap } from "./paths";
+import { CARDS_DIR, JOURNAL_FILE, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, isConflictCopy, manuscriptPath, trashPath, type FileMap } from "./paths";
 import { parse as parseScreenplay } from "../screenplay/parse";
 import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
@@ -163,6 +163,8 @@ export function serialize(project: Project): FileMap {
   for (const card of project.trash ?? []) if (card.trashed) files[trashPath(card.id)] = cardToFile(card);
   // Un projet roman n'a pas de scénario : le fichier n'est jamais créé pour lui.
   if (project.screenplay) files[SCREENPLAY_FILE] = serializeScreenplay(project.screenplay);
+  // Journal de l'IA (mode Atelier) : écrit tel quel, seulement s'il a commencé.
+  if (project.journal?.trim()) files[JOURNAL_FILE] = project.journal;
   // Manuscrit : un fichier par scène écrite. Une scène sans texte n'a pas de fichier.
   for (const [id, html] of Object.entries(project.manuscript ?? {})) {
     const text = htmlToMarkdown(html);
@@ -217,5 +219,6 @@ export function deserialize(files: FileMap): Project | null {
     const html = isCardId(id) ? markdownToHtml(text.replace(/\r\n/g, "\n")).trim() : "";
     if (html) manuscript[id] = html;
   }
-  return { meta, cards, screenplay, manuscript, ...(trash.length > 0 ? { trash } : {}) };
+  const journal = files[JOURNAL_FILE];
+  return { meta, cards, screenplay, manuscript, ...(trash.length > 0 ? { trash } : {}), ...(journal?.trim() ? { journal } : {}) };
 }

@@ -1,6 +1,7 @@
 // Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
+import { readAiMode, type AiMode } from "./atelier";
 import { relabelMentions } from "./mentions";
 import { readWires, wiresToMeta } from "./wires";
 import { foldNovelNodes, foldScreenplayNotes } from "./sceneNotes";
@@ -96,11 +97,11 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true, beat: typeof f.beat === "string" && (isBeat(f.beat) || isCustomBeat(f.beat)) ? f.beat : undefined }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "wires", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "wires", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -284,6 +285,8 @@ export function toProject(
       ...(s.sceneNumbers ? { sceneNumbers: true } : {}),
       ...(s.underlineHeadings ? { underlineHeadings: true } : {}),
       ...(s.hideWires ? { hideWires: true } : {}),
+      // Mode Atelier : écrit seulement s'il est actif (absent = « gardienne »).
+      ...(s.aiMode === "atelier" ? { aiMode: "atelier" as const } : {}),
       ...(s.markdownCopies ? {} : { markdownCopies: false }),
       layout: [
         ...s.nodes.map((n) => ({
@@ -327,6 +330,7 @@ export function toProject(
     screenplay: s.screenplay,
     manuscript: s.manuscript,
     ...(s.trash.length > 0 ? { trash: s.trash } : {}),
+    ...(s.journal.trim() ? { journal: s.journal } : {}),
   };
 }
 
@@ -342,6 +346,10 @@ export interface ProjectSlice {
   underlineHeadings: boolean;
   /** Fils du canevas masqués (réglage du projet, enregistré). */
   hideWires: boolean;
+  /** Mode de l'IA du projet (« atelier » : l'IA peut proposer du texte, marqué et journalisé). */
+  aiMode: AiMode;
+  /** Journal de l'IA (ia-journal.md), tel quel : on n'y fait qu'ajouter des lignes. */
+  journal: string;
   markdownCopies: boolean;
   nodes: CardNode[];
   frames: FrameNode[];

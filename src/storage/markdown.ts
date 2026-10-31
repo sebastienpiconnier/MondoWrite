@@ -12,6 +12,7 @@
 // corbeille: {…}             (seulement dans corbeille/ : jour, place, fils et scène du scénario)
 // images: ["a.jpg","b.png"] (facultatif : photos supplémentaires de la fiche)
 // page: dedicace            (facultatif, carte Scène : page hors récit du livre, voir book.ts)
+// ia: ["synopsis"]          (facultatif, mode Atelier : champs proposés par l'IA et acceptés, voir atelier.ts)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
 // Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).     (mention d'une autre carte)
@@ -25,6 +26,7 @@ import { isDocumentName, isMediaName } from "../media";
 import { MENTION_SCHEME, isCardId, mentionTarget } from "../mentions";
 import { readFiche, readQuestions } from "../character";
 import { isPageKind } from "../book";
+import { isIaId, readIaFields } from "../atelier";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
 // Une mention s'écrit comme un lien Markdown vers la carte citée.
@@ -44,6 +46,12 @@ turndown.addRule("taskItem", {
 });
 // « À reprendre » : gardé en HTML (<mark>), lisible dans tout éditeur Markdown.
 turndown.keep(["mark"]);
+// Passage proposé par l'IA (mode Atelier) : gardé en HTML autour de son Markdown, `<span data-ia="id">…</span>`.
+// Sans cette règle, turndown ne garderait que le texte et la marque se perdrait au premier enregistrement.
+turndown.addRule("ia", {
+  filter: (node) => node.nodeName === "SPAN" && isIaId((node as HTMLElement).getAttribute("data-ia")),
+  replacement: (content, node) => (content ? `<span data-ia="${(node as HTMLElement).getAttribute("data-ia")}">${content}</span>` : ""),
+});
 
 export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
@@ -103,6 +111,11 @@ export function sanitizeHtml(html: string): string {
       }
       if (child.tagName === "LI") adoptCheckbox(child);
       clean(child); // descendants d'abord, puis l'élément lui-même
+      // Marque de l'IA (mode Atelier) : seulement avec un identifiant sûr, et rien d'autre que lui.
+      if (child.tagName === "SPAN" && isIaId(child.getAttribute("data-ia"))) {
+        for (const attr of Array.from(child.attributes)) if (attr.name !== "data-ia") child.removeAttribute(attr.name);
+        continue;
+      }
       if (!ALLOWED.has(child.tagName)) {
         child.replaceWith(...Array.from(child.childNodes));
         continue;
@@ -135,6 +148,8 @@ export function cardToFile(card: CardData): string {
     ...(card.trashed ? [`corbeille: ${JSON.stringify(card.trashed)}`] : []),
     // Carnet (iPhone) : carte capturée, encore à ranger sur le canevas.
     ...(card.inbox ? ["inbox: true"] : []),
+    // Mode Atelier : champs dont la valeur vient de l'IA (« title », « synopsis », clés de la fiche).
+    ...(card.ia && card.ia.length > 0 ? [`ia: ${JSON.stringify(card.ia)}`] : []),
     // Ce qu'une version plus récente a écrit et que celle-ci ignore : réécrit tel quel.
     ...Object.entries(card.keep?.front ?? {}).map(([key, value]) => `${key}: ${value}`),
     "---",
@@ -188,6 +203,8 @@ export function fileToCard(text: string): CardData | null {
   const trashed = readTrashInfo(parseJson(fields.corbeille));
   if (trashed) card.trashed = trashed;
   if (fields.inbox === "true") card.inbox = true;
+  const ia = readIaFields(parseJson(fields.ia));
+  if (ia) card.ia = ia;
   const keep = keepUnknown(fields, rawFiche, fiche);
   if (fields.type && fields.type !== type && KEY_RE.test(fields.type)) keep.type = fields.type;
   if (Object.keys(keep).length > 0) card.keep = keep;
@@ -195,7 +212,7 @@ export function fileToCard(text: string): CardData | null {
 }
 
 /** Lignes du frontmatter que cette version écrit elle-même. */
-const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille", "inbox"]);
+const KNOWN_FRONT = new Set(["id", "type", "title", "image", "fichier", "page", "fiche", "images", "questions", "reponses", "corbeille", "inbox", "ia"]);
 const KEY_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 
 /**

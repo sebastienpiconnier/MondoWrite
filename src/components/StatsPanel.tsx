@@ -13,6 +13,7 @@ import { PlaceStats } from "./PlaceStats";
 import { useProjectStats } from "./useProjectStats";
 import { castForMatrix, neverMeet, shared, topDuo, type Cast, type Presence } from "../review/crossings";
 import type { SettingSummary } from "../review/places";
+import { iaPercent, iaShareOfManuscript, iaShareOfScreenplay } from "../atelier";
 
 type Tab = "characters" | "places" | "crossings" | "setting";
 
@@ -63,7 +64,27 @@ export function StatsPanel() {
       {tab === "places" && <PlaceStats rows={places} kind={script ? "script" : "text"} onOpen={openCard} />}
       {tab === "crossings" && <Crossings cast={cast} script={script} onOpen={openCard} />}
       {tab === "setting" && summary && <Setting summary={summary} />}
+      <IaShare script={script} />
     </div>
+  );
+}
+
+/**
+ * Mode Atelier : la part du texte touchée par l'IA (passages proposés et pas encore repris), en mots. Montrée
+ * dès que le projet est en Atelier ou qu'il reste un passage marqué (Atelier arrêté depuis).
+ */
+function IaShare({ script }: { script: boolean }) {
+  const { t } = useVocab();
+  const mode = useCosmos((s) => s.aiMode);
+  const manuscript = useCosmos((s) => s.manuscript);
+  const screenplay = useCosmos((s) => s.screenplay);
+  const share = useMemo(() => (script ? iaShareOfScreenplay(screenplay) : iaShareOfManuscript(manuscript)), [script, screenplay, manuscript]);
+  if (mode !== "atelier" && share.ia === 0) return null;
+  return (
+    <section className="stats-ia" aria-label={t.atelier.marked}>
+      <p>{share.ia > 0 ? fmt(t.atelier.stats, { n: share.ia, p: iaPercent(share) }) : t.atelier.statsNone}</p>
+      <p className="settings-hint">{t.atelier.statsHint}</p>
+    </section>
   );
 }
 

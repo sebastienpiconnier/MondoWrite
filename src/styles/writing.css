@@ -874,3 +874,57 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .tpl-count, .tpl-empty { color: var(--muted); }
 .tpl-actions { justify-content: flex-end; }
 @media (max-width: 600px) { .tpl-row { grid-template-columns: 1.6em minmax(0, 1fr) auto; } .tpl-row .tpl-hint { grid-column: 2 / -1; } }
+
+/* ---------- Mode Atelier (1.8.0) : ce que l'IA a proposé et que l'auteur a accepté ---------- */
+/* Soulignement pointillé discret (`--ia-mark`, défini dans les deux thèmes) : texte riche, champs, éléments du scénario. */
+.ia-mark,
+.card-title.is-ia,
+.synopsis-show.is-ia,
+.sheet-field.is-ia :is(input, textarea),
+.pitch-field.is-ia textarea,
+.atelier-proposed,
+.sp-el[data-ia],
+.sp-preserved[data-ia] {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--ia-mark);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.22em;
+}
+.atelier-badge { flex: none; min-height: 32px; padding: 0 10px; border: 1px solid var(--ia-mark); border-radius: 999px; background: transparent; color: var(--ia-mark); font: inherit; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; white-space: nowrap; cursor: pointer; }
+@media (any-hover: hover) { .atelier-badge:hover { background: var(--ground); } }
+.atelier-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ia-field-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 4px 0 0; font-size: 0.75rem; color: var(--ia-mark); }
+.ia-field-note .ghost-button { min-height: 32px; font-size: 0.75rem; }
+.ia-field-note.is-on-cover { color: var(--cover-muted); }
+.ia-field-note.is-on-cover .ghost-button { background: transparent; color: var(--cover-ink); border-color: var(--cover-line); }
+@media (any-hover: hover) { .ia-field-note.is-on-cover .ghost-button:hover { background: var(--cover-chip); } }
+.atelier-inline { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 6px 0; max-width: 100%; }
+.atelier-spark { color: var(--ia-mark); margin-right: 4px; }
+.format-bar .atelier-spark { margin: 0; font-size: 1rem; }
+.atelier-working { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8125rem; color: var(--ink-2); }
+.atelier-panel { width: 100%; }
+.atelier-proposed { margin: 0; white-space: pre-wrap; }
+.atelier-choices { display: flex; flex-direction: column; gap: 6px; width: 100%; margin: 0; padding: 0; list-style: none; }
+.atelier-choices > li { display: flex; flex-direction: column; gap: 6px; }
+.atelier-choice { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-family: var(--font-ui); font-weight: 400; font-size: 0.875rem; line-height: 1.4; text-align: start; cursor: pointer; }
+@media (any-hover: hover) { .atelier-choice:hover { border-color: var(--ia-mark); } }
+.atelier-variants { display: flex; flex-direction: column; gap: 8px; width: min(420px, 80vw); padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop); }
+.format-bar .atelier-variants { margin-top: 6px; }
+.format-bar .atelier-variants button { height: auto; min-height: 44px; font: 400 0.875rem var(--font-ui); }
+.format-bar .atelier-variants .atelier-choice { border: 1px solid var(--line-2); }
+.format-bar .format-ia-variants, .format-bar .format-ia-rework { padding: 0 8px; }
+/* Dans les barres du Manuscrit et du Scénario : le bouton reste dans la ligne, le panneau s'ouvre dessous. */
+.ms-meta .atelier-inline, .sp-bar .atelier-inline, .atelier-sp { position: relative; display: inline-flex; flex-direction: row; margin: 0; }
+.ms-meta .atelier-inline > :not(.atelier-button), .sp-bar .atelier-inline > :not(.atelier-button), .atelier-pop {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: min(440px, 90vw); padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop);
+}
+.stats-ia { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
+.stats-ia > p { margin: 0 0 4px; }
+.todo-group li:has(.todo-rework) { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.todo-rework { min-height: 32px; font-size: 0.75rem; }
+@media (pointer: coarse) {
+  .atelier-badge, .ia-field-note .ghost-button, .todo-rework { min-height: 44px; }
+}
+.sp-bar .atelier-panel .assistant-actions button, .sp-bar .atelier-pop .assistant-actions button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.sp-bar .atelier-panel .atelier-choice, .sp-bar .atelier-pop .atelier-choice { border: 1px solid var(--line-2); }

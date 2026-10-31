@@ -526,7 +526,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       <textarea
         ref={titleRef}
         rows={1}
-        className={`card-title nodrag${slugline ? " is-slugline" : ""}`}
+        className={`card-title nodrag${slugline ? " is-slugline" : ""}${data.ia?.includes("title") ? " is-ia" : ""}`}
         value={data.title}
         placeholder={data.type === "lien" && !data.fiche?.url ? t.card.linkAddress : types[data.type].titlePlaceholder}
         aria-label={t.card.titleAria}
@@ -586,7 +586,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           )}
           {/* La barre de mise en forme ne s'installe qu'à la première écriture dans la carte : posée sur chacune
               à l'ouverture, elle redessinait tous les éditeurs du canevas (une extension par carte). */}
-          {editor && wrote && <FormatBar editor={editor} />}
+          {editor && wrote && <FormatBar editor={editor} atelier={data.title} />}
         </div>
       )}
       {!novelScene && tall && !writing && (

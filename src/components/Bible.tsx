@@ -31,6 +31,7 @@ import { Gallery } from "./Gallery";
 import { SourceTools } from "./SourceTools";
 import { BibleBody } from "./BibleBody";
 import { CharacterMotor } from "./CharacterMotor";
+import { SheetDraft } from "./Atelier";
 import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
@@ -419,6 +420,8 @@ export function Bible() {
               {type === "scene" && !card.page && <SceneStatusPicker card={card} />}
               {type === "personnage" && (
                 <>
+                  {/* Mode Atelier : propositions pour la fiche d'un personnage presque vide. */}
+                  <SheetDraft card={card} />
                   <CardSheet card={card} startOpen={false} />
                   <CharacterAnswers card={card} />
                   <Gallery card={card} />

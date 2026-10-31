@@ -465,6 +465,50 @@ const scenarios = [
       for (const n of [2, 3, 4, 1]) await h.view(n);
     },
   },
+  {
+    name: "atelier : réglage du projet, trois variantes, passage marqué et journalisé",
+    async run(h) {
+      const { page } = h;
+      // Une IA « branchée » (Claude) dont la réponse est fabriquée ici : rien ne sort vers Internet.
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
+      });
+      await page.route("https://api.anthropic.com/**", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        const text = JSON.stringify({ variants: ["La mer rugissait", "La mer tonnait", "Elle grondait"] });
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text }] }) });
+      });
+      await h.create("Atelier");
+      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await page.getByLabel("Activer le mode Atelier pour ce projet").check();
+      await page.keyboard.press("Escape");
+      await until(() => page.locator(".atelier-badge").isVisible(), "le repère « Atelier » n'apparaît pas dans la barre du haut");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("La tempête");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      await page.locator(".ms-page .ProseMirror").click();
+      await page.keyboard.type("La mer grondait sous le phare.");
+      // Sélectionne « La mer grondait » : la barre de mise en forme propose « Trois variantes ».
+      await page.evaluate(() => {
+        const text = document.querySelector(".ms-page .ProseMirror p").firstChild;
+        const range = document.createRange();
+        range.setStart(text, 0);
+        range.setEnd(text, "La mer grondait".length);
+        getSelection().removeAllRanges();
+        getSelection().addRange(range);
+      });
+      await page.locator(".format-bar").getByRole("button", { name: "Trois variantes" }).click();
+      await page.getByRole("button", { name: "Prendre la variante 2" }).click();
+      await until(() => page.locator(".ms-page .ia-mark").count(), "la variante prise n'est pas marquée");
+      await h.saved((f) => {
+        const meta = JSON.parse(f["cosmos.json"] ?? "{}");
+        const scene = Object.entries(f).find(([k]) => k.startsWith("manuscrit/"))?.[1] ?? "";
+        return meta.aiMode === "atelier" && /<span data-ia="[\w-]+">La mer tonnait<\/span> sous le phare\./.test(scene) && /· Variante · «\s?La tempête\s?» · anthropic, claude-test · 3 mots/.test(f["ia-journal.md"] ?? "");
+      }, "réglage, passage marqué ou ligne du journal non enregistrés");
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------

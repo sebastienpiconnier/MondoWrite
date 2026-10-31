@@ -77,7 +77,7 @@ export function BibleBody({ card }: { card: CardData }) {
         <StaticBody html={card.html} className="bible-editor" label={attributes(card.title)["aria-label"]} placeholder={getT().bible.toDig} link={false} onActivate={goLive} />
       )}
       {mentions.menu}
-      {editor && <FormatBar editor={editor} />}
+      {editor && <FormatBar editor={editor} atelier={card.title} />}
     </div>
   );
 }

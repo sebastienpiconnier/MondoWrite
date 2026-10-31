@@ -135,3 +135,75 @@ You are a continuity reader for a writer's story bible. Find statements in the n
 ```
 
 **Ce que MondoWrite garde** : au plus douze questions, chacune avec au moins une carte connue (par son identifiant ou, si le modèle l'a donnée ainsi, par son titre ; à défaut, les cartes que la question nomme). L'auteur peut en faire une carte Question reliée aux cartes concernées.
+
+## Mode Atelier (1.8.0)
+
+L'exception choisie par projet : Réglages › Ce projet › « Activer le mode Atelier pour ce projet » (seulement quand un service d'IA est branché ; `aiMode: "atelier"` dans cosmos.json, absent sinon). Le principe reste le même ailleurs : l'IA questionne, elle n'écrit pas. Dans l'Atelier, elle peut proposer du texte, mais rien n'entre sans un clic de l'auteur, et ce qu'il accepte reste marqué (soulignement pointillé ; `<span data-ia>` dans le Markdown, note `[[ia]]` dans le Fountain, liste `ia` d'une carte ou de la couverture) et noté dans `ia-journal.md` (date et heure, action, carte ou scène par son titre, service et modèle, mots insérés), jusqu'à « Je l'ai repris ». Consignes et lecteurs : `src/ai/atelier.ts`. Chaque réponse est relue en texte brut (balises, Markdown, puces et guillemets autour retirés, longueur bornée), jamais insérée comme HTML. Toutes les consignes finissent par la même règle :
+
+```
+Write in {langue}. Plain text only: no Markdown, no HTML, no quotation marks around your answer, no commentary. Never mention a card id.
+```
+
+### A1. Trois variantes
+
+Barre de mise en forme (cartes, Bible, manuscrit) sur une sélection de 600 caractères au plus ; barre du scénario sur l'action, la réplique ou la didascalie où est le curseur.
+
+```
+You help a writer who asked, for this project, for alternative wordings of {a sentence or short passage from a novel | a line of dialogue from a screenplay | a line of action (scene description) from a screenplay} they wrote. Give exactly three rewordings of the passage. Keep its meaning, its point of view, its tense, its person and the voice of the text; do not add events, names or information, and do not explain. Each rewording is about as long as the passage. {règle commune} Answer with a JSON object only: {"variants": ["<rewording 1>", "<rewording 2>", "<rewording 3>"]}.
+```
+
+**Données** : `{"passage": "…", "speaker": "INÈS", "textBefore": "…", "textAfter": "…"}` (le personnage d'une réplique ; 600 caractères avant, 400 après, dans le même paragraphe).
+
+**Ce que MondoWrite garde** (`parseVariants`) : trois textes au plus, distincts entre eux et du passage, au plus trois fois sa longueur. La variante prise remplace la sélection en une transaction de l'éditeur (une étape d'annulation), marquée, ligne au journal.
+
+### A2. Synopsis d'une scène
+
+À côté d'un synopsis vide (volet des scènes du Scénario, séquencier, Plan, volet du Manuscrit, carte agrandie d'une scène de scénario), quand la scène a au moins huit mots de texte.
+
+```
+You help a writer keep track of their {novel | screenplay}. Summarise the scene below in one or two sentences, present tense, at most 40 words: what happens and what changes. Use only what the text says; do not interpret, judge or add anything. {règle commune}
+```
+
+**Données** : `{"scene": "<titre>", "text": "<texte de la scène, 12 000 caractères au plus>"}`.
+
+**Ce que MondoWrite garde** (`parseSynopsis`) : le premier paragraphe, sans « Synopsis : » devant, 400 caractères au plus. Gardé : roman, `fiche.synopsis` et `ia: ["synopsis"]` dans la carte ; scénario, ligne `= … [[ia]]`. Retouché par l'auteur, la marque part.
+
+### A3. Trois directions
+
+Barre de la page du Manuscrit et barre du Scénario (scène où est le curseur).
+
+```
+You help a writer who is stuck at the end of a scene of their {novel | screenplay}. Suggest exactly three different directions for what could happen next, each in one short line (at most 25 words): a lead, not prose for the book. Make them genuinely different (for example: an escalation, a reversal, a quiet turn). Use the characters and places the writer already has when they fit; do not invent backstory. {règle commune} Answer with a JSON object only: {"directions": ["<line 1>", "<line 2>", "<line 3>"]}.
+```
+
+**Données** : titre, synopsis, les 3 000 derniers caractères de la scène, et au plus 40 cartes Personnage, Lieu, Intrigue, Objet, Secret (type et titre seulement).
+
+**Ce que MondoWrite garde** (`parseDirections`) : trois lignes de 200 caractères au plus. « En faire une carte » : une carte Idée à ce titre (`ia: ["title"]`), reliée à la scène par un fil « piste ». Rien n'est écrit dans le manuscrit.
+
+### A4. Brouillon de la couverture
+
+Couverture du projet (Bible), sous « Questionner » : « Proposer un brouillon » pour l'accroche, la logline, le résumé, les comparables et la note d'intention restés vides.
+
+```
+You help a writer draft the cover page of their {novel | screenplay} project, which they will rework. Draft only the fields asked for, from what the cards and the fields already filled say. Do not invent characters, events or an ending the cards do not give. Leave out a field you cannot draft honestly. {règle commune} Answer with a JSON object only, with these keys: {"logline": "one sentence: who wants what, against what obstacle, with what at stake", …}.
+```
+
+Repères donnés par champ : tagline « a one-line hook for the cover, at most 15 words » ; logline ci-dessus ; résumé « a summary of the story in one or two short paragraphs, in the present tense, ending included if the cards say it » ; comparables « two or three comparable published works or films, as "Title (Author or director)", separated by commas » ; note d'intention « a short statement of intent, in the first person, about why this story and what it is about, using only what the cards say ».
+
+**Données** : titre du projet, champs déjà remplis, au plus 80 cartes (type, titre, 300 caractères de texte).
+
+**Ce que MondoWrite garde** (`parsePitchDraft`) : seulement les champs demandés, bornés (160, 400, 2 500, 400, 2 500 caractères), paragraphes gardés pour le résumé et la note. Chaque champ s'accepte à part (Ajouter, ou Remplacer avec la valeur actuelle sous les yeux, ou Ignorer). Accepté : `pitch.ia` (« logline,resume »), retiré quand l'auteur retouche le champ ou dit « Je l'ai repris ».
+
+### A5. Fiche d'un personnage secondaire
+
+Bible, fiche d'un personnage presque vide (au plus deux champs remplis, 120 mots de notes au plus) qui a des notes ou des fils : « Proposer une fiche ».
+
+```
+You help a writer flesh out a minor character of their story, from the few notes they wrote and the character's links to other cards. Suggest a short value for some of the sheet fields below (a few words, at most two sentences each), consistent with the notes and links. Never invent or guess ethnicity, origin, religion, health, disability or sexual orientation, and do not change what the notes already say. Leave out a field you have no basis for. {règle commune} Answer with a JSON object only: {"fields": {<key>: "<value>"}}, keys among: {"metier": "Métier", …}.
+```
+
+Champs permis (`SHEET_DRAFT_FIELDS`), parmi les vides : accroche, rôle, âge, métier, surnoms, apparence, personnalité, voix, objectif, peur, secret, relations. Jamais le genre ni l'origine, ni les champs à choix (arc, principal, certitude).
+
+**Données** : nom, notes (1 500 caractères), fiche, au plus 30 fils (étiquette, titre et type de la carte au bout).
+
+**Ce que MondoWrite garde** (`parseSheetDraft`) : seulement les champs permis et demandés, 400 caractères au plus (60 pour l'âge). Acceptés un à un comme la description d'une photo ; marqués par `ia` dans la carte, retirés au premier changement de l'auteur.

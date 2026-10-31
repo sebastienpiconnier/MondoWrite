@@ -42,6 +42,10 @@ const PAIRS: [string, string][] = [
   ["page-ink", "page"],
   ["page-ink-dim", "page"],
   ["danger", "surface"],
+  // Mode Atelier : le repère « Atelier » et le soulignement des passages de l'IA (sur la page du manuscrit aussi).
+  ["ia-mark", "surface"],
+  ["ia-mark", "page"],
+  ["ia-mark", "ground"],
   ...["idee", "personnage", "lieu", "scene", "theme", "intrigue", "lien", "image", "document", "question", "episode", "groupe", "objet", "evenement", "regle", "secret"].map((t): [string, string] => [`type-${t}`, "surface"]),
   ...["draft", "revise", "done"].map((s): [string, string] => [`status-${s}`, "surface"]),
 ];

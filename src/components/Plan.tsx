@@ -8,6 +8,7 @@
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { TrashIcon } from "./TrashIcon";
 import { SynopsisField } from "./SynopsisField";
+import { novelSceneText } from "./Atelier";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, planScenes } from "../store";
 import { useSettings, type SequencerMode } from "../settings";
@@ -195,7 +196,13 @@ export function Plan() {
           {/* Ce qui se passe dans la scène, en une phrase (champ `synopsis` de sa fiche). Faute de synopsis, ses notes.
               En liste, cette ligne prend toute la largeur de la fiche, sous le titre (le statut reste à sa droite). */}
           <div className="plan-detail">
-            <SynopsisField value={card.fiche?.synopsis ?? ""} scene={title} onSave={(value) => useCosmos.getState().setFiche(id, "synopsis", value)} />
+            <SynopsisField
+              value={card.fiche?.synopsis ?? ""}
+              scene={title}
+              onSave={(value) => useCosmos.getState().setFiche(id, "synopsis", value)}
+              ia={card.ia?.includes("synopsis")}
+              atelier={{ sceneId: id, text: novelSceneText(id) }}
+            />
             {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
             <SceneStatusPicker card={card} />
           </div>
