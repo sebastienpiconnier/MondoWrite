@@ -165,6 +165,7 @@ MondoWrite uses the following libraries, bundled in the app. Each license's full
 | html-to-image | MIT |
 | nanoid | MIT |
 | serde, serde_json, log (crates Rust / Rust crates) | MIT ou / or Apache-2.0 |
+| swift-rs (crate Rust, compilation du pont Swift d'Apple Intelligence, Copyright The swift-rs contributors / build of the Apple Intelligence Swift bridge) | MIT ou / or Apache-2.0 |
 
 ---
 

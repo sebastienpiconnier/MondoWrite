@@ -13,6 +13,7 @@ import type { CardData } from "../types";
 import { useMediaUrl } from "./useMediaUrl";
 import { imageExtension } from "../media";
 import { storage } from "../storage";
+import { allows } from "../ai/limits";
 import { AiError, PROVIDERS, aiErrorText, complete, isLoopback, isReady } from "../ai/providers";
 import { describeCharacterPrompt, describeImagePrompt, describePlacePrompt, parseCharacterPhoto, parseNotes, type PhotoField } from "../ai/tasks";
 import { imageForAi } from "../ai/image";
@@ -63,7 +64,8 @@ export function Gallery({ card }: { card: CardData }) {
   }, [open]);
 
   const character = card.type === "personnage";
-  const canDescribe = isReady(config);
+  // Le modèle doit lire les images : pas celui d'Apple sur l'appareil (ai/limits.ts).
+  const canDescribe = isReady(config) && allows(config.provider, "photo");
   const describe = async (photo: string) => {
     if (!isReady(config) || busy) return;
     const controller = new AbortController();

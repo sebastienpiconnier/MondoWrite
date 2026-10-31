@@ -9,6 +9,7 @@ import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { aiConfig, useSettings } from "../settings";
 import { aiErrorText, complete, isReady } from "../ai/providers";
+import { vracLimit } from "../ai/limits";
 import { keptLinks, parseVrac, VRAC_MAX, vracMaxTokens, vracPrompt, vracTypes, type VracCard, type VracLink } from "../ai/vrac";
 import type { CardNames } from "../ai/tasks";
 import { formOf } from "../pitch";
@@ -54,7 +55,9 @@ export function VracDialog() {
     fieldRef.current?.focus({ preventScroll: true });
   }, []);
 
-  const tooLong = text.length > VRAC_MAX;
+  // Texte le plus long : VRAC_MAX, moins pour un petit modèle (Apple sur l'appareil, ai/limits.ts).
+  const vracMax = config ? vracLimit(config.provider, VRAC_MAX) : VRAC_MAX;
+  const tooLong = text.length > vracMax;
   const inbox = phone || !!draft?.inbox;
 
   const run = async () => {
@@ -132,7 +135,7 @@ export function VracDialog() {
             }}
           />
           <p id={`${id}-count`} className={`vrac-count${tooLong ? " is-over" : ""}`}>
-            {tooLong ? fmt(t.tooLong, { max: VRAC_MAX.toLocaleString(lang) }) : fmt(t.count, { n: text.length.toLocaleString(lang), max: VRAC_MAX.toLocaleString(lang) })}
+            {tooLong ? fmt(t.tooLong, { max: vracMax.toLocaleString(lang) }) : fmt(t.count, { n: text.length.toLocaleString(lang), max: vracMax.toLocaleString(lang) })}
           </p>
         </>
       )}

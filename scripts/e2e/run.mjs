@@ -612,6 +612,33 @@ const scenarios = [
     },
   },
   {
+    name: "Apple Intelligence (1.10.0) : absent des Réglages du navigateur ; choisi quand même, les actions longues sont refusées",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      const service = page.getByLabel("Service", { exact: true });
+      await until(() => service.isVisible(), "le choix du service n'apparaît pas");
+      const options = await service.locator("option").allTextContents();
+      assert(options.length >= 6 && !options.some((o) => /Apple/.test(o)), `Apple Intelligence est proposé dans le navigateur : ${options.join(", ")}`);
+      await page.keyboard.press("Escape");
+      // Réglage venu d'un Mac (copie du profil) : le service reste nommé, et ce qui lit tout le récit est refusé.
+      await page.evaluate(() => {
+        const raw = JSON.parse(localStorage.getItem("cosmos:reglages") ?? "{}");
+        localStorage.setItem("cosmos:reglages", JSON.stringify({ ...raw, ai: { provider: "apple", keys: {}, models: {}, urls: {} } }));
+      });
+      await page.reload();
+      await h.create("Petit modèle");
+      await page.getByRole("button", { name: "IA", exact: true }).click();
+      const coherence = page.getByRole("button", { name: "Vérifier la cohérence" });
+      await until(() => coherence.isVisible(), "le menu IA ne s'ouvre pas");
+      assert(await coherence.isDisabled(), "« Vérifier la cohérence » reste proposé au modèle d'Apple");
+      assert(await page.getByRole("button", { name: "Lecteur bêta" }).isDisabled(), "le lecteur bêta reste proposé au modèle d'Apple");
+      assert(await page.getByRole("button", { name: "Ranger les idées" }).isEnabled(), "« Ranger les idées » n'est plus proposé");
+      await until(() => page.getByText("Trop long pour le modèle d’Apple sur l’appareil", { exact: false }).first().isVisible(), "la raison du refus n'est pas dite");
+    },
+  },
+  {
     name: "atelier : réglage du projet, trois variantes, passage marqué et journalisé",
     async run(h) {
       const { page } = h;

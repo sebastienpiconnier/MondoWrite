@@ -399,3 +399,27 @@ You help a screenwriter break down a screenplay for production. For each scene, 
 **Données** (`breakdownScenes`, `breakdownBatches`) : les scènes reliées à une carte, en-tête et lignes d'action seulement (jamais les répliques), en lots de 8 000 caractères et douze scènes au plus (« Lecture des scènes : lot 2 sur 4… », Annuler).
 
 **Ce que MondoWrite garde** (`parseBreakdown`) : une scène du lot, une des cinq catégories, une entrée d'une ligne (80 caractères) qui n'est pas déjà dans la fiche de la scène ni proposée deux fois (casse et accents ignorés), la citation retrouvée dans les lignes d'action de cette scène. Propositions cochées d'office ; « Ajouter les éléments cochés » les met dans les champs `accessoires`, `costumes`, `figurants`, `vehicules`, `effets` de la fiche (une entrée par ligne, `addBreakdown`, une étape d'historique).
+
+## 12. Apple Intelligence sur l'appareil (1.10.0)
+
+Sixième service, « Apple Intelligence (sur l’appareil) » : le modèle d'Apple Foundation Models (iOS 26, iPadOS 26, macOS 26 et après, appareil Apple Silicon avec Apple Intelligence activée). Gratuit, sans clé, sans adresse, hors ligne.
+
+**Ce qui part où : rien ne quitte l'appareil.** La consigne et le message sont exactement ceux des autres services (mêmes textes, mêmes données), mais ils vont du WebView de l'app au pont Swift (`src-tauri/apple/MondoWriteFM`, commandes Tauri `fm_availability`, `fm_complete`, `fm_cancel`), qui les donne au modèle du système. Aucune requête réseau, aucun journal côté Apple pour MondoWrite. Une session neuve par demande (`LanguageModelSession(instructions: consigne)`, `respond(to: message)`, température 0,3), sans historique.
+
+**Où on le voit** (`src/ai/apple.ts`) : dans les Réglages, seulement si le pont répond (app Mac ou iPhone/iPad construite avec Xcode 26, puce Apple). Prêt : proposé. Apple Intelligence désactivée, modèle en cours de téléchargement ou autre raison passagère : grisé, avec la raison et « Vérifier de nouveau ». Appareil non pris en charge, système avant 26, navigateur, Windows, Linux, Android, Mac Intel : absent.
+
+**Un petit modèle** (environ 3 milliards de paramètres, fenêtre de 4 096 jetons, consigne, texte et réponse compris). Limites dans `PROVIDER_LIMITS` (`src/ai/limits.ts`, testées) :
+
+| Action | Avec le modèle d'Apple |
+|---|---|
+| Ranger les idées, Ranger les fils | les premières cartes qui tiennent dans 6 000 caractères ; les autres comptées dans « non regardées » (Ranger) |
+| Question sur mesure, Interroger, synthèse, une question pour une case vide, Carnet, mode Atelier | gardées, réponse bornée à 1 024 jetons |
+| Du vrac aux cartes | 1 500 caractères au plus |
+| Chronologie, dépouillement (une scène ou tout le scénario) | paquets de 6 000 caractères au lieu de 30 000 et 8 000 : plus d'envois, chacun dans la fenêtre |
+| Vérifier la cohérence, cohérence scène par scène, voix des personnages, lecteur bêta, rétro-bible | refusées : bouton grisé, « Trop long pour le modèle d’Apple sur l’appareil : choisis un autre service dans les Réglages pour cette action. » |
+| Décrire une photo | absente (le modèle ne lit pas les images) |
+| Recherche par le sens | absente (pas de vecteurs de ce modèle, `canEmbed`) |
+
+Avant chaque envoi, `fitReply` estime les jetons (3 caractères par jeton, prudent pour le français et le JSON) : si la consigne et le texte ne laissent pas 200 jetons de réponse, l'envoi est refusé avec une phrase claire, sans appeler le modèle ; sinon la réponse demandée est bornée à la place qui reste.
+
+**Ce que MondoWrite garde** : la réponse passe par les mêmes lecteurs que pour les autres services (`parse…`, identifiants de cartes connus, citations retrouvées dans le texte) ; rien de plus n'est cru. Erreurs du modèle traduites pour l'auteur : garde-fous d'Apple (« ses garde-fous le jugent sensible » : une scène dure peut suffire, choisir un autre service), langue non prise en charge, contexte dépassé, modèle indisponible, occupé. Annuler arrête la tâche Swift (`Task.cancel`).

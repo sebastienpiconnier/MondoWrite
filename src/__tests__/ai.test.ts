@@ -17,10 +17,11 @@ const card = (id: string, type: CardData["type"], title: string, html = ""): Car
 const config = (provider: AiConfig["provider"], extra: Partial<AiConfig> = {}): AiConfig => ({ provider, key: "sk-test", model: "modele", url: "", ...extra });
 
 describe("services", () => {
-  it("cinq services, tous nommés ; les deux locaux n'ont pas besoin de clé", () => {
-    expect(AI_PROVIDERS).toEqual(["anthropic", "openai", "openrouter", "ollama", "lmstudio"]);
+  it("six services, tous nommés ; les locaux (et le modèle d'Apple, 1.10.0) n'ont pas besoin de clé", () => {
+    expect(AI_PROVIDERS).toEqual(["anthropic", "openai", "openrouter", "ollama", "lmstudio", "apple"]);
     for (const p of AI_PROVIDERS) expect(fr.ai.providers[p] && en.ai.providers[p]).toBeTruthy();
-    expect(AI_PROVIDERS.filter((p) => PROVIDERS[p].local)).toEqual(["ollama", "lmstudio"]);
+    expect(AI_PROVIDERS.filter((p) => PROVIDERS[p].local)).toEqual(["ollama", "lmstudio", "apple"]);
+    expect(AI_PROVIDERS.filter((p) => PROVIDERS[p].device)).toEqual(["apple"]);
     expect(isReady(config("ollama", { key: "" }))).toBe(true);
     expect(isReady(config("openai", { key: " " }))).toBe(false);
     expect(isReady(config("anthropic", { model: "" }))).toBe(false);

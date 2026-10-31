@@ -49,6 +49,15 @@ Le serveur Vite doit rester actif (terminal ouvert) et l'iPad être sur le même
   (autoriser Node), ou adresse du Mac changée (relancer `npm run tauri ios dev`).
 - **Icône Tauri au lieu de MondoWrite** : `src-tauri/gen/` n'est pas versionné, relancer `npm run ios:prepare`.
 
+## Apple Intelligence sur l'appareil (1.10.0)
+
+Le service « Apple Intelligence (sur l’appareil) » passe par un petit paquet Swift (`src-tauri/apple/MondoWriteFM`)
+que `build.rs` compile avec swift-rs pendant `tauri ios dev` ou `build`, si le SDK d'Xcode a le framework
+FoundationModels (Xcode 26). Sur un iPhone ou un iPad compatible Apple Intelligence (iOS 26), activée dans Réglages >
+Apple Intelligence et Siri, le service apparaît dans les Réglages de MondoWrite ; sinon il est grisé avec la raison,
+ou absent. Le framework est lié en faible (tous ses symboles sont plus récents que la cible) : l'app doit aussi se
+lancer sur iOS 18. `MONDOWRITE_NO_FM=1 npm run tauri ios dev` construit sans le pont si jamais il bloque la compilation.
+
 ## Installer sans câble
 
 Une fois l'iPad appairé en USB une première fois : Xcode > Window > Devices and Simulators > sélectionner

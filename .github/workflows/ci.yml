@@ -48,6 +48,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - uses: dtolnay/rust-toolchain@stable
+      # Apple Foundation Models (1.10.0) : le framework n'est que dans le SDK de macOS 26 et d'iOS 26 (Xcode 26).
+      # On choisit le plus récent Xcode 26 stable de l'image ; sans lui, build.rs ne compile pas le pont Swift et
+      # l'app sort sans le service Apple Intelligence (avertissement ci-dessous), le reste n'est pas touché.
+      - name: Xcode 26 (Apple Foundation Models)
+        if: runner.os == 'macOS'
+        run: |
+          xcode=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)
+          if [ -n "$xcode" ]; then sudo xcode-select -s "$xcode/Contents/Developer"; else echo "::warning::Xcode 26 absent de l'image : Apple Intelligence ne sera pas dans cette version."; fi
+          xcodebuild -version
+          ls "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks" | grep -q '^FoundationModels.framework$' && echo "SDK : FoundationModels présent" || echo "::warning::SDK sans FoundationModels"
+
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"

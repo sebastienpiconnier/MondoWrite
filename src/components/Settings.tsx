@@ -17,6 +17,7 @@ import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
 import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, isLoopback, isReady, listModels } from "../ai/providers";
 import { canEmbed, isEmbedModel, proposeEmbedModel } from "../ai/semantic";
+import { appleAvailability, isOffered, type FmAvailability } from "../ai/apple";
 import { ATELIER_SETTING_ID } from "./Atelier";
 import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
@@ -43,6 +44,15 @@ export function Settings({ project = true }: { project?: boolean }) {
     void storage.icloud?.available().then(setIcloudOk);
   }, []);
   const [testing, setTesting] = useState(false);
+  // Apple Foundation Models (1.10.0) : null tant qu'on ne sait pas ; « unsupported » hors d'un appareil Apple qui le connaît.
+  const [apple, setApple] = useState<FmAvailability | null>(null);
+  const [appleChecking, setAppleChecking] = useState(false);
+  const checkApple = () => {
+    setAppleChecking(true);
+    void appleAvailability(true)
+      .then(setApple)
+      .finally(() => setAppleChecking(false));
+  };
   const provider = ai.provider;
   const config = aiConfig(ai);
   const embedModel = (provider && ai.embedModels?.[provider]) || "";
@@ -130,8 +140,12 @@ export function Settings({ project = true }: { project?: boolean }) {
   }, [open]);
 
   // Service local : à l'ouverture des réglages, la liste des modèles installés se charge d'elle-même.
-  const localUrl = provider && PROVIDERS[provider].local ? `${provider}|${config?.url ?? ""}` : "";
+  const localUrl = provider && PROVIDERS[provider].local && !PROVIDERS[provider].device ? `${provider}|${config?.url ?? ""}` : "";
   const listed = useRef("");
+  // Modèle d'Apple : disponibilité redemandée à chaque ouverture (Apple Intelligence activée, modèle téléchargé entre-temps).
+  useEffect(() => {
+    if (open) checkApple();
+  }, [open]);
   useEffect(() => {
     if (!open || !localUrl || !config || listed.current === localUrl) return;
     listed.current = localUrl;
@@ -463,16 +477,46 @@ export function Settings({ project = true }: { project?: boolean }) {
             }}
           >
             <option value="">{t.ai.none}</option>
-            {AI_PROVIDERS.map((p) => (
-              <option key={p} value={p}>
-                {t.ai.providers[p]}
-              </option>
-            ))}
+            {AI_PROVIDERS.filter((p) => p !== "apple" || p === provider || (apple !== null && isOffered(apple))).map((p) =>
+              p === "apple" && apple !== "available" ? (
+                // Proposé grisé (raison sous la liste) ; gardé s'il est déjà choisi, pour pouvoir en changer.
+                <option key={p} value={p} disabled={p !== provider}>
+                  {fmt(t.apple.unavailableOption, { name: t.ai.providers[p] })}
+                </option>
+              ) : (
+                <option key={p} value={p}>
+                  {t.ai.providers[p]}
+                </option>
+              ),
+            )}
           </select>
           <p className="settings-hint" id={ids.aiHint}>
-            {!provider ? t.ai.hintNone : !PROVIDERS[provider].local ? t.ai.hintCloud : isLoopback(config?.url ?? "") ? t.ai.hintLocal : t.ai.hintRemote}
+            {!provider ? t.ai.hintNone : PROVIDERS[provider].device ? t.apple.hint : !PROVIDERS[provider].local ? t.ai.hintCloud : isLoopback(config?.url ?? "") ? t.ai.hintLocal : t.ai.hintRemote}
           </p>
-          {provider && config && (
+          {/* Apple Intelligence proposé grisé : la raison, et de quoi vérifier de nouveau. */}
+          {provider !== "apple" && apple !== null && isOffered(apple) && apple !== "available" && (
+            <>
+              <p className="settings-hint" role="status">
+                {appleChecking ? t.apple.checking : t.apple.availability[apple]}
+              </p>
+              <button type="button" className="ghost-button" disabled={appleChecking} onClick={checkApple}>
+                {t.apple.recheck}
+              </button>
+            </>
+          )}
+          {provider && config && PROVIDERS[provider].device && (
+            <>
+              <p className="settings-hint" role="status">
+                {appleChecking || apple === null ? t.apple.checking : t.apple.availability[apple]}
+              </p>
+              <p className="settings-hint">{t.apple.small}</p>
+              <button type="button" className="ghost-button" disabled={appleChecking} onClick={checkApple}>
+                {t.apple.recheck}
+              </button>
+              <p className="settings-hint">{t.apple.noSemantic}</p>
+            </>
+          )}
+          {provider && config && !PROVIDERS[provider].device && (
             <>
               {PROVIDERS[provider].local ? (
                 <>
