@@ -265,7 +265,7 @@
 </div>
 
 <h3>Write in a card</h3>
-<p>A card’s text is formatted like a light word processor. Select a passage: a small bar offers bold, italic, strikethrough, heading, list, checkbox, quote and <span class="ui">To revisit</span> (a highlight for passages to rework). You can also write Markdown, which turns into formatting as you type: <code>**bold**</code>, <code>*italic*</code>, <code># Heading</code>, <code>- list</code>, <code>[ ]</code> for a checkbox. Pasted Markdown text is formatted the same way.</p>
+<p>A card’s text is formatted like a light word processor. Select a passage: a small bar offers bold, italic, strikethrough, heading, list, checkbox, quote and <span class="ui">To revisit</span> (a highlight for passages to rework). You can also write Markdown, which turns into formatting as you type: <code>**bold**</code>, <code>*italic*</code>, <code># Heading</code>, <code>- list</code>, <code>[ ]</code> for a checkbox. Pasted Markdown text is formatted the same way. In a scene’s text (the Manuscript, the enlarged Scene card), a dash at the start of a line stays a dialogue dash: start a list there with <code>* </code>.</p>
 <p>A card whose text is taller than a certain height folds, with <span class="ui">More details</span> to unfold it; it stays open while you write.</p>
 
 <h3>Mention another card: @</h3>
@@ -647,9 +647,9 @@
 <p>In <span class="ui">Settings</span> › <span class="ui">AI (optional)</span>, choose a <span class="ui">Service</span>:</p>
 <ul>
   <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: online services. Paste your <span class="ui">API key</span>; it stays on your device, never in the project. Your cards are only sent to the service when you run an AI action.</li>
-  <li><strong>Ollama, LM Studio</strong>: models running on your computer. Your texts never leave it. Give the server address (the default one usually works).</li>
+  <li><strong>Ollama, LM Studio</strong>: models running on your computer. As long as the server address is this computer’s, your texts never leave it; any other address is flagged in Settings. Give the server address (the default one usually works; an address ending in <code>/v1</code> works too).</li>
 </ul>
-<p><span class="ui">Test and list models</span> checks the connection and offers the list of available models. The <span class="ui">AI</span> button then appears in the top bar.</p>
+<p><span class="ui">Test and list models</span> checks the connection and offers the list of available models. The <span class="ui">AI</span> button then appears in the top bar. If the list could not be loaded, a message says so: press the button again to retry.</p>
 <div class="pair">
   <figure><img src="images/en/reglages-ia.jpg"><figcaption>Plugging in Ollama in Settings.</figcaption></figure>
   <figure><img src="images/en/ia-menu.jpg"><figcaption>The AI menu.</figcaption></figure>
@@ -657,13 +657,13 @@
 
 <h3>What the AI can do</h3>
 <ul>
-  <li><span class="ui">Tidy up ideas</span>: suggests a type for each of your loose ideas (“this one is a character”, “this one a place”), with its reason. Apply or ignore each suggestion, or <span class="ui">Apply all</span>; everything can be undone on the canvas.</li>
+  <li><span class="ui">Tidy up ideas</span>: suggests a type for each of your loose ideas (“this one is a character”, “this one a place”), with its reason. Apply or ignore each suggestion, or <span class="ui">Apply all</span>; everything can be undone on the canvas. Beyond 80 ideas, the AI looks at the first 80 and says so: run it again once those are sorted.</li>
   <li><span class="ui">Check consistency</span>: points out possible contradictions between your cards, as questions. A question can become a Question card.</li>
   <li><strong>Tailored questions</strong>: in a character’s assistant, <span class="ui">Tailored</span> asks for a question written from their entry. You answer.</li>
   <li><strong>Summary</strong>: <span class="ui">AI summary</span> puts in order what you wrote about a character (sheet, notes, answers), inventing nothing; it only goes into the entry when you click.</li>
   <li><strong>Describe a photo</strong>: enlarge a photo in the gallery, then <span class="ui">Describe with AI</span>. For a place, the AI notes what the photo shows; for a character, it suggests the apparent age and appearance, which you accept field by field. It never tries to identify a person. The model must be able to read images.</li>
 </ul>
-<p>The AI always names cards by their title. When something goes wrong, a message says what: service unreachable, key rejected, unknown model, limit reached.</p>
+<p>While it works, a <span class="ui">Cancel</span> button stops it (AI menu, gallery, character assistant). The AI always names cards by their title. When something goes wrong, a message says what: service unreachable, key rejected, unknown model, limit reached, answer taking too long.</p>
 
 <!-- ===================================================================================== -->
 <h2 id="export"><span class="num">Chapter 11</span>Export and publish</h2>

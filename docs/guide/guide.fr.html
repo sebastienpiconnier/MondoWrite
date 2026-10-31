@@ -265,7 +265,7 @@
 </div>
 
 <h3>Écrire dans une carte</h3>
-<p>Le texte d’une carte se met en forme comme un traitement de texte léger. Sélectionne un passage : une petite barre propose gras, italique, barré, intertitre, liste, case à cocher, citation et <span class="ui">À reprendre</span> (un surlignage pour les passages à retravailler). Tu peux aussi écrire en Markdown, qui se transforme à la frappe : <code>**gras**</code>, <code>*italique*</code>, <code># Titre</code>, <code>- liste</code>, <code>[ ]</code> pour une case à cocher. Un texte Markdown collé est mis en forme de la même façon.</p>
+<p>Le texte d’une carte se met en forme comme un traitement de texte léger. Sélectionne un passage : une petite barre propose gras, italique, barré, intertitre, liste, case à cocher, citation et <span class="ui">À reprendre</span> (un surlignage pour les passages à retravailler). Tu peux aussi écrire en Markdown, qui se transforme à la frappe : <code>**gras**</code>, <code>*italique*</code>, <code># Titre</code>, <code>- liste</code>, <code>[ ]</code> pour une case à cocher. Un texte Markdown collé est mis en forme de la même façon. Dans le texte d’une scène (le Manuscrit, la carte Scène agrandie), un tiret en début de ligne reste un tiret de dialogue : une liste s’y ouvre avec <code>* </code>.</p>
 <p>Une carte dont le texte dépasse une certaine hauteur se replie, avec <span class="ui">Plus de détails</span> pour la déplier ; elle reste dépliée pendant que tu écris.</p>
 
 <h3>Citer une autre carte : @</h3>
@@ -647,9 +647,9 @@
 <p>Dans <span class="ui">Réglages</span> › <span class="ui">IA (facultative)</span>, choisis un <span class="ui">Service</span> :</p>
 <ul>
   <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong> : des services en ligne. Colle ta <span class="ui">Clé d’API</span> ; elle reste sur ton appareil, jamais dans le projet. Tes cartes ne partent vers le service que lorsque tu lances une action IA.</li>
-  <li><strong>Ollama, LM Studio</strong> : des modèles qui tournent sur ton ordinateur. Tes textes n’en sortent pas. Indique l’adresse du serveur (celle par défaut convient le plus souvent).</li>
+  <li><strong>Ollama, LM Studio</strong> : des modèles qui tournent sur ton ordinateur. Tant que l’adresse du serveur est celle de cet ordinateur, tes textes n’en sortent pas ; une autre adresse est signalée dans les Réglages. Indique l’adresse du serveur (celle par défaut convient le plus souvent ; une adresse qui finit par <code>/v1</code> marche aussi).</li>
 </ul>
-<p><span class="ui">Tester et lister les modèles</span> vérifie la connexion et propose la liste des modèles disponibles. Le bouton <span class="ui">IA</span> apparaît alors dans la barre du haut.</p>
+<p><span class="ui">Tester et lister les modèles</span> vérifie la connexion et propose la liste des modèles disponibles. Le bouton <span class="ui">IA</span> apparaît alors dans la barre du haut. Si la liste n’a pas pu être chargée, un message le dit : touche de nouveau le bouton pour réessayer.</p>
 <div class="pair">
   <figure><img src="images/fr/reglages-ia.jpg"><figcaption>Brancher Ollama dans les Réglages.</figcaption></figure>
   <figure><img src="images/fr/ia-menu.jpg"><figcaption>Le menu IA.</figcaption></figure>
@@ -657,13 +657,13 @@
 
 <h3>Ce que l’IA peut faire</h3>
 <ul>
-  <li><span class="ui">Ranger les idées</span> : propose un type pour chacune de tes idées en vrac (« ce personnage », « ce lieu »), avec sa raison. Applique ou ignore chaque proposition, ou <span class="ui">Tout appliquer</span> ; tout s’annule sur le canevas.</li>
+  <li><span class="ui">Ranger les idées</span> : propose un type pour chacune de tes idées en vrac (« ce personnage », « ce lieu »), avec sa raison. Applique ou ignore chaque proposition, ou <span class="ui">Tout appliquer</span> ; tout s’annule sur le canevas. Au-delà de 80 idées, l’IA regarde les 80 premières et le dit : relance-la une fois celles-ci rangées.</li>
   <li><span class="ui">Vérifier la cohérence</span> : relève les contradictions possibles entre tes cartes, sous forme de questions. Une question peut devenir une carte Question.</li>
   <li><strong>Questions sur mesure</strong> : dans l’assistant d’un personnage, <span class="ui">Sur mesure</span> demande une question écrite d’après sa fiche. C’est toi qui réponds.</li>
   <li><strong>Synthèse</strong> : <span class="ui">Synthèse par l’IA</span> remet en ordre ce que tu as écrit sur un personnage (fiche, notes, réponses), sans rien inventer ; elle n’entre dans la fiche que sur ton clic.</li>
   <li><strong>Décrire une photo</strong> : agrandis une photo de la galerie, puis <span class="ui">Décrire avec l’IA</span>. Pour un lieu, l’IA relève ce que montre la photo en notes ; pour un personnage, elle propose l’âge apparent et l’apparence, que tu acceptes champ par champ. Elle ne cherche jamais à identifier une personne. Le modèle doit savoir lire les images.</li>
 </ul>
-<p>L’IA nomme toujours les cartes par leur titre. En cas de problème, un message dit ce qui ne va pas : service injoignable, clé refusée, modèle inconnu, limite atteinte.</p>
+<p>Pendant qu’elle travaille, un bouton <span class="ui">Annuler</span> l’arrête (menu IA, galerie, assistant personnage). L’IA nomme toujours les cartes par leur titre. En cas de problème, un message dit ce qui ne va pas : service injoignable, clé refusée, modèle inconnu, limite atteinte, réponse trop longue à venir.</p>
 
 <!-- ===================================================================================== -->
 <h2 id="exporter"><span class="num">Chapitre 11</span>Exporter et publier</h2>
