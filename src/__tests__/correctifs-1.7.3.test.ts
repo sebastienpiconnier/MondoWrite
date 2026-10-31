@@ -116,3 +116,20 @@ describe("M17 : vider l'auteur d'une page de titre ne vide pas le profil", () =>
     expect(withAuthorName(p as never, "Jean Soleil")).toMatchObject({ penName: "Jean Soleil" });
   });
 });
+
+describe("M10 : une réplique collée sur le canevas (citée) n'est pas une liste", () => {
+  it("« > - Tu viens ? » reste une réplique citée", () => {
+    const html = markdownToHtml(markdownSource("> - Tu viens ?"));
+    expect(html).not.toContain("<li>");
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("- Tu viens ?");
+  });
+  it("plusieurs répliques citées, suivies de narration", () => {
+    const html = markdownToHtml(markdownSource("> - Tu viens ?\n> - Oui.\n> Il sortit."));
+    expect(html).not.toContain("<li>");
+    expect(html).toContain("Il sortit.");
+  });
+  it("une vraie liste citée reste une liste", () => {
+    expect(markdownToHtml(markdownSource("> - pain\n> - lait"))).toContain("<li>");
+  });
+});

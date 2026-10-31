@@ -17,8 +17,9 @@ const PATTERNS = [
   /==[^=\n]+==/, // à reprendre
 ];
 
-const ITEM_RE = /^\s*[-*+]\s+(\S.*)$/;
-const BLANK_RE = /^\s*$/;
+// Une ligne de liste, éventuellement dans une citation (« > - Tu viens ? » : un texte collé sur le canevas est cité).
+const ITEM_RE = /^((?:\s*>)*\s*)([-*+])(\s+\S.*)$/;
+const BLANK_RE = /^(?:\s*>)*\s*$/;
 /** Ce qui sonne comme une réplique : question, exclamation, points de suspension, guillemets. */
 const SPOKEN_RE = /[?!…«»“”]|\.\.\.$/;
 
@@ -37,8 +38,8 @@ export function dialogueLines(text: string): Set<number> {
     let end = i;
     while (end < lines.length && ITEM_RE.test(lines[end])) end++;
     const after = lines[end];
-    const prose = after !== undefined && !BLANK_RE.test(after) && !/^\s{2,}\S/.test(after);
-    const items = lines.slice(i, end).map((l) => ITEM_RE.exec(l)![1].trim());
+    const prose = after !== undefined && !BLANK_RE.test(after) && !/^(?:\s*>)*\s{2,}\S/.test(after);
+    const items = lines.slice(i, end).map((l) => ITEM_RE.exec(l)![3].trim());
     // Une case à cocher (« - [ ] ») est toujours une liste.
     const tasks = items.some((item) => /^\[[ xX]\]/.test(item));
     const spoken = items.some((item) => SPOKEN_RE.test(item));
@@ -54,7 +55,12 @@ export function protectDialogue(text: string): string {
   if (dialogue.size === 0) return text;
   return text
     .split("\n")
-    .map((line, i) => (dialogue.has(i) ? `\n${line.replace(/^(\s*)([-*+])/, "$1\\$2")}\n` : line))
+    .map((line, i) => {
+      if (!dialogue.has(i)) return line;
+      // Paragraphe à part (ligne vide autour, citée si la réplique l'est), tiret échappé.
+      const quote = /^(?:\s*>)*/.exec(line)![0];
+      return `${quote}\n${line.replace(ITEM_RE, (_m, lead: string, mark: string, rest: string) => `${lead}\\${mark}${rest}`)}\n${quote}`;
+    })
     .join("\n")
     .replace(/\n{3,}/g, "\n\n");
 }
