@@ -9,11 +9,11 @@ import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, 
 import { appDataDir, documentDir, homeDir, join } from "@tauri-apps/api/path";
 import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
-import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, isConflictCopy, type FileMap } from "./paths";
+import { COPIES_DIR, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isMobileOS } from "../platform";
 import { getT } from "../i18n";
-import { MISSING_FOLDER } from "../saveErrors";
+import { MISSING_FOLDER, classifySaveError } from "../saveErrors";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 import { LOCK_DIR } from "../lock";
 import { downloadProgress, reportLoad } from "../loadProgress";
@@ -38,6 +38,51 @@ const ICLOUD_KEY = "cosmos:icloud";
 const ICLOUD_SEEN_KEY = "cosmos:icloud-vu";
 /** Repères iCloud vus à la dernière lecture du projet (voir `pending`), avec le projet sélectionné à ce moment. */
 let pendingPaths: { key: string | null; paths: string[] } | null = null;
+/**
+ * Écrit un fichier sans jamais le laisser à moitié : d'abord un temporaire à côté (même dossier, donc même volume, et
+ * dans le même droit d'accès), puis renommé sur le nom final. Le renommage passe par `std::fs::rename` (plugin fs) : il
+ * remplace le fichier existant, aussi sous Windows (MoveFileEx avec remplacement). Une coupure pendant l'écriture ne
+ * laisse donc que le temporaire, ignoré à la lecture. Repli si le temporaire ne s'écrit pas (sauf disque plein, où
+ * l'écriture directe tronquerait le vrai fichier) ou ne se renomme pas (fichier tenu par un antivirus, un service de
+ * synchronisation) : écriture directe comme avant. Si le repli échoue aussi, c'est la première erreur du système qui
+ * remonte, pour `classifySaveError`.
+ */
+export async function writeSafely(path: string, write: (target: string) => Promise<void>) {
+  const temp = tempPath(path);
+  try {
+    await write(temp);
+  } catch (err) {
+    await remove(temp).catch(() => {});
+    if (classifySaveError(err) === "full") throw err;
+    await write(path).catch(() => {
+      throw err;
+    });
+    return;
+  }
+  try {
+    await rename(temp, path);
+  } catch (err) {
+    await write(path).catch(() => {
+      throw err;
+    });
+    await remove(temp).catch(() => {});
+  }
+}
+
+const writeText = (path: string, text: string) => writeSafely(path, (target) => writeTextFile(target, text));
+
+/** Temporaires d'écriture laissés par une coupure (voir `writeSafely`) : effacés, jamais relus. */
+async function removeTemps(dir: string, entries: { name: string; isFile: boolean }[]) {
+  for (const entry of entries) {
+    if (!entry.isFile || !isTempFile(entry.name) || entry.name.startsWith(".")) continue;
+    try {
+      await remove(await join(dir, entry.name));
+    } catch {
+      /* il sera effacé à la prochaine lecture */
+    }
+  }
+}
+
 /** « .nom.md.icloud » → « nom.md » (fichier iCloud pas encore téléchargé), sinon null. */
 export const icloudPlaceholder = (name: string): string | null =>
   name.startsWith(".") && name.endsWith(".icloud") && name.length > ".icloud".length + 1 ? name.slice(1, -".icloud".length) : null;
@@ -335,7 +380,9 @@ async function adoptMacIcloud() {
 /** Ce que MondoWrite écrit dans un dossier projet (fichiers et dossiers, copies de conflit et repères iCloud compris). */
 const PROJECT_DIRS = new Set([...TEXT_DIRS, MEDIA_DIR, COPIES_DIR, LOCK_DIR]);
 function isProjectEntry(name: string) {
-  const plain = name.startsWith(".") && name.endsWith(".icloud") ? name.slice(1, -".icloud".length) : name;
+  const shown = name.startsWith(".") && name.endsWith(".icloud") ? name.slice(1, -".icloud".length) : name;
+  // Temporaire d'écriture laissé par une coupure (« cosmos.json.mondowrite-tmp ») : il part avec le projet.
+  const plain = isTempFile(shown) ? shown.slice(0, -TEMP_SUFFIX.length) : shown;
   return PROJECT_DIRS.has(plain) || plain === META_FILE || plain === SCREENPLAY_FILE || (isConflictCopy(plain) && (plain.startsWith("cosmos") || plain.startsWith("scenario")));
 }
 
@@ -408,7 +455,7 @@ export const tauriStorage: Storage = {
         if (!path) throw new Error("Aucun dossier projet choisi");
         const parent = await copyPath(name.split("/").slice(0, -1).join("/"));
         if (parent) await mkdir(parent, { recursive: true });
-        await writeTextFile(path, content);
+        await writeText(path, content);
       }
       for (const name of removed) {
         const path = await copyPath(name);
@@ -727,7 +774,8 @@ export const tauriStorage: Storage = {
     if (!dir) throw new Error("Aucun dossier projet choisi");
     const media = await join(dir, MEDIA_DIR);
     await mkdir(media, { recursive: true });
-    await writeFile(await join(media, name), data);
+    const path = await join(media, name);
+    await writeSafely(path, (target) => writeFile(target, data));
   },
   async mediaUrl(name) {
     const dir = await projectFolder();
@@ -771,6 +819,8 @@ export const tauriStorage: Storage = {
     const metaPath = await join(dir, META_FILE);
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
+    // Temporaires d'écriture du dossier du projet (cosmos.json, scenario.fountain) laissés par une coupure.
+    await removeTemps(dir, await readDir(dir).catch(() => []));
     // Cartes et manuscrit : un fichier Markdown par carte, dans chacun de ces dossiers. On liste d'abord, pour
     // annoncer l'avancement (un fichier iCloud peut mettre du temps à arriver).
     const paths: [string, string][] = [];
@@ -779,7 +829,8 @@ export const tauriStorage: Storage = {
       if (!(await exists(folder))) continue;
       // join passe aussi par le système : les chemins se calculent ensemble.
       const entries = await readDir(folder);
-      const names = entries.filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name)).map((entry) => entry.name);
+      await removeTemps(folder, entries);
+      const names = entries.filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name) && !isTempFile(entry.name)).map((entry) => entry.name);
       // Pas encore téléchargé (ou retiré de l'appareil par iCloud) : présent, mais illisible pour l'instant.
       for (const entry of entries) {
         const real = icloudPlaceholder(entry.name);
@@ -827,7 +878,7 @@ export const tauriStorage: Storage = {
       if (name === TEXT_DIRS[0] || Object.keys(files).some((path) => path.startsWith(`${name}/`))) await mkdir(await join(dir, name), { recursive: true });
     }
     for (const [path, content] of Object.entries(files)) {
-      await writeTextFile(await join(dir, ...path.split("/")), content);
+      await writeText(await join(dir, ...path.split("/")), content);
     }
     for (const path of removed) {
       const full = await join(dir, ...path.split("/"));
@@ -870,7 +921,8 @@ export const tauriStorage: Storage = {
       (event) => {
         // markdown/ (copies réécrites à chaque enregistrement), medias/ et verrous/ (battement) ne sont jamais relus.
         const paths = event.paths ?? [];
-        const relevant = paths.length === 0 || paths.some((p) => !/[\\/](markdown|medias|verrous)([\\/]|$)/.test(p.slice(dir.length)));
+        // Un temporaire d'écriture non plus (son renommage signale aussi le fichier final, qui compte).
+        const relevant = paths.length === 0 || paths.some((p) => !isTempFile(p) && !/[\\/](markdown|medias|verrous)([\\/]|$)/.test(p.slice(dir.length)));
         if (relevant) onChange();
       },
       { recursive: true, delayMs: 600 },

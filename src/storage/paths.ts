@@ -32,9 +32,18 @@ export const isConflictCopy = (path: string) => /\(MondoWrite\)(\.[^./]+)?$/.tes
 export const VERSIONS_DIR = "versions";
 
 /**
+ * Écriture sûre (stockage Tauri) : un fichier est d'abord écrit sous ce nom, à côté de lui (« cartes/a.md.mondowrite-tmp »),
+ * puis renommé sur son nom final. Le suffixe s'ajoute à la fin, jamais un point en tête : le plugin fs refuse tout élément de
+ * chemin qui commence par un point. Un tel fichier n'est jamais relu ; laissé par une coupure, il est effacé à la lecture suivante.
+ */
+export const TEMP_SUFFIX = ".mondowrite-tmp";
+export const tempPath = (path: string) => `${path}${TEMP_SUFFIX}`;
+export const isTempFile = (path: string) => path.endsWith(TEMP_SUFFIX);
+
+/**
  * Chemin qu'un projet peut contenir, relatif à son dossier : cosmos.json, scenario.fountain ou un .md de cartes/,
  * manuscrit/, corbeille/. Tout le reste (« .. », sous-dossiers, autres fichiers) est refusé : un .zip importé
  * ne doit rien écrire hors du projet.
  */
 export const isProjectFilePath = (path: string) =>
-  path === META_FILE || path === SCREENPLAY_FILE || TEXT_DIRS.some((dir) => new RegExp(`^${dir}/[^/\\\\.][^/\\\\]*\\.md$`).test(path) && !path.includes(".."));
+  path === META_FILE || path === SCREENPLAY_FILE || (!isTempFile(path) && TEXT_DIRS.some((dir) => new RegExp(`^${dir}/[^/\\\\.][^/\\\\]*\\.md$`).test(path) && !path.includes("..")));

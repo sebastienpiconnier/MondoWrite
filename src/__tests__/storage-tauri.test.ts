@@ -11,6 +11,7 @@ const fsPlugin = vi.hoisted(() => ({
   readFile: vi.fn(async () => new Uint8Array([1, 2, 3])),
   readTextFile: vi.fn(async () => "{}"),
   remove: vi.fn(async () => {}),
+  rename: vi.fn(async () => {}),
   writeFile: vi.fn(async () => {}),
   writeTextFile: vi.fn(async () => {}),
   watch: vi.fn(async () => () => {}),
@@ -23,7 +24,9 @@ vi.mock("@tauri-apps/api/path", () => ({
   join: async (...parts: string[]) => parts.join("\\"),
 }));
 
-import { tauriStorage } from "../storage/tauri";
+import { tauriStorage, writeSafely } from "../storage/tauri";
+import { isProjectFilePath, tempPath } from "../storage/paths";
+import { classifySaveError } from "../saveErrors";
 
 beforeEach(() => {
   localStorage.clear();
@@ -53,8 +56,12 @@ describe("écrire un projet", () => {
     await tauriStorage.pickFolder();
     await tauriStorage.write({ "cosmos.json": "{}", "cartes/a.md": "texte" }, ["cartes/b.md"]);
     expect(fsPlugin.mkdir).toHaveBeenCalledWith("D:\\Projet\\cartes", { recursive: true });
-    expect(fsPlugin.writeTextFile).toHaveBeenCalledWith("D:\\Projet\\cosmos.json", "{}");
-    expect(fsPlugin.writeTextFile).toHaveBeenCalledWith("D:\\Projet\\cartes\\a.md", "texte");
+    // Écriture sûre : le temporaire d'abord, puis le renommage sur le nom final.
+    expect(fsPlugin.writeTextFile).toHaveBeenCalledWith("D:\\Projet\\cosmos.json.mondowrite-tmp", "{}");
+    expect(fsPlugin.writeTextFile).toHaveBeenCalledWith("D:\\Projet\\cartes\\a.md.mondowrite-tmp", "texte");
+    expect(fsPlugin.rename).toHaveBeenCalledWith("D:\\Projet\\cosmos.json.mondowrite-tmp", "D:\\Projet\\cosmos.json");
+    expect(fsPlugin.rename).toHaveBeenCalledWith("D:\\Projet\\cartes\\a.md.mondowrite-tmp", "D:\\Projet\\cartes\\a.md");
+    expect(fsPlugin.writeTextFile).not.toHaveBeenCalledWith("D:\\Projet\\cartes\\a.md", "texte");
     expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Projet\\cartes\\b.md");
   });
 
@@ -63,7 +70,8 @@ describe("écrire un projet", () => {
     await tauriStorage.pickFolder();
     await tauriStorage.writeMedia("abc.png", new Uint8Array([1, 2, 3]));
     expect(fsPlugin.mkdir).toHaveBeenCalledWith("D:\\Projet\\medias", { recursive: true });
-    expect(fsPlugin.writeFile).toHaveBeenCalledWith("D:\\Projet\\medias\\abc.png", new Uint8Array([1, 2, 3]));
+    expect(fsPlugin.writeFile).toHaveBeenCalledWith("D:\\Projet\\medias\\abc.png.mondowrite-tmp", new Uint8Array([1, 2, 3]));
+    expect(fsPlugin.rename).toHaveBeenCalledWith("D:\\Projet\\medias\\abc.png.mondowrite-tmp", "D:\\Projet\\medias\\abc.png");
 
     expect(await tauriStorage.mediaUrl("abc.png")).toMatch(/^blob:/);
     expect(fsPlugin.readFile).toHaveBeenCalledWith("D:\\Projet\\medias\\abc.png");
@@ -140,6 +148,109 @@ describe("modifications faites hors de l'app", () => {
     handler({ paths: ["D:\\Écriture\\Phare\\medias\\a.jpg"] });
     expect(onChange).not.toHaveBeenCalled();
     handler({ paths: ["D:\\Écriture\\Phare\\cartes\\a.md"] });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("écriture sûre (temporaire puis renommage)", () => {
+  const order = () =>
+    [...fsPlugin.writeTextFile.mock.calls.map((c, i) => ({ what: `écrit ${(c as unknown[])[0]}`, at: fsPlugin.writeTextFile.mock.invocationCallOrder[i] })),
+      ...fsPlugin.rename.mock.calls.map((c, i) => ({ what: `renomme ${(c as unknown[])[0]} -> ${(c as unknown[])[1]}`, at: fsPlugin.rename.mock.invocationCallOrder[i] }))]
+      .sort((a, b) => a.at - b.at)
+      .map((e) => e.what);
+
+  it("le temporaire est écrit avant le renommage, et son nom ne commence jamais par un point", async () => {
+    dialog.open.mockResolvedValue("D:\\Projet");
+    await tauriStorage.pickFolder();
+    await tauriStorage.write({ "cartes/k3x9.md": "texte" }, []);
+    expect(order()).toEqual(["écrit D:\\Projet\\cartes\\k3x9.md.mondowrite-tmp", "renomme D:\\Projet\\cartes\\k3x9.md.mondowrite-tmp -> D:\\Projet\\cartes\\k3x9.md"]);
+    for (const [path] of fsPlugin.writeTextFile.mock.calls as unknown as [string][]) {
+      expect(path.split(/[\\/]/).some((part) => part.startsWith("."))).toBe(false);
+    }
+    expect(tempPath("cosmos.json")).toBe("cosmos.json.mondowrite-tmp");
+  });
+
+  it("renommage refusé : repli en écriture directe, et le temporaire est retiré", async () => {
+    dialog.open.mockResolvedValue("D:\\Projet");
+    await tauriStorage.pickFolder();
+    fsPlugin.rename.mockRejectedValueOnce(new Error("failed to rename: Access is denied. (os error 5)"));
+    await tauriStorage.write({ "cartes/a.md": "texte" }, []);
+    expect(fsPlugin.writeTextFile).toHaveBeenLastCalledWith("D:\\Projet\\cartes\\a.md", "texte");
+    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Projet\\cartes\\a.md.mondowrite-tmp");
+  });
+
+  it("renommage et repli refusés : l'erreur d'origine remonte, pour classifySaveError", async () => {
+    dialog.open.mockResolvedValue("D:\\Projet");
+    await tauriStorage.pickFolder();
+    const original = new Error("failed to rename: Access is denied. (os error 5)");
+    fsPlugin.rename.mockRejectedValueOnce(original);
+    fsPlugin.writeTextFile.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("autre chose"));
+    await expect(tauriStorage.write({ "cartes/a.md": "texte" }, [])).rejects.toBe(original);
+    expect(classifySaveError(original)).toBe("permission");
+  });
+
+  it("disque plein pendant le temporaire : pas d'écriture directe (elle tronquerait le vrai fichier)", async () => {
+    const full = new Error("No space left on device (os error 28)");
+    const write = vi.fn(async (target: string) => {
+      if (target.endsWith(".mondowrite-tmp")) throw full;
+    });
+    await expect(writeSafely("D:\\Projet\\cosmos.json", write)).rejects.toBe(full);
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(fsPlugin.rename).not.toHaveBeenCalled();
+    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Projet\\cosmos.json.mondowrite-tmp");
+  });
+
+  it("autre échec du temporaire : écriture directe comme avant", async () => {
+    const write = vi.fn(async (target: string) => {
+      if (target.endsWith(".mondowrite-tmp")) throw new Error("bizarre");
+    });
+    await writeSafely("D:\\Projet\\cosmos.json", write);
+    expect(write).toHaveBeenLastCalledWith("D:\\Projet\\cosmos.json");
+  });
+
+  it("un temporaire laissé par une coupure n'est jamais relu comme carte, et il est effacé", async () => {
+    dialog.open.mockResolvedValue("D:\\Écriture\\Phare");
+    await tauriStorage.pickFolder();
+    fsPlugin.readDir.mockImplementation((async (dir: string) =>
+      dir.endsWith("cartes")
+        ? [{ name: "a.md", isFile: true }, { name: "b.md.mondowrite-tmp", isFile: true }]
+        : dir.endsWith("Phare")
+        ? [{ name: "cosmos.json.mondowrite-tmp", isFile: true }, { name: "cartes", isFile: false, isDirectory: true }]
+        : []) as never);
+    fsPlugin.readTextFile.mockImplementation((async (path: string) => (path.endsWith("cosmos.json") ? "{}" : "texte")) as never);
+    fsPlugin.exists.mockImplementation((async (path: string) => !path.endsWith("scenario.fountain")) as never);
+    const files = await tauriStorage.readAll();
+    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json"]);
+    expect(fsPlugin.readTextFile).not.toHaveBeenCalledWith(expect.stringContaining("mondowrite-tmp"));
+    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Écriture\\Phare\\cartes\\b.md.mondowrite-tmp");
+    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Écriture\\Phare\\cosmos.json.mondowrite-tmp");
+    expect(isProjectFilePath("cartes/b.md.mondowrite-tmp")).toBe(false);
+    fsPlugin.readDir.mockReset();
+    fsPlugin.readDir.mockImplementation(async () => []);
+    fsPlugin.readTextFile.mockReset();
+    fsPlugin.exists.mockReset();
+    fsPlugin.exists.mockImplementation(async () => true);
+  });
+
+  it("supprimer un projet emporte aussi ses temporaires (rien ne reste dans le dossier)", async () => {
+    fsPlugin.readDir
+      .mockResolvedValueOnce([{ name: "cosmos.json", isFile: true }, { name: "cosmos.json.mondowrite-tmp", isFile: true }, { name: "scenario.fountain.mondowrite-tmp", isFile: true }, { name: "notes perso.txt", isFile: true }] as never)
+      .mockResolvedValueOnce([{ name: "notes perso.txt", isFile: true }] as never);
+    await tauriStorage.deleteProject!("D:\\Projet");
+    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Projet\\cosmos.json.mondowrite-tmp", undefined);
+    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Projet\\scenario.fountain.mondowrite-tmp", undefined);
+    expect(fsPlugin.remove).not.toHaveBeenCalledWith("D:\\Projet\\notes perso.txt", undefined);
+  });
+
+  it("la surveillance ignore les temporaires", async () => {
+    dialog.open.mockResolvedValue("D:\\Écriture\\Phare");
+    await tauriStorage.pickFolder();
+    const onChange = vi.fn();
+    await tauriStorage.watch!(onChange);
+    const handler = (fsPlugin.watch.mock.calls[0] as unknown as [string, (e: { paths: string[] }) => void])[1];
+    handler({ paths: ["D:\\Écriture\\Phare\\cartes\\a.md.mondowrite-tmp"] });
+    expect(onChange).not.toHaveBeenCalled();
+    handler({ paths: ["D:\\Écriture\\Phare\\cartes\\a.md.mondowrite-tmp", "D:\\Écriture\\Phare\\cartes\\a.md"] });
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 });
