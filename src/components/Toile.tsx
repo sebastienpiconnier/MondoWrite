@@ -35,6 +35,7 @@ import { useLifted } from "../lifted";
 import { documentExtension, imageExtension } from "../media";
 import { TEXT_FILE_RE, clipFromText } from "../clip";
 import { attachCanvasWheel } from "../canvasWheel";
+import { setCanvasCenter } from "../canvasCenter";
 
 /** Fichiers qui deviennent une carte quand on les dépose ou les colle sur le canevas. */
 const isIncomingFile = (f: File) =>
@@ -300,6 +301,14 @@ export function Toile() {
     }
   };
 
+  // Centre de la vue pour « Du vrac aux cartes », ouvert depuis la barre du haut.
+  useEffect(() => {
+    setCanvasCenter(() => {
+      const rect = wrapper.current?.getBoundingClientRect();
+      return rect ? screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }) : undefined;
+    });
+    return () => setCanvasCenter(null);
+  }, [screenToFlowPosition]);
   const createInCenterRef = useRef(createInCenter);
   createInCenterRef.current = createInCenter;
   const createFrameRef = useRef(createFrame);

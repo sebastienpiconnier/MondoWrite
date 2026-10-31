@@ -4,6 +4,8 @@
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
 import { isPhone } from "./components/usePhone";
 import { capturedCard, fileCards } from "./inbox";
+import { isTouch } from "./platform";
+import { vracCardHeight, vracGrid, type VracCard, type VracLink } from "./ai/vrac";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
@@ -183,8 +185,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -401,6 +403,18 @@ export interface CosmosState {
   captureCard: (type: CardType, text: string) => string | null;
   /** Ces cartes sont rangées : elles quittent « À ranger ». */
   fileInbox: (ids: string[]) => void;
+
+  // ----- « Du vrac aux cartes » (1.8.0, ai/vrac.ts, VracDialog) -----
+  /** Texte de départ de la fenêtre (note du Carnet) et cartes à mettre dans « À ranger » (téléphone). État d'affichage. */
+  vracDraft: { text: string; inbox: boolean } | null;
+  /** Ouvre la fenêtre « Du vrac aux cartes », avec un texte déjà là (Carnet) ou vide (menu IA). */
+  openVrac: (text?: string, inbox?: boolean) => void;
+  /**
+   * Crée les cartes et les fils retenus par l'auteur, en une étape d'historique : posées ensemble en grille dans un
+   * espace libre près de `at` (centre de la vue), jamais sur une carte ni sur un cadre. Fils : clés « new:<rang> »
+   * des cartes de `cards`, ou identifiants de cartes du projet. Rend les identifiants des cartes créées.
+   */
+  createVracCards: (cards: Pick<VracCard, "key" | "type" | "title" | "text">[], links: VracLink[], options?: { at?: { x: number; y: number }; inbox?: boolean }) => string[];
   /** Tire un fil entre deux cartes s'il n'y en a pas, sinon retire celui (ou ceux) qui les relie. */
   toggleLink: (a: string, b: string) => void;
   /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
@@ -2413,6 +2427,48 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record();
       set({ nodes });
       touch();
+    },
+
+    // ----- « Du vrac aux cartes » -----
+    vracDraft: null,
+    openVrac: (text = "", inbox = false) => set({ vracDraft: { text, inbox }, dialog: "vrac" }),
+    createVracCards: (cards, links, options = {}) => {
+      // Jamais de carte Image, Lien ou Document ici (elles portent un fichier ou une adresse), ni de texte vide.
+      const chosen = cards.filter((c) => c.text.trim() && c.type !== "image" && c.type !== "lien" && c.type !== "document");
+      if (chosen.length === 0) return [];
+      record();
+      const heights = chosen.map((c) => vracCardHeight(c.text, isTouch()));
+      // Marge plus large qu'entre deux cartes ordinaires : la ligne « Relié à » des cartes reliées les allonge.
+      const grid = vracGrid(heights, CARD_WIDTH, 40);
+      // Le bloc entier dans un espace libre : hors des cartes et des cadres (placeFrame), près du centre de la vue.
+      const wanted = options.at ? { x: options.at.x - grid.width / 2, y: options.at.y - grid.height / 2 } : firstFreeCell(occupied());
+      const origin = placeFrame({ x: Math.round(wanted.x), y: Math.round(wanted.y) }, occupied(), { width: grid.width, height: grid.height });
+      const ids = new Map<string, string>();
+      const scenes: { id: string; title: string; html: string }[] = [];
+      const made: CardNode[] = chosen.map((c, i) => {
+        const id = newId();
+        ids.set(c.key, id);
+        const html = textToHtml(c.text);
+        const title = c.title.trim().slice(0, 300);
+        // Une Scène range son texte comme toute carte qui devient Scène (manuscrit, ou Fountain d'un scénario) : updateCard plus bas.
+        if (c.type === "scene") scenes.push({ id, title, html });
+        const data: CardData = { id, type: c.type, title: c.type === "scene" ? "" : title, html: c.type === "scene" ? "" : html, ...(options.inbox ? { inbox: true } : {}) };
+        return { ...toNode(data, origin.x + grid.cells[i].x, origin.y + grid.cells[i].y), selected: !options.inbox };
+      });
+      const known = new Set(get().nodes.map((n) => n.id));
+      const resolve = (ref: string) => ids.get(ref) ?? (known.has(ref) ? ref : null);
+      let edges = get().edges;
+      for (const l of links) {
+        const source = resolve(l.from);
+        const target = resolve(l.to);
+        if (!source || !target || source === target) continue;
+        if (edges.some((e) => (e.source === source && e.target === target) || (e.source === target && e.target === source))) continue;
+        edges = addEdge({ id: newId(), source, target, sourceHandle: null, targetHandle: null, label: l.label.trim().slice(0, 60), type: "floating" }, edges);
+      }
+      set({ nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), ...made], edges });
+      for (const scene of scenes) get().updateCard(scene.id, { title: scene.title, html: scene.html });
+      touch();
+      return made.map((n) => n.id);
     },
     addTitledCard: (type, title) => {
       record();
