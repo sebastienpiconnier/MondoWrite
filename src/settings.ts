@@ -10,7 +10,7 @@ import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
 import { isTauri } from "./platform";
 import { PHOTO_SOURCES, type PhotoSourceId } from "./imageSources";
-import { authorName, cleanProfile, readProfile, withAuthorName, type AuthorProfile } from "./profile";
+import { authorName, cleanProfile, readProfile, type AuthorProfile } from "./profile";
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
 
 export type ThemePref = "system" | "light" | "dark";
@@ -120,8 +120,6 @@ interface SettingsState {
   setProfile: (profile: AuthorProfile) => void;
   /** Nom signé sur les œuvres, tiré du profil (nom de plume, sinon prénom et nom). */
   author: string;
-  /** Nom tapé sur la page de titre d'un scénario : il met le profil à jour. */
-  setAuthor: (author: string) => void;
   ai: AiSettings;
   setAi: (ai: AiSettings) => void;
   /** Mode focus du manuscrit : machine à écrire, et ce qui reste en pleine encre. */
@@ -231,10 +229,6 @@ export const useSettings = create<SettingsState>((set) => ({
     set({ profile: clean, author: authorName(clean) });
   },
   author: authorName(initialProfile),
-  setAuthor: (author) => set((s) => {
-    const profile = withAuthorName(s.profile, author);
-    return profile === s.profile ? {} : { profile, author: authorName(profile) };
-  }),
   ai: readAi(saved.ai),
   setAi: (ai) => set({ ai }),
   writing: readWriting(saved.writing),

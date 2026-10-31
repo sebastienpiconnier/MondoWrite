@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
-import { authorName, cleanProfile, contactLines, EMPTY_PROFILE, readProfile, withAuthorName } from "../profile";
+import { authorName, cleanProfile, contactLines, EMPTY_PROFILE, readProfile } from "../profile";
 import { layoutProse } from "../export/prose";
 import { toMarkdown } from "../export/text";
 
@@ -26,12 +26,6 @@ describe("profil (fonctions pures)", () => {
   it("reprend l'ancien nom d'auteur de l'appareil comme nom de plume", () => {
     expect(readProfile(undefined, "Inès Morvan").penName).toBe("Inès Morvan");
     expect(readProfile({ firstName: "Inès" }, "Autre")).toMatchObject({ firstName: "Inès", penName: "" });
-  });
-
-  it("un nom tapé sur la page de titre met le profil à jour", () => {
-    expect(withAuthorName(ines, "Inès Morvan")).toBe(ines);
-    expect(withAuthorName(ines, "I. Morvan").penName).toBe("I. Morvan");
-    expect(withAuthorName({ ...ines, penName: "X" }, "Inès Morvan").penName).toBe("");
   });
 });
 
@@ -55,6 +49,16 @@ describe("profil dans les projets", () => {
       Author: "Inès Morvan",
       Contact: "12 rue du Port\n29200 Brest\n06 12 34 56 78\nines@exemple.fr",
     });
+  });
+
+  it("le nom tapé sur la page de titre ne touche jamais au profil (1.7.3)", async () => {
+    useSettings.getState().setProfile(ines);
+    await state().createProject({ title: "Kerlaouen", kind: "scenario" });
+    // Effacé lettre par lettre puis retapé, comme à la main : le profil ne bouge pas.
+    for (const name of ["Inès Morva", "I", "", "J", "Jean Lune"]) state().setTitlePageField("author", name);
+    expect(state().screenplay!.titlePage.Author).toBe("Jean Lune");
+    expect(useSettings.getState().profile).toEqual(cleanProfile(ines));
+    expect(useSettings.getState().author).toBe("Inès Morvan");
   });
 
   it("sans profil, la page de titre ne porte que le titre", async () => {

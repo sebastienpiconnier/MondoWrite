@@ -1861,7 +1861,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (field === "author" && !before && !readTitleField(titlePage, "credit")) {
         titlePage = writeTitleField(titlePage, "credit", getT().screenplay.titlePage.creditDefault);
       }
-      if (field === "author") useSettings.getState().setAuthor(readTitleField(titlePage, "author"));
+      // Le nom tapé ici reste dans le projet : le profil de l'appareil ne se change que dans « Toi, l'auteur »
+      // (1.7.3 : recopié à chaque frappe, il laissait une lettre dans le nom de plume).
       const next = { ...screenplay, titlePage };
       const renamed = field === "title" && before.trim() === title.trim() && readTitleField(titlePage, "title") !== "";
       forgetHistory();

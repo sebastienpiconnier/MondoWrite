@@ -13,7 +13,6 @@ import { settingOf } from "../review/places";
 import { isNaturalHeading } from "../screenplay/rules";
 import { fromDoc, screenplayExtensions, toDoc } from "../screenplay/editor";
 import { interviewPrompt, coherencePrompt } from "../ai/tasks";
-import { withAuthorName } from "../profile";
 import type { CardData } from "../types";
 
 describe("M10 : un dialogue à tirets collé n'est pas une liste", () => {
@@ -109,13 +108,6 @@ describe("M16 : les réponses de l'auteur vont à l'IA", () => {
   });
 });
 
-describe("M17 : vider l'auteur d'une page de titre ne vide pas le profil", () => {
-  it("nom de plume gardé", () => {
-    const p = { firstName: "", lastName: "", penName: "Jean Lune", address: "", phone: "", email: "", bio: "", works: "" };
-    expect(withAuthorName(p as never, "")).toBe(p);
-    expect(withAuthorName(p as never, "Jean Soleil")).toMatchObject({ penName: "Jean Soleil" });
-  });
-});
 
 describe("M10 : une réplique collée sur le canevas (citée) n'est pas une liste", () => {
   it("« > - Tu viens ? » reste une réplique citée", () => {
