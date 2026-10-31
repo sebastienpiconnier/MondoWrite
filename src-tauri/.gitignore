@@ -2,3 +2,7 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# Pont Swift d’Apple Intelligence (swift-rs construit hors de ce dossier ; Xcode peut y créer ses fichiers)
+/apple/MondoWriteFM/.build/
+/apple/MondoWriteFM/.swiftpm/

@@ -12,6 +12,7 @@ import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { aiErrorText, complete, isReady } from "../ai/providers";
+import { allows, packBudget } from "../ai/limits";
 import type { AiConfig } from "../ai/providers";
 import type { CardData } from "../types";
 import { BREAKDOWN_FIELDS, type BreakdownField, type SheetField } from "../character";
@@ -22,6 +23,7 @@ import {
   beatContext,
   beatQuestionPrompt,
   breakdownBatches,
+  BREAKDOWN_BUDGET,
   breakdownByCategory,
   breakdownPrompt,
   isRetroType,
@@ -206,7 +208,7 @@ export function RetroBible({ card }: { card: CardData }) {
   return (
     <div className="retro-bible">
       <div className="assistant-bar">
-        <button type="button" className="ghost-button assistant-toggle" disabled={busy} onClick={() => void read()}>
+        <button type="button" className="ghost-button assistant-toggle" disabled={busy || !allows(config.provider, "retro")} onClick={() => void read()}>
           {s.retroButton}
         </button>
         {busy && (
@@ -215,7 +217,7 @@ export function RetroBible({ card }: { card: CardData }) {
           </button>
         )}
       </div>
-      {!items && !busy && !message && <p className="gallery-hint">{s.retroHint}</p>}
+      {!items && !busy && !message && <p className="gallery-hint">{allows(config.provider, "retro") ? s.retroHint : t.apple.refused}</p>}
       <p className="ai-message" role="status">
         {message}
       </p>
@@ -322,7 +324,8 @@ function useBreakdownRun() {
       const state = useCosmos.getState();
       const scenes = breakdownScenes(state.screenplay, lang, only);
       if (scenes.length === 0) return ai.setMessage(s.breakdownNoScenes);
-      const batches = breakdownBatches(scenes);
+      // Lots plus petits pour un petit modèle (Apple sur l'appareil, ai/limits.ts).
+      const batches = breakdownBatches(scenes, packBudget(config.provider, BREAKDOWN_BUDGET));
       const fiches = Object.fromEntries(state.nodes.map((n) => [n.id, n.data.fiche]));
       let found: BreakdownProposal[] = [];
       let rejected = 0;
@@ -479,7 +482,8 @@ export function RetroInvite() {
   const s = useT().structure;
   const on = useCosmos((st) => st.retroInvite);
   const { config } = useAi();
-  if (!on) return null;
+  // Rétro-bible refusée par le service choisi (petit modèle d'Apple) : pas d'invitation qui ne mènerait à rien.
+  if (!on || (config && !allows(config.provider, "retro"))) return null;
   const close = () => useCosmos.getState().setRetroInvite(false);
   return (
     <div className="app-alert retro-invite" role="status">

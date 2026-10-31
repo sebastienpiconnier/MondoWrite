@@ -10,11 +10,14 @@
 // Ollama passe par son API native (/api/chat) : elle permet d'agrandir la fenêtre de contexte, que l'API
 // compatible OpenAI laisse à quelques milliers de jetons (au-delà, les cartes étaient tronquées en silence),
 // et de demander une réponse en JSON.
+// Apple Foundation Models (1.10.0, `apple`) : le modèle d'Apple Intelligence de l'appareil, appelé par le pont Swift
+// de l'app (ai/apple.ts), sans réseau, sans clé ni adresse ; ses limites sont dans ai/limits.ts.
 
 import { isTauri } from "../platform";
+import { appleComplete } from "./apple";
 
-export type AiProvider = "anthropic" | "openai" | "openrouter" | "ollama" | "lmstudio";
-export const AI_PROVIDERS: AiProvider[] = ["anthropic", "openai", "openrouter", "ollama", "lmstudio"];
+export type AiProvider = "anthropic" | "openai" | "openrouter" | "ollama" | "lmstudio" | "apple";
+export const AI_PROVIDERS: AiProvider[] = ["anthropic", "openai", "openrouter", "ollama", "lmstudio", "apple"];
 export const isAiProvider = (v: unknown): v is AiProvider => AI_PROVIDERS.includes(v as AiProvider);
 
 interface ProviderInfo {
@@ -24,6 +27,8 @@ interface ProviderInfo {
   url: string;
   /** Modèle proposé par défaut ; vide : à choisir (la liste vient du service). */
   model: string;
+  /** Modèle du système (Apple) : ni adresse, ni clé, ni liste de modèles ; proposé selon l'appareil (ai/apple.ts). */
+  device?: true;
 }
 
 export const PROVIDERS: Record<AiProvider, ProviderInfo> = {
@@ -32,6 +37,8 @@ export const PROVIDERS: Record<AiProvider, ProviderInfo> = {
   openrouter: { local: false, url: "https://openrouter.ai/api", model: "openrouter/auto" },
   ollama: { local: true, url: "http://localhost:11434", model: "" },
   lmstudio: { local: true, url: "http://localhost:1234", model: "" },
+  // « local » au sens où rien ne quitte l'appareil ; le modèle est celui du système, sans nom à choisir.
+  apple: { local: true, url: "", model: "on-device", device: true },
 };
 
 export interface AiConfig {
@@ -224,6 +231,8 @@ export type AiErrorCode = "network" | "timeout" | "cancelled" | "auth" | "token"
 export class AiError extends Error {
   /** Raison donnée par le service lui-même (son message d'erreur), montrée à l'auteur à côté du nôtre. */
   reason = "";
+  /** Message complet pour l'auteur, à la place du message du code (modèle d'Apple : texte trop long, garde-fous…). */
+  text = "";
   constructor(public code: AiErrorCode, detail = "") {
     super(detail || code);
   }
@@ -246,6 +255,7 @@ export function serviceReason(body: string): string {
 
 /** Texte d'erreur pour l'auteur : notre explication, puis celle du service s'il en a donné une. */
 export function aiErrorText(err: unknown, errors: Record<AiErrorCode, string>): string {
+  if (err instanceof AiError && err.text) return err.text;
   const code = err instanceof AiError ? err.code : "other";
   const reason = err instanceof AiError ? err.reason : "";
   // Jeton demandé : le message dit quoi faire, le texte du serveur (long, en anglais, coupé) n'apporte rien.
@@ -314,6 +324,7 @@ export async function send(request: HttpRequest, local = false, signal?: AbortSi
 
 /** Envoie une consigne et rend le texte de la réponse. */
 export async function complete(config: AiConfig, system: string, user: string, options?: ChatOptions | number): Promise<string> {
+  if (config.provider === "apple") return appleComplete(system, user, typeof options === "number" ? { maxTokens: options } : options);
   const local = PROVIDERS[config.provider].local;
   const signal = typeof options === "object" ? options.signal : undefined;
   const timeout = typeof options === "object" ? options.timeoutMs : undefined;
@@ -323,6 +334,8 @@ export async function complete(config: AiConfig, system: string, user: string, o
 }
 
 export async function listModels(config: AiConfig): Promise<string[]> {
+  // Modèle du système : rien à lister.
+  if (PROVIDERS[config.provider].device) return [];
   const local = PROVIDERS[config.provider].local;
   // Ollama : sa liste native donne tous les modèles installés ; la liste compatible OpenAI en secours.
   if (config.provider === "ollama") {

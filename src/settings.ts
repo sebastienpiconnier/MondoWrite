@@ -39,19 +39,21 @@ export interface AiSettings {
   urls: Partial<Record<AiProvider, string>>;
   /** Modèle d'embedding de la recherche par le sens (services locaux seulement, ai/semantic.ts). */
   embedModels?: Partial<Record<AiProvider, string>>;
+  /** Modèle d'image des images de référence (mode Atelier, OpenAI et OpenRouter, ai/imageGen.ts) ; vide : celui par défaut. */
+  imageModels?: Partial<Record<AiProvider, string>>;
 }
 
-const NO_AI: AiSettings = { provider: null, keys: {}, models: {}, urls: {}, embedModels: {} };
+const NO_AI: AiSettings = { provider: null, keys: {}, models: {}, urls: {}, embedModels: {}, imageModels: {} };
 
 function readAi(raw: unknown): AiSettings {
   if (!raw || typeof raw !== "object") return NO_AI;
-  const { provider, keys, models, urls, embedModels } = raw as Record<string, unknown>;
+  const { provider, keys, models, urls, embedModels, imageModels } = raw as Record<string, unknown>;
   const strings = (value: unknown) => {
     const out: Partial<Record<AiProvider, string>> = {};
     if (value && typeof value === "object") for (const p of AI_PROVIDERS) if (typeof (value as Record<string, unknown>)[p] === "string") out[p] = (value as Record<string, string>)[p];
     return out;
   };
-  return { provider: isAiProvider(provider) ? provider : null, keys: strings(keys), models: strings(models), urls: strings(urls), embedModels: strings(embedModels) };
+  return { provider: isAiProvider(provider) ? provider : null, keys: strings(keys), models: strings(models), urls: strings(urls), embedModels: strings(embedModels), imageModels: strings(imageModels) };
 }
 
 /** Réglages du service choisi, prêts pour une requête ; null si l'IA est désactivée. */

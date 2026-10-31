@@ -16,6 +16,7 @@ import { useProjectStats } from "./useProjectStats";
 import { castForMatrix, neverMeet, shared, topDuo, type Cast, type Presence } from "../review/crossings";
 import type { SettingSummary } from "../review/places";
 import { iaPercent, iaShareOfManuscript, iaShareOfScreenplay } from "../atelier";
+import { IaImageStats } from "./ImageGen";
 
 type Tab = "characters" | "places" | "crossings" | "setting" | "breakdown";
 
@@ -83,10 +84,11 @@ function IaShare({ script }: { script: boolean }) {
   const manuscript = useCosmos((s) => s.manuscript);
   const screenplay = useCosmos((s) => s.screenplay);
   const share = useMemo(() => (script ? iaShareOfScreenplay(screenplay) : iaShareOfManuscript(manuscript)), [script, screenplay, manuscript]);
-  if (mode !== "atelier" && share.ia === 0) return null;
+  if (mode !== "atelier" && share.ia === 0) return <IaImageStats />;
   return (
     <section className="stats-ia" aria-label={t.atelier.marked}>
       <p>{share.ia > 0 ? fmt(t.atelier.stats, { n: share.ia, p: iaPercent(share) }) : t.atelier.statsNone}</p>
+      <IaImageStats />
       <p className="settings-hint">{t.atelier.statsHint}</p>
     </section>
   );

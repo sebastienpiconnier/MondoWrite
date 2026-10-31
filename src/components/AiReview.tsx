@@ -12,7 +12,12 @@ import { aiConfig, useSettings } from "../settings";
 import { aiErrorText, AiError, complete, isReady, type AiConfig } from "../ai/providers";
 import { allQuestionTexts } from "../assistant";
 import type { CardNames, Prompt } from "../ai/tasks";
-import { betaPrompt, continuityPrompts, novelScenes, parseReview, REVIEW_TASKS, screenplayScenes, timelinePrompts, voicesPrompt, type ReviewQuestion, type ReviewTask, type SceneRef } from "../ai/review";
+import { betaPrompt, continuityPrompts, novelScenes, parseReview, REVIEW_BUDGET, REVIEW_TASKS, screenplayScenes, timelinePrompts, voicesPrompt, type ReviewQuestion, type ReviewTask, type SceneRef } from "../ai/review";
+import { allows, packBudget, type AiAction } from "../ai/limits";
+
+/** Relectures aux envois longs (tout le récit, ou une scène entière avec ses fiches) : un petit modèle peut les refuser (ai/limits.ts). */
+const LONG_TASKS: Partial<Record<ReviewTask, AiAction>> = { continuity: "continuity", voices: "voices", beta: "beta" };
+const allowsTask = (config: AiConfig, task: ReviewTask) => !LONG_TASKS[task] || allows(config.provider, LONG_TASKS[task]!);
 
 interface ReviewState {
   items: ReviewQuestion[];
@@ -46,6 +51,8 @@ interface RunContext {
   questions: Record<string, string>;
   t: ReturnType<typeof useT>["aiReview"];
   errors: ReturnType<typeof useT>["ai"]["errors"];
+  /** Phrase d'une relecture refusée par le service (trop longue pour lui). */
+  refused: string;
 }
 
 /** Lance une relecture : un appel par paquet, les questions arrivent au fil des réponses. */
@@ -61,11 +68,14 @@ export async function runReview(task: ReviewTask, ctx: RunContext) {
   useAiReview.setState((s) => ({ items: s.items.filter((q) => q.task !== task) }));
   useCosmos.getState().setView("manuscrit");
   if (!scenes.some((s) => s.text || s.synopsis)) return say(ctx.t.nothing);
+  if (!allowsTask(ctx.config, task)) return say(ctx.refused);
+  // Paquets plus petits pour un petit modèle (Apple sur l'appareil) : plus d'envois, chacun dans sa fenêtre.
+  const budget = packBudget(ctx.config.provider, REVIEW_BUDGET);
   const prompts: Prompt[] =
     task === "continuity"
-      ? continuityPrompts(scenes, cards, links, ctx.lang, kind, ctx.questions)
+      ? continuityPrompts(scenes, cards, links, ctx.lang, kind, ctx.questions, budget)
       : task === "timeline"
-        ? timelinePrompts(scenes, ctx.lang, kind)
+        ? timelinePrompts(scenes, ctx.lang, kind, budget)
         : [task === "voices" ? voicesPrompt(scenes, cards, ctx.lang, kind) : betaPrompt(scenes, ctx.lang, kind)].filter((p): p is Prompt => !!p);
   if (prompts.length === 0) return say(task === "timeline" ? ctx.t.noMarkers : task === "voices" ? ctx.t.noLines : ctx.t.nothing);
   const own = new AbortController();
@@ -105,7 +115,7 @@ function useRunContext(): RunContext | null {
   return useMemo(() => {
     if (!isReady(config)) return null;
     const names: CardNames = { type: (type) => types[type].label.toLocaleLowerCase(lang), untitled: all.bible.untitled };
-    return { config: config!, lang, names, questions: allQuestionTexts(all.assistant), t: all.aiReview, errors: all.ai.errors };
+    return { config: config!, lang, names, questions: allQuestionTexts(all.assistant), t: all.aiReview, errors: all.ai.errors, refused: all.apple.refused };
   }, [config, lang, types, all]);
 }
 
@@ -126,7 +136,7 @@ export function AiReviewActions({ disabled, onStart }: { disabled: boolean; onSt
           <button
             type="button"
             className="ghost-button"
-            disabled={disabled || running}
+            disabled={disabled || running || !allowsTask(ctx.config, task)}
             onClick={() => {
               onStart();
               void runReview(task, ctx);
@@ -134,7 +144,7 @@ export function AiReviewActions({ disabled, onStart }: { disabled: boolean; onSt
           >
             {t.tasks[task]}
           </button>
-          <p className="settings-hint">{t.hints[task]}</p>
+          <p className="settings-hint">{allowsTask(ctx.config, task) ? t.hints[task] : ctx.refused}</p>
         </div>
       ))}
     </div>

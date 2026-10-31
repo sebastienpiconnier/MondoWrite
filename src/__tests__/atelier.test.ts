@@ -49,7 +49,7 @@ const card = (id: string) => state().nodes.find((n) => n.id === id)!.data;
 
 const LABELS: JournalLabels = {
   header: "# Journal de l’IA\n\nUne ligne par proposition acceptée.",
-  actions: { variants: "Variante", synopsis: "Synopsis", directions: "Piste", pitch: "Couverture", sheet: "Fiche" },
+  actions: { variants: "Variante", synopsis: "Synopsis", directions: "Piste", pitch: "Couverture", sheet: "Fiche", image: "Image" },
   words: "{n} mots",
   quoted: "« {title} »",
 };
