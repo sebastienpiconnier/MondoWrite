@@ -14,6 +14,10 @@
   .topbar .brand-text { flex: 1; min-width: 0; }
   .brand-project { display: block; field-sizing: fixed; width: calc(100% + 8px); max-width: calc(100% + 8px); }
   .topbar-more { display: grid; flex: none; width: 44px; height: 44px; }
+  /* Enregistrement : le point d'état du bouton Enregistrer (barre compacte), reporté sur « ⋯ » qui le cache. */
+  .topbar-more { position: relative; }
+  .topbar-more:is(.is-modifie, .is-enregistrement, .is-erreur)::after { content: ""; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .topbar-more.is-erreur::after { background: var(--danger); }
   .topbar > .actions { display: none; position: absolute; z-index: 60; top: calc(100% + 6px); left: 8px; right: 8px; flex-wrap: wrap; justify-content: flex-start; margin: 0; padding: 10px; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop); }
   .topbar.more-open > .actions { display: flex; }
   /* Accueil : pas de « ⋯ », les Réglages restent dans la barre (ils étaient cachés, donc inaccessibles). */
@@ -69,6 +73,7 @@
   .ms-focus-bar { top: calc(env(safe-area-inset-top) + 6px); left: auto; right: 10px; transform: none; flex-wrap: nowrap; gap: 0; padding: 3px; border-radius: 999px; opacity: 0.8; }
   .ms-focus-bar .focus-options, .ms-focus-bar .focus-toggle { display: none; }
   .ms-focus-bar .focus-exit { width: 40px; min-height: 40px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; }
+  @media (pointer: coarse) { .ms-focus-bar .focus-exit { width: 44px; min-height: 44px; } }
   .ms-focus-bar .focus-exit-text { display: none; }
   .ms-focus-bar .focus-exit-x { display: block; }
   .manuscript.is-focus:not(.is-typewriter) .ms-main { padding-top: calc(env(safe-area-inset-top) + 56px); }

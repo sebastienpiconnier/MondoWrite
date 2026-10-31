@@ -23,11 +23,18 @@ import { ProfileDialog } from "./ProfileDialog";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
+// Fenêtres qui ont leur propre bouton de fermeture : pas de « Fermer » en bas.
+const OWN_CLOSE = new Set(["document", "paperback", "scriptPdf", "bibleExport", "profile", "card", "stats"]);
+function hasCloseButton(dialog: string): boolean {
+  return !OWN_CLOSE.has(dialog);
+}
+
 export function Dialogs() {
   const dialog = useCosmos((s) => s.dialog);
   const expanded = useCosmos((s) => (s.dialog === "card" ? s.nodes.find((n) => n.id === s.expandedId)?.data : undefined));
   const setDialog = useCosmos((s) => s.setDialog);
   const ref = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const t = useT();
 
   useEffect(() => {
@@ -35,6 +42,14 @@ export function Dialogs() {
     if (!el) return;
     if (dialog && !el.open) el.showModal?.();
     if (!dialog && el.open) el.close();
+    // Fenêtre sans champ à remplir (raccourcis, À propos…) : showModal donne le focus au bouton « Fermer », tout en
+    // bas, et la fenêtre s'ouvrait défilée jusqu'à lui. On le focalise sans défiler et on remonte en haut. Un champ
+    // qui a pris le focus (Aller à, Photos) le garde.
+    const active = document.activeElement;
+    if (dialog && hasCloseButton(dialog) && dialog !== "replace" && (!el.contains(active) || active === closeRef.current)) {
+      closeRef.current?.focus({ preventScroll: true });
+      el.scrollTop = 0;
+    }
   }, [dialog]);
 
   // La carte agrandie a disparu (supprimée, annulée) : la fenêtre se ferme.
@@ -132,9 +147,9 @@ export function Dialogs() {
       )}
       {/* La liseuse a son bouton « Fermer » en haut : la place en bas va aux pages. Les fenêtres d'export ont le leur, à côté du bouton d'export. */}
       {/* La carte agrandie et les statistiques ont leur croix en haut : un bouton en bas, focalisé à l'ouverture, faisait descendre la fenêtre tout en bas. */}
-      {dialog !== "document" && dialog !== "paperback" && dialog !== "scriptPdf" && dialog !== "bibleExport" && dialog !== "profile" && dialog !== "card" && dialog !== "stats" && (
+      {dialog && hasCloseButton(dialog) && (
         <div className="assistant-actions app-dialog-actions">
-          <button type="button" className={dialog === "replace" ? "" : "is-primary"} onClick={() => setDialog(null)} autoFocus={dialog !== "replace"}>
+          <button ref={closeRef} type="button" className={dialog === "replace" ? "" : "is-primary"} onClick={() => setDialog(null)}>
             {t.gallery.close}
           </button>
         </div>

@@ -15,7 +15,7 @@ describe("aide en ligne", () => {
   it("chaque ancre est un titre du guide", () => {
     for (const lang of ["fr", "en"] as const) {
       const html = lang === "fr" ? guideFr : guideEn;
-      for (const section of Object.values(GUIDE_SECTIONS)) expect(html, `${lang}#${section[lang]}`).toContain(`<h2 id="${section[lang]}">`);
+      for (const section of Object.values(GUIDE_SECTIONS)) expect(html, `${lang}#${section[lang]}`).toMatch(new RegExp(`<h[23] id="${section[lang]}">`));
     }
   });
 });

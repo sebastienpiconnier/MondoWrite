@@ -132,11 +132,11 @@ describe("faisabilité d'un film", () => {
     const text = feasibilityText(sp.elements, [], pagination, fr.pitch, "fr");
     const lines = text.split("\n");
     expect(lines[0]).toMatch(/^3 scènes, 1 page \(/);
-    expect(lines[1]).toBe("2 décors : 2 scènes en intérieur, 1 en extérieur");
+    expect(lines[1]).toBe("2 décors\u00a0: 2 scènes en intérieur, 1 en extérieur");
     // « PLUS TARD » reprend le jour de la scène d'avant.
     expect(lines[2]).toBe("2 scènes de jour, 1 de nuit");
     expect(lines[3]).toBe("2 rôles parlants");
-    expect(lines[4]).toMatch(/^Décors principaux : Phare \(2\), Grève \(1\)$/i);
+    expect(lines[4]).toMatch(/^Décors principaux\u00a0: Phare \(2\), Grève \(1\)$/i);
     expect(feasibilityText(sp.elements, [], pagination, en.pitch, "en")).toContain("2 speaking parts");
   });
 

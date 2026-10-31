@@ -18,7 +18,14 @@ const PHONE_VIEWS: View[] = ["manuscrit", "bible", "carnet"];
 export function TopBar() {
   const { t, views, kind } = useVocab();
   const lang = useSettings((s) => s.lang);
-  const { view, setView, status, save, closeProject, title, setTitle } = useCosmos();
+  // Un sélecteur par champ (valeurs simples ou fonctions stables) : la barre ne se redessine plus à chaque frappe.
+  const view = useCosmos((s) => s.view);
+  const setView = useCosmos((s) => s.setView);
+  const status = useCosmos((s) => s.status);
+  const save = useCosmos((s) => s.save);
+  const closeProject = useCosmos((s) => s.closeProject);
+  const title = useCosmos((s) => s.title);
+  const setTitle = useCosmos((s) => s.setTitle);
   const phone = usePhone();
   const current = shownView(view, phone);
 
@@ -80,7 +87,8 @@ export function TopBar() {
         ))}
       </nav>
 
-      <button type="button" className="icon-button topbar-more" aria-label={t.app.moreOptions} title={t.app.moreOptions} aria-expanded={more} onClick={() => setMore(!more)}>
+      {/* Téléphone : le bouton Enregistrer est derrière « ⋯ », qui porte donc le point d'état (comme en barre compacte). */}
+      <button type="button" className={`icon-button topbar-more is-${status}`} aria-label={t.app.moreOptions} title={`${t.app.moreOptions} (${t.status[status]})`} aria-expanded={more} onClick={() => setMore(!more)}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="5" cy="12" r="1.8" />
           <circle cx="12" cy="12" r="1.8" />
