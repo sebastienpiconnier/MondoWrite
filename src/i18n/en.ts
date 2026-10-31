@@ -490,6 +490,8 @@ export const en: Messages = {
       model: "Unknown model or request rejected. Check the model name in Settings.",
       limit: "Limit or credit reached with this service. Try again later.",
       empty: "The AI returned nothing usable. Try again, or change the model.",
+      context: "The text sent is larger than the loaded model’s window. In LM Studio, reload the model with a bigger “Context Length” (at least 16,384 for read-throughs), or pick a model with a larger one.",
+      length: "The model spent its whole answer thinking and wrote nothing. Try again, or pick a model that reasons less (GPT-5 mini, for example).",
       other: "The AI action failed.",
     },
   },

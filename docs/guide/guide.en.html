@@ -919,7 +919,7 @@
 <h4>My paperback PDF has too few pages.</h4>
 <p>KDP requires at least 24 pages. A smaller trim (5 × 8) or a table of contents and back pages add a few pages; otherwise the text is simply too short for a paperback.</p>
 <h4>The AI doesn’t answer.</h4>
-<p>For Ollama or LM Studio, check that the software is running and a model is loaded, then <span class="ui">Test and list models</span>. For an online service, check the API key and your credit. The error message says what is blocking.</p>
+<p>For Ollama or LM Studio, check that the software is running and a model is loaded, then <span class="ui">Test and list models</span>. For an online service, check the API key and your credit. The error message says what is blocking. In LM Studio, load the model with a “Context Length” of at least 16,384 for read-throughs and consistency checks: with 4,096 or 8,192, MondoWrite sends smaller packs, and a request that does not fit is refused with a message that says so. With a reasoning model (GPT-5, o3…), MondoWrite asks it to reason briefly; if it still returns nothing, pick a lighter one (GPT-5 mini).</p>
 <h4>My photo can’t be described.</h4>
 <p>The chosen model must be able to read images (for example gemma3, qwen2.5vl or llava with Ollama).</p>
 <h4>Is MondoWrite free?</h4>

@@ -11,7 +11,7 @@ import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
 import { typeColor } from "../types";
-import { aiErrorText, complete, isReady } from "../ai/providers";
+import { aiErrorText, complete, isReady, localContext } from "../ai/providers";
 import { plainText } from "../search";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
@@ -89,6 +89,8 @@ export function AiMenu() {
     if (task === "tidy" && tidyCandidates(cards).length === 0) return setMessage(t.tidyNone);
     // Petit modèle (Apple sur l'appareil, ai/limits.ts) : seulement les premières idées qui tiennent dans son budget,
     // les autres comptées dans « non regardées ». Les autres services : le budget propre à Ranger.
+    // Fenêtre du modèle chargé dans LM Studio : les budgets en tiennent compte (limits.ts).
+    await localContext(config);
     const candidates = tidyCandidates(cards);
     const tidyKept = new Set(takeWithin(candidates, (c) => JSON.stringify({ id: c.id, title: c.title, text: clip(plainText(c.html)) }).length, packBudget(config.provider, Infinity)).map((c) => c.id));
     const tidyCards = cards.filter((c) => !candidates.some((x) => x.id === c.id) || tidyKept.has(c.id));

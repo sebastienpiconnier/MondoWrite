@@ -9,7 +9,7 @@ import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
-import { aiErrorText, AiError, complete, isReady, type AiConfig } from "../ai/providers";
+import { aiErrorText, AiError, complete, isReady, localContext, type AiConfig } from "../ai/providers";
 import { allQuestionTexts } from "../assistant";
 import type { CardNames, Prompt } from "../ai/tasks";
 import { betaPrompt, continuityPrompts, novelScenes, parseReview, REVIEW_BUDGET, REVIEW_TASKS, screenplayScenes, timelinePrompts, voicesPrompt, type ReviewQuestion, type ReviewTask, type SceneRef } from "../ai/review";
@@ -70,6 +70,7 @@ export async function runReview(task: ReviewTask, ctx: RunContext) {
   if (!scenes.some((s) => s.text || s.synopsis)) return say(ctx.t.nothing);
   if (!allowsTask(ctx.config, task)) return say(ctx.refused);
   // Paquets plus petits pour un petit modèle (Apple sur l'appareil) : plus d'envois, chacun dans sa fenêtre.
+  await localContext(ctx.config);
   const budget = packBudget(ctx.config.provider, REVIEW_BUDGET);
   const prompts: Prompt[] =
     task === "continuity"

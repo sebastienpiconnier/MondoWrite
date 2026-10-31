@@ -15,6 +15,7 @@
 
 import { isTauri } from "../platform";
 import { appleComplete } from "./apple";
+import { fitLocal, setDetectedContext } from "./limits";
 
 export type AiProvider = "anthropic" | "openai" | "openrouter" | "ollama" | "lmstudio" | "apple";
 export const AI_PROVIDERS: AiProvider[] = ["anthropic", "openai", "openrouter", "ollama", "lmstudio", "apple"];
@@ -110,6 +111,8 @@ export interface ChatOptions {
   signal?: AbortSignal;
   /** Délai d'un service en ligne, si la réponse attendue est longue (« Du vrac aux cartes ») ; sinon TIMEOUT_MS. */
   timeoutMs?: number;
+  /** Limite totale de la réponse (marge comprise), si la fenêtre du modèle local est plus petite. */
+  cap?: number;
 }
 
 /**
@@ -119,9 +122,24 @@ export interface ChatOptions {
  */
 export const THINKING_MARGIN = 2048;
 
+/**
+ * Modèle d'OpenAI qui raisonne avant d'écrire (GPT-5, o1, o3, o4-mini…). Son raisonnement, invisible, compte
+ * dans `max_completion_tokens` : à l'effort par défaut (« medium »), GPT-5 pouvait tout y passer et rendre une
+ * réponse vide (1.10.1, cohérence scène par scène et voix des personnages). On lui demande un effort « low » et
+ * on lui laisse une marge plus grande. GPT-5 Chat (sans raisonnement) et les versions « pro » (effort fixe) à part.
+ */
+export function isReasoningModel(model: string): boolean {
+  const m = model.trim().toLowerCase().replace(/^openai\//, "");
+  if (/chat|pro\b/.test(m)) return false;
+  return /^(gpt-5|o\d)/.test(m);
+}
+
+/** Marge d'un modèle qui raisonne (voir isReasoningModel). */
+export const REASONING_MARGIN = 8192;
+
 /** Requête de complétion : une consigne (system) et un message de l'auteur (user). */
 export function chatRequest(config: AiConfig, system: string, user: string, options: ChatOptions | number = {}): HttpRequest {
-  const { maxTokens = 1500, json = false, images = [] } = typeof options === "number" ? { maxTokens: options } : options;
+  const { maxTokens = 1500, json = false, images = [], cap } = typeof options === "number" ? { maxTokens: options } : options;
   const model = config.model.trim();
   if (config.provider === "ollama") {
     return {
@@ -158,6 +176,8 @@ export function chatRequest(config: AiConfig, system: string, user: string, opti
       }),
     };
   }
+  const reasoning = config.provider !== "lmstudio" && isReasoningModel(model);
+  const limit = Math.min(maxTokens + (reasoning ? REASONING_MARGIN : THINKING_MARGIN), cap ?? Infinity);
   return {
     url: `${base(config)}/v1/chat/completions`,
     method: "POST",
@@ -166,7 +186,9 @@ export function chatRequest(config: AiConfig, system: string, user: string, opti
       model,
       stream: false,
       // OpenAI n'accepte plus max_tokens pour ses modèles récents ; les autres (OpenRouter, LM Studio) le lisent.
-      ...(config.provider === "openai" ? { max_completion_tokens: maxTokens + THINKING_MARGIN } : { max_tokens: maxTokens + THINKING_MARGIN }),
+      ...(config.provider === "openai" ? { max_completion_tokens: limit } : { max_tokens: limit }),
+      // Raisonnement court (voir isReasoningModel) : OpenAI le lit à plat, OpenRouter dans `reasoning`.
+      ...(reasoning ? (config.provider === "openai" ? { reasoning_effort: "low" } : { reasoning: { effort: "low" } }) : {}),
       messages: [
         { role: "system", content: system },
         {
@@ -193,6 +215,17 @@ export function readReply(provider: AiProvider, json: unknown): string {
   }
   const content = provider === "ollama" && data?.message ? data.message.content : data?.choices?.[0]?.message?.content;
   return typeof content === "string" ? stripThinking(content) : "";
+}
+
+/**
+ * La réponse a-t-elle été coupée par la limite de longueur ? (`finish_reason: "length"` d'OpenAI, d'OpenRouter
+ * et de LM Studio, `stop_reason: "max_tokens"` de Claude, `done_reason: "length"` d'Ollama.)
+ */
+export function wasCut(provider: AiProvider, json: unknown): boolean {
+  const data = json as { stop_reason?: unknown; done_reason?: unknown; choices?: { finish_reason?: unknown }[] } | null;
+  if (provider === "anthropic") return data?.stop_reason === "max_tokens";
+  if (provider === "ollama") return data?.done_reason === "length";
+  return data?.choices?.[0]?.finish_reason === "length";
 }
 
 /**
@@ -226,7 +259,7 @@ export function readModels(json: unknown): string[] {
 }
 
 /** Ce qui a empêché une action IA, pour un message compréhensible. */
-export type AiErrorCode = "network" | "timeout" | "cancelled" | "auth" | "token" | "model" | "limit" | "empty" | "other";
+export type AiErrorCode = "network" | "timeout" | "cancelled" | "auth" | "token" | "model" | "limit" | "context" | "length" | "empty" | "other";
 
 export class AiError extends Error {
   /** Raison donnée par le service lui-même (son message d'erreur), montrée à l'auteur à côté du nôtre. */
@@ -309,8 +342,11 @@ export async function send(request: HttpRequest, local = false, signal?: AbortSi
     const body = await response.text().catch(() => "");
     // Un serveur local qui répond 403 refuse l'origine de l'app, ce n'est pas une affaire de clé ; sauf s'il
     // réclame un jeton (LM Studio avec « Require Authentication » : 401, message sur le jeton).
-    const wantsToken = local && (response.status === 401 || /token|authoriz/i.test(body));
-    const code: AiErrorCode = wantsToken ? "token" : local && response.status === 403 ? "network" : errorCode(response.status);
+    // Texte trop long pour la fenêtre du modèle chargé : LM Studio répond « Channel Error » (MLX) ou parle de
+    // contexte ; on le dit avant tout (le message du jeton parlait de « tokens » et trompait).
+    const tooLong = local && isContextError(body);
+    const wantsToken = local && !tooLong && (response.status === 401 || /api[ _-]?token|authoriz/i.test(body));
+    const code: AiErrorCode = tooLong ? "context" : wantsToken ? "token" : local && response.status === 403 ? "network" : errorCode(response.status);
     const reason = serviceReason(body);
     // Claude répond 400 quand le crédit du compte est épuisé : c'est une limite, pas un modèle inconnu.
     const error = new AiError(/credit balance|billing|quota/i.test(reason) ? "limit" : code, `${response.status} ${body}`.slice(0, 300));
@@ -322,15 +358,89 @@ export async function send(request: HttpRequest, local = false, signal?: AbortSi
   });
 }
 
+/**
+ * Erreur d'un serveur local qui dit que le texte dépasse la fenêtre du modèle : « Channel Error » de LM Studio
+ * (le moteur MLX s'arrête), « context length », « n_ctx », « exceeds »… Fonction pure, testée.
+ */
+export function isContextError(body: string): boolean {
+  return /channel error|context (length|window|size|overflow)|n_ctx|num_ctx|exceed|too (long|many tokens)|tokens to keep/i.test(body);
+}
+
 /** Envoie une consigne et rend le texte de la réponse. */
 export async function complete(config: AiConfig, system: string, user: string, options?: ChatOptions | number): Promise<string> {
   if (config.provider === "apple") return appleComplete(system, user, typeof options === "number" ? { maxTokens: options } : options);
   const local = PROVIDERS[config.provider].local;
   const signal = typeof options === "object" ? options.signal : undefined;
   const timeout = typeof options === "object" ? options.timeoutMs : undefined;
-  const text = readReply(config.provider, await send(chatRequest(config, system, user, options), local, signal, timeout));
-  if (!text) throw new AiError("empty");
+  const opts: ChatOptions = typeof options === "number" ? { maxTokens: options } : { ...options };
+  // LM Studio : fenêtre du modèle chargé connue, l'envoi trop long est refusé avant de partir, et la réponse
+  // demandée tient dans ce qui reste (le moteur MLX s'arrêtait sinon sur « Channel Error »).
+  const ctx = await localContext(config);
+  if (ctx) {
+    const room = fitLocal(ctx, system, user, (opts.maxTokens ?? 1500) + THINKING_MARGIN);
+    if (room === null) throw contextError(ctx);
+    opts.cap = room;
+  }
+  let reply: unknown;
+  try {
+    reply = await send(chatRequest(config, system, user, opts), local, signal, timeout);
+  } catch (err) {
+    // Fenêtre peut-être changée (modèle rechargé) : relue au prochain envoi.
+    if (err instanceof AiError && err.code === "context") forgetContext(config);
+    throw err;
+  }
+  const text = readReply(config.provider, reply);
+  if (!text) {
+    // Erreur rendue dans une réponse 200 (certains serveurs locaux).
+    if (local && isContextError(serviceReason(JSON.stringify(reply ?? {})))) throw new AiError("context");
+    // Rien d'écrit et réponse coupée : le modèle a passé sa limite à raisonner (ou le texte remplissait sa fenêtre).
+    throw new AiError(wasCut(config.provider, reply) ? "length" : "empty");
+  }
   return text;
+}
+
+/** Erreur « texte trop long » avec la fenêtre lue, pour que l'auteur sache quoi changer. */
+function contextError(ctx: number): AiError {
+  const error = new AiError("context", `fenêtre ${ctx}`);
+  error.reason = `Context Length ${ctx}`;
+  return error;
+}
+
+/** Fenêtre du modèle chargé dans une réponse de `/api/v0/models` de LM Studio (`loaded_context_length`). Pure, testée. */
+export function readLoadedContext(json: unknown, model: string): number | null {
+  const data = (json as { data?: unknown } | null)?.data;
+  if (!Array.isArray(data)) return null;
+  const entries = data as { id?: unknown; state?: unknown; loaded_context_length?: unknown }[];
+  const wanted = model.trim();
+  const entry = wanted ? entries.find((e) => e?.id === wanted) : entries.find((e) => e?.state === "loaded");
+  const n = entry?.loaded_context_length;
+  return typeof n === "number" && Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+}
+
+/** Fenêtres lues, par serveur et modèle, gardées une minute (l'auteur peut recharger le modèle autrement). */
+const contexts = new Map<string, { at: number; ctx: number | null }>();
+const CONTEXT_TTL = 60_000;
+const contextKey = (config: AiConfig) => `${base(config)}|${config.model.trim()}`;
+const forgetContext = (config: AiConfig) => contexts.delete(contextKey(config));
+
+/**
+ * Fenêtre du modèle chargé dans LM Studio (null ailleurs, ou si le serveur ne la donne pas). Met aussi à jour
+ * les budgets des envois par paquets (`setDetectedContext`, limits.ts) : à appeler avant `packBudget`.
+ */
+export async function localContext(config: AiConfig): Promise<number | null> {
+  if (config.provider !== "lmstudio") return null;
+  const key = contextKey(config);
+  const known = contexts.get(key);
+  if (known && Date.now() - known.at < CONTEXT_TTL) return known.ctx;
+  let ctx: number | null = null;
+  try {
+    ctx = readLoadedContext(await send({ url: `${base(config)}/api/v0/models`, method: "GET", headers: headers(config) }, true), config.model);
+  } catch {
+    /* ancienne version de LM Studio, ou serveur qui ne la donne pas : budgets ordinaires */
+  }
+  contexts.set(key, { at: Date.now(), ctx });
+  setDetectedContext(config.provider, ctx);
+  return ctx;
 }
 
 export async function listModels(config: AiConfig): Promise<string[]> {

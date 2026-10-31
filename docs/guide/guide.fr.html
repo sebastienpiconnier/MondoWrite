@@ -919,7 +919,7 @@
 <h4>Mon PDF de livre broché a trop peu de pages.</h4>
 <p>KDP demande au moins 24 pages. Un format plus petit (5 × 8) ou une table des matières et des pages de fin ajoutent quelques pages ; sinon, le texte est simplement trop court pour un livre broché.</p>
 <h4>L’IA ne répond pas.</h4>
-<p>Pour Ollama ou LM Studio, vérifie que le logiciel est lancé et qu’un modèle est chargé, puis <span class="ui">Tester et lister les modèles</span>. Pour un service en ligne, vérifie la clé d’API et ton crédit. Le message d’erreur dit ce qui bloque.</p>
+<p>Pour Ollama ou LM Studio, vérifie que le logiciel est lancé et qu’un modèle est chargé, puis <span class="ui">Tester et lister les modèles</span>. Pour un service en ligne, vérifie la clé d’API et ton crédit. Le message d’erreur dit ce qui bloque. Dans LM Studio, charge le modèle avec une « Context Length » d’au moins 16&nbsp;384 pour la relecture et la cohérence : avec 4&nbsp;096 ou 8&nbsp;192, les envois sont plus petits, et un envoi qui ne tient pas est refusé avec un message qui le dit. Avec un modèle qui raisonne (GPT-5, o3…), MondoWrite lui demande un raisonnement court ; s’il ne répond toujours rien, choisis-en un plus léger (GPT-5 mini).</p>
 <h4>Ma photo ne se décrit pas.</h4>
 <p>Le modèle choisi doit savoir lire les images (par exemple gemma3, qwen2.5vl ou llava avec Ollama).</p>
 <h4>MondoWrite est-il gratuit ?</h4>

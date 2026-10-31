@@ -2,7 +2,8 @@
 // IA facultative : requêtes vers chaque service, lecture des réponses, consignes et relecture des propositions.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig, OLLAMA_CONTEXT, stripThinking, THINKING_MARGIN } from "../ai/providers";
+import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig, OLLAMA_CONTEXT, stripThinking, THINKING_MARGIN, isReasoningModel, REASONING_MARGIN, wasCut, isContextError, readLoadedContext } from "../ai/providers";
+import { CONTEXT_MARGIN, fitLocal, LOCAL_CHARS_PER_TOKEN, LOCAL_ROOM, MIN_PACK, packBudget, setDetectedContext } from "../ai/limits";
 import { aiErrorText, AiError as AiErr, serviceReason } from "../ai/providers";
 import { coherencePrompt, extractJson, interviewPrompt, nameCards, parseCoherence, parseQuestion, parseTidy, tidyCandidates, tidyPrompt } from "../ai/tasks";
 import { aiConfig } from "../settings";
@@ -83,7 +84,7 @@ describe("services", () => {
 
   it("erreurs traduites en causes compréhensibles, toutes expliquées dans les deux langues", () => {
     expect([401, 403, 404, 400, 429, 402, 500].map(errorCode)).toEqual(["auth", "auth", "model", "model", "limit", "limit", "other"]);
-    for (const code of ["network", "auth", "model", "limit", "empty", "other"] as const) expect(fr.ai.errors[code] && en.ai.errors[code]).toBeTruthy();
+    for (const code of ["network", "auth", "model", "limit", "context", "length", "empty", "other"] as const) expect(fr.ai.errors[code] && en.ai.errors[code]).toBeTruthy();
   });
 });
 
@@ -95,8 +96,10 @@ describe("appels", () => {
     const fetchMock = answer(200, { choices: [{ message: { content: "Une question ?" } }] });
     vi.stubGlobal("fetch", fetchMock);
     expect(await complete(config("lmstudio"), "c", "t")).toBe("Une question ?");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    // LM Studio : fenêtre du modèle d'abord (/api/v0/models), puis la complétion.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toBe("http://localhost:1234/api/v0/models");
+    const [url, init] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
     expect(url).toBe("http://localhost:1234/v1/chat/completions");
     expect(init.method).toBe("POST");
   });
@@ -109,6 +112,26 @@ describe("appels", () => {
     await expect(listModels(config("ollama"))).rejects.toBeInstanceOf(AiError);
     vi.stubGlobal("fetch", answer(200, { choices: [{ message: { content: "  " } }] }));
     await expect(complete(config("openai"), "c", "t")).rejects.toMatchObject({ code: "empty" });
+    vi.stubGlobal("fetch", answer(200, { choices: [{ message: { content: "" }, finish_reason: "length" }] }));
+    await expect(complete(config("openai"), "c", "t")).rejects.toMatchObject({ code: "length" });
+  });
+
+  it("LM Studio : fenêtre trop petite dite en clair, avant ou après l'envoi", async () => {
+    const small = { ...config("lmstudio"), model: "gemma-petit" };
+    const fetchMock = vi.fn(async (url: string) =>
+      url.endsWith("/api/v0/models")
+        ? new Response(JSON.stringify({ data: [{ id: "gemma-petit", state: "loaded", loaded_context_length: 8192 }] }), { status: 200 })
+        : new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(complete(small, "c", "t".repeat(40_000))).rejects.toMatchObject({ code: "context" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(await complete(small, "c", "court", { maxTokens: 3000 })).toBe("ok");
+    const body = JSON.parse((fetchMock.mock.calls[1] as unknown as [string, RequestInit])[1].body as string);
+    expect(body.max_tokens).toBe(3000 + THINKING_MARGIN);
+    // « Channel Error » rendu par le serveur : même message, pas celui du jeton.
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => (url.endsWith("/api/v0/models") ? new Response("{}", { status: 404 }) : new Response(JSON.stringify({ error: "Channel Error" }), { status: 400 }))));
+    await expect(complete({ ...config("lmstudio"), model: "autre" }, "c", "t")).rejects.toMatchObject({ code: "context" });
   });
 
   it("modèles du service", async () => {
@@ -280,12 +303,64 @@ describe("message d'erreur du service", () => {
     expect(serviceReason("<html>")).toBe("");
     const err = new AiErr("model");
     err.reason = "max_tokens: too big";
-    const errors = { network: "N", timeout: "T", cancelled: "C", auth: "A", token: "K", model: "M", limit: "L", empty: "E", other: "O" };
+    const errors = { network: "N", timeout: "T", cancelled: "C", auth: "A", token: "K", model: "M", limit: "L", context: "X", length: "G", empty: "E", other: "O" };
     expect(aiErrorText(err, errors)).toBe("M (max_tokens: too big)");
     expect(aiErrorText(new Error("x"), errors)).toBe("O");
     // Jeton demandé par un serveur local : le message suffit, sans le long texte du serveur.
     const token = new AiErr("token");
     token.reason = "An LM Studio API token is required to make requests to this server";
     expect(aiErrorText(token, errors)).toBe("K");
+  });
+});
+
+describe("modèles qui raisonnent et fenêtres trop petites (1.10.2)", () => {
+  it("GPT-5 et la série o reçoivent un effort court et une grande marge", () => {
+    expect(isReasoningModel("gpt-5")).toBe(true);
+    expect(isReasoningModel("gpt-5-mini")).toBe(true);
+    expect(isReasoningModel("o4-mini")).toBe(true);
+    expect(isReasoningModel("openai/gpt-5.1")).toBe(true);
+    expect(isReasoningModel("gpt-5-chat-latest")).toBe(false);
+    expect(isReasoningModel("gpt-5-pro")).toBe(false);
+    expect(isReasoningModel("gpt-4.1")).toBe(false);
+    const cfg = (provider: AiConfig["provider"], model: string): AiConfig => ({ provider, model, key: "k", url: "" });
+    const openai = JSON.parse(chatRequest(cfg("openai", "gpt-5"), "S", "U", { maxTokens: 3000 }).body!);
+    expect(openai.max_completion_tokens).toBe(3000 + REASONING_MARGIN);
+    expect(openai.reasoning_effort).toBe("low");
+    const router = JSON.parse(chatRequest(cfg("openrouter", "openai/gpt-5"), "S", "U", { maxTokens: 3000 }).body!);
+    expect(router.reasoning).toEqual({ effort: "low" });
+    const plain = JSON.parse(chatRequest(cfg("openai", "gpt-4.1"), "S", "U", { maxTokens: 3000 }).body!);
+    expect(plain.reasoning_effort).toBeUndefined();
+    expect(plain.max_completion_tokens).toBe(3000 + THINKING_MARGIN);
+    const capped = JSON.parse(chatRequest(cfg("lmstudio", "gemma"), "S", "U", { maxTokens: 3000, cap: 1200 }).body!);
+    expect(capped.max_tokens).toBe(1200);
+  });
+
+  it("une réponse vide et coupée dit que le modèle a tout passé à réfléchir", () => {
+    expect(wasCut("openai", { choices: [{ message: { content: "" }, finish_reason: "length" }] })).toBe(true);
+    expect(wasCut("openai", { choices: [{ message: { content: "" }, finish_reason: "stop" }] })).toBe(false);
+    expect(wasCut("ollama", { done_reason: "length" })).toBe(true);
+    expect(wasCut("anthropic", { stop_reason: "max_tokens" })).toBe(true);
+  });
+
+  it("« Channel Error » de LM Studio est une fenêtre trop petite, pas un jeton", () => {
+    expect(isContextError('{"error":"Channel Error"}')).toBe(true);
+    expect(isContextError("The number of tokens to keep from the initial prompt is greater than the context length")).toBe(true);
+    expect(isContextError("model not found")).toBe(false);
+    expect(readLoadedContext({ data: [{ id: "gemma-4", state: "loaded", loaded_context_length: 8192 }] }, "gemma-4")).toBe(8192);
+    expect(readLoadedContext({ data: [{ id: "a", state: "loaded", loaded_context_length: 4096 }] }, "")).toBe(4096);
+    expect(readLoadedContext({ data: [{ id: "a" }] }, "a")).toBeNull();
+    expect(readLoadedContext({}, "a")).toBeNull();
+  });
+
+  it("une fenêtre connue réduit les paquets et refuse un envoi qui n'y tient pas", () => {
+    expect(fitLocal(8192, "x".repeat(3000), "y".repeat(30_000), 5048)).toBeNull();
+    expect(fitLocal(8192, "x".repeat(3000), "y".repeat(9000), 5048)).toBe(8192 - CONTEXT_MARGIN - 4000);
+    expect(fitLocal(32_768, "x", "y", 5048)).toBe(5048);
+    setDetectedContext("lmstudio", 8192);
+    expect(packBudget("lmstudio", 30_000)).toBe((8192 - LOCAL_ROOM) * LOCAL_CHARS_PER_TOKEN);
+    setDetectedContext("lmstudio", 2048);
+    expect(packBudget("lmstudio", 30_000)).toBe(MIN_PACK);
+    setDetectedContext("lmstudio", null);
+    expect(packBudget("lmstudio", 30_000)).toBe(30_000);
   });
 });

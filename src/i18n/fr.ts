@@ -495,6 +495,8 @@ export const fr = {
       model: "Modèle inconnu ou requête refusée. Vérifie le nom du modèle dans les Réglages.",
       limit: "Limite ou crédit atteint chez ce service. Réessaie plus tard.",
       empty: "L’IA n’a rien répondu d’utilisable. Réessaie, ou change de modèle.",
+      context: "Le texte envoyé dépasse la fenêtre du modèle chargé. Dans LM Studio, recharge le modèle avec une « Context Length » plus grande (16 384 au moins pour la relecture), ou choisis un modèle qui en a une plus grande.",
+      length: "Le modèle a passé toute sa réponse à réfléchir, sans rien écrire. Réessaie, ou choisis un modèle qui raisonne moins (GPT-5 mini, par exemple).",
       other: "L’action IA a échoué.",
     },
   },

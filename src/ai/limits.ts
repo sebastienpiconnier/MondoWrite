@@ -58,11 +58,46 @@ export const PROVIDER_LIMITS: Record<AiProvider, ProviderLimits> = {
   },
 };
 
+/**
+ * Fenêtre du modèle chargé, lue auprès du serveur local (LM Studio : « Context Length » choisie au chargement,
+ * souvent 4 096 ou 8 192). Inconnue : null, on garde les budgets de l'action. Mise à jour par `localContext`
+ * (providers.ts) avant une action longue.
+ */
+const detected: Partial<Record<AiProvider, number>> = {};
+export function setDetectedContext(provider: AiProvider, tokens: number | null) {
+  if (tokens && tokens > 0) detected[provider] = tokens;
+  else delete detected[provider];
+}
+export const detectedContext = (provider: AiProvider): number | null => detected[provider] ?? null;
+
+/** Caractères par jeton pour une fenêtre lue sur un serveur local (compte prudent, comme pour Apple). */
+export const LOCAL_CHARS_PER_TOKEN = 3;
+/** Place gardée dans une fenêtre lue pour la consigne, les fiches jointes et la réponse, en jetons. */
+export const LOCAL_ROOM = 5000;
+/** Paquet le plus petit qu'on envoie, même dans une petite fenêtre (en caractères). */
+export const MIN_PACK = 2000;
+
 /** Ce service sait-il faire cette action ? */
 export const allows = (provider: AiProvider, action: AiAction) => !PROVIDER_LIMITS[provider].refused.includes(action);
 
 /** Budget en caractères d'un envoi par paquets : celui du service s'il est plus petit, sinon celui de l'action. */
-export const packBudget = (provider: AiProvider, fallback: number) => Math.min(fallback, PROVIDER_LIMITS[provider].pack ?? fallback);
+export function packBudget(provider: AiProvider, fallback: number): number {
+  const own = Math.min(fallback, PROVIDER_LIMITS[provider].pack ?? fallback);
+  const ctx = detected[provider];
+  if (!ctx) return own;
+  return Math.min(own, Math.max(MIN_PACK, (ctx - LOCAL_ROOM) * LOCAL_CHARS_PER_TOKEN));
+}
+
+/**
+ * Limite de réponse à demander à un serveur local dont on connaît la fenêtre (`ctx`) : ce qui reste après la
+ * consigne et le texte, au plus `wanted`. Null si le texte seul ne laisse pas `MIN_REPLY` jetons (envoi refusé
+ * avant de partir, avec un message qui dit d'agrandir la fenêtre).
+ */
+export function fitLocal(ctx: number, system: string, user: string, wanted: number): number | null {
+  const room = ctx - CONTEXT_MARGIN - Math.ceil((system.length + user.length) / LOCAL_CHARS_PER_TOKEN);
+  if (room < MIN_REPLY) return null;
+  return Math.min(wanted, room);
+}
 
 /** Texte collé le plus long pour « Du vrac aux cartes ». */
 export const vracLimit = (provider: AiProvider, fallback: number) => Math.min(fallback, PROVIDER_LIMITS[provider].vracMax ?? fallback);

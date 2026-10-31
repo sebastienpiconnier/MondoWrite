@@ -11,7 +11,7 @@ import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { aiConfig, useSettings } from "../settings";
-import { aiErrorText, complete, isReady } from "../ai/providers";
+import { aiErrorText, complete, isReady, localContext } from "../ai/providers";
 import { allows, packBudget } from "../ai/limits";
 import type { AiConfig } from "../ai/providers";
 import type { CardData } from "../types";
@@ -325,6 +325,7 @@ function useBreakdownRun() {
       const scenes = breakdownScenes(state.screenplay, lang, only);
       if (scenes.length === 0) return ai.setMessage(s.breakdownNoScenes);
       // Lots plus petits pour un petit modèle (Apple sur l'appareil, ai/limits.ts).
+      await localContext(config);
       const batches = breakdownBatches(scenes, packBudget(config.provider, BREAKDOWN_BUDGET));
       const fiches = Object.fromEntries(state.nodes.map((n) => [n.id, n.data.fiche]));
       let found: BreakdownProposal[] = [];
