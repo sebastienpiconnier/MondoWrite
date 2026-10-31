@@ -90,7 +90,7 @@ export function nameCards(text: string, cards: Pick<CardData, "id" | "type" | "t
   const ids = [...byId.keys()].sort((a, b) => b.length - a.length).map(escapeRe).join("|");
   const id = `(${ids})`;
   const tag = `(?:(?:id|ID|Id|identifiant|identifier)\\s*:?\\s*)?`;
-  const wrapped = [`\\(\\s*${tag}${id}\\s*\\)`, `\\[\\s*${tag}${id}\\s*\\]`, `"${id}"`, `“${id}”`, `«\\s*${id}\\s*»`, `'${id}'`, `’${id}’`, `\`${id}\``, `\\b${id}\\b`].join("|");
+  const wrapped = [`\\(\\s*${tag}${id}\\s*\\)`, `\\[\\s*${tag}${id}\\s*\\]`, `"${id}"`, `“${id}”`, `«\\s*${id}\\s*»`, `'${id}'`, `’${id}’`, `\`${id}\``, `(?<![\\w-])${id}(?![\\w-])`].join("|");
   const re = new RegExp(`(?:\\b(?:id|ID|Id|identifiant|identifier)\\s*:?\\s*)?(?:${wrapped})`, "g");
   const label = (c: Pick<CardData, "type" | "title">) => `${c.title.trim() || names.untitled} (${names.type(c.type)})`;
   return text.replace(re, (match, ...groups: unknown[]) => {
@@ -121,7 +121,12 @@ export interface TidySuggestion {
 }
 
 /** Cartes que « Ranger » regarde : les idées en vrac qui ont un titre ou un texte. */
-export const tidyCandidates = (cards: CardData[]) => cards.filter((c) => c.type === "idee" && (c.title.trim() || plainText(c.html))).slice(0, MAX_CARDS);
+const looseIdeas = (cards: CardData[]) => cards.filter((c) => c.type === "idee" && (c.title.trim() || plainText(c.html)));
+export const tidyCandidates = (cards: CardData[]) => looseIdeas(cards).slice(0, MAX_CARDS);
+/** Idées en vrac que « Ranger » n'a pas regardées cette fois (au-delà des MAX_CARDS premières). */
+export const tidyLeftOut = (cards: CardData[]) => Math.max(0, looseIdeas(cards).length - MAX_CARDS);
+/** Nombre d'idées que « Ranger » regarde à la fois. */
+export const TIDY_MAX = MAX_CARDS;
 
 export function tidyPrompt(cards: CardData[], lang: string, kind: "roman" | "scenario"): Prompt {
   return {
@@ -187,7 +192,8 @@ export function interviewPrompt(
 export function parseQuestion(reply: string, cards: CardData[] = [], names?: CardNames): string {
   if (names && cards.length > 0) reply = nameCards(reply, cards, names);
   const line = reply.split("\n").map((l) => l.trim()).filter(Boolean).find((l) => l.includes("?")) ?? reply.trim().split("\n")[0] ?? "";
-  return clip(line.replace(/^[-*\d.\s]*(question\s*:)?\s*/i, "").replace(/^["«“]\s*|\s*["»”]$/g, "").trim(), 300);
+  // Puce ou numérotation (« 2. », « 2) ») retirées, jamais un nombre de la phrase (« 2 ans après… »).
+  return clip(line.replace(/^[-*•\s]*(?:\d{1,2}[.)]\s+)?(question\s*:)?\s*/i, "").replace(/^["«“]\s*|\s*["»”]$/g, "").trim(), 300);
 }
 
 // ---------- Synthèse d'un personnage ----------
@@ -394,6 +400,10 @@ const foldTitle = (text: string) =>
     .trim()
     .toLowerCase();
 
+/** Le texte (replié) nomme ce titre (replié) en mots entiers : « Max » n'est pas cité dans « maximum ». */
+const namesTitle = (folded: string, title: string) =>
+  !!title && new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(title)}(?![\\p{L}\\p{N}])`, "u").test(folded);
+
 export function parseCoherence(reply: string, cards: CardData[], names?: CardNames): CoherenceAlert[] {
   const known = new Set(cards.map((c) => c.id));
   // Malgré la consigne, un modèle donne souvent le titre de la carte (« Inès (personnage) ») au lieu de son identifiant.
@@ -415,7 +425,7 @@ export function parseCoherence(reply: string, cards: CardData[], names?: CardNam
       // Aucune carte reconnue : celles que la question nomme par leur titre.
       if (ids.length === 0 && raw) {
         const folded = foldTitle(raw);
-        ids = cards.filter((c) => c.title.trim().length >= 3 && folded.includes(foldTitle(c.title))).map((c) => c.id);
+        ids = cards.filter((c) => c.title.trim().length >= 3 && namesTitle(folded, foldTitle(c.title))).map((c) => c.id);
       }
       const question = names ? nameCards(raw, cards, names) : raw;
       return ids.length > 0 && question ? [{ cards: ids, question }] : [];

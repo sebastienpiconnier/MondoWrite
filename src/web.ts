@@ -8,6 +8,27 @@ import { pageInfo } from "./research";
 const TIMEOUT_MS = 20_000;
 const MAX_BYTES = 2_000_000;
 
+/**
+ * Texte d'une réponse, au plus `max` octets : la lecture s'arrête dès qu'ils sont là (une page énorme
+ * n'est pas lue en entier). Sans corps lisible en flux, tout est lu puis coupé.
+ */
+export async function readText(response: Response, max: number): Promise<string> {
+  const reader = response.body?.getReader?.();
+  if (!reader) return (await response.text()).slice(0, max);
+  const decoder = new TextDecoder();
+  let out = "";
+  let size = 0;
+  while (size < max) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = value.byteLength > max - size ? value.subarray(0, max - size) : value;
+    size += chunk.byteLength;
+    out += decoder.decode(chunk, { stream: true });
+  }
+  if (size >= max) void reader.cancel().catch(() => {});
+  return out + decoder.decode();
+}
+
 export async function readPage(url: string): Promise<ReturnType<typeof pageInfo>> {
   if (!/^https?:\/\//i.test(url)) throw new Error("adresse");
   const doFetch: typeof fetch = isTauri() ? ((await import("@tauri-apps/plugin-http")).fetch as typeof fetch) : fetch;
@@ -16,7 +37,7 @@ export async function readPage(url: string): Promise<ReturnType<typeof pageInfo>
   try {
     const response = await doFetch(url, { method: "GET", headers: { accept: "text/html" }, signal: controller.signal });
     if (!response.ok) throw new Error(String(response.status));
-    const html = (await response.text()).slice(0, MAX_BYTES);
+    const html = await readText(response, MAX_BYTES);
     return pageInfo(html, url);
   } finally {
     clearTimeout(timer);

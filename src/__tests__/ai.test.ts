@@ -2,7 +2,7 @@
 // IA facultative : requêtes vers chaque service, lecture des réponses, consignes et relecture des propositions.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig, OLLAMA_CONTEXT, stripThinking } from "../ai/providers";
+import { AI_PROVIDERS, AiError, PROVIDERS, chatRequest, complete, errorCode, isReady, listModels, modelsRequest, readModels, readReply, type AiConfig, OLLAMA_CONTEXT, stripThinking, THINKING_MARGIN } from "../ai/providers";
 import { aiErrorText, AiError as AiErr, serviceReason } from "../ai/providers";
 import { coherencePrompt, extractJson, interviewPrompt, nameCards, parseCoherence, parseQuestion, parseTidy, tidyCandidates, tidyPrompt } from "../ai/tasks";
 import { aiConfig } from "../settings";
@@ -38,7 +38,7 @@ describe("services", () => {
     const openai = chatRequest(config("openai"), "Consigne", "Texte");
     expect(openai.url).toBe("https://api.openai.com/v1/chat/completions");
     expect(openai.headers.authorization).toBe("Bearer sk-test");
-    expect(JSON.parse(openai.body!)).toEqual({ model: "modele", stream: false, messages: [{ role: "system", content: "Consigne" }, { role: "user", content: "Texte" }] });
+    expect(JSON.parse(openai.body!)).toEqual({ model: "modele", stream: false, max_completion_tokens: 1500 + THINKING_MARGIN, messages: [{ role: "system", content: "Consigne" }, { role: "user", content: "Texte" }] });
     const router = chatRequest(config("openrouter"), "c", "t");
     expect(router.url).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect(router.headers).toMatchObject({ authorization: "Bearer sk-test", "x-title": "MondoWrite" });
@@ -276,7 +276,7 @@ describe("message d'erreur du service", () => {
     expect(serviceReason("<html>")).toBe("");
     const err = new AiErr("model");
     err.reason = "max_tokens: too big";
-    const errors = { network: "N", auth: "A", model: "M", limit: "L", empty: "E", other: "O" };
+    const errors = { network: "N", timeout: "T", cancelled: "C", auth: "A", model: "M", limit: "L", empty: "E", other: "O" };
     expect(aiErrorText(err, errors)).toBe("M (max_tokens: too big)");
     expect(aiErrorText(new Error("x"), errors)).toBe("O");
   });

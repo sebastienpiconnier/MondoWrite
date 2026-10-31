@@ -15,7 +15,7 @@ import { plainText } from "../search";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
 import { allQuestionTexts } from "../assistant";
-import { coherencePrompt, parseCoherence, type CardNames, parseTidy, tidyCandidates, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
+import { coherencePrompt, parseCoherence, type CardNames, parseTidy, TIDY_MAX, tidyCandidates, tidyLeftOut, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
 
 type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | null;
 
@@ -34,6 +34,10 @@ export function AiMenu() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<Result>(null);
+  // Idées que « Ranger » n'a pas regardées (au-delà de TIDY_MAX), dites sous le résultat.
+  const [leftOut, setLeftOut] = useState(0);
+  // Annulation de l'action en cours par l'auteur.
+  const abortRef = useRef<AbortController | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -57,6 +61,9 @@ export function AiMenu() {
     };
   }, [open]);
 
+  // Barre du haut démontée (projet fermé) : la requête en cours s'arrête.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
   if (!isReady(config)) return null;
 
   // Une carte citée dans un texte de l'IA : « Titre (type) », jamais son identifiant.
@@ -68,14 +75,19 @@ export function AiMenu() {
     const { nodes: now, edges, manuscript, screenplay } = useCosmos.getState();
     const cards = now.map((n) => n.data);
     setResult(null);
+    setLeftOut(0);
     if (task === "tidy" && tidyCandidates(cards).length === 0) return setMessage(t.tidyNone);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const signal = controller.signal;
     setBusy(true);
     setMessage(t.working);
     try {
       if (task === "tidy") {
         const prompt = tidyPrompt(cards, lang, kind);
-        const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards, names);
+        const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000, signal }), cards, names);
         setResult({ kind: "tidy", items });
+        setLeftOut(tidyLeftOut(cards));
         setMessage(items.length === 0 ? t.tidyEmpty : "");
       } else {
         // Le texte des scènes vit dans le manuscrit ou le scénario, pas dans leur carte.
@@ -88,7 +100,7 @@ export function AiMenu() {
           } else if (manuscript[card.id]) sceneTexts[card.id] = plainText(manuscript[card.id]);
         }
         const prompt = coherencePrompt(cards, edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })), lang, sceneTexts, allQuestionTexts(all.assistant));
-        const items = parseCoherence(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards, names);
+        const items = parseCoherence(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000, signal }), cards, names);
         setResult({ kind: "coherence", items });
         setMessage(items.length === 0 ? t.coherenceNone : "");
       }
@@ -96,6 +108,7 @@ export function AiMenu() {
       console.error(err);
       setMessage(aiErrorText(err, t.errors));
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setBusy(false);
     }
   };
@@ -144,6 +157,12 @@ export function AiMenu() {
           <p className="ai-message" role="status">
             {message}
           </p>
+          {busy && (
+            <button type="button" className="ghost-button" onClick={() => abortRef.current?.abort()}>
+              {t.cancel}
+            </button>
+          )}
+          {result?.kind === "tidy" && leftOut > 0 && <p className="settings-hint">{fmt(t.tidyLeftOut, { max: TIDY_MAX, n: leftOut })}</p>}
 
           {result?.kind === "tidy" && result.items.length > 0 && (
             <>

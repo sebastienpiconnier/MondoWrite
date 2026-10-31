@@ -51,9 +51,23 @@ export function isReady(config: AiConfig | null): config is AiConfig {
 
 const base = (config: AiConfig) => {
   const info = PROVIDERS[config.provider];
-  const custom = info.local ? config.url.trim().replace(/\/+$/, "") : "";
+  // Adresse collée telle que la documentation la donne (« …:1234/v1/ ») : sans la barre finale ni « /v1 »,
+  // que les chemins ajoutent déjà (sinon « /v1/v1/… », que le serveur refuse en « modèle inconnu »).
+  const custom = info.local ? config.url.trim().replace(/\/+$/, "").replace(/\/v1$/i, "").replace(/\/+$/, "") : "";
   return custom || info.url;
 };
+
+/** L'adresse vise-t-elle cet ordinateur ? (Vide : l'adresse par défaut, locale.) Sert au texte d'aide. */
+export function isLoopback(url: string): boolean {
+  const text = url.trim();
+  if (!text) return true;
+  try {
+    const host = new URL(/^[a-z][a-z\d+.-]*:\/\//i.test(text) ? text : `http://${text}`).hostname.toLowerCase();
+    return host === "localhost" || host === "[::1]" || /^127(\.\d{1,3}){3}$/.test(host);
+  } catch {
+    return false;
+  }
+}
 
 export interface HttpRequest {
   url: string;
@@ -83,7 +97,16 @@ export interface ChatOptions {
   images?: { mime: string; data: string }[];
   /** La réponse attendue est un objet JSON (Ollama le garantit alors avec `format: "json"`). */
   json?: boolean;
+  /** Annulation par l'auteur (bouton « Annuler » pendant que l'IA réfléchit). */
+  signal?: AbortSignal;
 }
+
+/**
+ * Marge ajoutée à la limite de longueur pour les services autres que Claude : un modèle qui raisonne
+ * (o1, Qwen 3, DeepSeek R1…) compte son raisonnement dans la limite, et rendrait sinon une réponse vide.
+ * La limite reste là pour qu'un modèle local bavard ne tourne pas jusqu'au délai de 300 s.
+ */
+export const THINKING_MARGIN = 2048;
 
 /** Requête de complétion : une consigne (system) et un message de l'auteur (user). */
 export function chatRequest(config: AiConfig, system: string, user: string, options: ChatOptions | number = {}): HttpRequest {
@@ -98,7 +121,7 @@ export function chatRequest(config: AiConfig, system: string, user: string, opti
         model,
         stream: false,
         messages: [{ role: "system", content: system }, { role: "user", content: user, ...(images.length > 0 ? { images: images.map((i) => i.data) } : {}) }],
-        options: { num_ctx: OLLAMA_CONTEXT, temperature: 0.3 },
+        options: { num_ctx: OLLAMA_CONTEXT, temperature: 0.3, num_predict: maxTokens + THINKING_MARGIN },
         ...(json ? { format: "json" } : {}),
       }),
     };
@@ -131,6 +154,8 @@ export function chatRequest(config: AiConfig, system: string, user: string, opti
     body: JSON.stringify({
       model,
       stream: false,
+      // OpenAI n'accepte plus max_tokens pour ses modèles récents ; les autres (OpenRouter, LM Studio) le lisent.
+      ...(config.provider === "openai" ? { max_completion_tokens: maxTokens + THINKING_MARGIN } : { max_tokens: maxTokens + THINKING_MARGIN }),
       messages: [
         { role: "system", content: system },
         {
@@ -190,7 +215,7 @@ export function readModels(json: unknown): string[] {
 }
 
 /** Ce qui a empêché une action IA, pour un message compréhensible. */
-export type AiErrorCode = "network" | "auth" | "model" | "limit" | "empty" | "other";
+export type AiErrorCode = "network" | "timeout" | "cancelled" | "auth" | "model" | "limit" | "empty" | "other";
 
 export class AiError extends Error {
   /** Raison donnée par le service lui-même (son message d'erreur), montrée à l'auteur à côté du nôtre. */
@@ -239,9 +264,17 @@ async function httpFetch(): Promise<typeof fetch> {
   }
 }
 
-async function send(request: HttpRequest, local = false): Promise<unknown> {
+async function send(request: HttpRequest, local = false, signal?: AbortSignal): Promise<unknown> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), local ? LOCAL_TIMEOUT_MS : TIMEOUT_MS);
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, local ? LOCAL_TIMEOUT_MS : TIMEOUT_MS);
+  // Annulation par l'auteur : elle coupe la même requête.
+  const cancel = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener("abort", cancel);
   let response: Response;
   try {
     const doFetch = await httpFetch();
@@ -249,10 +282,13 @@ async function send(request: HttpRequest, local = false): Promise<unknown> {
     const headers = local && isTauri() ? { ...request.headers, origin: "" } : request.headers;
     response = await doFetch(request.url, { method: request.method, headers, body: request.body, signal: controller.signal });
   } catch (err) {
+    if (timedOut) throw new AiError("timeout", String(err));
+    if (signal?.aborted) throw new AiError("cancelled", String(err));
     // Serveur local éteint, pas de réseau, ou appel refusé par le service (CORS).
     throw new AiError("network", String(err));
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener("abort", cancel);
   }
   // Un serveur local qui répond 403 refuse l'origine de l'app, ce n'est pas une affaire de clé.
   const code = local && response.status === 403 ? "network" : errorCode(response.status);
@@ -272,7 +308,8 @@ async function send(request: HttpRequest, local = false): Promise<unknown> {
 /** Envoie une consigne et rend le texte de la réponse. */
 export async function complete(config: AiConfig, system: string, user: string, options?: ChatOptions | number): Promise<string> {
   const local = PROVIDERS[config.provider].local;
-  const text = readReply(config.provider, await send(chatRequest(config, system, user, options), local));
+  const signal = typeof options === "object" ? options.signal : undefined;
+  const text = readReply(config.provider, await send(chatRequest(config, system, user, options), local, signal));
   if (!text) throw new AiError("empty");
   return text;
 }

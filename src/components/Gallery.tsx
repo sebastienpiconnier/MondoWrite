@@ -13,7 +13,7 @@ import type { CardData } from "../types";
 import { useMediaUrl } from "./useMediaUrl";
 import { imageExtension } from "../media";
 import { storage } from "../storage";
-import { AiError, PROVIDERS, complete, isReady } from "../ai/providers";
+import { AiError, PROVIDERS, aiErrorText, complete, isLoopback, isReady } from "../ai/providers";
 import { describeCharacterPrompt, describeImagePrompt, describePlacePrompt, parseCharacterPhoto, parseNotes, type PhotoField } from "../ai/tasks";
 import { imageForAi } from "../ai/image";
 
@@ -87,8 +87,7 @@ export function Gallery({ card }: { card: CardData }) {
     } catch (err) {
       console.error(err);
       // Erreur de modèle : le plus souvent, il ne lit pas les images.
-      const code = err instanceof AiError ? err.code : "other";
-      setError(code === "model" ? g.visionModel : all.ai.errors[code]);
+      setError(aiErrorText(err, { ...all.ai.errors, model: g.visionModel }));
     } finally {
       setBusy(false);
     }
@@ -140,7 +139,7 @@ export function Gallery({ card }: { card: CardData }) {
       </div>
       {canDescribe && photos.length > 0 && !notes && !fields && (
         <p className="gallery-hint">
-          {character ? g.describeHintCharacter : g.describeHint} {PROVIDERS[config!.provider].local ? g.describeLocal : g.describeCloud}
+          {character ? g.describeHintCharacter : g.describeHint} {PROVIDERS[config!.provider].local && isLoopback(config!.url) ? g.describeLocal : g.describeCloud}
         </p>
       )}
 

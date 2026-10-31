@@ -15,7 +15,7 @@ import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
-import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, listModels } from "../ai/providers";
+import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, isLoopback, listModels } from "../ai/providers";
 import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
 import { SOURCE_INFO } from "../imageSources";
@@ -43,7 +43,18 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [testing, setTesting] = useState(false);
   const provider = ai.provider;
   const config = aiConfig(ai);
-  const patchAi = (field: "keys" | "models" | "urls", value: string) => provider && setAi({ ...ai, [field]: { ...ai[field], [provider]: value } });
+  // Toujours sur les réglages du moment (pas ceux du rendu) : une clé collée pendant le chargement des
+  // modèles n'est pas effacée quand le modèle proposé s'écrit ensuite.
+  const patchAi = (field: "keys" | "models" | "urls", value: string, forProvider = provider) => {
+    if (!forProvider) return;
+    const now = useSettings.getState().ai;
+    setAi({ ...now, [field]: { ...now[field], [forProvider]: value } });
+  };
+  /** Pas encore de modèle choisi pour ce service (réglages du moment) : on propose le premier de la liste. */
+  const proposeModel = (forProvider: NonNullable<typeof provider>, list: string[]) => {
+    const now = aiConfig({ ...useSettings.getState().ai, provider: forProvider });
+    if (now && !now.model.trim() && list[0]) patchAi("models", list[0], forProvider);
+  };
   const test = async () => {
     if (!config || testing) return;
     setTesting(true);
@@ -53,8 +64,7 @@ export function Settings({ project = true }: { project?: boolean }) {
       setModels(list);
       setTyping(false);
       setAiStatus(fmt(t.ai.testOk, { n: list.length }));
-      // Pas encore de modèle choisi : on propose le premier de la liste.
-      if (!config.model.trim() && list[0]) patchAi("models", list[0]);
+      proposeModel(config.provider, list);
     } catch (err) {
       console.error(err);
       setAiStatus(aiErrorText(err, t.ai.errors));
@@ -115,12 +125,22 @@ export function Settings({ project = true }: { project?: boolean }) {
   useEffect(() => {
     if (!open || !localUrl || !config || listed.current === localUrl) return;
     listed.current = localUrl;
+    const asked = localUrl;
+    const stale = () => listed.current !== asked || useSettings.getState().ai.provider !== config.provider;
     listModels(config)
       .then((list) => {
+        if (stale()) return; // adresse ou service changés entre-temps
         setModels(list);
-        if (!config.model.trim() && list[0]) patchAi("models", list[0]);
+        setAiStatus("");
+        proposeModel(config.provider, list);
       })
-      .catch(() => setModels([]));
+      .catch((err) => {
+        if (stale()) return;
+        setModels([]);
+        // Échec : on pourra réessayer (bouton, ou en rouvrant les réglages), et on le dit.
+        listed.current = "";
+        setAiStatus(fmt(t.ai.listFailed, { error: aiErrorText(err, t.ai.errors) }));
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, localUrl]);
 
@@ -420,7 +440,7 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </select>
           <p className="settings-hint" id={ids.aiHint}>
-            {!provider ? t.ai.hintNone : PROVIDERS[provider].local ? t.ai.hintLocal : t.ai.hintCloud}
+            {!provider ? t.ai.hintNone : !PROVIDERS[provider].local ? t.ai.hintCloud : isLoopback(config?.url ?? "") ? t.ai.hintLocal : t.ai.hintRemote}
           </p>
           {provider && config && (
             <>

@@ -10,7 +10,7 @@ Source : `src/ai/tasks.ts`. Ce fichier en est la copie : le tenir à jour à cha
 - **Réponses jamais crues sur parole** : tout passe par une fonction `parse…` qui ne garde que des identifiants de cartes connus et des types valides. Une réponse n'est jamais insérée comme HTML.
 - **Une carte se nomme par son titre et son type** dans tout texte destiné à l'auteur (raison de Ranger, question sur mesure, alerte de cohérence), jamais par son identifiant : la consigne le demande, et la relecture (`nameCards`) remplace quand même tout identifiant connu par « Titre (type) », le type dans la langue de l'interface (Décor dans un scénario).
 - Une carte est envoyée sous la forme `{ id, type, title, text, sheet?, answers? }` : le texte est abrégé à 500 caractères, `sheet` est la fiche d'identité d'un personnage quand elle est remplie, `answers` (interview et cohérence, depuis la 1.7.3) les réponses de l'auteur aux questions de l'assistant, `{ question, answer }`, chaque réponse abrégée à 400 caractères. Au plus 80 cartes par requête. Dans l'interview, `alreadyAsked` reprend aussi les questions auxquelles l'auteur a déjà répondu.
-- **Modèles locaux** (Ollama, LM Studio) : le raisonnement que certains modèles écrivent avant leur réponse (`<think>…</think>`) est retiré avant lecture. Avec Ollama, MondoWrite passe par l'API native `/api/chat` avec une fenêtre de contexte de 16 384 jetons (au lieu de la valeur par défaut, trop courte pour un projet) et, pour Ranger et Cohérence, `format: "json"`.
+- **Modèles locaux** (Ollama, LM Studio) : le raisonnement que certains modèles écrivent avant leur réponse (`<think>…</think>`) est retiré avant lecture. Avec Ollama, MondoWrite passe par l'API native `/api/chat` avec une fenêtre de contexte de 16 384 jetons (au lieu de la valeur par défaut, trop courte pour un projet) et, pour Ranger et Cohérence, `format: "json"`. Longueur de la réponse bornée partout (1.7.4) : `max_tokens` pour Claude, et pour les autres la même limite plus 2 048 jetons de marge pour le raisonnement (`max_completion_tokens` chez OpenAI, `max_tokens` chez OpenRouter et LM Studio, `num_predict` chez Ollama), pour qu'un modèle local bavard ne tourne pas jusqu'au délai de 300 s. Une adresse saisie avec `/v1` à la fin est acceptée (le `/v1` est retiré).
 
 ## 1. Ranger les idées
 
@@ -22,13 +22,13 @@ Bouton IA › Ranger les idées. Propose un type pour les cartes Idée.
 You help a writer organise the notes of a {kind}. Each note is an untyped idea card. Suggest a type only when the note clearly is one of: personnage (a character), lieu (a place or location), scene (something that happens, a scene), intrigue (a plot line or subplot running through several scenes), theme (a theme), question (an open question the writer asks themself). Leave out notes that should stay plain ideas. Never rewrite, summarise or complete the writer's text. In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into {langue} (for example: Inès Morvan (personnage)). Card ids belong only in the JSON fields meant for them ("id", "cards"). Answer with a JSON object only: {"items": [{"id": "<card id>", "type": "<type>", "reason": "<one short sentence in {langue}>"}]}. Use the card ids exactly as given. If no note should change, answer {"items": []}.
 ```
 
-**Données** : la liste des cartes Idée qui ont un titre ou un texte.
+**Données** : la liste des cartes Idée qui ont un titre ou un texte, les 80 premières (au-delà, le résultat dit combien attendent un nouveau passage).
 
 ```json
 [{"id":"i1","title":"","text":"Un phare qui s’allume seul."}]
 ```
 
-**Ce que MondoWrite garde** : les propositions dont l'identifiant est une idée connue et le type un des cinq autres. L'auteur applique ou ignore chacune. Ensuite, « Organiser le canevas » range toutes les cartes en cadres (sans IA).
+**Ce que MondoWrite garde** : les propositions dont l'identifiant est une idée connue et le type un des six proposés (personnage, lieu, scène, intrigue, thème, question). L'auteur applique ou ignore chacune. Ensuite, « Organiser le canevas » range toutes les cartes en cadres (sans IA).
 
 ## 2. Question sur mesure (assistant personnage)
 
