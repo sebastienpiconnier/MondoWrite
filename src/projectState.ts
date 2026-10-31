@@ -1,6 +1,7 @@
 // Modèle des nœuds du canevas et passage projet sur disque <-> état du store (fonctions pures).
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
+import { relabelMentions } from "./mentions";
 import { readWires, wiresToMeta } from "./wires";
 import { foldNovelNodes, foldScreenplayNotes } from "./sceneNotes";
 import { renamedZone } from "./research";
@@ -145,17 +146,29 @@ export function firstScreenplay(title: string, nodes: CardNode[]): Screenplay {
   return { ...screenplay, titlePage };
 }
 
-/** L'en-tête fait foi : les cartes Scène liées prennent le texte de leur en-tête. */
-export function titlesFromHeadings(nodes: CardNode[], screenplay: Screenplay): CardNode[] {
+/** Cartes Scène dont l'en-tête dit un autre titre que le leur : identifiant → titre de l'en-tête. */
+export function headingRenames(nodes: CardNode[], screenplay: Screenplay): Map<string, string> {
   const titles = headingTitles(screenplay);
-  let changed = false;
-  const next = nodes.map((n) => {
+  const renamed = new Map<string, string>();
+  for (const n of nodes) {
     const title = titles.get(n.id);
-    if (n.data.type !== "scene" || title === undefined || title === n.data.title) return n;
-    changed = true;
-    return { ...n, data: { ...n.data, title } };
+    if (n.data.type === "scene" && title !== undefined && title !== n.data.title) renamed.set(n.id, title);
+  }
+  return renamed;
+}
+
+/**
+ * L'en-tête fait foi : les cartes Scène liées prennent le texte de leur en-tête, et leurs mentions dans les
+ * autres cartes suivent (comme un renommage par le titre de la carte, `updateCard`).
+ */
+export function titlesFromHeadings(nodes: CardNode[], screenplay: Screenplay): CardNode[] {
+  const renamed = headingRenames(nodes, screenplay);
+  if (renamed.size === 0) return nodes;
+  return nodes.map((n) => {
+    const title = renamed.get(n.id);
+    const node = title === undefined ? n : { ...n, data: { ...n.data, title } };
+    return withHtml(node, relabelMentions(node.data.html, renamed));
   });
-  return changed ? next : nodes;
 }
 
 /**
@@ -255,10 +268,11 @@ export function openProject(p: Project) {
 export function toProject(
   s: ProjectSlice,
 ): Project {
-  // Le plan écrit ne cite que des cartes qui existent encore (ou dont le fichier arrive d'iCloud).
+  // Le plan écrit ne cite que des cartes qui existent encore (ou dont le fichier arrive d'iCloud), et celles de la
+  // corbeille : remise après une relance de l'app, une scène retrouve sa case et son chapitre, comme dans la session.
   const present = new Set(s.nodes.map((n) => n.id));
   const awaiting = (s.awaitingLayout ?? []).filter((l) => !present.has(l.id));
-  const plan = prunePlan(s.plan, new Set([...present, ...awaiting.map((l) => l.id)]));
+  const plan = prunePlan(s.plan, new Set([...present, ...awaiting.map((l) => l.id), ...s.trash.map((c) => c.id)]));
   return {
     meta: {
       // Ce qu'une version plus récente a écrit et que celle-ci ignore, d'abord : les clés connues l'emportent.

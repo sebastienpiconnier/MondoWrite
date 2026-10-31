@@ -45,7 +45,8 @@ export function beatKeys(s: CosmosState): readonly string[] {
  *  l'en-tête des cadres (FrameNode), sinon le titre s'afficherait deux fois près du seuil. */
 export const zoomStep = (s: { transform: [number, number, number] }) => Math.round(s.transform[2] * 20) / 20;
 
-function FrameLabelsImpl() {
+/** `hidden` : cadres masqués par le filtre du canevas (Toile), dont le titre ne se dessine pas non plus de loin. */
+function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
   const t = useT().toile;
   const zoom = useStore(zoomStep);
   const frames = useCosmos((s) => s.frames);
@@ -56,13 +57,14 @@ function FrameLabelsImpl() {
       const data = frames[i].data;
       const level = frameLevel(frameDepth(box.id, boxes));
       const title = data.title.trim();
+      if (hidden?.has(box.id)) return [];
       const far = titleBoost(zoom, level);
       if (far <= 1 || !title) return [];
       const boost = fitBoost(title, box.width, titleSize(level, !!data.beat), far);
       const rank = data.beat ? keys.indexOf(data.beat) + 1 : 0;
       return [{ ...box, level, boost, title, beat: !!data.beat, kicker: rank > 0 ? fmt(t.beatRank, { n: rank, total: keys.length }) : "" }];
     });
-  }, [frames, zoom, keys, t]);
+  }, [frames, zoom, keys, t, hidden]);
 
   if (labels.length === 0) return null;
   return (

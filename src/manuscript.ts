@@ -91,6 +91,27 @@ export function mentionsIn(card: CardData, manuscript: Manuscript, order: string
   return { count, first };
 }
 
+/**
+ * Présence d'une carte dans le livre, pour la Bible (« cité 12 fois, dès la scène 3 ») : `scene` est le rang de
+ * la première scène du récit qui la nomme, sans compter les pages du livre (`pages` : titre, dédicace,
+ * prologue…). Nommée seulement dans une page : `first` est cette page et `scene` vaut 0.
+ */
+export function presenceIn(card: CardData, manuscript: Manuscript, order: string[], pages: ReadonlySet<string>): { count: number; first: string | null; scene: number } {
+  const all = mentionsIn(card, manuscript, order);
+  if (all.count === 0) return { ...all, scene: 0 };
+  const story = order.filter((id) => !pages.has(id));
+  const first = mentionsIn(card, manuscript, story).first;
+  return first ? { count: all.count, first, scene: story.indexOf(first) + 1 } : { ...all, scene: 0 };
+}
+
+/**
+ * Mots du livre : seulement les textes des scènes qui ont une carte Scène vivante. Les textes sans carte (carte à
+ * la corbeille ou supprimée) restent dans le projet mais ne comptent pas dans le volume.
+ */
+export function bookWords(manuscript: Manuscript, cards: readonly Pick<CardData, "id" | "type">[]): number {
+  return cards.reduce((sum, c) => (c.type === "scene" && manuscript[c.id] ? sum + countWords(manuscript[c.id]) : sum), 0);
+}
+
 /** Textes dont la carte Scène n'existe plus : ils restent dans le projet, jamais effacés par l'app. */
 export function orphanTexts(manuscript: Manuscript, sceneIds: string[]): string[] {
   const scenes = new Set(sceneIds);

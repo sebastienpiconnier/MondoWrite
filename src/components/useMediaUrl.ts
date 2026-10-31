@@ -11,8 +11,18 @@ const cache = new Map<string, Promise<string | null>>();
 const RETRIES = 5;
 const FIRST_RETRY_MS = 1500;
 
-/** À appeler quand on ouvre un autre projet : deux projets peuvent avoir un fichier du même nom. */
-export const forgetMediaUrls = () => cache.clear();
+/**
+ * À appeler quand on ouvre un autre projet : deux projets peuvent avoir un fichier du même nom. Les adresses
+ * `blob:` gardées (app de bureau) sont rendues au navigateur, sinon chaque image lue restait en mémoire.
+ */
+export const forgetMediaUrls = () => {
+  for (const pending of cache.values()) {
+    void pending.then((url) => {
+      if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+    });
+  }
+  cache.clear();
+};
 
 export function useMediaUrl(name: string | undefined): string | null {
   const [url, setUrl] = useState<string | null>(null);

@@ -70,7 +70,10 @@ export function Gallery({ card }: { card: CardData }) {
     try {
       const url = await storage.mediaUrl(photo);
       if (!url) throw new AiError("other");
-      const image = await imageForAi(url);
+      // Adresse lue pour l'occasion (hors du cache de useMediaUrl) : rendue dès que l'image est préparée.
+      const image = await imageForAi(url).finally(() => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
       if (character) {
         const prompt = describeCharacterPrompt(card, lang);
         const found = parseCharacterPhoto(await complete(config, prompt.system, prompt.user, { maxTokens: 700, images: [image], json: true }));

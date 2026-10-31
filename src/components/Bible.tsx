@@ -17,8 +17,8 @@ import { typeColor, typesFor, type CardData, type CardType } from "../types";
 import { episodeOrder } from "../episodes";
 import { fmt, useT } from "../i18n";
 import { POSTER_FIELDS, PRINCIPAL, isPrincipal, isSettledQuestion } from "../character";
-import { mentionsIn } from "../manuscript";
-import { bookOrder } from "../book";
+import { presenceIn } from "../manuscript";
+import { bookOrder, isPageKind } from "../book";
 import { toggleSection } from "../bibleSections";
 import { PART_OF, bibleOrder, partNumber } from "../bibleParts";
 import { BibleToc } from "./BibleToc";
@@ -62,7 +62,9 @@ function Poster({ card }: { card: CardData }) {
   const plan = useCosmos((s) => s.plan);
   const manuscript = useCosmos((s) => s.manuscript);
   const order = useMemo(() => bookOrder(nodes, plan), [nodes, plan]);
-  const seen = useMemo(() => mentionsIn(card, manuscript, order), [card, manuscript, order]);
+  // Le rang de la scène ne compte que les scènes du récit, pas les pages du livre (titre, dédicace…).
+  const pages = useMemo(() => new Set(nodes.filter((n) => isPageKind(n.data.page)).map((n) => n.id)), [nodes]);
+  const seen = useMemo(() => presenceIn(card, manuscript, order, pages), [card, manuscript, order, pages]);
   const traits = card.type === "personnage" ? POSTER_FIELDS.map((key) => card.fiche?.[key]?.trim()).filter(Boolean) : [];
   const firstTitle = seen.first ? nodes.find((n) => n.id === seen.first)?.data.title.trim() || t.manuscript.untitled : "";
   const num = new Intl.NumberFormat(lang).format(seen.count);
@@ -74,7 +76,7 @@ function Poster({ card }: { card: CardData }) {
         <span className="bible-mentions">
           {seen.count === 0
             ? t.character.notInText
-            : fmt(seen.count === 1 ? t.character.mentionsOne : t.character.mentionsMany, { n: num, scene: order.indexOf(seen.first!) + 1, title: firstTitle })}
+            : fmt(seen.count === 1 ? t.character.mentionsOne : t.character.mentionsMany, { n: num, scene: seen.scene || order.indexOf(seen.first!) + 1, title: firstTitle })}
         </span>
       )}
     </p>
@@ -133,7 +135,8 @@ export function Bible() {
       return !open;
     });
   // Fiche ouverte depuis le canevas (« 3 questions à compléter ») : assistant ouvert sur elle.
-  const [assisted, setAssisted] = useState<string | null>(null);
+  // `at` : chaque arrivée compte, même sur la même fiche (l'assistant ne revient à « À creuser » qu'à ce moment-là).
+  const [assisted, setAssisted] = useState<{ id: string; at: number } | null>(null);
   // Fiches repliées (seulement l'en-tête) : réglage d'affichage de l'appareil, gardé d'une ouverture à l'autre.
   const [folded, setFoldedList] = useState(loadFolded);
   const foldedIds = useMemo(() => new Set(folded), [folded]);
@@ -215,7 +218,7 @@ export function Bible() {
     if (bibleSections.hidden.includes(card.type)) setBibleSections(toggleSection(bibleSections, card.type));
     setCurrent(card.type);
     fold([card.id], false);
-    if (target.assistant) setAssisted(card.id);
+    if (target.assistant) setAssisted({ id: card.id, at: Date.now() });
     requestAnimationFrame(() => mainRef.current?.querySelector(`[data-entry="${card.id}"]`)?.scrollIntoView({ block: "start" }));
   }, [target, nodes, clearTarget, fold]);
 
@@ -421,7 +424,7 @@ export function Bible() {
                   <Gallery card={card} />
                 </>
               )}
-              {type === "personnage" && <CharacterAssistant card={card} startOpen={assisted === card.id} />}
+              {type === "personnage" && <CharacterAssistant card={card} startOpen={assisted?.id === card.id} openKey={assisted?.id === card.id ? assisted.at : 0} />}
               <BibleLinks cardId={card.id} links={links} titleOf={titleOf} />
               {/* En bas de la fiche : dans l'en-tête, il prenait la place du titre sur téléphone. */}
               <button type="button" className="link-button bible-see-canvas" onClick={() => revealCard(card.id)}>

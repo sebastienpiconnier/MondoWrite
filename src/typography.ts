@@ -26,9 +26,22 @@ const opensBefore = (before: string) => before === "" || /[\s([{  —–-]$/.
 /** Un guillemet ouvrant n'a pas encore son fermant dans le paragraphe. */
 const unclosed = (before: string, open: string, close: string) => before.split(open).length - 1 > before.split(close).length - 1;
 
+/**
+ * Le curseur est dans une adresse ou du code : le mot en cours commence par http ou www., contient « :// »,
+ * « / », « @ », « \\ », « = », ou un point collé à une lettre (site.fr), ou bien un « ` » est resté ouvert.
+ * Rien n'y est remplacé : « ? », « ! » et « -- » cassaient une adresse ou une option qu'on tape.
+ */
+export function inAddressOrCode(before: string): boolean {
+  if ((before.match(/`/g)?.length ?? 0) % 2 === 1) return true;
+  const word = before.match(/\S*$/)![0];
+  if (!word) return false;
+  return /^(https?:|www\.)/i.test(word) || /:\/\/|[/@\\=]|\.\p{L}/u.test(word);
+}
+
 /** Ce que devient le caractère tapé, ou null s'il reste tel quel. */
 export function smartType(before: string, typed: string, mode: TypographyMode): SmartEdit | null {
   if (mode === "off" || typed.length !== 1) return null;
+  if (inAddressOrCode(before)) return null;
 
   // Points de suspension : le troisième point.
   if (typed === "." && before.endsWith("..")) return { remove: 2, insert: "…" };

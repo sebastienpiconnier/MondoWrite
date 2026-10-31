@@ -16,7 +16,7 @@ import { feasibilityText, pitchLabels } from "../feasibility";
 import { paginate } from "../screenplay/paginate";
 import { LAYOUTS, type Paper } from "../screenplay/layout";
 import { appearances, bySeason, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, manySeasons, pivotOf } from "../episodes";
-import { countWords, type Manuscript } from "../manuscript";
+import { bookWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
 import { listScenes, sceneSynopsis } from "../screenplay/scenes";
 import { beatOf, sectionLabel } from "../screenplay/template";
@@ -164,7 +164,8 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
   // Épisodes de la série (cartes Épisode, lot 6), dans l'ordre de la saison.
   const episodes = s.kind === "scenario" ? episodeOrder(cards) : [];
-  const words = Object.values(s.manuscript).reduce((sum, html) => sum + countWords(html), 0);
+  // Comme la couverture de la Bible : seulement les scènes qui ont une carte.
+  const words = bookWords(s.manuscript, cards);
 
   // Ligne de couverture : roman ou série, genre, volume (mots écrits, ou objectif).
   const volume = s.kind === "scenario" ? "" : s.goals?.total ? fmt(e.wordsTarget, { n: num(s.goals.total) }) : words > 0 ? fmt(e.words, { n: num(words) }) : "";

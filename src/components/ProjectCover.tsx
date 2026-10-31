@@ -11,7 +11,7 @@ import { useSettings } from "../settings";
 import { SERIES_CHIPS, chipsFor, chipSuggestions, formOf, isSeriesForm, otherTexts, pitchFields, pitchFilled, writingTexts, type PitchChip, type PitchText } from "../pitch";
 import { feasibilityText, pitchLabels } from "../feasibility";
 import { CoverAssistant } from "./CoverAssistant";
-import { countWords } from "../manuscript";
+import { bookWords, countWords } from "../manuscript";
 import { typeColor } from "../types";
 import { episodeOrder } from "../episodes";
 import { minutesFor, usePagination } from "./usePagination";
@@ -185,7 +185,9 @@ function Volume() {
   const manuscript = useCosmos((s) => s.manuscript);
   const goal = useCosmos((s) => s.goals.total);
   const pagination = usePagination();
-  const words = useMemo(() => Object.values(manuscript).reduce((sum, html) => sum + countWords(html), 0), [manuscript]);
+  const nodes = useCosmos((s) => s.nodes);
+  // Seulement les scènes qui ont une carte : ni la corbeille ni les textes sans carte.
+  const words = useMemo(() => bookWords(manuscript, nodes.map((n) => n.data)), [manuscript, nodes]);
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
   if (kind === "scenario") {
     const pages = pagination?.pages ?? 0;
