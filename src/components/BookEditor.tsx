@@ -409,7 +409,8 @@ export function BookEditor({
         // Paragraphe par paragraphe : le texte d'un bloc, puis sa position dans le document.
         ed.state.doc.nodesBetween(g.markerPos, g.end, (node, pos) => {
           if (found || !node.isTextblock) return !found;
-          const at = node.textContent.indexOf(needle);
+          // Espaces insécables (typographie française) comparées comme des espaces : même longueur, mêmes positions.
+          const at = node.textContent.replace(/\s/g, " ").indexOf(needle.replace(/\s/g, " "));
           if (at >= 0) {
             // Position dans le document d'un caractère du bloc (le texte peut être coupé par une mise en forme).
             const map = (target: number) => {

@@ -266,3 +266,22 @@ Champs permis (`SHEET_DRAFT_FIELDS`), parmi les vides : accroche, rôle, âge, m
 **Données** : nom, notes (1 500 caractères), fiche, au plus 30 fils (étiquette, titre et type de la carte au bout).
 
 **Ce que MondoWrite garde** (`parseSheetDraft`) : seulement les champs permis et demandés, 400 caractères au plus (60 pour l'âge). Acceptés un à un comme la description d'une photo ; marqués par `ia` dans la carte, retirés au premier changement de l'auteur.
+
+## Recherche par le sens (1.9.0)
+
+Fenêtre de recherche (Cmd/Ctrl + F), mode « Par le sens » : retrouve les passages qui parlent de la même chose que la question, même avec d'autres mots (« Où ai-je parlé de la lettre ? » trouve « une enveloppe glissée sous la porte »). Code : `src/ai/semantic.ts`, `src/components/SemanticSearch.tsx`.
+
+**Pas de consigne** : aucun modèle de conversation n'est appelé, rien n'est rédigé. Le service ne fait que changer des textes en vecteurs de nombres (embeddings) ; le classement se fait dans l'app (cosinus).
+
+**Seulement un service local** (Ollama, LM Studio) : la recherche lit tout le projet, qui ne doit pas partir en ligne. Avec Claude, OpenAI ou OpenRouter, le mode n'apparaît pas, et les Réglages disent pourquoi en une phrase. Modèle : « Modèle de la recherche par le sens » dans les Réglages (`settings.ai.embedModels[service]`, réglage de l'appareil), proposé d'office s'il y a un modèle installé dont le nom contient « embed » (par exemple `nomic-embed-text`).
+
+**Ce qui est envoyé, et où** :
+
+- Ollama : `POST {adresse}/api/embed` avec `{ "model", "input": [textes], "truncate": true }`.
+- LM Studio : `POST {adresse}/v1/embeddings` avec `{ "model", "input": [textes] }`, et le jeton facultatif en `Authorization: Bearer`.
+- Les textes : les passages du projet, 16 par requête, puis la question seule. Passages : un paragraphe du manuscrit (roman), ou une suite de paragraphes courts (répliques) jusqu'à 600 caractères ; dans un scénario, l'en-tête de la scène puis un petit bloc d'éléments (action, nom et réplique ensemble, didascalie, transition, synopsis ; jamais les notes ni le texte mis de côté) ; pour une carte, son titre, les valeurs de sa fiche écrites par l'auteur (pas les codes : statut, certitude, arc…) et son texte. Au plus 1 500 caractères par passage (coupé entre deux phrases).
+- Préfixes attendus par certains modèles : `search_document: ` et `search_query: ` pour nomic-embed-text, `passage: ` et `query: ` pour la famille e5.
+
+**Ce que MondoWrite garde** (`readEmbeddings`) : exactement un vecteur par texte envoyé, nombres finis, tous de la même taille ; sinon la réponse est refusée (message « ce modèle ne sait pas lire le texte en vecteurs »). L'index vit en mémoire le temps de la session (`SemanticIndex`) : seuls les passages nouveaux ou changés (empreinte du texte) sont recalculés, ceux qui ne sont plus dans le projet sont oubliés, et changer de service, d'adresse ou de modèle repart de zéro. **Rien n'est écrit dans le projet**, ni ailleurs sur le disque. Lecture du projet avec progression et « Annuler ».
+
+**Résultats** : classés par proximité, une carte une seule fois (son meilleur passage), les passages trop loin du meilleur écartés. Choisir un passage du manuscrit l'ouvre et le sélectionne (`openInManuscript(scène, début du paragraphe)`) ; un passage du scénario ouvre l'élément (`@` + rang) ; une carte est montrée sur le canevas (`revealCard`).

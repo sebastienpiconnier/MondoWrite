@@ -2749,6 +2749,32 @@ export const fr = {
       quoted: "« {title} »",
     },
   },
+  // Recherche par le sens (1.9.0, ai/semantic.ts) : embeddings du service local, jamais en ligne.
+  semantic: {
+    modes: "Façon de chercher",
+    modeWords: "Par les mots",
+    modeSense: "Par le sens",
+    placeholder: "Une idée : où ai-je parlé de la lettre ?",
+    prompt: "Trouve les passages qui parlent de la même chose, même avec d’autres mots. Entrée pour lancer.",
+    go: "Chercher",
+    results: "Passages trouvés",
+    indexing: "Lecture du projet : {done} passages sur {total}…",
+    searching: "Recherche…",
+    cancel: "Annuler",
+    cancelled: "Recherche annulée.",
+    empty: "Rien de proche dans le projet.",
+    nothing: "Rien à lire : le projet n’a pas encore de texte.",
+    noModel: "Choisis le modèle de la recherche par le sens dans les Réglages (rubrique IA).",
+    badModel: "Le modèle « {model} » ne sait pas lire le texte en vecteurs (embeddings), ou n’est pas installé. Choisis-en un autre dans les Réglages.",
+    failed: "La recherche par le sens n’a pas abouti : {error}",
+    inManuscript: "dans le texte",
+    inScreenplay: "dans le scénario",
+    untitledScene: "Scène sans titre",
+    embedModel: "Modèle de la recherche par le sens",
+    noEmbedModel: "Aucun (recherche par le sens coupée)",
+    embedHint: "Un modèle d’embedding de ton service local, par exemple nomic-embed-text (« ollama pull nomic-embed-text »). Le texte du projet reste sur l’ordinateur, et l’index n’est gardé que le temps de la session.",
+    cloudOnly: "La recherche par le sens n’est proposée qu’avec un service local (Ollama, LM Studio) : elle lit tout le projet, qui ne doit pas partir en ligne.",
+  },
 };
 
 export type Messages = typeof fr;
