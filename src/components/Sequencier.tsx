@@ -13,7 +13,8 @@ import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { blocks, moveBlock } from "../screenplay/sequence";
 import { pagesBetween } from "../screenplay/paginate";
-import { sceneCharacters, sceneSynopsis, setSceneSynopsis } from "../screenplay/scenes";
+import { sceneCharacters, sceneSynopsis, setSceneSynopsis, synopsisIsIa } from "../screenplay/scenes";
+import { screenplaySceneText } from "./Atelier";
 import { matchesCharacter } from "../screenplay/editor/autocomplete";
 import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
@@ -259,6 +260,8 @@ export function Sequencier() {
                     value={synopsis}
                     scene={title}
                     onSave={(text) => setScreenplay({ ...screenplay, elements: setSceneSynopsis(screenplay.elements, block.start, text) }, true)}
+                    ia={synopsisIsIa(screenplay.elements, block.start)}
+                    atelier={card ? { sceneId: card.id, text: screenplaySceneText(block.start) } : undefined}
                   />
                   {cardText && <p className="sq-desc">{cardText.length > 140 ? `${cardText.slice(0, 140)}…` : cardText}</p>}
                   {card && <SceneStatusPicker card={card} />}

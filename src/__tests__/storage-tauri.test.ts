@@ -104,7 +104,8 @@ describe("modifications faites hors de l'app", () => {
       dir.endsWith("cartes") ? [{ name: "a.md", isFile: true }, { name: "a (MondoWrite).md", isFile: true }] : []) as never);
     fsPlugin.readTextFile.mockImplementation((async (path: string) => (path.endsWith("cosmos.json") ? "{}" : `contenu de ${path}`)) as never);
     const files = await tauriStorage.readAll();
-    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json", "scenario.fountain"].sort());
+    // Le journal de l'IA (1.8.0), à la racine, est lu comme le scénario (le faux système dit qu'il existe).
+    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json", "ia-journal.md", "scenario.fountain"].sort());
     fsPlugin.exists.mockImplementation((async (path: string) => !path.endsWith("absent.md")) as never);
     expect(await tauriStorage.readFiles!(["cartes/a.md", "cartes/absent.md"])).toEqual({ "cartes/a.md": "contenu de D:\\Écriture\\Phare\\cartes\\a.md" });
     fsPlugin.readDir.mockReset();
@@ -126,7 +127,7 @@ describe("modifications faites hors de l'app", () => {
       dir.endsWith("cartes") ? [{ name: "a.md", isFile: true }, { name: ".b.md.icloud", isFile: true }] : dir.endsWith("Phare") ? [{ name: ".scenario.fountain.icloud", isFile: true }] : []) as never);
     fsPlugin.readTextFile.mockImplementation((async (path: string) => (path.endsWith("cosmos.json") ? "{}" : "texte")) as never);
     const files = await tauriStorage.readAll();
-    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json"]);
+    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json", "ia-journal.md"]);
     expect(tauriStorage.pending!().sort()).toEqual(["cartes/b.md", "scenario.fountain"]);
     expect(await tauriStorage.readFiles!(["cartes/absent.md", "cartes/b.md"])).toEqual({});
     expect(tauriStorage.pending!()).toContain("cartes/b.md");
@@ -220,7 +221,7 @@ describe("écriture sûre (temporaire puis renommage)", () => {
     fsPlugin.readTextFile.mockImplementation((async (path: string) => (path.endsWith("cosmos.json") ? "{}" : "texte")) as never);
     fsPlugin.exists.mockImplementation((async (path: string) => !path.endsWith("scenario.fountain")) as never);
     const files = await tauriStorage.readAll();
-    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json"]);
+    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json", "ia-journal.md"]);
     expect(fsPlugin.readTextFile).not.toHaveBeenCalledWith(expect.stringContaining("mondowrite-tmp"));
     expect(fsPlugin.remove).not.toHaveBeenCalledWith("D:\\Écriture\\Phare\\cartes\\b.md.mondowrite-tmp");
     expect(isProjectFilePath("cartes/b.md.mondowrite-tmp")).toBe(false);

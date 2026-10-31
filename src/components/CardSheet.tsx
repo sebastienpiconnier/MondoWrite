@@ -5,6 +5,7 @@
 // Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; les autres attendent
 // derrière « Ajouter si utile », une pastille par champ (Bible v2), ou tous d'un coup par « Afficher les champs vides ». Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
+import { IaFieldNote } from "./Atelier";
 import { useEffect, useId, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
@@ -59,7 +60,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
       },
     };
     return (
-      <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) || isChoiceField(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}`}>
+      <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) || isChoiceField(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}${card.ia?.includes(key) ? " is-ia" : ""}`}>
         <label htmlFor={props.id}>{labels[key]}</label>
         {key === "pivot" ? (
           <select id={props.id} value={props.value} onChange={props.onChange}>
@@ -85,6 +86,8 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
         ) : (
           <textarea rows={1} {...props} />
         )}
+        {/* Mode Atelier : valeur proposée par l'IA et acceptée, jusqu'à ce que l'auteur y touche. */}
+        {card.ia?.includes(key) && <IaFieldNote onRework={() => useCosmos.getState().reworkIaField(card.id, key)} />}
       </div>
     );
   };

@@ -26,7 +26,7 @@ import type { Screenplay, ScreenplayElement } from "./screenplay/model";
 import { listScenes, sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes";
 import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
-import { useSettings } from "./settings";
+import { aiConfig, useSettings } from "./settings";
 import { bibleOrder } from "./bibleParts";
 import { IMPORT_EXTENSIONS, projectFromFile } from "./import";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
@@ -41,7 +41,8 @@ import { EMPTY_PLAN, beatText, withKeys, isCustomBeat, type CustomTemplate, arra
 import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
-import { setPitchField, type Pitch, type PitchField } from "./pitch";
+import { setPitchField, setPitchFieldIa, withoutPitchIa, type Pitch, type PitchField, type PitchText } from "./pitch";
+import { appendJournal, iaAfterPatch, journalLine, unmarkIa, withIaField, withoutIaField, type AiMode, type AtelierAction } from "./atelier";
 import type { Passage } from "./chutier";
 import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
 import { DEFAULT_BIBLE_EXPORT, type BibleExportState } from "./bibleExport";
@@ -294,6 +295,30 @@ export interface CosmosState {
   /** Fils masqués : cartes dont on a rallumé les fils (affichage, jamais enregistré). */
   wiresShown: string[];
   toggleCardWires: (id: string) => void;
+  // ---------- Mode Atelier (1.8.0) : l'IA propose du texte, marqué et journalisé (voir atelier.ts) ----------
+  /** Mode de l'IA du projet : réglage enregistré dans cosmos.json (`aiMode`), hors historique. */
+  aiMode: AiMode;
+  setAiMode: (mode: AiMode) => void;
+  /** Journal de l'IA (ia-journal.md), tel quel. On n'y fait qu'ajouter des lignes, hors historique. */
+  journal: string;
+  /** Ajoute une ligne au journal (texte proposé par l'IA et accepté), avec le service et le modèle de l'appareil. */
+  logAtelier: (action: AtelierAction, target: string, words: number) => void;
+  /** « Je l'ai repris » : retire la marque de l'IA d'un passage (ou de tous) d'une carte ou d'une scène du roman. */
+  unmarkIaPassage: (id: string, where: "card" | "manuscript", markId?: string) => void;
+  /** « Je l'ai repris » sur un élément du scénario (note [[ia]]) : l'élément d'index donné. */
+  unmarkIaElement: (index: number) => void;
+  /** Synopsis proposé et accepté pour une scène (roman : fiche ; scénario : ligne « = » avec [[ia]]). Une étape. */
+  acceptIaSynopsis: (id: string, text: string) => void;
+  /** Piste proposée et acceptée : une carte Idée reliée à la scène par un fil « piste ». Une étape. Rend son identifiant. */
+  acceptIaDirection: (sceneId: string, text: string) => string | null;
+  /** Champ de la couverture proposé et accepté (hors historique, comme la couverture). */
+  acceptIaPitch: (key: PitchText, text: string) => void;
+  /** « Je l'ai repris » sur un champ de la couverture : il garde son texte, sans la marque de l'IA. */
+  reworkIaPitch: (key: PitchText) => void;
+  /** « Je l'ai repris » sur un champ d'une carte (titre, synopsis, clé de fiche) : la marque part, le texte reste. */
+  reworkIaField: (id: string, key: string) => void;
+  /** Champ de la fiche d'une carte proposé et accepté. Une étape. */
+  acceptIaFiche: (id: string, key: SheetField, text: string) => void;
   /** Copies Markdown du projet dans markdown/ (réglage du projet, oui par défaut). */
   markdownCopies: boolean;
   setMarkdownCopies: (on: boolean) => void;
@@ -1173,7 +1198,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Les lettres d'un même champ tapées d'affilée ne font qu'une étape d'historique.
       record(`card:${id}:fiche:${field}`);
       const fiche = setFicheField(card.fiche, field, value);
-      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche } } : n)) });
+      // Retouché par l'auteur : le champ n'est plus « proposé par l'IA » (mode Atelier).
+      const ia = withoutIaField(card.ia, field);
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ...(ia !== card.ia ? { ia } : {}) } } : n)) });
       touch();
     },
     openInBible: (id, assistant = false) => {
@@ -2516,6 +2543,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       let nodes = get().nodes.map((n) => {
         if (n.id !== id) return n;
         const data = { ...n.data, ...patch };
+        // Titre ou fiche retouchés par l'auteur : ces champs ne sont plus « proposés par l'IA » (mode Atelier).
+        if (!("ia" in patch) && n.data.ia) data.ia = iaAfterPatch(n.data.ia, n.data, patch);
         // Type choisi par l'auteur : on oublie le type inconnu gardé d'une version plus récente.
         if (patch.type && data.keep?.type) {
           const { type: _type, ...rest } = data.keep;
@@ -2895,6 +2924,120 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Étape à part (étiquette vide) : deux réponses gardées coup sur coup ne se fondent pas comme des lettres tapées.
       record();
       get().setReponse(id, key, before ? `${before}\n${text}` : text);
+    },
+    // ---------- Mode Atelier (1.8.0) ----------
+    // L'IA propose, l'auteur accepte : chaque acceptation est une action (une étape d'historique quand elle touche
+    // des cartes, le scénario ou le manuscrit), marque ce qui vient de l'IA et ajoute sa ligne au journal. Le
+    // journal n'est pas dans l'historique : une ligne reste même si l'auteur annule ce qu'il avait accepté.
+    aiMode: "gardienne",
+    setAiMode: (aiMode) => {
+      if (aiMode === get().aiMode) return;
+      set({ aiMode });
+      touch();
+    },
+    journal: "",
+    logAtelier: (action, target, words) => {
+      const t = getT().atelier.journal;
+      const config = aiConfig(useSettings.getState().ai);
+      const line = journalLine(
+        { at: new Date(), action, target: target.trim() || getT().bible.untitled, service: config ? config.provider : "", model: config?.model ?? "", words },
+        { header: t.header, actions: t.actions, words: t.words, quoted: t.quoted },
+      );
+      set({ journal: appendJournal(get().journal, line, t.header) });
+      touch();
+    },
+    unmarkIaPassage: (id, where, markId) => {
+      if (where === "manuscript") {
+        const html = get().manuscript[id];
+        const next = html ? unmarkIa(html, markId) : html;
+        if (!html || next === html) return;
+        // Le manuscrit n'est pas dans l'historique (l'éditeur a le sien) : il se resynchronise sur le store.
+        set({ manuscript: { ...get().manuscript, [id]: next } });
+        touch();
+        return;
+      }
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card) return;
+      const html = unmarkIa(card.html, markId);
+      if (html === card.html) return;
+      record();
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, html } } : n)) });
+      touch();
+    },
+    unmarkIaElement: (index) => {
+      const { screenplay } = get();
+      const el = screenplay?.elements[index];
+      if (!screenplay || !el?.ia) return;
+      record();
+      const { ia: _ia, ...rest } = el;
+      set({ screenplay: { ...screenplay, elements: screenplay.elements.map((e, i) => (i === index ? rest : e)) } });
+      touch();
+    },
+    acceptIaSynopsis: (id, text) => {
+      const value = text.replace(/\s+/g, " ").trim();
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!value || card?.type !== "scene") return;
+      record();
+      const { screenplay, kind } = get();
+      const at = screenplay && kind === "scenario" ? headingOf(screenplay.elements, id) : -1;
+      if (screenplay && at >= 0) {
+        set({ screenplay: { ...screenplay, elements: setSceneSynopsis(screenplay.elements, at, value, true) } });
+      } else {
+        const fiche = setFicheField(card.fiche, "synopsis", value);
+        set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ia: withIaField(n.data.ia, "synopsis") } } : n)) });
+      }
+      touch();
+      get().logAtelier("synopsis", card.title, countWords(value));
+    },
+    acceptIaDirection: (sceneId, text) => {
+      const title = text.replace(/\s+/g, " ").trim().slice(0, 300);
+      const scene = get().nodes.find((n) => n.id === sceneId);
+      if (!title || !scene) return null;
+      record();
+      const card: CardData = { id: newId(), type: "idee", title, html: "", ia: ["title"] };
+      const width = typeof scene.style?.width === "number" ? scene.style.width : CARD_SIZE.width;
+      const spot = placeCard({ x: scene.position.x + width + 60, y: scene.position.y }, occupied());
+      const edge = { source: sceneId, target: card.id, sourceHandle: null, targetHandle: null };
+      set({
+        nodes: [...get().nodes, toNode(card, spot.x, spot.y)],
+        edges: addEdge({ ...edge, id: newId(), label: getT().atelier.directions.wire, type: "floating" }, get().edges),
+      });
+      touch();
+      get().logAtelier("directions", scene.data.title, countWords(title));
+      return card.id;
+    },
+    acceptIaPitch: (key, text) => {
+      const value = text.trim();
+      if (!value) return;
+      const next = setPitchFieldIa(get().pitch, key, value);
+      if (next === get().pitch) return;
+      set({ pitch: next });
+      touch();
+      get().logAtelier("pitch", get().title, countWords(value));
+    },
+    reworkIaPitch: (key) => {
+      const next = withoutPitchIa(get().pitch, key);
+      if (next === get().pitch) return;
+      set({ pitch: next });
+      touch();
+    },
+    reworkIaField: (id, key) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      const ia = withoutIaField(card?.ia, key);
+      if (!card || ia === card.ia) return;
+      record();
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ia } } : n)) });
+      touch();
+    },
+    acceptIaFiche: (id, key, text) => {
+      const value = text.trim();
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      if (!card || !value) return;
+      record();
+      const fiche = setFicheField(card.fiche, key, value);
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ia: withIaField(n.data.ia, key) } } : n)) });
+      touch();
+      get().logAtelier("sheet", card.title, countWords(value));
     },
   };
   // Toute action est une transaction : quoi qu'elle appelle, elle fait au plus une étape d'historique.

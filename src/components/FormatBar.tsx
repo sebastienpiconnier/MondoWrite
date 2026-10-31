@@ -7,6 +7,7 @@ import type { EditorState } from "@tiptap/pm/state";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { useT } from "../i18n";
+import { useAtelierFormat } from "./Atelier";
 
 interface Action {
   key: string;
@@ -126,11 +127,18 @@ export function FormatButtons({ actions }: { actions: Action[] }) {
   );
 }
 
-export function FormatBar({ editor, ...options }: { editor: Editor } & FormatOptions) {
+/**
+ * `atelier` : titre de la carte ou de la scène, pour le journal de l'IA. En mode Atelier, la barre propose
+ * « Trois variantes » sur la sélection ; sur un passage de l'IA, « Je l'ai repris » (Atelier.tsx).
+ */
+export function FormatBar({ editor, atelier = "", ...options }: { editor: Editor; atelier?: string } & FormatOptions) {
   const actions = useFormatActions(editor, options);
+  const ia = useAtelierFormat(editor, atelier);
   return (
-    <BubbleMenu editor={editor} className="format-bar nodrag nopan" options={{ placement: "top" }}>
-      <FormatButtons actions={actions} />
+    // `shift` : la barre (plus large avec les boutons de l'Atelier) reste dans la fenêtre.
+    <BubbleMenu editor={editor} className="format-bar nodrag nopan" options={{ placement: "top", shift: { padding: 8 } }}>
+      <FormatButtons actions={[...actions, ...ia.actions]} />
+      {ia.panel}
     </BubbleMenu>
   );
 }

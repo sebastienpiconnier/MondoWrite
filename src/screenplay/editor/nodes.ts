@@ -25,7 +25,10 @@ const flag = (name: string) => ({
   renderHTML: (attrs: Record<string, unknown>) => (attrs[name] ? { [`data-${name}`]: "" } : {}),
 });
 
-function element(name: EditableType, attributes: Record<string, ReturnType<typeof text> | ReturnType<typeof flag>>) {
+/** Marque de l'IA (mode Atelier) : jamais reprise par l'élément qui naît d'un Entrée. */
+const iaFlag = () => ({ ...flag("ia"), keepOnSplit: false });
+
+function element(name: EditableType, attributes: Record<string, ReturnType<typeof text> | ReturnType<typeof flag> | ReturnType<typeof iaFlag>>) {
   return Node.create({
     name,
     group: "block",
@@ -48,7 +51,8 @@ function element(name: EditableType, attributes: Record<string, ReturnType<typeo
 export const Doc = Node.create({ name: "doc", topNode: true, content: "block+" });
 
 // L'action est déclarée en premier : c'est le type par défaut d'un document vide.
-export const Action = element("action", { forced: flag("forced") });
+// « ia » (mode Atelier) : texte proposé par l'IA et accepté, note [[ia]] dans le fichier, souligné en pointillé.
+export const Action = element("action", { forced: flag("forced"), ia: iaFlag() });
 // « known » : l'élément est déjà connu du projet (lu dans le fichier, ou sa carte a été créée).
 // Un en-tête ou un personnage écrit à l'instant ne l'est pas encore : sa carte est à créer.
 export const SceneHeading = element("sceneHeading", {
@@ -58,8 +62,8 @@ export const SceneHeading = element("sceneHeading", {
   known: flag("known"),
 });
 export const Character = element("character", { dual: flag("dual"), forced: flag("forced"), known: flag("known") });
-export const Parenthetical = element("parenthetical", {});
-export const Dialogue = element("dialogue", {});
+export const Parenthetical = element("parenthetical", { ia: iaFlag() });
+export const Dialogue = element("dialogue", { ia: iaFlag() });
 export const Transition = element("transition", { forced: flag("forced") });
 
 // Le libellé de chaque sorte (« Note », « Section »…) est posé en CSS : il suit la langue sans redessiner.
@@ -85,11 +89,17 @@ export const Preserved = Node.create({
         parseHTML: (el: HTMLElement) => Number(el.getAttribute("data-depth")) || null,
         renderHTML: () => ({}),
       },
+      // Synopsis proposé par l'IA (mode Atelier) : gardé tel quel, comme le texte.
+      ia: {
+        default: false,
+        parseHTML: (el: HTMLElement) => el.hasAttribute("data-ia"),
+        renderHTML: () => ({}),
+      },
     };
   },
   parseHTML: () => [{ tag: "div[data-preserved]" }],
   renderHTML({ node }) {
-    const { kind, text: content, depth } = node.attrs as { kind: PreservedKind; text: string; depth: number | null };
+    const { kind, text: content, depth, ia } = node.attrs as { kind: PreservedKind; text: string; depth: number | null; ia: boolean };
     const attrs: Record<string, string> = {
       "data-preserved": kind,
       "data-text": content,
@@ -97,6 +107,7 @@ export const Preserved = Node.create({
       contenteditable: "false",
     };
     if (depth) attrs["data-depth"] = String(depth);
+    if (ia) attrs["data-ia"] = "";
     return ["div", attrs, kind === "section" ? sectionLabel(content) : content.trim()];
   },
 });

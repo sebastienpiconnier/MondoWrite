@@ -17,6 +17,8 @@ import {
   TITLE_KEY_RE,
 } from "./rules";
 
+import { IA_TYPES, readIaNote } from "../atelier";
+
 const TITLE_CONTINUATION_RE = /^(?: {3,}|\t)\s*(\S.*)$/;
 
 export function parse(source: string): Screenplay {
@@ -28,8 +30,15 @@ export function parse(source: string): Screenplay {
   const title = parseTitlePage(lines, start);
   return {
     titlePage: title?.titlePage ?? {},
-    elements: parseBody(lines, title?.next ?? start),
+    elements: parseBody(lines, title?.next ?? start).map(readIa),
   };
+}
+
+/** Note [[ia]] en fin d'élément : retirée du texte, gardée en `ia`. */
+function readIa(el: ScreenplayElement): ScreenplayElement {
+  if (!IA_TYPES.has(el.type)) return el;
+  const read = readIaNote(el.text);
+  return read.ia ? { ...el, text: read.text, ia: true } : el;
 }
 
 /** Page de titre : bloc « Clé: valeur » en tête de fichier, terminé par une ligne vide. */
@@ -248,7 +257,9 @@ function readDialogueBlock(lines: string[], start: number, out: ScreenplayElemen
       break;
     }
     const s = line.trim();
-    if (s.startsWith("(") && s.endsWith(")")) {
+    // Une didascalie proposée par l'IA finit par la note [[ia]] (mode Atelier).
+    const bare = readIaNote(s).text;
+    if (bare.startsWith("(") && bare.endsWith(")")) {
       out.push({ type: "parenthetical", text: s });
       dialogue = null;
     } else if (dialogue) {

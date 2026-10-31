@@ -2,30 +2,42 @@
 // part. Une case se coche d'ici ; une ligne mène à sa carte, à sa fiche ou à sa scène. Cmd/Ctrl+Maj+L.
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useCosmos } from "../store";
+import { SCENE_AT, useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { collectTodos, type Todo, type TodoKind } from "../todos";
 import { typeColor } from "../types";
 
 // Trois groupes : les questions gardées dans un personnage et les cartes Question forment ensemble « À creuser ».
-const GROUPS: { key: "task" | "revisit" | "dig"; kinds: TodoKind[] }[] = [
+// Mode Atelier : un quatrième, « Passages de l'IA », avec « Je l'ai repris » sur chaque ligne.
+const GROUPS: { key: "task" | "revisit" | "dig" | "ia"; kinds: TodoKind[] }[] = [
   { key: "task", kinds: ["task"] },
   { key: "revisit", kinds: ["revisit"] },
   { key: "dig", kinds: ["question", "open"] },
+  { key: "ia", kinds: ["ia"] },
 ];
+
+/** « Je l'ai repris » depuis « À faire » : la marque part, le texte reste. */
+function rework(todo: Todo) {
+  const s = useCosmos.getState();
+  if (todo.where === "screenplay") s.unmarkIaElement(todo.index);
+  else if (todo.field) s.reworkIaField(todo.cardId, todo.field);
+  else if (todo.where === "card" || todo.where === "manuscript") s.unmarkIaPassage(todo.cardId, todo.where, todo.markId);
+}
 
 export function TodoPanel() {
   const t = useT();
   const d = t.todos;
   const nodes = useCosmos((s) => s.nodes);
   const manuscript = useCosmos((s) => s.manuscript);
+  const screenplay = useCosmos((s) => s.screenplay);
+  const kind = useCosmos((s) => s.kind);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
 
   const cards = useMemo(() => new Map(nodes.map((n) => [n.id, n.data])), [nodes]);
-  const todos = useMemo(() => collectTodos([...cards.values()], manuscript), [cards, manuscript]);
+  const todos = useMemo(() => collectTodos([...cards.values()], manuscript, kind === "scenario" ? screenplay : null), [cards, manuscript, screenplay, kind]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -61,6 +73,7 @@ export function TodoPanel() {
     setOpen(false);
     const s = useCosmos.getState();
     if (todo.where === "manuscript") s.openInManuscript(todo.cardId);
+    else if (todo.where === "screenplay") s.openInManuscript(`${SCENE_AT}${todo.index}`);
     else if (todo.kind === "question") s.openInBible(todo.cardId, true);
     else s.revealCard(todo.cardId);
   };
@@ -93,21 +106,21 @@ export function TodoPanel() {
             const items = todos.filter((x) => kinds.includes(x.kind));
             if (items.length === 0) return null;
             return (
-              <section key={key} className="todo-group" aria-label={d.kinds[key]}>
+              <section key={key} className="todo-group" aria-label={key === "ia" ? t.atelier.todo : d.kinds[key]}>
                 <h3>
-                  {d.kinds[key]} <span className="toc-count">{items.length}</span>
+                  {key === "ia" ? t.atelier.todo : d.kinds[key]} <span className="toc-count">{items.length}</span>
                 </h3>
                 <ul>
                   {items.map((todo) => {
                     const card = cards.get(todo.cardId);
-                    const where = fmt(todo.where === "manuscript" ? d.inScene : d.inCard, { title: titleOf(todo.cardId) });
+                    const where = todo.where === "screenplay" && !card ? t.atelier.todoScreenplay : fmt(todo.where === "card" ? d.inCard : d.inScene, { title: titleOf(todo.cardId) });
                     return (
-                      <li key={`${todo.kind}-${todo.where}-${todo.cardId}-${todo.index}`}>
+                      <li key={`${todo.kind}-${todo.where}-${todo.cardId}-${todo.field ?? ""}-${todo.index}`}>
                         {todo.kind === "task" && (
                           <input
                             type="checkbox"
                             aria-label={fmt(d.check, { text: todo.text })}
-                            onChange={() => useCosmos.getState().toggleTodo(todo.cardId, todo.where, todo.index)}
+                            onChange={() => useCosmos.getState().toggleTodo(todo.cardId, todo.where === "manuscript" ? "manuscript" : "card", todo.index)}
                           />
                         )}
                         <button type="button" className="todo-item" onClick={() => go(todo)}>
@@ -117,6 +130,11 @@ export function TodoPanel() {
                             {where}
                           </span>
                         </button>
+                        {todo.kind === "ia" && (
+                          <button type="button" className="ghost-button todo-rework" title={t.atelier.reworkedHint} onClick={() => rework(todo)}>
+                            {t.atelier.reworked}
+                          </button>
+                        )}
                       </li>
                     );
                   })}

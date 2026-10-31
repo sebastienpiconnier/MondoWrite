@@ -15,7 +15,8 @@ import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
-import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, isLoopback, listModels } from "../ai/providers";
+import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, isLoopback, isReady, listModels } from "../ai/providers";
+import { ATELIER_SETTING_ID } from "./Atelier";
 import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
 import { SOURCE_INFO } from "../imageSources";
@@ -80,6 +81,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const scriptPdf = useCosmos((s) => s.scriptPdf);
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
   const markdownCopies = useCosmos((s) => s.markdownCopies);
+  const aiMode = useCosmos((s) => s.aiMode);
   const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const [open, setOpen] = useState(false);
   // Barre des menus du Mac (Réglages…) et Cmd/Ctrl + virgule : ouvrir.
@@ -97,7 +99,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), atelierHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -247,6 +249,26 @@ export function Settings({ project = true }: { project?: boolean }) {
               <p className="settings-hint" id={ids.copiesHint}>
                 {t.copies.hint}
               </p>
+            </>
+          )}
+          {/* Mode Atelier (1.8.0) : seulement quand une IA est branchée (ou s'il est déjà actif, pour pouvoir l'arrêter). */}
+          {(isReady(config) || aiMode === "atelier") && (
+            <>
+              <label className="settings-check" htmlFor={ATELIER_SETTING_ID}>
+                <input
+                  id={ATELIER_SETTING_ID}
+                  type="checkbox"
+                  checked={aiMode === "atelier"}
+                  aria-describedby={ids.atelierHint}
+                  onChange={(e) => useCosmos.getState().setAiMode(e.target.checked ? "atelier" : "gardienne")}
+                />
+                {t.atelier.settingOn}
+              </label>
+              <div className="settings-hint" id={ids.atelierHint}>
+                <p>{aiMode === "atelier" ? t.atelier.settingHint : t.atelier.settingOff}</p>
+                {aiMode !== "atelier" && <p>{t.atelier.settingHint}</p>}
+                <p>{t.atelier.settingKdp}</p>
+              </div>
             </>
           )}
           <button type="button" className="ghost-button settings-trash" onClick={() => { setOpen(false); useCosmos.getState().setDialog("trash"); }}>

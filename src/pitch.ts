@@ -135,7 +135,11 @@ export const chipsFor = (kind: "roman" | "scenario", form: ProjectForm = kind ==
   );
 export type PitchChip = (typeof PITCH_CHIPS)[number];
 export type PitchField = PitchText | PitchChip;
-export type Pitch = Partial<Record<PitchField, string>>;
+/**
+ * `ia` (mode Atelier) : clés des champs dont le texte a été proposé par l'IA et accepté, séparées par des
+ * virgules (« logline,resume »). Un texte, pour que les versions d'avant le gardent comme clé inconnue.
+ */
+export type Pitch = Partial<Record<PitchField, string>> & { ia?: string };
 
 const FIELDS: readonly PitchField[] = [...PITCH_TEXTS, ...PITCH_CHIPS];
 const MAX_TEXT = 6000;
@@ -159,13 +163,42 @@ export function readPitch(raw: unknown): Pitch {
     const value = (raw as Record<string, unknown>)[key];
     if (typeof value === "string" && value.trim()) out[key] = value.slice(0, limit(key));
   }
+  // Champs proposés par l'IA (mode Atelier) : seulement des textes connus et remplis.
+  const ia = pitchIaKeys({ ...out, ia: (raw as Record<string, unknown>).ia as string | undefined });
   let future = 0;
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    if ((FIELDS as readonly string[]).includes(key) || !FUTURE_KEY.test(key) || typeof value !== "string" || !value.trim()) continue;
+    if (key === "ia" || (FIELDS as readonly string[]).includes(key) || !FUTURE_KEY.test(key) || typeof value !== "string" || !value.trim()) continue;
     if (future++ >= MAX_FUTURE) break;
     (out as Record<string, string>)[key] = value.slice(0, MAX_TEXT);
   }
+  if (ia.length > 0) out.ia = ia.join(",");
   return out;
+}
+
+/** Champs de la couverture proposés par l'IA et acceptés (mode Atelier), encore remplis. */
+export function pitchIaKeys(pitch: Pitch): PitchText[] {
+  if (typeof pitch.ia !== "string") return [];
+  const keys = pitch.ia.split(",").map((k) => k.trim());
+  return (PITCH_TEXTS as readonly string[]).filter((k) => keys.includes(k) && !!pitch[k as PitchText]?.trim()) as PitchText[];
+}
+
+/** « Je l'ai repris » : le champ garde son texte et quitte la liste `ia`. Même objet si rien ne change. */
+export function withoutPitchIa(pitch: Pitch, key: PitchText): Pitch {
+  const keys = pitchIaKeys(pitch);
+  if (!keys.includes(key)) return pitch;
+  const out = { ...pitch };
+  const rest = keys.filter((k) => k !== key);
+  if (rest.length > 0) out.ia = rest.join(",");
+  else delete out.ia;
+  return out;
+}
+
+/** Couverture après l'acceptation d'un champ proposé par l'IA : le texte, et sa clé dans `ia`. */
+export function setPitchFieldIa(pitch: Pitch, key: PitchText, value: string): Pitch {
+  const next = setPitchField(pitch, key, value);
+  if (!next[key]?.trim()) return next;
+  const keys = new Set([...pitchIaKeys(next), key]);
+  return { ...next, ia: (PITCH_TEXTS as readonly string[]).filter((k) => keys.has(k as PitchText)).join(",") };
 }
 
 /** Couverture après modification d'un champ (vidé : retiré). Même objet si rien ne change. */
@@ -175,6 +208,12 @@ export function setPitchField(pitch: Pitch, key: PitchField, value: string): Pit
   const out = { ...pitch };
   if (next.trim()) out[key] = next;
   else delete out[key];
+  // Retouché par l'auteur : ce champ n'est plus « proposé par l'IA ».
+  if (out.ia !== undefined) {
+    const ia = pitchIaKeys({ ...out, ia: out.ia }).filter((k) => k !== key);
+    if (ia.length > 0) out.ia = ia.join(",");
+    else delete out.ia;
+  }
   return out;
 }
 

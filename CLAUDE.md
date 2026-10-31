@@ -23,6 +23,7 @@ Fichiers de mise à jour Mac : leur nom suit `productName` (`MondoWrite_aarch64.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
 - **Trois gestes** : taper (double-clic, clic droit, bouton « + » ou touche N), tirer un fil, déposer. Un cadre (bouton ou touche C) regroupe des cartes sans rien leur imposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. La synthèse d'un personnage remet seulement en ordre ce que l'auteur a écrit, et n'entre dans la fiche que sur son clic. L'IA reste optionnelle. Les consignes complètes sont dans `docs/prompts-ia.md`.
+- **Mode Atelier, l'exception choisie par projet** (1.8.0) : le principe ci-dessus reste le défaut (« gardienne »). Pour le seul projet où l'auteur l'active (Réglages › Ce projet, IA branchée), l'IA peut proposer du texte (trois variantes, synopsis d'une scène, trois directions, brouillon de la couverture, fiche d'un personnage secondaire). Rien n'entre sans un clic ; ce qui est accepté est **toujours marqué** (pointillé, jusqu'à « Je l'ai repris ») et **journalisé** (`ia-journal.md`). Aucune autre action IA ne change de règle.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
 - **Multiplateforme dès le départ** : voir la section dédiée, c'est une règle, pas une option.
 - **Multilingue et mode sombre dès le départ** : aucun texte ni aucune couleur en dur dans les composants (voir les sections dédiées).
@@ -189,6 +190,7 @@ src/
   markdownCopies.ts     Copies Markdown du projet (markdown/ : manuscrit, bible, canevas), liens vers les fiches, versions du jour et nettoyage
   review/               Outils de relecture (fonctions pures, testées) : names.ts (noms presque identiques), checks.ts (points de l'onglet « Vérifier », scénario et roman), filter.ts (filtre par personnage), report.ts (Statistiques des personnages, CSV), places.ts (Statistiques des lieux et décors, moment repris), crossings.ts (qui croise qui)
   vocab.ts              useVocab() : vocabulaire selon le type de projet (roman ou scénario)
+  atelier.ts            Mode Atelier : réglage `aiMode`, marque `ia` dans le HTML (passages, mots, unmarkIa), champs `ia` d'une carte, journal ia-journal.md (ligne, ajout seul), note [[ia]] du Fountain, part de l'IA (fonctions pures)
   i18n/
     fr.ts               Textes de référence (type Messages)
     en.ts               Traduction anglaise
@@ -223,6 +225,8 @@ src/
     FormatBar.tsx       Barre de mise en forme au-dessus d'un texte sélectionné (gras, italique, listes, case, à reprendre)
     focusWriting.ts     Mode focus : phrase ou paragraphe en pleine encre (décorations ProseMirror)
     TodoPanel.tsx       Bouton « À faire » de la barre du haut (Cmd/Ctrl+Maj+L)
+    Atelier.tsx         Mode Atelier : repère de la barre du haut, `useAtelier` (Annuler, erreurs), propositions champ par champ, variantes (barre de mise en forme, barre du scénario), synopsis, directions, brouillon de la couverture, fiche d'un secondaire
+    iaMark.ts           Marque TipTap `ia` (<span data-ia>), commande `unsetIa`, `selectionHasIa`
     Updates.tsx         Bandeau « MondoWrite x.y.z est disponible », vérification au lancement (useLaunchUpdateCheck), réglage et bouton « Rechercher les mises à jour » (Réglages, À propos)
     Dialogs.tsx         Fenêtres « Raccourcis clavier » (Cmd/Ctrl+/), « À propos de MondoWrite », corbeille, liseuse, photos libres
     GoToPanel.tsx       Fenêtre « Aller à » (dialogue `goto`) : champ, liste des endroits, Entrée et flèches
@@ -293,6 +297,7 @@ src/
       continued.ts      (SUITE) affiché après le nom d'un personnage qui reprend après une action (décoration, réglage `scriptPdf.resumes`)
       index.ts          screenplayExtensions() : l'assemblage
   ai/                   IA facultative (rien n'est appelé tant que l'auteur n'a pas choisi un service)
+    atelier.ts          Mode Atelier : consignes et lecteurs (variantes, synopsis, directions, brouillon de la couverture, fiche d'un secondaire), réponses relues en texte brut
     providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes (plugin HTTP de Tauri, API native d'Ollama), lecture des réponses, erreurs
     image.ts            Photo préparée pour une IA qui lit les images (réduite, JPEG, base64)
     vrac.ts             « Du vrac aux cartes » : consigne, relecture (passages retrouvés dans le texte de l'auteur, `locate`), fils gardés, grille (fonctions pures)
@@ -344,6 +349,7 @@ MonRoman/
   medias/<nom>.jpg     images des cartes (copiées dans le projet), et PDF des cartes Document (medias/<nom>.pdf)
   corbeille/<id>.md    cartes supprimées, même format plus une ligne `corbeille:` (jour, place, fils, scène du scénario)
   scenario.fountain    texte du scénario (créé au premier passage en scénario, jamais pour un roman)
+  ia-journal.md        mode Atelier : une ligne par texte de l'IA accepté (date, action, carte, service et modèle, mots), seulement ajouté
   markdown/            copies lisibles hors de l'app (manuscrit.md pour un roman, bible.md, canevas.md), jamais relues ; versions/AAAA-MM-JJ/ une par jour
 ```
 
@@ -369,6 +375,9 @@ Types possibles : `idee`, `personnage`, `lieu`, `scene`, `intrigue`, `episode`, 
 Le format est un contrat : toute évolution doit rester lisible par les versions précédentes ou passer par `version` dans `cosmos.json` avec une migration. Depuis octobre 2026, ce qu'une version ne connaît pas est gardé et réécrit tel quel (voir « Versions futures » dans les pièges) ; les versions d'avant, elles, perdent à l'enregistrement les champs qu'elles ignorent.
 
 ## Pièges connus (déjà résolus, ne pas réintroduire)
+
+- **Mode Atelier, marques** (1.8.0, `atelier.ts`) : un passage de l'IA est `<span data-ia="<id>">` dans le HTML et le Markdown (règle turndown `ia`, `sanitizeHtml` ne le garde qu'avec `isIaId`) ; un champ (titre d'une piste, synopsis, clé de fiche) est dans `ia: [...]` de la carte (`KNOWN_FRONT`), retiré par `setFiche` et `updateCard` dès que l'auteur y touche (`iaAfterPatch`) ; la couverture a `pitch.ia` (« logline,resume », un texte pour que les versions d'avant le gardent) ; le Fountain, ` [[ia]]` en fin d'action, de réplique, de didascalie ou de synopsis (`ia` de l'élément, attribut `keepOnSplit: false` dans l'éditeur, jamais dans le texte, donc jamais imprimé). **Une version d'avant la 1.8.0 perd la marque `<span data-ia>` en réenregistrant** (turndown ne garde que le texte) : accepté par l'auteur ; elle garde la ligne `ia:` d'une carte et `pitch.ia` (clés inconnues), et montre la note ` [[ia]]` du Fountain dans le texte de l'élément. `aiMode` (KNOWN_META) est écrit seulement s'il vaut « atelier », hors historique comme `hideWires`.
+- **Journal de l'IA** : `ia-journal.md` à la racine (`JOURNAL_FILE`, lu par `readAll`, emporté par `isProjectEntry`, accepté dans un .zip). On n'y fait qu'ajouter (`appendJournal`, `logAtelier`), jamais dans l'historique : une ligne reste si l'auteur annule ce qu'il avait accepté. Le journal dit ce qui a été proposé et accepté, pas ce qui reste ; ce qui reste se lit dans les marques (« À faire », Statistiques).
 
 - **Fils flottants** : `onConnect` enregistre les fils avec `sourceHandle: null, targetHandle: null`, sinon React Flow cherche le point d'accroche temporaire (`drop`) qui n'existe plus et n'affiche pas le fil. Il refuse aussi un fil d'une carte vers elle-même ou un second fil entre deux cartes déjà reliées, dans un sens ou l'autre (1.7.1).
 - **Suppr au clavier** : React Flow retire d'abord les fils des cartes (`onEdgesChange`), puis les cartes (`onNodesChange`). Le store garde les fils d'avant le temps d'une tâche (`edgesCut`) : les cartes partent à la corbeille avec leurs fils (et leur fiche, `TrashLink.fiche`), en une seule étape d'historique (1.7.1).

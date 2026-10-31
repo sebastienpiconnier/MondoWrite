@@ -17,6 +17,7 @@ import { markdownToHtml } from "../storage/markdown";
 import { looksLikeMarkdown, markdownSource } from "../markdownText";
 import { useSettings } from "../settings";
 import { smartType, typographyMode } from "../typography";
+import { IaMark } from "./iaMark";
 
 /** Texte brut collé en Markdown : converti en texte mis en forme. Le HTML collé garde son chemin habituel. */
 export const MarkdownPaste = Extension.create({
@@ -117,6 +118,8 @@ export function richTextExtensions({ link = true, prose = false }: { link?: bool
     TaskList,
     TaskItem.configure({ nested: true }),
     Revisit,
+    // Passage proposé par l'IA (mode Atelier), marqué jusqu'à « Je l'ai repris ».
+    IaMark,
     MarkdownPaste,
     Typography,
   ];

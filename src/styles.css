@@ -48,6 +48,7 @@
   --type-secret: #7c1d45;
   --backdrop: rgb(20 22 34 / 0.6); /* fond derrière une photo agrandie */
   --revisit: #ffe58a; /* « à reprendre » */
+  --ia-mark: #8a3a9e; /* mode Atelier : soulignement des passages de l'IA, et repère « Atelier » (texte, 4,5:1) */
   --page-ink-dim: #6f7584; /* texte hors focus (mode focus), estompé mais lisible : 4,5:1 au moins */
   --type-question: #6b7085;
   /* Statut d'une scène (pastilles) : brouillon, à revoir, terminée */
@@ -113,6 +114,7 @@
   --type-secret: #e98aa9;
   --backdrop: rgb(0 0 0 / 0.7);
   --revisit: #6b5a12;
+  --ia-mark: #d9a3ea;
   --page-ink-dim: #848a98;
   --type-question: #8e93a8;
   --status-draft: #9ca1b4;

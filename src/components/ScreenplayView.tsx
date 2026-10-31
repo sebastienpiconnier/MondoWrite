@@ -54,8 +54,10 @@ import {
   sceneCharacters,
   sceneSynopsis,
   scenesInLocation,
+  synopsisIsIa,
   type Scene,
 } from "../screenplay/scenes";
+import { ScreenplayAtelier, ScreenplayDirections, screenplaySceneText } from "./Atelier";
 import {
   currentElement,
   fromDoc,
@@ -841,6 +843,8 @@ export function ScreenplayView() {
                 value={sceneSynopsis(elements, s.index)}
                 scene={s.text || sp.untitledScene}
                 onSave={(text) => saveSynopsis(s.index, text)}
+                ia={synopsisIsIa(elements, s.index)}
+                atelier={elements[s.index]?.cardId ? { sceneId: elements[s.index].cardId!, text: screenplaySceneText(s.index) } : undefined}
               />
               </div>
             </li>
@@ -941,6 +945,9 @@ export function ScreenplayView() {
           <button type="button" className="sp-option stats-button" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
             {t.projectStats.button}
           </button>
+          {/* Mode Atelier : variantes de l'élément en cours, « Je l'ai repris », trois directions pour la scène. */}
+          <ScreenplayAtelier editor={editor} />
+          <ScreenplayDirections editor={editor} />
           {charFilter && (
             <p className="sp-filter-banner" role="status">
               <span>{charFilter.with ? fmt(charFilter.mode === "lines" ? sp.filterBannerPairLines : sp.filterBannerPair, { name: charFilter.name, other: charFilter.with }) : fmt(charFilter.mode === "lines" ? sp.filterBannerLines : sp.filterBannerScenes, { name: charFilter.name })}</span>

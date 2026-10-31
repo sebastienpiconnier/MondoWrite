@@ -16,6 +16,7 @@ import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
 import type { BookHandlers } from "./bookExtensions";
 import { SynopsisField } from "./SynopsisField";
+import { DirectionsSuggest, novelSceneText } from "./Atelier";
 import { TrashIcon } from "./TrashIcon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
@@ -648,6 +649,8 @@ export function Manuscript() {
             <button type="button" className="ghost-button ms-start-chapter stats-button" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
               {t.projectStats.button}
             </button>
+            {/* Mode Atelier : trois pistes pour la suite de la scène (rien n'est écrit dans le manuscrit). */}
+            {!pageKind && <DirectionsSuggest sceneId={current} title={title} text={plainText(manuscript[current] ?? "")} synopsis={card.fiche?.synopsis} />}
             {/* La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle. */}
             <button
               type="button"
@@ -750,6 +753,8 @@ export function Manuscript() {
             scene={title}
             // Vidé : la clé quitte la fiche (setFiche), jamais `synopsis: ""` écrit dans la carte.
             onSave={(text) => useCosmos.getState().setFiche(current, "synopsis", text)}
+            ia={card.ia?.includes("synopsis")}
+            atelier={{ sceneId: current, text: novelSceneText(current) }}
           />
           <button type="button" className="chip" onClick={() => revealCard(current)}>
             {fmt(m.show, { title })}
