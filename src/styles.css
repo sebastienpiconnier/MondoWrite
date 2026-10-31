@@ -148,6 +148,12 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
   .icon-button { width: 44px; height: 44px; }
   .ghost-button, .views button { min-height: 44px; }
 }
+/* Liens-boutons (texte seul) et volet des éléments du scénario sur téléphone : la cible grandit à 44 px par
+   une zone invisible, le texte et la barre gardent leur taille. */
+@media (pointer: coarse) {
+  .link-button, .sp-bar .sp-bar-toggle { position: relative; }
+  .link-button::after, .sp-bar .sp-bar-toggle::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+}
 
 /* ---------- Réglages d'accessibilité du système ---------- */
 /* Réduire les animations : plus aucune transition ni animation, partout (fondus compris). */

@@ -190,10 +190,12 @@ export function adoptParkedCards(nodes: CardNode[], edges: Edge[]): { nodes: Car
 /**
  * Projets d'avant : les réponses de l'assistant écrites dans le texte d'un personnage (question en gras,
  * réponse dessous) rejoignent ses réponses rangées. Seulement pour les questions connues, dans une des langues.
+ * Questions comparées espaces repliées : les anciens projets ont « Que veut-il ? » avec une espace ordinaire,
+ * fr.ts une espace fine insécable (et extractAnswers replie déjà le texte lu).
  */
 export function adoptTextAnswers(nodes: CardNode[]): CardNode[] {
   const byText = new Map<string, string>();
-  for (const d of Object.values(DICTIONARIES)) for (const [key, text] of Object.entries(allQuestionTexts(d.assistant))) byText.set(text, key);
+  for (const d of Object.values(DICTIONARIES)) for (const [key, text] of Object.entries(allQuestionTexts(d.assistant))) byText.set(text.replace(/\s+/g, " ").trim(), key);
   let changed = false;
   const next = nodes.map((n) => {
     if (n.data.type !== "personnage") return n;

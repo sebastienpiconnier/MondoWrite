@@ -59,11 +59,12 @@ export async function buildPdf(
   const left = layout.margin.left * POINT;
   const top = height - layout.margin.top * POINT;
 
-  const watermark = options.watermark?.trim() ?? "";
+  const watermark = options.watermark?.trim().replace(/\u202f/g, "\u00a0") ?? "";
   const header = options.header?.trim() ?? "";
   const draw = (lines: TypesetLine[], number?: number) => {
     const page = pdf.addPage([width, height]);
-    const text = (value: string, x: number, y: number, font: PDFFont, gray = false) => page.drawText(value, { x, y, size: SIZE, font, ...(gray ? { color: GRAY } : {}) });
+    // Courier Prime n'a pas l'espace fine insécable (textes d'interface en français) : une insécable ordinaire.
+    const text = (value: string, x: number, y: number, font: PDFFont, gray = false) => page.drawText(value.replace(/\u202f/g, "\u00a0"), { x, y, size: SIZE, font, ...(gray ? { color: GRAY } : {}) });
     if (watermark) {
       // En travers de la page, centré, assez grand pour se voir sans gêner la lecture.
       const angle = Math.atan2(height, width);
