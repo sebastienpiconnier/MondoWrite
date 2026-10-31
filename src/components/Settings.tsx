@@ -470,6 +470,9 @@ export function Settings({ project = true }: { project?: boolean }) {
                 <>
                   <label htmlFor={ids.aiUrl}>{t.ai.url}</label>
                   <input id={ids.aiUrl} type="url" value={config.url} placeholder={PROVIDERS[provider].url} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("urls", e.target.value)} />
+                  <label htmlFor={ids.aiKey}>{t.ai.token}</label>
+                  <input id={ids.aiKey} type="password" value={config.key} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("keys", e.target.value)} />
+                  <p className="settings-hint">{t.ai.tokenHint}</p>
                 </>
               ) : (
                 <>
