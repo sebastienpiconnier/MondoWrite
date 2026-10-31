@@ -87,7 +87,8 @@ describe("dans le projet", () => {
     state().setManuscriptText(scene, `<p>${mentionHtml(ines, "Inès")} arrive. Inès a froid.</p>`);
     state().replaceText({ find: "Inès", replacement: "Lise", wholeWord: true, cards: true, renameId: ines });
     expect(state().nodes.find((n) => n.id === ines)!.data.title).toBe("Lise");
-    expect(state().manuscript[scene]).toBe(`<p>${mentionHtml(ines, "Inès")} arrive. Lise a froid.</p>`);
+    // La mention suit le renommage, dans le manuscrit aussi (lot 1.7.4).
+    expect(state().manuscript[scene]).toBe(`<p>${mentionHtml(ines, "Lise")} arrive. Lise a froid.</p>`);
     state().undoReplace();
     expect(state().nodes.find((n) => n.id === ines)!.data.title).toBe("Inès");
     expect(state().manuscript[scene]).toBe(`<p>${mentionHtml(ines, "Inès")} arrive. Inès a froid.</p>`);

@@ -30,7 +30,7 @@ import { IMPORT_EXTENSIONS, projectFromFile } from "./import";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
 import { documentFiche, documentTitle } from "./documents";
-import { removeMentions, renameMentions } from "./mentions";
+import { mapTexts, relabelMentions, removeMentions, renameMentions } from "./mentions";
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
 import { isParked, placeAnswer } from "./assistant";
@@ -58,7 +58,7 @@ import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
-import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
+import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, headingRenames, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
 
@@ -528,6 +528,32 @@ const HISTORY_MERGE_MS = 800;
 
 export const useCosmos = create<CosmosState>((set, get) => {
   const touch = () => set({ status: "modifie" });
+  /**
+   * Les cartes Scène prennent le titre de leur en-tête (`titlesFromHeadings`) ; leurs mentions suivent dans les
+   * autres cartes et dans le texte du manuscrit (hors historique, comme tout le manuscrit).
+   */
+  const headedNodes = (nodes: CardNode[], screenplay: Screenplay): CardNode[] => {
+    const renamed = headingRenames(nodes, screenplay);
+    if (renamed.size === 0) return nodes;
+    const manuscript = mapTexts(get().manuscript, (html) => relabelMentions(html, renamed));
+    if (manuscript !== get().manuscript) set({ manuscript });
+    return titlesFromHeadings(nodes, screenplay);
+  };
+
+  /** Copie une image dans medias/ sous un nom neuf (deux images du même nom ne s'écrasent pas, et annuler reste
+   * possible). Rend ce nom, ou null si ce n'est pas une image ou si la copie échoue. */
+  const storeImage = async (file: { name: string; data: Uint8Array }): Promise<string | null> => {
+    const ext = imageExtension(file.name);
+    if (!ext) return null;
+    const name = `${newId()}.${ext}`;
+    try {
+      await storage.writeMedia(name, file.data);
+      return name;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
 
   /**
    * Copie un PDF dans medias/ avec l'aperçu de sa première page, et lit ce qu'il dit de lui-même (titre,
@@ -580,9 +606,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
     }
     let nodes = from.nodes.filter((n) => !gone.has(n.id));
     for (const id of ids) nodes = nodes.map((n) => withHtml(n, removeMentions(n.data.html, id)));
+    // Même chose dans le texte des scènes du roman (manuscrit/<id>.md).
+    let manuscript = get().manuscript;
+    for (const id of ids) manuscript = mapTexts(manuscript, (html) => removeMentions(html, id));
     const first = entries[0];
+    const { spotlightId } = get();
     return {
       nodes,
+      manuscript,
+      // La carte mise en avant part à la corbeille : plus rien ne reste estompé.
+      spotlightId: spotlightId && gone.has(spotlightId) ? null : spotlightId,
       edges: from.edges.filter((e) => !gone.has(e.source) && !gone.has(e.target)),
       screenplay,
       trash: [...entries, ...get().trash.filter((c) => !gone.has(c.id))],
@@ -596,7 +629,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
   let lastAt = 0;
   /** Fils tels qu'ils étaient avant le dernier retrait de fils, le temps d'une tâche (voir onEdgesChange). */
   let edgesCut: Edge[] | null = null;
+  /** Vrai le temps d'une action qui prolonge l'étape d'historique déjà prise (scène lâchée dans une case). */
+  let quiet = false;
   const record = (tag = "") => {
+    if (quiet) return;
     const now = Date.now();
     const merge = tag !== "" && tag === lastTag && now - lastAt < HISTORY_MERGE_MS;
     lastTag = tag;
@@ -746,7 +782,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
         return o ? before(o) : false;
       }).length;
       if ((current.beats[beat] ?? []).filter((s) => story.has(s)).indexOf(id) === index) continue;
-      get().placeInBeat(id, beat, index);
+      // Le glisser a déjà pris son étape d'historique (« move ») : le rangement en fait partie, un seul Annuler
+      // défait les deux. Le scénario passe par setScreenplay(…, true), qui garde ainsi aussi l'historique.
+      quiet = true;
+      try {
+        get().placeInBeat(id, beat, index);
+      } finally {
+        quiet = false;
+      }
     }
   };
   /** Cartes et cadres du canevas : une nouvelle carte ne se pose sur aucun d'eux. */
@@ -758,6 +801,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     if (!target) return;
     lastTag = "";
     const here: Snapshot = { nodes, frames, edges, screenplay, plan, trash, manuscript };
+    const titles = new Map(target.nodes.map((n) => [n.id, n.data.title]));
     set({
       past: from === "past" ? past.slice(0, -1) : [...past, here],
       future: from === "past" ? [...future, here] : future.slice(0, -1),
@@ -767,7 +811,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       screenplay: target.screenplay,
       plan: target.plan,
       trash: target.trash,
-      manuscript: manuscriptAfterUndo(manuscript, nodes, target),
+      // Le manuscrit n'est pas remis par l'annulation : ses mentions reprennent le titre des cartes de l'étape.
+      manuscript: mapTexts(manuscriptAfterUndo(manuscript, nodes, target), (html) => relabelMentions(html, titles)),
       trashNotice: null,
       pendingFocusId: null,
     });
@@ -1124,7 +1169,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const stored = await storeDocument(file);
       const card = get().nodes.find((n) => n.id === id)?.data;
       if (!stored || !card) return false;
-      record();
+      // Une seule étape d'historique, celle d'updateCard (un record() de plus en faisait deux).
       // Rien de ce que l'auteur a écrit n'est remplacé : titre, image et champs déjà remplis restent.
       get().updateCard(id, {
         type: "document",
@@ -1181,7 +1226,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       });
       record();
       set({ manuscript: done.manuscript, nodes: done.nodes });
-      if (done.screenplay !== before.screenplay && done.screenplay) set({ screenplay: done.screenplay, nodes: titlesFromHeadings(get().nodes, done.screenplay) });
+      if (done.screenplay !== before.screenplay && done.screenplay) set({ screenplay: done.screenplay, nodes: headedNodes(get().nodes, done.screenplay) });
       // Renommer partout : la carte prend le nouveau nom (ses mentions suivent, comme pour tout renommage).
       if (renamed) get().updateCard(renamed.id, { title: req.replacement });
       touch();
@@ -1199,8 +1244,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
       let nodes = get().nodes.map((n) => (n.id in snap.html ? withHtml(n, snap.html[n.id]) : n));
       if (snap.title) nodes = nodes.map((n) => (n.id === snap.title!.id ? { ...n, data: { ...n.data, title: snap.title!.title } } : n));
       if (snap.title) nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, snap.title!.id, snap.title!.title)));
-      set({ manuscript, nodes, replaceUndo: null });
-      if (snap.screenplay !== undefined && snap.screenplay) set({ screenplay: snap.screenplay, nodes: titlesFromHeadings(get().nodes, snap.screenplay) });
+      // Les mentions du manuscrit avaient suivi le nouveau nom : elles reprennent l'ancien.
+      const restored = snap.title ? mapTexts(manuscript, (html) => renameMentions(html, snap.title!.id, snap.title!.title)) : manuscript;
+      set({ manuscript: restored, nodes, replaceUndo: null });
+      if (snap.screenplay !== undefined && snap.screenplay) set({ screenplay: snap.screenplay, nodes: headedNodes(get().nodes, snap.screenplay) });
       touch();
     },
     addPhoto: async (photo) => {
@@ -1415,8 +1462,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
     turnIntoImage: async (id, file) => {
       const card = get().nodes.find((n) => n.id === id)?.data;
       if (!card || !isBlankCard(card) || !imageExtension(file.name)) return false;
-      if (!(await get().setCardImage(id, file))) return false;
-      get().updateCard(id, { type: "image", fiche: { consulte: today(useSettings.getState().lang) } });
+      const image = await storeImage(file);
+      // La carte a pu disparaître pendant la copie. Image et type en une seule étape d'historique.
+      if (!image || !get().nodes.some((n) => n.id === id)) return false;
+      get().updateCard(id, { image, type: "image", fiche: { consulte: today(useSettings.getState().lang) } });
       return true;
     },
     completeSource: async (id) => {
@@ -1845,7 +1894,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const { progress } = get();
       const totalAfter = screenplayWords(screenplay);
       const totalBefore = progress[day]?.end ?? (before ? screenplayWords(before) : totalAfter);
-      set({ screenplay, nodes: titlesFromHeadings(get().nodes, screenplay), progress: recordProgress(progress, day, totalBefore, totalAfter) });
+      set({ screenplay, nodes: headedNodes(get().nodes, screenplay), progress: recordProgress(progress, day, totalBefore, totalAfter) });
       // Scènes déplacées (séquencier, liste des scènes) : le canevas suit l'ordre du fichier.
       const order = (sp: Screenplay | null) => (sp ? listScenes(sp.elements).map((s) => s.cardId ?? "").join(" ") : "");
       if (undoable && before && order(before) !== order(screenplay)) followStory();
@@ -1878,8 +1927,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!get().nodes.some((n) => n.id === id)) return;
       // Téléphone (Carnet) : pas de canevas, la carte s'ouvre dans la Bible.
       if (isPhone()) return get().openInBible(id);
+      // Carte masquée par le filtre du canevas : le filtre est retiré, sinon la vue se centrerait sur du vide.
+      const hidden = hiddenCards(get().nodes.map((n) => n.data), get().edges, get().filter).has(id);
       // La carte est mise en avant (les autres s'estompent) jusqu'au prochain clic sur le fond ou Échap.
-      set({ view: "toile", focusId: id, spotlightId: id, nodes: get().nodes.map((n) => ({ ...n, selected: n.id === id })) });
+      set({ view: "toile", focusId: id, spotlightId: id, nodes: get().nodes.map((n) => ({ ...n, selected: n.id === id })), ...(hidden ? { filter: NO_FILTER } : {}) });
     },
     view: "toile",
     focusId: null,
@@ -2255,7 +2306,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
       let nextFrames = frameChanges.length > 0 ? applyNodeChanges(frameChanges, frames) : frames;
       if (carried.size > 0) nextFrames = nextFrames.map((f) => (carried.has(f.id) ? { ...f, position: carried.get(f.id)! } : f));
-      set({ nodes: nextNodes, frames: nextFrames, screenplay, ...(trashed ? { edges: trashed.edges, trash: trashed.trash, trashNotice: trashed.trashNotice } : {}) });
+      set({ nodes: nextNodes, frames: nextFrames, screenplay, ...(trashed ? { edges: trashed.edges, trash: trashed.trash, trashNotice: trashed.trashNotice, manuscript: trashed.manuscript, spotlightId: trashed.spotlightId } : {}) });
       if (changed) touch();
       // Une scène déposée dans le cadre d'une case du gabarit y est rangée, à la place où on l'a lâchée.
       if (placed.size > 0) dropIntoBeats(placed);
@@ -2356,7 +2407,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       });
       // Les mentions de cette carte, dans les autres, suivent son nouveau titre.
       const { title } = patch;
-      if (typeof title === "string") nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, id, title)));
+      if (typeof title === "string") {
+        nodes = nodes.map((n) => withHtml(n, renameMentions(n.data.html, id, title)));
+        // Et dans le texte des scènes du roman (manuscrit/<id>.md).
+        const manuscript = mapTexts(get().manuscript, (html) => renameMentions(html, id, title));
+        if (manuscript !== get().manuscript) set({ manuscript });
+      }
       let { screenplay } = get();
       // Une Scène qui change de type garde son texte : synopsis et texte de la scène passent dans ses notes.
       // Roman : le texte quitte le manuscrit (il y revient si la carte redevient Scène). Scénario : le texte
@@ -2435,26 +2491,21 @@ export const useCosmos = create<CosmosState>((set, get) => {
     setCardImage: async (id, file) => {
       const ext = imageExtension(file.name);
       if (!ext || !get().nodes.some((n) => n.id === id)) return false;
-      // Un nom neuf dans medias/ : deux images du même nom ne s'écrasent pas, et annuler reste possible.
-      const name = `${newId()}.${ext}`;
-      try {
-        await storage.writeMedia(name, file.data);
-      } catch (err) {
-        console.error(err);
-        return false;
-      }
+      const name = await storeImage(file);
+      if (!name || !get().nodes.some((n) => n.id === id)) return false;
       get().updateCard(id, { image: name });
       return true;
     },
     addImageCard: async (pos, file) => {
       if (!imageExtension(file.name)) return null;
+      // L'image est copiée d'abord, la carte naît ensuite avec elle : une seule étape d'historique, prise au
+      // moment où la carte apparaît (avant, annuler après un échec de copie défaisait la dernière étape, quelle qu'elle soit).
+      const name = await storeImage(file);
+      if (!name) return null;
       // La place de l'image est réservée d'avance, pour ne pas recouvrir une voisine une fois l'image affichée.
       const id = get().addCard(pos, "idee", CARD_SIZE.height + IMAGE_ROOM);
-      set({ pendingFocusId: null });
-      if (await get().setCardImage(id, file)) return id;
-      // La copie a échoué : pas de carte vide laissée derrière.
-      get().undo();
-      return null;
+      set({ pendingFocusId: null, nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, image: name } } : n)) });
+      return id;
     },
     pickCardImage: async (id) => {
       const file = await storage.pickImage(getT().card.imageFiles).catch((err) => {
@@ -2524,6 +2575,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     renameLink: (id, label) => {
+      // Étiquette inchangée (fil cliqué puis ailleurs) : ni étape d'historique ni projet modifié.
+      const edge = get().edges.find((e) => e.id === id);
+      if (!edge || String(edge.label ?? "") === label) return;
       record(`link:${id}`);
       set({ edges: get().edges.map((e) => (e.id === id ? { ...e, label } : e)) });
       touch();

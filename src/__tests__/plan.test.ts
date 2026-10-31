@@ -242,7 +242,11 @@ describe("plan dans le projet", () => {
     expect(arrange(state().plan, planScenes(state().nodes)).beats[0].ids).toEqual([b]);
     state().deleteCard(b);
     await state().save();
-    // La carte devenue Idée garde sa place si elle redevient une scène ; la carte supprimée est oubliée.
+    // La carte devenue Idée garde sa place si elle redevient une scène ; la carte à la corbeille aussi (lot 1.7.4 :
+    // remise après une relance, elle retrouve sa case) ; supprimée pour de bon, elle est oubliée.
+    expect((await meta()).plan).toEqual({ template: "troisActes", beats: { a_setup: [a, b] } });
+    state().purgeTrash(b);
+    await state().save();
     expect((await meta()).plan).toEqual({ template: "troisActes", beats: { a_setup: [a] } });
   });
 

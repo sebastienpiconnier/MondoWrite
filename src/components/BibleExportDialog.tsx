@@ -140,17 +140,22 @@ export function BibleExportDialog() {
         if (stale) return;
         pdfRef.current = bytes;
         const doc = await openPdf(bytes);
-        const holder = canvases.current;
-        if (stale || !holder) return;
-        holder.replaceChildren();
-        for (let n = 1; n <= pages; n++) {
-          const canvas = document.createElement("canvas");
-          canvas.className = "bexp-page";
-          holder.append(canvas);
-          await renderPage(doc, n, canvas, PREVIEW_WIDTH);
-          if (stale) break;
+        // Le document de pdf.js est toujours détruit, même quand un réglage changé entre-temps rend l'aperçu
+        // périmé (avant, un retour anticipé le laissait en mémoire avec son worker).
+        try {
+          const holder = canvases.current;
+          if (stale || !holder) return;
+          holder.replaceChildren();
+          for (let n = 1; n <= pages; n++) {
+            const canvas = document.createElement("canvas");
+            canvas.className = "bexp-page";
+            holder.append(canvas);
+            await renderPage(doc, n, canvas, PREVIEW_WIDTH);
+            if (stale) break;
+          }
+        } finally {
+          void doc.loadingTask.destroy();
         }
-        void doc.loadingTask.destroy();
         if (!stale) setPreview({ status: "ready", pages });
       } catch (err) {
         console.error(err);
@@ -177,7 +182,8 @@ export function BibleExportDialog() {
         }
         file = { name: `${fileName(name, "bible")}.pdf`, extension: "pdf", mime: "application/pdf", data: pdfRef.current };
       } else {
-        const doc = bibleOf(useCosmos.getState(), { t, lang, author }, typesForParts(bibleOrder(sections), options.parts), options.audience !== "moi");
+        // Même règle que le PDF : les rubriques masquées dans la Bible (réglage d'affichage) sont exportées aussi.
+        const doc = bibleOf(useCosmos.getState(), { t, lang, author }, typesForParts(bibleOrder({ ...sections, hidden: [] }), options.parts), options.audience !== "moi");
         const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (n) => storage.mediaUrl(n));
         file = await exportDocument(full, format, { name, paper, contents: t.exports.contents });
       }

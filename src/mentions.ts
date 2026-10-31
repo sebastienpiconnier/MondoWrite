@@ -37,6 +37,34 @@ export function renameMentions(html: string, id: string, title: string): string 
   return html.replace(MENTION_RE, (all, found) => (found === id ? mentionHtml(id, title.trim()) : all));
 }
 
+/**
+ * Plusieurs cartes ont changé de titre (identifiant → titre) : leurs mentions suivent. Un titre vide est ignoré,
+ * comme dans `renameMentions`. Rend la même chaîne si rien ne change.
+ */
+export function relabelMentions(html: string, titles: ReadonlyMap<string, string>): string {
+  if (titles.size === 0 || !html.includes("data-mention=")) return html;
+  let changed = false;
+  const next = html.replace(MENTION_RE, (all, found, label) => {
+    const title = titles.get(found)?.trim();
+    if (!title || label === `@${escape(title)}`) return all;
+    changed = true;
+    return mentionHtml(found, title);
+  });
+  return changed ? next : html;
+}
+
+/** Applique `fn` à chaque texte (manuscrit : identifiant → HTML). Rend le même objet si aucun ne change. */
+export function mapTexts(texts: Record<string, string>, fn: (html: string) => string): Record<string, string> {
+  let next: Record<string, string> | null = null;
+  for (const [id, html] of Object.entries(texts)) {
+    const out = fn(html);
+    if (out === html) continue;
+    next ??= { ...texts };
+    next[id] = out;
+  }
+  return next ?? texts;
+}
+
 /** La carte citée n'existe plus : la mention redevient du texte ordinaire (le nom reste écrit). */
 export function removeMentions(html: string, id: string): string {
   if (!html.includes(`data-mention="${id}"`)) return html;

@@ -317,6 +317,8 @@ export function Manuscript() {
       if (opens && plainText(useCosmos.getState().manuscript[from] ?? "") !== "") return false;
       const before = { from: useCosmos.getState().manuscript[from] ?? "", into: useCosmos.getState().manuscript[into] ?? "" };
       useCosmos.getState().joinScenes(from, into);
+      // L'étape d'historique de la fusion : « Annuler » ne défait qu'elle, jamais un geste fait depuis.
+      const step = useCosmos.getState().past.at(-1);
       setFresh(null);
       setChosen(into);
       bookApi.current?.focusScene(into, offset, true);
@@ -326,7 +328,11 @@ export function Manuscript() {
         text: b.joined,
         undo: () => {
           const store = useCosmos.getState();
-          store.undo();
+          // Toujours la dernière étape : on l'annule. Sinon (autre geste depuis, ou déjà annulée), seule la
+          // fiche revient de la corbeille, si elle y est encore.
+          if (step && store.past.at(-1) === step) store.undo();
+          else if (store.trash.some((c) => c.id === from)) store.restoreFromTrash(from);
+          else if (!store.nodes.some((n) => n.id === from)) return setNotice(null);
           store.setManuscriptText(into, before.into);
           store.setManuscriptText(from, before.from);
           setChosen(from);
@@ -412,9 +418,11 @@ export function Manuscript() {
             key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`}
             className={`${group.chapter ? "ms-chapter" : ""}${over === group.ids[0] ? " is-over" : ""}`}
             // Dépôt d'un chapitre sur un groupe : avant lui en remontant, après lui en descendant.
+            // Le groupe se repère par sa première scène du récit : celui d'avant le premier chapitre commence par les
+            // pages du livre (titre, dédicace…), qui ne comptent pas (sinon le dépôt y était refusé).
             onDragOver={(e) => {
               const id = draggedRef.current;
-              if (!id || group.chapter?.id === id || !story.includes(group.ids[0])) return;
+              if (!id || group.chapter?.id === id || !group.ids.some((x) => story.includes(x))) return;
               e.preventDefault();
               e.dataTransfer.dropEffect = "move";
               setOver(group.ids[0]);
@@ -426,8 +434,9 @@ export function Manuscript() {
               if (!id) return;
               e.preventDefault();
               const groups = groupByChapter(plan, story);
+              const head = group.ids.find((x) => story.includes(x));
               const from = groups.findIndex((g) => g.chapter?.id === id);
-              const to = groups.findIndex((g) => g.ids[0] === group.ids[0]);
+              const to = groups.findIndex((g) => g.ids[0] === head);
               if (from < 0 || to < 0) return;
               movePlanChapter(id, to < from ? groups[to].ids[0] : (groups[to + 1]?.ids[0] ?? null));
             }}
@@ -739,7 +748,8 @@ export function Manuscript() {
           <SynopsisField
             value={card.fiche?.synopsis ?? ""}
             scene={title}
-            onSave={(text) => updateCard(current, { fiche: { ...(card.fiche ?? {}), synopsis: text } })}
+            // Vidé : la clé quitte la fiche (setFiche), jamais `synopsis: ""` écrit dans la carte.
+            onSave={(text) => useCosmos.getState().setFiche(current, "synopsis", text)}
           />
           <button type="button" className="chip" onClick={() => revealCard(current)}>
             {fmt(m.show, { title })}

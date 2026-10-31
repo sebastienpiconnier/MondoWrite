@@ -117,7 +117,9 @@ describe("Vérifier : trois questions sur l'histoire", () => {
 });
 
 describe("roman : extrait en annexe", () => {
-  const novel = (): PackSource => ({ ...source("roman"), manuscript: { s1: "<p>Il était une fois une petite fille de village.</p>" } } as never);
+  // La scène a sa carte : un texte sans carte ne compte pas (lot 1.7.4, volume du livre).
+  const novel = (): PackSource =>
+    ({ ...source("roman"), nodes: [{ id: "s1", position: { x: 0, y: 0 }, data: { id: "s1", type: "scene", title: "Le village", html: "" } }], manuscript: { s1: "<p>Il était une fois une petite fille de village.</p>" } }) as never;
 
   it("un éditeur reçoit les premières pages du manuscrit, annoncées par une page", () => {
     expect(defaultsFor("tiers", "roman").extract).toBe(true);

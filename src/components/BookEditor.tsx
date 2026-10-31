@@ -11,6 +11,7 @@ import { EditorState, Selection, TextSelection } from "@tiptap/pm/state";
 import { nanoid } from "nanoid";
 import { placePassage, takePassage, type Passage } from "../chutier";
 import { richTextExtensions } from "./editorKit";
+import { MentionNode } from "./MentionNode";
 import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
 import { BookKeys, BookUndo, BookStructure, SceneMark, type BookHandlers } from "./bookExtensions";
@@ -156,6 +157,9 @@ export function BookEditor({
   const editor = useStableEditor({
     extensions: [
       ...richTextExtensions({ link: false, prose: true }),
+      // Une mention « @ » venue d'une carte devenue Scène (ou de la carte agrandie) : sans ce nœud, elle
+      // redevenait du texte à la première frappe dans le livre, et le lien vers la carte était perdu.
+      MentionNode,
       SceneMark,
       ReadingMark,
       BookStructure,

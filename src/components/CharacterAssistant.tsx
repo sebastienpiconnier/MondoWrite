@@ -20,7 +20,9 @@ type Tab = "themes" | "custom" | "pending";
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export function CharacterAssistant({ card, startOpen = false }: { card: CardData; startOpen?: boolean }) {
+/** `openKey` change à chaque nouvelle arrivée demandée (« N questions à compléter ») : l'assistant s'ouvre alors
+ *  sur « À creuser », une fois, sans y revenir à chaque question rangée ou répondue. */
+export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { card: CardData; startOpen?: boolean; openKey?: number }) {
   const all = useT();
   const t = all.assistant;
   const ct = all.character;
@@ -40,11 +42,13 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
   const [open, setOpen] = useState(startOpen);
   const [chosen, setTab] = useState<Tab>(startOpen && pending.length > 0 ? "pending" : "themes");
   const tab: Tab = chosen === "custom" && !ai ? "themes" : chosen;
+  const questionsRef = useRef(card.questions);
+  questionsRef.current = card.questions;
   useEffect(() => {
     if (!startOpen) return;
     setOpen(true);
-    if ((card.questions ?? []).length > 0) setTab("pending");
-  }, [startOpen, card.questions]);
+    if ((questionsRef.current ?? []).length > 0) setTab("pending");
+  }, [startOpen, openKey]);
 
   // Question affichée : on la garde tant qu'elle est ouverte, sinon on passe à la suivante.
   const [shownKey, setShownKey] = useState<string | null>(null);

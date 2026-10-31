@@ -310,6 +310,9 @@ export function Toile() {
       if (e.isComposing) return;
       const target = eventElement(e);
       if (target?.closest(EDITABLE)) return;
+      // Une fenêtre ouverte (du store, ou un <dialog> natif) : ses touches lui sont destinées, le canevas
+      // derrière ne réagit pas (Cmd/Ctrl + A sélectionnait, Cmd/Ctrl + D dupliquait des cartes cachées).
+      if (useCosmos.getState().dialog || document.querySelector("dialog[open]")) return;
       // Alt + flèche droite ou gauche : élargir ou rétrécir les cartes sélectionnées.
       if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
         const { nodes: all, resizeCard } = useCosmos.getState();
@@ -350,10 +353,9 @@ export function Toile() {
         setSelecting(false);
         return;
       }
+      // N et C : la fenêtre ouverte a déjà été écartée plus haut (le « n » de « tu viens » tapé dans une carte
+      // agrandie dont le champ n'avait pas encore le focus créait une carte Idée).
       if ((key !== "n" && key !== "c") || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
-      // Une fenêtre ouverte (carte agrandie…) : la lettre lui est destinée, même si son champ n'a pas encore
-      // le focus (WebKit le donne parfois en retard) ; le « n » de « tu viens » créait une carte Idée.
-      if (useCosmos.getState().dialog) return;
       e.preventDefault();
       if (key === "n") createInCenterRef.current();
       else createFrameRef.current();
@@ -703,7 +705,7 @@ export function Toile() {
         proOptions={{ hideAttribution: false }}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} />
-        <FrameLabels />
+        <FrameLabels hidden={hiddenFrameIds} />
         <Controls showInteractive={false} position="bottom-right" />
         <MiniMap
           position="top-right"
