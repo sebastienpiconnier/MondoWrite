@@ -109,7 +109,8 @@ export function appendAnswer(html: string, question: string, answer: string): st
 }
 
 /** La fiche répond déjà à cette question (elle y figure en gras, telle qu'elle a été posée). */
-export const isAnswered = (html: string, question: string) => html.includes(`<strong>${escape(question)}</strong>`);
+export const isAnswered = (html: string, question: string) =>
+  html.replace(/[\u00a0\u202f]/g, " ").includes(`<strong>${escape(question).replace(/[\u00a0\u202f]/g, " ")}</strong>`);
 
 /** Titre de la carte Question créée par « Je ne sais pas encore ». */
 export const parkedTitle = (name: string, question: string) => (name.trim() ? `${name.trim()} : ${question}` : question);
@@ -119,9 +120,11 @@ export const parkedTitle = (name: string, question: string) => (name.trim() ? `$
  * d'avant, dans une carte Question reliée au personnage.
  */
 export function isParked(cards: CardData[], links: Pick<Link, "source" | "target">[], characterId: string, question: string): boolean {
-  if (cards.find((c) => c.id === characterId)?.questions?.includes(question)) return true;
+  const fold = (t: string) => t.replace(/\s+/g, " ").trim();
+  const q = fold(question);
+  if (cards.find((c) => c.id === characterId)?.questions?.some((x) => fold(x) === q)) return true;
   const linked = new Set(links.flatMap((l) => (l.source === characterId ? [l.target] : l.target === characterId ? [l.source] : [])));
-  return cards.some((c) => c.type === "question" && linked.has(c.id) && c.title.trim().endsWith(question));
+  return cards.some((c) => c.type === "question" && linked.has(c.id) && fold(c.title).endsWith(q));
 }
 
 export type QuestionState = "open" | "answered" | "parked";

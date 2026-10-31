@@ -228,17 +228,23 @@ export function setFicheField(fiche: Record<string, string> | undefined, key: Sh
 
 export const ficheCount = (card: Pick<CardData, "fiche">) => Object.values(card.fiche ?? {}).filter((v) => v.trim()).length;
 
+/**
+ * Deux textes de question identiques aux espaces près : les questions livrées ont une espace fine insécable
+ * avant « ? » (1.7.4), celles gardées par les projets d'avant une espace ordinaire.
+ */
+export const sameQuestion = (a: string, b: string) => a.replace(/\s+/g, " ").trim() === b.replace(/\s+/g, " ").trim();
+
 /** Questions de la carte, plus une. Même tableau si elle y est déjà. */
 export function addQuestion(list: string[] | undefined, question: string): string[] | undefined {
   const q = question.trim();
-  if (!q || list?.includes(q)) return list;
+  if (!q || list?.some((x) => sameQuestion(x, q))) return list;
   return [...(list ?? []), q];
 }
 
 /** Questions de la carte, moins une. undefined quand il n'en reste aucune. */
 export function removeQuestion(list: string[] | undefined, question: string): string[] | undefined {
-  if (!list?.includes(question)) return list;
-  const next = list.filter((q) => q !== question);
+  if (!list?.some((x) => sameQuestion(x, question))) return list;
+  const next = list.filter((q) => !sameQuestion(q, question));
   return next.length > 0 ? next : undefined;
 }
 

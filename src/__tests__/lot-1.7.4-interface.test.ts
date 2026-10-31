@@ -125,3 +125,16 @@ describe("fenêtre des raccourcis", () => {
     host.remove();
   });
 });
+
+describe("questions gardées des projets d'avant (espace ordinaire avant « ? »)", () => {
+  it("restent reconnues, retirées et pas dupliquées", async () => {
+    const { addQuestion, removeQuestion } = await import("../character");
+    const { isParked } = await import("../assistant");
+    const old = ["Que veut-il ?"];
+    const now = "Que veut-il ?";
+    expect(addQuestion(old, now)).toBe(old);
+    expect(removeQuestion(old, now)).toBeUndefined();
+    const cards = [{ id: "p", type: "personnage", title: "Inès", html: "", questions: old }] as never;
+    expect(isParked(cards, [], "p", now)).toBe(true);
+  });
+});
