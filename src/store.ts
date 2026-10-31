@@ -623,26 +623,78 @@ export const useCosmos = create<CosmosState>((set, get) => {
     };
   };
 
-  // Historique : chaque action qui change les cartes, les fils ou leur lien avec le scénario
-  // appelle record() AVANT de modifier l'état.
+  // Historique (1.7.5) : une action, une étape. Chaque action du store est une transaction (voir `inTransaction`,
+  // posée sur toutes les actions à la fin de ce fichier) : `record()` n'empile plus rien, il dit seulement que
+  // l'action entre dans l'historique et prend l'instantané au premier appel. L'étape n'est empilée qu'à la fin de
+  // la transaction la plus externe, et seulement si un champ de `Snapshot` a changé (comparaison par référence).
+  // Une action asynchrone fait ses await d'abord, puis écrit dans le store par une action (sa propre transaction).
   let lastTag = "";
   let lastAt = 0;
   /** Fils tels qu'ils étaient avant le dernier retrait de fils, le temps d'une tâche (voir onEdgesChange). */
   let edgesCut: Edge[] | null = null;
   /** Vrai le temps d'une action qui prolonge l'étape d'historique déjà prise (scène lâchée dans une case). */
   let quiet = false;
+  /** Profondeur des transactions en cours (actions imbriquées). */
+  let depth = 0;
+  /** Étape en attente de la transaction en cours : état d'avant, et `merge` si elle prolonge la précédente. */
+  let pending: { before: Snapshot; past: Snapshot[]; merge: boolean } | null = null;
+  const snapshotOf = (s: CosmosState): Snapshot => {
+    const { nodes, frames, edges, screenplay, plan, trash, manuscript } = s;
+    return { nodes, frames, edges, screenplay, plan, trash, manuscript };
+  };
+  const commit = () => {
+    const step = pending;
+    pending = null;
+    if (!step || step.merge) return;
+    const now = get();
+    // L'historique a été remplacé pendant l'action (projet ouvert, annulation) : l'étape n'a plus de sens.
+    if (now.past !== step.past) return;
+    const b = step.before;
+    const changed =
+      b.nodes !== now.nodes || b.frames !== now.frames || b.edges !== now.edges || b.screenplay !== now.screenplay ||
+      b.plan !== now.plan || b.trash !== now.trash || b.manuscript !== now.manuscript;
+    if (changed) set({ past: [...now.past.slice(-(HISTORY_LIMIT - 1)), b], future: [] });
+  };
+  /** Exécute `fn` dans une transaction : au plus une étape d'historique, empilée par la plus externe. */
+  const inTransaction = <T,>(fn: () => T): T => {
+    depth++;
+    try {
+      return fn();
+    } finally {
+      depth--;
+      if (depth === 0) commit();
+    }
+  };
+  /**
+   * L'action en cours entre dans l'historique : l'état d'avant est pris au premier appel de la transaction, les
+   * suivants ne font rien. Deux gestes de même étiquette à moins de `HISTORY_MERGE_MS` ne font qu'une étape.
+   */
   const record = (tag = "") => {
-    if (quiet) return;
+    if (quiet || pending) return;
+    if (depth === 0) {
+      // Hors de toute action (ne devrait pas arriver) : une transaction le temps de la tâche.
+      depth++;
+      queueMicrotask(() => {
+        depth--;
+        if (depth === 0) commit();
+      });
+    }
     const now = Date.now();
     const merge = tag !== "" && tag === lastTag && now - lastAt < HISTORY_MERGE_MS;
     lastTag = tag;
     lastAt = now;
-    if (merge) return;
-    const { nodes, frames, edges, screenplay, plan, trash, manuscript, past } = get();
-    set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { nodes, frames, edges, screenplay, plan, trash, manuscript }], future: [] });
+    pending = { before: snapshotOf(get()), past: get().past, merge };
   };
+  /** Transaction explicite : `fn` entre dans l'historique sous l'étiquette `tag`, en une seule étape. */
+  const transaction = <T,>(tag: string, fn: () => T): T =>
+    inTransaction(() => {
+      record(tag);
+      return fn();
+    });
   const forgetHistory = () => {
     lastTag = "";
+    // L'étape en attente est oubliée avec le reste ; un record() plus loin dans l'action en reprend une neuve.
+    pending = null;
     if (get().past.length > 0 || get().future.length > 0) set({ past: [], future: [] });
   };
   /** Ordre du récit : celui du Plan (roman), celui du fichier Fountain (scénario), puis les scènes pas encore écrites. */
@@ -1031,7 +1083,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     if (!written || !openFiles(written)) set({ homeNotice: true });
   };
 
-  return {
+  const api: CosmosState = {
     title: "",
     kind: "roman",
     setTitle: (title) => {
@@ -2391,6 +2443,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Les lettres d'un titre ou d'un texte tapées d'affilée ne font qu'une étape d'historique.
       // Un changement de type ou d'image est toujours une étape à part.
       const keys = Object.keys(patch);
+      const current = get().nodes.find((n) => n.id === id)?.data;
+      // Rien ne change (même titre, même type…) : ni étape d'historique, ni projet modifié.
+      if (!current || keys.every((k) => current[k as keyof CardData] === patch[k as keyof CardData])) return;
       const typed = keys.length === 1 && (keys[0] === "title" || keys[0] === "html");
       record(typed ? `card:${id}:${keys[0]}` : "");
       const before = get().nodes.find((n) => n.id === id)?.data;
@@ -2503,9 +2558,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const name = await storeImage(file);
       if (!name) return null;
       // La place de l'image est réservée d'avance, pour ne pas recouvrir une voisine une fois l'image affichée.
-      const id = get().addCard(pos, "idee", CARD_SIZE.height + IMAGE_ROOM);
-      set({ pendingFocusId: null, nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, image: name } } : n)) });
-      return id;
+      // Carte et image dans la même transaction, ouverte après l'await : une seule étape, jamais prise avant la copie.
+      return transaction("", () => {
+        const id = get().addCard(pos, "idee", CARD_SIZE.height + IMAGE_ROOM);
+        set({ pendingFocusId: null, nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, image: name } } : n)) });
+        return id;
+      });
     },
     pickCardImage: async (id) => {
       const file = await storage.pickImage(getT().card.imageFiles).catch((err) => {
@@ -2763,4 +2821,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
     },
   };
+  // Toute action est une transaction : quoi qu'elle appelle, elle fait au plus une étape d'historique.
+  const wrapped = { ...api } as Record<string, unknown>;
+  for (const [key, value] of Object.entries(api)) {
+    if (typeof value !== "function") continue;
+    const action = value as (...args: unknown[]) => unknown;
+    wrapped[key] = (...args: unknown[]) => inTransaction(() => action(...args));
+  }
+  return wrapped as unknown as CosmosState;
 });
