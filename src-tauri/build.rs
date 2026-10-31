@@ -76,6 +76,9 @@ mod mac {
     // demande en plus sur Mac, où Cargo fait l'édition des liens. Sur iOS, c'est Xcode qui lie (voir docs/ios.md).
     if os == "macos" {
       println!("cargo:rustc-link-arg=-Wl,-weak_framework,FoundationModels");
+      // Les bibliothèques de Swift liées par « @rpath » (concurrence) sont dans /usr/lib/swift sur le système : sans ce
+      // chemin, le binaire de la 1.10.0 n'en avait aucun et le premier appel au pont aurait manqué ses symboles.
+      println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
       // La concurrence de Swift (async/await) n'est dans le système qu'à partir de macOS 12 : liée en faible, l'app
       // se lance encore sur macOS 11 (le pont n'y est jamais appelé au-delà de « système trop ancien »).
       let swift_lib = Path::new(&sdk_path).join("usr/lib/swift");
