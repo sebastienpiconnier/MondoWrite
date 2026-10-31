@@ -19,6 +19,18 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      # Tests de bout en bout dans Chromium (scripts/e2e/run.mjs) : version du navigateur
+      # attendue par le playwright-core du projet.
+      - name: Chromium pour les tests de bout en bout
+        run: npx playwright-core install --with-deps chromium
+      - run: npm run e2e
+      - name: Captures des tests de bout en bout échoués
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-captures
+          path: scripts/e2e/captures/
+          if-no-files-found: ignore
 
   rust:
     strategy:

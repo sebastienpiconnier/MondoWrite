@@ -115,6 +115,7 @@ npm run tauri dev    # app desktop, vrais fichiers sur disque
 npm run build        # tsc --noEmit + vite build (à lancer avant chaque commit)
 npm test             # tests Vitest
 npm run coverage     # tests + couverture (seuil 90 % sur src/screenplay/)
+npm run e2e          # tests de bout en bout dans Chromium (scripts/e2e/run.mjs) ; `npm run e2e -- bible` pour un seul
 npm run tauri build  # installeur pour le système courant
 npm run tauri ios init && npm run ios:prepare && npm run tauri ios dev   # iOS (sur Mac, avec Xcode) ; voir docs/ios.md
 npm run tauri android init && npm run tauri android dev  # Android (Android Studio + NDK)
@@ -477,6 +478,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Réponses de l'auteur envoyées à l'IA** (1.7.3) : interview et cohérence joignent `answers` (`reponses`, question en clair par `allQuestionTexts`) ; l'interview met aussi ces questions dans `alreadyAsked`.
 - **Téléphone** (1.7.3) : pas de visite guidée (elle passe par le canevas et le Plan) : ni au lancement de l'exemple, ni dans les Réglages, et fermée si l'écran devient étroit. Réglages visibles à l'accueil (`.home-actions`), message de corbeille au-dessus des onglets ou du clavier.
 - **Espaces insécables de fr.ts** (1.7.4) : fine insécable (U+202F) avant `; ? !`, insécable (U+00A0) avant `:` et dans « », vérifié par un test ; tout texte d'un ancien projet comparé à une chaîne de fr.ts se compare espaces repliées (`adoptTextAnswers`), et un PDF dont la police n'a pas U+202F la remplace (`noThinSpace`, `printable`, PDF du scénario).
+- **Tests de bout en bout** (1.7.5, `scripts/e2e/run.mjs`, aussi dans la CI) : un contexte de navigateur neuf par scénario, réseau extérieur coupé, échec sur toute erreur de la page ou de React (« Maximum update depth », « getSnapshot should be cached »). Sélecteurs par rôles et libellés de fr.ts : renommer un libellé ou une classe stable (`.card-title`, `.home-create`, `.card-type`) demande de mettre le script à jour. Un bogue connu va dans `KNOWN`, pas dans un scénario affaibli.
 - **Lignes d’une action** (1.7.4) : une ligne suivante qui commence par `!` ou ouvrirait un élément (`#`, `=`, `/*`, `[[…]]`, `> … <`) s’écrit précédée de `!`, que `readAction` retire ; une réplique ne s’écrit jamais avec des retours en tête (le nom ne serait plus relu comme personnage).
 
 ## Conventions
@@ -516,7 +518,7 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 
 **Fin de session** :
 
-1. `npm run build` et `npm test` au vert
+1. `npm run build` et `npm test` au vert, et `npm run e2e` si l'interface a changé (Chromium : `npx playwright-core install chromium` une fois par machine)
 2. Mettre à jour le plan en cours : cocher ce qui est fait (`- [x]`), noter en une ligne ce qui reste ou ce qui bloque
 3. Commit, puis `git push`. Le dire explicitement à l'auteur : du travail non poussé reste bloqué sur la machine
 
