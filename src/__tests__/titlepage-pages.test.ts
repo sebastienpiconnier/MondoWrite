@@ -99,12 +99,14 @@ describe("page de titre dans le projet", () => {
     expect(readTitleField(state().screenplay!.titlePage, "title")).toBe("LE PHARE");
   });
 
-  it("le nom d'auteur est retenu sur l'appareil et proposé au scénario suivant", async () => {
+  it("le nom d'auteur reste dans le projet : ni le profil ni le scénario suivant ne le reprennent (1.7.3)", async () => {
+    const before = useSettings.getState().author;
     state().setTitlePageField("author", "Inès Morvan");
-    expect(useSettings.getState().author).toBe("Inès Morvan");
+    expect(state().screenplay!.titlePage.Author).toBe("Inès Morvan");
+    expect(useSettings.getState().author).toBe(before);
     await state().closeProject();
     await state().createProject({ title: "Suivant", kind: "scenario" });
-    expect(state().screenplay!.titlePage).toEqual({ Title: "Suivant", Credit: "Écrit par", Author: "Inès Morvan" });
+    expect(state().screenplay!.titlePage.Author).toBe(before || undefined);
   });
 
   it("rien ne change : même scénario rendu, projet pas marqué modifié", async () => {
