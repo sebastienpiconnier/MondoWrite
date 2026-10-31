@@ -9,6 +9,8 @@ import { useCosmos } from "../store";
 import { STORY_RULES, groupFindings, type Finding } from "../review/checks";
 import type { PlanBeat } from "../plan";
 import { titleCase } from "../screenplay/editor/autocomplete";
+import type { SceneRef } from "../ai/review";
+import { AiQuestions, useAiReviewActive } from "./AiReview";
 
 /** Points ignorés pendant la session (jamais enregistrés). */
 const useIgnored = create<{ keys: Set<string> }>(() => ({ keys: new Set() }));
@@ -27,14 +29,17 @@ interface Props {
   /** Où se trouve le point, pour l'auteur : « Scène 3 », ou le titre de la scène. */
   where: (f: Finding) => string;
   onGo: (f: Finding) => void;
+  /** Questions de l'IA (relecture) : mène à la scène citée ; faux si elle n'existe plus. */
+  onAiScene?: (ref: SceneRef, quote?: string) => boolean;
 }
 
-export function ReviewPanel({ findings, kind, where, onGo }: Props) {
+export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
   const all = useT();
   const t = all.review;
   const beats = all.plan.beats;
   const lang = useSettings((s) => s.lang);
   const ignored = useIgnored((s) => s.keys);
+  const aiActive = useAiReviewActive() && !!onAiScene;
   const groups = groupFindings(findings, ignored);
   const left = groups.reduce((n, g) => n + g.items.length, 0);
   const hidden = findings.filter((f) => ignored.has(f.key)).length;
@@ -87,9 +92,12 @@ export function ReviewPanel({ findings, kind, where, onGo }: Props) {
 
   return (
     <div className="review">
-      <p className="review-summary" role="status">
-        {left === 0 ? t.none : left === 1 ? t.summaryOne : fmt(t.summaryMany, { n: left })}
-      </p>
+      {onAiScene && <AiQuestions onScene={onAiScene} />}
+      {!(left === 0 && aiActive) && (
+        <p className="review-summary" role="status">
+          {left === 0 ? t.none : left === 1 ? t.summaryOne : fmt(t.summaryMany, { n: left })}
+        </p>
+      )}
       {groups.map((g) => (
         <section key={g.rule} className="review-group" aria-labelledby={`review-${g.rule}`}>
           <h3 id={`review-${g.rule}`} className="review-rule">

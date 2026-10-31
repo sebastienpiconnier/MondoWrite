@@ -1,7 +1,7 @@
 // Bouton « IA » de la barre du haut, présent seulement si l'auteur a branché un service dans les Réglages.
 // Deux actions, qui proposent sans rien changer d'elles-mêmes : « Ranger les idées » (un type pour les
 // idées en vrac) et « Vérifier la cohérence » (contradictions possibles, sous forme de questions).
-// Et « Organiser le canevas », qui range ensuite toutes les cartes en cadres (sans IA, annulable).
+// Plus le groupe « Relecture par l'IA » (AiReview.tsx) et « Organiser le canevas », qui range ensuite toutes les cartes en cadres (sans IA, annulable).
 // L'auteur applique, ignore, ou garde une question pour plus tard.
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -15,6 +15,7 @@ import { plainText } from "../search";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
 import { allQuestionTexts } from "../assistant";
+import { AiReviewActions } from "./AiReview";
 import { coherencePrompt, parseCoherence, type CardNames, parseTidy, TIDY_MAX, tidyCandidates, tidyLeftOut, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
 
 type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | null;
@@ -161,6 +162,8 @@ export function AiMenu() {
             {all.vrac.menu}
           </button>
           <p className="settings-hint">{all.vrac.menuHint}</p>
+          {/* Relecture par l'IA (1.9.0) : tout le récit, des questions dans l'onglet « Vérifier ». */}
+          <AiReviewActions disabled={busy} onStart={() => setOpen(false)} />
           {/* Après avoir typé les idées : tout ranger en cadres sur le canevas (sans IA, annulable). */}
           <button type="button" className="ghost-button" disabled={busy} onClick={() => useCosmos.getState().organizeCanvas()}>
             {all.organize.button}

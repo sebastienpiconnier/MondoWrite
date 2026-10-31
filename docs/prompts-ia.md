@@ -266,3 +266,65 @@ Champs permis (`SHEET_DRAFT_FIELDS`), parmi les vides : accroche, rôle, âge, m
 **Données** : nom, notes (1 500 caractères), fiche, au plus 30 fils (étiquette, titre et type de la carte au bout).
 
 **Ce que MondoWrite garde** (`parseSheetDraft`) : seulement les champs permis et demandés, 400 caractères au plus (60 pour l'âge). Acceptés un à un comme la description d'une photo ; marqués par `ia` dans la carte, retirés au premier changement de l'auteur.
+
+## 9. Relecture par l'IA (1.9.0)
+
+Bouton IA › groupe « Relecture par l'IA », quatre actions, roman et scénario. Elles lisent **tout le récit** et rendent des questions, jamais des corrections ; les questions arrivent en tête de l'onglet « Vérifier » du Manuscrit ou du Scénario, sous « Questions de l'IA » (la vue s'y ouvre au lancement). Chacune mène à sa scène (et sélectionne le passage cité quand il est retrouvé tel quel dans le texte), se garde en carte Question reliée aux scènes et aux cartes en jeu (« Garder en question »), ou s'ignore pour la session. Rien n'est enregistré dans le projet hormis une question gardée. Un appel par paquet, avec l'avancement (« partie 2 sur 5 ») et « Annuler » ; les questions déjà reçues restent. Consignes et lecteurs : `src/ai/review.ts`.
+
+**Scènes envoyées** : dans l'ordre du récit (roman : `bookOrder`, sans les pages de titre, mentions légales, dédicace, épigraphe, remerciements et « l'auteur » ; scénario : ordre du fichier Fountain), chacune avec une référence `s1`, `s2`… qui ne sert qu'à l'IA. Une scène est `{ ref, title, time?, synopsis?, text }` : `time` est le moment de l'en-tête d'un scénario (« NUIT »), `text` le texte brut (scénario : les noms des personnages devant leurs répliques).
+
+Toutes les consignes finissent par la même règle (`answerRule`) :
+
+```
+Do not propose fixes, do not rewrite and do not complete anything: phrase each point as one short question to the writer, in {langue}. {règle des cartes nommées par leur titre, voir « Règles communes »} Name a scene by its title in quotation marks, never by its ref ("s3"): refs belong only in the "scenes" field. Answer with a JSON object only: {"items": [{"scenes": ["<scene ref>"], "cards": ["<card id>"], "question": "<question>", "quote": "<up to 12 words copied exactly from the scene text, or empty>"}]}. "scenes" lists the refs of the scenes involved, exactly as given; "cards" the ids of the cards involved (may be empty). At most 12 items. If you find nothing, answer {"items": []}.
+```
+
+**Ce que MondoWrite garde** (`parseReview`) : au plus douze questions par réponse, chacune rattachée à au moins une scène connue (référence `s3`, numéro, titre de la scène ou identifiant de sa carte Scène ; pour les voix, une carte connue suffit). Les cartes par identifiant ou par titre, rien d'inconnu. Une référence `s3` restée dans la question devient le titre de la scène entre guillemets, un identifiant de carte devient « Titre (type) » (`nameCards`). Le passage cité (`quote`) n'est gardé que s'il se retrouve dans le texte d'une des scènes (casse et espaces repliées), sinon la question reste sans lui. Une même question n'est gardée qu'une fois.
+
+### R1. Cohérence scène par scène
+
+```
+You are a continuity reader for a {novel | screenplay}. You get scenes in story order with their text, the sheets of the cards they involve (characters, places, objects, secrets, events, groups) and a short summary of the scenes before them. Look for continuity slips: an age, eye or hair colour or other physical detail that changes; a season, weather, time of day or date that does not fit the scene before; a character who knows something before they could have learnt it, or forgets what they know; a character in two places at the same time; an object where it cannot be. Report only real inconsistencies in what is written (between scenes, or between a scene and a sheet), never missing information, style, taste or plot advice. {règle commune}
+```
+
+**Données** (`continuityPrompts`, un envoi par paquet) : les scènes écrites, découpées en paquets (`packScenes`, dans l'ordre) qui tiennent dans 60 % des 30 000 caractères, chaque scène bornée à 9 000 caractères ; pour chaque paquet, `earlier` (référence, titre et synopsis des scènes d'avant, 3 000 caractères au plus, les plus proches d'abord gardées), `cards` (fiches des Personnages, Lieux, Objets, Secrets, Événements et Groupes que le paquet nomme, par titre, prénom ou surnom, ou qu'un fil relie à une de ses scènes ; au plus 40, 10 000 caractères, sous la même forme que pour la cohérence) et les fils entre elles.
+
+```json
+{"earlier":[{"ref":"s1","title":"L’arrivée","synopsis":"…"}],
+ "cards":[{"id":"p1","type":"personnage","title":"Inès Morvan","text":"…","sheet":{"age":"34 ans"}}],
+ "links":[], "scenes":[{"ref":"s2","title":"La tempête","synopsis":"…","text":"…"}]}
+```
+
+### R2. Chronologie
+
+Les repères de temps sont relevés **sans IA** (`timeMarkers`, français et anglais : « trois jours plus tard », « le lendemain matin », « la veille », « à l’aube », « vers midi », jours de la semaine, « le 3 mars 1942 », « en hiver », « 19 h 30 », “the next morning”, “two weeks later”, “at dawn”, “in March”, “7:30 pm”, dates en chiffres…). Sans aucun repère ni moment d'en-tête, rien n'est envoyé et l'auteur en est averti.
+
+```
+You check the timeline of a {novel | screenplay}. For each scene, in story order, you get its title{, the time of day written in its heading (scénario)}, the time markers found in its text ("three days later", "at dawn", "the next day", dates, seasons, weekdays), its synopsis and its opening. Work out the time line from these markers and report only what cannot hold: an impossible order (a scene marked "the next morning" after one that already happens two days later; night followed by "the same afternoon"), a duration that does not add up (a journey, an age, a pregnancy, a countdown), a date, weekday or season that contradicts another. A flashback or a time jump is fine when the text marks it. Never ask for markers that are missing. {règle commune}
+```
+
+**Données** (`timelinePrompts`) : `{"scenes": [{"ref", "title", "time"?, "markers": [...], "synopsis"? (200), "opening" (300)}]}`, en paquets de 28 000 caractères au plus.
+
+### R3. Voix des personnages
+
+```
+You read the dialogue of a screenplay to help the writer hear their characters. For each character who speaks you get what the writer says of them (sheet field "voice", personality, notes, when a card exists) and lines they speak, each with the ref of its scene.
+```
+ou, pour un roman :
+```
+You read the dialogue of a novel to help the writer hear their characters. You get the characters' cards (sheet field "voice", personality, notes) and, scene by scene, the passages between quotation marks or after a dialogue dash, with the characters the scene names. The lines are not attributed: attribute one only when the text makes it clear; when unsure, say nothing about it.
+```
+suivi de :
+```
+Report only two kinds of points: two characters who sound alike (same vocabulary, rhythm, verbal tics, register) when nothing the writer wrote says they should; a character whose lines in a scene leave what the writer says of their voice (register, accent, way of speaking). Never rewrite a line and never suggest a better one. Put the scene where it shows in "scenes" and a few words of the line in "quote". {règle commune}
+```
+
+**Données** (`voicesPrompt`, un envoi) : scénario, `{"characters": [{"name": "INÈS", "id"?, "title"?, "voice"?, "personality"?, "notes"?, "lines": ["s3: Encore une nuit.", …]}]}` pour les seize personnages qui parlent le plus (au moins deux répliques), la carte retrouvée par son nom (titre, prénom, surnoms), une part égale du budget pour chacun, répliques prises dans tout le récit. Roman : `{"characters": [fiches, 30 au plus], "scenes": [{"ref", "title", "names": [personnages nommés dans la scène], "lines": [12 passages au plus]}]}` ; les passages sont ceux entre « », “ ” ou " " et les paragraphes ouverts par un tiret (`proseLines`), jamais attribués par MondoWrite. Sans répliques, rien n'est envoyé.
+
+### R4. Lecteur bêta
+
+```
+You are a beta reader of a {novel | screenplay}. You get the whole story, scene by scene, in story order: the title, synopsis and opening of each scene. Tell the writer, honestly and specifically: where you lose interest (a scene or stretch where the tension drops), what you did not understand (a motive, a jump, someone who appears without introduction), and what you expected that never comes (a promise, a set-up, a question the story raises and drops). Tie each point to the scene where it happens. Do not praise, do not rewrite, do not suggest scenes or events. Give each item a "kind": "lost" (where you lose interest), "unclear" (what you did not understand) or "expected" (what you expected). {règle commune, avec "kind" dans le format}
+```
+
+**Données** (`betaPrompt`, un envoi) : `{"scenes": [{"ref", "title", "synopsis"?, "opening"}]}`, toutes les scènes écrites ; la part de chacune (entre 20 et 700 caractères, synopsis puis début du texte) est calculée pour que l'ensemble tienne dans les 30 000 caractères. Le `kind` n'est gardé que s'il vaut `lost`, `unclear` ou `expected` (affiché « Je décroche », « Pas compris », « J'attendais »).

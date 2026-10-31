@@ -627,6 +627,57 @@ const scenarios = [
       }, "le synopsis ou la frappe d'avant ont été perdus");
     },
   },
+  {
+    name: "IA : relecture scène par scène, question dans « Vérifier », gardée en carte Question reliée (1.9.0)",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
+      });
+      let asked = null;
+      await page.route("https://api.anthropic.com/**", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        asked = JSON.parse(route.request().postData() ?? "{}");
+        const sent = JSON.parse(asked.messages[0].content);
+        const ines = sent.cards.find((c) => c.title === "Inès Morvan")?.id;
+        const items = [
+          { scenes: ["s1"], cards: [ines], question: "Inès a-t-elle les yeux verts ou bleus ?", quote: "les yeux verts" },
+          { scenes: ["s7"], cards: [], question: "Scène inventée ?" },
+        ];
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ items }) }] }) });
+      });
+      await h.create("Relecture");
+      const ines = await h.newCard("Inès Morvan");
+      await h.node(ines).locator(".card-type").click();
+      await page.getByRole("option", { name: "Personnage", exact: true }).click();
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("L’arrivée");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.click();
+      await page.keyboard.type("Inès Morvan a les yeux verts. Plus loin, ses yeux bleus brillent.");
+      await h.wait(500);
+      await page.getByRole("button", { name: "IA", exact: true }).click();
+      await page.getByRole("button", { name: "Cohérence scène par scène" }).click();
+      const question = page.locator(".ai-review .review-item", { hasText: "les yeux verts ou bleus" });
+      await until(() => question.isVisible(), "la question de l'IA n'arrive pas dans « Vérifier »");
+      assert(/yeux verts/.test(JSON.parse(asked.messages[0].content).scenes[0].text), "le texte de la scène n'est pas envoyé");
+      assert(!/Scène inventée/.test(await page.locator(".ai-review").innerText()), "une scène inconnue a été gardée");
+      await question.getByRole("button", { name: "Aller à la scène « L’arrivée »" }).click();
+      await until(() => page.evaluate(() => window.getSelection()?.toString() === "les yeux verts"), "le passage cité n'est pas sélectionné");
+      const before = await h.files();
+      await question.getByRole("button", { name: "Garder en question" }).click();
+      await until(async () => (await page.locator(".ai-review .review-item").count()) === 0, "la question gardée reste dans la liste");
+      await h.saved((f) => {
+        const file = Object.entries(f).find(([k, v]) => k.startsWith("cartes/") && !before[k] && /type: question/.test(v));
+        if (!file) return false;
+        const id = file[0].slice(7, -3);
+        const links = JSON.parse(f["cosmos.json"]).links ?? [];
+        return /yeux verts ou bleus/.test(file[1]) && links.filter((l) => l.source === id).length === 2;
+      }, "la carte Question reliée à Inès et à la scène n'est pas enregistrée");
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------

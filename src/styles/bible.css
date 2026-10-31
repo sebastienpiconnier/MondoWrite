@@ -117,6 +117,9 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 /* Menu IA : propositions que l'auteur applique ou ignore */
 .ai-panel { width: min(380px, calc(100vw - 32px)); }
 .ai-panel .ghost-button { text-align: left; }
+/* Groupe « Relecture par l'IA » du menu IA (AiReview.tsx). */
+.ai-review-group { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.ai-review-action { display: flex; flex-direction: column; }
 .ai-message { margin: 4px 0 0; font-size: 0.8125rem; line-height: 1.45; color: var(--ink-2); }
 .ai-message:empty { display: none; }
 .ai-error { margin: 0; font-size: 0.8125rem; font-weight: 600; color: var(--danger); }

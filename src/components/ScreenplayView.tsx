@@ -27,6 +27,8 @@ import { checkScreenplay, type Finding } from "../review/checks";
 import { keptScenes as keptBy, speakingNames } from "../review/filter";
 import { setCharacterFilter } from "../screenplay/editor/characterFilter";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
+import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
+import { elementFor, type SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
@@ -500,12 +502,14 @@ export function ScreenplayView() {
   }, [focusMode]);
   const storyFindings = useStoryFindings();
   const findings = useMemo(() => [...checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), ...storyFindings], [elements, paper, nodes, lang, storyFindings]);
-  const openFindings = useOpenFindings(findings);
+  const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
   const openReview = () => {
     setSideTab("review");
     if (!panels.side) togglePanel("side");
   };
   useCommand("review", openReview);
+  // Une relecture par l'IA vient de partir : ses questions arrivent dans l'onglet « Vérifier ».
+  useAiReviewReveal(openReview);
   // Filtre par personnage : ses scènes, ou ses répliques (le reste estompé). Affichage seulement.
   const charFilter = useCosmos((s) => s.charFilter);
   const setCharFilter = useCosmos((s) => s.setCharFilter);
@@ -547,16 +551,25 @@ export function ScreenplayView() {
     if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
   };
 
-  const goToFinding = (f: Finding) => {
+  const goToFinding = (f: Finding) => goToElement(f.at);
+  // Question de l'IA : l'élément de la scène qui contient le passage cité, sinon son en-tête.
+  const goToAiScene = (ref: SceneRef, quote?: string) => {
     emit();
-    const pos = posOf(editor.state.doc, f.at);
+    const at = elementFor(useCosmos.getState().screenplay?.elements ?? [], ref, quote);
+    if (at < 0) return false;
+    goToElement(at);
+    return true;
+  };
+  const goToElement = (at: number) => {
+    emit();
+    const pos = posOf(editor.state.doc, at);
     const node = editor.state.doc.nodeAt(pos);
     if (!node) return;
     // Passage caché par le filtre par personnage : on retire le filtre, puis on y va.
     const hidden = editor.view.nodeDOM(pos);
     if (hidden instanceof HTMLElement && hidden.classList.contains("is-filter-hidden")) {
       useCosmos.getState().setCharFilter(null);
-      window.requestAnimationFrame(() => goToFinding(f));
+      window.requestAnimationFrame(() => goToElement(at));
       return;
     }
     // Tout l'élément est sélectionné : on voit tout de suite de quoi il s'agit.
@@ -1044,6 +1057,7 @@ export function ScreenplayView() {
             kind="script"
             where={(f) => (f.scene ? fmt(t.review.scene, { n: f.scene }) : t.review.beforeFirst)}
             onGo={goToFinding}
+            onAiScene={goToAiScene}
           />
         ) : (
         <>
