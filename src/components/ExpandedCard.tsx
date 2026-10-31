@@ -10,6 +10,7 @@ import { BibleBody } from "./BibleBody";
 import { CardSheet } from "./CardSheet";
 import { useMediaUrl } from "./useMediaUrl";
 import { DraftEditor } from "./SceneDraft";
+import { SynopsisSuggest, novelSceneText } from "./Atelier";
 import { ScriptSceneEditor } from "./ScriptSceneEditor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 
@@ -19,6 +20,8 @@ export function ExpandedCard({ card }: { card: CardData }) {
   const novelScene = kind !== "scenario" && card.type === "scene";
   const scriptScene = kind === "scenario" && card.type === "scene";
   const updateCard = useCosmos((s) => s.updateCard);
+  // Redessine quand le texte de la scène grandit (par paliers) : « Proposer un synopsis » paraît dès qu'il a assez de mots.
+  useCosmos((s) => (novelScene ? Math.min(20, Math.floor((s.manuscript[card.id]?.length ?? 0) / 40)) : 0));
   const imageUrl = useMediaUrl(card.image);
 
   return (
@@ -70,6 +73,8 @@ export function ExpandedCard({ card }: { card: CardData }) {
         <>
           {/* Scène d'un roman : son synopsis (sa note de plan), puis son texte, qu'on écrit ici. */}
           <CardSheet card={card} />
+          {/* Mode Atelier : synopsis vide et texte écrit, « Proposer un synopsis » (comme dans le Manuscrit). */}
+          {!card.page && <SynopsisSuggest sceneId={card.id} title={card.title} text={novelSceneText(card.id)} synopsis={card.fiche?.synopsis ?? ""} />}
           <section className="expanded-draft" aria-label={t.draft.heading}>
             <h3 className="expanded-draft-title">{t.draft.heading}</h3>
             <DraftEditor card={card} autofocus />

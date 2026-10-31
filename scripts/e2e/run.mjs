@@ -555,6 +555,78 @@ const scenarios = [
       }, "réglage, passage marqué ou ligne du journal non enregistrés");
     },
   },
+  {
+    name: "atelier : variantes dans une scène de scénario ouverte en carte agrandie (1.8.1)",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
+      });
+      await page.route("https://api.anthropic.com/**", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        const text = JSON.stringify({ variants: ["La lanterne pivote.", "La lanterne balaie la nuit.", "Le feu tourne."] });
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text }] }) });
+      });
+      await h.create("Le Phare", "scenario");
+      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await page.getByLabel("Activer le mode Atelier pour ce projet").check();
+      await page.keyboard.press("Escape");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("INT. PHARE – NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne.");
+      await h.wait(500);
+      await h.view(1);
+      const card = page.locator(".react-flow__node", { hasText: "INT. PHARE – NUIT" }).first();
+      await card.getByRole("button", { name: "Agrandir la carte" }).click();
+      const sheet = page.locator(".script-scene .sp-editor");
+      await sheet.locator("[data-el=action]").click();
+      await page.locator(".script-scene .sp-bar").getByRole("button", { name: "Trois variantes" }).click();
+      await page.getByRole("button", { name: "Prendre la variante 2" }).click();
+      await until(() => sheet.locator("[data-el=action][data-ia]").count(), "la variante prise n'est pas marquée dans la carte agrandie");
+      await page.locator(".script-scene .sp-bar").getByRole("button", { name: "Je l’ai repris" }).click();
+      await until(async () => (await sheet.locator("[data-ia]").count()) === 0, "« Je l’ai repris » ne retire pas la marque");
+      await page.keyboard.press("Escape");
+      await h.saved((f) => /La lanterne balaie la nuit\./.test(f["scenario.fountain"] ?? "") && !/\[\[ia\]\]/.test(f["scenario.fountain"] ?? "") && /· Variante · «\s?INT\. PHARE – NUIT\s?»/.test(f["ia-journal.md"] ?? ""), "variante, marque retirée ou journal non enregistrés");
+    },
+  },
+  {
+    name: "atelier : synopsis gardé juste après une frappe dans la vue Scénario, rien n'est perdu (1.8.1)",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
+      });
+      await page.route("https://api.anthropic.com/**", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text: "Inès veille seule pendant la tempête." }] }) });
+      });
+      await h.create("Le Phare", "scenario");
+      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await page.getByLabel("Activer le mode Atelier pour ce projet").check();
+      await page.keyboard.press("Escape");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("INT. PHARE – NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne au-dessus de la mer qui gronde fort.");
+      await h.wait(500);
+      await page.getByRole("button", { name: "Proposer un synopsis" }).click();
+      const keep = page.getByRole("button", { name: "Garder ce synopsis" });
+      await keep.waitFor();
+      // Une frappe qui n'a pas encore été envoyée (250 ms), puis « Garder » aussitôt.
+      await page.getByRole("textbox", { name: "Texte du scénario" }).press("End");
+      await page.keyboard.type(" Puis rien.");
+      await keep.click();
+      await h.saved((f) => {
+        const fountain = f["scenario.fountain"] ?? "";
+        return /= Inès veille seule pendant la tempête\. \[\[ia\]\]/.test(fountain) && /Puis rien\./.test(fountain);
+      }, "le synopsis ou la frappe d'avant ont été perdus");
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------

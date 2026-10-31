@@ -627,7 +627,7 @@ export function ScreenplayView() {
    * Synopsis d'une scène : une ligne « = … » juste sous son en-tête (un texte vide la retire).
    * Écrit dans l'éditeur, qui est la référence tant que la vue est ouverte.
    */
-  const saveSynopsis = (index: number, text: string) => {
+  const saveSynopsis = (index: number, text: string, ia = false) => {
     emit();
     const { state, view } = editor;
     const heading = state.doc.maybeChild(index);
@@ -642,7 +642,7 @@ export function ScreenplayView() {
       end += node.nodeSize;
     }
     if (end > at) tr.delete(at, end);
-    if (text) tr.insert(at, state.schema.nodes.preserved.create({ kind: "synopsis", text, depth: null }));
+    if (text) tr.insert(at, state.schema.nodes.preserved.create({ kind: "synopsis", text, depth: null, ia }));
     if (!tr.docChanged) return;
     view.dispatch(tr);
     emit();
@@ -844,7 +844,7 @@ export function ScreenplayView() {
                 scene={s.text || sp.untitledScene}
                 onSave={(text) => saveSynopsis(s.index, text)}
                 ia={synopsisIsIa(elements, s.index)}
-                atelier={elements[s.index]?.cardId ? { sceneId: elements[s.index].cardId!, text: screenplaySceneText(s.index) } : undefined}
+                atelier={elements[s.index]?.cardId ? { sceneId: elements[s.index].cardId!, text: screenplaySceneText(s.index), accept: (text) => saveSynopsis(s.index, text, true) } : undefined}
               />
               </div>
             </li>

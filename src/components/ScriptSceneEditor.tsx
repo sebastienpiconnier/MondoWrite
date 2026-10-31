@@ -14,7 +14,7 @@ import { currentElement, fromDoc, screenplayExtensions, setElementType, toDoc, t
 import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { headingOf, sceneBody } from "../screenplay/sceneText";
 import { sceneSynopsis, synopsisIsIa } from "../screenplay/scenes";
-import { screenplaySceneText } from "./Atelier";
+import { ScreenplayAtelier, screenplaySceneText } from "./Atelier";
 import { SynopsisField } from "./SynopsisField";
 import type { CardData } from "../types";
 
@@ -137,6 +137,8 @@ export function ScriptSceneEditor({ card }: { card: CardData }) {
             {sp.elements[kind]}
           </button>
         ))}
+        {/* Mode Atelier : variantes de l'élément en cours et « Je l'ai repris », comme dans la vue Scénario. */}
+        <ScreenplayAtelier editor={editor} scene={card.title} />
       </div>
       <div className="script-scene-sheet">
         <div className="sp-page is-scene" data-paper={paper} style={labels} lang={lang}>

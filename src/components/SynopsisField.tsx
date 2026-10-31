@@ -11,7 +11,7 @@ interface Props {
   scene: string;
   onSave: (text: string) => void;
   /** Mode Atelier : la carte de la scène et son texte (lu au clic), pour « Proposer un synopsis » quand il est vide. */
-  atelier?: { sceneId: string; text: () => string };
+  atelier?: { sceneId: string; text: () => string; accept?: (text: string) => void };
   /** Synopsis proposé par l'IA et pas encore retouché (souligné en pointillé). */
   ia?: boolean;
 }
@@ -37,7 +37,7 @@ export function SynopsisField({ value, scene, onSave, atelier, ia = false }: Pro
     return (
       <>
         {show}
-        <SynopsisSuggest sceneId={atelier.sceneId} title={scene} text={atelier.text} synopsis={value} />
+        <SynopsisSuggest sceneId={atelier.sceneId} title={scene} text={atelier.text} synopsis={value} accept={atelier.accept} />
       </>
     );
   }
