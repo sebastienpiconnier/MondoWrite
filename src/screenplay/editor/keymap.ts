@@ -6,6 +6,7 @@ import { Extension } from "@tiptap/react";
 import { Selection, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { isEditableType, type EditableType } from "./nodes";
+import { isTransitionCue } from "../rules";
 import { RETYPE_META, UPPERCASE, attrMemory, caseMemory } from "./autodetect";
 
 type Dispatch = ((tr: Transaction) => void) | undefined;
@@ -97,9 +98,8 @@ export function setElementType(to: EditableType) {
   };
 }
 
-/** Une action en majuscules finissant par « : », validée par Entrée, est une transition. */
-const looksLikeTransition = (text: string) =>
-  !text.includes("\n") && /\p{L}/u.test(text) && text === text.toUpperCase() && /:$/.test(text.trim());
+/** Une action validée par Entrée devient une transition si son texte en est une (« CUT TO: », « COUPE À : »). */
+const looksLikeTransition = (text: string) => !text.includes("\n") && isTransitionCue(text);
 
 export function enter(state: EditorState, dispatch: Dispatch): boolean {
   const tr = state.tr;

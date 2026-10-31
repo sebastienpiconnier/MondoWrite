@@ -82,13 +82,18 @@ export const hasContd = (cue: string, contd: string) =>
 export function resumedCues(elements: ScreenplayElement[]): Set<number> {
   const out = new Set<number>();
   let last: string | null = null;
+  // Dialogue double : chacun des deux noms se compare au dernier qui a parlé avant la paire, puis on repart
+  // de zéro (après deux voix à la fois, personne ne « reprend »).
+  let before: string | null = null;
   elements.forEach((el, index) => {
     if (el.type === "sceneHeading" || el.type === "section" || el.type === "pageBreak") last = null;
     else if (el.type === "character") {
       const name = foldName(characterName(el.text));
-      const dual = el.dual || elements[index + 1]?.dual;
-      if (!dual && name && name === last) out.add(index);
-      last = dual ? null : name;
+      const opens = !el.dual && elements.slice(index + 1).find((e) => e.type === "character" || !SPEECH.has(e.type))?.dual === true;
+      if (opens) before = last;
+      const previous = el.dual ? before : last;
+      if (name && name === previous) out.add(index);
+      last = opens || el.dual ? null : name;
     }
   });
   return out;
@@ -206,7 +211,14 @@ export function typeset(
           i -= first.taken;
           const left = collect(el, half - 4, narrow, at(0));
           const second = elements[++i];
+          const secondIndex = i;
           const right = collect(second, half - 4, narrow, at(half + 2));
+          // Le même personnage reprend après une action : (SUITE) après son nom, d'un côté comme de l'autre.
+          const resume = (r: typeof left, cueEl: ScreenplayElement, at: number) => {
+            if (resumed.has(at) && !hasContd(cueEl.text, strings.contd)) r.cue = wrap(upper(`${printable(cueEl.text, notes)} ${strings.contd}`), half - 4);
+          };
+          resume(left, el, cueIndex);
+          resume(right, second, secondIndex);
           if (dual(left, right, half)) break;
           // Trop long pour tenir côte à côte sur une page : l'une sous l'autre.
           speech(left.cue, left.body, left.lit);

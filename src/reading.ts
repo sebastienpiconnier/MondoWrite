@@ -62,7 +62,8 @@ export function spokenHeading(text: string, lang: string): string {
 
 /**
  * Scénario : le narrateur lit en-têtes (en phrase), action et transitions ; chaque réplique est lue par la voix
- * de son personnage. Les didascalies seulement sur demande ; notes, synopsis et sections jamais.
+ * de son personnage, une phrase à la fois. Les didascalies seulement sur demande ; notes (même au milieu d'une
+ * ligne), texte mis de côté, synopsis et sections jamais.
  */
 export function screenplayUtterances(nodes: ReadNode[], from: number, lang: string, parentheticals = false): Utterance[] {
   const out: Utterance[] = [];
@@ -78,20 +79,65 @@ export function screenplayUtterances(nodes: ReadNode[], from: number, lang: stri
   }
   nodes.forEach((node, index) => {
     if (index < from) return;
-    const text = node.text.trim();
+    const text = unspoken(node.text);
     if (node.type === "character") speaker = characterName(text);
     if (!text) return;
+    const say = (who: string | null, what: string) => {
+      for (const part of sentences(what, lang)) out.push({ index, speaker: who, text: part });
+    };
     if (node.type === "sceneHeading") out.push({ index, speaker: null, text: spokenHeading(text, lang) });
-    else if (node.type === "action" || node.type === "transition") out.push({ index, speaker: null, text });
-    else if (node.type === "dialogue") out.push({ index, speaker, text });
-    else if (node.type === "parenthetical" && parentheticals) out.push({ index, speaker: null, text: text.replace(/^\(|\)$/g, "") });
+    else if (node.type === "action" || node.type === "transition") say(null, text);
+    else if (node.type === "dialogue") say(speaker, text);
+    else if (node.type === "parenthetical" && parentheticals) say(null, text.replace(/^\(|\)$/g, ""));
   });
   return out;
 }
 
-/** Roman : le narrateur lit chaque paragraphe (titres compris), à partir du bloc `from`. */
-export function proseUtterances(nodes: ReadNode[], from: number): Utterance[] {
-  return nodes.flatMap((node, index) => (index >= from && node.text.trim() && node.type !== "sceneMark" ? [{ index, speaker: null, text: node.text.trim() }] : []));
+/** Ce qui ne se dit pas : notes [[…]] et texte mis de côté /* … *\/ (avec l'espace qui les précède). */
+const unspoken = (text: string) =>
+  text
+    .replace(/\s*\[\[[\s\S]*?\]\]/g, "")
+    .replace(/\s*\/\*[\s\S]*?\*\//g, "")
+    .trim();
+
+/** Au-delà, Chromium coupe parfois une énonciation (vers 15 s) : une phrase plus longue est découpée. */
+const MAX_SPOKEN = 200;
+
+/**
+ * Un texte en phrases, pour lire une phrase à la fois (surlignage, pause, reprise) ; une phrase trop longue est
+ * coupée à une virgule, un point-virgule ou deux-points, sinon à une espace, jamais au milieu d'un mot.
+ */
+export function sentences(text: string, lang: string): string[] {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return [];
+  let parts: string[];
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    const segmenter = new Intl.Segmenter(lang, { granularity: "sentence" });
+    parts = [...segmenter.segment(clean)].map((s) => s.segment.trim()).filter(Boolean);
+  } else {
+    parts = clean.split(/(?<=[.!?…]+[»”"’)]*)\s+/u).filter(Boolean);
+  }
+  return parts.flatMap((part) => {
+    const out: string[] = [];
+    let rest = part;
+    while (rest.length > MAX_SPOKEN) {
+      const head = rest.slice(0, MAX_SPOKEN + 1);
+      const cut = Math.max(head.lastIndexOf(", "), head.lastIndexOf("; "), head.lastIndexOf(": "));
+      const at = cut > MAX_SPOKEN / 3 ? cut + 1 : head.lastIndexOf(" ");
+      if (at <= 0) break;
+      out.push(rest.slice(0, at).trim());
+      rest = rest.slice(at).trim();
+    }
+    if (rest) out.push(rest);
+    return out;
+  });
+}
+
+/** Roman : le narrateur lit chaque paragraphe (titres compris), phrase par phrase, à partir du bloc `from`. */
+export function proseUtterances(nodes: ReadNode[], from: number, lang = "fr"): Utterance[] {
+  return nodes.flatMap((node, index) =>
+    index >= from && node.text.trim() && node.type !== "sceneMark" ? sentences(node.text, lang).map((text) => ({ index, speaker: null, text })) : [],
+  );
 }
 
 /** Une voix du système, ce qu'on en garde. */

@@ -149,6 +149,18 @@ interface Classified {
   y: number;
   page: number;
   sceneNumber?: string;
+  /** Second nom d'un dialogue simultané. */
+  dual?: boolean;
+}
+
+/** Dialogue simultané en cours de lecture : deux colonnes, séparées en `split` (abscisse). */
+interface DualColumns {
+  split: number;
+  lastY: number;
+  /** Interligne dans les colonnes (du nom à la première ligne) : un blanc plus grand les termine. */
+  step: number | null;
+  sides: [Classified[], Classified[]];
+  paren: [boolean, boolean];
 }
 
 /** Retrouve les éléments d'un scénario d'après le retrait de chaque ligne (en caractères depuis la marge). */
@@ -173,9 +185,18 @@ export function screenplayFromPdf(pages: PdfPageText[]): Screenplay {
   );
 
   const out: Classified[] = [];
+  // Dialogue simultané : les deux répliques, celle de gauche puis celle de droite (second nom marqué `dual`).
+  let dual: DualColumns | null = null;
+  const flushDual = () => {
+    if (dual) out.push(...dual.sides[0], ...dual.sides[1]);
+    dual = null;
+  };
+  const isCue = (seg: PdfSegment) => isUpper(seg.text) && seg.text.length <= 40 && !HEADING.test(seg.text) && !seg.text.startsWith("(");
+
   body.forEach((lines, pageIndex) => {
     const page = bodyPages[pageIndex];
     let openParen = false;
+    flushDual();
     lines.forEach((line) => {
       // En-tête et pied de page : numéro de page, (MORE), CONTINUED.
       const edge = line.y < page.height * 0.09 || line.y > page.height * 0.92;
@@ -192,6 +213,29 @@ export function screenplayFromPdf(pages: PdfPageText[]): Screenplay {
         }
         return true;
       });
+      // Deux noms côte à côte (dialogue simultané) : la suite se lit en deux colonnes tant que les lignes se suivent.
+      const current = dual as DualColumns | null;
+      if (current && (line.y - current.lastY > Math.min(lineGap, current.step ?? lineGap) * 1.5)) flushDual();
+      if (!dual && segments.length === 2 && isCue(segments[0]) && isCue(segments[1])) {
+        const [l, r] = segments.map((seg) => indent(seg.x));
+        if (l >= 4 && l < 26 && r >= 28 && r - l >= 20) {
+          const cue = (seg: PdfSegment, isDual: boolean): Classified => ({ kind: "character", text: seg.text, y: line.y, page: pageIndex, ...(isDual ? { dual: true } : {}) });
+          dual = { split: (segments[0].x + segments[1].x) / 2, lastY: line.y, step: null, sides: [[cue(segments[0], false)], [cue(segments[1], true)]], paren: [false, false] };
+          return;
+        }
+      }
+      if (dual) {
+        const columns: DualColumns = dual;
+        columns.step ??= line.y - columns.lastY;
+        columns.lastY = line.y;
+        for (const segment of segments) {
+          const side = segment.x < columns.split ? 0 : 1;
+          const kind: Kind = columns.paren[side] || segment.text.startsWith("(") ? "parenthetical" : "dialogue";
+          if (kind === "parenthetical") columns.paren[side] = !segment.text.includes(")");
+          columns.sides[side].push({ kind, text: segment.text, y: line.y, page: pageIndex });
+        }
+        return;
+      }
       for (const segment of segments) {
         let text = segment.text;
         const r = indent(segment.x);
@@ -224,6 +268,7 @@ export function screenplayFromPdf(pages: PdfPageText[]): Screenplay {
       }
     });
   });
+  flushDual();
 
   // Les lignes deviennent des éléments : une ligne qui suit de près une ligne de même sorte la continue.
   const elements: ScreenplayElement[] = [];
@@ -258,6 +303,7 @@ export function screenplayFromPdf(pages: PdfPageText[]): Screenplay {
       // (SUITE) / (CONT'D) après un nom : ajouté par le logiciel qui a fait le PDF, MondoWrite le remet lui-même (réglage).
       const el: ScreenplayElement = { type: line.kind, text: line.kind === "character" ? line.text.replace(CONTD, "").trim() : line.text };
       if (line.kind === "sceneHeading" && line.sceneNumber) el.sceneNumber = line.sceneNumber;
+      if (line.dual) el.dual = true;
       // Dialogue ou didascalie sans personnage au-dessus : de l'action (fichier mal reconnu).
       if ((el.type === "dialogue" || el.type === "parenthetical") && !(last && (last.type === "character" || last.type === "dialogue" || last.type === "parenthetical"))) el.type = "action";
       if (el.type === "character") lastSpeaker = el.text;

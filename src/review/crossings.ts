@@ -41,7 +41,7 @@ export function screenplayCast(elements: ScreenplayElement[], cards: CardData[],
   const covered = new Set<string>();
   for (const card of cards) {
     if (card.type !== "personnage" || !card.title.trim()) continue;
-    const names = cardNames(card);
+    const names = cardNames(card, cards);
     names.forEach((n) => covered.add(foldName(n)));
     people.push({ id: card.id, name: card.title.trim(), scenes: where(names) });
   }

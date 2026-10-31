@@ -213,7 +213,8 @@ function readAction(lines: string[], start: number, out: ScreenplayElement[], fo
   const text = [forced ? lines[start].replace("!", "") : lines[start]];
   let i = start + 1;
   while (i < lines.length && !isBlank(lines[i]) && !startsStructure(lines[i])) {
-    text.push(lines[i]);
+    // « ! » en tête d'une ligne suivante : ligne forcée en action (écrite ainsi par le sérialiseur), on le retire.
+    text.push(lines[i].startsWith("!") ? lines[i].slice(1) : lines[i]);
     i++;
   }
   const el: ScreenplayElement = { type: "action", text: text.join("\n") };
