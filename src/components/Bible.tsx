@@ -27,6 +27,8 @@ import { useSettings } from "../settings";
 import { useMediaUrl } from "./useMediaUrl";
 import { CharacterAssistant } from "./CharacterAssistant";
 import { CardSheet } from "./CardSheet";
+import { BreakdownSheet, RetroBible } from "./StructureTools";
+import { BREAKDOWN_FIELDS } from "../character";
 import { Gallery } from "./Gallery";
 import { SourceTools } from "./SourceTools";
 import { BibleBody } from "./BibleBody";
@@ -400,6 +402,8 @@ export function Bible() {
               {type === "personnage" && <CharacterMotor card={card} />}
               {/* Le synopsis d'une scène de scénario vit dans le fichier Fountain (séquencier) : pas de fiche ici. */}
               {type !== "personnage" && !(type === "scene" && kind === "scenario") && <CardSheet card={card} />}
+              {/* Lieu : « Ce que le texte en dit » (rétro-bible, IA branchée) propose de remplir ses champs vides. */}
+              {type === "lieu" && <RetroBible card={card} />}
               {(type === "lien" || type === "image") && <SourceTools card={card} />}
               {type === "document" && (
                 <div className="source-tools">
@@ -418,11 +422,14 @@ export function Bible() {
                   de roman, c'est son manuscrit : un aperçu, qu'on écrit dans la carte agrandie. */}
               {type === "scene" && (kind !== "scenario" || headingOf(screenplay?.elements ?? [], card.id) >= 0) ? <DraftPreview card={card} className="is-bible" /> : <BibleBody card={card} />}
               {type === "scene" && !card.page && <SceneStatusPicker card={card} />}
+              {/* Scène d'un scénario (ou d'un roman qui en garde un) : son dépouillement, sous son texte. */}
+              {type === "scene" && !card.page && (kind === "scenario" || BREAKDOWN_FIELDS.some((f) => card.fiche?.[f]?.trim())) && <BreakdownSheet card={card} />}
               {type === "personnage" && (
                 <>
                   {/* Mode Atelier : propositions pour la fiche d'un personnage presque vide. */}
                   <SheetDraft card={card} />
                   <CardSheet card={card} startOpen={false} />
+                  <RetroBible card={card} />
                   <CharacterAnswers card={card} />
                   <Gallery card={card} />
                 </>

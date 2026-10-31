@@ -1,7 +1,8 @@
 // Bouton « IA » de la barre du haut, présent seulement si l'auteur a branché un service dans les Réglages.
-// Deux actions, qui proposent sans rien changer d'elles-mêmes : « Ranger les idées » (un type pour les
-// idées en vrac) et « Vérifier la cohérence » (contradictions possibles, sous forme de questions).
-// Plus le groupe « Relecture par l'IA » (AiReview.tsx) et « Organiser le canevas », qui range ensuite toutes les cartes en cadres (sans IA, annulable).
+// Trois actions, qui proposent sans rien changer d'elles-mêmes : « Ranger les idées » (un type pour les
+// idées en vrac), « Vérifier la cohérence » (contradictions possibles, sous forme de questions) et « Ranger
+// les fils » (1.9.0 : des fils manquants, chacun avec le passage de l'auteur qui le justifie).
+// Plus le groupe « Relecture par l'IA » (AiReview.tsx), et « Organiser le canevas », qui range ensuite toutes les cartes en cadres (sans IA, annulable).
 // L'auteur applique, ignore, ou garde une question pour plus tard.
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -16,9 +17,11 @@ import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
 import { allQuestionTexts } from "../assistant";
 import { AiReviewActions } from "./AiReview";
+import { parseWires, wireCandidates, wiresPrompt, type WireSuggestion } from "../ai/structure";
+import { wireCards } from "../structureSources";
 import { coherencePrompt, parseCoherence, type CardNames, parseTidy, TIDY_MAX, tidyCandidates, tidyLeftOut, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
 
-type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | null;
+type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | { kind: "wires"; items: WireSuggestion[] } | null;
 
 export function AiMenu() {
   const { t: all, types, kind } = useVocab();
@@ -37,6 +40,8 @@ export function AiMenu() {
   const [result, setResult] = useState<Result>(null);
   // Idées que « Ranger » n'a pas regardées (au-delà de TIDY_MAX), dites sous le résultat.
   const [leftOut, setLeftOut] = useState(0);
+  // Fils proposés sans passage retrouvé dans le texte de l'auteur (écartés).
+  const [rejected, setRejected] = useState(0);
   // Annulation de l'action en cours par l'auteur.
   const abortRef = useRef<AbortController | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -71,20 +76,33 @@ export function AiMenu() {
   const names: CardNames = { type: (type) => types[type].label.toLocaleLowerCase(lang), untitled: all.bible.untitled };
   const titleOf = (id: string) => nodes.find((n) => n.id === id)?.data.title.trim() || all.bible.untitled;
 
-  const run = async (task: "tidy" | "coherence") => {
+  const run = async (task: "tidy" | "coherence" | "wires") => {
     if (busy) return;
     const { nodes: now, edges, manuscript, screenplay } = useCosmos.getState();
     const cards = now.map((n) => n.data);
     setResult(null);
     setLeftOut(0);
+    setRejected(0);
     if (task === "tidy" && tidyCandidates(cards).length === 0) return setMessage(t.tidyNone);
+    // « Ranger les fils » (1.9.0) : il faut au moins deux cartes nommées.
+    const wired = task === "wires" ? wireCards(useCosmos.getState(), lang) : [];
+    if (task === "wires" && wireCandidates(wired).length < 2) return setMessage(all.structure.wiresFew);
     const controller = new AbortController();
     abortRef.current = controller;
     const signal = controller.signal;
     setBusy(true);
     setMessage(t.working);
     try {
-      if (task === "tidy") {
+      if (task === "wires") {
+        const links = edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") }));
+        const prompt = wiresPrompt(wired, links, lang, kind);
+        const sent = wireCandidates(wired);
+        // Une carte pas envoyée n'est jamais visée (le lecteur ne connaît que celles-ci).
+        const found = parseWires(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000, signal }), sent.map((c) => wired.find((w) => w.id === c.id)!), links, names);
+        setResult({ kind: "wires", items: found.items });
+        setRejected(found.rejected);
+        setMessage(found.items.length === 0 ? all.structure.wiresNone : "");
+      } else if (task === "tidy") {
         const prompt = tidyPrompt(cards, lang, kind);
         const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000, signal }), cards, names);
         setResult({ kind: "tidy", items });
@@ -124,6 +142,12 @@ export function AiMenu() {
     drop(index);
   };
   const applyAll = () => {
+    if (result?.kind === "wires") {
+      useCosmos.getState().addWires(result.items);
+      setResult(null);
+      setMessage(all.structure.wiresApplied);
+      return;
+    }
     if (result?.kind !== "tidy") return;
     for (const item of result.items) updateCard(item.id, { type: item.type });
     setResult(null);
@@ -149,6 +173,10 @@ export function AiMenu() {
             {t.coherence}
           </button>
           <p className="settings-hint">{t.coherenceHint}</p>
+          <button type="button" className="ghost-button" disabled={busy} onClick={() => void run("wires")}>
+            {all.structure.wires}
+          </button>
+          <p className="settings-hint">{all.structure.wiresHint}</p>
           {/* Du vrac aux cartes (1.8.0) : sa propre fenêtre, avec un grand champ texte. */}
           <button
             type="button"
@@ -208,6 +236,53 @@ export function AiMenu() {
               {result.items.length > 1 && (
                 <button type="button" className="ghost-button" onClick={applyAll}>
                   {t.applyAll}
+                </button>
+              )}
+            </>
+          )}
+
+          {result?.kind === "wires" && rejected > 0 && <p className="settings-hint">{rejected === 1 ? all.structure.rejectedOne : fmt(all.structure.rejected, { n: rejected })}</p>}
+          {result?.kind === "wires" && result.items.length > 0 && (
+            <>
+              <ul className="ai-list">
+                {result.items.map((item, i) => (
+                  <li key={`${item.from}-${item.to}`}>
+                    <div className="ai-cards">
+                      <button type="button" className="ai-card" title={fmt(all.manuscript.show, { title: titleOf(item.from) })} onClick={() => revealCard(item.from)}>
+                        {titleOf(item.from)}
+                      </button>
+                      <span className="ai-arrow">
+                        <span aria-hidden="true">→ </span>
+                        {item.label || all.structure.wireNoLabel}
+                        <span aria-hidden="true"> →</span>
+                      </span>
+                      <button type="button" className="ai-card" title={fmt(all.manuscript.show, { title: titleOf(item.to) })} onClick={() => revealCard(item.to)}>
+                        {titleOf(item.to)}
+                      </button>
+                    </div>
+                    <p className="ai-quote" aria-label={all.structure.quoteAria}>
+                      {fmt(all.structure.quote, { text: item.quote })}
+                    </p>
+                    <div className="ai-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          useCosmos.getState().linkCards(item.from, item.to, item.label);
+                          drop(i);
+                        }}
+                      >
+                        {all.structure.wireApply}
+                      </button>
+                      <button type="button" onClick={() => drop(i)}>
+                        {t.ignore}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {result.items.length > 1 && (
+                <button type="button" className="ghost-button" onClick={applyAll}>
+                  {all.structure.wiresApplyAll}
                 </button>
               )}
             </>
