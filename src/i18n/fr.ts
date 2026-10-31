@@ -2633,6 +2633,23 @@ export const fr = {
       unties: "se dénoue",
     },
   },
+  interrogate: {
+    tab: "Interroger",
+    hint: "{name} te répond seulement avec ce que tu as écrit. Ce que tes textes ne disent pas reste sans réponse.",
+    ephemeral: "Cette conversation n’est pas enregistrée : seules les réponses que tu gardes vont dans la fiche.",
+    label: "Ta question pour {name}",
+    placeholder: "Par exemple : qu’est-ce qui te fait peur ?",
+    ask: "Demander",
+    you: "Toi",
+    keep: "Garder",
+    kept: "Gardée dans la fiche",
+    keepAria: "Garder la réponse à « {question} » dans la fiche",
+    keptSaid: "Réponse gardée dans les réponses de la fiche.",
+    restart: "Effacer la conversation",
+    unknownName: "Ce nom n’existe pas encore dans ton projet : {names}",
+    noName: "Donne d’abord un nom à ce personnage.",
+    answerTag: "dit par le personnage",
+  },
 };
 
 export type Messages = typeof fr;

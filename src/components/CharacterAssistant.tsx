@@ -15,8 +15,9 @@ import { QUESTION_FIELD, THEMES, THEME_KEYS, allQuestionTexts, bankQuestions, cu
 import { AiError, aiErrorText, complete, isReady } from "../ai/providers";
 import { useVocab } from "../vocab";
 import { interviewPrompt, parseQuestion, parseSynthesis, synthesisPrompt } from "../ai/tasks";
+import { CharacterInterrogation, type ShownExchange } from "./CharacterInterrogation";
 
-type Tab = "themes" | "custom" | "pending";
+type Tab = "themes" | "custom" | "interrogate" | "pending";
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -41,7 +42,9 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
 
   const [open, setOpen] = useState(startOpen);
   const [chosen, setTab] = useState<Tab>(startOpen && pending.length > 0 ? "pending" : "themes");
-  const tab: Tab = chosen === "custom" && !ai ? "themes" : chosen;
+  const tab: Tab = (chosen === "custom" || chosen === "interrogate") && !ai ? "themes" : chosen;
+  // « Interroger » : la conversation vit ici (état d'affichage) pour survivre à un changement d'onglet ; perdue en quittant la fiche.
+  const [interview, setInterview] = useState<ShownExchange[]>([]);
   const questionsRef = useRef(card.questions);
   questionsRef.current = card.questions;
   useEffect(() => {
@@ -285,6 +288,11 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
                 {t.custom}
               </button>
             )}
+            {ai && (
+              <button type="button" aria-pressed={tab === "interrogate"} onClick={() => pickTab("interrogate")}>
+                {all.interrogate.tab}
+              </button>
+            )}
             <button type="button" aria-pressed={tab === "pending"} onClick={() => pickTab("pending")}>
               {ct.pendingTab} <span className="assistant-count">{pending.length}</span>
             </button>
@@ -308,39 +316,45 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
               ))}
             </div>
           )}
-          <p className="assistant-hint">{tab === "custom" ? t.customHint : tab === "pending" ? ct.pendingHint : t.themeHints[theme]}</p>
-          {question && field && <p className="assistant-field">{fmt(t.fillsField, { field: ct.fields[field] })}</p>}
-
-          {tab === "pending" && !question ? (
-            pending.length === 0 ? (
-              <p className="assistant-done">{ct.pendingEmpty}</p>
-            ) : (
-              <ul className="pending-list">
-                {pending.map((q) => (
-                  <li key={q}>
-                    <span>{q}</span>
-                    <div className="assistant-actions">
-                      <button type="button" className="is-primary" onClick={() => setPendingShown(q)}>
-                        {ct.answer}
-                      </button>
-                      <button type="button" aria-label={fmt(ct.dropAria, { question: q })} onClick={() => dropQuestion(card.id, q)}>
-                        {ct.drop}
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )
-          ) : question ? (
-            answering
-          ) : tab === "custom" ? (
-            <div className="assistant-actions">
-              <button type="button" className="is-primary" disabled={busy !== ""} onClick={() => void ask()}>
-                {busy === "ask" ? all.ai.working : t.ask}
-              </button>
-            </div>
+          {tab === "interrogate" ? (
+            <CharacterInterrogation card={card} log={interview} setLog={setInterview} />
           ) : (
-            <p className="assistant-done">{tab === "themes" ? t.themeDone : t.levelDone}</p>
+            <>
+              <p className="assistant-hint">{tab === "custom" ? t.customHint : tab === "pending" ? ct.pendingHint : t.themeHints[theme]}</p>
+              {question && field && <p className="assistant-field">{fmt(t.fillsField, { field: ct.fields[field] })}</p>}
+
+              {tab === "pending" && !question ? (
+                pending.length === 0 ? (
+                  <p className="assistant-done">{ct.pendingEmpty}</p>
+                ) : (
+                  <ul className="pending-list">
+                    {pending.map((q) => (
+                      <li key={q}>
+                        <span>{q}</span>
+                        <div className="assistant-actions">
+                          <button type="button" className="is-primary" onClick={() => setPendingShown(q)}>
+                            {ct.answer}
+                          </button>
+                          <button type="button" aria-label={fmt(ct.dropAria, { question: q })} onClick={() => dropQuestion(card.id, q)}>
+                            {ct.drop}
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              ) : question ? (
+                answering
+              ) : tab === "custom" ? (
+                <div className="assistant-actions">
+                  <button type="button" className="is-primary" disabled={busy !== ""} onClick={() => void ask()}>
+                    {busy === "ask" ? all.ai.working : t.ask}
+                  </button>
+                </div>
+              ) : (
+                <p className="assistant-done">{tab === "themes" ? t.themeDone : t.levelDone}</p>
+              )}
+            </>
           )}
         </div>
       )}

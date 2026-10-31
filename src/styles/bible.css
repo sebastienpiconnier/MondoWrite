@@ -465,3 +465,16 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
   .bible-entry.is-character header .bible-fold { grid-row: 1; grid-column: 4; align-self: center; }
   .bible-entry.is-character header .bible-heading { grid-row: 2; grid-column: 1 / -1; }
 }
+
+/* Interroger le personnage (1.8.0) : la conversation, état d'affichage, au-dessus du champ de question. */
+.interrogate { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.interrogate-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.interrogate-log li { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.interrogate-log p { margin: 0; font-size: 0.9375rem; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+.interrogate-a { font-family: var(--font-text); }
+.interrogate-who { font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); margin-right: 4px; }
+.interrogate-log p.interrogate-warn { font-size: 0.8125rem; color: var(--ink-2); font-style: italic; }
+.interrogate-log p.interrogate-q { color: var(--ink-2); }
+.interrogate-label { font-size: 1rem; }
+.interrogate-note { margin: 0; font-size: 0.75rem; line-height: 1.45; color: var(--ink-2); }
+.answer-tag { font-weight: 400; color: var(--ink-2); }

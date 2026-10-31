@@ -247,6 +247,7 @@ src/
     TrashList.tsx       Fenêtre « Corbeille » (remettre, supprimer pour de bon, vider) et message « … est dans la corbeille · Annuler »
     TrashIcon.tsx       Icône des boutons « Mettre à la corbeille »
     CharacterAssistant.tsx  Assistant personnage, dans la fiche d'un personnage : une question à la fois, questions « À creuser », synthèse par l'IA
+    CharacterInterrogation.tsx  Onglet « Interroger » de l'assistant (IA branchée) : conversation d'affichage, « Garder » une réponse (`keepInterviewAnswer`)
     ScreenplayView.tsx  Vue Scénario : liste des scènes (avec leur synopsis), feuille, panneau « Dans cette scène »
     SynopsisField.tsx   Synopsis d'une scène, modifiable sur place (volet des scènes et séquencier)
     TitlePage.tsx       Page de titre du scénario (page de garde), modifiable sur place
@@ -293,6 +294,7 @@ src/
     providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes (plugin HTTP de Tauri, API native d'Ollama), lecture des réponses, erreurs
     image.ts            Photo préparée pour une IA qui lit les images (réduite, JPEG, base64)
     tasks.ts            Consignes et relecture des réponses : Ranger, interview, synthèse, description d'un lieu, cohérence (fonctions pures), recopiées dans docs/prompts-ia.md
+    interrogate.ts      « Interroger le personnage » : extraits bornés des scènes où il paraît, consigne en personnage, relecture (texte brut, noms propres inconnus du projet) (fonctions pures)
   export/               Exports du manuscrit et de la bible, fabriqués dans l'app (aucun outil externe)
     doc.ts              Modèle de document commun (chapitres, blocs) ; HTML des cartes et du manuscrit → blocs
     text.ts             Markdown, Word (.docx) et EPUB 3
@@ -475,6 +477,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Séparateur décor / moment** : « - », « – » (Word, donc tout import) ou « — », entouré d'espaces (`timeCut`, scenes.ts), aussi pour la complétion ; préfixe `EXT./INT.` reconnu comme `INT./EXT.` (1.7.3). Ne jamais revenir à `lastIndexOf(" - ")`.
 - **Dialogue à tirets collé** (`dialogueLines`, `protectDialogue`, markdownText.ts, 1.7.3) : une suite de « - … » suivie de narration sans ligne vide, ou dont une ligne sonne comme une parole (? ! … guillemets), est une suite de répliques, jamais une liste, même citée (`> - …` : un texte collé sur le canevas devient une Idée qui le cite) ; une case à cocher reste une liste. Tout Markdown collé passe par `markdownSource`, jamais `markHighlights` seul.
 - **Tiret de dialogue tapé dans une scène** (1.7.3) : le texte d'une scène (manuscrit, carte Scène agrandie : `richTextExtensions({ prose: true })`) n'ouvre une liste qu'avec « * » ou « + » suivis d'une espace (`PROSE_BULLET_RE`), jamais « - », qui commence une réplique ; les cartes gardent « - ». Raccourcis et collage du canevas lisent leur cible par `eventElement` (eventTarget.ts : WebKit vise parfois le nœud de texte, et le champ qui a le focus l'emporte) et ignorent un collage déjà pris (`defaultPrevented`) : sinon un collage dans une carte agrandie créait aussi une carte Idée. N et C ne font rien quand une fenêtre est ouverte (`dialog` du store).
+- **Interroger le personnage** (1.8.0, `ai/interrogate.ts`) : le personnage répond seulement avec ce que l'auteur a écrit (fiche, notes, `reponses`, fils, extraits bornés des scènes) ; ne jamais assouplir « ne sait pas / ne veut pas le dire ». La conversation n'est jamais enregistrée ; « Garder » écrit `reponses["i:<question>"]` (`interviewKey`, une étape, étiquette vide) ; `questionText` lit `i:` comme `q:`, en clair pour l'interview, la synthèse et la cohérence.
 - **Réponses de l'auteur envoyées à l'IA** (1.7.3) : interview et cohérence joignent `answers` (`reponses`, question en clair par `allQuestionTexts`) ; l'interview met aussi ces questions dans `alreadyAsked`.
 - **Téléphone** (1.7.3) : pas de visite guidée (elle passe par le canevas et le Plan) : ni au lancement de l'exemple, ni dans les Réglages, et fermée si l'écran devient étroit. Réglages visibles à l'accueil (`.home-actions`), message de corbeille au-dessus des onglets ou du clavier.
 - **Espaces insécables de fr.ts** (1.7.4) : fine insécable (U+202F) avant `; ? !`, insécable (U+00A0) avant `:` et dans « », vérifié par un test ; tout texte d'un ancien projet comparé à une chaîne de fr.ts se compare espaces repliées (`adoptTextAnswers`), et un PDF dont la police n'a pas U+202F la remplace (`noThinSpace`, `printable`, PDF du scénario).

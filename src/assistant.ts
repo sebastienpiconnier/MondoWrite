@@ -194,8 +194,16 @@ export function readReponses(raw: unknown): Record<string, string> | undefined {
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-/** Texte d'une question d'après sa clé (banque de la langue courante, ou question sur mesure). */
-export const questionText = (key: string, texts: Record<string, string>) => texts[key] ?? (key.startsWith("q:") ? key.slice(2) : key);
+/**
+ * Clé d'une réponse gardée depuis « Interroger le personnage » : `i:` + la question de l'auteur, sur une ligne
+ * (une clé de `reponses` ne contient pas de retour et reste courte, voir `readReponses`).
+ */
+export const interviewKey = (question: string) => `i:${question.replace(/\s+/g, " ").trim().slice(0, 380)}`;
+/** La réponse vient de l'entretien inversé (dite par le personnage, gardée par l'auteur). */
+export const isInterviewKey = (key: string) => key.startsWith("i:");
+
+/** Texte d'une question d'après sa clé (banque de la langue courante, question sur mesure `q:` ou de l'auteur `i:`). */
+export const questionText = (key: string, texts: Record<string, string>) => texts[key] ?? (key.startsWith("q:") || key.startsWith("i:") ? key.slice(2) : key);
 
 /**
  * Projets d'avant : les réponses écrites dans le texte (la question en gras, la réponse dessous) quittent

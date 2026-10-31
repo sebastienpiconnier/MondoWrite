@@ -33,7 +33,7 @@ import { documentFiche, documentTitle } from "./documents";
 import { mapTexts, relabelMentions, removeMentions, renameMentions } from "./mentions";
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
-import { isParked, placeAnswer } from "./assistant";
+import { interviewKey, isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type SheetField } from "./character";
 import { EMPTY_PLAN, beatText, withKeys, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
 import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
@@ -458,6 +458,13 @@ export interface CosmosState {
    * sans modification ici est repris ; ce qui a changé des deux côtés devient un conflit.
    */
   syncFromDisk: () => Promise<void>;
+
+  // ---------- Interroger le personnage (1.8.0) ----------
+  /**
+   * « Garder » une réponse de l'entretien inversé : elle va dans `reponses` du personnage sous `i:<question>`
+   * (ajoutée à la suite si la même question a déjà une autre réponse gardée). Une étape d'annulation.
+   */
+  keepInterviewAnswer: (id: string, question: string, answer: string) => void;
 }
 
 /** Ce qu'une annulation restaure. Les réglages du projet (titre, type, format) n'en font pas partie. */
@@ -2819,6 +2826,19 @@ export const useCosmos = create<CosmosState>((set, get) => {
       } finally {
         syncing = false;
       }
+    },
+
+    // ---------- Interroger le personnage (1.8.0) ----------
+    keepInterviewAnswer: (id, question, answer) => {
+      const card = get().nodes.find((n) => n.id === id)?.data;
+      const text = answer.trim();
+      if (!card || card.type !== "personnage" || !text || !question.trim()) return;
+      const key = interviewKey(question);
+      const before = card.reponses?.[key]?.trim() ?? "";
+      if (before.split("\n").some((line) => line.trim() === text)) return;
+      // Étape à part (étiquette vide) : deux réponses gardées coup sur coup ne se fondent pas comme des lettres tapées.
+      record();
+      get().setReponse(id, key, before ? `${before}\n${text}` : text);
     },
   };
   // Toute action est une transaction : quoi qu'elle appelle, elle fait au plus une étape d'historique.

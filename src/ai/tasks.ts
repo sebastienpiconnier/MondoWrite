@@ -14,7 +14,7 @@ const MAX_CARDS = 80;
 const MAX_TEXT = 500;
 
 /** Texte abrégé, sans couper un caractère en deux (une moitié d'emoji seule rend la requête invalide pour Claude). */
-const clip = (text: string, max = MAX_TEXT) => {
+export const clip = (text: string, max = MAX_TEXT) => {
   if (text.length <= max) return text;
   const end = /[\ud800-\udbff]/.test(text[max - 1]) ? max - 1 : max;
   return `${text.slice(0, end)}…`;
@@ -29,7 +29,7 @@ const answersOf = (card: CardData, questions: Record<string, string>) =>
  * Une carte telle que l'IA la lit : identifiant, type, titre, texte (abrégé), fiche d'identité et, quand on
  * donne les textes des questions, les réponses de l'auteur à l'assistant (sinon l'IA les reposerait).
  */
-const brief = (card: CardData, questions?: Record<string, string>) => {
+export const brief = (card: CardData, questions?: Record<string, string>) => {
   const answers = questions ? answersOf(card, questions) : [];
   return {
     id: card.id,
@@ -43,7 +43,7 @@ const brief = (card: CardData, questions?: Record<string, string>) => {
 
 /** Nom de la langue de l'interface, pour demander la réponse dans cette langue. */
 const LANGUAGE: Record<string, string> = { fr: "français", en: "English" };
-const language = (lang: string) => LANGUAGE[lang] ?? lang;
+export const language = (lang: string) => LANGUAGE[lang] ?? lang;
 
 export interface Prompt {
   system: string;
@@ -67,7 +67,7 @@ export function extractJson(text: string): unknown {
 }
 
 /** Consigne commune : dans le texte écrit pour l'auteur, une carte se nomme par son titre et son type, jamais par son identifiant. */
-const nameRule = (lang: string) =>
+export const nameRule = (lang: string) =>
   `In any text you write for the writer, never mention a card id: name a card by its title followed by its type in parentheses, the type translated into ${language(lang)} (for example: Inès Morvan (${lang === "fr" ? "personnage" : "character"})). ` +
   `Card ids belong only in the JSON fields meant for them ("id", "cards"). `;
 

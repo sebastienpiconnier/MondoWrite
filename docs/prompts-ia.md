@@ -135,3 +135,31 @@ You are a continuity reader for a writer's story bible. Find statements in the n
 ```
 
 **Ce que MondoWrite garde** : au plus douze questions, chacune avec au moins une carte connue (par son identifiant ou, si le modèle l'a donnée ainsi, par son titre ; à défaut, les cartes que la question nomme). L'auteur peut en faire une carte Question reliée aux cartes concernées.
+
+## 6. Interroger le personnage (1.8.0)
+
+Bible › fiche d'un personnage › assistant › onglet « Interroger » (seulement si un service d'IA est branché). L'entretien inversé : l'auteur pose ses questions, le personnage répond à la première personne. Source : `src/ai/interrogate.ts`.
+
+**Consigne** (`{nom}` le titre de la carte, `{kind}` vaut `novel` ou `screenplay`, `{langue}` la langue de l'interface) :
+
+```
+You are {nom}, a character in a writer's {kind}. The writer is interviewing you to understand you better. Answer the writer's question in the first person, in your own voice (follow the "voice" of your sheet if there is one), in {langue}, in one to four short sentences, at most 80 words. Everything you know about yourself is in the material below, all written by the writer: your sheet, your notes, your earlier answers, your links to other people and places, and the scenes where you appear. Never go beyond it. If the material does not answer the question, say in character that you do not know, or that you would rather not say. Never invent a fact: no age, past event, place, date, name, relationship or feeling that the material does not state. Never mention a person or place whose name is not in the material. Do not give the writer advice, do not narrate, do not talk about yourself in the third person, never mention cards, ids or types. Reply with your answer only: no quotation marks, no name before it, no stage directions.
+```
+
+**Données** : aucun identifiant de carte.
+
+```json
+{"you":{"name":"Inès Morvan","sheet":{"Voix":"Phrases courtes."},"notes":"…","earlierAnswers":[{"question":"Tu as peur de quoi ?","answer":"Du noir."}]},
+ "links":[{"from":"Inès Morvan","link":"remplace","to":"Yann Le Goff","type":"personnage","about":"Ancien gardien."}],
+ "scenes":[{"scene":"Arrivée","passages":["Inès monte l’escalier."]}],
+ "conversation":[{"writer":"…","you":"…"}],
+ "question":"Qui es-tu ?"}
+```
+
+- `sheet` : les champs remplis de la fiche (moteur, arc et voix compris, libellés de l'interface, l'étoile « principal » exceptée), 600 caractères chacun ; `notes` : le texte de la carte, 2 500 caractères ; `earlierAnswers` : ses `reponses` (questions en clair, `q:` et `i:` compris), 30 au plus, 400 caractères chacune.
+- `links` : les fils vers des cartes titrées, avec leur sens et leur étiquette, et le début du texte de l'autre carte (200 caractères), 20 au plus.
+- `scenes` : roman, les paragraphes du manuscrit qui le nomment (titre, prénom, surnoms, comme la Bible), deux par scène, 420 caractères chacun ; scénario, les scènes où il parle ou est nommé dans l'action (lecture du filtre par personnage), avec l'action et ses propres répliques, 900 caractères par scène. Dans l'ordre du récit, au plus 14 scènes et environ 7 000 caractères.
+- `conversation` : les six derniers échanges de la conversation en cours (réponses abrégées à 500 caractères), qui n'est jamais enregistrée.
+- Longueur demandée : 350 jetons (plus la marge de raisonnement hors Claude).
+
+**Ce que MondoWrite garde** (`parseInterrogation`) : du texte brut seulement (balises et Markdown retirés, préfixe « Nom : » ou « Réponse : », guillemets autour de la réponse et didascalie de tête retirés), 700 caractères au plus, coupé à une fin de phrase. Les noms propres de la réponse (mot à majuscule qui ne commence pas une phrase) qu'aucun texte du projet ne contient (consigne envoyée, titres et textes de toutes les cartes, question de l'auteur) sont signalés sous la réponse : « Ce nom n’existe pas encore dans ton projet ». Rien n'entre dans le projet sans « Garder » : la réponse va alors dans `reponses` du personnage sous la clé `i:<question de l'auteur>` (à la suite d'une réponse déjà gardée pour la même question), et paraît repliée sous la fiche avec la question en clair. L'interview, la synthèse et la cohérence la reçoivent comme les autres réponses.
