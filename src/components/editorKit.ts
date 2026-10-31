@@ -1,5 +1,5 @@
 // Extensions communes aux éditeurs de texte (cartes, Bible, manuscrit) : la même mise en forme partout.
-// - Markdown à la frappe : **gras**, *italique*, ~~barré~~, `# ` titre, `- ` liste, `1. ` liste numérotée,
+// - Markdown à la frappe : **gras**, *italique*, ~~barré~~, `# ` titre, `- ` liste (`* ` dans le texte d’une scène, où `- ` ouvre une réplique), `1. ` liste numérotée,
 //   `> ` citation, `[ ] ` case à cocher, ==à reprendre== (règles de saisie de TipTap).
 // - Markdown au collage : un texte brut en Markdown arrive mis en forme (MarkdownPaste).
 // - Cases à cocher (listes de tâches), enregistrées en Markdown standard `- [ ]` / `- [x]`.
@@ -7,10 +7,10 @@
 // Raccourcis : Cmd/Ctrl+B gras, +I italique, +Maj+X à reprendre, +Maj+9 case à cocher, +Maj+8 liste,
 // +Maj+7 liste numérotée, +Maj+B citation, +Alt+1 à 3 titres.
 
-import { Extension } from "@tiptap/react";
+import { Extension, wrappingInputRule } from "@tiptap/react";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { BulletList, TaskItem, TaskList } from "@tiptap/extension-list";
 import Highlight from "@tiptap/extension-highlight";
 import Strike from "@tiptap/extension-strike";
 import { markdownToHtml } from "../storage/markdown";
@@ -94,9 +94,25 @@ const StrikeD = Strike.extend({
   },
 });
 
-export function richTextExtensions({ link = true }: { link?: boolean } = {}) {
+/**
+ * Liste à puces du texte d'une scène : « * » ou « + » suivis d'une espace ouvrent une liste, jamais « - » ni
+ * « – » ni « — », qui ouvrent une réplique (« - Tu viens ? »). Cmd/Ctrl+Maj+8 reste là.
+ */
+export const PROSE_BULLET_RE = /^\s*([+*])\s$/;
+const ProseBulletList = BulletList.extend({
+  addInputRules() {
+    return [wrappingInputRule({ find: PROSE_BULLET_RE, type: this.type })];
+  },
+});
+
+/**
+ * `prose` : texte d'une scène (manuscrit, carte Scène agrandie). Un tiret en tête de ligne y est un dialogue,
+ * pas une liste.
+ */
+export function richTextExtensions({ link = true, prose = false }: { link?: boolean; prose?: boolean } = {}) {
   return [
-    StarterKit.configure({ heading: { levels: [1, 2, 3] }, strike: false, ...(link ? {} : { link: false }) }),
+    StarterKit.configure({ heading: { levels: [1, 2, 3] }, strike: false, ...(link ? {} : { link: false }), ...(prose ? { bulletList: false } : {}) }),
+    ...(prose ? [ProseBulletList] : []),
     StrikeD,
     TaskList,
     TaskItem.configure({ nested: true }),

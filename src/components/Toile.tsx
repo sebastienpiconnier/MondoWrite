@@ -2,6 +2,7 @@
 // au doigt, ou bouton « + »), on tire un fil d'un point de connexion vers une autre
 // carte, on double-clique (ou touche, sur écran tactile) un fil pour l'étiqueter.
 
+import { EDITABLE, eventElement } from "../eventTarget";
 import { isCardCopy } from "../cardClipboard";
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import {
@@ -101,6 +102,7 @@ function chosenCards(target: HTMLElement | Element | null): string[] {
   const id = target?.closest?.(".react-flow__node")?.getAttribute("data-id");
   return id && nodes.some((n) => n.id === id) ? [id] : [];
 }
+
 
 export function Toile() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
@@ -305,8 +307,9 @@ export function Toile() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      const target = e.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      if (e.isComposing) return;
+      const target = eventElement(e);
+      if (target?.closest(EDITABLE)) return;
       // Alt + flèche droite ou gauche : élargir ou rétrécir les cartes sélectionnées.
       if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
         const { nodes: all, resizeCard } = useCosmos.getState();
@@ -348,6 +351,9 @@ export function Toile() {
         return;
       }
       if ((key !== "n" && key !== "c") || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      // Une fenêtre ouverte (carte agrandie…) : la lettre lui est destinée, même si son champ n'a pas encore
+      // le focus (WebKit le donne parfois en retard) ; le « n » de « tu viens » créait une carte Idée.
+      if (useCosmos.getState().dialog) return;
       e.preventDefault();
       if (key === "n") createInCenterRef.current();
       else createFrameRef.current();
@@ -372,8 +378,9 @@ export function Toile() {
   // Le presse-papiers du système reçoit leur texte lisible ; un collage sur le canevas recrée les cartes.
   useEffect(() => {
     const onCopy = (e: ClipboardEvent) => {
-      const target = e.target instanceof Element ? e.target : null;
-      if (target?.closest("input, textarea, select, [contenteditable='true'], dialog")) return;
+      if (e.defaultPrevented) return;
+      const target = eventElement(e);
+      if (target?.closest(EDITABLE)) return;
       const selection = window.getSelection();
       if (selection && !selection.isCollapsed && selection.toString().trim()) return;
       const ids = chosenCards(target as HTMLElement | null);
@@ -390,8 +397,9 @@ export function Toile() {
   // Coller hors d'un champ : un lien, un texte ou une image devient une carte Lien, Extrait ou Image, là où l'on est.
   useEffect(() => {
     const onPaste = async (e: ClipboardEvent) => {
-      const target = e.target instanceof Element ? e.target : null;
-      if (target?.closest("input, textarea, select, [contenteditable='true'], dialog")) return;
+      if (e.defaultPrevented) return;
+      const target = eventElement(e);
+      if (target?.closest(EDITABLE)) return;
       const data = e.clipboardData;
       if (!data) return;
       const store = useCosmos.getState();

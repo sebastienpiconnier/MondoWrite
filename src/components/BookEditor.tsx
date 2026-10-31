@@ -155,7 +155,7 @@ export function BookEditor({
 
   const editor = useStableEditor({
     extensions: [
-      ...richTextExtensions({ link: false }),
+      ...richTextExtensions({ link: false, prose: true }),
       SceneMark,
       ReadingMark,
       BookStructure,

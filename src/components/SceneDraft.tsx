@@ -84,7 +84,7 @@ export function DraftEditor({ card, autofocus = false }: { card: CardData; autof
   const title = card.title.trim() || getT().manuscript.untitled;
   const editor = useStableEditor({
     extensions: [
-      ...richTextExtensions({ link: false }),
+      ...richTextExtensions({ link: false, prose: true }),
       // Fonction : relue à chaque rendu (langue, synopsis modifié à côté).
       Placeholder.configure({ placeholder: () => draftPlaceholder(cardRef.current) }),
       MentionNode,

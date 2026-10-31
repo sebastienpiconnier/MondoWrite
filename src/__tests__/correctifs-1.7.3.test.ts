@@ -125,3 +125,58 @@ describe("M10 : une réplique collée sur le canevas (citée) n'est pas une list
     expect(markdownToHtml(markdownSource("> - pain\n> - lait"))).toContain("<li>");
   });
 });
+
+describe("M10 : « - Tu viens ? » tapé dans une scène reste une réplique", () => {
+  it("dans le texte d'une scène, « - » puis espace ne fait pas de liste ; « * » si", async () => {
+    const { richTextExtensions } = await import("../components/editorKit");
+    const ed = new Editor({ extensions: richTextExtensions({ link: false, prose: true }), content: "<p></p>" });
+    const typeIn = (text: string) => {
+      for (const ch of text) {
+        const { from, to } = ed.state.selection;
+        const view = ed.view;
+        if (!view.someProp("handleTextInput", (f) => f(view, from, to, ch, () => view.state.tr.insertText(ch, from, to)))) view.dispatch(view.state.tr.insertText(ch, from, to));
+      }
+    };
+    ed.commands.focus("end");
+    typeIn("- tu viens ?");
+    expect(ed.getHTML()).toBe("<p>- tu viens ?</p>");
+    ed.commands.setContent("<p></p>");
+    ed.commands.focus("end");
+    typeIn("* item");
+    expect(ed.getHTML()).toContain("<ul>");
+    ed.destroy();
+  });
+
+  it("une carte garde « - » pour ouvrir une liste", async () => {
+    const { richTextExtensions } = await import("../components/editorKit");
+    const ed = new Editor({ extensions: richTextExtensions(), content: "<p></p>" });
+    ed.commands.focus("end");
+    for (const ch of "- a") {
+      const view = ed.view;
+      const { from, to } = view.state.selection;
+      if (!view.someProp("handleTextInput", (f) => f(view, from, to, ch, () => view.state.tr.insertText(ch, from, to)))) view.dispatch(view.state.tr.insertText(ch, from, to));
+    }
+    expect(ed.getHTML()).toContain("<ul>");
+    ed.destroy();
+  });
+});
+
+describe("M10 : un collage dans une carte n'est jamais aussi un collage sur le canevas", () => {
+  it("cible nœud de texte (WebKit) : on remonte à l'éditeur", async () => {
+    const { eventElement, EDITABLE } = await import("../eventTarget");
+    document.body.innerHTML = `<div class="react-flow__node" data-id="x"><div contenteditable="true"><p>Tu viens ?</p></div></div>`;
+    const text = document.querySelector("p")!.firstChild!;
+    const e = new Event("paste");
+    Object.defineProperty(e, "target", { value: text });
+    expect(eventElement(e)?.closest(EDITABLE)).not.toBeNull();
+  });
+
+  it("focus dans une carte agrandie, cible ailleurs : c'est l'éditeur qui compte", async () => {
+    const { eventElement, EDITABLE } = await import("../eventTarget");
+    document.body.innerHTML = `<div id="canvas"></div><div class="dialog"><textarea></textarea></div>`;
+    document.querySelector("textarea")!.focus();
+    const e = new Event("keydown");
+    Object.defineProperty(e, "target", { value: document.getElementById("canvas") });
+    expect(eventElement(e)?.closest(EDITABLE)?.tagName).toBe("TEXTAREA");
+  });
+});
