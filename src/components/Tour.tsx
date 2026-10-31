@@ -7,6 +7,7 @@ import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { TOUR_STEPS, nextStep, prevStep, stepText } from "../tour";
+import { usePhone } from "./usePhone";
 
 export function Tour() {
   const { t, kind, views } = useVocab();
@@ -14,13 +15,19 @@ export function Tour() {
   const setTour = useCosmos((s) => s.setTour);
   const setView = useCosmos((s) => s.setView);
   const nextRef = useRef<HTMLButtonElement>(null);
+  // Sur téléphone, pas de visite : ses étapes montrent le canevas et le Plan, absents de l'écran.
+  const phone = usePhone();
+
+  useEffect(() => {
+    if (phone && step !== null) setTour(null);
+  }, [phone, step, setTour]);
 
   // Chaque étape montre sa vue.
   useEffect(() => {
-    if (step === null) return;
+    if (step === null || phone) return;
     setView(TOUR_STEPS[step].view);
     nextRef.current?.focus();
-  }, [step, setView]);
+  }, [step, phone, setView]);
 
   useEffect(() => {
     if (step === null) return;
@@ -31,7 +38,7 @@ export function Tour() {
     return () => window.removeEventListener("keydown", onKey);
   }, [step, setTour]);
 
-  if (step === null) return null;
+  if (step === null || phone) return null;
   const current = TOUR_STEPS[step];
   const text = stepText(t.tour.steps, t.tour.scenario, current.key, kind);
   const next = nextStep(step);

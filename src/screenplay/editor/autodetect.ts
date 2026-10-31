@@ -24,6 +24,18 @@ export interface CaseMemory {
   upper: string;
 }
 export const caseMemory = new PluginKey<CaseMemory | null>("screenplayCaseMemory");
+
+/**
+ * Attributs d'un élément dont on vient de changer le type (lien vers la carte, numéro de scène, « connu ») :
+ * revenu à ce type au même endroit (Tab puis Maj+Tab), il les retrouve, sinon le scénario créerait une
+ * carte en double. Suivi à travers les modifications, oublié quand l'élément disparaît.
+ */
+export interface AttrMemory {
+  pos: number;
+  type: string;
+  attrs: Record<string, unknown>;
+}
+export const attrMemory = new PluginKey<AttrMemory | null>("screenplayAttrMemory");
 /** Éléments où « int. » ou « ext. » tapés en tête font un en-tête de scène. */
 const HEADING_FROM = new Set(["action", "character", "transition"]);
 
@@ -68,6 +80,19 @@ export const Autodetect = Extension.create<AutodetectOptions>({
     const locale = this.options.locale;
     let view: EditorView | null = null;
     return [
+      new Plugin<AttrMemory | null>({
+        key: attrMemory,
+        state: {
+          init: () => null,
+          apply(tr, value) {
+            const set = tr.getMeta(attrMemory) as AttrMemory | null | undefined;
+            if (set !== undefined) return set;
+            if (!value || !tr.docChanged) return value;
+            const mapped = tr.mapping.mapResult(value.pos, 1);
+            return mapped.deleted ? null : { ...value, pos: mapped.pos };
+          },
+        },
+      }),
       new Plugin<CaseMemory | null>({
         key: caseMemory,
         state: {

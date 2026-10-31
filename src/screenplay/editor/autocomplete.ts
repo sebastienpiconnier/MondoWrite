@@ -3,7 +3,7 @@
 // Fonctions pures : la vue fournit les données et affiche le résultat.
 
 import type { ScreenplayElement } from "../model";
-import { characterName, headingParts } from "../scenes";
+import { characterName, headingParts, timeCut } from "../scenes";
 
 export interface SuggestData {
   /** Titres des cartes Personnage et des cartes Lieu (Décor). */
@@ -191,7 +191,7 @@ function suggestCharacter(text: string, data: SuggestData): SuggestResult {
 }
 
 const PREFIXES = ["INT.", "EXT.", "INT./EXT."];
-const HEADING_RE = /^(INT\.?\/EXT\.?|INT\.?|EXT\.?|EST\.?|I\/E\.?)\s+(.*)$/;
+const HEADING_RE = /^(INT\.?\/EXT\.?|EXT\.?\/INT\.?|INT\.?|EXT\.?|EST\.?|I\/E\.?)\s+(.*)$/;
 
 function suggestHeading(text: string, data: SuggestData): SuggestResult {
   const typed = text.toLocaleUpperCase(data.locale).replace(/^\s+/, "");
@@ -209,7 +209,7 @@ function suggestHeading(text: string, data: SuggestData): SuggestResult {
   }
 
   const [, prefix, rest] = match;
-  const cut = rest.lastIndexOf(" - ");
+  const { at: cut, length: sep } = timeCut(rest);
 
   // 2. Le décor.
   if (cut === -1) {
@@ -232,7 +232,7 @@ function suggestHeading(text: string, data: SuggestData): SuggestResult {
   // 3. Le moment, et la carte du décor si elle n'existe pas encore.
   const location = rest.slice(0, cut).trim();
   const head = `${prefix} ${location} - `;
-  const query = fold(rest.slice(cut + 3));
+  const query = fold(rest.slice(cut + sep));
   const moments = data.moments.filter((moment) => fold(moment).startsWith(query) && fold(moment) !== query);
   const items: Suggestion[] = moments.map((moment) => ({
     key: `moment:${moment}`,

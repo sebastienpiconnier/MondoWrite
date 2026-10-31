@@ -102,7 +102,7 @@ export function CharacterAssistant({ card, startOpen = false }: { card: CardData
     setError("");
     try {
       const { data, self } = selfNow();
-      const prompt = interviewPrompt(self, data, linksNow(), lang, asked.current);
+      const prompt = interviewPrompt(self, data, linksNow(), lang, asked.current, texts);
       // Une carte citée dans la question : « Titre (type) », jamais son identifiant.
       const next = parseQuestion(await complete(config, prompt.system, prompt.user, 400), data, { type: (type) => types[type].label.toLocaleLowerCase(lang), untitled: all.bible.untitled });
       if (!next) throw new AiError("empty");

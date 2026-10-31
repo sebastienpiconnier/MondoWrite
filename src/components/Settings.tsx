@@ -5,6 +5,7 @@ import { SPELLCHECK_MODES, isSpellcheckMode } from "../writingAids";
 import { openGuide } from "../help";
 import { isTypographySetting } from "../typography";
 import { UpdateSettings } from "./Updates";
+import { usePhone } from "./usePhone";
 import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { useCommand } from "../commands";
@@ -26,6 +27,7 @@ const OTHER_MODEL = "\u0000other";
 export function Settings({ project = true }: { project?: boolean }) {
   const trashCount = useCosmos((s) => s.trash.length);
   const t = useT();
+  const phone = usePhone();
   const { lang, themePref, palette, setPalette, setLang, setThemePref, author, ai, setAi, photos, writing, setWriting } = useSettings();
   const [models, setModels] = useState<string[]>([]);
   // Modèle saisi à la main (absent de la liste du service).
@@ -464,19 +466,22 @@ export function Settings({ project = true }: { project?: boolean }) {
           )}
           </section>
           <div className="settings-links">
-            {/* Visite guidée : dans un projet, elle s'ouvre sur place ; à l'accueil, avec le projet d'exemple. */}
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => {
-                setOpen(false);
-                const { screen, setTour, tryExample } = useCosmos.getState();
-                if (screen === "project") setTour(0);
-                else void tryExample();
-              }}
-            >
-              {t.tour.open}
-            </button>
+            {/* Visite guidée : dans un projet, elle s'ouvre sur place ; à l'accueil, avec le projet d'exemple.
+                Pas sur téléphone (canevas et Plan absents). */}
+            {!phone && (
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  setOpen(false);
+                  const { screen, setTour, tryExample } = useCosmos.getState();
+                  if (screen === "project") setTour(0);
+                  else void tryExample();
+                }}
+              >
+                {t.tour.open}
+              </button>
+            )}
             <button type="button" className="link-button" title={t.help.guideHint} onClick={() => { setOpen(false); void openGuide(null); }}>
               {t.help.guide} <span aria-hidden="true">↗</span>
             </button>

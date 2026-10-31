@@ -73,11 +73,12 @@ export function contactLines(p: AuthorProfile): string[] {
 
 /**
  * Le nom tapé ailleurs (page de titre d'un scénario) met le profil à jour : le nom civil s'il est
- * identique, sinon le nom de plume. Rend le même objet quand rien ne change.
+ * identique, sinon le nom de plume. Rend le même objet quand rien ne change. Un champ vidé ne touche à
+ * rien : effacer l'auteur d'une page de titre ne doit pas effacer le nom de l'appareil.
  */
 export function withAuthorName(p: AuthorProfile, name: string): AuthorProfile {
   const typed = clean(name, 120);
-  if (typed === authorName(p)) return p;
+  if (typed === "" || typed === authorName(p)) return p;
   if (typed === legalName(p)) return p.penName ? { ...p, penName: "" } : p;
   return { ...p, penName: typed };
 }

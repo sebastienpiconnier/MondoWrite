@@ -3,7 +3,7 @@
 // de la scène (manuscrit d'un roman, corps de la scène dans le scénario) et retour. Fonctions pures.
 
 import { markdownToHtml } from "./storage/markdown";
-import { looksLikeMarkdown, markHighlights } from "./markdownText";
+import { looksLikeMarkdown, markdownSource } from "./markdownText";
 import { plainText } from "./search";
 import type { ScreenplayElement } from "./screenplay/model";
 import { parse } from "./screenplay/parse";
@@ -14,7 +14,7 @@ const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;")
 export function textToHtml(text: string): string {
   const clean = text.replace(/\r\n?/g, "\n").trim();
   if (!clean) return "";
-  if (looksLikeMarkdown(clean)) return markdownToHtml(markHighlights(clean));
+  if (looksLikeMarkdown(clean)) return markdownToHtml(markdownSource(clean));
   return clean
     .split("\n")
     .map((line) => line.trim())

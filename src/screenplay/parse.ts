@@ -12,12 +12,11 @@ import {
   isNaturalTransition,
   isPageBreak,
   isStandaloneNote,
+  isTitleKey,
   startsStructure,
+  TITLE_KEY_RE,
 } from "./rules";
 
-// Une clé ne commence pas par un marqueur Fountain et ne contient pas de note : sinon un en-tête
-// forcé en première ligne (« .PHARE [[cosmos:id]] ») serait pris pour une page de titre.
-const TITLE_KEY_RE = /^([^\s:.!@>#=~(/[\]][^:[\]]*):[ \t]*(.*)$/;
 const TITLE_CONTINUATION_RE = /^(?: {3,}|\t)\s*(\S.*)$/;
 
 export function parse(source: string): Screenplay {
@@ -56,6 +55,9 @@ function parseTitlePage(
   }
   // « FADE IN: » seul en tête de fichier n'est pas une page de titre : une clé a toujours une valeur.
   if (entries.length === 0 || entries.some(([, value]) => value.length === 0)) return null;
+  // Une première action « Paris, 1942 : la ville est occupée. » n'est pas une page de titre : il faut
+  // au moins une clé du format (Title, Author…), les autres clés du bloc sont gardées telles quelles.
+  if (!entries.some(([key]) => isTitleKey(key))) return null;
 
   const titlePage: Record<string, string> = {};
   for (const [key, value] of entries) titlePage[key] = value.join("\n");

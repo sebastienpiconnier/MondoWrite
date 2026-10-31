@@ -14,7 +14,7 @@ import { TaskItem, TaskList } from "@tiptap/extension-list";
 import Highlight from "@tiptap/extension-highlight";
 import Strike from "@tiptap/extension-strike";
 import { markdownToHtml } from "../storage/markdown";
-import { looksLikeMarkdown, markHighlights } from "../markdownText";
+import { looksLikeMarkdown, markdownSource } from "../markdownText";
 import { useSettings } from "../settings";
 import { smartType, typographyMode } from "../typography";
 
@@ -32,7 +32,7 @@ export const MarkdownPaste = Extension.create({
             if (!data || data.types.includes("text/html")) return false;
             const text = data.getData("text/plain");
             if (!text || !looksLikeMarkdown(text)) return false;
-            const html = markdownToHtml(markHighlights(text));
+            const html = markdownToHtml(markdownSource(text));
             if (!html) return false;
             editor.commands.insertContent(html);
             return true;

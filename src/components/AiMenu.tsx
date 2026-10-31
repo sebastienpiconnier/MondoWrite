@@ -14,6 +14,7 @@ import { aiErrorText, complete, isReady } from "../ai/providers";
 import { plainText } from "../search";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
+import { allQuestionTexts } from "../assistant";
 import { coherencePrompt, parseCoherence, type CardNames, parseTidy, tidyCandidates, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
 
 type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | null;
@@ -86,7 +87,7 @@ export function AiMenu() {
             if (at >= 0) sceneTexts[card.id] = [sceneSynopsis(screenplay.elements, at), sceneText(sceneBody(screenplay.elements, at), lang)].filter(Boolean).join(" ");
           } else if (manuscript[card.id]) sceneTexts[card.id] = plainText(manuscript[card.id]);
         }
-        const prompt = coherencePrompt(cards, edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })), lang, sceneTexts);
+        const prompt = coherencePrompt(cards, edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") })), lang, sceneTexts, allQuestionTexts(all.assistant));
         const items = parseCoherence(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000 }), cards, names);
         setResult({ kind: "coherence", items });
         setMessage(items.length === 0 ? t.coherenceNone : "");

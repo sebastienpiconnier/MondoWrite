@@ -6,7 +6,7 @@ import { Extension } from "@tiptap/react";
 import { Selection, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { isEditableType, type EditableType } from "./nodes";
-import { RETYPE_META, UPPERCASE, caseMemory } from "./autodetect";
+import { RETYPE_META, UPPERCASE, attrMemory, caseMemory } from "./autodetect";
 
 type Dispatch = ((tr: Transaction) => void) | undefined;
 
@@ -71,8 +71,14 @@ function replaceElement(tr: Transaction, pos: number, node: PMNode, to: Editable
   tr.setMeta(RETYPE_META, true);
   if (restore !== null) tr.setMeta(caseMemory, null);
   const schema = tr.doc.type.schema;
-  // Le lien vers la carte et le numéro appartiennent à l'en-tête : ils ne suivent pas un changement de type.
-  const created = schema.nodes[to].create(null, next.text ? schema.text(next.text) : null);
+  // Le lien vers la carte et le numéro appartiennent à l'en-tête : ils ne suivent pas un changement de type,
+  // mais sont retenus (attrMemory) pour qu'un retour à l'en-tête au même endroit les retrouve.
+  const kept = state ? attrMemory.getState(state) : null;
+  const back = kept && kept.pos === pos && kept.type === to ? kept.attrs : null;
+  const own = Object.values(node.attrs).some((v) => v !== null && v !== false);
+  if (back) tr.setMeta(attrMemory, null);
+  else if (state && own && !(kept && kept.pos === pos)) tr.setMeta(attrMemory, { pos, type: from, attrs: node.attrs });
+  const created = schema.nodes[to].create(back, next.text ? schema.text(next.text) : null);
   tr.replaceWith(pos, pos + node.nodeSize, created);
   return tr.setSelection(TextSelection.create(tr.doc, pos + 1 + next.offset));
 }

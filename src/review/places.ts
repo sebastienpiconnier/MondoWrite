@@ -41,7 +41,7 @@ export interface PlaceRow {
 /** INT., EXT., INT./EXT. ou I/E d'un préfixe d'en-tête. */
 export function settingOf(prefix: string): Setting {
   const p = prefix.toUpperCase().replace(/\./g, "");
-  if (p === "INT/EXT" || p === "I/E") return "both";
+  if (p === "INT/EXT" || p === "EXT/INT" || p === "I/E") return "both";
   if (p === "INT") return "int";
   if (p === "EXT") return "ext";
   return "";

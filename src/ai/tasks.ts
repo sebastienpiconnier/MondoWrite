@@ -8,7 +8,7 @@
 import type { CardData, CardType, Link } from "../types";
 import { plainText } from "../search";
 import { CHARACTER_FIELDS, ficheText } from "../character";
-import { splitAnswers, type Answered } from "../assistant";
+import { questionText, splitAnswers, type Answered } from "../assistant";
 
 const MAX_CARDS = 80;
 const MAX_TEXT = 500;
@@ -19,14 +19,27 @@ const clip = (text: string, max = MAX_TEXT) => {
   const end = /[\ud800-\udbff]/.test(text[max - 1]) ? max - 1 : max;
   return `${text.slice(0, end)}…`;
 };
-/** Une carte telle que l'IA la lit : identifiant, type, titre, texte (abrégé) et fiche d'identité s'il y en a une. */
-const brief = (card: CardData) => ({
-  id: card.id,
-  type: card.type,
-  title: card.title.trim(),
-  text: clip(plainText(card.html)),
-  ...(card.fiche && Object.keys(card.fiche).length > 0 ? { sheet: card.fiche } : {}),
-});
+/** Réponses de l'auteur aux questions de l'assistant (`reponses`), question en clair. */
+const answersOf = (card: CardData, questions: Record<string, string>) =>
+  Object.entries(card.reponses ?? {})
+    .filter(([, answer]) => answer.trim())
+    .map(([key, answer]) => ({ question: questionText(key, questions), answer: clip(answer.trim(), 400) }));
+
+/**
+ * Une carte telle que l'IA la lit : identifiant, type, titre, texte (abrégé), fiche d'identité et, quand on
+ * donne les textes des questions, les réponses de l'auteur à l'assistant (sinon l'IA les reposerait).
+ */
+const brief = (card: CardData, questions?: Record<string, string>) => {
+  const answers = questions ? answersOf(card, questions) : [];
+  return {
+    id: card.id,
+    type: card.type,
+    title: card.title.trim(),
+    text: clip(plainText(card.html)),
+    ...(card.fiche && Object.keys(card.fiche).length > 0 ? { sheet: card.fiche } : {}),
+    ...(answers.length > 0 ? { answers } : {}),
+  };
+};
 
 /** Nom de la langue de l'interface, pour demander la réponse dans cette langue. */
 const LANGUAGE: Record<string, string> = { fr: "français", en: "English" };
@@ -142,7 +155,14 @@ export function parseTidy(reply: string, cards: CardData[], names?: CardNames): 
 // ---------- Interview ----------
 
 /** Une question sur mesure pour ce personnage, d'après sa fiche et les cartes qui lui sont reliées. */
-export function interviewPrompt(character: CardData, cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, avoid: string[] = []): Prompt {
+export function interviewPrompt(
+  character: CardData,
+  cards: CardData[],
+  links: Pick<Link, "source" | "target" | "label">[],
+  lang: string,
+  avoid: string[] = [],
+  questions: Record<string, string> = {},
+): Prompt {
   const related = links.flatMap((l) => {
     const other = l.source === character.id ? l.target : l.target === character.id ? l.source : null;
     const card = other ? cards.find((c) => c.id === other) : undefined;
@@ -154,7 +174,12 @@ export function interviewPrompt(character: CardData, cards: CardData[], links: P
       `Do not answer it, do not suggest answers, do not invent facts about the character. ` +
       nameRule(lang) +
       `No preamble, no quotation marks: reply with the question only, in ${language(lang)}, in one sentence.`,
-    user: JSON.stringify({ character: { ...brief(character), text: clip(plainText(character.html), 2500) }, related: related.slice(0, 20), alreadyAsked: avoid.slice(-12) }),
+    // Déjà posées : celles de la session et celles auxquelles l'auteur a répondu.
+    user: JSON.stringify({
+      character: { ...brief(character, questions), text: clip(plainText(character.html), 2500) },
+      related: related.slice(0, 20),
+      alreadyAsked: [...new Set([...answersOf(character, questions).map((a) => a.question), ...avoid])].slice(-24),
+    }),
   };
 }
 
@@ -325,14 +350,20 @@ const SCENE_TEXT = 900;
  * Consigne de cohérence. `sceneTexts` donne le texte d'une carte Scène (synopsis et début du manuscrit ou du
  * scénario) : depuis octobre 2026 le corps d'une carte Scène est vide, son texte vit dans le manuscrit.
  */
-export function coherencePrompt(cards: CardData[], links: Pick<Link, "source" | "target" | "label">[], lang: string, sceneTexts: Record<string, string> = {}): Prompt {
+export function coherencePrompt(
+  cards: CardData[],
+  links: Pick<Link, "source" | "target" | "label">[],
+  lang: string,
+  sceneTexts: Record<string, string> = {},
+  questions: Record<string, string> = {},
+): Prompt {
   const briefs = cards
     .map((card, index) => {
-      const b = brief(card);
+      const b = brief(card, questions);
       const own = card.type === "scene" ? sceneTexts[card.id]?.replace(/\s+/g, " ").trim() : "";
       return { index, rank: coherenceRank(card.type), b: own ? { ...b, text: clip([b.text, own].filter(Boolean).join(" "), SCENE_TEXT) } : b };
     })
-    .filter(({ b }) => b.title || b.text || b.sheet)
+    .filter(({ b }) => b.title || b.text || b.sheet || b.answers)
     .sort((a, b) => a.rank - b.rank || a.index - b.index);
   const kept: ReturnType<typeof brief>[] = [];
   let size = 0;

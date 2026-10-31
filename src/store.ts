@@ -49,7 +49,7 @@ import { fetchImage, readPage } from "./web";
 import type { Photo } from "./imageSources";
 import { readFiche, sourceUrl } from "./character";
 import { cardFromTextFile, clipFromText } from "./clip";
-import { markHighlights } from "./markdownText";
+import { markdownSource } from "./markdownText";
 import { markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
@@ -1272,7 +1272,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const id = get().addResearchCard(
         clip.url
           ? { type: "lien", title: clip.title, html: "", fiche: { url: clip.url, consulte: today(useSettings.getState().lang) } }
-          : { type: clip.type ?? "idee", title: clip.title, html: markdownToHtml(markHighlights(clip.markdown)) },
+          : { type: clip.type ?? "idee", title: clip.title, html: markdownToHtml(markdownSource(clip.markdown)) },
         at,
       );
       // L'adresse d'une image : la carte devient une Image si elle se télécharge, sinon elle reste un Lien.
@@ -1312,7 +1312,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const parsed = cardFromTextFile(fileName, text);
       if (!parsed) return null;
       const fiche = readFiche(parsed.fiche, parsed.type);
-      return get().addResearchCard({ type: parsed.type, title: parsed.title, html: markdownToHtml(markHighlights(parsed.markdown)), ...(fiche ? { fiche } : {}) }, at);
+      return get().addResearchCard({ type: parsed.type, title: parsed.title, html: markdownToHtml(markdownSource(parsed.markdown)), ...(fiche ? { fiche } : {}) }, at);
     },
     cardCopy: null,
     copyCards: (ids) => {
@@ -2067,8 +2067,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
       await get().load();
       if (get().screen === "project" && get().status === "modifie") await get().save();
-      // Le projet d'exemple s'ouvre sur la visite guidée : c'est là qu'on découvre l'app.
-      if (get().screen === "project") get().setTour(0);
+      // Le projet d'exemple s'ouvre sur la visite guidée : c'est là qu'on découvre l'app. Pas sur téléphone :
+      // elle passe par le canevas et le Plan, que le téléphone n'a pas.
+      if (get().screen === "project" && !isPhone()) get().setTour(0);
     },
     tour: null,
     setTour: (tour) => set({ tour }),

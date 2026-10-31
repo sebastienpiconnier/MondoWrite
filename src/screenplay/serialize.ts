@@ -7,7 +7,9 @@ import {
   isNaturalHeading,
   isNaturalTransition,
   isStandaloneNote,
+  isTitleKey,
   startsStructure,
+  TITLE_KEY_RE,
 } from "./rules";
 
 const IN_DIALOGUE = new Set(["character", "parenthetical", "dialogue"]);
@@ -26,13 +28,17 @@ export function serialize(screenplay: Screenplay): string {
   // Un élément vide (l'auteur vient de créer la ligne) ne s'écrit pas.
   const elements = screenplay.elements.filter((el) => el.type === "pageBreak" || el.text !== "");
   let body = "";
+  // Sans page de titre, une première action « Title: … » serait relue comme page de titre.
+  const first = elements[0];
+  const forceFirst =
+    title.length === 0 && first?.type === "action" && !first.forced && titleLike(first.text);
   elements.forEach((el, i) => {
     const prev = elements[i - 1];
     if (prev) {
       // Personnage, didascalie et réplique d'un même bloc se suivent sans ligne vide.
       body += SPEECH.has(el.type) && IN_DIALOGUE.has(prev.type) ? "\n" : "\n\n";
     }
-    body += line(el, elements[i + 1]);
+    body += i === 0 && forceFirst ? `!${el.text}` : line(el, elements[i + 1]);
   });
   if (body !== "") blocks.push(body);
 
@@ -77,6 +83,12 @@ function line(el: ScreenplayElement, next: ScreenplayElement | undefined): strin
     case "boneyard":
       return `/*${el.text}*/`;
   }
+}
+
+/** Vrai si ce bloc serait lu comme une page de titre (chaque ligne « Clé: valeur », une clé connue). */
+function titleLike(text: string): boolean {
+  const keys = text.split("\n").map((l) => TITLE_KEY_RE.exec(l.trim()));
+  return keys.every((k) => k !== null && k[2].trim() !== "") && keys.some((k) => k !== null && isTitleKey(k[1]));
 }
 
 /** Vrai si ce texte d'action serait relu comme un autre élément. */

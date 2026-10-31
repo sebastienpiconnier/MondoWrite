@@ -87,18 +87,25 @@ export function sceneCharacters(
   return [...lines].map(([name, count]) => ({ name, lines: count }));
 }
 
-const PREFIX_RE = /^(int\.?\/ext\.?|int\.?|ext\.?|est\.?|i\/e\.?)(?=\s|$)\s*/i;
+const PREFIX_RE = /^(int\.?\/ext\.?|ext\.?\/int\.?|int\.?|ext\.?|est\.?|i\/e\.?)(?=\s|$)\s*/i;
+
+/** Dernier séparateur décor / moment : « - », « – » (Word) ou « — », entouré d'espaces. */
+export function timeCut(rest: string): { at: number; length: number } {
+  let found: { at: number; length: number } = { at: -1, length: 0 };
+  for (const m of rest.matchAll(/\s+[-–—]\s+/g)) found = { at: m.index, length: m[0].length };
+  return found;
+}
 
 /** « INT. PHARE, LANTERNE - NUIT » → préfixe, décor, moment. Un en-tête libre est tout entier un décor. */
 export function headingParts(text: string): { prefix: string; location: string; time: string } {
   const trimmed = text.trim();
   const prefix = PREFIX_RE.exec(trimmed);
   const rest = prefix ? trimmed.slice(prefix[0].length) : trimmed;
-  const cut = rest.lastIndexOf(" - ");
+  const cut = timeCut(rest);
   return {
     prefix: prefix ? prefix[1] : "",
-    location: (cut === -1 ? rest : rest.slice(0, cut)).trim(),
-    time: cut === -1 ? "" : rest.slice(cut + 3).trim(),
+    location: (cut.at === -1 ? rest : rest.slice(0, cut.at)).trim(),
+    time: cut.at === -1 ? "" : rest.slice(cut.at + cut.length).trim(),
   };
 }
 
