@@ -14,7 +14,8 @@
     "coverage": "vitest run --coverage",
     "guide:shots": "node scripts/guide/shots.mjs fr && node scripts/guide/shots.mjs en",
     "guide": "node scripts/guide/build.mjs fr && node scripts/guide/build.mjs en",
-    "guide:site": "node scripts/guide/site.mjs"
+    "guide:site": "node scripts/guide/site.mjs",
+    "e2e": "node scripts/e2e/run.mjs"
   },
   "dependencies": {
     "@fontsource/courier-prime": "^5.3.0",

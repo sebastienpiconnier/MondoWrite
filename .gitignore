@@ -10,3 +10,6 @@ docs/guide/.site/
 docs/guide/.build-*.html
 _to_delete/
 coverage/
+
+# Captures des tests de bout en bout échoués (npm run e2e).
+scripts/e2e/captures/
