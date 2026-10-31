@@ -43,6 +43,19 @@ export const icloudPlaceholder = (name: string): string | null =>
   name.startsWith(".") && name.endsWith(".icloud") && name.length > ".icloud".length + 1 ? name.slice(1, -".icloud".length) : null;
 let icloudDocs: string | null | undefined;
 
+/**
+ * Le dossier contient-il le repère iCloud « .nom.icloud » ? On lit le dossier au lieu de tester le repère :
+ * le plugin fs refuse tout chemin dont un élément commence par un point (`requireLiteralLeadingDot`), et
+ * `exists` levait alors une erreur qui faisait échouer l'ouverture des romans (1.7.2).
+ */
+async function hasPlaceholder(dir: string, name: string): Promise<boolean> {
+  try {
+    return (await readDir(dir)).some((entry) => entry.name === `.${name}.icloud`);
+  } catch {
+    return false;
+  }
+}
+
 /** Dossier Documents du conteneur iCloud de l'app, ou null (hors iOS, session iCloud absente, droit non accordé). */
 async function icloudDir(): Promise<string | null> {
   if (!mobile) return null;
@@ -201,7 +214,7 @@ async function strayDirs(docs: string): Promise<string[]> {
 
 async function isProjectDir(dir: string) {
   try {
-    return (await exists(await join(dir, META_FILE))) || (await exists(await join(dir, `.${META_FILE}.icloud`)));
+    return (await exists(await join(dir, META_FILE))) || (await hasPlaceholder(dir, META_FILE));
   } catch {
     return false;
   }
@@ -792,7 +805,7 @@ export const tauriStorage: Storage = {
     paths.forEach(([key], i) => (files[key] = texts[i]));
     const screenplayPath = await join(dir, SCREENPLAY_FILE);
     if (await exists(screenplayPath)) files[SCREENPLAY_FILE] = await readTextFile(screenplayPath);
-    else if (await exists(await join(dir, `.${SCREENPLAY_FILE}.icloud`))) placeholders.push(SCREENPLAY_FILE);
+    else if (await hasPlaceholder(dir, SCREENPLAY_FILE)) placeholders.push(SCREENPLAY_FILE);
     pendingPaths = { key, paths: placeholders };
     return files;
   },
@@ -834,7 +847,7 @@ export const tauriStorage: Storage = {
       if (await exists(full)) {
         out[path] = await readTextFile(full);
         placeholders.delete(path);
-      } else if (await exists(await join(dir, ...parts.slice(0, -1), `.${parts[parts.length - 1]}.icloud`))) placeholders.add(path);
+      } else if (await hasPlaceholder(await join(dir, ...parts.slice(0, -1)), parts[parts.length - 1])) placeholders.add(path);
     }
     pendingPaths = { key, paths: [...placeholders] };
     return out;

@@ -105,6 +105,30 @@ describe("modifications faites hors de l'app", () => {
     fsPlugin.exists.mockImplementation(async () => true);
   });
 
+  it("un roman s'ouvre : jamais de chemin caché demandé au système, qui le refuse (régression de la 1.7.2)", async () => {
+    dialog.open.mockResolvedValue("D:\\Romans\\Phare");
+    await tauriStorage.pickFolder();
+    // Comme le plugin fs : un élément de chemin qui commence par un point est refusé (requireLiteralLeadingDot).
+    const hidden = (path: string) => path.split(/[\\/]/).some((part) => part.startsWith("."));
+    fsPlugin.exists.mockImplementation((async (path: string) => {
+      if (hidden(path)) throw new Error(`forbidden path: ${path}`);
+      return !path.endsWith("scenario.fountain") && !path.endsWith("absent.md") && !path.endsWith("b.md");
+    }) as never);
+    fsPlugin.readDir.mockImplementation((async (dir: string) =>
+      dir.endsWith("cartes") ? [{ name: "a.md", isFile: true }, { name: ".b.md.icloud", isFile: true }] : dir.endsWith("Phare") ? [{ name: ".scenario.fountain.icloud", isFile: true }] : []) as never);
+    fsPlugin.readTextFile.mockImplementation((async (path: string) => (path.endsWith("cosmos.json") ? "{}" : "texte")) as never);
+    const files = await tauriStorage.readAll();
+    expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json"]);
+    expect(tauriStorage.pending!().sort()).toEqual(["cartes/b.md", "scenario.fountain"]);
+    expect(await tauriStorage.readFiles!(["cartes/absent.md", "cartes/b.md"])).toEqual({});
+    expect(tauriStorage.pending!()).toContain("cartes/b.md");
+    fsPlugin.readDir.mockReset();
+    fsPlugin.readDir.mockImplementation(async () => []);
+    fsPlugin.readTextFile.mockReset();
+    fsPlugin.exists.mockReset();
+    fsPlugin.exists.mockImplementation(async () => true);
+  });
+
   it("le dossier est surveillé, sans réagir aux copies markdown/ ni aux images", async () => {
     dialog.open.mockResolvedValue("D:\\Écriture\\Phare");
     await tauriStorage.pickFolder();
