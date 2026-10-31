@@ -1,6 +1,7 @@
 // Fenêtre « Statistiques » (bouton du Manuscrit et du Scénario, menu Présentation du Mac) : personnages, lieux
 // ou décors, qui croise qui, et pour un scénario intérieur ou extérieur, jour ou nuit. Tout est relu dans le
-// texte (useProjectStats) : rien n'est enregistré, l'onglet choisi est un état d'affichage.
+// texte (useProjectStats) : rien n'est enregistré, l'onglet choisi est un état d'affichage. Le dépouillement
+// d'un scénario (1.9.0) a son onglet : il lit les fiches des scènes, et ses propositions s'y ajoutent sur un clic.
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { fmt } from "../i18n";
@@ -10,12 +11,13 @@ import { storage } from "../storage";
 import { useVocab } from "../vocab";
 import { CharacterStats } from "./CharacterStats";
 import { PlaceStats } from "./PlaceStats";
+import { BreakdownStats } from "./StructureTools";
 import { useProjectStats } from "./useProjectStats";
 import { castForMatrix, neverMeet, shared, topDuo, type Cast, type Presence } from "../review/crossings";
 import type { SettingSummary } from "../review/places";
 import { iaPercent, iaShareOfManuscript, iaShareOfScreenplay } from "../atelier";
 
-type Tab = "characters" | "places" | "crossings" | "setting";
+type Tab = "characters" | "places" | "crossings" | "setting" | "breakdown";
 
 /** Au-delà, la matrice devient illisible : les plus présents seulement. */
 const MATRIX_MAX = 12;
@@ -41,7 +43,7 @@ export function StatsPanel() {
     ["characters", s.tabCharacters],
     ["places", types.lieu.section],
     ["crossings", s.tabCrossings],
-    ...(script ? ([["setting", s.tabSetting]] as [Tab, string][]) : []),
+    ...(script ? ([["setting", s.tabSetting], ["breakdown", t.structure.breakdownTitle]] as [Tab, string][]) : []),
   ];
 
   return (
@@ -64,6 +66,8 @@ export function StatsPanel() {
       {tab === "places" && <PlaceStats rows={places} kind={script ? "script" : "text"} onOpen={openCard} />}
       {tab === "crossings" && <Crossings cast={cast} script={script} onOpen={openCard} />}
       {tab === "setting" && summary && <Setting summary={summary} />}
+      {/* Dépouillement (1.9.0) : tout le scénario par l'IA, à cocher, puis la liste par catégorie avec les scènes. */}
+      {tab === "breakdown" && script && <BreakdownStats />}
       <IaShare script={script} />
     </div>
   );

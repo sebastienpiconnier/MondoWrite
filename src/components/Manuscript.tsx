@@ -25,6 +25,8 @@ import { EdgeHandle } from "./EdgeHandle";
 import { fmt, useT } from "../i18n";
 import { checkManuscript, type Finding } from "../review/checks";
 import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
+import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
+import type { SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
@@ -144,20 +146,29 @@ export function Manuscript() {
   const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
   const storyFindings = useStoryFindings();
   const findings = useMemo(() => [...checkManuscript(manuscript, order, cards), ...storyFindings], [manuscript, order, cards, storyFindings]);
-  const openFindings = useOpenFindings(findings);
+  const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
   const openReview = () => {
     setSideTab("review");
     if (!panels.side) togglePanel("side");
   };
   useCommand("review", openReview);
-  const goToFinding = (f: Finding) => {
-    const id = f.sceneId;
-    if (!id) return;
+  // Une relecture par l'IA vient de partir : ses questions arrivent dans l'onglet « Vérifier ».
+  useAiReviewReveal(openReview);
+  const goToScene = (id: string, needle?: string) => {
     setChosen(id);
     // Au redessin suivant : la scène est dans l'éditeur, on y sélectionne le passage.
     window.requestAnimationFrame(() => {
-      if (!f.needle || !bookApi.current?.selectText(id, f.needle)) bookApi.current?.scrollToScene(id);
+      if (!needle || !bookApi.current?.selectText(id, needle)) bookApi.current?.scrollToScene(id);
     });
+  };
+  const goToFinding = (f: Finding) => {
+    if (f.sceneId) goToScene(f.sceneId, f.needle);
+  };
+  // Question de l'IA : la scène (sa carte existe encore), et le passage cité s'il y en a un.
+  const goToAiScene = (ref: SceneRef, quote?: string) => {
+    if (!ref.cardId || !cards.some((c) => c.id === ref.cardId)) return false;
+    goToScene(ref.cardId, quote);
+    return true;
   };
   // Pages occupées par la scène en cours, mesurées par l'éditeur (null : feuille continue).
   const [place, setPlace] = useState<{ first: number; last: number } | null>(null);
@@ -165,10 +176,13 @@ export function Manuscript() {
   // Arrivée depuis « À faire » : la bonne scène.
   useEffect(() => {
     if (!target) return;
+    const needle = useCosmos.getState().manuscriptNeedle;
     useCosmos.getState().clearManuscriptTarget();
     setChosen(target);
-    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée.
-    window.requestAnimationFrame(() => bookApi.current?.scrollToScene(target));
+    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée, et au passage cherché s'il y en a un.
+    window.requestAnimationFrame(() => {
+      if (!needle || !bookApi.current?.selectText(target, needle)) bookApi.current?.scrollToScene(target);
+    });
   }, [target]);
 
   // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée.
@@ -724,6 +738,7 @@ export function Manuscript() {
             kind="text"
             where={(f) => cards.find((c) => c.id === f.sceneId)?.title.trim() || m.untitled}
             onGo={goToFinding}
+            onAiScene={goToAiScene}
           />
         ) : (
         <>

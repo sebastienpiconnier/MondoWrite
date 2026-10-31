@@ -78,7 +78,8 @@ export const isPrincipal = (card: Pick<CardData, "type" | "fiche">) => card.type
 /** Champs montrés ailleurs que dans la liste de la fiche (bande du moteur, choix de l'arc). */
 export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<string> {
   // Le statut d'une scène a son propre sélecteur (SceneStatusPicker) : pas une ligne de la fiche.
-  if (card.type === "scene") return new Set<string>(["statut"]);
+  // Le dépouillement a sa propre section (BreakdownSheet).
+  if (card.type === "scene") return new Set<string>(["statut", ...BREAKDOWN_FIELDS]);
   return card.type === "personnage" ? new Set<string>([...motorFields(card), ...CHARACTER_HEAD_FIELDS]) : new Set<string>();
 }
 
@@ -111,7 +112,14 @@ export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obsta
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
 /** Scène d'un roman : ce qui s'y passe, en une phrase (le scénario garde le sien dans le fichier Fountain). */
-export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement", "issue"] as const;
+/**
+ * Dépouillement d'une scène de scénario (1.9.0) : texte libre, une entrée par ligne. Clés écrites dans le fichier,
+ * jamais traduites ; une version d'avant les garde sans les montrer (`keep.fiche`). Montrées par BreakdownSheet.
+ */
+export const BREAKDOWN_FIELDS = ["accessoires", "costumes", "figurants", "vehicules", "effets"] as const;
+export type BreakdownField = (typeof BREAKDOWN_FIELDS)[number];
+export const isBreakdownField = (key: string): key is BreakdownField => (BREAKDOWN_FIELDS as readonly string[]).includes(key);
+export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement", "issue", ...BREAKDOWN_FIELDS] as const;
 
 /** Statut d'une scène : valeurs écrites dans le fichier (`fiche.statut`), jamais traduites. Libellés : `t.status.values`. */
 export const SCENE_STATUSES = ["brouillon", "revoir", "fini"] as const;

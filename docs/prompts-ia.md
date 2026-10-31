@@ -266,3 +266,136 @@ Champs permis (`SHEET_DRAFT_FIELDS`), parmi les vides : accroche, rôle, âge, m
 **Données** : nom, notes (1 500 caractères), fiche, au plus 30 fils (étiquette, titre et type de la carte au bout).
 
 **Ce que MondoWrite garde** (`parseSheetDraft`) : seulement les champs permis et demandés, 400 caractères au plus (60 pour l'âge). Acceptés un à un comme la description d'une photo ; marqués par `ia` dans la carte, retirés au premier changement de l'auteur.
+
+## 9. Relecture par l'IA (1.9.0)
+
+Bouton IA › groupe « Relecture par l'IA », quatre actions, roman et scénario. Elles lisent **tout le récit** et rendent des questions, jamais des corrections ; les questions arrivent en tête de l'onglet « Vérifier » du Manuscrit ou du Scénario, sous « Questions de l'IA » (la vue s'y ouvre au lancement). Chacune mène à sa scène (et sélectionne le passage cité quand il est retrouvé tel quel dans le texte), se garde en carte Question reliée aux scènes et aux cartes en jeu (« Garder en question »), ou s'ignore pour la session. Rien n'est enregistré dans le projet hormis une question gardée. Un appel par paquet, avec l'avancement (« partie 2 sur 5 ») et « Annuler » ; les questions déjà reçues restent. Consignes et lecteurs : `src/ai/review.ts`.
+
+**Scènes envoyées** : dans l'ordre du récit (roman : `bookOrder`, sans les pages de titre, mentions légales, dédicace, épigraphe, remerciements et « l'auteur » ; scénario : ordre du fichier Fountain), chacune avec une référence `s1`, `s2`… qui ne sert qu'à l'IA. Une scène est `{ ref, title, time?, synopsis?, text }` : `time` est le moment de l'en-tête d'un scénario (« NUIT »), `text` le texte brut (scénario : les noms des personnages devant leurs répliques).
+
+Toutes les consignes finissent par la même règle (`answerRule`) :
+
+```
+Do not propose fixes, do not rewrite and do not complete anything: phrase each point as one short question to the writer, in {langue}. {règle des cartes nommées par leur titre, voir « Règles communes »} Name a scene by its title in quotation marks, never by its ref ("s3"): refs belong only in the "scenes" field. Answer with a JSON object only: {"items": [{"scenes": ["<scene ref>"], "cards": ["<card id>"], "question": "<question>", "quote": "<up to 12 words copied exactly from the scene text, or empty>"}]}. "scenes" lists the refs of the scenes involved, exactly as given; "cards" the ids of the cards involved (may be empty). At most 12 items. If you find nothing, answer {"items": []}.
+```
+
+**Ce que MondoWrite garde** (`parseReview`) : au plus douze questions par réponse, chacune rattachée à au moins une scène connue (référence `s3`, numéro, titre de la scène ou identifiant de sa carte Scène ; pour les voix, une carte connue suffit). Les cartes par identifiant ou par titre, rien d'inconnu. Une référence `s3` restée dans la question devient le titre de la scène entre guillemets, un identifiant de carte devient « Titre (type) » (`nameCards`). Le passage cité (`quote`) n'est gardé que s'il se retrouve dans le texte d'une des scènes (casse et espaces repliées), sinon la question reste sans lui. Une même question n'est gardée qu'une fois.
+
+### R1. Cohérence scène par scène
+
+```
+You are a continuity reader for a {novel | screenplay}. You get scenes in story order with their text, the sheets of the cards they involve (characters, places, objects, secrets, events, groups) and a short summary of the scenes before them. Look for continuity slips: an age, eye or hair colour or other physical detail that changes; a season, weather, time of day or date that does not fit the scene before; a character who knows something before they could have learnt it, or forgets what they know; a character in two places at the same time; an object where it cannot be. Report only real inconsistencies in what is written (between scenes, or between a scene and a sheet), never missing information, style, taste or plot advice. {règle commune}
+```
+
+**Données** (`continuityPrompts`, un envoi par paquet) : les scènes écrites, découpées en paquets (`packScenes`, dans l'ordre) qui tiennent dans 60 % des 30 000 caractères, chaque scène bornée à 9 000 caractères ; pour chaque paquet, `earlier` (référence, titre et synopsis des scènes d'avant, 3 000 caractères au plus, les plus proches d'abord gardées), `cards` (fiches des Personnages, Lieux, Objets, Secrets, Événements et Groupes que le paquet nomme, par titre, prénom ou surnom, ou qu'un fil relie à une de ses scènes ; au plus 40, 10 000 caractères, sous la même forme que pour la cohérence) et les fils entre elles.
+
+```json
+{"earlier":[{"ref":"s1","title":"L’arrivée","synopsis":"…"}],
+ "cards":[{"id":"p1","type":"personnage","title":"Inès Morvan","text":"…","sheet":{"age":"34 ans"}}],
+ "links":[], "scenes":[{"ref":"s2","title":"La tempête","synopsis":"…","text":"…"}]}
+```
+
+### R2. Chronologie
+
+Les repères de temps sont relevés **sans IA** (`timeMarkers`, français et anglais : « trois jours plus tard », « le lendemain matin », « la veille », « à l’aube », « vers midi », jours de la semaine, « le 3 mars 1942 », « en hiver », « 19 h 30 », “the next morning”, “two weeks later”, “at dawn”, “in March”, “7:30 pm”, dates en chiffres…). Sans aucun repère ni moment d'en-tête, rien n'est envoyé et l'auteur en est averti.
+
+```
+You check the timeline of a {novel | screenplay}. For each scene, in story order, you get its title{, the time of day written in its heading (scénario)}, the time markers found in its text ("three days later", "at dawn", "the next day", dates, seasons, weekdays), its synopsis and its opening. Work out the time line from these markers and report only what cannot hold: an impossible order (a scene marked "the next morning" after one that already happens two days later; night followed by "the same afternoon"), a duration that does not add up (a journey, an age, a pregnancy, a countdown), a date, weekday or season that contradicts another. A flashback or a time jump is fine when the text marks it. Never ask for markers that are missing. {règle commune}
+```
+
+**Données** (`timelinePrompts`) : `{"scenes": [{"ref", "title", "time"?, "markers": [...], "synopsis"? (200), "opening" (300)}]}`, en paquets de 28 000 caractères au plus.
+
+### R3. Voix des personnages
+
+```
+You read the dialogue of a screenplay to help the writer hear their characters. For each character who speaks you get what the writer says of them (sheet field "voice", personality, notes, when a card exists) and lines they speak, each with the ref of its scene.
+```
+ou, pour un roman :
+```
+You read the dialogue of a novel to help the writer hear their characters. You get the characters' cards (sheet field "voice", personality, notes) and, scene by scene, the passages between quotation marks or after a dialogue dash, with the characters the scene names. The lines are not attributed: attribute one only when the text makes it clear; when unsure, say nothing about it.
+```
+suivi de :
+```
+Report only two kinds of points: two characters who sound alike (same vocabulary, rhythm, verbal tics, register) when nothing the writer wrote says they should; a character whose lines in a scene leave what the writer says of their voice (register, accent, way of speaking). Never rewrite a line and never suggest a better one. Put the scene where it shows in "scenes" and a few words of the line in "quote". {règle commune}
+```
+
+**Données** (`voicesPrompt`, un envoi) : scénario, `{"characters": [{"name": "INÈS", "id"?, "title"?, "voice"?, "personality"?, "notes"?, "lines": ["s3: Encore une nuit.", …]}]}` pour les seize personnages qui parlent le plus (au moins deux répliques), la carte retrouvée par son nom (titre, prénom, surnoms), une part égale du budget pour chacun, répliques prises dans tout le récit. Roman : `{"characters": [fiches, 30 au plus], "scenes": [{"ref", "title", "names": [personnages nommés dans la scène], "lines": [12 passages au plus]}]}` ; les passages sont ceux entre « », “ ” ou " " et les paragraphes ouverts par un tiret (`proseLines`), jamais attribués par MondoWrite. Sans répliques, rien n'est envoyé.
+
+### R4. Lecteur bêta
+
+```
+You are a beta reader of a {novel | screenplay}. You get the whole story, scene by scene, in story order: the title, synopsis and opening of each scene. Tell the writer, honestly and specifically: where you lose interest (a scene or stretch where the tension drops), what you did not understand (a motive, a jump, someone who appears without introduction), and what you expected that never comes (a promise, a set-up, a question the story raises and drops). Tie each point to the scene where it happens. Do not praise, do not rewrite, do not suggest scenes or events. Give each item a "kind": "lost" (where you lose interest), "unclear" (what you did not understand) or "expected" (what you expected). {règle commune, avec "kind" dans le format}
+```
+
+**Données** (`betaPrompt`, un envoi) : `{"scenes": [{"ref", "title", "synopsis"?, "opening"}]}`, toutes les scènes écrites ; la part de chacune (entre 20 et 700 caractères, synopsis puis début du texte) est calculée pour que l'ensemble tienne dans les 30 000 caractères. Le `kind` n'est gardé que s'il vaut `lost`, `unclear` ou `expected` (affiché « Je décroche », « Pas compris », « J'attendais »).
+
+## 10. Recherche par le sens (1.9.0)
+
+Fenêtre de recherche (Cmd/Ctrl + F), mode « Par le sens » : retrouve les passages qui parlent de la même chose que la question, même avec d'autres mots (« Où ai-je parlé de la lettre ? » trouve « une enveloppe glissée sous la porte »). Code : `src/ai/semantic.ts`, `src/components/SemanticSearch.tsx`.
+
+**Pas de consigne** : aucun modèle de conversation n'est appelé, rien n'est rédigé. Le service ne fait que changer des textes en vecteurs de nombres (embeddings) ; le classement se fait dans l'app (cosinus).
+
+**Seulement un service local** (Ollama, LM Studio) : la recherche lit tout le projet, qui ne doit pas partir en ligne. Avec Claude, OpenAI ou OpenRouter, le mode n'apparaît pas, et les Réglages disent pourquoi en une phrase. Modèle : « Modèle de la recherche par le sens » dans les Réglages (`settings.ai.embedModels[service]`, réglage de l'appareil), proposé d'office s'il y a un modèle installé dont le nom contient « embed » (par exemple `nomic-embed-text`).
+
+**Ce qui est envoyé, et où** :
+
+- Ollama : `POST {adresse}/api/embed` avec `{ "model", "input": [textes], "truncate": true }`.
+- LM Studio : `POST {adresse}/v1/embeddings` avec `{ "model", "input": [textes] }`, et le jeton facultatif en `Authorization: Bearer`.
+- Les textes : les passages du projet, 16 par requête, puis la question seule. Passages : un paragraphe du manuscrit (roman), ou une suite de paragraphes courts (répliques) jusqu'à 600 caractères ; dans un scénario, l'en-tête de la scène puis un petit bloc d'éléments (action, nom et réplique ensemble, didascalie, transition, synopsis ; jamais les notes ni le texte mis de côté) ; pour une carte, son titre, les valeurs de sa fiche écrites par l'auteur (pas les codes : statut, certitude, arc…) et son texte. Au plus 1 500 caractères par passage (coupé entre deux phrases).
+- Préfixes attendus par certains modèles : `search_document: ` et `search_query: ` pour nomic-embed-text, `passage: ` et `query: ` pour la famille e5.
+
+**Ce que MondoWrite garde** (`readEmbeddings`) : exactement un vecteur par texte envoyé, nombres finis, tous de la même taille ; sinon la réponse est refusée (message « ce modèle ne sait pas lire le texte en vecteurs »). L'index vit en mémoire le temps de la session (`SemanticIndex`) : seuls les passages nouveaux ou changés (empreinte du texte) sont recalculés, ceux qui ne sont plus dans le projet sont oubliés, et changer de service, d'adresse ou de modèle repart de zéro. **Rien n'est écrit dans le projet**, ni ailleurs sur le disque. Lecture du projet avec progression et « Annuler ».
+
+**Résultats** : classés par proximité, une carte une seule fois (son meilleur passage), les passages trop loin du meilleur écartés. Choisir un passage du manuscrit l'ouvre et le sélectionne (`openInManuscript(scène, début du paragraphe)`) ; un passage du scénario ouvre l'élément (`@` + rang) ; une carte est montrée sur le canevas (`revealCard`).
+
+## 11. Structure et Bible (1.9.0)
+
+Quatre aides du mode par défaut : elles proposent, l'auteur coche ou clique. Consignes et lecteurs dans `src/ai/structure.ts`, ce qui est lu du projet dans `src/structureSources.ts`, interface dans `src/components/StructureTools.tsx` (et `AiMenu.tsx` pour Ranger les fils). Règle commune de ces lecteurs : toute proposition qui s'appuie sur le texte cite un passage (`quote`), retrouvé dans le texte de l'auteur par `locate` (vrac.ts : casse, accents, espaces et ponctuation repliés ; au moins huit lettres ou chiffres) ; c'est le passage d'origine qui est montré, et une proposition sans passage retrouvé est écartée (le nombre d'écartées est dit à l'auteur).
+
+### S1. Ranger les fils
+
+Menu IA, « Ranger les fils ».
+
+```
+You help a writer connect the cards of a {novel | screenplay}. Each card has an id, a type, a title and the writer's text. Find links that are missing between two cards: only when the writer's text already states the connection (for example "Inès works at the lighthouse" links Inès to the lighthouse). Never guess, never infer a link the text does not state. Leave out pairs that already appear in "links", in either direction. Give each link a short label of 1 to 4 words in {langue}, read from the first card to the second (for example: « travaille à », « frère de », « se passe à »). For each link, copy in "quote" the exact words of the writer's text that state it: a short continuous excerpt (5 to 25 words), copied word for word from the text of one of the two cards. {règle commune : nameRule} Answer with a JSON object only: {"items": [{"from": "<card id>", "to": "<card id>", "label": "<label>", "quote": "<exact excerpt>"}]}. Use the card ids exactly as given. At most 30 links. If no link is missing, answer {"items": []}.
+```
+
+**Données** (`wireCandidates`) : les cartes qui ont un titre (ni Image ni Document), au plus 80 et 30 000 caractères ; texte = notes, valeurs de la fiche et, pour une scène, synopsis et texte (manuscrit ou corps Fountain), 700 caractères ; les fils existants entre ces cartes.
+
+**Ce que MondoWrite garde** (`parseWires`) : deux cartes envoyées et distinctes (identifiant, ou titre exact à défaut), jamais une paire déjà reliée dans un sens ou l'autre ni deux fois la même paire, une étiquette d'une ligne (40 caractères, cartes nommées par `nameCards`), la citation retrouvée dans le titre ou le texte de l'une des deux cartes. « Tirer ce fil » : `linkCards` ; « Tirer tous les fils » : `addWires`, une étape d'historique.
+
+### S2. Une question pour une case vide du gabarit
+
+Plan d'un roman et séquencier d'un scénario, sous chaque case de gabarit sans scène : « Une question ».
+
+```
+You help a writer plan a {novel | screenplay} with a structure template ({nom du gabarit}). One beat of the template has no scene yet. Ask ONE open question that helps the writer find what could happen in this beat, specific to this story: use the neighbouring beats, their scenes and the characters. Do not answer it, do not suggest a scene, do not invent facts, names or events. {règle commune : nameRule} Answer with a JSON object only: {"question": "<one sentence in {langue}, ending with a question mark>", "cards": ["<id of a character the question is about>"]}. "cards" may be empty.
+```
+
+**Données** (`beatContext`) : la case vide (nom et aide, par `beatText`, case de l'auteur comprise), les deux cases avant et après avec leurs scènes (titre, synopsis de 300 caractères, six au plus), toute la structure (nom et nombre de scènes de chaque case, `templateBeats`), les personnages principaux (sinon les huit premiers : accroche, rôle, objectif), la logline de la couverture.
+
+**Ce que MondoWrite garde** (`parseBeatQuestion`) : une question (une phrase qui contient « ? », 300 caractères), les cartes citées seulement si elles existent (ou nommées par leur titre dans la question). « Garder » : une carte Question reliée à ces cartes (`addQuestionAbout`), sinon rien.
+
+### S3. Rétro-bible : ce que le texte en dit
+
+Bible, fiche d'un personnage ou d'un lieu : « Ce que le texte en dit ». Ce n'est pas le mode Atelier : la valeur est une note courte tirée du texte de l'auteur, fondée sur une citation.
+
+```
+You help a writer fill the story bible of a {novel | screenplay} from what their own text already says. You read excerpts about one {character | place | location}. For each field listed in "fields", give a value ONLY if the excerpts state it clearly. Never guess, never infer from hints, never invent. Leave out a field the excerpts do not state. A value is a short note in {langue} (a few words, at most one sentence), close to the writer's words. For each value, copy in "quote" the exact words of the excerpts that state it: a short continuous excerpt (5 to 30 words), copied word for word. Answer with a JSON object only: {"items": [{"field": "<field key>", "value": "<value>", "quote": "<exact excerpt>"}]}. Use the field keys exactly as given. If the excerpts state nothing, answer {"items": []}.
+```
+
+**Données** : le nom, les champs VIDES permis (`RETRO_FIELDS` : personnage rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, voix, objectif, peur, secret, relations ; lieu époque, ambiance, ce qui s'y passe ; jamais une interprétation ni un champ à choix), avec leur libellé ; les paragraphes du récit qui nomment la carte (titre, prénom, surnoms, `namesOf` ; pour un décor, aussi les trois premières actions des scènes dont l'en-tête est ce lieu), en paquets de 9 000 caractères, six paquets au plus (« Lecture du texte : partie 2 sur 5… », Annuler ; au-delà, l'auteur est prévenu).
+
+**Ce que MondoWrite garde** (`parseRetro`, `mergeRetro`) : seulement les champs demandés, une valeur d'une ligne (240 caractères), la citation retrouvée dans le paquet ; trois valeurs différentes au plus par champ. Chaque proposition s'accepte à part (« Ajouter à la fiche », `setFiche`, seulement si le champ est encore vide) ou s'ignore. Après l'import d'un manuscrit, un bandeau invite à s'en servir (`retroInvite`, jamais enregistré).
+
+### S4. Dépouillement d'un scénario
+
+Fiche d'une scène de scénario (Bible, carte agrandie), « Dépouiller cette scène » ; fenêtre Statistiques, onglet « Dépouillement », « Dépouiller tout le scénario ».
+
+```
+You help a screenwriter break down a screenplay for production. For each scene, read its action lines and list the elements a production team must prepare, in five categories: accessoires (props: objects handled or used by characters); costumes (wardrobe: clothes, uniforms, make-up that the action describes); figurants (extras: background people, crowds, unnamed passers-by (not speaking characters)); vehicules (vehicles: cars, boats, bikes, aircraft); effets (effects: special or visual effects, stunts, weather, fire, explosions, sound effects). List only what the action lines actually mention, never what a scene might need. One element per entry, named in a few words in the language of the screenplay. For each entry, copy in "quote" the exact words of the scene's action lines that mention it (3 to 20 words, copied word for word). Answer with a JSON object only: {"items": [{"scene": "<scene id>", "category": "<category key>", "entry": "<element>", "quote": "<exact excerpt>"}]}. Use the scene ids and category keys exactly as given. If nothing needs preparing, answer {"items": []}. Write in {langue} only if the screenplay is in {langue}.
+```
+
+**Données** (`breakdownScenes`, `breakdownBatches`) : les scènes reliées à une carte, en-tête et lignes d'action seulement (jamais les répliques), en lots de 8 000 caractères et douze scènes au plus (« Lecture des scènes : lot 2 sur 4… », Annuler).
+
+**Ce que MondoWrite garde** (`parseBreakdown`) : une scène du lot, une des cinq catégories, une entrée d'une ligne (80 caractères) qui n'est pas déjà dans la fiche de la scène ni proposée deux fois (casse et accents ignorés), la citation retrouvée dans les lignes d'action de cette scène. Propositions cochées d'office ; « Ajouter les éléments cochés » les met dans les champs `accessoires`, `costumes`, `figurants`, `vehicules`, `effets` de la fiche (une entrée par ligne, `addBreakdown`, une étape d'historique).

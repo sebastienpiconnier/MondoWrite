@@ -117,6 +117,9 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 /* Menu IA : propositions que l'auteur applique ou ignore */
 .ai-panel { width: min(380px, calc(100vw - 32px)); }
 .ai-panel .ghost-button { text-align: left; }
+/* Groupe « Relecture par l'IA » du menu IA (AiReview.tsx). */
+.ai-review-group { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.ai-review-action { display: flex; flex-direction: column; }
 .ai-message { margin: 4px 0 0; font-size: 0.8125rem; line-height: 1.45; color: var(--ink-2); }
 .ai-message:empty { display: none; }
 .ai-error { margin: 0; font-size: 0.8125rem; font-weight: 600; color: var(--danger); }
@@ -132,6 +135,34 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 @media (pointer: coarse) {
   .ai-actions button, .settings-panel input { min-height: 44px; }
   .ai-card { min-height: 44px; }
+}
+/* Lot IA 2 (1.9.0), « Structure et Bible » : passage de l'auteur qui fonde une proposition, question d'une case vide,
+   rétro-bible, dépouillement (StructureTools.tsx). */
+.ai-quote { margin: 4px 0 0; font: italic 0.8125rem/1.45 var(--font-text); color: var(--ink-2); overflow-wrap: anywhere; }
+.ai-list p.ai-quote { font-style: italic; }
+.beat-question { flex-basis: 100%; margin-top: 4px; font: 400 0.875rem/1.45 var(--font-ui); letter-spacing: 0; text-transform: none; }
+.beat-question .link-button { min-height: 32px; }
+.beat-question .ai-question { margin: 0; font: 500 1rem/1.4 var(--font-display); color: var(--ink); }
+.beat-question-found { margin-top: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--ground); }
+.retro-bible { margin-top: 12px; }
+.retro-bible .ai-message, .breakdown-sheet .ai-message, .breakdown-stats .ai-message { margin-top: 6px; }
+.breakdown-sheet > div > .gallery-hint { margin: 2px 14px 4px; }
+.breakdown-sheet > div > .assistant-bar, .breakdown-sheet > div > .ai-message, .breakdown-sheet .breakdown-proposals { margin: 0 14px 14px; width: auto; }
+.breakdown-proposals { width: 100%; }
+.breakdown-group { width: 100%; }
+.breakdown-scene { margin: 6px 0 4px; font: 600 0.875rem var(--font-ui); color: var(--ink); }
+.breakdown-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.breakdown-checks label { display: flex; align-items: flex-start; gap: 8px; font-size: 0.875rem; color: var(--ink); cursor: pointer; }
+.breakdown-checks input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
+.breakdown-checks .ai-quote { margin-left: 26px; }
+.breakdown-category { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.breakdown-category-list ul { margin: 4px 0 14px; padding-left: 18px; font-size: 0.875rem; line-height: 1.6; color: var(--ink); }
+.breakdown-category-list .link-button { padding: 0; font-size: inherit; }
+@media (pointer: coarse) {
+  .beat-question .link-button { min-height: 44px; }
+  .breakdown-checks label { min-height: 44px; align-items: center; }
+  .breakdown-checks input { width: 24px; height: 24px; margin: 0; }
+  .breakdown-category-list .link-button { min-height: 44px; padding: 0 2px; }
 }
 /* Menu Exporter : un groupe par document (manuscrit ou scénario, bible). */
 .export-group { display: flex; flex-direction: column; gap: 4px; }

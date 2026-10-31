@@ -679,6 +679,15 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .review-ignore { border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); }
 @media (pointer: coarse) { .review-actions button { min-height: 44px; } }
 .review-ignored { margin: 0; color: var(--ink-2); font-size: 0.8125rem; }
+/* Questions de l'IA (relecture, AiReview.tsx) : en tête de « Vérifier », un liseré d'accent pour les distinguer des points sans IA. */
+.ai-review { padding-left: 10px; border-left: 3px solid var(--accent); }
+.ai-review-question { margin: 0; color: var(--ink); font-size: 0.875rem; line-height: 1.45; overflow-wrap: anywhere; }
+.ai-review-task { margin-right: 4px; color: var(--ink-2); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.ai-review-links { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.ai-review-link { min-height: 28px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; font-size: 0.8125rem; text-align: left; text-decoration: underline; cursor: pointer; overflow-wrap: anywhere; }
+.ai-review-link.is-card { color: var(--ink); }
+.ai-review-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+@media (pointer: coarse) { .ai-review-link { min-height: 44px; } }
 
 /* Fenêtre « Exporter le scénario en PDF » (ScriptPdfPanel) : réglages à gauche, aperçu de la première page à droite. */
 .spdf { display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap; }
