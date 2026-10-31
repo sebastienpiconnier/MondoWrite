@@ -18,7 +18,7 @@ export const AI_PROVIDERS: AiProvider[] = ["anthropic", "openai", "openrouter", 
 export const isAiProvider = (v: unknown): v is AiProvider => AI_PROVIDERS.includes(v as AiProvider);
 
 interface ProviderInfo {
-  /** Service local : pas de clé, adresse modifiable, les textes ne quittent pas la machine. */
+  /** Service local : adresse modifiable, jeton facultatif (LM Studio « Require Authentication »), les textes ne quittent pas la machine. */
   local: boolean;
   /** Adresse de base par défaut (sans barre finale). */
   url: string;
@@ -36,7 +36,7 @@ export const PROVIDERS: Record<AiProvider, ProviderInfo> = {
 
 export interface AiConfig {
   provider: AiProvider;
-  /** Clé d'API (services en ligne). */
+  /** Clé d'API (services en ligne) ; jeton facultatif d'un serveur local qui en demande un. */
   key: string;
   model: string;
   /** Adresse du service local ; vide : adresse par défaut. */
@@ -83,7 +83,8 @@ function headers(config: AiConfig): Record<string, string> {
     return { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
   }
   const out: Record<string, string> = { "content-type": "application/json" };
-  if (key && !PROVIDERS[config.provider].local) out.authorization = `Bearer ${key}`;
+  // Un serveur local peut aussi demander un jeton (LM Studio 0.4 et après, « Require Authentication ») : envoyé s'il y en a un.
+  if (key) out.authorization = `Bearer ${key}`;
   if (config.provider === "openrouter") out["x-title"] = "MondoWrite";
   return out;
 }
@@ -217,7 +218,7 @@ export function readModels(json: unknown): string[] {
 }
 
 /** Ce qui a empêché une action IA, pour un message compréhensible. */
-export type AiErrorCode = "network" | "timeout" | "cancelled" | "auth" | "model" | "limit" | "empty" | "other";
+export type AiErrorCode = "network" | "timeout" | "cancelled" | "auth" | "token" | "model" | "limit" | "empty" | "other";
 
 export class AiError extends Error {
   /** Raison donnée par le service lui-même (son message d'erreur), montrée à l'auteur à côté du nôtre. */
@@ -246,7 +247,8 @@ export function serviceReason(body: string): string {
 export function aiErrorText(err: unknown, errors: Record<AiErrorCode, string>): string {
   const code = err instanceof AiError ? err.code : "other";
   const reason = err instanceof AiError ? err.reason : "";
-  return reason ? `${errors[code]} (${reason})` : errors[code];
+  // Jeton demandé : le message dit quoi faire, le texte du serveur (long, en anglais, coupé) n'apporte rien.
+  return reason && code !== "token" ? `${errors[code]} (${reason})` : errors[code];
 }
 
 export const errorCode = (status: number): AiErrorCode =>
@@ -292,10 +294,12 @@ async function send(request: HttpRequest, local = false, signal?: AbortSignal, t
     clearTimeout(timer);
     signal?.removeEventListener("abort", cancel);
   }
-  // Un serveur local qui répond 403 refuse l'origine de l'app, ce n'est pas une affaire de clé.
-  const code = local && response.status === 403 ? "network" : errorCode(response.status);
   if (!response.ok) {
     const body = await response.text().catch(() => "");
+    // Un serveur local qui répond 403 refuse l'origine de l'app, ce n'est pas une affaire de clé ; sauf s'il
+    // réclame un jeton (LM Studio avec « Require Authentication » : 401, message sur le jeton).
+    const wantsToken = local && (response.status === 401 || /token|authoriz/i.test(body));
+    const code: AiErrorCode = wantsToken ? "token" : local && response.status === 403 ? "network" : errorCode(response.status);
     const reason = serviceReason(body);
     // Claude répond 400 quand le crédit du compte est épuisé : c'est une limite, pas un modèle inconnu.
     const error = new AiError(/credit balance|billing|quota/i.test(reason) ? "limit" : code, `${response.status} ${body}`.slice(0, 300));

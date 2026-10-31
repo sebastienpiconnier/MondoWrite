@@ -46,13 +46,16 @@ describe("services", () => {
 
   it("Ollama et LM Studio : serveur local, sans clé, adresse modifiable", () => {
     // Ollama : API native, pour une fenêtre de contexte assez grande et une réponse JSON garantie.
-    const ollama = chatRequest(config("ollama"), "c", "t", { json: true });
+    const ollama = chatRequest(config("ollama", { key: "" }), "c", "t", { json: true });
     expect(ollama.url).toBe("http://localhost:11434/api/chat");
     expect(ollama.headers).not.toHaveProperty("authorization");
     expect(JSON.parse(ollama.body!)).toMatchObject({ stream: false, format: "json", options: { num_ctx: OLLAMA_CONTEXT } });
     expect(JSON.parse(chatRequest(config("ollama"), "c", "t").body!)).not.toHaveProperty("format");
     expect(chatRequest(config("lmstudio"), "c", "t").url).toBe("http://localhost:1234/v1/chat/completions");
     expect(chatRequest(config("lmstudio", { url: "http://127.0.0.1:5000/" }), "c", "t").url).toBe("http://127.0.0.1:5000/v1/chat/completions");
+    // LM Studio avec « Require Authentication » : le jeton saisi part en Bearer (1.8.2).
+    expect(chatRequest(config("lmstudio", { key: "" }), "c", "t").headers).not.toHaveProperty("authorization");
+    expect(chatRequest(config("lmstudio", { key: "lm-tok" }), "c", "t").headers.authorization).toBe("Bearer lm-tok");
     // Une adresse saisie ne détourne jamais un service en ligne (la clé partirait ailleurs).
     expect(chatRequest(config("openai", { url: "http://pirate.example" }), "c", "t").url).toBe("https://api.openai.com/v1/chat/completions");
   });
@@ -276,8 +279,12 @@ describe("message d'erreur du service", () => {
     expect(serviceReason("<html>")).toBe("");
     const err = new AiErr("model");
     err.reason = "max_tokens: too big";
-    const errors = { network: "N", timeout: "T", cancelled: "C", auth: "A", model: "M", limit: "L", empty: "E", other: "O" };
+    const errors = { network: "N", timeout: "T", cancelled: "C", auth: "A", token: "K", model: "M", limit: "L", empty: "E", other: "O" };
     expect(aiErrorText(err, errors)).toBe("M (max_tokens: too big)");
     expect(aiErrorText(new Error("x"), errors)).toBe("O");
+    // Jeton demandé par un serveur local : le message suffit, sans le long texte du serveur.
+    const token = new AiErr("token");
+    token.reason = "An LM Studio API token is required to make requests to this server";
+    expect(aiErrorText(token, errors)).toBe("K");
   });
 });
