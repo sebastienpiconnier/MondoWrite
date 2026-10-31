@@ -16,14 +16,26 @@ import type { ScreenplayElement } from "../screenplay/model";
 type CosmosState = ReturnType<typeof useCosmos.getState>;
 
 // Cases du gabarit en place, relues une fois par version du scénario (pas une fois par cadre et par rendu).
+// Sélecteur du store : il doit rendre le MÊME tableau tant que rien ne change, sinon React redessine en
+// boucle et la fenêtre reste vide (1.7.0 à 1.7.2 : roman en gabarit libre ou « Mes gabarits »).
+const NO_BEATS: readonly string[] = Object.freeze([]);
 const screenplayKeys = new WeakMap<ScreenplayElement[], readonly string[]>();
+const customKeys = new WeakMap<object, readonly string[]>();
 export function beatKeys(s: CosmosState): readonly string[] {
-  if (s.kind !== "scenario") return s.plan.template === "libre" ? [] : templateBeats(s.plan.template, s.plan.custom);
+  if (s.kind !== "scenario") {
+    const { template, custom } = s.plan;
+    if (template === "libre") return NO_BEATS;
+    if (template !== "perso") return templateBeats(template);
+    if (!custom) return NO_BEATS;
+    let keys = customKeys.get(custom);
+    if (!keys) customKeys.set(custom, (keys = templateBeats(template, custom)));
+    return keys;
+  }
   const elements = s.screenplay?.elements ?? [];
   let keys = screenplayKeys.get(elements);
   if (!keys) {
     const plan = screenplayPlan(elements);
-    keys = plan.template === "libre" ? [] : templateBeats(plan.template, plan.custom);
+    keys = plan.template === "libre" ? NO_BEATS : templateBeats(plan.template, plan.custom);
     screenplayKeys.set(elements, keys);
   }
   return keys;
