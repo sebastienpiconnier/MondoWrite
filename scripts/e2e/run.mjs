@@ -483,6 +483,64 @@ const scenarios = [
     },
   },
   {
+    name: "IA locale : la recherche par le sens trouve le passage sans le mot cherché, et y mène",
+    async run(h) {
+      const { page } = h;
+      // Ollama simulé : rien ne part ailleurs que vers « localhost:11434 », intercepté ici.
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "ollama", keys: {}, models: { ollama: "llama3" }, urls: {}, embedModels: { ollama: "nomic-embed-text" } } }));
+      });
+      const sent = [];
+      // Vecteurs fabriqués : un axe pour le courrier, un pour la mer, un pour le reste.
+      const vec = (s) => (/lettre|enveloppe|courrier/i.test(s) ? [1, 0.05, 0] : /mer|tempête/i.test(s) ? [0, 1, 0.05] : [0.05, 0, 1]);
+      await page.route("http://localhost:11434/**", async (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "GET, POST, OPTIONS" };
+        const req = route.request();
+        if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        if (req.url().endsWith("/api/tags")) return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ models: [{ name: "llama3" }, { name: "nomic-embed-text" }] }) });
+        if (!req.url().endsWith("/api/embed")) return route.fulfill({ status: 404, headers: cors, body: "{}" });
+        const body = JSON.parse(req.postData() ?? "{}");
+        sent.push(body);
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ model: body.model, embeddings: body.input.map(vec) }) });
+      });
+      await h.create("Par le sens");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("La nuit au phare");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      await page.locator(".ms-page .ProseMirror").click();
+      // Deux paragraphes ordinaires (plus de 160 caractères) : deux passages, chacun son endroit exact.
+      await page.keyboard.type("La mer grondait sous le phare depuis le début de la nuit, et les vagues montaient si haut qu'elles venaient frapper les vitres de la lanterne, là-haut, où rien ne bougeait.");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Inès trouva une enveloppe glissée sous la porte, sans timbre ni adresse, avec seulement son prénom écrit à l'encre bleue d'une main qui tremblait un peu.");
+      await h.wait(900);
+      await h.view(1);
+      await h.pane();
+      await page.keyboard.press("Control+f");
+      await page.getByRole("button", { name: "Par le sens" }).click();
+      const field = page.getByRole("combobox", { name: "Rechercher une carte" });
+      await field.fill("Où ai-je parlé du courrier ?");
+      await field.press("Enter");
+      const results = page.getByRole("listbox", { name: "Passages trouvés" }).getByRole("option");
+      await until(async () => (await results.count()) > 0, "la recherche par le sens ne rend rien");
+      assert((await results.first().innerText()).includes("enveloppe"), `premier passage : ${await results.first().innerText()}`);
+      assert(sent.every((b) => b.model === "nomic-embed-text"), "le modèle d'embedding n'est pas celui des Réglages");
+      assert(sent.some((b) => b.input.some((t) => t.startsWith("search_document: ") && t.includes("enveloppe"))), "le texte du manuscrit n'a pas été lu");
+      assert(sent.some((b) => b.input.length === 1 && b.input[0] === "search_query: Où ai-je parlé du courrier ?"), "la question n'a pas été envoyée");
+      // Une seconde recherche ne relit pas le projet : seulement la question.
+      const before = sent.length;
+      await field.fill("La tempête");
+      await field.press("Enter");
+      await until(async () => (await results.count()) > 0 && (await results.first().innerText()).includes("grondait"), "la seconde recherche ne trouve pas la mer");
+      assert(sent.length === before + 1, `le projet a été relu (${sent.length - before} requêtes)`);
+      await field.fill("Où ai-je parlé du courrier ?");
+      await field.press("Enter");
+      await until(async () => (await results.first().innerText()).includes("enveloppe"), "la troisième recherche ne trouve pas l'enveloppe");
+      await field.press("Enter");
+      await until(() => page.evaluate(() => getSelection()?.toString().startsWith("Inès trouva une enveloppe")), "le passage n'est pas sélectionné dans le manuscrit");
+    },
+  },
+  {
     name: "tactile (iPad 834 × 1194) : exemple ouvert, « Nouvelle carte » crée une carte",
     context: { viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
     async run(h) {

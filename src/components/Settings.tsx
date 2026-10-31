@@ -16,6 +16,7 @@ import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
 import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, isLoopback, isReady, listModels } from "../ai/providers";
+import { canEmbed, isEmbedModel, proposeEmbedModel } from "../ai/semantic";
 import { ATELIER_SETTING_ID } from "./Atelier";
 import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
@@ -44,9 +45,10 @@ export function Settings({ project = true }: { project?: boolean }) {
   const [testing, setTesting] = useState(false);
   const provider = ai.provider;
   const config = aiConfig(ai);
+  const embedModel = (provider && ai.embedModels?.[provider]) || "";
   // Toujours sur les réglages du moment (pas ceux du rendu) : une clé collée pendant le chargement des
   // modèles n'est pas effacée quand le modèle proposé s'écrit ensuite.
-  const patchAi = (field: "keys" | "models" | "urls", value: string, forProvider = provider) => {
+  const patchAi = (field: "keys" | "models" | "urls" | "embedModels", value: string, forProvider = provider) => {
     if (!forProvider) return;
     const now = useSettings.getState().ai;
     setAi({ ...now, [field]: { ...now[field], [forProvider]: value } });
@@ -54,7 +56,13 @@ export function Settings({ project = true }: { project?: boolean }) {
   /** Pas encore de modèle choisi pour ce service (réglages du moment) : on propose le premier de la liste. */
   const proposeModel = (forProvider: NonNullable<typeof provider>, list: string[]) => {
     const now = aiConfig({ ...useSettings.getState().ai, provider: forProvider });
-    if (now && !now.model.trim() && list[0]) patchAi("models", list[0], forProvider);
+    // Un modèle d'embedding ne sait pas converser : on propose d'abord un autre modèle.
+    const chat = list.find((m) => !isEmbedModel(m)) ?? list[0];
+    if (now && !now.model.trim() && chat) patchAi("models", chat, forProvider);
+    // Recherche par le sens (service local) : un modèle dont le nom dit « embed », s'il y en a un.
+    const embedNow = useSettings.getState().ai.embedModels?.[forProvider] ?? "";
+    const embedding = proposeEmbedModel(list);
+    if (canEmbed(forProvider) && !embedNow.trim() && embedding) patchAi("embedModels", embedding, forProvider);
   };
   const test = async () => {
     if (!config || testing) return;
@@ -99,7 +107,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), atelierHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), atelierHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -504,6 +512,29 @@ export function Settings({ project = true }: { project?: boolean }) {
               <button type="button" className="ghost-button" disabled={testing} onClick={() => void test()}>
                 {t.ai.test}
               </button>
+              {/* Recherche par le sens : seulement sur la machine (le texte ne part pas en ligne). */}
+              {canEmbed(provider) ? (
+                <>
+                  <label htmlFor={ids.aiEmbed}>{t.semantic.embedModel}</label>
+                  {models.length > 0 ? (
+                    <select id={ids.aiEmbed} value={embedModel} aria-describedby={ids.aiEmbedHint} onChange={(e) => patchAi("embedModels", e.target.value)}>
+                      <option value="">{t.semantic.noEmbedModel}</option>
+                      {[...new Set([...(embedModel ? [embedModel] : []), ...models])].map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input id={ids.aiEmbed} type="text" value={embedModel} aria-describedby={ids.aiEmbedHint} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("embedModels", e.target.value)} />
+                  )}
+                  <p className="settings-hint" id={ids.aiEmbedHint}>
+                    {t.semantic.embedHint}
+                  </p>
+                </>
+              ) : (
+                <p className="settings-hint">{t.semantic.cloudOnly}</p>
+              )}
               <p className="settings-hint" role="status">
                 {aiStatus}
               </p>

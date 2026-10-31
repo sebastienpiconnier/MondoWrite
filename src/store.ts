@@ -220,9 +220,11 @@ export interface CosmosState {
   cardMenu: string | null;
   setCardMenu: (id: string | null) => void;
   /** Ouvre une scène dans le manuscrit (ou le scénario) : identifiant de sa carte, ou `SCENE_AT` + rang de son en-tête. */
-  openInManuscript: (id: string) => void;
+  openInManuscript: (id: string, needle?: string) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
   manuscriptTarget: string | null;
+  /** Passage à sélectionner dans cette scène (recherche par le sens) ; null : le haut de la scène. */
+  manuscriptNeedle: string | null;
   clearManuscriptTarget: () => void;
   /** Coche ou décoche la n-ième case d'une carte ou d'une scène du manuscrit. */
   toggleTodo: (id: string, where: "card" | "manuscript", index: number) => void;
@@ -1601,9 +1603,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     focusFrame: null,
     clearFocusFrame: () => set({ focusFrame: null }),
-    openInManuscript: (id) => set({ view: "manuscrit", manuscriptTarget: id }),
+    openInManuscript: (id, needle) => set({ view: "manuscrit", manuscriptTarget: id, manuscriptNeedle: needle || null }),
     manuscriptTarget: null,
-    clearManuscriptTarget: () => set({ manuscriptTarget: null }),
+    manuscriptNeedle: null,
+    clearManuscriptTarget: () => set({ manuscriptTarget: null, manuscriptNeedle: null }),
     toggleTodo: (id, where, index) => {
       if (where === "manuscript") {
         const html = get().manuscript[id];

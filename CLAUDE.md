@@ -216,7 +216,8 @@ src/
     FrameNode.tsx       Cadre de regroupement : titre, redimensionnement, suppression
     useMediaUrl.ts      Adresse affichable d'une image de medias/ (hook)
     SuggestionMenu.tsx  Menu de suggestions partagé (cartes et complétion du scénario)
-    Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F)
+    Search.tsx          Recherche d'une carte (loupe de la barre du haut, Cmd/Ctrl+F), par les mots ou par le sens
+    SemanticSearch.tsx  Mode « Par le sens » de la recherche : état (lecture du projet, progression, Annuler, résultats) et aller au passage (goToHit)
     FloatingEdge.tsx    Fil qui part du bord le plus proche (pas de point d'accroche fixe)
     BibleToc.tsx        Sommaire de la Bible, en cinq parties numérotées (« Pour vous » à part), et mode « Choisir et ranger » par partie
     Bible.tsx           Toutes les rubriques sur une page, groupées (le sommaire y mène), fiches modifiables, images, liens (délier), création d'une fiche ; portrait rond des personnages
@@ -303,6 +304,7 @@ src/
     vrac.ts             « Du vrac aux cartes » : consigne, relecture (passages retrouvés dans le texte de l'auteur, `locate`), fils gardés, grille (fonctions pures)
     tasks.ts            Consignes et relecture des réponses : Ranger, interview, synthèse, description d'un lieu, cohérence (fonctions pures), recopiées dans docs/prompts-ia.md
     interrogate.ts      « Interroger le personnage » : extraits bornés des scènes où il paraît, consigne en personnage, relecture (texte brut, noms propres inconnus du projet) (fonctions pures)
+    semantic.ts         Recherche par le sens (service local seulement) : requêtes d'embeddings (Ollama /api/embed, LM Studio /v1/embeddings), vecteurs vérifiés, découpage en passages, cosinus et classement (purs, testés), index de la session (SemanticIndex)
   export/               Exports du manuscrit et de la bible, fabriqués dans l'app (aucun outil externe)
     doc.ts              Modèle de document commun (chapitres, blocs) ; HTML des cartes et du manuscrit → blocs
     text.ts             Markdown, Word (.docx) et EPUB 3
@@ -497,6 +499,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Téléphone** (1.7.3) : pas de visite guidée (elle passe par le canevas et le Plan) : ni au lancement de l'exemple, ni dans les Réglages, et fermée si l'écran devient étroit. Réglages visibles à l'accueil (`.home-actions`), message de corbeille au-dessus des onglets ou du clavier.
 - **Espaces insécables de fr.ts** (1.7.4) : fine insécable (U+202F) avant `; ? !`, insécable (U+00A0) avant `:` et dans « », vérifié par un test ; tout texte d'un ancien projet comparé à une chaîne de fr.ts se compare espaces repliées (`adoptTextAnswers`), et un PDF dont la police n'a pas U+202F la remplace (`noThinSpace`, `printable`, PDF du scénario).
 - **Tests de bout en bout** (1.7.5, `scripts/e2e/run.mjs`, aussi dans la CI) : un contexte de navigateur neuf par scénario, réseau extérieur coupé, échec sur toute erreur de la page ou de React (« Maximum update depth », « getSnapshot should be cached »). Sélecteurs par rôles et libellés de fr.ts : renommer un libellé ou une classe stable (`.card-title`, `.home-create`, `.card-type`) demande de mettre le script à jour. Un bogue connu va dans `KNOWN`, pas dans un scénario affaibli.
+- **Recherche par le sens** (1.9.0, `ai/semantic.ts`) : jamais avec un service en ligne (`canEmbed` : Ollama, LM Studio), les Réglages disent pourquoi. Index en mémoire seulement (`sessionIndex`, clé service + adresse + modèle, vecteurs par empreinte du texte), jamais écrit dans le projet ni sur le disque ; une réponse d'embedding passe par `readEmbeddings` (un vecteur par texte, nombres finis, même taille). Un paragraphe ordinaire est un passage à lui seul (`CHUNK_SHORT`), sinon `selectText` ne mènerait pas au bon endroit ; `openInManuscript(id, needle)` sélectionne le début du paragraphe (`manuscriptNeedle`), et `selectText` compare les espaces insécables comme des espaces.
 - **Lignes d’une action** (1.7.4) : une ligne suivante qui commence par `!` ou ouvrirait un élément (`#`, `=`, `/*`, `[[…]]`, `> … <`) s’écrit précédée de `!`, que `readAction` retire ; une réplique ne s’écrit jamais avec des retours en tête (le nom ne serait plus relu comme personnage).
 
 ## Conventions

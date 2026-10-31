@@ -49,7 +49,8 @@ export function isReady(config: AiConfig | null): config is AiConfig {
   return PROVIDERS[config.provider].local || config.key.trim() !== "";
 }
 
-const base = (config: AiConfig) => {
+/** Adresse de base du service (exportée pour les embeddings, semantic.ts). */
+export const base = (config: AiConfig) => {
   const info = PROVIDERS[config.provider];
   // Adresse collée telle que la documentation la donne (« …:1234/v1/ ») : sans la barre finale ni « /v1 »,
   // que les chemins ajoutent déjà (sinon « /v1/v1/… », que le serveur refuse en « modèle inconnu »).
@@ -76,7 +77,7 @@ export interface HttpRequest {
   body?: string;
 }
 
-function headers(config: AiConfig): Record<string, string> {
+export function headers(config: AiConfig): Record<string, string> {
   const key = config.key.trim();
   if (config.provider === "anthropic") {
     // L'en-tête d'accès direct autorise l'appel depuis une app sans serveur intermédiaire.
@@ -268,7 +269,7 @@ async function httpFetch(): Promise<typeof fetch> {
   }
 }
 
-async function send(request: HttpRequest, local = false, signal?: AbortSignal, timeoutMs = TIMEOUT_MS): Promise<unknown> {
+export async function send(request: HttpRequest, local = false, signal?: AbortSignal, timeoutMs = TIMEOUT_MS): Promise<unknown> {
   const controller = new AbortController();
   let timedOut = false;
   const timer = setTimeout(() => {

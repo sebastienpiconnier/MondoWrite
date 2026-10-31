@@ -165,10 +165,13 @@ export function Manuscript() {
   // Arrivée depuis « À faire » : la bonne scène.
   useEffect(() => {
     if (!target) return;
+    const needle = useCosmos.getState().manuscriptNeedle;
     useCosmos.getState().clearManuscriptTarget();
     setChosen(target);
-    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée.
-    window.requestAnimationFrame(() => bookApi.current?.scrollToScene(target));
+    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée, et au passage cherché s'il y en a un.
+    window.requestAnimationFrame(() => {
+      if (!needle || !bookApi.current?.selectText(target, needle)) bookApi.current?.scrollToScene(target);
+    });
   }, [target]);
 
   // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée.
