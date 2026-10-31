@@ -980,7 +980,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
           const forKey = storage.copies.key();
           const { lang, author, bibleSections } = useSettings.getState();
           void import("./markdownCopies").then((m) =>
-            m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, bibleOrder(bibleSections)), snapshot.markdownCopies, new Date(), forKey),
+            m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, bibleOrder({ ...bibleSections, hidden: [] })), snapshot.markdownCopies, new Date(), forKey),
           );
         }
       } catch (err) {

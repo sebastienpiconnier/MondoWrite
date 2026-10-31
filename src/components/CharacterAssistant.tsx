@@ -62,6 +62,14 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
   const [error, setError] = useState("");
   const [synthesis, setSynthesis] = useState<string[] | null>(null);
   const asked = useRef<string[]>([]);
+  // Question ou synthèse en cours : « Annuler » l'arrête, et elle s'arrête si la fiche disparaît.
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
+  const startAi = () => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    return controller.signal;
+  };
   const panelId = useId();
 
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
@@ -102,13 +110,14 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
   /** Demande à l'IA une question d'après la fiche et les cartes reliées. */
   const ask = async () => {
     if (!isReady(config) || busy) return;
+    const signal = startAi();
     setBusy("ask");
     setError("");
     try {
       const { data, self } = selfNow();
       const prompt = interviewPrompt(self, data, linksNow(), lang, asked.current, texts);
       // Une carte citée dans la question : « Titre (type) », jamais son identifiant.
-      const next = parseQuestion(await complete(config, prompt.system, prompt.user, 400), data, { type: (type) => types[type].label.toLocaleLowerCase(lang), untitled: all.bible.untitled });
+      const next = parseQuestion(await complete(config, prompt.system, prompt.user, { maxTokens: 400, signal }), data, { type: (type) => types[type].label.toLocaleLowerCase(lang), untitled: all.bible.untitled });
       if (!next) throw new AiError("empty");
       asked.current.push(next);
       setCustom(next);
@@ -124,6 +133,7 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
   /** Demande une synthèse de ce qui est écrit sur ce personnage. */
   const synthesize = async () => {
     if (!isReady(config) || busy) return;
+    const signal = startAi();
     setBusy("synthesis");
     setError("");
     setSynthesis(null);
@@ -138,7 +148,7 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
         ct.arcTypes,
         Object.entries(self.reponses ?? {}).map(([key, value]) => ({ question: questionText(key, texts), answer: value })),
       );
-      const paragraphs = parseSynthesis(await complete(config, prompt.system, prompt.user, 1200));
+      const paragraphs = parseSynthesis(await complete(config, prompt.system, prompt.user, { maxTokens: 1200, signal }));
       if (paragraphs.length === 0) throw new AiError("empty");
       setSynthesis(paragraphs);
     } catch (err) {
@@ -236,6 +246,11 @@ export function CharacterAssistant({ card, startOpen = false, openKey = 0 }: { c
         {ai && (
           <button type="button" className="ghost-button assistant-toggle" disabled={busy !== ""} title={ct.synthesisHint} onClick={() => void synthesize()}>
             {busy === "synthesis" ? all.ai.working : ct.synthesis}
+          </button>
+        )}
+        {busy !== "" && (
+          <button type="button" className="ghost-button assistant-toggle" onClick={() => abortRef.current?.abort()}>
+            {all.ai.cancel}
           </button>
         )}
       </div>

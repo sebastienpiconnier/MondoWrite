@@ -50,6 +50,9 @@ export function Gallery({ card }: { card: CardData }) {
   const setFiche = useCosmos((s) => s.setFiche);
   const [error, setError] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Description en cours : « Annuler » l'arrête, et elle s'arrête si la galerie disparaît.
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
   const openUrl = useMediaUrl(open ?? undefined);
 
   useEffect(() => {
@@ -63,6 +66,9 @@ export function Gallery({ card }: { card: CardData }) {
   const canDescribe = isReady(config);
   const describe = async (photo: string) => {
     if (!isReady(config) || busy) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const signal = controller.signal;
     setBusy(true);
     setError("");
     setNotes(null);
@@ -76,13 +82,13 @@ export function Gallery({ card }: { card: CardData }) {
       });
       if (character) {
         const prompt = describeCharacterPrompt(card, lang);
-        const found = parseCharacterPhoto(await complete(config, prompt.system, prompt.user, { maxTokens: 700, images: [image], json: true }));
+        const found = parseCharacterPhoto(await complete(config, prompt.system, prompt.user, { maxTokens: 700, images: [image], json: true, signal }));
         if (Object.keys(found.fields).length === 0 && found.notes.length === 0) throw new AiError("empty");
         setFields(Object.keys(found.fields).length > 0 ? found.fields : null);
         setNotes(found.notes.length > 0 ? found.notes : null);
       } else {
         const prompt = card.type === "lieu" ? describePlacePrompt(card, lang) : describeImagePrompt(card, lang);
-        const lines = parseNotes(await complete(config, prompt.system, prompt.user, { maxTokens: 600, images: [image] }));
+        const lines = parseNotes(await complete(config, prompt.system, prompt.user, { maxTokens: 600, images: [image], signal }));
         if (lines.length === 0) throw new AiError("empty");
         setNotes(lines);
       }
@@ -209,6 +215,11 @@ export function Gallery({ card }: { card: CardData }) {
           {canDescribe && open && (
             <button type="button" className="is-primary" disabled={busy} onClick={() => void describe(open)}>
               {busy ? all.ai.working : g.describe}
+            </button>
+          )}
+          {busy && (
+            <button type="button" onClick={() => abortRef.current?.abort()}>
+              {all.ai.cancel}
             </button>
           )}
           {open && (
