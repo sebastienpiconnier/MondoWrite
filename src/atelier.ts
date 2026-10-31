@@ -126,7 +126,7 @@ export function iaAfterPatch(
 /** Fichier du journal, à la racine du projet, lisible hors de l'app (storage/paths.ts). */
 export { JOURNAL_FILE } from "./storage/paths";
 
-export type AtelierAction = "variants" | "synopsis" | "directions" | "pitch" | "sheet";
+export type AtelierAction = "variants" | "synopsis" | "directions" | "pitch" | "sheet" | "image";
 
 export interface JournalEntry {
   at: Date;
@@ -136,6 +136,8 @@ export interface JournalEntry {
   service: string;
   model: string;
   words: number;
+  /** À la place du nombre de mots (image générée, 1.10.0) : sa taille, « 1024 × 1536 px ». */
+  detail?: string;
 }
 
 /** Libellés du journal, dans la langue de l'interface au moment de l'écriture. */
@@ -158,7 +160,7 @@ const oneLine = (s: string) => s.replace(/[\r\n|]+/g, " ").replace(/\s+/g, " ").
 export function journalLine(entry: JournalEntry, labels: JournalLabels): string {
   const title = labels.quoted.replace("{title}", oneLine(entry.target).slice(0, 120));
   const service = [oneLine(entry.service), oneLine(entry.model)].filter(Boolean).join(", ");
-  return `- ${journalStamp(entry.at)} · ${labels.actions[entry.action]} · ${title} · ${service} · ${labels.words.replace("{n}", String(entry.words))}`;
+  return `- ${journalStamp(entry.at)} · ${labels.actions[entry.action]} · ${title} · ${service} · ${entry.detail ? oneLine(entry.detail) : labels.words.replace("{n}", String(entry.words))}`;
 }
 
 /**

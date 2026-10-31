@@ -21,6 +21,7 @@ import { ATELIER_SETTING_ID } from "./Atelier";
 import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
 import { SOURCE_INFO } from "../imageSources";
+import { ImageModelField } from "./ImageGen";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 /** Valeur du choix « Autre modèle… » de la liste. */
@@ -535,6 +536,8 @@ export function Settings({ project = true }: { project?: boolean }) {
               ) : (
                 <p className="settings-hint">{t.semantic.cloudOnly}</p>
               )}
+              {/* Images de référence du mode Atelier (1.10.0) : modèle d'image, ou la phrase qui dit que le service n'en fait pas. */}
+              <ImageModelField provider={provider} />
               <p className="settings-hint" role="status">
                 {aiStatus}
               </p>

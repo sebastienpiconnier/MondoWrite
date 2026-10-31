@@ -90,6 +90,11 @@ export interface CardData {
    * « synopsis » ou une clé de la fiche). Un champ en sort dès que l'auteur le retouche. Frontmatter `ia: [...]`.
    */
   ia?: string[];
+  /**
+   * Mode Atelier (1.10.0) : images de la carte générées par l'IA et gardées par l'auteur, nom du fichier de medias/
+   * → « service, modèle ». Écrit seulement pour les images que la carte porte encore. Frontmatter `iaImages: {...}`.
+   */
+  iaImages?: Record<string, string>;
   /** Carte dans la corbeille (fichier de corbeille/) : jour, place sur le canevas, fils, scène du scénario. */
   trashed?: import("./trash").TrashInfo;
   [key: string]: unknown; // requis par React Flow pour data

@@ -16,15 +16,20 @@ import { storage } from "../storage";
 import { AiError, PROVIDERS, aiErrorText, complete, isLoopback, isReady } from "../ai/providers";
 import { describeCharacterPrompt, describeImagePrompt, describePlacePrompt, parseCharacterPhoto, parseNotes, type PhotoField } from "../ai/tasks";
 import { imageForAi } from "../ai/image";
+import { IaImageBadge, IaImageCredit, ImageGenButton } from "./ImageGen";
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-function Thumb({ name, alt, onOpen }: { name: string; alt: string; onOpen: () => void }) {
+function Thumb({ name, alt, onOpen, card }: { name: string; alt: string; onOpen: () => void; card: CardData }) {
   const url = useMediaUrl(name);
   return (
-    <button type="button" className="gallery-thumb" aria-label={alt} onClick={onOpen}>
-      {url && <img src={url} alt="" />}
-    </button>
+    <span className="gallery-thumb-wrap">
+      <button type="button" className="gallery-thumb" aria-label={alt} onClick={onOpen}>
+        {url && <img src={url} alt="" />}
+      </button>
+      {/* Image générée gardée (mode Atelier) : toujours marquée. */}
+      <IaImageBadge card={card} name={name} />
+    </span>
   );
 }
 
@@ -137,7 +142,7 @@ export function Gallery({ card }: { card: CardData }) {
     >
       <div className="gallery-row">
         {photos.map((photo, i) => (
-          <Thumb key={photo} name={photo} alt={fmt(g.photoAlt, { n: i + 1, name })} onOpen={() => setOpen(photo)} />
+          <Thumb key={photo} card={card} name={photo} alt={fmt(g.photoAlt, { n: i + 1, name })} onOpen={() => setOpen(photo)} />
         ))}
         {/* Un seul bouton : la fenêtre Photos propose les photos libres (Openverse, Pixabay, Unsplash) et un
             fichier de l'appareil. La première photo ajoutée devient l'image principale. */}
@@ -145,6 +150,8 @@ export function Gallery({ card }: { card: CardData }) {
           <span aria-hidden="true">+</span>
           {g.add}
         </button>
+        {/* Mode Atelier avec un service qui génère des images : une image tirée de la fiche. */}
+        <ImageGenButton target={{ kind: "gallery", id: card.id }} className="gallery-add" />
       </div>
       {canDescribe && photos.length > 0 && !notes && !fields && (
         <p className="gallery-hint">
@@ -206,6 +213,7 @@ export function Gallery({ card }: { card: CardData }) {
 
       <dialog ref={dialogRef} className="gallery-dialog" aria-label={name} onClose={() => setOpen(null)}>
         {open && openUrl && <img src={openUrl} alt={fmt(g.photoAlt, { n: photos.indexOf(open) + 1, name })} />}
+        {open && <IaImageCredit card={card} name={open} />}
         <div className="assistant-actions">
           {open && open !== card.image && (
             <button type="button" onClick={() => useAsMainImage(card.id, open)}>
