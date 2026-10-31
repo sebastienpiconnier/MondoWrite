@@ -9,7 +9,9 @@ on:
 
 jobs:
   front:
-    runs-on: ubuntu-latest
+    # Ubuntu 24.04 et pas « latest » : ubuntu-latest passe à Ubuntu 26 (octobre 2026), que l'installeur
+    # de dépendances de playwright-core 1.56 ne connaît pas encore (étape Chromium en échec).
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
