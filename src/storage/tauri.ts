@@ -71,18 +71,6 @@ export async function writeSafely(path: string, write: (target: string) => Promi
 
 const writeText = (path: string, text: string) => writeSafely(path, (target) => writeTextFile(target, text));
 
-/** Temporaires d'écriture laissés par une coupure (voir `writeSafely`) : effacés, jamais relus. */
-async function removeTemps(dir: string, entries: { name: string; isFile: boolean }[]) {
-  for (const entry of entries) {
-    if (!entry.isFile || !isTempFile(entry.name) || entry.name.startsWith(".")) continue;
-    try {
-      await remove(await join(dir, entry.name));
-    } catch {
-      /* il sera effacé à la prochaine lecture */
-    }
-  }
-}
-
 /** « .nom.md.icloud » → « nom.md » (fichier iCloud pas encore téléchargé), sinon null. */
 export const icloudPlaceholder = (name: string): string | null =>
   name.startsWith(".") && name.endsWith(".icloud") && name.length > ".icloud".length + 1 ? name.slice(1, -".icloud".length) : null;
@@ -820,7 +808,6 @@ export const tauriStorage: Storage = {
     if (!(await exists(metaPath))) return null;
     const files: FileMap = { [META_FILE]: await readTextFile(metaPath) };
     // Temporaires d'écriture du dossier du projet (cosmos.json, scenario.fountain) laissés par une coupure.
-    await removeTemps(dir, await readDir(dir).catch(() => []));
     // Cartes et manuscrit : un fichier Markdown par carte, dans chacun de ces dossiers. On liste d'abord, pour
     // annoncer l'avancement (un fichier iCloud peut mettre du temps à arriver).
     const paths: [string, string][] = [];
@@ -829,7 +816,6 @@ export const tauriStorage: Storage = {
       if (!(await exists(folder))) continue;
       // join passe aussi par le système : les chemins se calculent ensemble.
       const entries = await readDir(folder);
-      await removeTemps(folder, entries);
       const names = entries.filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name) && !isTempFile(entry.name)).map((entry) => entry.name);
       // Pas encore téléchargé (ou retiré de l'appareil par iCloud) : présent, mais illisible pour l'instant.
       for (const entry of entries) {

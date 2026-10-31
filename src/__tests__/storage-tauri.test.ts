@@ -208,7 +208,7 @@ describe("écriture sûre (temporaire puis renommage)", () => {
     expect(write).toHaveBeenLastCalledWith("D:\\Projet\\cosmos.json");
   });
 
-  it("un temporaire laissé par une coupure n'est jamais relu comme carte, et il est effacé", async () => {
+  it("un temporaire laissé par une coupure n'est jamais relu comme carte, ni effacé (un autre appareil peut être en train de l'écrire)", async () => {
     dialog.open.mockResolvedValue("D:\\Écriture\\Phare");
     await tauriStorage.pickFolder();
     fsPlugin.readDir.mockImplementation((async (dir: string) =>
@@ -222,8 +222,7 @@ describe("écriture sûre (temporaire puis renommage)", () => {
     const files = await tauriStorage.readAll();
     expect(Object.keys(files!).sort()).toEqual(["cartes/a.md", "cosmos.json"]);
     expect(fsPlugin.readTextFile).not.toHaveBeenCalledWith(expect.stringContaining("mondowrite-tmp"));
-    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Écriture\\Phare\\cartes\\b.md.mondowrite-tmp");
-    expect(fsPlugin.remove).toHaveBeenCalledWith("D:\\Écriture\\Phare\\cosmos.json.mondowrite-tmp");
+    expect(fsPlugin.remove).not.toHaveBeenCalledWith("D:\\Écriture\\Phare\\cartes\\b.md.mondowrite-tmp");
     expect(isProjectFilePath("cartes/b.md.mondowrite-tmp")).toBe(false);
     fsPlugin.readDir.mockReset();
     fsPlugin.readDir.mockImplementation(async () => []);
