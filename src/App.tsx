@@ -21,6 +21,7 @@ import { fmt, useT } from "./i18n";
 import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
 import { ConflictNotice } from "./components/ConflictNotice";
+import { RetroInvite } from "./components/StructureTools";
 import { Carnet } from "./components/Carnet";
 import { shownView, usePhone } from "./components/usePhone";
 
@@ -239,6 +240,7 @@ export function App() {
           </div>
         )}
         <ConflictNotice />
+        <RetroInvite />
         <main className="app-main">
           {view === "toile" && <Toile />}
           {view === "carnet" && <Carnet />}

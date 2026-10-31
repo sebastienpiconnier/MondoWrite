@@ -266,3 +266,55 @@ Champs permis (`SHEET_DRAFT_FIELDS`), parmi les vides : accroche, rôle, âge, m
 **Données** : nom, notes (1 500 caractères), fiche, au plus 30 fils (étiquette, titre et type de la carte au bout).
 
 **Ce que MondoWrite garde** (`parseSheetDraft`) : seulement les champs permis et demandés, 400 caractères au plus (60 pour l'âge). Acceptés un à un comme la description d'une photo ; marqués par `ia` dans la carte, retirés au premier changement de l'auteur.
+
+## Structure et Bible (lot IA 2, 1.9.0)
+
+Quatre aides du mode par défaut : elles proposent, l'auteur coche ou clique. Consignes et lecteurs dans `src/ai/structure.ts`, ce qui est lu du projet dans `src/structureSources.ts`, interface dans `src/components/StructureTools.tsx` (et `AiMenu.tsx` pour Ranger les fils). Règle commune de ces lecteurs : toute proposition qui s'appuie sur le texte cite un passage (`quote`), retrouvé dans le texte de l'auteur par `locate` (vrac.ts : casse, accents, espaces et ponctuation repliés ; au moins huit lettres ou chiffres) ; c'est le passage d'origine qui est montré, et une proposition sans passage retrouvé est écartée (le nombre d'écartées est dit à l'auteur).
+
+### S1. Ranger les fils
+
+Menu IA, « Ranger les fils ».
+
+```
+You help a writer connect the cards of a {novel | screenplay}. Each card has an id, a type, a title and the writer's text. Find links that are missing between two cards: only when the writer's text already states the connection (for example "Inès works at the lighthouse" links Inès to the lighthouse). Never guess, never infer a link the text does not state. Leave out pairs that already appear in "links", in either direction. Give each link a short label of 1 to 4 words in {langue}, read from the first card to the second (for example: « travaille à », « frère de », « se passe à »). For each link, copy in "quote" the exact words of the writer's text that state it: a short continuous excerpt (5 to 25 words), copied word for word from the text of one of the two cards. {règle commune : nameRule} Answer with a JSON object only: {"items": [{"from": "<card id>", "to": "<card id>", "label": "<label>", "quote": "<exact excerpt>"}]}. Use the card ids exactly as given. At most 30 links. If no link is missing, answer {"items": []}.
+```
+
+**Données** (`wireCandidates`) : les cartes qui ont un titre (ni Image ni Document), au plus 80 et 30 000 caractères ; texte = notes, valeurs de la fiche et, pour une scène, synopsis et texte (manuscrit ou corps Fountain), 700 caractères ; les fils existants entre ces cartes.
+
+**Ce que MondoWrite garde** (`parseWires`) : deux cartes envoyées et distinctes (identifiant, ou titre exact à défaut), jamais une paire déjà reliée dans un sens ou l'autre ni deux fois la même paire, une étiquette d'une ligne (40 caractères, cartes nommées par `nameCards`), la citation retrouvée dans le titre ou le texte de l'une des deux cartes. « Tirer ce fil » : `linkCards` ; « Tirer tous les fils » : `addWires`, une étape d'historique.
+
+### S2. Une question pour une case vide du gabarit
+
+Plan d'un roman et séquencier d'un scénario, sous chaque case de gabarit sans scène : « Une question ».
+
+```
+You help a writer plan a {novel | screenplay} with a structure template ({nom du gabarit}). One beat of the template has no scene yet. Ask ONE open question that helps the writer find what could happen in this beat, specific to this story: use the neighbouring beats, their scenes and the characters. Do not answer it, do not suggest a scene, do not invent facts, names or events. {règle commune : nameRule} Answer with a JSON object only: {"question": "<one sentence in {langue}, ending with a question mark>", "cards": ["<id of a character the question is about>"]}. "cards" may be empty.
+```
+
+**Données** (`beatContext`) : la case vide (nom et aide, par `beatText`, case de l'auteur comprise), les deux cases avant et après avec leurs scènes (titre, synopsis de 300 caractères, six au plus), toute la structure (nom et nombre de scènes de chaque case, `templateBeats`), les personnages principaux (sinon les huit premiers : accroche, rôle, objectif), la logline de la couverture.
+
+**Ce que MondoWrite garde** (`parseBeatQuestion`) : une question (une phrase qui contient « ? », 300 caractères), les cartes citées seulement si elles existent (ou nommées par leur titre dans la question). « Garder » : une carte Question reliée à ces cartes (`addQuestionAbout`), sinon rien.
+
+### S3. Rétro-bible : ce que le texte en dit
+
+Bible, fiche d'un personnage ou d'un lieu : « Ce que le texte en dit ». Ce n'est pas le mode Atelier : la valeur est une note courte tirée du texte de l'auteur, fondée sur une citation.
+
+```
+You help a writer fill the story bible of a {novel | screenplay} from what their own text already says. You read excerpts about one {character | place | location}. For each field listed in "fields", give a value ONLY if the excerpts state it clearly. Never guess, never infer from hints, never invent. Leave out a field the excerpts do not state. A value is a short note in {langue} (a few words, at most one sentence), close to the writer's words. For each value, copy in "quote" the exact words of the excerpts that state it: a short continuous excerpt (5 to 30 words), copied word for word. Answer with a JSON object only: {"items": [{"field": "<field key>", "value": "<value>", "quote": "<exact excerpt>"}]}. Use the field keys exactly as given. If the excerpts state nothing, answer {"items": []}.
+```
+
+**Données** : le nom, les champs VIDES permis (`RETRO_FIELDS` : personnage rôle, genre, âge, métier, surnoms, origine, apparence, personnalité, voix, objectif, peur, secret, relations ; lieu époque, ambiance, ce qui s'y passe ; jamais une interprétation ni un champ à choix), avec leur libellé ; les paragraphes du récit qui nomment la carte (titre, prénom, surnoms, `namesOf` ; pour un décor, aussi les trois premières actions des scènes dont l'en-tête est ce lieu), en paquets de 9 000 caractères, six paquets au plus (« Lecture du texte : partie 2 sur 5… », Annuler ; au-delà, l'auteur est prévenu).
+
+**Ce que MondoWrite garde** (`parseRetro`, `mergeRetro`) : seulement les champs demandés, une valeur d'une ligne (240 caractères), la citation retrouvée dans le paquet ; trois valeurs différentes au plus par champ. Chaque proposition s'accepte à part (« Ajouter à la fiche », `setFiche`, seulement si le champ est encore vide) ou s'ignore. Après l'import d'un manuscrit, un bandeau invite à s'en servir (`retroInvite`, jamais enregistré).
+
+### S4. Dépouillement d'un scénario
+
+Fiche d'une scène de scénario (Bible, carte agrandie), « Dépouiller cette scène » ; fenêtre Statistiques, onglet « Dépouillement », « Dépouiller tout le scénario ».
+
+```
+You help a screenwriter break down a screenplay for production. For each scene, read its action lines and list the elements a production team must prepare, in five categories: accessoires (props: objects handled or used by characters); costumes (wardrobe: clothes, uniforms, make-up that the action describes); figurants (extras: background people, crowds, unnamed passers-by (not speaking characters)); vehicules (vehicles: cars, boats, bikes, aircraft); effets (effects: special or visual effects, stunts, weather, fire, explosions, sound effects). List only what the action lines actually mention, never what a scene might need. One element per entry, named in a few words in the language of the screenplay. For each entry, copy in "quote" the exact words of the scene's action lines that mention it (3 to 20 words, copied word for word). Answer with a JSON object only: {"items": [{"scene": "<scene id>", "category": "<category key>", "entry": "<element>", "quote": "<exact excerpt>"}]}. Use the scene ids and category keys exactly as given. If nothing needs preparing, answer {"items": []}. Write in {langue} only if the screenplay is in {langue}.
+```
+
+**Données** (`breakdownScenes`, `breakdownBatches`) : les scènes reliées à une carte, en-tête et lignes d'action seulement (jamais les répliques), en lots de 8 000 caractères et douze scènes au plus (« Lecture des scènes : lot 2 sur 4… », Annuler).
+
+**Ce que MondoWrite garde** (`parseBreakdown`) : une scène du lot, une des cinq catégories, une entrée d'une ligne (80 caractères) qui n'est pas déjà dans la fiche de la scène ni proposée deux fois (casse et accents ignorés), la citation retrouvée dans les lignes d'action de cette scène. Propositions cochées d'office ; « Ajouter les éléments cochés » les met dans les champs `accessoires`, `costumes`, `figurants`, `vehicules`, `effets` de la fiche (une entrée par ligne, `addBreakdown`, une étape d'historique).

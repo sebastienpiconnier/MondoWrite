@@ -19,6 +19,7 @@ import { Timeline } from "./Timeline";
 import { StoryCircle } from "./StoryCircle";
 import { TemplatePicker } from "./TemplatePicker";
 import { useBeatText } from "./useBeatText";
+import { BeatQuestion } from "./StructureTools";
 
 /** Valeur du menu « Ranger dans » pour une scène sortie du plan. */
 const UNPLACED = "";
@@ -321,6 +322,8 @@ export function Plan() {
               {beat.ids.length > 0 && <span className="plan-count">{beat.ids.length}</span>}
             </h2>
             {beatInfo(beat.key).hint && <p className="plan-beat-hint">{beatInfo(beat.key).hint}</p>}
+            {/* Case vide d'un gabarit (IA branchée) : une question sur mesure, à garder en carte Question. */}
+            {!free && beat.ids.length === 0 && <BeatQuestion beatKey={beat.key} />}
             {groupByChapter(plan, beat.ids).map((group) => {
               const list = <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{group.ids.map((id) => scene(id, beat.key, beat.ids.indexOf(id)))}</ol>;
               if (!group.chapter) return <div key={`loose-${group.ids[0]}`}>{list}</div>;

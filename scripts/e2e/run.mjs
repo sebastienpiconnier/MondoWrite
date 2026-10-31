@@ -483,6 +483,48 @@ const scenarios = [
     },
   },
   {
+    name: "IA : ranger les fils, fil proposé avec son passage, tiré sur le canevas, Ctrl+Z",
+    async run(h) {
+      const { page } = h;
+      // Un service branché (Claude) et une réponse fabriquée : rien ne sort vers Internet.
+      await page.addInitScript(() => localStorage.setItem("cosmos:reglages", JSON.stringify({ ai: { provider: "anthropic", keys: { anthropic: "sk-test" }, models: {}, urls: {} } })));
+      let asked = null;
+      await page.route("https://api.anthropic.com/**", async (route) => {
+        asked = JSON.parse(route.request().postData() ?? "{}");
+        const { cards } = JSON.parse(asked.messages[0].content);
+        const id = (title) => cards.find((c) => c.title === title)?.id;
+        const items = [
+          { from: id("Inès Morvan"), to: id("Le phare de Kerbrat"), label: "travaille à", quote: "Inès travaille au phare de Kerbrat" },
+          // Passage inventé : écarté par la relecture.
+          { from: id("Yann"), to: id("Inès Morvan"), label: "frère de", quote: "Yann est le frère aîné d'Inès" },
+        ];
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ items }) }] }) });
+      });
+      await h.create("Fils");
+      await h.newCard("Inès Morvan");
+      await page.keyboard.press("Enter");
+      await h.wait(200);
+      await page.keyboard.type("Inès travaille au phare de Kerbrat depuis l'hiver.");
+      await h.newCard("Le phare de Kerbrat");
+      await h.newCard("Yann");
+      await h.pane();
+      await page.getByRole("button", { name: "IA", exact: true }).click();
+      await page.getByRole("button", { name: "Ranger les fils" }).click();
+      const quote = page.locator(".ai-quote", { hasText: "Inès travaille au phare de Kerbrat" });
+      await until(() => quote.isVisible(), "le fil proposé et son passage n'apparaissent pas");
+      assert(asked?.max_tokens > 0, "pas de limite de longueur");
+      await until(() => page.getByText(/1 proposition\(s\) écartée\(s\)/).isVisible(), "le passage inventé n'est pas signalé comme écarté");
+      assert((await h.edges().count()) === 0, "un fil est tiré avant le clic de l'auteur");
+      await page.getByRole("button", { name: "Tirer ce fil" }).click();
+      await until(async () => (await h.edges().count()) === 1, "le fil n'est pas tiré sur le canevas");
+      await until(() => page.locator(".react-flow__edgelabel-renderer, .react-flow").getByText("travaille à", { exact: true }).first().isVisible(), "l'étiquette du fil n'est pas affichée");
+      await page.keyboard.press("Escape");
+      await h.pane();
+      await page.keyboard.press("Control+z");
+      await until(async () => (await h.edges().count()) === 0, "Ctrl+Z ne retire pas le fil");
+    },
+  },
+  {
     name: "tactile (iPad 834 × 1194) : exemple ouvert, « Nouvelle carte » crée une carte",
     context: { viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
     async run(h) {

@@ -23,6 +23,7 @@ import { Timeline } from "./Timeline";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
 import { useBeatText } from "./useBeatText";
+import { BeatQuestion } from "./StructureTools";
 import { StoryCircle } from "./StoryCircle";
 
 const MODES: SequencerMode[] = ["outline", "cards"];
@@ -93,6 +94,8 @@ export function Sequencier() {
     const plan = screenplayPlan(screenplay.elements);
     return plan.template === "libre" ? [] : templateBeats(plan.template, plan.custom);
   }, [screenplay.elements]);
+  // Scènes rangées dans chaque case : une case vide reçoit « Une question » (IA branchée).
+  const beatScenes = useMemo(() => screenplayPlan(screenplay.elements).beats, [screenplay.elements]);
   const labelOf = (text: string) => {
     const key = beatOf(text);
     return key && key in t.plan.beats ? t.plan.beats[key as PlanBeat].label : sectionLabel(text);
@@ -194,6 +197,7 @@ export function Sequencier() {
                     {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}
                     {beatOf(block.text) && beatInfo(beatOf(block.text)!).hint && <span className="sq-section-hint">{beatInfo(beatOf(block.text)!).hint}</span>}
                   </span>
+                  {beatKeys.includes(beatOf(block.text) ?? "") && !beatScenes[beatOf(block.text)!]?.length && <BeatQuestion beatKey={beatOf(block.text)!} />}
                   {(sectionPages.get(i) ?? 0) > 0 && (
                     <span className="sq-section-length">
                       {fmt(sp.lengthShort, { n: number.format(sectionPages.get(i)!) })}

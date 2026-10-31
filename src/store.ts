@@ -36,7 +36,8 @@ import { mapTexts, relabelMentions, removeMentions, renameMentions } from "./men
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
 import { interviewKey, isParked, placeAnswer } from "./assistant";
-import { addQuestion, removeQuestion, setFicheField, type SheetField } from "./character";
+import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
+import { addEntries, breakdownEntries } from "./ai/structure";
 import { EMPTY_PLAN, beatText, withKeys, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
 import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { organize, reorderSlots } from "./organize";
@@ -504,6 +505,18 @@ export interface CosmosState {
    * (ajoutée à la suite si la même question a déjà une autre réponse gardée). Une étape d'annulation.
    */
   keepInterviewAnswer: (id: string, question: string, answer: string) => void;
+
+  // ---------- Structure et Bible (lot IA 2, 1.9.0 ; ai/structure.ts) ----------
+  /** « Ranger les fils » : tire les fils acceptés (jamais entre deux cartes déjà reliées), en une étape. Rend le nombre tiré. */
+  addWires: (links: { from: string; to: string; label: string }[]) => number;
+  /**
+   * Dépouillement : ajoute les entrées cochées aux champs des cartes Scène (une par ligne, sans doublon), en une
+   * étape. Rend le nombre d'entrées ajoutées.
+   */
+  addBreakdown: (items: { scene: string; field: BreakdownField; entry: string }[]) => number;
+  /** Invitation à la rétro-bible après l'import d'un manuscrit. État d'affichage, jamais enregistré. */
+  retroInvite: boolean;
+  setRetroInvite: (on: boolean) => void;
 }
 
 /** Ce qu'une annulation restaure. Les réglages du projet (titre, type, format) n'en font pas partie. */
@@ -943,6 +956,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       filter: NO_FILTER,
       expandedId: null,
       cardMenu: null,
+      retroInvite: false,
       screen: "project",
       view: "toile",
       focusId: null,
@@ -2093,6 +2107,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,
+        retroInvite: false,
         screen: "project",
         view: "toile",
         focusId: null,
@@ -2198,6 +2213,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,
+        // Manuscrit importé : la Bible peut se remplir de ce que le texte dit déjà (rétro-bible).
+        retroInvite: true,
         screen: "project",
         view: "manuscrit",
         focusId: null,
@@ -2772,6 +2789,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         filter: NO_FILTER,
         expandedId: null,
         cardMenu: null,
+        retroInvite: false,
         loaded: true,
         screen: "project",
         view: "toile",
@@ -2925,6 +2943,56 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record();
       get().setReponse(id, key, before ? `${before}\n${text}` : text);
     },
+
+    // ---------- Structure et Bible (lot IA 2, 1.9.0) ----------
+    // L'IA a proposé, l'auteur a coché : chaque acceptation est une action, une étape d'historique.
+    addWires: (links) => {
+      const known = new Set(get().nodes.map((n) => n.id));
+      let edges = get().edges;
+      const touched = new Set<string>();
+      for (const l of links) {
+        if (!known.has(l.from) || !known.has(l.to) || l.from === l.to) continue;
+        if (edges.some((e) => (e.source === l.from && e.target === l.to) || (e.source === l.to && e.target === l.from))) continue;
+        edges = addEdge({ id: newId(), source: l.from, target: l.to, sourceHandle: null, targetHandle: null, label: l.label.trim().slice(0, 60), type: "floating" }, edges);
+        touched.add(l.from).add(l.to);
+      }
+      if (edges === get().edges) return 0;
+      record();
+      const added = edges.length - get().edges.length;
+      // Une carte du Carnet reliée est rangée, comme par linkCards.
+      set({ edges, nodes: fileCards(get().nodes, touched) });
+      touch();
+      return added;
+    },
+    addBreakdown: (items) => {
+      const byScene = new Map<string, Map<BreakdownField, string[]>>();
+      for (const item of items) {
+        const fields = byScene.get(item.scene) ?? new Map<BreakdownField, string[]>();
+        fields.set(item.field, [...(fields.get(item.field) ?? []), item.entry]);
+        byScene.set(item.scene, fields);
+      }
+      let added = 0;
+      const nodes = get().nodes.map((n) => {
+        const fields = byScene.get(n.id);
+        if (!fields || n.data.type !== "scene") return n;
+        let fiche = n.data.fiche;
+        for (const [field, entries] of fields) {
+          const before = fiche?.[field] ?? "";
+          const next = addEntries(before, entries);
+          if (next === before) continue;
+          added += breakdownEntries(next).length - breakdownEntries(before).length;
+          fiche = setFicheField(fiche, field, next);
+        }
+        return fiche === n.data.fiche ? n : { ...n, data: { ...n.data, fiche } };
+      });
+      if (added === 0) return 0;
+      record();
+      set({ nodes });
+      touch();
+      return added;
+    },
+    retroInvite: false,
+    setRetroInvite: (retroInvite) => set({ retroInvite }),
     // ---------- Mode Atelier (1.8.0) ----------
     // L'IA propose, l'auteur accepte : chaque acceptation est une action (une étape d'historique quand elle touche
     // des cartes, le scénario ou le manuscrit), marque ce qui vient de l'IA et ajoute sa ligne au journal. Le

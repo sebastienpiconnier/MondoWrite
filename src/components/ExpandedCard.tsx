@@ -8,6 +8,7 @@ import { useCosmos } from "../store";
 import { typeColor, type CardData } from "../types";
 import { BibleBody } from "./BibleBody";
 import { CardSheet } from "./CardSheet";
+import { BreakdownSheet } from "./StructureTools";
 import { useMediaUrl } from "./useMediaUrl";
 import { DraftEditor } from "./SceneDraft";
 import { SynopsisSuggest, novelSceneText } from "./Atelier";
@@ -58,6 +59,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
           <section className="expanded-draft" aria-label={t.draft.heading}>
             <ScriptSceneEditor card={card} />
           </section>
+          {!card.page && <BreakdownSheet card={card} />}
           <button
             type="button"
             className="link-button expanded-open"
