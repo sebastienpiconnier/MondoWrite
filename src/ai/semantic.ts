@@ -12,8 +12,8 @@ import type { CardData, CardType } from "../types";
 import { plainText } from "../search";
 import { AiError, PROVIDERS, base, headers, send, type AiConfig, type AiProvider, type HttpRequest } from "./providers";
 
-/** La recherche par le sens n'est offerte qu'avec un service qui tourne sur la machine. */
-export const canEmbed = (provider: AiProvider | null | undefined): boolean => !!provider && PROVIDERS[provider].local;
+/** La recherche par le sens n'est offerte qu'avec un service qui tourne sur la machine (pas le modèle d'Apple, `device` : le système n'en donne pas de vecteurs). */
+export const canEmbed = (provider: AiProvider | null | undefined): boolean => !!provider && PROVIDERS[provider].local && !PROVIDERS[provider].device;
 
 /** Modèle d'embedding proposé d'office : le premier dont le nom contient « embed » (nomic-embed-text, bge-m3 n'en a pas). */
 export function proposeEmbedModel(models: string[]): string {

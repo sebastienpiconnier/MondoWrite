@@ -19,7 +19,8 @@ import { allQuestionTexts } from "../assistant";
 import { AiReviewActions } from "./AiReview";
 import { parseWires, wireCandidates, wiresPrompt, type WireSuggestion } from "../ai/structure";
 import { wireCards } from "../structureSources";
-import { coherencePrompt, parseCoherence, type CardNames, parseTidy, TIDY_MAX, tidyCandidates, tidyLeftOut, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
+import { clip, coherencePrompt, parseCoherence, type CardNames, parseTidy, TIDY_MAX, tidyCandidates, tidyLeftOut, tidyPrompt, type CoherenceAlert, type TidySuggestion } from "../ai/tasks";
+import { allows, packBudget, takeWithin } from "../ai/limits";
 
 type Result = { kind: "tidy"; items: TidySuggestion[] } | { kind: "coherence"; items: CoherenceAlert[] } | { kind: "wires"; items: WireSuggestion[] } | null;
 
@@ -40,6 +41,8 @@ export function AiMenu() {
   const [result, setResult] = useState<Result>(null);
   // Idées que « Ranger » n'a pas regardées (au-delà de TIDY_MAX), dites sous le résultat.
   const [leftOut, setLeftOut] = useState(0);
+  // Idées regardées (TIDY_MAX, ou moins pour un petit modèle).
+  const [tidySent, setTidySent] = useState(TIDY_MAX);
   // Fils proposés sans passage retrouvé dans le texte de l'auteur (écartés).
   const [rejected, setRejected] = useState(0);
   // Annulation de l'action en cours par l'auteur.
@@ -84,8 +87,15 @@ export function AiMenu() {
     setLeftOut(0);
     setRejected(0);
     if (task === "tidy" && tidyCandidates(cards).length === 0) return setMessage(t.tidyNone);
+    // Petit modèle (Apple sur l'appareil, ai/limits.ts) : seulement les premières idées qui tiennent dans son budget,
+    // les autres comptées dans « non regardées ». Les autres services : le budget propre à Ranger.
+    const candidates = tidyCandidates(cards);
+    const tidyKept = new Set(takeWithin(candidates, (c) => JSON.stringify({ id: c.id, title: c.title, text: clip(plainText(c.html)) }).length, packBudget(config.provider, Infinity)).map((c) => c.id));
+    const tidyCards = cards.filter((c) => !candidates.some((x) => x.id === c.id) || tidyKept.has(c.id));
     // « Ranger les fils » (1.9.0) : il faut au moins deux cartes nommées.
-    const wired = task === "wires" ? wireCards(useCosmos.getState(), lang) : [];
+    const allWired = task === "wires" ? wireCards(useCosmos.getState(), lang) : [];
+    const wiredKept = new Set(takeWithin(wireCandidates(allWired), (c) => JSON.stringify(c).length, packBudget(config.provider, Infinity)).map((c) => c.id));
+    const wired = allWired.filter((c) => wiredKept.has(c.id));
     if (task === "wires" && wireCandidates(wired).length < 2) return setMessage(all.structure.wiresFew);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -103,10 +113,11 @@ export function AiMenu() {
         setRejected(found.rejected);
         setMessage(found.items.length === 0 ? all.structure.wiresNone : "");
       } else if (task === "tidy") {
-        const prompt = tidyPrompt(cards, lang, kind);
-        const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000, signal }), cards, names);
+        const prompt = tidyPrompt(tidyCards, lang, kind);
+        const items = parseTidy(await complete(config, prompt.system, prompt.user, { json: true, maxTokens: 3000, signal }), tidyCards, names);
         setResult({ kind: "tidy", items });
-        setLeftOut(tidyLeftOut(cards));
+        setLeftOut(tidyLeftOut(cards) + candidates.length - tidyKept.size);
+        setTidySent(tidyKept.size);
         setMessage(items.length === 0 ? t.tidyEmpty : "");
       } else {
         // Le texte des scènes vit dans le manuscrit ou le scénario, pas dans leur carte.
@@ -169,10 +180,11 @@ export function AiMenu() {
             {t.tidy}
           </button>
           <p className="settings-hint">{t.tidyHint}</p>
-          <button type="button" className="ghost-button" disabled={busy} onClick={() => void run("coherence")}>
+          {/* Tout le projet en un envoi : refusé au petit modèle d'Apple (ai/limits.ts), avec la raison. */}
+          <button type="button" className="ghost-button" disabled={busy || !allows(config.provider, "coherence")} onClick={() => void run("coherence")}>
             {t.coherence}
           </button>
-          <p className="settings-hint">{t.coherenceHint}</p>
+          <p className="settings-hint">{allows(config.provider, "coherence") ? t.coherenceHint : all.apple.refused}</p>
           <button type="button" className="ghost-button" disabled={busy} onClick={() => void run("wires")}>
             {all.structure.wires}
           </button>
@@ -206,7 +218,7 @@ export function AiMenu() {
               {t.cancel}
             </button>
           )}
-          {result?.kind === "tidy" && leftOut > 0 && <p className="settings-hint">{fmt(t.tidyLeftOut, { max: TIDY_MAX, n: leftOut })}</p>}
+          {result?.kind === "tidy" && leftOut > 0 && <p className="settings-hint">{fmt(t.tidyLeftOut, { max: tidySent, n: leftOut })}</p>}
 
           {result?.kind === "tidy" && result.items.length > 0 && (
             <>

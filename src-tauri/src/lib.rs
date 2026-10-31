@@ -1,3 +1,6 @@
+/// Apple Foundation Models : modèle d'Apple Intelligence sur l'appareil (commandes fm_*, pont Swift sur Apple).
+mod apple_fm;
+
 /// Conteneur iCloud de l'app (déclaré dans les droits iOS, et dans ceux du Mac quand la Release est signée avec un
 /// profil qui porte iCloud : voir docs/icloud-mac.md).
 #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -290,7 +293,15 @@ async fn cloud_restore(app: tauri::AppHandle, bookmark: String) -> Option<CloudF
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![icloud_container, icloud_download, cloud_pick_folder, cloud_restore])
+    .invoke_handler(tauri::generate_handler![
+      icloud_container,
+      icloud_download,
+      cloud_pick_folder,
+      cloud_restore,
+      apple_fm::fm_availability,
+      apple_fm::fm_complete,
+      apple_fm::fm_cancel
+    ])
     // Lecture/écriture du dossier projet (cosmos.json + cartes/*.md)
     .plugin(tauri_plugin_fs::init())
     // Sélecteur de dossier natif

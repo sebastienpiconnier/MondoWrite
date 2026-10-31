@@ -175,7 +175,7 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
         <div className="image-gen-row">
           <div className="photos-sources image-gen-count" role="group" aria-label={g.countLabel}>
             {Array.from({ length: IMAGE_MAX }, (_, i) => i + 1).map((n) => (
-              <button key={n} type="button" aria-pressed={n === count} aria-label={fmt(g.countOption, { n })} className={n === count ? "is-on" : ""} disabled={busy !== ""} onClick={() => setCount(n)}>
+              <button key={n} type="button" aria-pressed={n === count} aria-label={n === 1 ? g.countOne : fmt(g.countOption, { n })} className={n === count ? "is-on" : ""} disabled={busy !== ""} onClick={() => setCount(n)}>
                 {n}
               </button>
             ))}
