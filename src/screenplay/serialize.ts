@@ -25,8 +25,11 @@ export function serialize(screenplay: Screenplay): string {
     );
   if (title.length > 0) blocks.push(title.join("\n"));
 
-  // Un élément vide (l'auteur vient de créer la ligne) ne s'écrit pas.
-  const elements = screenplay.elements.filter((el) => el.type === "pageBreak" || el.text !== "");
+  // Un élément vide (l'auteur vient de créer la ligne) ne s'écrit pas. Les retours en tête d'une réplique
+  // (Maj+Entrée au début) feraient une ligne vide sous le nom, qui ne serait plus relu comme un personnage.
+  const elements = screenplay.elements
+    .map((el) => (el.type === "dialogue" && el.text.startsWith("\n") ? { ...el, text: el.text.replace(/^\n+/, "") } : el))
+    .filter((el) => el.type === "pageBreak" || el.text !== "");
   let body = "";
   // Sans page de titre, une première action « Title: … » serait relue comme page de titre.
   const first = elements[0];
@@ -53,8 +56,13 @@ function line(el: ScreenplayElement, next: ScreenplayElement | undefined): strin
       const number = el.sceneNumber ? ` #${el.sceneNumber}#` : "";
       return `${dot}${el.text}${link}${number}`;
     }
-    case "action":
-      return el.forced || actionNeedsForcing(el.text) ? `!${el.text}` : el.text;
+    case "action": {
+      const [head, ...rest] = el.text.split("\n");
+      // Une ligne suivante qui ouvrirait un élément de structure (# section, = synopsis, /* … , [[note]]) est
+      // forcée elle aussi : le parseur retire ce « ! » (voir readAction).
+      const body = [head, ...rest.map((l) => (l.startsWith("!") || startsStructure(l) ? `!${l}` : l))].join("\n");
+      return el.forced || actionNeedsForcing(el.text) ? `!${body}` : body;
+    }
     case "character": {
       // Sans réplique derrière lui, un nom en majuscules serait relu comme de l'action.
       const spoken = next !== undefined && SPEECH.has(next.type);

@@ -19,7 +19,8 @@ export function wrap(text: string, width: number): string[] {
   const out: string[] = [];
   for (const line of text.split("\n")) {
     let current = "";
-    for (const word of line.split(/\s+/)) {
+    // Les espaces insécables (« viens ? », « Non ! ») ne coupent pas : sinon « ? » commencerait une ligne.
+    for (const word of line.split(/[^\S\u00a0\u202f\u2007]+/)) {
       if (word === "") continue;
       if (current !== "" && current.length + 1 + word.length <= width) {
         current += ` ${word}`;

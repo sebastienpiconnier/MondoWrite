@@ -30,8 +30,24 @@ export interface CharacterRow {
 /** Mots d'une réplique (la ponctuation seule, « ? » ou « — », n'en est pas un). */
 const spokenWords = (text: string) => text.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 
-/** Noms par lesquels une carte Personnage est désignée : titre et surnoms. */
-export const cardNames = (card: CardData) => [card.title, ...(card.fiche?.surnoms ?? "").split(/[,;]/)].map((n) => n.trim()).filter(Boolean);
+/** Articles qu'on ne prend jamais pour un prénom (« Les Thénardier », « The Mother »). */
+const ARTICLES = new Set(["LES", "UNE", "DES", "THE", "AUX"]);
+
+/**
+ * Prénom d'usage d'un personnage : « HUGO » pour « Hugo Le Bris », celui que propose la complétion du scénario
+ * (premier mot d'au moins trois lettres, jamais un article). Null si une autre carte Personnage porte le même.
+ */
+export function usageName(card: CardData, cards: CardData[] = []): string | null {
+  const words = card.title.trim().split(/\s+/);
+  const first = foldName(words[0] ?? "");
+  if (words.length < 2 || first.length < 3 || ARTICLES.has(first)) return null;
+  const shared = cards.some((c) => c.id !== card.id && c.type === "personnage" && (foldName(c.title.trim().split(/\s+/)[0] ?? "") === first || foldName(c.title) === first));
+  return shared ? null : words[0];
+}
+
+/** Noms par lesquels une carte Personnage est désignée : titre, prénom d'usage (voir `usageName`) et surnoms. */
+export const cardNames = (card: CardData, cards: CardData[] = []) =>
+  [card.title, usageName(card, cards) ?? "", ...(card.fiche?.surnoms ?? "").split(/[,;]/)].map((n) => n.trim()).filter(Boolean);
 
 /** Scénario : une ligne par carte Personnage, plus les noms qui parlent sans carte. */
 export function screenplayReport(elements: ScreenplayElement[], cards: CardData[], locale = "fr"): CharacterRow[] {
@@ -68,7 +84,7 @@ export function screenplayReport(elements: ScreenplayElement[], cards: CardData[
   const covered = new Set<string>();
   for (const card of cards) {
     if (card.type !== "personnage" || !card.title.trim()) continue;
-    const names = cardNames(card);
+    const names = cardNames(card, cards);
     names.forEach((n) => covered.add(foldName(n)));
     rows.push(row(card.id, card.title.trim(), (card.fiche?.genre ?? "").trim(), names));
   }

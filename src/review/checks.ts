@@ -10,7 +10,7 @@ import type { CardData } from "../types";
 import { foldName, similarNames } from "./names";
 import { isPrincipal } from "../character";
 import { formOf, isSeriesForm, type Pitch } from "../pitch";
-import type { CharacterRow } from "./report";
+import { cardNames, type CharacterRow } from "./report";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
 export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
@@ -75,14 +75,10 @@ export function speakers(elements: ScreenplayElement[], locale = "fr"): Map<stri
   return out;
 }
 
-/** Une carte Personnage porte-t-elle ce nom (titre entier, ou un de ses surnoms) ? */
+/** Une carte Personnage porte-t-elle ce nom (titre entier, prénom d'usage ou un de ses surnoms) ? */
 const hasCard = (name: string, cards: CardData[]) => {
   const key = foldName(name);
-  return cards.some(
-    (c) =>
-      c.type === "personnage" &&
-      [c.title, ...(c.fiche?.surnoms ?? "").split(/[,;]/)].some((n) => n.trim() && foldName(n) === key),
-  );
+  return cards.some((c) => c.type === "personnage" && cardNames(c, cards).some((n) => foldName(n) === key));
 };
 
 /** Points à regarder dans un scénario. */

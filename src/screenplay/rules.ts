@@ -34,6 +34,17 @@ export const isNaturalTransition = (line: string): boolean => {
   return isUpper(s) && s.endsWith("TO:");
 };
 
+/**
+ * Une transition qu'on reconnaît à son texte, pour Entrée dans l'éditeur : en majuscules et finie par « : », avec
+ * « TO: » (règle Fountain), « À : » (« COUPE À : ») ou un mot de transition en tête (« FONDU AU NOIR : »).
+ * « FADE IN: » s'écrit à la marge de l'action (le parseur le relit en action) et « SILENCE : » est de l'action.
+ */
+export const isTransitionCue = (line: string): boolean => {
+  const s = line.trim();
+  if (s.includes("\n") || !isUpper(s) || !/:$/.test(s)) return false;
+  return isNaturalTransition(s) || /\sÀ\s?:$/u.test(s) || /^(COUPE|CUT|FONDU|ENCHAÎNÉ|DISSOLVE|SMASH CUT|MATCH CUT|JUMP CUT)\b/u.test(s);
+};
+
 /** Nom en majuscules ; les extensions entre parenthèses (V.O., cont'd) et le ^ final sont ignorés. */
 export const isNaturalCharacter = (line: string): boolean => {
   let name = line.trim().replace(/\s*\^$/, "");

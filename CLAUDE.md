@@ -476,6 +476,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **Réponses de l'auteur envoyées à l'IA** (1.7.3) : interview et cohérence joignent `answers` (`reponses`, question en clair par `allQuestionTexts`) ; l'interview met aussi ces questions dans `alreadyAsked`.
 - **Téléphone** (1.7.3) : pas de visite guidée (elle passe par le canevas et le Plan) : ni au lancement de l'exemple, ni dans les Réglages, et fermée si l'écran devient étroit. Réglages visibles à l'accueil (`.home-actions`), message de corbeille au-dessus des onglets ou du clavier.
 - **Espaces insécables de fr.ts** (1.7.4) : fine insécable (U+202F) avant `; ? !`, insécable (U+00A0) avant `:` et dans « », vérifié par un test ; tout texte d'un ancien projet comparé à une chaîne de fr.ts se compare espaces repliées (`adoptTextAnswers`), et un PDF dont la police n'a pas U+202F la remplace (`noThinSpace`, `printable`, PDF du scénario).
+- **Lignes d’une action** (1.7.4) : une ligne suivante qui commence par `!` ou ouvrirait un élément (`#`, `=`, `/*`, `[[…]]`, `> … <`) s’écrit précédée de `!`, que `readAction` retire ; une réplique ne s’écrit jamais avec des retours en tête (le nom ne serait plus relu comme personnage).
 
 ## Conventions
 
