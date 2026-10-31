@@ -92,17 +92,21 @@ export function CharacterInterrogation({ card, log, setLog }: { card: CardData; 
                 </p>
                 {e.unknown.length > 0 && <p className="interrogate-warn">{fmt(t.unknownName, { names: e.unknown.join(", ") })}</p>}
                 <div className="assistant-actions">
-                  <button
-                    type="button"
-                    disabled={kept}
-                    aria-label={kept ? undefined : fmt(t.keepAria, { question: e.question })}
-                    onClick={() => {
-                      keep(card.id, e.question, e.answer);
-                      setSaid(t.keptSaid);
-                    }}
-                  >
-                    {kept ? t.kept : t.keep}
-                  </button>
+                  {/* Gardée : un état écrit en clair, pas un bouton grisé (contraste trop faible pour un état). */}
+                  {kept ? (
+                    <span className="interrogate-kept">✓ {t.kept}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label={fmt(t.keepAria, { question: e.question })}
+                      onClick={() => {
+                        keep(card.id, e.question, e.answer);
+                        setSaid(t.keptSaid);
+                      }}
+                    >
+                      {t.keep}
+                    </button>
+                  )}
                 </div>
               </li>
             );

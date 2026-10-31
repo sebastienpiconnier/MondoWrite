@@ -163,3 +163,34 @@ You are {nom}, a character in a writer's {kind}. The writer is interviewing you 
 - Longueur demandée : 350 jetons (plus la marge de raisonnement hors Claude).
 
 **Ce que MondoWrite garde** (`parseInterrogation`) : du texte brut seulement (balises et Markdown retirés, préfixe « Nom : » ou « Réponse : », guillemets autour de la réponse et didascalie de tête retirés), 700 caractères au plus, coupé à une fin de phrase. Les noms propres de la réponse (mot à majuscule qui ne commence pas une phrase) qu'aucun texte du projet ne contient (consigne envoyée, titres et textes de toutes les cartes, question de l'auteur) sont signalés sous la réponse : « Ce nom n’existe pas encore dans ton projet ». Rien n'entre dans le projet sans « Garder » : la réponse va alors dans `reponses` du personnage sous la clé `i:<question de l'auteur>` (à la suite d'une réponse déjà gardée pour la même question), et paraît repliée sous la fiche avec la question en clair. L'interview, la synthèse et la cohérence la reçoivent comme les autres réponses.
+
+## 7. Du vrac aux cartes (1.8.0)
+
+Bouton IA › Du vrac aux cartes… (sur téléphone : Carnet › Découper avec l'IA, pour une note longue). Code : `src/ai/vrac.ts`, fenêtre `VracDialog`.
+
+L'auteur colle un texte en vrac (notes, compte rendu de brainstorm, dictée), au plus 8 000 caractères (au-delà, la fenêtre le dit et demande de le coller en plusieurs fois : la réponse recopie le texte, plus long elle dépasserait le délai des services). L'IA propose de le découper en cartes reliées par des fils. Le texte des cartes est celui de l'auteur, découpé, jamais réécrit : seul le titre vient de l'IA.
+
+**Consigne** (exemple pour un roman ; `{types}` est la liste des types du projet, sans Image, Lien ni Document, avec l'Épisode seulement pour une série) :
+
+```
+You help a writer turn raw notes for a novel (a brainstorm, a dictation, a list) into cards. Split the text into passages, one per card. Each card gets a type, a short title and its text. Types (use these keys only): idee (a loose idea that fits no other type); personnage (a character); lieu (a place or location); scene (a scene: something that happens at a given moment, only if the text really describes one); intrigue (a plot line or subplot running through several scenes); groupe (a group, family, organisation or faction); objet (an object that matters to the story); evenement (an event of the story world, past or offstage); regle (a rule of the story world: magic, society, technology); secret (a secret someone keeps); theme (a theme); question (an open question the writer asks themself). The "text" of a card MUST be copied word for word from the writer's text: an exact, continuous excerpt. Never rewrite, rephrase, summarise, correct, translate or complete it, and never add words. A passage goes in one card only. Leave out filler that belongs in no card. The "title" is the only thing you write: at most 6 words, in the language of the text, taken from the passage (for a character or a place, its name). Then suggest links between cards that the text itself connects (a character lives in a place, a secret is kept by someone), with an optional "label" of 1 to 4 words in {langue}. A link may also point to an existing card of the project, by its "id" from the list "existing" (for example when the text names a character who already has a card); do not create a new card for something that already has one, link to it instead. Answer with a JSON object only: {"cards": [{"key": "n1", "type": "<type>", "title": "<title>", "text": "<exact excerpt>"}], "links": [{"from": "<key or existing id>", "to": "<key or existing id>", "label": "<label>"}]}. Keys are "n1", "n2"… Use existing ids exactly as given. At most 40 cards. If nothing in the text makes a card, answer {"cards": [], "links": []}.
+```
+
+**Données** : le texte collé, et les cartes du projet qui ont un titre (identifiant, type, titre ; au plus 150), pour que l'IA puisse y tirer des fils.
+
+```json
+{"text":"Brainstorm du 12 mars.\nInès Morvan, gardienne remplaçante du phare…",
+ "existing":[{"id":"k3x9a7bq2m","type":"personnage","title":"Yann Le Goff"}]}
+```
+
+Réponse en JSON (`format: "json"` pour Ollama), limite de longueur `1500 + longueur du texte / 2` jetons (au plus 8 000), délai de 240 s pour un service en ligne.
+
+**Ce que MondoWrite garde** (`parseVrac`) :
+
+- chaque passage est cherché dans le texte collé, espaces, ponctuation, casse et accents repliés ; trouvé, c'est le passage d'origine, tel que l'auteur l'a écrit (avec sa ponctuation et sa marque de liste en tête de ligne), qui entre dans la carte, jamais le texte rendu par l'IA ; un mot changé au milieu est rattrapé en alignant le début et la fin du passage (longueur voisine), et c'est encore le texte d'origine qui est gardé ; sinon le passage est écarté, et la fenêtre dit combien ;
+- un passage déjà pris (ou contenu dans un autre) ne fait pas une seconde carte ; au plus 40 cartes ;
+- un type hors de la liste du projet (Image, Lien, Document, type inconnu) devient Idée : le texte reste à l'auteur ;
+- le titre est coupé à une ligne de 80 caractères ; vide, les premiers mots du passage ;
+- un fil relie deux cartes connues (clé d'une carte gardée, ou identifiant d'une carte du projet), dont au moins une nouvelle, sans boucle ni doublon ; son étiquette est coupée à 40 caractères, et un identifiant qui s'y glisserait devient « Titre (type) » (`nameCards`).
+
+L'auteur voit la liste : chaque carte cochée (case), son type et son titre modifiables, l'aperçu du texte ; les fils cochés, retirés d'office si une de leurs cartes est décochée. « Créer les cartes » les pose en une seule étape d'annulation (`createVracCards`), en grille, dans un espace libre près du centre de la vue, jamais sur une carte ni sur un cadre. Sur téléphone, elles vont dans « À ranger ». Une Scène range son texte comme toute carte qui devient Scène (manuscrit d'un roman, Fountain d'un scénario). Rien n'est créé sans ce clic.

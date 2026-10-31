@@ -137,6 +137,7 @@ src/
   tour.ts               Visite guidée : étapes et vue de chacune (données pures)
   platform.ts           isTauri, isTouch, isMobileOS
   keyboard.ts           Clavier virtuel : hauteur masquée (hiddenByKeyboard, pure, testée) et variable --keyboard-h sur <html> (watchKeyboard)
+  canvasCenter.ts       Centre de la vue du canevas (Toile s'y inscrit), pour une fenêtre ouverte hors de lui
   placement.ts          Emplacement libre pour une nouvelle carte (jamais de chevauchement à la création)
   search.ts             Recherche dans les cartes (titre et texte, sans casse ni accents) et dans le texte des scènes, fonction pure
   replace.ts            Rechercher et remplacer : texte d'un HTML d'éditeur (hors balises et mentions), éléments du scénario, projet entier (applyReplace), garde la casse (fonctions pures)
@@ -257,6 +258,7 @@ src/
     TemplatePicker.tsx  Choix du gabarit (Plan, séquencier) et éditeur de « Mes gabarits » (<dialog> natif) ; useBeatText.ts donne nom et aide d'une case, gabarit livré ou de l'auteur
     Timeline.tsx        Chronologie par intrigue (troisième présentation du Plan) : scènes en colonnes, cartes en lignes
     Sequencier.tsx      Vue Plan d'un scénario, en liste ou en fiches : gabarit, synopsis, personnages, longueur, réordonnancement
+    VracDialog.tsx      Fenêtre « Du vrac aux cartes » (dialogue `vrac`) : texte collé, propositions à cocher, « Créer les cartes »
     AiMenu.tsx          Bouton « IA » (si un service est branché) : Ranger les idées, Vérifier la cohérence
     StatsPanel.tsx      Fenêtre « Statistiques » : personnages, lieux, qui croise qui, int./ext. et jour/nuit (useProjectStats)
     BibleExportDialog.tsx Fenêtre « Exporter la Bible » : pour qui, parties (cocher, ranger), rendu, réglages nommés, PDF / Word / Markdown, aperçu du vrai PDF (pdf.js)
@@ -293,6 +295,7 @@ src/
   ai/                   IA facultative (rien n'est appelé tant que l'auteur n'a pas choisi un service)
     providers.ts        Services (Claude, OpenAI, OpenRouter, Ollama, LM Studio) : requêtes (plugin HTTP de Tauri, API native d'Ollama), lecture des réponses, erreurs
     image.ts            Photo préparée pour une IA qui lit les images (réduite, JPEG, base64)
+    vrac.ts             « Du vrac aux cartes » : consigne, relecture (passages retrouvés dans le texte de l'auteur, `locate`), fils gardés, grille (fonctions pures)
     tasks.ts            Consignes et relecture des réponses : Ranger, interview, synthèse, description d'un lieu, cohérence (fonctions pures), recopiées dans docs/prompts-ia.md
     interrogate.ts      « Interroger le personnage » : extraits bornés des scènes où il paraît, consigne en personnage, relecture (texte brut, noms propres inconnus du projet) (fonctions pures)
   export/               Exports du manuscrit et de la bible, fabriqués dans l'app (aucun outil externe)
@@ -413,6 +416,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 - **IA : réponses jamais crues sur parole** : tout ce qui revient d'un modèle passe par un `parse…` qui ne garde que des identifiants de cartes connus et des types valides. Ne jamais insérer une réponse comme HTML.
 - **IA : réglage de l'appareil** : service, clés, modèles et adresses vivent dans `settings.ai` (localStorage), jamais dans le projet. Une clé est donc lisible par qui a accès au profil de l'appareil : pas de trousseau système pour l'instant. Une adresse saisie ne vaut que pour les services locaux, jamais pour un service en ligne (la clé partirait ailleurs).
 - **IA : appels directs depuis l'app** : `fetch` vers le service, sans serveur intermédiaire. Tout nouveau service doit être ajouté à `connect-src` dans la CSP de `tauri.conf.json`, sinon l'exe refuse l'appel alors que le navigateur l'accepte. Les serveurs locaux ne sont autorisés que sur `localhost` et `127.0.0.1`.
+- **Du vrac aux cartes** (1.8.0, `ai/vrac.ts`) : le texte d'une carte n'est jamais celui que rend l'IA, toujours le passage d'origine retrouvé par `locate` (texte replié) ; introuvable, il est écarté. Au plus `VRAC_MAX` caractères (refusé au-delà, pas découpé en silence). Création par `createVracCards`, une étape, bloc posé par `placeFrame` (jamais sur un cadre), `inbox: true` sur téléphone ; une Scène passe par `updateCard` pour ranger son texte.
 - **IA : limite de longueur et adresse** (1.7.4) : tout service reçoit une limite (`max_completion_tokens` chez OpenAI, `max_tokens` ailleurs, `num_predict` chez Ollama), plus `THINKING_MARGIN` hors Claude, sinon un modèle qui raisonne rend une réponse vide ; un `/v1` final de l'adresse locale est retiré (`base`). Délai dépassé = code `timeout`, annulation = `cancelled` (signal de `ChatOptions`) : bouton « Annuler » dans le menu IA, la Galerie et l'assistant personnage, et requête arrêtée si le composant disparaît.
 - **Sélecteur Zustand** : `aiConfig(s.ai)` crée un objet à chaque appel. Sélectionner `s.ai` puis calculer dans un `useMemo`, sinon React boucle. Même règle pour tout sélecteur passé à `useCosmos` : il rend le même objet tant que rien ne change (constante pour un tableau vide, cache `WeakMap` sinon). `beatKeys` (FrameLabels) rendait un `[]` neuf pour un roman en gabarit libre : de la 1.7.0 à la 1.7.2, la fenêtre restait vide à l'ouverture d'un tel roman sur le canevas (test `selecteurs-stables`).
 - **Exports sans Pandoc** : le manuscrit et la bible sortent en Markdown, Word, EPUB et PDF par du code maison (`src/export/`), pour marcher aussi dans le navigateur et sur mobile. Un .docx et un .epub sont des ZIP de fichiers XML : `zip.ts` les écrit sans compression. Dans un EPUB, `mimetype` doit rester le premier fichier de l'archive.

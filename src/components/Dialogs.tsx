@@ -20,11 +20,12 @@ import { GoToPanel } from "./GoToPanel";
 import { ScriptPdfPanel } from "./ScriptPdfPanel";
 import { BibleExportDialog } from "./BibleExportDialog";
 import { ProfileDialog } from "./ProfileDialog";
+import { VracDialog } from "./VracDialog";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
 // Fenêtres qui ont leur propre bouton de fermeture : pas de « Fermer » en bas.
-const OWN_CLOSE = new Set(["document", "paperback", "scriptPdf", "bibleExport", "profile", "card", "stats"]);
+const OWN_CLOSE = new Set(["document", "paperback", "scriptPdf", "bibleExport", "profile", "card", "stats", "vrac"]);
 function hasCloseButton(dialog: string): boolean {
   return !OWN_CLOSE.has(dialog);
 }
@@ -65,7 +66,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -114,6 +115,7 @@ export function Dialogs() {
       {dialog === "profile" && <ProfileDialog onDone={() => setDialog(null)} />}
       {dialog === "document" && <DocumentViewer />}
       {dialog === "photos" && <PhotoSearch />}
+      {dialog === "vrac" && <VracDialog />}
       {dialog === "about" && (
         <div className="about">
           <div className="about-brand">

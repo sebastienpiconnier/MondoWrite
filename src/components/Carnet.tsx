@@ -3,13 +3,18 @@
 // trouvera sa place depuis l'iPad ou l'ordinateur. Ici, la liste « À ranger » permet d'ouvrir une note dans la
 // Bible, d'y joindre une photo, de la dire rangée ou de la jeter.
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { typeColor, type CardType } from "../types";
 import { CAPTURE_TYPES, inboxCards } from "../inbox";
 import { TrashIcon } from "./TrashIcon";
+import { aiConfig, useSettings } from "../settings";
+import { isReady } from "../ai/providers";
+
+/** Une note de cette longueur (ou de plusieurs lignes) peut être découpée par l'IA en plusieurs cartes. */
+const LONG_NOTE = 200;
 
 export function Carnet() {
   const { t, types } = useVocab();
@@ -20,6 +25,21 @@ export function Carnet() {
   const [said, setSaid] = useState("");
   const id = useId();
   const waiting = useMemo(() => inboxCards(nodes.map((n) => n.data)), [nodes]);
+  const aiSettings = useSettings((s) => s.ai);
+  const aiReady = useMemo(() => isReady(aiConfig(aiSettings)), [aiSettings]);
+  // La note est partie dans « Du vrac aux cartes » : une fois les cartes créées (brouillon vidé), le champ se vide aussi.
+  const draft = useCosmos((s) => s.vracDraft);
+  const sent = useRef(false);
+  useEffect(() => {
+    if (draft) sent.current = draft.inbox;
+    else if (!draft && sent.current) {
+      sent.current = false;
+      setText("");
+      setSaid(c.added);
+    }
+  }, [draft, c.added]);
+  // Note longue et IA branchée : « Découper avec l'IA » ouvre la même fenêtre que le menu IA du canevas.
+  const long = text.trim().length >= LONG_NOTE || text.trim().split("\n").filter((l) => l.trim()).length >= 4;
 
   const keep = () => {
     if (!useCosmos.getState().captureCard(type, text)) return;
@@ -79,6 +99,11 @@ export function Carnet() {
           <p id={`${id}-hint`} className="carnet-hint">
             {said || c.hint}
           </p>
+          {aiReady && long && (
+            <button type="button" className="ghost-button carnet-split" title={t.vrac.carnetHint} onClick={() => useCosmos.getState().openVrac(text, true)}>
+              {t.vrac.carnet}
+            </button>
+          )}
           <button type="submit" className="ghost-button carnet-keep" disabled={!text.trim()}>
             {c.add}
           </button>

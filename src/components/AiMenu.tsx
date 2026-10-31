@@ -148,6 +148,19 @@ export function AiMenu() {
             {t.coherence}
           </button>
           <p className="settings-hint">{t.coherenceHint}</p>
+          {/* Du vrac aux cartes (1.8.0) : sa propre fenêtre, avec un grand champ texte. */}
+          <button
+            type="button"
+            className="ghost-button"
+            disabled={busy}
+            onClick={() => {
+              setOpen(false);
+              useCosmos.getState().openVrac();
+            }}
+          >
+            {all.vrac.menu}
+          </button>
+          <p className="settings-hint">{all.vrac.menuHint}</p>
           {/* Après avoir typé les idées : tout ranger en cadres sur le canevas (sans IA, annulable). */}
           <button type="button" className="ghost-button" disabled={busy} onClick={() => useCosmos.getState().organizeCanvas()}>
             {all.organize.button}

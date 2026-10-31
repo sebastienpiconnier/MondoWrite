@@ -476,5 +476,6 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
 .interrogate-log p.interrogate-warn { font-size: 0.8125rem; color: var(--ink-2); font-style: italic; }
 .interrogate-log p.interrogate-q { color: var(--ink-2); }
 .interrogate-label { font-size: 1rem; }
+.interrogate-kept { display: inline-flex; align-items: center; min-height: 36px; font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
 .interrogate-note { margin: 0; font-size: 0.75rem; line-height: 1.45; color: var(--ink-2); }
 .answer-tag { font-weight: 400; color: var(--ink-2); }
