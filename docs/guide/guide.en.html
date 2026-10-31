@@ -661,9 +661,21 @@
   <li><span class="ui">Check consistency</span>: points out possible contradictions between your cards, as questions. A question can become a Question card.</li>
   <li><strong>Tailored questions</strong>: in a character’s assistant, <span class="ui">Tailored</span> asks for a question written from their entry. You answer.</li>
   <li><strong>Summary</strong>: <span class="ui">AI summary</span> puts in order what you wrote about a character (sheet, notes, answers), inventing nothing; it only goes into the entry when you click.</li>
+  <li><strong>Ask the character</strong>: in a character’s assistant, the <span class="ui">Ask them</span> tab turns the interview around. You ask the questions, the character answers in the first person, only from what you wrote (their sheet, answers, wires, the scenes they appear in). On what your texts don’t say, they answer that they don’t know; a name that doesn’t exist in your project is flagged. The conversation isn’t saved: <span class="ui">Keep</span> files an answer with the sheet’s answers.</li>
+  <li><strong>From notes to cards</strong>: <span class="ui">AI</span> › <span class="ui">From notes to cards…</span> (on iPhone, <span class="ui">Split with AI</span> in the Notebook, for a long note). Paste notes, a brainstorm or a dictation, up to 8,000 characters: the AI suggests cards, each with a type, a title and a passage of your text, and wires between them. Your text is never rewritten: a passage not found as such is left out. Tick what you keep, change a type or a title, then <span class="ui">Create the cards</span>; it all undoes in one go.</li>
   <li><strong>Describe a photo</strong>: enlarge a photo in the gallery, then <span class="ui">Describe with AI</span>. For a place, the AI notes what the photo shows; for a character, it suggests the apparent age and appearance, which you accept field by field. It never tries to identify a person. The model must be able to read images.</li>
 </ul>
 <p>While it works, a <span class="ui">Cancel</span> button stops it (AI menu, gallery, character assistant). The AI always names cards by their title. When something goes wrong, a message says what: service unreachable, key rejected, unknown model, limit reached, answer taking too long.</p>
+
+<h3>Workshop mode</h3>
+<p>By default, MondoWrite’s AI asks and suggests; it doesn’t write for you. Workshop mode, turned on project by project in <span class="ui">Settings</span> › <span class="ui">This project</span> › <span class="ui">Workshop mode</span>, lets it suggest text. A <span class="ui">Workshop</span> badge in the top bar reminds you.</p>
+<ul>
+  <li><span class="ui">Three variants</span> (the ✦ button in the formatting bar, or the Screenplay bar): three rewordings of a selected sentence or line; <span class="ui">Take</span> replaces the selection.</li>
+  <li><span class="ui">Suggest a synopsis</span>: a one- or two-sentence summary drawn from the scene’s text, in the synopsis field.</li>
+  <li><span class="ui">Three directions</span> (Manuscript and Screenplay bars): three one-line leads for what comes next; <span class="ui">Make it a card</span> creates an Idea card linked to the scene.</li>
+  <li><span class="ui">Suggest a draft</span> on the cover, and <span class="ui">Suggest a sheet</span> for a minor character: suggestions field by field, to add, replace or ignore.</li>
+</ul>
+<p>Everything you accept gets a dotted underline, is listed in <span class="ui">To do</span> (<span class="ui">AI passages</span>) and counted in Statistics (<span class="ui">Text touched by AI</span>). Once you’ve reworked a passage, <span class="ui">I’ve made it mine</span> removes the mark. Each accepted suggestion also adds a line to the project’s <code>ia-journal.md</code> file (date, action, card or scene, service and model, word count): it helps you answer Amazon KDP, which asks you to declare AI-generated text. A MondoWrite version before 1.8.0 keeps the text but drops the mark if it saves the project again.</p>
 
 <!-- ===================================================================================== -->
 <h2 id="export"><span class="num">Chapter 11</span>Export and publish</h2>
