@@ -48,6 +48,8 @@
 }
 .sp-bar button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; font-size: 0.875rem; cursor: pointer; white-space: nowrap; }
 @media (any-hover: hover) { .sp-bar button:hover { background: var(--hover); } }
+/* Au doigt : 44 px. Ici et pas seulement dans canvas.css, chargé avant : la règle ci-dessus l'emportait (36 px). */
+@media (pointer: coarse) { .sp-bar button { min-height: 44px; padding: 0 14px; } }
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 .sp-bar-hint { padding: 0 10px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .sp-focus { border: 1px solid var(--line) !important; }

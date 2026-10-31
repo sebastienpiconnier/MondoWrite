@@ -242,7 +242,7 @@ export const novelSceneText = (id: string) => () => plainText(useCosmos.getState
  * « Proposer un synopsis » : seulement quand le synopsis est vide et que la scène a du texte. La proposition
  * attend « Garder ce synopsis » ; gardée, elle porte la marque de l'IA (fiche `ia` ou note [[ia]]).
  */
-export function SynopsisSuggest({ sceneId, title, text: textOf, synopsis }: { sceneId: string; title: string; text: () => string; synopsis: string }) {
+export function SynopsisSuggest({ sceneId, title, text: textOf, synopsis, accept }: { sceneId: string; title: string; text: () => string; synopsis: string; accept?: (text: string) => void }) {
   const t = useT();
   const a = useAtelier();
   const kind = useCosmos((s) => s.kind);
@@ -273,7 +273,12 @@ export function SynopsisSuggest({ sceneId, title, text: textOf, synopsis }: { sc
               type="button"
               className="is-primary"
               onClick={() => {
-                useCosmos.getState().acceptIaSynopsis(sceneId, proposal);
+                // La vue Scénario passe par son éditeur (`accept`) : une frappe qui attend d'être envoyée n'est pas perdue.
+                if (accept) {
+                  const value = proposal.replace(/\s+/g, " ").trim();
+                  accept(value);
+                  useCosmos.getState().logAtelier("synopsis", title, countWords(value));
+                } else useCosmos.getState().acceptIaSynopsis(sceneId, proposal);
                 setProposal("");
               }}
             >
@@ -563,7 +568,7 @@ export function useAtelierFormat(editor: Editor, target: string, kind: VariantKi
  * proposé par l'IA reçoit l'attribut `ia` (note [[ia]] dans le fichier, souligné en pointillé à l'écran).
  * « Trois variantes » vaut pour l'action, la réplique ou la didascalie où est le curseur (ou la sélection dedans).
  */
-export function ScreenplayAtelier({ editor }: { editor: Editor }) {
+export function ScreenplayAtelier({ editor, scene = "" }: { editor: Editor; scene?: string }) {
   const t = useT();
   const a = useAtelier();
   const info = useEditorState({
@@ -628,8 +633,8 @@ export function ScreenplayAtelier({ editor }: { editor: Editor }) {
     const tr = state.tr.insertText(variant, start, end).setNodeMarkup(asked.pos, undefined, { ...node.attrs, ia: true });
     editor.view.dispatch(tr);
     editor.view.focus();
-    const scene = sceneTitleBefore(editor, asked.pos);
-    useCosmos.getState().logAtelier("variants", scene, countWords(variant));
+    // Dans une carte agrandie, l'éditeur n'a que le corps de la scène : son titre vient de la carte.
+    useCosmos.getState().logAtelier("variants", sceneTitleBefore(editor, asked.pos) || scene, countWords(variant));
   };
   const rework = () => {
     if (!info?.ia) return;

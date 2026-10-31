@@ -142,6 +142,16 @@ describe("relecture de la réponse", () => {
     expect(unknownNames("Je suis allée « Ailleurs ».", known)).toEqual([]);
   });
 
+  it("noms propres : possessif, élision, civilité, nom complet en tête de phrase (1.8.1)", () => {
+    expect(unknownNames("I trust Yann’s lamp more than mine.", known)).toEqual([]);
+    expect(unknownNames("C’est l’ami d’Artagnan, je crois.", known)).toEqual(["Artagnan"]);
+    expect(unknownNames("Il y avait Madame Roux, au phare.", known)).toEqual(["Roux"]);
+    expect(unknownNames("Marc Duval est passé hier.", known)).toEqual(["Marc", "Duval"]);
+    expect(unknownNames("Jamais. Personne ne vient ici.", known)).toEqual([]);
+    expect(unknownNames("Yann Le Goff me l’a dit.", "yann le goff")).toEqual([]);
+    expect(unknownNames("I’m tired, I’ll sleep.", known)).toEqual([]);
+  });
+
   it("knownText : ce que le modèle a reçu et les titres et textes de toutes les cartes", () => {
     const p = interrogatePrompt(ines, [ines], [], [], "Qui ?", ctx());
     const k = knownText(p, [ines, card("x", "idee", "Lucie", "<p>Brest</p>")]);

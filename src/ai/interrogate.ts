@@ -188,32 +188,42 @@ export interface Interrogation {
   unknown: string[];
 }
 
-/** Mots qu'une majuscule ne rend pas « nom propre » (jours et mois anglais, pronom « I »). */
+/** Mots qu'une majuscule ne rend pas « nom propre » (jours et mois anglais, pronom « I »), et titres de civilité (le nom qui suit compte). */
 const COMMON = new Set(
-  "i monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december ok".split(" "),
+  "i monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december ok monsieur madame mademoiselle messieurs mesdames mr mrs ms miss dr docteur doctor sir lady maitre".split(" "),
 );
 /** Un mot qui suit l'un de ces signes commence une phrase : sa majuscule ne dit rien. */
 const STARTS = /[.!?…:;«“"(\[—–-]$/;
+/** Élisions et possessif : « d’Artagnan », « l’Abbé », « Yann’s » se lisent sans l'apostrophe. */
+const APOSTROPHE = /['’]/;
 
 /**
  * Les noms propres d'un texte qui n'apparaissent nulle part dans `known` (textes du projet et de la question) :
- * un mot à majuscule qui ne commence pas une phrase. Repliés pour la comparaison, rendus tels qu'écrits.
+ * un mot à majuscule qui ne commence pas une phrase, ou le premier mot d'une phrase suivi d'un autre mot à
+ * majuscule (« Marc Duval est venu »). Une apostrophe coupe le mot (« d’Artagnan », « Yann’s »). Repliés pour
+ * la comparaison, rendus tels qu'écrits.
  */
 export function unknownNames(text: string, known: string): string[] {
-  const corpus = ` ${fold(known).replace(/[^\p{L}\p{N}'’-]+/gu, " ")} `;
+  const corpus = ` ${fold(known).replace(/[^\p{L}\p{N}-]+/gu, " ")} `;
+  const isKnown = (key: string) =>
+    corpus.includes(` ${key} `) || (key.includes("-") && key.split("-").every((part) => part.length < 2 || corpus.includes(` ${part} `)));
+  const words = [...text.matchAll(/\p{L}[\p{L}\p{M}-]*/gu)].map((m) => ({ word: m[0].replace(/-+$/, ""), at: m.index }));
   const out: string[] = [];
-  for (const m of text.matchAll(/\p{L}[\p{L}\p{M}'’-]*/gu)) {
-    const word = m[0].replace(/['’-]+$/, "");
-    if (!/^\p{Lu}/u.test(word)) continue;
-    const before = text.slice(0, m.index).trimEnd();
-    if (!before || STARTS.test(before)) continue;
+  words.forEach(({ word, at }, i) => {
+    if (!/^\p{Lu}/u.test(word)) return;
+    const before = text.slice(0, at);
+    const trimmed = before.trimEnd();
+    if (APOSTROPHE.test(before.slice(-1)) && /^(?:s|t|m|ll|re|ve|d)$/i.test(word)) return;
     const key = fold(word);
-    if (COMMON.has(key) || /^i['’]/.test(key) || word.length < 2 || (word === word.toUpperCase() && word.length <= 3)) continue;
-    if (corpus.includes(` ${key} `) || out.some((w) => fold(w) === key)) continue;
-    // Un nom composé (« Saint-Ouen ») est connu si chacune de ses parties l'est.
-    if (key.includes("-") && key.split("-").every((part) => part.length < 2 || corpus.includes(` ${part} `))) continue;
+    if (COMMON.has(key) || word.length < 2 || (word === word.toUpperCase() && word.length <= 3)) return;
+    if (!trimmed || STARTS.test(trimmed)) {
+      // Tête de phrase : seulement le prénom d'un nom complet (le mot suivant, collé, a lui aussi une majuscule).
+      const next = words[i + 1];
+      if (!next || !/^\p{Lu}/u.test(next.word) || text.slice(at + word.length, next.at) !== " " || COMMON.has(fold(next.word))) return;
+    }
+    if (isKnown(key) || out.some((w) => fold(w) === key)) return;
     out.push(word);
-  }
+  });
   return out.slice(0, 5);
 }
 
