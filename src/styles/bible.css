@@ -475,7 +475,8 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
 .bible-hook { width: 100%; margin: 2px 0 4px; padding: 2px 0; border: 0; border-radius: 4px; background: transparent; color: var(--ink-2); font: italic 1rem/1.4 var(--font-text); }
 .bible-hook::placeholder { color: var(--placeholder); }
 .bible-hook:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.bible-principal { color: var(--ink-2); flex-shrink: 0; }
+.bible-principal { display: inline-flex; align-items: center; color: var(--ink-2); flex-shrink: 0; width: auto; padding: 0 10px; gap: 6px; border-radius: 999px; }
+.bible-principal-label { font: 600 0.8125rem/1 var(--font-ui); white-space: nowrap; }
 .bible-principal.is-on { color: var(--accent-ink); }
 .motor-arc-ends { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; }
 .motor-cell.is-arc-end { position: relative; background: transparent; border: 1px solid var(--line); }
@@ -510,3 +511,6 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
 .interrogate-kept { display: inline-flex; align-items: center; min-height: 36px; font-size: 0.875rem; font-weight: 600; color: var(--ink-2); }
 .interrogate-note { margin: 0; font-size: 0.75rem; line-height: 1.45; color: var(--ink-2); }
 .answer-tag { font-weight: 400; color: var(--ink-2); }
+
+/* Retirer un fil : au pied de sa fiche, à droite (1.11.2). */
+.wire-sheet-actions { display: flex; justify-content: flex-end; margin-top: 10px; }

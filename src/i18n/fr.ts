@@ -411,7 +411,7 @@ export const fr = {
   },
 
   bible: {
-    tocTitle: "Sommaire, généré automatiquement",
+    tocTitle: "Sommaire",
     tocAria: "Sommaire de la bible",
     seeOnCanvas: "Voir sur le canevas",
     seeLines: "Voir ses répliques dans le scénario",
@@ -1018,6 +1018,7 @@ export const fr = {
     previous: "Scène précédente",
     next: "Scène suivante",
     position: "Scène {n} sur {total}",
+    cited: "Cités dans le texte",
     inScene: "Dans cette scène",
     nothingDetected: "Les personnages et les lieux cités dans le texte apparaîtront ici.",
     show: "Voir la carte « {title} » sur le canevas",
@@ -1513,12 +1514,14 @@ export const fr = {
     addField: "Ajouter : {field}",
     principalOn: "Personnage principal",
     principalOff: "Marquer comme personnage principal",
-    principalHint: "Les personnages principaux passent en tête et ont une page chacun dans le dossier.",
+    principalHint: "Les personnages principaux passent en tête de la rubrique et gardent leur fiche entière dans le dossier.",
     hookAria: "Le personnage en une phrase",
     principalAria: "Personnage principal : {title}",
     notInText: "Pas encore dans le texte",
     mentionsOne: "Cité {n} fois · dès la scène {scene} « {title} »",
     mentionsMany: "Cité {n} fois · dès la scène {scene} « {title} »",
+    mentionsIn: "Cité {n} fois dans {scenes} · dès la scène {scene} « {title} »",
+    principalShort: "Principal",
     pendingOne: "{n} question à creuser",
     pendingMany: "{n} questions à creuser",
     pendingTab: "À creuser",
@@ -2478,6 +2481,7 @@ export const fr = {
   // Statistiques et objectifs du manuscrit.
   stats: {
     title: "Statistiques",
+    glance: "{n} mots · {today} aujourd’hui",
     words: "Mots",
     pages: "Pages",
     reading: "Lecture",

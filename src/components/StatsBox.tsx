@@ -1,5 +1,6 @@
 // Statistiques et objectifs du volet de droite : le manuscrit d'un roman et le scénario s'en servent tous deux.
 
+import { useState } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
@@ -26,6 +27,14 @@ export function StatsBox({
 }) {
   const t = useT();
   const s = t.stats;
+  // Replié par défaut (1.11.2) : le volet s'ouvre sur la scène, pas sur les chiffres. État de l'appareil.
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(OPEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const lang = useSettings((x) => x.lang);
   const goals = useCosmos((x) => x.goals);
   const setGoals = useCosmos((x) => x.setGoals);
@@ -53,8 +62,23 @@ export function StatsBox({
   );
 
   return (
-    <section className="sp-box ms-stats" aria-label={s.title}>
-      <h2 className="sp-box-title">{s.title}</h2>
+    <details
+      className="sp-box ms-stats"
+      open={open}
+      onToggle={(e) => {
+        const now = (e.currentTarget as HTMLDetailsElement).open;
+        setOpen(now);
+        try {
+          localStorage.setItem(OPEN_KEY, now ? "1" : "0");
+        } catch {
+          /* stockage indisponible : l'état reste celui de la session */
+        }
+      }}
+    >
+      <summary>
+        <span className="sp-box-title">{s.title}</span>
+        <span className="ms-stats-glance">{fmt(s.glance, { n: num(stats.words), today: num(today) })}</span>
+      </summary>
       <dl>
         <div>
           <dt>{s.words}</dt>
@@ -116,7 +140,9 @@ export function StatsBox({
         </div>
         <p className="sp-empty">{note ?? fmt(s.estimate, { n: WORDS_PER_PAGE })}</p>
       </div>
-    </section>
+    </details>
   );
 }
+
+const OPEN_KEY = "mondowrite.stats.open";
 

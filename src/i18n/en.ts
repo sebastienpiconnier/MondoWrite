@@ -407,7 +407,7 @@ export const en: Messages = {
   },
 
   bible: {
-    tocTitle: "Contents, built automatically",
+    tocTitle: "Contents",
     tocAria: "Bible contents",
     seeOnCanvas: "Show on canvas",
     seeLines: "See their lines in the screenplay",
@@ -1037,6 +1037,7 @@ export const en: Messages = {
     previous: "Previous scene",
     next: "Next scene",
     position: "Scene {n} of {total}",
+    cited: "Named in the text",
     inScene: "In this scene",
     nothingDetected: "Characters and places mentioned in the text will show up here.",
     show: "Show the card “{title}” on the canvas",
@@ -1526,12 +1527,14 @@ export const en: Messages = {
     addField: "Add: {field}",
     principalOn: "Main character",
     principalOff: "Mark as a main character",
-    principalHint: "Main characters come first and get a page each in the pack.",
+    principalHint: "Main characters come first in their section and keep their full sheet in the pack.",
     hookAria: "The character in one sentence",
     principalAria: "Main character: {title}",
     notInText: "Not in the text yet",
     mentionsOne: "Named {n} time · from scene {scene} “{title}”",
     mentionsMany: "Named {n} times · from scene {scene} “{title}”",
+    mentionsIn: "Named {n} times in {scenes} · from scene {scene} “{title}”",
+    principalShort: "Main",
     pendingOne: "{n} question to dig into",
     pendingMany: "{n} questions to dig into",
     pendingTab: "To dig into",
@@ -2437,6 +2440,7 @@ export const en: Messages = {
 
   stats: {
     title: "Statistics",
+    glance: "{n} words · {today} today",
     words: "Words",
     pages: "Pages",
     reading: "Reading time",

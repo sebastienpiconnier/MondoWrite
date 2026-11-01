@@ -58,7 +58,7 @@ function EntryImage({ name, alt }: { name: string | undefined; alt: string }) {
  * Sous le nom : genre, âge, métier, rôle (personnage), puis la présence dans le manuscrit
  * (« cité 12 fois, dès la scène 3 »). Idées reprises de la Bible du fork de NEO.
  */
-function Poster({ card }: { card: CardData }) {
+function Poster({ card, scenes }: { card: CardData; /** Roman : « 5 scènes », pour dire en une ligne combien de fois et où (1.11.2). */ scenes?: string }) {
   const t = useT();
   const lang = useSettings((s) => s.lang);
   const nodes = useCosmos((s) => s.nodes);
@@ -79,7 +79,12 @@ function Poster({ card }: { card: CardData }) {
         <span className="bible-mentions">
           {seen.count === 0
             ? t.character.notInText
-            : fmt(seen.count === 1 ? t.character.mentionsOne : t.character.mentionsMany, { n: num, scene: seen.scene || order.indexOf(seen.first!) + 1, title: firstTitle })}
+            : fmt(scenes ? t.character.mentionsIn : seen.count === 1 ? t.character.mentionsOne : t.character.mentionsMany, {
+                n: num,
+                scenes: scenes ?? "",
+                scene: seen.scene || order.indexOf(seen.first!) + 1,
+                title: firstTitle,
+              })}
         </span>
       )}
     </p>
@@ -114,6 +119,8 @@ export function Bible() {
   const { characters: charRows, places: placeRows } = useProjectStats();
   const rowOf = useMemo(() => new Map(charRows.filter((r) => r.id).map((r) => [r.id!, r])), [charRows]);
   const placeOf = useMemo(() => new Map(placeRows.filter((r) => r.id).map((r) => [r.id!, r])), [placeRows]);
+  const scenesLabel = (n: number | undefined) =>
+    !n ? undefined : n === 1 ? t.charStats.scenesOne : fmt(t.charStats.scenesMany, { n: new Intl.NumberFormat(lang).format(n) });
   const seeLines = (name: string) => {
     useCosmos.getState().setCharFilter({ name: name.toLocaleUpperCase(lang), mode: "lines" });
     useCosmos.getState().setView("manuscrit");
@@ -361,9 +368,12 @@ export function Bible() {
                     }}
                   />
                 )}
-                {type === "personnage" && rowOf.get(card.id) && <StatsLine row={rowOf.get(card.id)!} script={kind === "scenario"} />}
-                {type === "lieu" && placeOf.get(card.id) && <PlaceLine row={placeOf.get(card.id)!} script={kind === "scenario"} />}
-                {(type === "personnage" || type === "lieu") && <Poster card={card} />}
+                {/* Roman : une seule ligne de présence (« cité 14 fois dans 5 scènes »), plus deux qui se répétaient. */}
+                {type === "personnage" && kind === "scenario" && rowOf.get(card.id) && <StatsLine row={rowOf.get(card.id)!} script />}
+                {type === "lieu" && kind === "scenario" && placeOf.get(card.id) && <PlaceLine row={placeOf.get(card.id)!} script />}
+                {(type === "personnage" || type === "lieu") && (
+                  <Poster card={card} scenes={kind === "scenario" ? undefined : scenesLabel(type === "personnage" ? rowOf.get(card.id)?.scenes : placeOf.get(card.id)?.scenes)} />
+                )}
                 </div>
                 {type === "personnage" && (
                   <button
@@ -377,6 +387,8 @@ export function Bible() {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill={isPrincipal(card) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
                       <path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1-4.5-4.2 6.1-.8z" />
                     </svg>
+                    {/* Le mot à côté de l'étoile (1.11.2) : une étoile seule ne disait pas ce qu'elle fait. */}
+                    <span className="bible-principal-label" aria-hidden="true">{t.character.principalShort}</span>
                   </button>
                 )}
                 <button

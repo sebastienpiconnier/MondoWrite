@@ -411,6 +411,15 @@ await step("ruban", async () => {
 });
 await shot("manuscrit-colonne", { clip: { x: 0, y: 64, width: 360, height: 836 } });
 await shot("manuscrit-stats", { clip: { x: 1080, y: 64, width: 360, height: 836 } });
+// Statistiques repliées en bas de la colonne (1.11.2) : on les ouvre pour la capture, puis on les referme.
+await step("manuscrit-chiffres", async () => {
+  const stats = page.locator(".sp-side .ms-stats > summary");
+  await stats.click();
+  await page.locator(".sp-side .ms-stats").scrollIntoViewIfNeeded();
+  await wait(300);
+  await shot("manuscrit-chiffres", { clip: await union([".sp-side .ms-stats"], 12) });
+  await stats.click();
+});
 await step("remplacer", async () => {
   await moreItem(".ms-meta", T("Remplacer", "Replace"));
   await wait(400);

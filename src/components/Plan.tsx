@@ -205,47 +205,50 @@ export function Plan() {
               atelier={{ sceneId: id, text: novelSceneText(id) }}
             />
             {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
-            <SceneStatusPicker card={card} />
+            {/* Chapitre, case et statut ensemble sous le titre (1.11.2) : le titre garde toute la ligne. */}
+            <div className="plan-meta">
+              {beat !== null && (
+                <label className="plan-to">
+                  <span className="sr-only">{fmt(c.chooseFor, { title })}</span>
+                  <span aria-hidden="true">{c.short}</span>
+                  <select
+                    title={fmt(c.chooseFor, { title })}
+                    value={chapterOf(plan, id)?.id ?? NO_CHAPTER}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === NEW_CHAPTER) startChapterAt(id);
+                      else setSceneChapter(id, value === NO_CHAPTER ? null : value);
+                    }}
+                  >
+                    <option value={NO_CHAPTER}>{c.none}</option>
+                    {chapters.map((ch) => (
+                      <option key={ch.id} value={ch.id}>
+                        {chapterName(ch)}
+                      </option>
+                    ))}
+                    <option value={NEW_CHAPTER}>{c.startHere}</option>
+                  </select>
+                </label>
+              )}
+              {!free && (
+                <label className="plan-to">
+                  <span className="sr-only">{fmt(p.moveTo, { title })}</span>
+                  <span aria-hidden="true">{p.moveToShort}</span>
+                  <select title={fmt(p.moveTo, { title })} value={beat ?? UNPLACED} onChange={(e) => place(id, e.target.value === UNPLACED ? null : e.target.value)}>
+                    <option value={UNPLACED}>{p.unplaced}</option>
+                    {arranged.beats.map((b) => (
+                      <option key={b.key} value={b.key}>
+                        {beatLabel(b.key)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <SceneStatusPicker card={card} />
+            </div>
           </div>
         </div>
         <div className="plan-actions">
-        {beat !== null && (
-          <label className="plan-to">
-            <span className="sr-only">{fmt(c.chooseFor, { title })}</span>
-            <span aria-hidden="true">{c.short}</span>
-            <select
-              title={fmt(c.chooseFor, { title })}
-              value={chapterOf(plan, id)?.id ?? NO_CHAPTER}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === NEW_CHAPTER) startChapterAt(id);
-                else setSceneChapter(id, value === NO_CHAPTER ? null : value);
-              }}
-            >
-              <option value={NO_CHAPTER}>{c.none}</option>
-              {chapters.map((ch) => (
-                <option key={ch.id} value={ch.id}>
-                  {chapterName(ch)}
-                </option>
-              ))}
-              <option value={NEW_CHAPTER}>{c.startHere}</option>
-            </select>
-          </label>
-        )}
-        {!free && (
-          <label className="plan-to">
-            <span className="sr-only">{fmt(p.moveTo, { title })}</span>
-            <span aria-hidden="true">{p.moveToShort}</span>
-            <select title={fmt(p.moveTo, { title })} value={beat ?? UNPLACED} onChange={(e) => place(id, e.target.value === UNPLACED ? null : e.target.value)}>
-              <option value={UNPLACED}>{p.unplaced}</option>
-              {arranged.beats.map((b) => (
-                <option key={b.key} value={b.key}>
-                  {beatLabel(b.key)}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
         <button type="button" className="icon-button" aria-label={fmt(p.openText, { title })} title={fmt(p.openText, { title })} onClick={() => useCosmos.getState().openInManuscript(id)}>
           <span aria-hidden="true">✎</span>
         </button>

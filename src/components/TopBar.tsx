@@ -16,6 +16,21 @@ const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
 /** Téléphone (Carnet) : écrire, consulter, capturer. Le canevas et le Plan restent sur iPad et ordinateur. */
 const PHONE_VIEWS: View[] = ["manuscrit", "bible", "carnet"];
 
+/** Icônes de la barre d'onglets du téléphone (1.11.2) : une barre d'onglets d'iPhone montre une icône et son nom. */
+const tabIcon = (d: string) => (
+  <svg className="view-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d={d} />
+  </svg>
+);
+const PHONE_ICONS: Partial<Record<View, React.ReactNode>> = {
+  // Une page et sa plume.
+  manuscrit: tabIcon("M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4"),
+  // Un livre ouvert.
+  bible: tabIcon("M12 6.5C10.5 5 8 4.5 4 4.5v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-14c-4 0-6.5.5-8 2zM12 6.5v14"),
+  // Un carnet à spirale.
+  carnet: tabIcon("M7 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7zM4 7h3M4 12h3M4 17h3M11 8h5M11 12h5"),
+};
+
 export function TopBar() {
   const { t, views, kind } = useVocab();
   const lang = useSettings((s) => s.lang);
@@ -90,13 +105,14 @@ export function TopBar() {
               setMore(false);
             }}
           >
-            {views[v]}
+            {phone && PHONE_ICONS[v]}
+            <span className="view-label">{views[v]}</span>
           </button>
         ))}
       </nav>
 
       {/* Téléphone : les actions sont derrière « ⋯ », qui porte donc le point d'état d'enregistrement. */}
-      <button type="button" className={`icon-button topbar-more is-${status}`} aria-label={t.app.moreOptions} title={`${t.app.moreOptions} (${t.status[status]})`} aria-expanded={more} onClick={() => setMore(!more)}>
+      <button type="button" className={`icon-button topbar-more is-${status}`} aria-label={status === "enregistre" ? t.app.moreOptions : `${t.app.moreOptions} (${t.status[status]})`} title={`${t.app.moreOptions} (${t.status[status]})`} aria-expanded={more} onClick={() => setMore(!more)}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="5" cy="12" r="1.8" />
           <circle cx="12" cy="12" r="1.8" />

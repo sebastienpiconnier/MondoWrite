@@ -1,6 +1,6 @@
 // Fils d'une fiche de la Bible : les cartes reliées, chacune avec son étiquette. Toucher une pastille ouvre la
 // fiche du lien (lot 7 de la Bible v2) : leur histoire, ce qui se joue entre eux, comment ça évolue. Retirer
-// le fil se fait par la croix, comme avant.
+// le fil se fait au pied de cette fiche (1.11.2) : plus de croix sur la pastille, où un toucher le retirait sans un mot.
 
 import { useId, useState } from "react";
 import type { Edge } from "@xyflow/react";
@@ -35,15 +35,6 @@ export function BibleLinks({ cardId, links, titleOf }: { cardId: string; links: 
                 {e.label ? ` · ${String(e.label)}` : ""}
                 {filled && <span className="link-chip-mark" aria-hidden="true" />}
               </button>
-              <button
-                type="button"
-                className="chip-remove"
-                aria-label={fmt(t.unlink, { title: titleOf(other) })}
-                title={fmt(t.unlink, { title: titleOf(other) })}
-                onClick={() => useCosmos.getState().removeLink(e.id)}
-              >
-                <span aria-hidden="true">×</span>
-              </button>
             </span>
           );
         })}
@@ -64,6 +55,18 @@ export function BibleLinks({ cardId, links, titleOf }: { cardId: string; links: 
                 />
               </div>
             ))}
+          </div>
+          <div className="wire-sheet-actions">
+            <button
+              type="button"
+              className="ghost-button is-danger"
+              onClick={() => {
+                useCosmos.getState().removeLink(edge.id);
+                setOpen(null);
+              }}
+            >
+              {fmt(t.unlink, { title: titleOf(edge.source === cardId ? edge.target : edge.source) })}
+            </button>
           </div>
         </section>
       )}

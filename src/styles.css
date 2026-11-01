@@ -180,8 +180,8 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 .app-alert > span:first-child { flex: 1 1 320px; }
 .app-alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .app-alert-actions .ghost-button { min-height: 44px; }
-/* Conflit avec un autre logiciel : rien n'est perdu, le bandeau attend un choix (accent, pas danger). */
-.app-alert.is-conflict { border-bottom-color: var(--accent); }
+/* Conflit avec un autre logiciel, invitation après un import (1.11.2) : rien n'est perdu, accent et pas danger. */
+.app-alert.is-conflict, .app-alert.retro-invite { border-bottom-color: var(--accent); }
 .conflict-text { display: flex; flex-direction: column; gap: 2px; }
 .conflict-note { font-size: 0.8125rem; color: var(--ink-2); }
 
@@ -190,7 +190,9 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 /* La barre du haut est une grille à trois colonnes : à l'accueil, les réglages vont dans la dernière, à droite. */
 .home-actions { grid-column: 3; justify-self: end; }
 .home-main { flex: 1; min-height: 0; overflow: auto; display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; justify-content: center; gap: 24px; padding: 32px max(24px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
+/* Une erreur a le trait rouge ; une information (iCloud, projets à remettre) le trait d'accent (1.11.2). */
 .home-alert { flex-basis: 100%; max-width: 944px; margin: 0; padding: 12px 16px; background: var(--surface); border-left: 4px solid var(--danger); border-radius: 0 10px 10px 0; font-size: 0.875rem; line-height: 1.5; }
+.home-alert.is-info { border-left-color: var(--accent); }
 .home-panel { flex: 1 1 340px; max-width: 460px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px; background: var(--surface); border-radius: 16px; }
 .home-panel h1, .home-panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; }
 .home-list { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 6px; }
@@ -198,9 +200,9 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 .home-confirm { flex-basis: 100%; min-width: 0; box-sizing: border-box; overflow-wrap: anywhere; padding: 10px 12px; border: 1px solid var(--danger); border-radius: 10px; font-size: 0.875rem; line-height: 1.45; }
 .home-confirm p { margin: 0 0 8px; }
 .ghost-button.is-danger { color: var(--danger); border-color: var(--danger); }
-.home-project { flex: 1; min-width: 0; min-height: 56px; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; cursor: pointer; }
+.home-project { flex: 1; min-width: 0; min-height: 64px; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-align: left; cursor: pointer; }
 @media (any-hover: hover) { .home-project:hover { border-color: var(--line-2); background: var(--ground); } }
-.home-project-title { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
+.home-project-title { font-weight: 600; font-size: 1.0625rem; color: var(--ink); overflow-wrap: anywhere; }
 .home-project-meta { font-size: 0.8125rem; color: var(--ink-2); overflow-wrap: anywhere; }
 .home-list .icon-button { flex-shrink: 0; width: 44px; height: 44px; font-size: 1.125rem; }
 .home-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
@@ -220,7 +222,7 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 .home-buttons .ghost-button { min-height: 44px; }
 /* Profil de l'auteur : une grille de champs (deux par ligne quand la place le permet), puis un résumé. */
 /* Phrase d'accueil (greeting.ts) : grande, en tête, sur toute la largeur des deux colonnes. */
-.home-greeting { flex: 0 0 100%; max-width: none; box-sizing: border-box; padding-inline: max(0px, calc((100% - 944px) / 2)); margin: 8px 0 0; text-align: center; font: 400 clamp(1.625rem, 2.6vw, 2.25rem)/1.25 var(--font-text); color: var(--ink); text-wrap: balance; overflow-wrap: break-word; }
+.home-greeting { flex: 0 0 100%; max-width: none; box-sizing: border-box; padding-inline: max(0px, calc((100% - 944px) / 2)); margin: 8px 0 0; text-align: center; font: 400 clamp(1.25rem, 1.9vw, 1.625rem)/1.3 var(--font-text); color: var(--ink-2); text-wrap: balance; overflow-wrap: break-word; }
 .home-profile-nudge { margin: 4px 0 0; }
 .app-dialog.is-profile { width: min(720px, calc(100vw - 32px)); }
 .profile-dialog { display: flex; flex-direction: column; gap: 12px; }

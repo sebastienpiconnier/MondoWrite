@@ -732,9 +732,8 @@ export function Manuscript() {
           />
         ) : (
         <>
-        <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} />
         <section className="sp-box">
-          <h2 className="sp-box-title">{m.inScene}</h2>
+          <h2 className="sp-box-title">{m.cited}</h2>
           {detected.length === 0 ? (
             <p className="sp-empty">{m.nothingDetected}</p>
           ) : (
@@ -766,6 +765,7 @@ export function Manuscript() {
           </button>
         </section>
         <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
+        <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} />
         </>
         )}
       </aside>

@@ -177,7 +177,7 @@ export function Home() {
         )}
 
         {cloudIssue && (
-          <p className="home-alert" role="status">
+          <p className="home-alert is-info" role="status">
             {cloudIssue === "waiting"
               ? h.icloudWaitingPc
               : cloudIssue === "icloud"
@@ -198,7 +198,7 @@ export function Home() {
         )}
 
         {stray > 0 && (
-          <p className="home-alert" role="status">
+          <p className="home-alert is-info" role="status">
             {stray === 1 ? h.strayOne : fmt(h.strayMany, { n: stray })}{" "}
             <button
               type="button"

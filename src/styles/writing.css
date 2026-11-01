@@ -110,6 +110,14 @@
 .ms-chapter.is-over, .ms-scenes > div.is-over { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 8px; }
 @media (pointer: coarse) { .ms-chapter-move { width: 44px; height: 44px; } }
 /* Statistiques et objectifs */
+.ms-stats > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-height: 32px; cursor: pointer; list-style: none; }
+.ms-stats > summary::-webkit-details-marker { display: none; }
+.ms-stats > summary::before { content: "▸"; color: var(--ink-2); transition: transform 0.12s; }
+.ms-stats[open] > summary::before { transform: rotate(90deg); }
+.ms-stats > summary .sp-box-title { margin: 0; }
+.ms-stats-glance { margin-left: auto; font-size: 0.8125rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ms-stats[open] > summary { margin-bottom: 8px; }
+@media (pointer: coarse) { .ms-stats > summary { min-height: 44px; align-items: center; } }
 .ms-stats dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 0 0 10px; font-size: 0.8125rem; }
 .ms-stats dl > div { display: contents; }
 .ms-stats dt { color: var(--ink-2); }
@@ -231,12 +239,16 @@
 .sq-list.is-cards .sq-scene .plan-to select { max-width: none; }
 /* Actions d'une scène du Plan : chapitre, étape, voir la fiche, corbeille, sur une seule ligne compacte. */
 .plan-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; flex-wrap: wrap; }
-.plan-actions .plan-to { flex: 0 1 auto; min-width: 0; gap: 4px; }
-.plan-actions .plan-to > span[aria-hidden] { display: none; }
-.plan-actions .plan-to select { min-height: 32px; width: 100%; max-width: 140px; min-width: 0; padding: 0 6px; font-size: 0.8125rem; text-overflow: ellipsis; }
+.plan-actions .icon-button { flex: none; }
+/* Sous le titre (1.11.2) : chapitre, case et statut sur une ligne qui passe à la ligne au besoin. */
+.plan-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; margin-top: 4px; }
+.plan-meta .plan-to { flex: 0 1 auto; min-width: 0; gap: 6px; }
+.plan-meta .plan-to > span[aria-hidden] { white-space: nowrap; }
+.plan-meta .plan-to select { min-height: 32px; width: 100%; max-width: 12rem; min-width: 0; padding: 0 6px; font-size: 0.8125rem; text-overflow: ellipsis; }
+.plan-scene .bible-title { text-overflow: ellipsis; }
 .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 32px; height: 32px; }
-.sq-list.is-cards .plan-actions .plan-to { flex: 1 1 0; }
-.sq-list.is-cards .plan-actions .plan-to select { max-width: none; }
+.sq-list.is-cards .plan-meta .plan-to { flex: 1 1 100%; }
+.sq-list.is-cards .plan-meta .plan-to select { max-width: none; }
 /* Plan en liste, fenêtre large : titre et actions sur une ligne, synopsis (et statut) en dessous sur toute la largeur de la fiche. */
 @media (min-width: 700px) {
   .sq-list:not(.is-cards) .plan-scene { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding-block: 8px; }
@@ -244,13 +256,20 @@
   .sq-list:not(.is-cards) .plan-scene .sq-moves { grid-column: 1; grid-row: 1; }
   .sq-list:not(.is-cards) .plan-scene .bible-title { grid-column: 2; grid-row: 1; min-width: 0; }
   .sq-list:not(.is-cards) .plan-scene .plan-actions { grid-column: 3; grid-row: 1; flex-wrap: nowrap; }
-  .sq-list:not(.is-cards) .plan-scene .plan-detail { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: flex-start; gap: 4px 12px; min-width: 0; }
-  .sq-list:not(.is-cards) .plan-detail .synopsis-show:not(.is-empty), .sq-list:not(.is-cards) .plan-detail .synopsis-edit, .sq-list:not(.is-cards) .plan-detail .sq-desc { flex: 1 1 0; width: auto; min-width: 0; }
+  .sq-list:not(.is-cards) .plan-scene .plan-detail { grid-column: 1 / -1; grid-row: 2; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; }
   .sq-list:not(.is-cards) .plan-detail .sq-desc { margin: 2px 0 0; }
-  .sq-list:not(.is-cards) .plan-detail > :last-child { flex: none; margin-left: auto; }
+}
+/* Flèches de déplacement : à la souris, seulement sur la scène survolée ou qui a le focus (le glisser reste) ;
+   au doigt, toujours là. */
+@media (min-width: 700px) and (hover: hover) and (pointer: fine) {
+  .sq-list:not(.is-cards) .plan-scene .sq-moves { opacity: 0; transition: opacity 0.12s; }
+  .sq-list:not(.is-cards) .plan-scene:hover .sq-moves { opacity: 1; }
+}
+@media (min-width: 700px) and (pointer: fine) {
+  .sq-list:not(.is-cards) .plan-scene:focus-within .sq-moves { opacity: 1; }
 }
 @media (min-width: 700px) and (pointer: fine) { .sq-list:not(.is-cards) .plan-scene .sq-moves .icon-button { width: 32px; height: 32px; } }
-@media (pointer: coarse) { .plan-actions .plan-to select { min-height: 44px; } .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 44px; height: 44px; } }
+@media (pointer: coarse) { .plan-meta .plan-to select { min-height: 44px; } .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 44px; height: 44px; } }
 .plan-add { display: flex; gap: 8px; }
 .plan-add input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px dashed var(--line-2); border-radius: 10px; background: transparent; color: var(--ink); font: inherit; }
 .plan-add input::placeholder { color: var(--placeholder); }
@@ -719,6 +738,9 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .spdf-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.875rem; }
 .spdf-hint { margin: 2px 0 0; font-size: 0.8125rem; color: var(--ink-2); }
 .spdf-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+/* Boutons toujours visibles (1.11.2) : le pied du formulaire reste collé au bas de la fenêtre qui défile ; il
+   descend sur la marge du bas de la fenêtre (22 px) pour que rien ne passe dessous. */
+.spdf-actions, .paperback-panel .paperback-actions { position: sticky; bottom: -22px; z-index: 2; padding: 12px 0 22px; border-top: 1px solid var(--line); background: var(--surface); box-shadow: 0 4px 0 var(--surface); }
 .spdf-actions .spdf-hint { align-self: stretch; }
 .spdf-status { margin: 0; min-height: 1.2em; font-size: 0.8125rem; color: var(--ink-2); }
 .spdf-actions button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--strong-bg); color: var(--strong-fg); font: 600 0.9375rem var(--font-ui); cursor: pointer; }

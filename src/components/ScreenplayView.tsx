@@ -1051,15 +1051,6 @@ export function ScreenplayView() {
           />
         ) : (
         <>
-        <StatsBox
-          stats={stats}
-          done={scenes.filter((s) => (statusCards.get(s.cardId ?? "") ? sceneStatus(statusCards.get(s.cardId!)!) === "fini" : false)).length}
-          chapters={0}
-          sceneWords={sceneWordCount}
-          place={null}
-          note={t.stats.estimateScreenplay}
-        />
-        <div className="eyebrow">{sp.inSceneTitle}</div>
         {!scene ? (
           <p className="sp-empty">{sp.noScene}</p>
         ) : (
@@ -1121,6 +1112,14 @@ export function ScreenplayView() {
           </>
         )}
         <Chutier passages={chutier} cards={nodes.map((n) => n.data)} onPutBack={putBack} />
+        <StatsBox
+          stats={stats}
+          done={scenes.filter((s) => (statusCards.get(s.cardId ?? "") ? sceneStatus(statusCards.get(s.cardId!)!) === "fini" : false)).length}
+          chapters={0}
+          sceneWords={sceneWordCount}
+          place={null}
+          note={t.stats.estimateScreenplay}
+        />
         </>
         )}
       </aside>

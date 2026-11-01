@@ -89,7 +89,9 @@
 
   /* Autant d'onglets que de vues (4 pour un roman, 5 pour un scénario) sur la largeur de l'écran. */
   .app.has-tabbar .views { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
-  .app.has-tabbar .views button { font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app.has-tabbar .views button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 2px; border-radius: 12px; font-size: 0.6875rem; }
+  .app.has-tabbar .views .view-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app.has-tabbar .views .view-icon { flex: none; }
 }
 
 /* Sommaire de la Bible : tiroir escamotable sur tablette et téléphone, comme les volets du Manuscrit. */
