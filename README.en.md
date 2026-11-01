@@ -10,7 +10,7 @@
 
 <a href="https://youtu.be/o6AGiJrQib4"><img src="docs/images/video-poster-en.jpg" width="640" alt="Watch the MondoWrite presentation video (1 min 20)"></a>
 
-[Download](#download) · [Features](#features) · [AI](#ai-if-you-want-it) · [Platforms](#platforms) · [Development](#development)
+[Download](#download) · [Features](#features) · [AI, your choice](#ai-your-choice) · [Platforms](#platforms) · [Development](#development)
 
 ---
 
@@ -45,7 +45,7 @@ MondoWrite brings it all into one place, from the first fragment to the printed 
 - **Your work belongs to you.** No account, no cloud, no subscription: your projects are plain Markdown files on your own machine.
 - **Free and open source, for good.** MondoWrite is free software, released under the AGPL-3.0: you can use it, study it, change it and share it.
 
-**AI will not write your story.** If you choose to turn it on (including a 100% local model on your computer), it spots inconsistencies, puts your notes back in order and asks you sharp questions. You remain the author.
+**AI is your call.** There is none by default: MondoWrite works entirely without it. Plugged in (a 100% local model, Apple’s own model on your Mac or iPhone, or your own key), it asks questions, spots inconsistencies and suggests leads, without writing for you. And for a project where you decide so, Workshop mode lets it suggest text, always marked and logged. You remain the author. [Learn more](#ai-your-choice).
 
 ## 🖼️ Screenshots
 
@@ -117,13 +117,13 @@ MondoWrite is under active development (version 1.11.3). **Illustrated user guid
 ### The canvas
 
 - **Free-form cards:** double-click or right-click the canvas, use the “New card” button or press `N`, and start writing its title (`Enter` moves on to the text). Rich text (bold, italic, lists). A new card never lands on top of another.
-- **Ten card types:** Idea, Character, Place, Scene, Plot, Theme, Question, Image, Link, Document. Change the type by typing `/` at the start of a line or by tapping the type label.
+- **Sixteen card types:** Idea, Character, Place, Scene, Plot, Theme, Question, Secret, Group, Object, Event, World rule, Episode (series), Image, Link, Document. Change the type by typing `/` at the start of a line or by tapping the type label.
 - **Pasting, as in Milanote:** paste or drop a link or an image onto the canvas: a single **Link** or **Image** card is born where you are (a pasted text becomes an Idea, a Scene if it starts with a heading such as “INT. LIGHTHOUSE - NIGHT”, and a `# …` heading gives it its title). An image address, or an image dragged from a web page, becomes an Image card. Several files dropped at once make one card each, and a `.md` or `.txt` file becomes the card it describes (title, type and sheet of a MondoWrite card or an Obsidian note). Paste an address into a card that is still empty: that card becomes the Link card, without making a second one. “Organize the canvas” sorts them into Images and Links frames, and the Bible has a section for each. For a link, MondoWrite reads the page: title, author, publication date and the site’s image come in on their own. Pasting the same link twice makes only one card. A link keeps the day you read it; “Fill in from the page” adds what is missing, “Open” shows the page.
 - **Folded cards:** a card with a long text folds up, “More details” opens it.
 - **Formatting and Markdown:** select a word, a bar offers bold, italic, strikethrough, heading, lists, checkbox, quote. Markdown works as you type (`**bold**`, `*italic*`, `# heading`, `- list`, `[ ] task`) and when you paste, in cards, the Bible and the manuscript, and files stay in Markdown.
 - **To do:** unticked boxes, passages “to revisit”, questions kept for later and open questions, gathered in one panel, each linked to its card or scene.
 - **Keyboard shortcuts** for everything that matters; Ctrl/Cmd+/ lists them.
-- **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Click the thread (or tap it) to rename it or **unlink** the cards; in the Bible, a link’s cross does the same.
+- **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Click the thread (or tap it) to rename it or **unlink** the cards; in the Bible, a thread also has its own sheet (their history, what is at stake, how it changes), at the foot of which you can unlink it.
 - **Mentions:** type `@` (or `[[`, as in Obsidian) in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
 - **Images:** drop an image on a card or on the canvas, or go through the card’s ⋯ menu. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
 - **PDF:** drop, paste or import a PDF (“New card” menu, “Document…”): a **Document** card appears, with a preview of its first page, its page count, author and year when the file gives them. “Read the document” opens it in the app, page by page. The PDF is copied into `medias/`.
@@ -183,11 +183,11 @@ Then every entry, generated from your cards, on a single page and grouped by sec
 - **The pages of a book:** a scene can become a title page, copyright, dedication, epigraph, prologue, epilogue, acknowledgments or “about the author”. They place themselves before or after the story, and each one says what goes there (“Who is this book for?”).
 - **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages sized to your screen (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter; move a chapter by dragging it in the left column, or with its arrows. A scene too: drag it (above or below another), use its arrows, or Alt+↑ / Alt+↓; it joins the chapter of its new neighbour. Above the page, a quiet bar: the scene title, the page type, focus mode and the trash.
 - **Focus mode:** the page alone on screen, typewriter-style if you like (the current line stays at eye level), with the sentence, line or paragraph in full ink and the rest faded. Ctrl/Cmd+Shift+X marks a passage “to revisit”.
-- **Statistics and goals:** words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
 - **Import a manuscript:** on the projects page, “Import a manuscript or a screenplay…” turns a Word (`.docx`), PDF, Markdown or text file into a novel project (a screenplay PDF is recognized by its layout and becomes a screenplay project). Chapters come from headings, page breaks and “Chapter 3” lines; separators (`***`, `#`, `* * *`) split the scenes, each with its card; bold and italics are kept, a prologue and an epilogue become book pages (rules taken from NEO).
 - **Scene status:** draft, to revise or done, a coloured dot on the card, in the Outline, the step outline and the scene list. The statistics count the scenes done.
 - **The synopsis as a watermark:** an empty scene shows its synopsis in grey, like an outline note, until you write.
-- **In this scene:** characters and places mentioned in the text show up beside it, along with the scene’s synopsis, editable in place.
+- **In this scene:** beside the page, the characters and places named in the text, the scene’s synopsis (editable in place) and the Graveyard.
+- **Statistics and goals**, folded at the bottom of the same column: words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
 - **Go to** (Ctrl/Cmd+G): a page, a scene, a chapter, a passage to revisit or a note.
 - **Listen:** the text read aloud by the device’s voices, one voice per character and a narrator, the passage being read highlighted.
 - **Check and Statistics:** beside the text, the “Check” tab asks questions (a main character with no “Wants”, a secret never revealed, a beat far from its place), and the Statistics window counts how present characters and places are.
@@ -226,22 +226,36 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 </details>
 
-### AI, if you want it
+### AI, your choice
 
-MondoWrite works entirely without AI. You can plug one in from Settings:
+MondoWrite works entirely without AI, and offers none until you pick one. Three ways of working, your choice:
 
-- **Locally**, with Ollama or LM Studio: your texts never leave your machine. No server setting needed.
-- **With your own key**, for Claude, OpenAI or OpenRouter: the passages being analysed are then sent to that provider, under its terms. Your key stays on your device, never in the project.
+| | What the AI does | Where to set it |
+|---|---|---|
+| **No AI** (default) | Nothing. No calls, no data sent anywhere. | Nothing to do |
+| **AI that asks** | It asks questions, spots inconsistencies, suggests how to sort things. It never writes your text, and nothing enters the project without your click. | Settings › AI |
+| **Workshop mode** | On top of that, it may suggest text (variants, synopses, leads, draft sheets). Whatever you accept stays marked and logged. | Settings › This project, one project at a time |
 
-It asks, it doesn’t write: no action changes your project without your say.
+#### Which AI, and where your texts go
 
-- **Tidy up ideas:** suggests a type (Character, Place, Scene…) for your loose ideas. You apply or ignore them one by one, then “Organise the canvas” puts everything in frames.
-- **Tailored questions:** in the character assistant, a question based on what the entry already says. You do the answering.
-- **Character summary:** puts what you wrote in order, adding nothing.
-- **Describe a photo:** if you ask, from a sheet’s gallery, the AI notes what the photo shows (light, materials, atmosphere), inventing nothing. For a **character**, it also suggests an apparent age and appearance: each field is added to the sheet, replaces it or is ignored, in one click. It never says who the person is and never guesses origin, religion, health or personality. It needs a model that can read images.
-- **Check consistency:** points out possible contradictions between your cards (an age, a date, a place), as questions you can keep for later.
+- **Locally**, with Ollama or LM Studio: the model runs on your computer, your texts never leave it.
+- **Apple Intelligence, on device**: on a Mac or iPhone that has it (macOS 26, iOS 26), Apple’s own model, free, no key, nothing leaves the device. It is small: it handles the short actions, while readings of the whole story are left to the other models.
+- **With your own key**, for Claude, OpenAI or OpenRouter: nothing is sent until you start an action, and only what it needs (your ideas to sort them, the whole story for a review), under that provider’s terms. The key stays on your device, never in the project.
 
-When the AI talks about a card, it names it by its title and type, for example “Inès Morvan (character)”.
+#### When it asks
+
+- **Tidy up ideas** and **Tidy the wires**: a type for your loose ideas, the missing wires between your cards, each with its reason or the passage behind it. You apply or ignore them one by one.
+- **Review**: scene-by-scene continuity (ages, seasons, who knows what), timeline, character voices, beta reader. The questions land in the “Check” tab, each with its scene, and can become Question cards.
+- **The character assistant**: questions written from the sheet, a summary that puts what you wrote in order without adding anything, and **Ask the character**, who answers in the first person only from your texts (otherwise, they don’t know).
+- **From notes to cards**: paste notes or a dictation, the AI suggests cards made of your own passages, never rewritten.
+- **What the text says** and **breakdown**: empty sheet fields, or the props, costumes and extras of a screenplay, each with its quote.
+- **A question for an empty slot** in the outline, **describe a reference photo** (never identifying a person), and **search by meaning**, with a local model only.
+
+Every suggestion based on your text comes with the passage that supports it; a quote that cannot be found word for word is dropped. The AI names cards by their title, for example “Inès Morvan (character)”.
+
+#### Workshop mode, for one project
+
+Turned on in the Settings of the one project where you want it, it lets the AI suggest text: three variants of a sentence, a scene synopsis, three directions for what comes next, a draft of the cover, a minor character’s sheet, and reference images (with OpenAI or OpenRouter, never sending your project’s names). Nothing goes in without your click. What you accept stays underlined with dots until you rework it (“I’ve made it mine”), is counted in the statistics, and each acceptance adds a line to the project’s `ia-journal.md` file: enough to answer a publisher, or Amazon KDP, which asks you to declare AI-generated text, honestly.
 
 The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs/prompts-ia.md) (in French, with the prompts themselves in English).
 
@@ -274,7 +288,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 - **New card:** double-click or right-click the canvas, press `N`, or use the “New card” button. Then just write. A long press on a card (finger, pen or mouse) lifts it: it is selected, with a drop shadow, ready to be moved.
 - **Change the type:** type `/` at the start of a line, or tap the type label (“IDEA”).
 - **Connect:** drag a thread from a point on a card’s edge to another card, then name the link.
-- **Settings** (icon at the top right): project type, trash, interface language, appearance, and AI service.
+- **Settings** (icon at the top right), in four tabs: This project (type, Workshop mode, trash), General (language, appearance, profile, updates), Writing, and AI.
 
 ### Your files
 

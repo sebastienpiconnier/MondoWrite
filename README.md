@@ -10,7 +10,7 @@
 
 <a href="https://youtu.be/HW7D9uyo8l8"><img src="docs/images/video-poster-fr.jpg" width="640" alt="Voir la vidéo de présentation de MondoWrite (1 min 20)"></a>
 
-[Télécharger](#télécharger) · [Fonctionnalités](#fonctionnalités) · [L'IA](#lia-si-vous-le-souhaitez) · [Plateformes](#plateformes) · [Développer](#pour-développer)
+[Télécharger](#télécharger) · [Fonctionnalités](#fonctionnalités) · [L'IA, au choix](#lia-au-choix) · [Plateformes](#plateformes) · [Développer](#pour-développer)
 
 ---
 
@@ -45,7 +45,7 @@ MondoWrite rassemble tout au même endroit, du premier fragment jusqu'au livre i
 - **Votre œuvre vous appartient.** Pas de compte, pas de cloud, pas d'abonnement : vos projets sont de simples fichiers Markdown sur votre machine.
 - **Libre et gratuit, et ça le restera.** MondoWrite est un logiciel libre, distribué sous licence AGPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
 
-**L'IA n'écrira pas votre histoire.** Si vous choisissez de l'activer (y compris un modèle 100 % local sur votre ordinateur), elle relève vos incohérences, remet vos notes en ordre et vous pose des questions pointues. Vous restez l'auteur.
+**L'IA, c'est vous qui choisissez.** Aucune par défaut : MondoWrite fonctionne entièrement sans elle. Branchée (un modèle 100 % local, celui d'Apple sur votre Mac ou votre iPhone, ou votre propre clé), elle questionne, relève vos incohérences et vous propose des pistes, sans écrire à votre place. Et pour un projet où vous le décidez, le mode Atelier l'autorise à proposer du texte, toujours marqué et journalisé. Vous restez l'auteur. [En savoir plus](#lia-au-choix).
 
 ## 🖼️ En images
 
@@ -117,13 +117,13 @@ MondoWrite est en cours de développement (version 1.11.3). **Guide de l’utili
 ### Le canevas
 
 - **Cartes libres :** double-clic ou clic droit sur le canevas, bouton « Nouvelle carte » ou touche N, et vous écrivez directement son titre (Entrée passe au texte). Texte riche (gras, italique, listes). Une nouvelle carte ne se pose jamais sur une autre.
-- **Dix types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question, Image, Lien, Document. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
+- **Seize types de carte :** Idée, Personnage, Lieu, Scène, Intrigue, Thème, Question, Secret, Groupe, Objet, Événement, Règle du monde, Épisode (série), Image, Lien, Document. On change de type en tapant `/` en début de ligne ou en touchant l'étiquette du type.
 - **Coller, comme dans Milanote :** collez ou déposez un lien ou une image sur le canevas : une seule carte **Lien** ou **Image** naît là où vous êtes (un texte collé devient une Idée, une Scène s'il commence par un en-tête comme « INT. PHARE - NUIT », et un intertitre `# …` lui donne son titre). L'adresse d'une image, ou une image glissée depuis une page web, devient une carte Image. Plusieurs fichiers déposés d'un coup font une carte chacun, et un fichier `.md` ou `.txt` devient la carte qu'il annonce (titre, type et fiche d'une carte MondoWrite ou d'une note Obsidian). Collez une adresse dans une carte encore vide : c'est elle qui devient la carte Lien, sans en créer une deuxième. « Organiser le canevas » les range dans les cadres Images et Liens, et la Bible a une rubrique pour chacun. Pour un lien, MondoWrite lit la page : titre, auteur, date de publication et image du site arrivent d'eux-mêmes. Le même lien collé deux fois ne crée qu'une carte. Un lien garde le jour où vous l'avez consulté ; « Compléter depuis la page » remplit ce qui manque, « Ouvrir » affiche la page.
 - **Cartes repliées :** une carte au texte long se replie, « Plus de détails » la déplie.
 - **Mise en forme et Markdown :** sélectionnez un mot, une barre propose gras, italique, barré, titre, listes, case à cocher, citation. Le Markdown marche à la frappe (`**gras**`, `*italique*`, `# titre`, `- liste`, `[ ] tâche`) et au collage, dans les cartes, la Bible et le manuscrit, et les fichiers restent en Markdown.
 - **À faire :** les cases non cochées, les passages « à reprendre », les questions gardées pour plus tard et les questions ouvertes, rassemblés dans un seul panneau, chacun relié à sa carte ou à sa scène.
 - **Raccourcis clavier** pour tout ce qui compte ; Ctrl/Cmd+/ en donne la liste.
-- **Fils étiquetés :** tirez un fil d'une carte à une autre et nommez le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Clic sur le fil (ou appui au doigt) pour le renommer ou le **délier** ; dans la Bible, la croix d'un lien fait de même.
+- **Fils étiquetés :** tirez un fil d'une carte à une autre et nommez le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Clic sur le fil (ou appui au doigt) pour le renommer ou le **délier** ; dans la Bible, un fil a aussi sa fiche (leur histoire, ce qui se joue, comment ça évolue), au pied de laquelle on peut le délier.
 - **Mentions :** tapez `@` (ou `[[`, comme dans Obsidian) dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si vous renommez la carte, et vous pouvez créer la carte citée sans quitter votre phrase.
 - **Images :** déposez une image sur une carte ou sur le canevas, ou passez par le menu ⋯ de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.
 - **PDF :** déposez, collez ou importez un PDF (menu « Nouvelle carte », « Document… ») : une carte **Document** naît, avec l'aperçu de sa première page, son nombre de pages, son auteur et son année quand le fichier les donne. « Lire le document » l'ouvre dans l'app, page après page. Le PDF est copié dans `medias/`.
@@ -187,8 +187,8 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 - **Statut de scène :** brouillon, à revoir ou terminée, une pastille de couleur sur la carte, dans le Plan, le séquencier et la liste des scènes. Les statistiques comptent les scènes terminées.
 - **Le synopsis en filigrane :** une scène encore vide affiche son synopsis en gris, comme une note de plan, jusqu'à ce que vous écriviez. Au-dessus de la page, une barre discrète : le titre de la scène, le type de page, le mode focus et la corbeille.
 - **Mode focus :** la page seule à l'écran, en machine à écrire si vous le souhaitez (la ligne en cours reste à hauteur d'yeux), avec la phrase, la ligne ou le paragraphe en pleine encre et le reste estompé. Ctrl/Cmd+Maj+X marque un passage « à reprendre ».
-- **Statistiques et objectifs :** mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
-- **Dans cette scène :** les personnages et les lieux cités dans le texte s'affichent à côté, avec le synopsis de la scène, modifiable sur place.
+- **Dans cette scène :** à côté de la page, les personnages et les lieux cités dans le texte, le synopsis de la scène (modifiable sur place) et le Chutier.
+- **Statistiques et objectifs**, repliés en bas de la même colonne : mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
 - **Aller à** (Ctrl/Cmd+G) : une page, une scène, un chapitre, un passage à reprendre ou une note.
 - **Écouter :** le texte lu à voix haute par les voix de l'appareil, une voix par personnage et un narrateur, le passage lu surligné.
 - **Vérifier et Statistiques :** à côté du texte, l'onglet « Vérifier » pose des questions (un personnage principal sans « Veut », un secret jamais révélé, une case loin de sa place), et la fenêtre Statistiques compte la présence des personnages et des lieux.
@@ -227,22 +227,36 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma, re
 
 </details>
 
-### L'IA, si vous le souhaitez
+### L'IA, au choix
 
-MondoWrite fonctionne entièrement sans IA. Vous pouvez en brancher une dans les Réglages :
+MondoWrite fonctionne entièrement sans IA, et n'en propose aucune tant que vous n'en avez pas choisi une. Trois façons de travailler, que vous choisissez :
 
-- **En local**, avec Ollama ou LM Studio : vos textes ne quittent jamais votre machine. Aucun réglage du serveur n'est nécessaire.
-- **Avec votre propre clé**, chez Claude, OpenAI ou OpenRouter : les passages analysés sont alors envoyés à ce fournisseur, selon ses conditions. Votre clé reste sur votre appareil, jamais dans le projet.
+| | Ce que fait l'IA | Où le régler |
+|---|---|---|
+| **Sans IA** (par défaut) | Rien. Aucun appel, aucune donnée envoyée. | Rien à faire |
+| **IA qui questionne** | Elle pose des questions, relève des incohérences, propose un rangement. Elle n'écrit jamais votre texte, et rien n'entre dans le projet sans votre clic. | Réglages › IA |
+| **Mode Atelier** | En plus, elle peut proposer du texte (variantes, synopsis, pistes, brouillons de fiche). Tout ce que vous acceptez reste marqué et journalisé. | Réglages › Ce projet, projet par projet |
 
-Elle questionne, elle n'écrit pas : aucune action ne modifie votre projet sans votre accord.
+#### Quelle IA, et où vont vos textes
 
-- **Ranger les idées :** propose un type (Personnage, Lieu, Scène…) pour vos idées en vrac. Vous appliquez ou vous ignorez, une par une, puis « Organiser le canevas » range tout en cadres.
-- **Questions sur mesure :** dans l'assistant personnage, une question posée d'après ce que dit déjà la fiche. C'est vous qui répondez.
-- **Synthèse d'un personnage :** remet en ordre ce que vous avez écrit, sans rien ajouter.
-- **Décrire une photo :** si vous le demandez, depuis la galerie d'une fiche, l'IA relève en notes ce que montre la photo (lumière, matières, ambiance), sans rien inventer. Pour un **personnage**, elle propose aussi son âge apparent et son apparence : chaque champ s'ajoute à la fiche, la remplace ou s'ignore, d'un clic. Elle ne dit jamais qui est la personne et ne devine ni origine, ni religion, ni santé, ni caractère. Il faut un modèle qui lit les images.
-- **Vérifier la cohérence :** relève les contradictions possibles entre vos cartes (un âge, une date, un lieu), sous forme de questions que vous pouvez garder pour plus tard.
+- **En local**, avec Ollama ou LM Studio : le modèle tourne sur votre ordinateur, vos textes n'en sortent pas.
+- **Apple Intelligence, sur l'appareil** : sur un Mac ou un iPhone qui l'a (macOS 26, iOS 26), le modèle d'Apple, gratuit, sans clé, rien ne quitte l'appareil. Il est petit : il sert aux actions courtes, les lectures de tout le récit restent réservées aux autres modèles.
+- **Avec votre propre clé**, chez Claude, OpenAI ou OpenRouter : rien ne part tant que vous ne lancez pas une action, et seulement ce dont elle a besoin (vos idées pour les ranger, tout le récit pour une relecture), selon les conditions de ce fournisseur. La clé reste sur votre appareil, jamais dans le projet.
 
-Quand l'IA parle d'une carte, elle la nomme par son titre et son type, par exemple « Inès Morvan (personnage) ».
+#### Quand elle questionne
+
+- **Ranger les idées** et **Ranger les fils** : un type pour vos idées en vrac, les fils qui manquent entre vos cartes, chacun avec sa raison ou le passage qui le fonde. Vous appliquez ou ignorez, une par une.
+- **Relecture** : cohérence scène par scène (âges, saisons, qui sait quoi), chronologie, voix des personnages, lecteur bêta. Les questions arrivent dans l'onglet « Vérifier », chacune avec sa scène, et peuvent devenir des cartes Question.
+- **L'assistant personnage** : des questions écrites d'après la fiche, une synthèse qui remet en ordre ce que vous avez écrit sans rien ajouter, et **Interroger le personnage**, qui répond à la première personne seulement avec vos textes (sinon, il ne sait pas).
+- **Du vrac aux cartes** : collez des notes ou une dictée, l'IA propose des cartes faites de vos propres passages, jamais réécrits.
+- **Ce que le texte en dit** et **dépouillement** : des champs de fiche vides, ou les accessoires, costumes et figurants d'un scénario, chacun avec sa citation.
+- **Une question pour une case vide** du plan, **décrire une photo** de référence (sans jamais identifier une personne), et une **recherche par le sens**, avec un modèle local seulement.
+
+Toute proposition fondée sur votre texte porte le passage qui la justifie ; une citation introuvable telle quelle est écartée. L'IA nomme les cartes par leur titre, par exemple « Inès Morvan (personnage) ».
+
+#### Le mode Atelier, pour un projet
+
+Activé dans les Réglages du seul projet où vous le voulez, il permet à l'IA de proposer du texte : trois variantes d'une phrase, un synopsis de scène, trois directions pour la suite, un brouillon de la couverture, la fiche d'un personnage secondaire, et des images de référence (avec OpenAI ou OpenRouter, sans jamais envoyer les noms de votre projet). Rien n'entre sans votre clic. Ce que vous acceptez est souligné en pointillé jusqu'à ce que vous le retravailliez (« Je l'ai repris »), compté dans les statistiques, et chaque acceptation ajoute une ligne au fichier `ia-journal.md` du projet : de quoi répondre honnêtement à un éditeur ou à Amazon KDP, qui demande de déclarer le texte généré.
 
 Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md](docs/prompts-ia.md).
 
@@ -275,7 +289,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Nouvelle carte :** double-clic ou clic droit sur le canevas, touche N, ou bouton « Nouvelle carte ». On écrit directement. Un appui long sur une carte (doigt, stylet ou souris) la soulève : elle est sélectionnée, avec une ombre portée, pour être déplacée.
 - **Changer le type :** taper `/` en début de ligne, ou toucher l'étiquette du type (« IDÉE »).
 - **Relier :** tirer un fil depuis un point au bord d'une carte vers une autre, puis nommer le lien.
-- **Réglages** (icône en haut à droite) : type de projet, corbeille, langue de l'interface, apparence, et branchement d'une IA.
+- **Réglages** (icône en haut à droite), en quatre onglets : Ce projet (type, mode Atelier, corbeille), Général (langue, apparence, profil, mises à jour), Écriture, et IA.
 
 ### Vos fichiers
 
