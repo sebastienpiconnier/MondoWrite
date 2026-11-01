@@ -110,7 +110,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-MondoWrite est en cours de développement (version 1.11.4). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
+MondoWrite est en cours de développement (version 1.12.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
 
 ## Fonctionnalités
 
@@ -161,7 +161,7 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 ### Le plan
 
 - **Des structures au choix :** libre, trois actes, Save the Cat, voyage du héros, cercle de Dan Harmon, pyramide en cinq actes (Freytag), six étapes (Hauge), sept points (Dan Wells), kishōtenketsu, romance, polar. Chaque case rappelle en une ligne ce qu'on y attend. Le cercle de Harmon se dessine en cercle, avec les scènes de chaque étape.
-- **Mes gabarits :** « Créer un gabarit… » donne vos propres cases (un nom et une aide pour chacune), à partir de rien ou de la structure en place, dont les scènes suivent. Ils sont gardés sur l'appareil et proposés dans tous vos projets.
+- **Mes gabarits :** « Créer un gabarit… » donne vos propres cases (un nom et une aide pour chacune), à partir de rien ou de la structure en place, dont les scènes suivent. Ils sont gardés sur l'appareil et proposés dans tous vos projets, et s'échangent en fichier Markdown (exporter, importer).
 - **Ruban du récit :** en haut du Manuscrit et du Scénario, chaque case prend la place que ses scènes occupent vraiment (mots ou pages), avec un repère là où elle commence d'ordinaire. « Voir les intrigues » ajoute une ligne par intrigue, « Voir la courbe » dessine la fortune du héros scène après scène (d'après « Pour le héros, la scène finit » de chaque fiche de scène). « Vérifier » signale une case très loin de sa place habituelle.
 - **Ranger les scènes :** glissez une scène dans une case, déplacez-la avec les flèches ou choisissez sa case dans un menu. Les scènes du canevas qui n'ont pas encore leur place attendent dans « À placer ».
 - **Écrire depuis le plan :** une scène créée dans une case a aussitôt sa carte sur le canevas, et son titre se modifie des deux côtés. Chaque scène a son **synopsis** (ce qui s'y passe, en une phrase), écrit directement dans le plan.

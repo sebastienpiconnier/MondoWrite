@@ -1,6 +1,6 @@
 [package]
 name = "cosmos"
-version = "1.11.4"
+version = "1.12.0"
 description = "MondoWrite : du chaos au monde ordonné, une toile pour les écrivains"
 authors = ["Sébastien Piconnier"]
 license = "AGPL-3.0-or-later"

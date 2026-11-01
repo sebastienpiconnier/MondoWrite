@@ -110,7 +110,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-MondoWrite is under active development (version 1.11.4). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
+MondoWrite is under active development (version 1.12.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
 
 ## Features
 
@@ -161,7 +161,7 @@ Then every entry, generated from your cards, on a single page and grouped by sec
 ### The outline
 
 - **Structures to choose from:** free, three acts, Save the Cat, hero’s journey, Dan Harmon’s story circle, five-act pyramid (Freytag), six stages (Hauge), seven points (Dan Wells), kishōtenketsu, romance, mystery. A sentence under the picker says what each one is, and each slot reminds you in one line what belongs there. Harmon’s circle is drawn as a circle, with the scenes of each step.
-- **My templates:** “Create a template…” gives you your own beats (a name and a hint for each), from scratch or from the current structure, whose scenes follow. They are kept on the device and offered in all your projects.
+- **My templates:** “Create a template…” gives you your own beats (a name and a hint for each), from scratch or from the current structure, whose scenes follow. They are kept on the device, offered in all your projects, and shared as Markdown files (export, import).
 - **Story ribbon:** at the top of the Manuscript and the Screenplay, each beat takes the room its scenes really fill (words or pages), with a mark where it usually begins. “Show plotlines” adds a row per plot, “Show the curve” draws the hero’s fortune scene by scene (from “For the hero, the scene ends” in each scene sheet). “Check” flags a beat very far from its usual place.
 - **Placing scenes:** drag a scene into a slot, move it with the arrows or pick its slot from a menu. Canvas scenes without a place yet wait under “To place”.
 - **Writing from the outline:** a scene created in a slot gets its card on the canvas right away, and its title can be edited from both sides. Each scene has its **synopsis** (what happens, in one sentence), written right in the outline.

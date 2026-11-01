@@ -1,6 +1,9 @@
 // Choix du gabarit (Plan d'un roman, séquencier d'un scénario) : les gabarits livrés, puis « Mes gabarits »
 // (gardés sur l'appareil, proposés dans tous les projets), « Créer un gabarit… » et, gabarit de l'auteur en
 // place, « Modifier les cases… ». L'éditeur est une fenêtre native (<dialog>) : Échap la ferme, le focus y reste.
+// Échange (1.12.0, templateFile.ts) : « Exporter ce gabarit… » (livré ou de l'auteur) et l'export d'un gabarit de la
+// bibliothèque écrivent un fichier Markdown ; « Importer un gabarit… » lit Markdown, texte ou JSON et ouvre
+// l'éditeur prérempli : rien n'entre dans le projet ni dans la bibliothèque sans « Utiliser dans ce projet ».
 
 import { useEffect, useRef, useState } from "react";
 import { fmt, useT } from "../i18n";
@@ -8,6 +11,8 @@ import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { newId } from "../projectState";
 import { beatText, templateBeats, type CustomTemplate, type PlanTemplate } from "../plan";
+import { storage } from "../storage";
+import { parseTemplateText, TEMPLATE_IMPORT_EXTENSIONS, templateFileName, templateToMarkdown, type TemplateFile } from "../templateFile";
 
 interface Props {
   /** Gabarit en place ; null : aucun (scénario). */
@@ -34,13 +39,23 @@ interface Row {
 const NEW = "__new";
 const EDIT = "__edit";
 const MINE = "mine:";
+const IMPORT = "__import";
+const EXPORT = "__export";
+/** Durée d'affichage du message d'import ou d'export. */
+const NOTICE_MS = 6000;
 
 export function TemplatePicker({ value, options, allowNone = false, custom, onBuiltin }: Props) {
   const t = useT();
   const p = t.plan;
   const e = p.editor;
   const saved = useSettings((s) => s.templates);
-  const [editing, setEditing] = useState<{ name: string; rows: Row[]; keep: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ name: string; rows: Row[]; keep: boolean; imported?: string } | null>(null);
+  const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -60,7 +75,32 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
 
   const apply = (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[]) => useCosmos.getState().setCustomTemplate(name, rows);
 
+  const exportTemplate = async (tpl: TemplateFile) => {
+    try {
+      const name = templateFileName(tpl.name, e.namePlaceholder);
+      const ok = await storage.saveAs({ name, extension: "md", mime: "text/markdown", data: new TextEncoder().encode(templateToMarkdown(tpl)) }, p.exportLabel);
+      if (ok) setNotice({ text: p.exported, error: false });
+    } catch {
+      setNotice({ text: p.exportFailed, error: true });
+    }
+  };
+
+  const importTemplate = async () => {
+    const file = await storage.pickTextFile(p.fileLabel, TEMPLATE_IMPORT_EXTENSIONS).catch(() => null);
+    if (!file) return;
+    const tpl = parseTemplateText(file.text, file.name);
+    if (!tpl) return setNotice({ text: p.importFailed, error: true });
+    setNotice(null);
+    setEditing({ name: tpl.name, rows: tpl.beats.map((b) => ({ label: b.label, hint: b.hint ?? "", id: newId() })), keep: true, imported: file.name });
+  };
+
   const onChange = (v: string) => {
+    if (v === IMPORT) return void importTemplate();
+    if (v === EXPORT) {
+      if (!value || value === "libre") return;
+      const name = value === "perso" ? custom?.name || p.templates.perso : p.templates[value];
+      return void exportTemplate({ name, beats: rowsOf(value, true).map((r) => ({ label: r.label, ...(r.hint ? { hint: r.hint } : {}) })) });
+    }
     if (v === NEW) {
       const base = value && value !== "libre" ? rowsOf(value, false) : [];
       setEditing({ name: "", rows: base.length > 0 ? base : [{ label: "", hint: "", id: newId() }], keep: true });
@@ -127,13 +167,25 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
             ))}
             <option value={NEW}>{p.newTemplate}</option>
             {value === "perso" && <option value={EDIT}>{p.editTemplate}</option>}
+            <option value={IMPORT}>{p.importTemplate}</option>
+            {value && value !== "libre" && <option value={EXPORT}>{p.exportTemplate}</option>}
           </optgroup>
         </select>
       </label>
+      {notice && (
+        <span className={`tpl-notice${notice.error ? " is-error" : ""}`} role="status">
+          {notice.text}
+        </span>
+      )}
       {editing && (
         <dialog ref={dialogRef} className="app-dialog tpl-editor" aria-labelledby="tpl-editor-title" onClose={() => setEditing(null)}>
           <h2 id="tpl-editor-title">{e.title}</h2>
           <p className="tpl-intro">{e.intro}</p>
+          {editing.imported && (
+            <p className="tpl-imported" role="status">
+              {fmt(e.imported, { file: editing.imported })}
+            </p>
+          )}
           <label className="tpl-name">
             <span>{e.name}</span>
             <input type="text" value={editing.name} placeholder={e.namePlaceholder} autoFocus onChange={(ev) => setEditing({ ...editing, name: ev.target.value })} />
@@ -184,6 +236,14 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
                     <span>
                       {s.name || p.templates.perso} <span className="tpl-count">· {fmt(e.count, { n: s.beats.length })}</span>
                     </span>
+                    <button
+                      type="button"
+                      className="ghost-button tpl-export"
+                      aria-label={fmt(e.exportAria, { name: s.name || p.templates.perso })}
+                      onClick={() => void exportTemplate({ name: s.name || p.templates.perso, beats: s.beats })}
+                    >
+                      {e.export}
+                    </button>
                     <button type="button" className="icon-button" aria-label={fmt(e.forget, { name: s.name || p.templates.perso })} title={fmt(e.forget, { name: s.name || p.templates.perso })} onClick={() => useSettings.getState().forgetTemplate(s.id)}>
                       <span aria-hidden="true">×</span>
                     </button>
@@ -192,6 +252,7 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
               </ul>
             </details>
           )}
+          <p className="tpl-file-hint">{e.fileHint}</p>
           {named.length === 0 && <p className="tpl-empty" role="status">{e.empty}</p>}
           <div className="assistant-actions app-dialog-actions tpl-actions">
             <button type="button" onClick={close}>

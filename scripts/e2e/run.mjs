@@ -871,6 +871,35 @@ const scenarios = [
       }, "la carte Question reliée à Inès et à la scène n'est pas enregistrée");
     },
   },
+  {
+    name: "Plan : un gabarit importé d'un fichier Markdown se pose, puis s'exporte",
+    async run(h) {
+      const { page } = h;
+      await h.create("Gabarit importé");
+      await h.view(2);
+      const select = page.locator(".plan-template select");
+      await select.waitFor();
+      const chooser = page.waitForEvent("filechooser");
+      await select.selectOption("__import");
+      const md = "# Mon polar\n\n## Le crime\nUn corps, une question.\n\n## L’enquête\n\n## La vérité\nLe coupable est démasqué.\n";
+      await (await chooser).setFiles({ name: "polar.md", mimeType: "text/markdown", buffer: Buffer.from(md) });
+      const dialog = page.locator("dialog[open]");
+      await until(() => dialog.getByText("Importé de « polar.md »", { exact: false }).isVisible(), "l'éditeur ne dit pas d'où vient le gabarit");
+      const labels = await dialog.locator("input[type=text]").evaluateAll((els) => els.map((e) => e.value));
+      assert(labels.includes("Mon polar") && labels.includes("Le crime") && labels.includes("La vérité"), `cases lues : ${labels.join(" | ")}`);
+      await dialog.getByRole("button", { name: "Utiliser dans ce projet" }).click();
+      await h.saved((f) => {
+        const plan = JSON.parse(f["cosmos.json"] ?? "{}").plan;
+        return plan?.template === "perso" && plan.custom?.name === "Mon polar" && plan.custom.beats.length === 3;
+      }, "le gabarit importé n'est pas enregistré dans le plan");
+      const download = page.waitForEvent("download");
+      await select.selectOption("__export");
+      const file = await download;
+      assert(file.suggestedFilename() === "Mon polar.md", `nom proposé : ${file.suggestedFilename()}`);
+      const text = (await import("node:fs")).readFileSync(await file.path(), "utf8");
+      assert(/^# Mon polar/.test(text) && /## L’enquête/.test(text) && /Le coupable est démasqué/.test(text), `fichier exporté : ${text}`);
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------

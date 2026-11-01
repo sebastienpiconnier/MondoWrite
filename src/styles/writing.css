@@ -943,6 +943,14 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .tpl-library ul { margin: 6px 0 0; padding: 0; list-style: none; }
 .tpl-library li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .tpl-count, .tpl-empty { color: var(--muted); }
+.tpl-library li > span:first-child { flex: 1; min-width: 0; }
+.tpl-library .tpl-export { min-height: 32px; padding: 0 10px; font-size: 0.8125rem; }
+@media (pointer: coarse) { .tpl-library .tpl-export { min-height: 44px; } }
+/* Import et export d'un gabarit (1.12.0) : message près du choix du gabarit, origine du fichier dans l'éditeur. */
+.tpl-notice { font-size: 0.8125rem; color: var(--ink-2); }
+.tpl-notice.is-error { color: var(--danger); }
+.tpl-imported { margin: -6px 0 14px; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--ground); font-size: 0.875rem; line-height: 1.45; }
+.tpl-file-hint { margin: 0 0 10px; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.45; }
 .tpl-actions { justify-content: flex-end; }
 @media (max-width: 600px) { .tpl-row { grid-template-columns: 1.6em minmax(0, 1fr) auto; } .tpl-row .tpl-hint { grid-column: 2 / -1; } }
 
