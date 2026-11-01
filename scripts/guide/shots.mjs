@@ -66,7 +66,13 @@ async function scrollToText(text, offset = 70) {
 const step = async (name, fn) => { try { await fn(); } catch (e) { console.log("ÉCHEC", name, e.message.split("\n").slice(0, 3).join(" | ")); } };
 const view = async (v) => { await page.locator("nav button, [aria-label] button", { hasText: v }).first().click(); await wait(1000); };
 // Les fenêtres d'export ont leur propre « Fermer », à côté du bouton d'export.
-const closeDialog = () => page.locator("dialog[open] .app-dialog-actions button, dialog[open] .spdf-close, dialog[open] .paperback-row button:not(.is-primary)").first().click();
+// Carte agrandie : sa croix (.expanded-close). Échap en dernier recours, pour qu'une fenêtre restée ouverte
+// ne bloque pas les étapes suivantes.
+async function closeDialog() {
+  const b = page.locator("dialog[open] .expanded-close, dialog[open] .app-dialog-actions button, dialog[open] .spdf-close, dialog[open] .paperback-row button:not(.is-primary)").first();
+  if (await b.count()) await b.click({ timeout: 3000 }).catch(() => {});
+  for (let i = 0; i < 3 && (await page.locator("dialog[open]").count()); i++) { await page.keyboard.press("Escape"); await wait(200); }
+}
 const bg = async () => { await page.mouse.click(900, 200); await wait(200); };
 // Zoom au pincement (molette + Ctrl) : la molette seule déplace le canevas.
 async function zoomAt(x, y, steps) {
@@ -458,12 +464,30 @@ await step("réglages", async () => {
   await shot("a-propos", { el: "dialog[open]" });
   await closeDialog();
 });
+// IA : un faux LM Studio (adresse par défaut, localhost:1234) répond ce que l'étape attend (`aiReply`).
+// Les captures montrent donc l'app telle quelle, sans service réel ni réseau.
+const MODEL = "gemma-3-12b";
+let aiReply = "";
+async function mockAi() {
+  const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "GET, POST, OPTIONS" };
+  await page.route("http://localhost:1234/**", async (route) => {
+    const req = route.request();
+    const url = req.url();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    const json = url.includes("/api/v0/models")
+      ? { data: [{ id: MODEL, state: "loaded", loaded_context_length: 32768 }] }
+      : url.endsWith("/v1/models")
+        ? { data: [{ id: MODEL }, { id: "qwen3-8b" }] }
+        : { choices: [{ message: { content: aiReply }, finish_reason: "stop" }] };
+    await wait(250);
+    return route.fulfill({ status: 200, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(json) });
+  });
+}
 await step("ia", async () => {
+  await mockAi();
   await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
-  await page.locator(".settings-panel select").last().selectOption({ index: 4 });
-  await wait(300);
-  await page.locator(".settings-panel input").last().fill("gemma3");
-  await wait(300);
+  await page.locator('.settings-panel select:has(option[value="lmstudio"])').selectOption("lmstudio");
+  await wait(1200);
   await shot("reglages-ia", { clip: await union([".settings-panel"], 20) });
   await page.keyboard.press("Escape");
   await page.mouse.click(700, 500);
@@ -472,6 +496,68 @@ await step("ia", async () => {
   await b.click();
   await wait(300);
   await shot("ia-menu", { clip: await union([b, page.locator("[role=menu], .ai-panel, .settings-panel").last()], 24) });
+  await page.keyboard.press("Escape");
+});
+await step("ia relecture", async () => {
+  aiReply = JSON.stringify({
+    questions: [
+      {
+        question: T(
+          "Le Loup prend le chemin le plus court : comment sait-il déjà où se trouve la maison de la Mère-grand, que la petite fille vient seulement de lui décrire ?",
+          "The Wolf takes the shortest path: how does he already know where the Grandmother’s house is, when the little girl has only just described it?",
+        ),
+        scenes: ["s3"],
+        quote: T("par le chemin qui était le plus court", "along the shortest path"),
+      },
+      {
+        question: T("La Mère-grand est malade et garde le lit : qui lui a appris que sa petite-fille venait ce jour-là ?", "The Grandmother is ill and keeps to her bed: who told her that her granddaughter was coming that day?"),
+        scenes: ["s4"],
+        quote: T("Tire la chevillette, la bobinette cherra.", "Pull the peg, and the latch will fall."),
+      },
+    ],
+  });
+  await page.getByRole("button", { name: T("IA", "AI"), exact: true }).click();
+  await page.getByRole("button", { name: T("Cohérence scène par scène", "Scene-by-scene continuity") }).click();
+  await wait(2500);
+  await page.locator(".ai-review").first().scrollIntoViewIfNeeded();
+  await shot("ia-relecture", { clip: await union([".ai-review"], 16) });
+});
+await step("ia interroger", async () => {
+  aiReply = T(
+    "Ma mère m’avait dit de porter une galette et un petit pot de beurre à ma Mère-grand. Je ne savais pas qu’il était dangereux de s’arrêter à écouter un loup.",
+    "My mother had told me to take a cake and a little pot of butter to my grandmother. I did not know it was dangerous to stop and listen to a wolf.",
+  );
+  await view("Bible");
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await wait(600);
+  await page.getByRole("button", { name: T(/Questionner .*Chaperon/, /Ask about Little Red/) }).first().click();
+  await wait(400);
+  await page.getByRole("tab", { name: T("Interroger", "Ask them") }).first().click().catch(() => page.getByRole("button", { name: T("Interroger", "Ask them") }).first().click());
+  await wait(300);
+  const box = page.getByLabel(T(/Ta question pour/, /Your question for/)).first();
+  await box.fill(T("Pourquoi t’es-tu arrêtée pour parler au Loup ?", "Why did you stop to talk to the Wolf?"));
+  await page.getByRole("button", { name: T("Demander", "Ask"), exact: true }).first().click();
+  await wait(1500);
+  // L'assistant ouvert est celui qui a la question posée (la fiche de la Mère vient avant dans la Bible).
+  const asked = page.getByText(T("Pourquoi t’es-tu arrêtée", "Why did you stop"), { exact: false }).first();
+  const panel = asked.locator("xpath=ancestor::*[contains(@class,'assistant')][last()]");
+  await panel.scrollIntoViewIfNeeded();
+  await shot("ia-interroger", { clip: await union([panel], 16) });
+});
+await step("atelier", async () => {
+  aiReply = JSON.stringify([
+    T("Le Petit Chaperon rouge cueille trop de fleurs et perd de vue le chemin.", "Little Red Riding Hood picks too many flowers and loses sight of the path."),
+    T("Un bûcheron entend le Loup frapper chez la Mère-grand.", "A woodcutter hears the Wolf knocking at the Grandmother’s door."),
+    T("La Mère-grand, méfiante, ne répond pas à la voix trop douce.", "The Grandmother, wary, does not answer the too-gentle voice."),
+  ]);
+  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await page.getByLabel(T("Activer le mode Atelier pour ce projet", "Turn on Workshop mode for this project")).check();
+  await page.keyboard.press("Escape");
+  await page.mouse.click(700, 500);
+  await view(T("Manuscrit", "Manuscript"));
+  await page.getByRole("button", { name: T("Trois directions", "Three directions") }).first().click();
+  await wait(1500);
+  await shot("atelier-directions", { clip: await union([".atelier-directions .atelier-panel"], 0) });
 });
 await page.close();
 

@@ -652,7 +652,7 @@
 </ul>
 <p><span class="ui">Tester et lister les modèles</span> vérifie la connexion et propose la liste des modèles disponibles. Le bouton <span class="ui">IA</span> apparaît alors dans la barre du haut. Si la liste n’a pas pu être chargée, un message le dit : touche de nouveau le bouton pour réessayer.</p>
 <div class="pair">
-  <figure><img src="images/fr/reglages-ia.jpg"><figcaption>Brancher Ollama dans les Réglages.</figcaption></figure>
+  <figure><img src="images/fr/reglages-ia.jpg"><figcaption>Brancher LM Studio dans les Réglages.</figcaption></figure>
   <figure><img src="images/fr/ia-menu.jpg"><figcaption>Le menu IA.</figcaption></figure>
 </div>
 
@@ -666,6 +666,7 @@
   <li><strong>Du vrac aux cartes</strong> : <span class="ui">IA</span> › <span class="ui">Du vrac aux cartes…</span> (sur iPhone, <span class="ui">Découper avec l’IA</span> dans le Carnet, pour une note longue). Colle des notes, un brainstorm ou une dictée, jusqu’à 8 000 caractères : l’IA propose des cartes, chacune avec un type, un titre et un passage de ton texte, et des fils entre elles. Ton texte n’est jamais réécrit : un passage introuvable tel quel est écarté. Coche ce que tu gardes, change un type ou un titre, puis <span class="ui">Créer les cartes</span> ; tout s’annule d’un coup.</li>
   <li><strong>Décrire une photo</strong> : agrandis une photo de la galerie, puis <span class="ui">Décrire avec l’IA</span>. Pour un lieu, l’IA relève ce que montre la photo en notes ; pour un personnage, elle propose l’âge apparent et l’apparence, que tu acceptes champ par champ. Elle ne cherche jamais à identifier une personne. Le modèle doit savoir lire les images.</li>
 </ul>
+<figure class="medium"><img src="images/fr/ia-interroger.jpg"><figcaption>L’onglet « Interroger » : le personnage répond avec ce que tu as écrit.</figcaption></figure>
 <p>Pendant qu’elle travaille, un bouton <span class="ui">Annuler</span> l’arrête (menu IA, galerie, assistant personnage). L’IA nomme toujours les cartes par leur titre. En cas de problème, un message dit ce qui ne va pas : service injoignable, clé refusée, modèle inconnu, limite atteinte, réponse trop longue à venir.</p>
 
 <h3>Relire, ranger et chercher avec l’IA</h3>
@@ -678,6 +679,7 @@
   <li><strong>Dépouillement</strong> (scénario) : sur la fiche d’une scène, <span class="ui">Dépouiller cette scène</span> ; dans les Statistiques, onglet <span class="ui">Dépouillement</span>, <span class="ui">Dépouiller tout le scénario</span>. L’IA lit les lignes d’action et propose accessoires, costumes, figurants, véhicules et effets, à cocher ; la liste par catégorie montre les scènes de chacun.</li>
   <li><strong>Recherche par le sens</strong> : dans la recherche (Ctrl ou Cmd + F), <span class="ui">Par le sens</span> retrouve un passage même sans le mot cherché (« où ai-je parlé de la lettre ? »). Seulement avec Ollama ou LM Studio et un modèle d’embedding choisi dans <span class="ui">Modèle de la recherche par le sens</span> (par exemple nomic-embed-text) : le texte ne quitte pas ton ordinateur, et l’index n’est gardé que le temps de la session.</li>
 </ul>
+<figure class="small"><img src="images/fr/ia-relecture.jpg"><figcaption>Les questions de la relecture, dans l’onglet « Vérifier », chacune avec la scène qui la fonde.</figcaption></figure>
 
 <h3>Le mode Atelier</h3>
 <p>Par défaut, l’IA de MondoWrite questionne et propose, elle n’écrit pas à ta place. Le mode Atelier, activé projet par projet dans <span class="ui">Réglages</span> › <span class="ui">Ce projet</span> › <span class="ui">Mode Atelier</span>, lui permet de proposer du texte. Un repère <span class="ui">Atelier</span> le rappelle dans la barre du haut.</p>
@@ -688,6 +690,7 @@
   <li><span class="ui">Proposer un brouillon</span> sur la couverture, et <span class="ui">Proposer une fiche</span> pour un personnage secondaire : des propositions champ par champ, à ajouter, remplacer ou ignorer.</li>
   <li><span class="ui">Générer une image</span> (fenêtre Photos et galerie d’une fiche, avec OpenAI ou OpenRouter) : un portrait, un décor ou une ambiance d’après une description préremplie depuis la fiche, que tu retouches avant l’envoi. Les noms propres de ton projet ne sont jamais envoyés, et la consigne demande une personne fictive, sans texte ni logo. Tu gardes une image ou aucune ; celle que tu gardes porte la mention « Image générée » avec le service et le modèle, et une ligne du journal. Le modèle d’image se choisit dans <span class="ui">Modèle d’image (facultatif)</span>.</li>
 </ul>
+<figure class="medium"><img src="images/fr/atelier-directions.jpg"><figcaption>« Trois directions » en mode Atelier : chaque piste peut devenir une carte.</figcaption></figure>
 <p>Tout ce que tu acceptes est souligné en pointillé, listé dans <span class="ui">À faire</span> (<span class="ui">Passages de l’IA</span>) et compté dans les Statistiques (<span class="ui">Texte touché par l’IA</span>). Quand tu as retravaillé un passage, <span class="ui">Je l’ai repris</span> retire la marque. Chaque proposition acceptée ajoute aussi une ligne au fichier <code>ia-journal.md</code> du projet (date, action, carte ou scène, service et modèle, nombre de mots) : c’est ce qui t’aide à répondre à Amazon KDP, qui demande de déclarer le texte généré par l’IA. Une version de MondoWrite antérieure à la 1.8.0 garde le texte mais perd la marque si elle réenregistre le projet.</p>
 
 <!-- ===================================================================================== -->

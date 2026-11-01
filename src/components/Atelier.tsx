@@ -7,7 +7,7 @@
 // - `FieldProposals` : propositions champ par champ (Ajouter / Remplacer / Ignorer), comme la description d'une photo ;
 // - `SynopsisSuggest`, `DirectionsSuggest`, `PitchDraft`, `SheetDraft` : les fonctions b à e.
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { selectionHasIa } from "./iaMark";
 import { newId } from "../projectState";
@@ -46,6 +46,36 @@ import {
 export const ATELIER_SETTING_ID = "atelier-setting";
 
 /** L'Atelier est-il actif pour ce projet, avec un service d'IA prêt ? */
+
+/**
+ * Panneau posé sous un bouton des barres du Manuscrit et du Scénario (writing.css : aligné à droite du bouton).
+ * Un bouton proche du bord gauche le faisait sortir de la fenêtre (libellés anglais, fenêtre étroite) :
+ * il se décale alors vers la droite, jusqu'au bord de la fenêtre ou de la colonne qui le coupe.
+ */
+function useKeepInView(rootRef: RefObject<HTMLElement | null>, open: boolean) {
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!open || !root) return;
+    const panel = root.querySelector<HTMLElement>(":scope > :not(.atelier-button)");
+    if (!panel || getComputedStyle(panel).position !== "absolute") return;
+    panel.style.left = "";
+    panel.style.right = "";
+    // Bord gauche permis : la fenêtre, ou le premier parent qui coupe ce qui dépasse (colonne du Manuscrit).
+    let min = 8;
+    for (let el = root.parentElement; el; el = el.parentElement) {
+      if (getComputedStyle(el).overflowX !== "visible") {
+        min = Math.max(min, el.getBoundingClientRect().left + 4);
+        break;
+      }
+    }
+    const box = panel.getBoundingClientRect();
+    if (box.left < min) {
+      panel.style.right = "auto";
+      panel.style.left = `${Math.round(min - root.getBoundingClientRect().left)}px`;
+    }
+  });
+}
+
 export function useAtelierOn(): boolean {
   const mode = useCosmos((s) => s.aiMode);
   const ai = useSettings((s) => s.ai);
@@ -308,6 +338,7 @@ export function DirectionsSuggest({ sceneId, title, text, synopsis }: { sceneId:
     setLines(null);
     a.setError("");
   });
+  useKeepInView(rootRef, !!lines || !!a.error || a.busy);
   // Une autre scène : les pistes de la précédente ne valent plus.
   useEffect(() => {
     setLines(null);
@@ -587,6 +618,7 @@ export function ScreenplayAtelier({ editor, scene = "" }: { editor: Editor; scen
     setAsked(null);
     a.setError("");
   });
+  useKeepInView(rootRef, !!asked || !!a.error || a.busy);
   const editable = !!info && (info.type === "action" || info.type === "dialogue" || info.type === "parenthetical");
   const ask = async () => {
     if (!info || !editable) return;

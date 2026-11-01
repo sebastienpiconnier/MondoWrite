@@ -652,7 +652,7 @@
 </ul>
 <p><span class="ui">Test and list models</span> checks the connection and offers the list of available models. The <span class="ui">AI</span> button then appears in the top bar. If the list could not be loaded, a message says so: press the button again to retry.</p>
 <div class="pair">
-  <figure><img src="images/en/reglages-ia.jpg"><figcaption>Plugging in Ollama in Settings.</figcaption></figure>
+  <figure><img src="images/en/reglages-ia.jpg"><figcaption>Connecting LM Studio in Settings.</figcaption></figure>
   <figure><img src="images/en/ia-menu.jpg"><figcaption>The AI menu.</figcaption></figure>
 </div>
 
@@ -666,6 +666,7 @@
   <li><strong>From notes to cards</strong>: <span class="ui">AI</span> › <span class="ui">From notes to cards…</span> (on iPhone, <span class="ui">Split with AI</span> in the Notebook, for a long note). Paste notes, a brainstorm or a dictation, up to 8,000 characters: the AI suggests cards, each with a type, a title and a passage of your text, and wires between them. Your text is never rewritten: a passage not found as such is left out. Tick what you keep, change a type or a title, then <span class="ui">Create the cards</span>; it all undoes in one go.</li>
   <li><strong>Describe a photo</strong>: enlarge a photo in the gallery, then <span class="ui">Describe with AI</span>. For a place, the AI notes what the photo shows; for a character, it suggests the apparent age and appearance, which you accept field by field. It never tries to identify a person. The model must be able to read images.</li>
 </ul>
+<figure class="medium"><img src="images/en/ia-interroger.jpg"><figcaption>The “Ask them” tab: the character answers from what you wrote.</figcaption></figure>
 <p>While it works, a <span class="ui">Cancel</span> button stops it (AI menu, gallery, character assistant). The AI always names cards by their title. When something goes wrong, a message says what: service unreachable, key rejected, unknown model, limit reached, answer taking too long.</p>
 
 <h3>Read through, tidy and search with AI</h3>
@@ -678,6 +679,7 @@
   <li><strong>Breakdown</strong> (screenplay): on a scene’s sheet, <span class="ui">Break down this scene</span>; in Statistics, <span class="ui">Breakdown</span> tab, <span class="ui">Break down the whole screenplay</span>. AI reads the action lines and suggests props, costumes, extras, vehicles and effects to tick; the list by category shows each one’s scenes.</li>
   <li><strong>Search by meaning</strong>: in search (Ctrl or Cmd + F), <span class="ui">By meaning</span> finds a passage even without the word you typed (“where did I mention the letter?”). Only with Ollama or LM Studio and an embedding model picked in <span class="ui">Model for search by meaning</span> (nomic-embed-text, for instance): your text never leaves your computer, and the index is only kept for the session.</li>
 </ul>
+<figure class="small"><img src="images/en/ia-relecture.jpg"><figcaption>Read-through questions in the “Check” tab, each with the scene it rests on.</figcaption></figure>
 
 <h3>Workshop mode</h3>
 <p>By default, MondoWrite’s AI asks and suggests; it doesn’t write for you. Workshop mode, turned on project by project in <span class="ui">Settings</span> › <span class="ui">This project</span> › <span class="ui">Workshop mode</span>, lets it suggest text. A <span class="ui">Workshop</span> badge in the top bar reminds you.</p>
@@ -688,6 +690,7 @@
   <li><span class="ui">Suggest a draft</span> on the cover, and <span class="ui">Suggest a sheet</span> for a minor character: suggestions field by field, to add, replace or ignore.</li>
   <li><span class="ui">Generate an image</span> (Photos window and a sheet’s gallery, with OpenAI or OpenRouter): a portrait, a setting or a mood from a description pre-filled from the sheet, which you edit before sending. Your project’s proper names are never sent, and the prompt asks for a fictional person, with no text or logo. You keep one image or none; the one you keep is credited “Generated image” with the service and model, and gets a log line. Pick the model in <span class="ui">Image model (optional)</span>.</li>
 </ul>
+<figure class="medium"><img src="images/en/atelier-directions.jpg"><figcaption>“Three directions” in Workshop mode: each lead can become a card.</figcaption></figure>
 <p>Everything you accept gets a dotted underline, is listed in <span class="ui">To do</span> (<span class="ui">AI passages</span>) and counted in Statistics (<span class="ui">Text touched by AI</span>). Once you’ve reworked a passage, <span class="ui">I’ve made it mine</span> removes the mark. Each accepted suggestion also adds a line to the project’s <code>ia-journal.md</code> file (date, action, card or scene, service and model, word count): it helps you answer Amazon KDP, which asks you to declare AI-generated text. A MondoWrite version before 1.8.0 keeps the text but drops the mark if it saves the project again.</p>
 
 <!-- ===================================================================================== -->
