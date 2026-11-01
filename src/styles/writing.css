@@ -310,6 +310,17 @@
 .sq-list.is-cards .sq-scene:has(> .sq-go) > .sq-go { grid-area: go; display: flex; gap: 6px; }
 .sq-list.is-cards .sq-scene:has(> .sq-go) > :is(.sq-moves, .sq-go) .icon-button { width: 36px; height: 36px; }
 @media (pointer: coarse) { .sq-list.is-cards .sq-scene:has(> .sq-go) > :is(.sq-moves, .sq-go) .icon-button { width: 44px; height: 44px; } }
+/* Fiches du Plan d'un roman (1.11.4) : même rangée unique en bas (flèches à gauche, ✎ et ⋯ à droite), alignée d'une
+   fiche à l'autre ; sur iPad elle passait sur deux lignes. */
+.sq-list.is-cards .plan-scene {
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: 1fr auto;
+  grid-template-areas: "body body body" "moves . actions"; align-items: end; row-gap: 10px;
+}
+.sq-list.is-cards .plan-scene > .sq-body { grid-area: body; align-self: start; }
+.sq-list.is-cards .plan-scene > .sq-moves { grid-area: moves; display: flex; gap: 6px; }
+.sq-list.is-cards .plan-scene > .plan-actions { grid-area: actions; margin-top: 0; flex-wrap: nowrap; }
+.sq-list.is-cards .plan-scene > :is(.sq-moves, .plan-actions) .icon-button { width: 36px; height: 36px; }
+@media (pointer: coarse) { .sq-list.is-cards .plan-scene > :is(.sq-moves, .plan-actions) .icon-button { width: 44px; height: 44px; } }
 
 .sq-section { margin-top: 10px; padding: 4px; font-family: var(--font-display); font-weight: 500; font-size: 1.125rem; border-radius: 8px; }
 /* Case du gabarit : au-dessus des sections de l'auteur, comme dans le Plan. */
