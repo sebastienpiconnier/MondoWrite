@@ -71,6 +71,8 @@
 .screenplay.is-focus > .sp-center { min-height: 0; overflow: hidden; }
 .screenplay .sp-scroll { overflow-x: hidden; }
 .screenplay.is-focus .sp-editor { line-height: 1.5; }
+/* Le compteur du mode focus (FocusBar.tsx) remplace le pied de page. */
+.screenplay.is-focus .sp-footer { display: none; }
 .sp-bar-hint kbd { padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 4px; font: inherit; }
 
 /* La feuille : Courier 12 points, 10 caractères par pouce. 1ch = un caractère, donc

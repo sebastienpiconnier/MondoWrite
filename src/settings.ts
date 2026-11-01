@@ -4,7 +4,7 @@
 import { readReading, type ReadingSettings } from "./reading";
 import { applyWritingAids, isSpellcheckMode, type SpellcheckMode } from "./writingAids";
 import { isTypographySetting, type TypographySetting } from "./typography";
-import { isFocusHighlight, type FocusHighlight } from "./focusText";
+import { isFocusColumn, isFocusHighlight, type FocusColumn, type FocusHighlight } from "./focusText";
 import { readSections, type BibleSections } from "./bibleSections";
 import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
@@ -78,6 +78,10 @@ export interface WritingSettings {
   spellcheck: SpellcheckMode;
   /** Suggestions et correction automatique du clavier du système. */
   suggestions: boolean;
+  /** Mode focus du manuscrit : largeur de la colonne de texte. */
+  column: FocusColumn;
+  /** Mode focus : passer la fenêtre en plein écran (ordinateur). */
+  fullscreen: boolean;
 }
 
 /** Crans du zoom de la page (Cmd/Ctrl + et -, menu Présentation, Réglages). */
@@ -102,6 +106,8 @@ function readWriting(raw: unknown): WritingSettings {
     zoom: readZoom(w.zoom),
     spellcheck: isSpellcheckMode(w.spellcheck) ? w.spellcheck : "notes",
     suggestions: w.suggestions !== false,
+    column: isFocusColumn(w.column) ? w.column : "medium",
+    fullscreen: w.fullscreen === true,
   };
 }
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);

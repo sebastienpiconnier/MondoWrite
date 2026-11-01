@@ -45,6 +45,7 @@ import type { Node as PMNode } from "@tiptap/pm/model";
 import { SCENE_AT, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";
+import { FocusBar, FocusCounter, useFocusChrome } from "./FocusBar";
 import { useVocab } from "../vocab";
 import { isTouch } from "../platform";
 import { EDITABLE_TYPES } from "../screenplay/model";
@@ -84,6 +85,7 @@ export function ScreenplayView() {
   const { t, types } = useVocab();
   const sp = t.screenplay;
   const lang = useSettings((s) => s.lang);
+  const num = (n: number) => new Intl.NumberFormat(lang).format(n);
   const screenplay = useCosmos((s) => s.screenplay);
   const nodes = useCosmos((s) => s.nodes);
   const revealCard = useCosmos((s) => s.revealCard);
@@ -93,7 +95,6 @@ export function ScreenplayView() {
   const focusMode = useCosmos((s) => s.focusMode);
   const setFocusMode = useCosmos((s) => s.setFocusMode);
   const writing = useSettings((s) => s.writing);
-  const setWriting = useSettings((s) => s.setWriting);
   const chutier = useCosmos((s) => s.chutier);
   // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
   const [panels, togglePanel] = usePanels();
@@ -356,6 +357,7 @@ export function ScreenplayView() {
 
   // Écran tactile : la barre d'éléments se pose juste au-dessus du clavier virtuel.
   const rootRef = useRef<HTMLDivElement>(null);
+  const chrome = useFocusChrome(focusMode, rootRef);
   // Scène glissée dans la liste (ref : le dépôt peut arriver avant le rendu suivant).
   const dragRef = useRef<number | null>(null);
   const [dragScene, setDragScene] = useState<number | null>(null);
@@ -726,23 +728,16 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
       ref={rootRef}
     >
+      {focusMode && <FocusBar />}
       {focusMode && (
-        <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
-          <div className="focus-options">
-            <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
-              {t.focus.typewriter}
-            </button>
-          </div>
-          <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => setFocusMode(false)}>
-            <span className="focus-exit-text">{t.focus.exit}</span>
-            <svg className="focus-exit-x" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </div>
+        <FocusCounter
+          text={pagination && pagination.pages > 0 ? `${fmt(sp.pageOf, { page: pagination.startPage[Math.min(current.index, pagination.startPage.length - 1)] ?? 1, pages: pagination.pages })} · ${fmt(sp.minutes, { n: minutesFor(pagination.pages) })}` : fmt(t.manuscript.wordsMany, { n: num(stats.words) })}
+          words={stats.words}
+          num={num}
+        />
       )}
       <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
         <div className="eyebrow">{sp.scenesTitle}</div>

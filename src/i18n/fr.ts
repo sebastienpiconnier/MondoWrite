@@ -282,6 +282,8 @@ export const fr = {
     authorNone: "Pas encore de nom.",
     focusHighlight: "Mode focus : mise en valeur",
     focusTypewriter: "Mode focus : machine à écrire",
+    focusColumn: "Mode focus : largeur de la colonne (manuscrit)",
+    focusFullscreen: "Mode focus : passer en plein écran",
     icloud: "Synchroniser les projets avec iCloud Drive",
     icloudHint: "Les projets sont gardés dans iCloud Drive (Fichiers > iCloud Drive > MondoWrite) et retrouvés sur tes autres appareils. En le désactivant, ils restent dans iCloud et ceux de cet appareil ne sont plus synchronisés.",
     icloudOff: "iCloud Drive n’est pas activé sur cet appareil : tes projets restent sur l’iPhone ou l’iPad, sans synchronisation. Active-le dans Réglages › ton nom › iCloud › iCloud Drive pour les retrouver sur tes autres appareils, ou choisis un dossier Dropbox sur la page des projets.",
@@ -2102,6 +2104,7 @@ export const fr = {
       chapterBreak: "Nouveau chapitre",
       focus: "Mode focus",
       exitFocus: "Quitter le mode focus",
+      focusHighlight: "Mode focus : changer la mise en valeur",
       chutier: "Mettre le passage sélectionné au chutier",
       pageZoom: "Zoom de la page : agrandir, réduire, taille normale (aussi dans le Scénario)",
       elementType: "Changer d’élément",
@@ -2227,6 +2230,10 @@ export const fr = {
     typewriter: "Machine à écrire",
     highlight: "Mettre en valeur",
     highlights: { off: "Tout le texte", sentence: "La phrase", line: "La ligne", paragraph: "Le paragraphe" },
+    highlightButton: "Mise en valeur : {mode}",
+    highlightKey: "Changer la mise en valeur ({mod} + Maj + E)",
+    session: "{n} pendant la séance",
+    columns: { narrow: "Étroite", medium: "Moyenne", wide: "Large" },
   },
 
   // « À faire » : ce qui reste ouvert dans le projet.

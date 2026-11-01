@@ -427,6 +427,11 @@ await step("focus", async () => {
   await wait(800);
   await page.locator(".ProseMirror").first().click();
   await wait(500);
+  // Haut du chapitre visible sous la barre (le défilement gardé de la vue normale le cachait).
+  await page.evaluate(() => document.querySelector(".ms-main")?.scrollTo(0, 0));
+  await page.mouse.move(400, 300);
+  await page.mouse.move(420, 320);
+  await wait(400);
   await shot("mode-focus");
   await page.keyboard.press("Escape");
   await wait(400);

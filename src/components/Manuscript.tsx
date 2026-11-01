@@ -38,6 +38,8 @@ import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } 
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
 import { countWords, detectCards, orphanTexts } from "../manuscript";
 import { Chutier } from "./Chutier";
+import { FocusBar, FocusCounter, useFocusChrome } from "./FocusBar";
+import { FOCUS_COLUMN_EM } from "../focusText";
 import type { Passage } from "../chutier";
 import { plainText } from "../search";
 import { manuscriptStats } from "../stats";
@@ -105,9 +107,11 @@ export function Manuscript() {
   const [sceneOver, setSceneOver] = useState<{ id: string; side: "before" | "after" } | null>(null);
   const b = t.book;
   const focusMode = useCosmos((s) => s.focusMode);
+  // Mode focus à la iA Writer : barre et pointeur cachés pendant la frappe, compteur à la pause.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const chrome = useFocusChrome(focusMode, rootRef);
   const setFocusMode = useCosmos((s) => s.setFocusMode);
   const writing = useSettings((s) => s.writing);
-  const setWriting = useSettings((s) => s.setWriting);
   const target = useCosmos((s) => s.manuscriptTarget);
   const revealCard = useCosmos((s) => s.revealCard);
   const restoreScene = useCosmos((s) => s.restoreScene);
@@ -408,22 +412,12 @@ export function Manuscript() {
         : sceneWords;
 
   return (
-    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}`}>
-      {focusMode && (
-        <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
-          <div className="focus-options">
-            <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
-              {t.focus.typewriter}
-            </button>
-          </div>
-          <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => setFocusMode(false)}>
-            <span className="focus-exit-text">{t.focus.exit}</span>
-            <svg className="focus-exit-x" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </div>
-      )}
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
+      ref={rootRef}
+      style={focusMode ? { ["--focus-col" as string]: FOCUS_COLUMN_EM[writing.column] } : undefined}
+    >
+      {focusMode && <FocusBar />}
+      {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
       <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>

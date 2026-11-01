@@ -11,7 +11,8 @@ import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { useCommand } from "../commands";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, PAGE_ZOOMS, PALETTES, type Palette, type ThemePref, type WheelMode } from "../settings";
-import { FOCUS_HIGHLIGHTS } from "../focusText";
+import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS } from "../focusText";
+import { canFullscreen } from "./FocusBar";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { PAPERS, isPaper } from "../screenplay/layout";
@@ -118,7 +119,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), atelierHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), atelierHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -373,6 +374,20 @@ export function Settings({ project = true }: { project?: boolean }) {
             <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
             {t.settings.focusTypewriter}
           </label>
+          <label htmlFor={ids.focusCol}>{t.settings.focusColumn}</label>
+          <select id={ids.focusCol} value={writing.column} onChange={(e) => setWriting({ ...writing, column: e.target.value as typeof writing.column })}>
+            {FOCUS_COLUMNS.map((c) => (
+              <option key={c} value={c}>
+                {t.focus.columns[c]}
+              </option>
+            ))}
+          </select>
+          {canFullscreen() && (
+            <label className="settings-check" htmlFor={ids.focusFs}>
+              <input id={ids.focusFs} type="checkbox" checked={writing.fullscreen} onChange={(e) => setWriting({ ...writing, fullscreen: e.target.checked })} />
+              {t.settings.focusFullscreen}
+            </label>
+          )}
           <label htmlFor={ids.pageZoom}>{t.settings.pageZoom}</label>
           <select id={ids.pageZoom} value={String(writing.zoom)} onChange={(e) => setWriting({ ...writing, zoom: Number(e.target.value) })}>
             {/* Une valeur relue hors des crans reste proposée, sinon la liste afficherait autre chose. */}

@@ -278,6 +278,8 @@ export const en: Messages = {
     authorNone: "No name yet.",
     focusHighlight: "Focus mode: highlight",
     focusTypewriter: "Focus mode: typewriter",
+    focusColumn: "Focus mode: column width (manuscript)",
+    focusFullscreen: "Focus mode: go full screen",
     icloud: "Sync projects with iCloud Drive",
     icloudHint: "Projects are kept in iCloud Drive (Files > iCloud Drive > MondoWrite) and found on your other devices. Turning it off leaves them in iCloud and stops syncing this device.",
     icloudOff: "iCloud Drive isn’t turned on on this device: your projects stay on the iPhone or iPad, without syncing. Turn it on in Settings › your name › iCloud › iCloud Drive to find them on your other devices, or choose a Dropbox folder on the projects page.",
@@ -2106,6 +2108,7 @@ export const en: Messages = {
       chapterBreak: "New chapter",
       focus: "Focus mode",
       exitFocus: "Leave focus mode",
+      focusHighlight: "Focus mode: change the highlight",
       chutier: "Send the selected passage to the Graveyard",
       pageZoom: "Page zoom: in, out, normal size (also in the Screenplay)",
       elementType: "Change element",
@@ -2200,6 +2203,10 @@ export const en: Messages = {
     typewriter: "Typewriter",
     highlight: "Highlight",
     highlights: { off: "All the text", sentence: "The sentence", line: "The line", paragraph: "The paragraph" },
+    highlightButton: "Highlight: {mode}",
+    highlightKey: "Change the highlight ({mod} + Shift + E)",
+    session: "{n} this session",
+    columns: { narrow: "Narrow", medium: "Medium", wide: "Wide" },
   },
 
   todos: {

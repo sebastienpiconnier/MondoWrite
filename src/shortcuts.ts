@@ -49,6 +49,7 @@ export const SHORTCUT_GROUPS = {
     ["chapterBreak", ["Entrée", "Entrée", "Entrée"]],
     ["focus", ["Mod", "Shift", "F"]],
     ["exitFocus", ["Échap"]],
+    ["focusHighlight", ["Mod", "Shift", "E"]],
     ["chutier", ["Mod", "Shift", "K"]],
     ["moveScene", ["Alt", "↑ ↓"]],
     ["pageZoom", ["Mod", "+ − 0"]],

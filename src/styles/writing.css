@@ -341,7 +341,7 @@
 .manuscript.is-focus { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main"; }
 .manuscript.is-focus .ms-scenes, .manuscript.is-focus .sp-side, .manuscript.is-focus .ms-meta, .manuscript.is-focus .ms-hint { display: none; }
 .manuscript.is-typewriter .ms-main { padding-top: 40vh; padding-bottom: 60vh; }
-.ms-focus-bar { position: fixed; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); opacity: 0.35; transition: opacity 0.2s; }
+.ms-focus-bar { position: fixed; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); opacity: 0.6; transition: opacity 0.3s; }
 .ms-focus-bar:focus-within { opacity: 1; }
 @media (any-hover: hover) { .ms-focus-bar:hover { opacity: 1; } }
 .ms-focus-bar button, .ms-focus-bar select { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.8125rem; cursor: pointer; }
@@ -631,6 +631,22 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .manuscript.is-focus .ms-chapter-flow { padding-top: 2.6em; }
 .manuscript.is-focus .ms-page.is-dimmed .ms-chapter-flow, .manuscript.is-focus .ms-page.is-dimmed .ms-editor .scene-break { opacity: 0.34; transition: opacity 0.2s; }
 .manuscript.is-focus .ms-page.is-dimmed .ms-editor p.has-dropcap:not(.is-focus-on)::first-letter { color: color-mix(in srgb, var(--ink) 34%, transparent); }
+/* Mode focus à la iA Writer (1.11.0) : une colonne au texte aligné à gauche, sans césure, d'environ 66 caractères
+   (--focus-col, en em marges comprises, réglage de l'appareil) ; la taille du texte suit la colonne, bornée. */
+.manuscript.is-focus .ms-page { width: calc(var(--focus-col, 29) * 1em); font-size: calc(clamp(15px, calc((100cqw - 8px) / var(--focus-col, 29)), 22px) * var(--page-zoom, 1)); line-height: 1.65; }
+.manuscript.is-focus .ms-page .ms-editor p:not(.is-quiet) { text-align: left; hyphens: manual; }
+/* De la place pour la barre au-dessus du premier chapitre, et pour le compteur sous la dernière ligne. */
+.manuscript.is-focus:not(.is-typewriter) .ms-main { padding-top: 64px; }
+.manuscript.is-focus:not(.is-typewriter) .ms-main { padding-bottom: calc(120px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)); }
+.manuscript.is-focus .ms-editor .scene-mark { scroll-margin-top: 7rem; }
+/* Pendant la frappe : la barre et le pointeur s'effacent (la souris qui bouge les ramène), le compteur et le
+   bandeau du chapitre aussi (ils reviennent à la pause). */
+.is-focus.is-quiet .ms-focus-bar { opacity: 0; pointer-events: none; }
+.is-focus.is-quiet, .is-focus.is-quiet .ProseMirror { cursor: none; }
+.manuscript.is-focus .ms-chapter-flow { transition: opacity 0.4s; }
+.manuscript.is-focus.is-typing .ms-chapter-flow { opacity: 0.3; }
+.ms-focus-count { position: fixed; z-index: 30; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)); transform: translateX(-50%); margin: 0; padding: 4px 12px; border-radius: 999px; background: var(--ground); box-shadow: 0 0 14px 10px var(--ground); color: var(--ink-2); font: 0.8125rem/1.4 var(--font-ui); white-space: nowrap; pointer-events: none; user-select: none; transition: opacity 0.4s; }
+.is-focus.is-typing .ms-focus-count { opacity: 0; }
 
 /* Chutier : passages mis de côté (volet de droite), compteur de mots et correcteur dans la barre de la scène. */
 .ms-chutier-count { font: 13px var(--font-ui); color: var(--ink-2); }
