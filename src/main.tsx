@@ -27,6 +27,10 @@ import { watchKeyboard } from "./keyboard";
 import { watchTextScale } from "./textScale";
 import { watchFullscreen } from "./fullscreen";
 import { watchClosing } from "./closing";
+import { watchErrors } from "./bugReport";
+
+// Dernières erreurs gardées pour « Signaler un bug » (À propos).
+watchErrors();
 
 // App de bureau : comportements d'app du système (curseur flèche sur les commandes, voir styles.css).
 if (isTauri() && !isMobileOS()) {

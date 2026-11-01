@@ -14,6 +14,7 @@ import { isAppleKeyboard, isMobileOS, isTauri, openExternal } from "./platform";
 import { useSettings } from "./settings";
 import { useCosmos } from "./store";
 import { openGuide } from "./help";
+import { openBugReport } from "./reportBug";
 import { REPO } from "./updates";
 import { replayShortcut, sendCommand } from "./commands";
 import { storage } from "./storage";
@@ -137,6 +138,7 @@ async function buildMenu() {
         },
       }),
       await sep(),
+      await MenuItem.new({ id: "bug", text: m.reportBug, action: () => openBugReport() }),
       await MenuItem.new({ id: "source", text: m.source, action: () => void openExternal(`https://github.com/${REPO}`) }),
     ],
   });

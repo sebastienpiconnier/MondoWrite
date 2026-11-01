@@ -7,6 +7,7 @@ import { useCosmos } from "../store";
 import { useT } from "../i18n";
 import { SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
 import { isAppleKeyboard, openExternal } from "../platform";
+import { openBugReport } from "../reportBug";
 import { version } from "../../package.json";
 import { TrashList } from "./TrashList";
 import { DocumentViewer } from "./DocumentViewer";
@@ -139,6 +140,13 @@ export function Dialogs() {
           <p>{t.about.author}</p>
           <p>{t.about.credits}</p>
           <p>{t.about.license}</p>
+          <h3>{t.about.bug.heading}</h3>
+          <p>{t.about.bug.intro}</p>
+          <p>
+            <button type="button" className="ghost-button" onClick={openBugReport}>
+              {t.about.bug.button}
+            </button>
+          </p>
           <p>
             {t.about.source}{" "}
             <a className="about-link" href={REPO} onClick={(e) => (e.preventDefault(), void openExternal(REPO))}>

@@ -2156,6 +2156,7 @@ export const fr = {
     guide: "Guide de l’utilisateur",
     shortcuts: "Raccourcis clavier",
     tour: "Visite guidée",
+    reportBug: "Signaler un bug…",
     source: "MondoWrite sur GitHub",
   },
   about: {
@@ -2172,6 +2173,21 @@ export const fr = {
     credits: "Construit avec Tauri, React, React Flow, TipTap et pdf-lib. Polices IBM Plex, Space Grotesk, Playfair Display, Courier Prime et Crimson Text (licence SIL Open Font). L’import des manuscrits et le livre broché reprennent des règles de NEO, de Hugh Howey (licence MIT).",
     license: "Licence GNU AGPL 3.0 ou ultérieure.",
     source: "Code source :",
+    bug: {
+      heading: "Un problème ?",
+      intro: "« Signaler un bug » ouvre une page de GitHub avec un message prérempli : la version de MondoWrite, ton système, la langue, le type de projet et les dernières erreurs vues par l’app. Rien ne part sans toi : tu relis, tu complètes, puis tu envoies (il faut un compte GitHub, gratuit). Ni ton texte ni tes clés n’y figurent.",
+      button: "Signaler un bug",
+      title: "Bug : ",
+      what: "Ce qui s’est passé",
+      expected: "Ce que tu attendais",
+      steps: "Pour le refaire",
+      stepsHint: "Les gestes, dans l’ordre (le projet d’exemple aide si le bug s’y voit aussi).",
+      details: "Informations techniques (remplies par MondoWrite)",
+      noErrors: "Aucune erreur relevée pendant cette session.",
+      labels: { version: "Version", system: "Système", shell: "App", lang: "Langue", project: "Projet ouvert", ai: "Service d’IA", errors: "Dernières erreurs" },
+      shells: { desktop: "app de bureau", mobile: "app mobile", browser: "navigateur" },
+      kinds: { roman: "roman", scenario: "scénario" },
+    },
   },
 
   // Copies Markdown du projet (dossier markdown/) : réglage du projet et avertissement en tête de chaque copie.
