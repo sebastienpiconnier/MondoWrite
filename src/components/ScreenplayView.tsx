@@ -46,6 +46,8 @@ import { SCENE_AT, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";
 import { FocusBar, FocusCounter, useFocusChrome } from "./FocusBar";
+import { MoreMenu, useKeyHint } from "./MoreMenu";
+import { usePhone } from "./usePhone";
 import { useVocab } from "../vocab";
 import { isTouch } from "../platform";
 import { EDITABLE_TYPES } from "../screenplay/model";
@@ -98,6 +100,9 @@ export function ScreenplayView() {
   const chutier = useCosmos((s) => s.chutier);
   // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
   const [panels, togglePanel] = usePanels();
+  // Présentation › volets (barre des menus du Mac, 1.11.1).
+  useCommand("toggle-scenes", () => togglePanel("scenes"));
+  useCommand("toggle-side", () => togglePanel("side"));
   // Correcteur : seulement si les Réglages le veulent aussi dans le scénario (suivi en direct).
   const spell = usePageSpell();
   const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
@@ -358,6 +363,8 @@ export function ScreenplayView() {
   // Écran tactile : la barre d'éléments se pose juste au-dessus du clavier virtuel.
   const rootRef = useRef<HTMLDivElement>(null);
   const chrome = useFocusChrome(focusMode, rootRef);
+  const key = useKeyHint();
+  const phone = usePhone();
   // Scène glissée dans la liste (ref : le dépôt peut arriver avant le rendu suivant).
   const dragRef = useRef<number | null>(null);
   const [dragScene, setDragScene] = useState<number | null>(null);
@@ -919,17 +926,6 @@ export function ScreenplayView() {
             <kbd>{sp.keyTab}</kbd> {sp.hintTab} · <kbd>{sp.keyEnter}</kbd> {sp.hintEnter} · <kbd>{sp.keyEscape}</kbd>{" "}
             {sp.hintEscape}
           </span>
-          {/* Numéros de scène et soulignement : dans les Réglages. */}
-          <button
-            type="button"
-            className="sp-option"
-            title={t.format.chutier}
-            aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
-            onPointerDown={(e) => e.preventDefault()}
-            onClick={sendToChutier}
-          >
-            {t.book.chutier.title}
-          </button>
           <button
             type="button"
             className="sp-focus"
@@ -940,19 +936,18 @@ export function ScreenplayView() {
           >
             {focusMode ? sp.focusExit : sp.focus}
           </button>
-          <button type="button" className="sp-option" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onPointerDown={(e) => e.preventDefault()} onClick={openReplace}>
-            {t.replace.button}
-          </button>
-          <button type="button" className="sp-option" title={t.goto.buttonHint} aria-keyshortcuts="Control+G Meta+G" onPointerDown={(e) => e.preventDefault()} onClick={() => useCosmos.getState().setDialog("goto")}>
-            {t.goto.button}
-          </button>
           <ReaderBar buttonClass="sp-option" screenplay speakers={readerSpeakers} onStart={startListening} />
-          <button type="button" className="sp-option" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onPointerDown={(e) => e.preventDefault()} onClick={openReview}>
-            {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
-          </button>
-          <button type="button" className="sp-option stats-button" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
-            {t.projectStats.button}
-          </button>
+          {/* Le reste (1.11.1) : une seule rangée sous les éléments. Numéros de scène et soulignement : dans les Réglages. */}
+          <MoreMenu
+            className="sp-option"
+            items={[
+              { label: t.book.chutier.title, title: t.format.chutier, hint: key("Mod", "Shift", "K"), onSelect: sendToChutier },
+              { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: openReplace },
+              { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
+              { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
+              !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
+            ]}
+          />
           {/* Mode Atelier : variantes de l'élément en cours, « Je l'ai repris », trois directions pour la scène. */}
           <ScreenplayAtelier editor={editor} />
           <ScreenplayDirections editor={editor} />

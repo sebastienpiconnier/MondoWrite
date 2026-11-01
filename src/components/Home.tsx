@@ -14,7 +14,7 @@ import { BrandMark, Wordmark } from "./BrandMark";
 import { ExamplesPanel } from "./ExamplesPanel";
 import { greeting } from "../greeting";
 import { hasProfile } from "../profile";
-import { TrashIcon } from "./TrashIcon";
+import { MoreMenu } from "./MoreMenu";
 
 export function Home() {
   const t = useT();
@@ -86,29 +86,30 @@ export function Home() {
           {storage.canPickFolder && p.title && p.name !== p.title ? ` · ${p.name}` : ""}
         </span>
       </button>
-      {hidden ? (
+      {hidden && (
         <button type="button" className="ghost-button home-show" disabled={busy} aria-label={fmt(h.showAgainLabel, { title: nameOf(p) })} onClick={() => run(() => showProject(p.id))}>
           {h.showAgain}
         </button>
-      ) : (
-        <button type="button" className="icon-button" disabled={busy} aria-label={fmt(h.hide, { title: nameOf(p) })} title={h.hideHint} onClick={() => run(() => hideProject(p.id))}>
-          <EyeOffIcon />
-        </button>
       )}
-      {deletable(p) && asking !== p.id && (
-        <button
-          type="button"
-          className="icon-button is-danger"
-          disabled={busy}
-          aria-label={fmt(h.remove, { title: nameOf(p) })}
-          title={fmt(h.remove, { title: nameOf(p) })}
-          onClick={() => {
-            setFailed(null);
-            setAsking(p.id);
-          }}
-        >
-          <TrashIcon />
-        </button>
+      {/* Masquer et supprimer dans un menu (1.11.1) : ils avaient le même poids que le projet lui-même. Supprimer
+          demande toujours une confirmation. */}
+      {asking !== p.id && (
+        <MoreMenu
+          label={fmt(t.app.moreActionsFor, { title: nameOf(p) })}
+          items={[
+            !hidden && { label: h.hideShort, title: h.hideHint, disabled: busy, onSelect: () => run(() => hideProject(p.id)) },
+            deletable(p) && {
+              label: h.removeShort,
+              title: fmt(h.remove, { title: nameOf(p) }),
+              danger: true,
+              disabled: busy,
+              onSelect: () => {
+                setFailed(null);
+                setAsking(p.id);
+              },
+            },
+          ]}
+        />
       )}
       {asking === p.id && (
         <div className="home-confirm" role="alert" ref={(el) => el?.scrollIntoView({ block: "nearest" })}>
@@ -316,17 +317,5 @@ export function Home() {
         </div>
       </main>
     </div>
-  );
-}
-
-/** Œil barré : masquer un projet de la liste. */
-function EyeOffIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 3l18 18" />
-      <path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3 3.9" />
-      <path d="M6.6 6.6C3.9 8.3 2.5 12 2.5 12s3.5 7 9.5 7a9.6 9.6 0 0 0 5.4-1.6" />
-      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
-    </svg>
   );
 }

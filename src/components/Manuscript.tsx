@@ -17,7 +17,8 @@ import { BookEditor, PAGE, type BookApi } from "./BookEditor";
 import type { BookHandlers } from "./bookExtensions";
 import { SynopsisField } from "./SynopsisField";
 import { DirectionsSuggest, novelSceneText } from "./Atelier";
-import { TrashIcon } from "./TrashIcon";
+import { MoreMenu, useKeyHint } from "./MoreMenu";
+import { usePhone } from "./usePhone";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -87,6 +88,9 @@ export function Manuscript() {
       return next;
     });
   const lang = useSettings((s) => s.lang);
+  // Présentation › volets (barre des menus du Mac, 1.11.1).
+  useCommand("toggle-scenes", () => togglePanel("scenes"));
+  useCommand("toggle-side", () => togglePanel("side"));
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
   const manuscript = useCosmos((s) => s.manuscript);
@@ -110,6 +114,8 @@ export function Manuscript() {
   // Mode focus à la iA Writer : barre et pointeur cachés pendant la frappe, compteur à la pause.
   const rootRef = useRef<HTMLDivElement>(null);
   const chrome = useFocusChrome(focusMode, rootRef);
+  const key = useKeyHint();
+  const phone = usePhone();
   const setFocusMode = useCosmos((s) => s.setFocusMode);
   const writing = useSettings((s) => s.writing);
   const target = useCosmos((s) => s.manuscriptTarget);
@@ -636,43 +642,12 @@ export function Manuscript() {
               </select>
             </label>
             {!pageKind && <SceneStatusPicker card={card} />}
-            {!pageKind && !opensChapter && (
-              <button type="button" className="ghost-button ms-start-chapter" onClick={() => startChapterAt(current)}>
-                {b.startChapter}
-              </button>
-            )}
             <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
               {t.focus.enter}
             </button>
-            <button type="button" className="ghost-button ms-start-chapter" title={t.replace.buttonHint} aria-keyshortcuts="Control+Shift+H Meta+Shift+H" onClick={() => useCosmos.getState().openReplace({ sceneId: current })}>
-              {t.replace.button}
-            </button>
-            <button type="button" className="ghost-button ms-start-chapter" title={t.goto.buttonHint} aria-keyshortcuts="Control+G Meta+G" onClick={() => useCosmos.getState().setDialog("goto")}>
-              {t.goto.button}
-            </button>
             <ReaderBar buttonClass="ghost-button ms-start-chapter" onStart={startListening} />
-            <button type="button" className="ghost-button ms-start-chapter" aria-pressed={sideTab === "review" && panels.side} title={t.review.buttonHint} onClick={openReview}>
-              {openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button}
-            </button>
-            <button type="button" className="ghost-button ms-start-chapter stats-button" title={t.projectStats.buttonHint} onClick={() => useCosmos.getState().setDialog("stats")}>
-              {t.projectStats.button}
-            </button>
             {/* Mode Atelier : trois pistes pour la suite de la scène (rien n'est écrit dans le manuscrit). */}
             {!pageKind && <DirectionsSuggest sceneId={current} title={title} text={plainText(manuscript[current] ?? "")} synopsis={card.fiche?.synopsis} />}
-            {/* La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle. */}
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={fmt(t.trash.removeAria, { title })}
-              title={fmt(t.trash.removeAria, { title })}
-              onClick={() => {
-                const next = order[at + 1] ?? order[at - 1] ?? null;
-                useCosmos.getState().deleteCard(current);
-                if (next) go(next);
-              }}
-            >
-              <TrashIcon />
-            </button>
             {/* Un clic change ce que le compteur compte : la scène, son chapitre, tout le livre. */}
             <button
               type="button"
@@ -690,6 +665,27 @@ export function Manuscript() {
             >
               {words(counted)} · {b.counter[countScope]}
             </button>
+            {/* Le reste (1.11.1) : une seule rangée pour la barre, la corbeille en dernier et en rouge. */}
+            <MoreMenu
+              items={[
+                !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
+                { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },
+                { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
+                { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
+                !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
+                {
+                  // La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle.
+                  label: t.trash.remove,
+                  title: fmt(t.trash.removeAria, { title }),
+                  danger: true,
+                  onSelect: () => {
+                    const next = order[at + 1] ?? order[at - 1] ?? null;
+                    useCosmos.getState().deleteCard(current);
+                    if (next) go(next);
+                  },
+                },
+              ]}
+            />
           </div>
           </div>
           </div>

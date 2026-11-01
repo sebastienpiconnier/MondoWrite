@@ -6,7 +6,7 @@
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
-import { TrashIcon } from "./TrashIcon";
+import { MoreMenu } from "./MoreMenu";
 import { SynopsisField } from "./SynopsisField";
 import { novelSceneText } from "./Atelier";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -246,15 +246,17 @@ export function Plan() {
             </select>
           </label>
         )}
-        <button type="button" className="icon-button" aria-label={fmt(p.show, { title })} title={fmt(p.show, { title })} onClick={() => revealCard(id)}>
-          <span aria-hidden="true">↗</span>
-        </button>
         <button type="button" className="icon-button" aria-label={fmt(p.openText, { title })} title={fmt(p.openText, { title })} onClick={() => useCosmos.getState().openInManuscript(id)}>
           <span aria-hidden="true">✎</span>
         </button>
-        <button type="button" className="icon-button sq-trash" aria-label={fmt(t.trash.removeAria, { title })} title={fmt(t.trash.removeAria, { title })} onClick={() => useCosmos.getState().deleteCard(id)}>
-          <TrashIcon />
-        </button>
+        {/* Voir sur le canevas et la corbeille dans un menu (1.11.1) : la corbeille n'est plus à côté du crayon. */}
+        <MoreMenu
+          label={fmt(t.app.moreActionsFor, { title })}
+          items={[
+            { label: t.bible.seeOnCanvas, title: fmt(p.show, { title }), onSelect: () => revealCard(id) },
+            { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().deleteCard(id) },
+          ]}
+        />
         </div>
       </li>
     );

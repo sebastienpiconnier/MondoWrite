@@ -5,7 +5,7 @@
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { templateBeats, type PlanBeat } from "../plan";
-import { TrashIcon } from "./TrashIcon";
+import { MoreMenu } from "./MoreMenu";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SCENE_AT, useCosmos } from "../store";
 import { useSettings, type SequencerMode } from "../settings";
@@ -312,13 +312,8 @@ export function Sequencier() {
                   {/* Sous la demi-page, une durée arrondie à la minute ne voudrait rien dire. */}
                   {pages >= 0.5 && <div>{fmt(sp.minutes, { n: minutesFor(pages) })}</div>}
                 </div>
-                {/* Aller ailleurs : la carte de la scène sur le canevas, ou la scène dans le Scénario. */}
+                {/* Écrire la scène ; voir sa carte et la corbeille dans un menu (1.11.1). */}
                 <div className="sq-go">
-                  {block.cardId && (
-                    <button type="button" className="icon-button" aria-label={fmt(sq.show, { title })} title={fmt(sq.show, { title })} onClick={() => revealCard(block.cardId!)}>
-                      <span aria-hidden="true">↗</span>
-                    </button>
-                  )}
                   <button
                     type="button"
                     className="icon-button"
@@ -328,16 +323,14 @@ export function Sequencier() {
                   >
                     <span aria-hidden="true">✎</span>
                   </button>
+                  <MoreMenu
+                    label={fmt(t.app.moreActionsFor, { title })}
+                    items={[
+                      !!block.cardId && { label: t.bible.seeOnCanvas, title: fmt(sq.show, { title }), onSelect: () => revealCard(block.cardId!) },
+                      { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().trashScreenplayScene(block.start) },
+                    ]}
+                  />
                 </div>
-                <button
-                  type="button"
-                  className="icon-button sq-trash"
-                  aria-label={fmt(t.trash.removeAria, { title })}
-                  title={fmt(t.trash.removeAria, { title })}
-                  onClick={() => useCosmos.getState().trashScreenplayScene(block.start)}
-                >
-                  <TrashIcon />
-                </button>
               </li>
             );
           })}

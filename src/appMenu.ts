@@ -20,6 +20,7 @@ import { replayShortcut, sendCommand } from "./commands";
 import { storage } from "./storage";
 import { vocab } from "./vocab";
 import { quitApp } from "./closing";
+import { nextHighlight } from "./focusText";
 
 async function buildMenu() {
   const { Menu, Submenu, PredefinedMenuItem, MenuItem } = await import("@tauri-apps/api/menu");
@@ -64,6 +65,8 @@ async function buildMenu() {
       await MenuItem.new({ id: "save", text: m.save, accelerator: "CmdOrCtrl+S", enabled: inProject, action: () => replayShortcut("s", "KeyS") }),
       await MenuItem.new({ id: "export", text: m.exportMenu, enabled: inProject, action: () => sendCommand("export") }),
       await sep(),
+      await MenuItem.new({ id: "trash", text: m.trash, enabled: inProject, action: () => useCosmos.getState().setDialog("trash") }),
+      await sep(),
       await PredefinedMenuItem.new({ item: "CloseWindow", text: m.closeWindow }),
     ],
   });
@@ -95,6 +98,8 @@ async function buildMenu() {
     ],
   });
   const goTo = (view: "toile" | "plan" | "bible" | "manuscrit") => () => useCosmos.getState().setView(view);
+  const writing = inProject && currentView === "manuscrit";
+  const onCanvas = inProject && currentView === "toile";
   const view = await Submenu.new({
     text: m.view,
     items: [
@@ -102,6 +107,21 @@ async function buildMenu() {
       await MenuItem.new({ id: "view-plan", text: views.plan, accelerator: "CmdOrCtrl+2", enabled: inProject, action: goTo("plan") }),
       await MenuItem.new({ id: "view-bible", text: views.bible, accelerator: "CmdOrCtrl+3", enabled: inProject, action: goTo("bible") }),
       await MenuItem.new({ id: "view-manuscrit", text: views.manuscrit, accelerator: "CmdOrCtrl+4", enabled: inProject, action: goTo("manuscrit") }),
+      await sep(),
+      // Volets du Manuscrit et du Scénario, mode focus (1.11.1 : toute commande de l'interface est aussi dans un menu).
+      await MenuItem.new({ id: "toggle-scenes", text: m.toggleScenes, enabled: writing, action: () => sendCommand("toggle-scenes") }),
+      await MenuItem.new({ id: "toggle-side", text: m.toggleSide, enabled: writing, action: () => sendCommand("toggle-side") }),
+      await MenuItem.new({ id: "focus", text: m.focus, accelerator: "CmdOrCtrl+Shift+F", enabled: writing, action: () => replayShortcut("F", "KeyF", true) }),
+      await MenuItem.new({
+        id: "highlight",
+        text: m.highlight,
+        accelerator: "CmdOrCtrl+Shift+E",
+        enabled: writing,
+        action: () => {
+          const s = useSettings.getState();
+          s.setWriting({ ...s.writing, highlight: nextHighlight(s.writing.highlight) });
+        },
+      }),
       await sep(),
       // Fenêtre Statistiques : personnages, lieux, qui croise qui (tout le projet, depuis n'importe quelle vue).
       await MenuItem.new({ id: "stats", text: m.stats, enabled: inProject, action: () => useCosmos.getState().setDialog("stats") }),
@@ -112,6 +132,28 @@ async function buildMenu() {
       await MenuItem.new({ id: "zoom-reset", text: m.actualSize, accelerator: "CmdOrCtrl+0", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("0", "Digit0") }),
       await sep(),
       await PredefinedMenuItem.new({ item: "Fullscreen", text: m.fullscreen }),
+    ],
+  });
+  // Canevas : les boutons de la rangée du bas (1.11.1). N et C restent des touches seules, sans raccourci de menu
+  // (un raccourci sans modificateur prendrait la lettre tapée dans une carte).
+  const canvas = await Submenu.new({
+    text: m.canvas,
+    items: [
+      await MenuItem.new({ id: "new-card", text: m.newCard, enabled: onCanvas, action: () => sendCommand("new-card") }),
+      await MenuItem.new({ id: "new-frame", text: m.newFrame, enabled: onCanvas, action: () => sendCommand("new-frame") }),
+      await sep(),
+      await MenuItem.new({ id: "organize", text: m.organize, enabled: onCanvas, action: () => useCosmos.getState().organizeCanvas() }),
+      await MenuItem.new({ id: "wires", text: m.wires, enabled: onCanvas, action: () => useCosmos.getState().setHideWires(!useCosmos.getState().hideWires) }),
+    ],
+  });
+  // Format : les raccourcis des éditeurs de texte, rejoués dans le texte qui a le focus (cartes, Bible, manuscrit).
+  const format = await Submenu.new({
+    text: m.format,
+    items: [
+      await MenuItem.new({ id: "bold", text: m.bold, accelerator: "CmdOrCtrl+B", enabled: inProject, action: () => replayShortcut("b", "KeyB") }),
+      await MenuItem.new({ id: "italic", text: m.italic, accelerator: "CmdOrCtrl+I", enabled: inProject, action: () => replayShortcut("i", "KeyI") }),
+      await MenuItem.new({ id: "strike", text: m.strike, accelerator: "CmdOrCtrl+Shift+D", enabled: inProject, action: () => replayShortcut("D", "KeyD", true) }),
+      await MenuItem.new({ id: "revisit", text: m.revisit, accelerator: "CmdOrCtrl+Shift+X", enabled: inProject, action: () => replayShortcut("X", "KeyX", true) }),
     ],
   });
   const win = await Submenu.new({
@@ -142,7 +184,7 @@ async function buildMenu() {
       await MenuItem.new({ id: "source", text: m.source, action: () => void openExternal(`https://github.com/${REPO}`) }),
     ],
   });
-  const menu = await Menu.new({ items: [app, file, edit, view, win, help] });
+  const menu = await Menu.new({ items: [app, file, edit, format, view, canvas, win, help] });
   await menu.setAsAppMenu();
   // Le système range alors ses propres entrées (fenêtres ouvertes, recherche dans l'aide) dans ces menus.
   await win.setAsWindowsMenuForNSApp();

@@ -1005,3 +1005,16 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ia-image-badge { position: absolute; left: 4px; bottom: 4px; padding: 1px 6px; border: 1px dotted var(--ia-mark); border-radius: 999px; background: var(--surface); color: var(--ia-mark); font: 600 0.6875rem/1.4 var(--font-ui); letter-spacing: 0.04em; pointer-events: none; }
 .ia-image-credit { margin: 8px 0 0; font-size: 0.8125rem; color: var(--ink-2); text-align: center; }
 .image-gen .ghost-button.is-primary { border-color: transparent; background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+
+/* Menu « ⋯ » commun (MoreMenu.tsx, 1.11.1) : actions secondaires des barres et des lignes. */
+.more-menu { position: fixed; z-index: 2000; padding: 6px; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); font: 0.875rem var(--font-ui); }
+.more-menu.is-up { transform: translateY(-100%); }
+.more-menu button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.more-menu button:disabled { color: var(--muted); cursor: default; }
+.more-menu button:focus-visible { background: var(--ground); outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+@media (any-hover: hover) { .more-menu button:not(:disabled):hover { background: var(--ground); } }
+.more-menu button.is-danger { color: var(--danger); }
+.more-menu button.has-rule { margin-top: 5px; position: relative; }
+.more-menu button.has-rule::before { content: ""; position: absolute; left: 8px; right: 8px; top: -4px; border-top: 1px solid var(--line); }
+.more-menu kbd { font: 0.75rem var(--font-ui); color: var(--ink-2); }
+@media (pointer: coarse) { .more-menu button { min-height: 44px; } .more-button { min-width: 44px; min-height: 44px; } }

@@ -55,9 +55,10 @@ export function useTopbarFit(ref: RefObject<HTMLElement | null>, deps: unknown[]
       const available = bar.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
       const gap = parseFloat(style.columnGap) || 0;
       // La marque ne descend jamais sous le logo et le nom (le titre du projet, lui, peut raccourcir).
-      const logo = bar.querySelector(".brand > :first-child")?.getBoundingClientRect().width ?? 0;
+      const back = bar.querySelector(".brand .tb-back")?.getBoundingClientRect().width ?? 0;
+      const logo = bar.querySelector(".brand .brand-mark")?.getBoundingClientRect().width ?? 0;
       const name = bar.querySelector(".brand .wordmark")?.getBoundingClientRect().width ?? 0;
-      const brand = logo + 10 + name;
+      const brand = (back ? back + 10 : 0) + logo + 10 + name;
       const compact = bar.classList.contains("is-compact");
       const actions = rowWidth(bar.querySelector(".actions"));
       if (!compact) full.current = actions;

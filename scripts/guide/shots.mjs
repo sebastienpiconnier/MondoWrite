@@ -93,6 +93,10 @@ async function zoomOnCard(text, steps = 2) {
 }
 const fit = async () => { await page.getByRole("button", { name: "Fit View" }).click(); await wait(400); };
 const node = (text) => page.locator(".react-flow__node", { hasText: text }).first();
+// Menu « ⋯ » (1.11.1) : ouvrir celui de `scope`, puis choisir l'entrée.
+async function moreItem(scope, name) { await page.locator(`${scope} .more-button`).first().click(); await wait(250); await page.getByRole("menuitem", { name }).first().click(); }
+// Onglet des Réglages (1.11.1).
+async function settingsTab(name) { await page.getByRole("tab", { name, exact: true }).click(); await wait(200); }
 async function cardButton(text, label) { const n = node(text); await n.hover(); await n.getByRole("button", { name: label }).click(); }
 
 async function startExample(profile = true) {
@@ -277,10 +281,12 @@ await step("à faire", async () => {
   await page.keyboard.press("Escape");
 });
 await step("corbeille", async () => {
-  await cardButton(D.idea, T("Supprimer la carte", "Delete card"));
+  await cardButton(D.idea, T("Plus d’actions", "More actions"));
+  await page.getByRole("menuitem", { name: T("Mettre à la corbeille", "Move to trash") }).click();
   await wait(400);
   await shot("corbeille-message", { clip: { x: 0, y: 600, width: 1440, height: 300 } });
   await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await settingsTab(T("Ce projet", "This project"));
   await page.getByRole("button", { name: T(/Corbeille \(/, /Trash \(/) }).click();
   await wait(500);
   await shot("corbeille", { el: "dialog[open]" });
@@ -406,7 +412,7 @@ await step("ruban", async () => {
 await shot("manuscrit-colonne", { clip: { x: 0, y: 64, width: 360, height: 836 } });
 await shot("manuscrit-stats", { clip: { x: 1080, y: 64, width: 360, height: 836 } });
 await step("remplacer", async () => {
-  await page.getByRole("button", { name: T("Remplacer", "Replace"), exact: true }).click();
+  await moreItem(".ms-meta", T("Remplacer", "Replace"));
   await wait(400);
   await page.keyboard.type(D.find);
   await page.keyboard.press("Tab");
@@ -416,7 +422,7 @@ await step("remplacer", async () => {
   await closeDialog();
 });
 await step("statistiques du roman", async () => {
-  await page.getByRole("button", { name: T("Statistiques", "Statistics"), exact: true }).first().click();
+  await moreItem(".ms-meta", T("Statistiques", "Statistics"));
   await wait(600);
   await shot("stats-personnages", { el: "dialog[open]" });
   await closeDialog();
@@ -491,6 +497,7 @@ async function mockAi() {
 await step("ia", async () => {
   await mockAi();
   await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await settingsTab(T("IA", "AI"));
   await page.locator('.settings-panel select:has(option[value="lmstudio"])').selectOption("lmstudio");
   await wait(1200);
   await shot("reglages-ia", { clip: await union([".settings-panel"], 20) });
@@ -556,6 +563,7 @@ await step("atelier", async () => {
     T("La Mère-grand, méfiante, ne répond pas à la voix trop douce.", "The Grandmother, wary, does not answer the too-gentle voice."),
   ]);
   await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await settingsTab(T("Ce projet", "This project"));
   await page.getByLabel(T("Activer le mode Atelier pour ce projet", "Turn on Workshop mode for this project")).check();
   await page.keyboard.press("Escape");
   await page.mouse.click(700, 500);
@@ -589,7 +597,7 @@ await step("vérifier et filtre", async () => {
   await page.keyboard.press("Enter");
   await page.keyboard.type(T("Ici.", "Here."));
   await wait(800);
-  await page.locator(".sp-bar button", { hasText: T(/^Vérifier/, /^Check/) }).first().click();
+  await moreItem(".sp-bar", T(/^Vérifier/, /^Check/));
   await wait(600);
   await shot("scenario-verifier");
   // On retire la faute : annuler dans l'éditeur.
@@ -607,7 +615,7 @@ await step("vérifier et filtre", async () => {
 });
 await step("statistiques", async () => {
   // Fenêtre Statistiques, ouverte depuis la barre du Scénario.
-  await page.locator(".sp-bar button", { hasText: T(/^Statistiques$/, /^Statistics$/) }).first().click();
+  await moreItem(".sp-bar", T(/^Statistiques$/, /^Statistics$/));
   await wait(600);
   const dlg = "dialog[open]";
   await page.locator(dlg).getByRole("button", { name: T("Décors", "Locations"), exact: true }).click();

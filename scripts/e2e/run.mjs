@@ -236,6 +236,30 @@ const scenarios = [
     },
   },
   {
+    name: "menus ⋯ (1.11.1) : une carte part à la corbeille par son menu, la corbeille en dernier et en rouge ; Annuler la remet",
+    async run(h) {
+      const { page } = h;
+      await h.create("Menus");
+      const id = await h.newCard("Inès");
+      await h.pane();
+      await h.node(id).hover();
+      await h.node(id).getByRole("button", { name: "Plus d’actions" }).click();
+      const items = page.getByRole("menuitem");
+      const last = items.last();
+      assert((await last.textContent())?.trim() === "Mettre à la corbeille", `dernière entrée : ${await last.textContent()}`);
+      assert(await last.evaluate((el) => el.classList.contains("is-danger")), "la corbeille n'est pas marquée en rouge");
+      await last.click();
+      await until(async () => (await h.cards().count()) === 0, "la carte n'est pas partie à la corbeille");
+      await h.pane();
+      await page.keyboard.press("Control+z");
+      await until(async () => (await h.cards().count()) === 1, "Ctrl+Z n'a pas remis la carte");
+      // Barre du haut : plus de bouton Enregistrer, le statut enregistre ; « Projets » ramène à l'accueil.
+      assert((await page.getByRole("button", { name: "Enregistrer", exact: true }).count()) === 0, "le bouton Enregistrer est encore là");
+      await page.locator(".topbar .tb-back").click();
+      await until(() => page.locator(".home-create").first().isVisible(), "« Projets » ne ramène pas à l'accueil");
+    },
+  },
+  {
     name: "fils : relier deux cartes en glissant, annuler, rétablir",
     async run(h) {
       const { page } = h;
@@ -617,6 +641,8 @@ const scenarios = [
       const { page } = h;
       await h.home();
       await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      // Réglages en onglets (1.11.1) : le service d'IA est dans l'onglet IA.
+      await page.getByRole("tab", { name: "IA", exact: true }).click();
       const service = page.getByLabel("Service", { exact: true });
       await until(() => service.isVisible(), "le choix du service n'apparaît pas");
       const options = await service.locator("option").allTextContents();

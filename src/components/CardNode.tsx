@@ -52,7 +52,6 @@ interface MentionState {
 
 function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const updateCard = useCosmos((s) => s.updateCard);
-  const deleteCard = useCosmos((s) => s.deleteCard);
   // Soulevée par un appui long : sélectionnée + ombre portée ; elle se repose dès qu'elle n'est plus sélectionnée.
   const lifted = useLifted((s) => s.id === id) && !!selected;
   useEffect(() => {
@@ -510,15 +509,9 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
             <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" />
           </svg>
         </button>
+        {/* Mettre à la corbeille : dans le menu ⋯ (1.11.1), en rouge et en dernier ; un × se lisait comme « fermer ».
+            Suppr au clavier reste le chemin rapide. */}
         <CardActions id={id} hasImage={!!data.image} title={data.title} />
-        <button
-          type="button"
-          className="card-delete nodrag"
-          aria-label={t.card.delete}
-          onClick={() => deleteCard(id)}
-        >
-          ×
-        </button>
       </div>
 
       {/* Titre sur plusieurs lignes si besoin (zone qui grandit), mais sans retour à la ligne :

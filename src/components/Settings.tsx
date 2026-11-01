@@ -7,7 +7,7 @@ import { isTypographySetting } from "../typography";
 import { UpdateSettings } from "./Updates";
 import { usePhone } from "./usePhone";
 import { storage } from "../storage";
-import { Fragment, useEffect, useId, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useCommand } from "../commands";
 import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
 import { useSettings, PAGE_ZOOMS, PALETTES, type Palette, type ThemePref, type WheelMode } from "../settings";
@@ -28,6 +28,8 @@ import { ImageModelField } from "./ImageGen";
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 /** Valeur du choix « Autre modèle… » de la liste. */
 const OTHER_MODEL = "\u0000other";
+
+type SettingsTab = "project" | "general" | "writing" | "ai";
 
 export function Settings({ project = true }: { project?: boolean }) {
   const trashCount = useCosmos((s) => s.trash.length);
@@ -170,6 +172,25 @@ export function Settings({ project = true }: { project?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, localUrl]);
 
+  // Onglet affiché : « Ce projet » quand un projet est ouvert, sinon « Général ». Gardé tant que l'app tourne.
+  const tabs: [SettingsTab, string][] = [
+    ...(project ? [["project", t.kinds.section] as [SettingsTab, string]] : []),
+    ["general", t.settings.tabGeneral],
+    ["writing", t.settings.writingSection],
+    ["ai", t.settings.tabAi],
+  ];
+  const [chosenTab, setTab] = useState<SettingsTab>(project ? "project" : "general");
+  const tab: SettingsTab = tabs.some(([k]) => k === chosenTab) ? chosenTab : "general";
+  const onTabKey = (e: ReactKeyboardEvent) => {
+    const at = tabs.findIndex(([k]) => k === tab);
+    const go = e.key === "ArrowRight" ? at + 1 : e.key === "ArrowLeft" ? at - 1 : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : null;
+    if (go === null) return;
+    e.preventDefault();
+    const next = tabs[(go + tabs.length) % tabs.length][0];
+    setTab(next);
+    document.getElementById(`${ids.panel}-tab-${next}`)?.focus();
+  };
+
   const themes: { value: ThemePref; label: string }[] = [
     { value: "system", label: t.settings.themeSystem },
     { value: "light", label: t.settings.themeLight },
@@ -195,12 +216,28 @@ export function Settings({ project = true }: { project?: boolean }) {
       </button>
 
       {open && (
-        // Trois colonnes (projet, appareil et photos, IA) : tout se voit sans défiler sur un écran ordinaire.
-        <div className={`settings-panel${project ? " has-project" : ""}`} id={ids.panel} role="group" aria-label={t.settings.title}>
+        <div className="settings-panel" id={ids.panel} role="group" aria-label={t.settings.title}>
+          {/* Onglets (1.11.1) : une chose à la fois, comme la fenêtre Réglages d'une app Mac ; flèches au clavier. */}
+          <div className="settings-tabs" role="tablist" aria-label={t.settings.title} onKeyDown={onTabKey}>
+            {tabs.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                id={`${ids.panel}-tab-${key}`}
+                aria-controls={`${ids.panel}-${key}`}
+                aria-selected={tab === key}
+                tabIndex={tab === key ? 0 : -1}
+                className={tab === key ? "is-current" : undefined}
+                onClick={() => setTab(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {project && (
-            <section className="settings-col">
+            <section className="settings-col" role="tabpanel" id={`${ids.panel}-project`} aria-labelledby={`${ids.panel}-tab-project`} hidden={tab !== "project"}>
           {/* Réglage du projet (enregistré dans cosmos.json) */}
-          <div className="eyebrow">{t.kinds.section}</div>
           <label htmlFor={ids.kind}>{t.kinds.label}</label>
           <select
             id={ids.kind}
@@ -301,9 +338,8 @@ export function Settings({ project = true }: { project?: boolean }) {
             </section>
           )}
 
-          <section className="settings-col">
-          {/* Réglages de l'appareil (langue, apparence) */}
-          <div className="eyebrow">{t.settings.title}</div>
+          <section className="settings-col" role="tabpanel" id={`${ids.panel}-general`} aria-labelledby={`${ids.panel}-tab-general`} hidden={tab !== "general"}>
+          {/* Réglages de l'appareil (langue, apparence, profil, mises à jour, clés de photos) */}
           <label htmlFor={ids.lang}>{t.settings.language}</label>
           <select id={ids.lang} value={lang} onChange={(e) => isLang(e.target.value) && setLang(e.target.value)}>
             {LANGS.map((code) => (
@@ -356,11 +392,29 @@ export function Settings({ project = true }: { project?: boolean }) {
           </button>
           {/* Mises à jour : app de bureau seulement (rien dans le navigateur ni sur mobile). */}
           <UpdateSettings checkboxId={ids.updates} />
+          {/* Photos libres : Openverse sans clé ; Pixabay et Unsplash avec la clé de l'auteur, sur cet appareil seulement. */}
+          <div className="eyebrow settings-sep">{t.photos.settingsSection}</div>
+          {(["pixabay", "unsplash"] as const).map((source) => (
+            <Fragment key={source}>
+              <label htmlFor={ids[source]}>{fmt(t.photos.settingsKey, { source: SOURCE_INFO[source].name })}</label>
+              <input
+                id={ids[source]}
+                type="password"
+                value={photos.keys[source]}
+                autoComplete="off"
+                spellCheck={false}
+                aria-describedby={ids.photosHint}
+                onChange={(e) => useSettings.getState().setPhotoKey(source, e.target.value)}
+              />
+            </Fragment>
+          ))}
+          <p className="settings-hint" id={ids.photosHint}>
+            {t.photos.settingsHint}
+          </p>
           </section>
 
-          <section className="settings-col">
-          {/* Écriture : mode focus et typographie ; puis les clés de photos libres. */}
-          <div className="eyebrow">{t.settings.writingSection}</div>
+          <section className="settings-col" role="tabpanel" id={`${ids.panel}-writing`} aria-labelledby={`${ids.panel}-tab-writing`} hidden={tab !== "writing"}>
+          {/* Écriture : mode focus, zoom, typographie, correcteur. */}
           {/* Mode focus : réglé ici aussi, car sur téléphone la barre du mode focus ne garde que la sortie. */}
           <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
           <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
@@ -457,30 +511,10 @@ export function Settings({ project = true }: { project?: boolean }) {
             {t.settings.suggestions}
           </label>
           <p className="settings-hint" id={ids.suggestionsHint}>{t.settings.suggestionsHint}</p>
-          {/* Photos libres : Openverse sans clé ; Pixabay et Unsplash avec la clé de l'auteur, sur cet appareil seulement. */}
-          <div className="eyebrow settings-sep">{t.photos.settingsSection}</div>
-          {(["pixabay", "unsplash"] as const).map((source) => (
-            <Fragment key={source}>
-              <label htmlFor={ids[source]}>{fmt(t.photos.settingsKey, { source: SOURCE_INFO[source].name })}</label>
-              <input
-                id={ids[source]}
-                type="password"
-                value={photos.keys[source]}
-                autoComplete="off"
-                spellCheck={false}
-                aria-describedby={ids.photosHint}
-                onChange={(e) => useSettings.getState().setPhotoKey(source, e.target.value)}
-              />
-            </Fragment>
-          ))}
-          <p className="settings-hint" id={ids.photosHint}>
-            {t.photos.settingsHint}
-          </p>
           </section>
 
-          <section className="settings-col">
+          <section className="settings-col" role="tabpanel" id={`${ids.panel}-ai`} aria-labelledby={`${ids.panel}-tab-ai`} hidden={tab !== "ai"}>
           {/* IA facultative : un service au choix, en ligne ou sur la machine */}
-          <div className="eyebrow">{t.ai.section}</div>
           <label htmlFor={ids.ai}>{t.ai.provider}</label>
           <select
             id={ids.ai}

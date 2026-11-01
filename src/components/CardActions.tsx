@@ -28,7 +28,7 @@ export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage
     setCardMenu(null);
     action();
   };
-  const items: [string, () => void][] = [
+  const items: [string, () => void, boolean?][] = [
     // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
     [hasImage ? t.changeImage : t.addImage, () => useCosmos.getState().openPhotos({ kind: "card", id })],
     [t.filterHere, () => useCosmos.getState().setFilterCard(id)],
@@ -43,6 +43,8 @@ export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage
     [t.duplicateCard, () => useCosmos.getState().duplicateCards([id])],
     // Un nom propre change : la carte et toutes ses occurrences dans le texte.
     ...(title.trim() ? [[all.replace.renameMenu, () => useCosmos.getState().openReplace({ find: title.trim(), renameId: id })] as [string, () => void]] : []),
+    // En dernier, en rouge, après un filet (1.11.1) : la carte part à la corbeille (Annuler, ou la remettre).
+    [all.trash.remove, () => useCosmos.getState().deleteCard(id), true],
   ];
 
   const onKey = (e: ReactKeyboardEvent) => {
@@ -78,8 +80,8 @@ export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage
       </button>
       {open && (
         <div className="card-actions-menu nodrag nowheel" role="menu" aria-label={t.actions} onKeyDown={onKey}>
-          {items.map(([label, action]) => (
-            <button key={label} type="button" role="menuitem" tabIndex={-1} onClick={() => run(action)}>
+          {items.map(([label, action, danger]) => (
+            <button key={label} type="button" role="menuitem" tabIndex={-1} className={danger ? "is-danger" : undefined} onClick={() => run(action)}>
               {label}
             </button>
           ))}

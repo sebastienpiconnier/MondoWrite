@@ -23,6 +23,9 @@
   /* Accueil : pas de « ⋯ », les Réglages restent dans la barre (ils étaient cachés, donc inaccessibles). */
   .home .topbar > .actions.home-actions { display: flex; position: static; flex: none; padding: 0; background: none; border: 0; box-shadow: none; }
   .topbar > .actions .icon-button, .topbar > .actions .ghost-button { min-height: 44px; }
+  .topbar .tb-group { display: contents; }
+  .topbar .tb-back { min-width: 44px; justify-content: center; padding: 0; }
+  .topbar .tb-back .tb-label { display: none; }
 
   /* Bas : les vues en onglets, à portée du pouce. */
   .app.has-tabbar .views {

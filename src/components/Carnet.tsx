@@ -9,7 +9,7 @@ import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { typeColor, type CardType } from "../types";
 import { CAPTURE_TYPES, inboxCards } from "../inbox";
-import { TrashIcon } from "./TrashIcon";
+import { MoreMenu } from "./MoreMenu";
 import { aiConfig, useSettings } from "../settings";
 import { isReady } from "../ai/providers";
 
@@ -127,21 +127,19 @@ export function Carnet() {
                   <span className="carnet-name">{name}</span>
                 </button>
                 <div className="carnet-item-actions">
-                  <button type="button" className="icon-button" aria-label={t.card.addImage} title={t.card.addImage} onClick={() => useCosmos.getState().openPhotos({ kind: "card", id: card.id })}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="3" y="5" width="18" height="14" rx="2" />
-                      <circle cx="9" cy="10" r="1.6" />
-                      <path d="M21 16l-5-5-8 8" />
-                    </svg>
-                  </button>
                   <button type="button" className="icon-button" aria-label={fmt(c.filedAria, { title: name })} title={c.filed} onClick={() => useCosmos.getState().fileInbox([card.id])}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12.5l4.5 4.5L19 7" />
                     </svg>
                   </button>
-                  <button type="button" className="icon-button" aria-label={fmt(c.trash, { title: name })} title={fmt(c.trash, { title: name })} onClick={() => useCosmos.getState().deleteCard(card.id)}>
-                    <TrashIcon />
-                  </button>
+                  {/* Image et corbeille dans un menu (1.11.1) : la corbeille n'est plus à côté de « Rangé ». */}
+                  <MoreMenu
+                    label={fmt(t.app.moreActionsFor, { title: name })}
+                    items={[
+                      { label: t.card.addImage, onSelect: () => useCosmos.getState().openPhotos({ kind: "card", id: card.id }) },
+                      { label: t.trash.remove, title: fmt(c.trash, { title: name }), danger: true, onSelect: () => useCosmos.getState().deleteCard(card.id) },
+                    ]}
+                  />
                 </div>
               </li>
             );

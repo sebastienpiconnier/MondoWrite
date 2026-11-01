@@ -49,6 +49,13 @@ export function TopBar() {
     // un double-clic l'agrandit ; les boutons et le titre gardent leurs clics.
     <header ref={barRef} className={`topbar${more ? " more-open" : ""}${compact ? " is-compact" : ""}${stacked ? " is-stacked" : ""}`} data-tauri-drag-region>
       <div className="brand" data-tauri-drag-region>
+        {/* Retour à la liste des projets, à gauche comme un bouton Retour (1.11.1) : le projet est enregistré avant. */}
+        <button type="button" className="tb-back" aria-label={t.home.projects} title={t.home.backHint} onClick={() => closeProject()}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+          <span className="tb-label">{t.home.projects}</span>
+        </button>
         <BrandMark size={34} />
         {/* Le nom, et dessous le titre du projet (modifiable sur place) : la colonne reste étroite, les vues
             gardent leur place au centre, même sur un iPad en paysage. */}
@@ -88,7 +95,7 @@ export function TopBar() {
         ))}
       </nav>
 
-      {/* Téléphone : le bouton Enregistrer est derrière « ⋯ », qui porte donc le point d'état (comme en barre compacte). */}
+      {/* Téléphone : les actions sont derrière « ⋯ », qui porte donc le point d'état d'enregistrement. */}
       <button type="button" className={`icon-button topbar-more is-${status}`} aria-label={t.app.moreOptions} title={`${t.app.moreOptions} (${t.status[status]})`} aria-expanded={more} onClick={() => setMore(!more)}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="5" cy="12" r="1.8" />
@@ -98,47 +105,29 @@ export function TopBar() {
       </button>
 
       <div className="actions">
-        {/* Tous les libellés sont empilés (un seul visible) : la largeur ne change pas d'un statut à
-            l'autre, donc rien ne bouge dans la barre pendant un enregistrement. */}
-        <span className={`status status-${status}`}>
+        {/* Statut d'enregistrement (l'app enregistre seule) : un clic enregistre tout de suite, comme Ctrl ou Cmd + S.
+            Tous les libellés sont empilés (un seul visible) : la largeur ne change pas d'un statut à l'autre.
+            Barre compacte : un point seulement quand ce n'est pas enregistré (le nom reste dans l'infobulle). */}
+        <button type="button" className={`status status-${status}`} title={`${t.status[status]} · ${t.actions.saveHint}`} aria-label={`${t.status[status]}, ${t.actions.save}`} onClick={save}>
           {(Object.keys(t.status) as (keyof typeof t.status)[]).map((key) => (
-            <span key={key} aria-hidden={key !== status} className={key === status ? "is-current" : undefined}>
+            <span key={key} aria-hidden="true" className={key === status ? "is-current" : undefined}>
               {t.status[key]}
             </span>
           ))}
           <span className="sr-only" role="status">
             {t.status[status]}
           </span>
-        </span>
-        {/* Barre compacte (iPad) : le libellé laisse place à une icône, le nom reste pour les lecteurs d'écran. */}
-        <button type="button" className="ghost-button tb-iconable" aria-label={t.home.projects} title={t.home.backHint} onClick={() => closeProject()}>
-          <svg className="tb-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
-            <rect x="4" y="4" width="7" height="7" rx="1.5" />
-            <rect x="13" y="4" width="7" height="7" rx="1.5" />
-            <rect x="4" y="13" width="7" height="7" rx="1.5" />
-            <rect x="13" y="13" width="7" height="7" rx="1.5" />
-          </svg>
-          <span className="tb-label">{t.home.projects}</span>
         </button>
-        {/* En icône : la barre porte déjà le statut, et l'enregistrement est automatique. Barre compacte : le
-            statut passe dans le bouton (point quand ce n'est pas enregistré, et son nom dans l'infobulle). */}
-        <button
-          type="button"
-          className={`icon-button tb-save is-${status}`}
-          aria-label={t.actions.save}
-          title={compact ? `${t.actions.saveHint} (${t.status[status]})` : t.actions.saveHint}
-          onClick={save}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
-            <path d="M8 4v5h7V4M8 20v-6h8v6" />
-          </svg>
-        </button>
-        <AtelierBadge />
-        <AiMenu />
-        <ExportMenu />
-        <TodoPanel />
-        <Search />
+        {/* Trois groupes (règles d'Apple pour une barre d'outils) : produire, retrouver, régler. */}
+        <div className="tb-group">
+          <AtelierBadge />
+          <AiMenu />
+          <ExportMenu />
+        </div>
+        <div className="tb-group">
+          <TodoPanel />
+          <Search />
+        </div>
         <Settings />
       </div>
     </header>

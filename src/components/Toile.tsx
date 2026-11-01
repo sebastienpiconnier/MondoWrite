@@ -16,6 +16,7 @@ import {
   useReactFlow,
   type Edge,
 } from "@xyflow/react";
+import { useCommand } from "../commands";
 import { heldCardIds, useCosmos } from "../store";
 import { filterActive, hiddenCards, hiddenFrames } from "../canvasFilter";
 import { boxes, frameBox } from "../projectState";
@@ -282,6 +283,10 @@ export function Toile() {
     if (!rect) return;
     addFrame(screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }));
   };
+
+  // Menu Canevas du Mac (1.11.1) : les mêmes gestes que le bouton « + » et le bouton Cadre.
+  useCommand("new-card", () => createInCenterRef.current());
+  useCommand("new-frame", () => createFrameRef.current());
 
   // Raccourcis clavier : N (carte) et C (cadre), hors d'un champ ou d'une carte en cours d'écriture.
   // Menu « Nouvelle carte » : au centre de la vue, comme le bouton.

@@ -295,18 +295,30 @@ html[data-platform="mac"] .topbar :is(input, textarea) { -webkit-user-select: te
 
 /* margin-left: auto : si la barre passe sur deux lignes (fenêtre étroite), les actions restent à droite. */
 .actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.status { display: inline-grid; justify-items: end; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
+.status { display: inline-grid; justify-items: end; min-height: 36px; align-items: center; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; cursor: pointer; }
+@media (any-hover: hover) { .status:hover { background: var(--hover); color: var(--ink-2); } }
 .status > span:not(.sr-only) { grid-area: 1 / 1; visibility: hidden; }
 .status > span.is-current { visibility: visible; }
 .status-erreur { color: var(--danger); font-weight: 600; }
-/* Barre compacte (useTopbarFit, iPad) : « Projets » et « Exporter » en icônes, le statut dans le bouton Enregistrer. */
+/* Retour à la liste des projets (1.11.1), à gauche du logo, comme un bouton Retour. */
+.tb-back { display: inline-flex; align-items: center; gap: 2px; flex: none; min-height: 36px; padding: 0 10px 0 4px; border: 0; border-radius: 10px; background: transparent; color: var(--accent-ink); font: inherit; font-size: 0.875rem; cursor: pointer; }
+@media (any-hover: hover) { .tb-back:hover { background: var(--hover); } }
+@media (pointer: coarse) { .tb-back, .status { min-height: 44px; } }
+/* Actions de droite en trois groupes : produire (IA, Exporter), retrouver (À faire, Recherche), régler. */
+.topbar > .actions { gap: 16px; }
+.tb-group { display: flex; align-items: center; gap: 8px; }
+/* Barre compacte (useTopbarFit, iPad) : « Exporter » en icône, « Projets » réduit à sa flèche, et le statut
+   réduit à un point quand ce n'est pas enregistré. */
 .tb-icon { display: none; }
 .topbar.is-compact .tb-icon { display: block; }
-.topbar.is-compact .tb-label, .topbar.is-compact .actions > .status { display: none; }
+.topbar.is-compact .tb-label { display: none; }
+.topbar.is-compact .tb-back { padding-right: 4px; }
 .topbar.is-compact .tb-iconable { display: inline-flex; align-items: center; justify-content: center; padding-inline: 0; min-width: 40px; }
-.tb-save { position: relative; }
-.topbar.is-compact .tb-save:is(.is-modifie, .is-enregistrement, .is-erreur)::after { content: ""; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.topbar.is-compact .tb-save.is-erreur::after { background: var(--danger); }
+.topbar.is-compact .status { position: relative; width: 24px; padding: 0; }
+.topbar.is-compact .status > span:not(.sr-only) { display: none; }
+.topbar.is-compact .status.status-enregistre { display: none; }
+.topbar.is-compact .status::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.topbar.is-compact .status.status-erreur::after { background: var(--danger); }
 .ghost-button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; font-size: 0.875rem; cursor: pointer; }
 @media (any-hover: hover) { .ghost-button:hover { border-color: var(--line-2); background: var(--ground); } }
 .icon-button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; cursor: pointer; color: var(--ink); }
@@ -316,11 +328,17 @@ html[data-platform="mac"] .topbar :is(input, textarea) { -webkit-user-select: te
 /* Réglages */
 .settings { position: relative; }
 .settings-panel {
-  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: min(870px, calc(100vw - 24px));
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px 24px; padding: 16px 18px;
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: min(520px, calc(100vw - 24px));
+  display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 14px; padding: 16px 18px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-pop);
 }
-.settings-panel.has-project { width: min(1140px, calc(100vw - 24px)); }
+/* Onglets des Réglages (1.11.1) : Ce projet, Général, Écriture, IA ; un seul visible à la fois. */
+.settings-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--ground); justify-self: start; }
+.settings-tabs button { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 0.875rem; cursor: pointer; }
+@media (any-hover: hover) { .settings-tabs button:not(.is-current):hover { background: var(--hover); } }
+.settings-tabs button.is-current { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+@media (pointer: coarse) { .settings-tabs button { min-height: 44px; } }
+.settings-col[hidden] { display: none; }
 .settings-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .settings-links { grid-column: 1 / -1; }
 .settings-panel label, .settings-label { font-size: 0.8125rem; font-weight: 600; margin-top: 6px; }
