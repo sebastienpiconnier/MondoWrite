@@ -25,3 +25,13 @@ describe("barre compacte avant deux lignes", () => {
     expect(topbarLayout(1366, 220, 340, 450, 300, true, 16)).toEqual({ compact: false, stacked: false });
   });
 });
+
+describe("barre du haut sans oscillation (1.11.2)", () => {
+  it("reste compacte tant que la marque complète ne tient pas, même si la marque compacte tiendrait", () => {
+    // Pleine : marque 300 (avec « Projets »), compacte : 240. Les actions pleines : 400.
+    const avail = 300 + 380 + 400 + 2 * 16 - 10; // ne tient pas avec la marque pleine
+    expect(topbarLayout(avail, 240, 380, 400, 300, true, 16, 300).compact).toBe(true);
+    // Sans la marque pleine, l'ancienne règle aurait quitté le compact :
+    expect(topbarLayout(avail, 240, 380, 400, 300, true, 16).compact).toBe(false);
+  });
+});

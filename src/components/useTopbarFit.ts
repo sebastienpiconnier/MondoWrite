@@ -30,10 +30,20 @@ export function needsTwoRows(available: number, brand: number, views: number, ac
  * 1. « compacte » : « Projets » et « Exporter » en icônes, le statut d'enregistrement dans le bouton Enregistrer ;
  * 2. « sur deux lignes » : les vues sous la marque, seulement si la barre compacte ne tient toujours pas.
  * Fonction pure, testée. `fullActions` est la largeur des actions avec leurs libellés (mesurée hors compact),
- * `actions` la largeur actuelle.
+ * `actions` la largeur actuelle ; de même `fullBrand` pour la marque (« ‹ Projets » perd son mot en compact).
+ * Décider de quitter le compact avec les largeurs compactes faisait osciller la barre (1.11.2 : vibration sur Mac).
  */
-export function topbarLayout(available: number, brand: number, views: number, fullActions: number, actions: number, compact: boolean, gap: number): { compact: boolean; stacked: boolean } {
-  if (!needsTwoRows(available, brand, views, fullActions, gap)) return { compact: false, stacked: false };
+export function topbarLayout(
+  available: number,
+  brand: number,
+  views: number,
+  fullActions: number,
+  actions: number,
+  compact: boolean,
+  gap: number,
+  fullBrand = brand,
+): { compact: boolean; stacked: boolean } {
+  if (!needsTwoRows(available, fullBrand, views, fullActions, gap)) return { compact: false, stacked: false };
   // La largeur compacte n'est connue qu'une fois la barre compacte affichée : en attendant, une seule ligne.
   return { compact: true, stacked: compact && needsTwoRows(available, brand, views, actions, gap) };
 }
@@ -46,6 +56,7 @@ export interface TopbarFit {
 export function useTopbarFit(ref: RefObject<HTMLElement | null>, deps: unknown[]): TopbarFit {
   const [fit, setFit] = useState<TopbarFit>({ compact: false, stacked: false });
   const full = useRef(0);
+  const fullBrand = useRef(0);
   useLayoutEffect(() => {
     const bar = ref.current;
     if (!bar || typeof ResizeObserver === "undefined") return;
@@ -61,8 +72,11 @@ export function useTopbarFit(ref: RefObject<HTMLElement | null>, deps: unknown[]
       const brand = (back ? back + 10 : 0) + logo + 10 + name;
       const compact = bar.classList.contains("is-compact");
       const actions = rowWidth(bar.querySelector(".actions"));
-      if (!compact) full.current = actions;
-      const next = topbarLayout(available, brand, rowWidth(bar.querySelector(".views")), full.current, actions, compact, gap);
+      if (!compact) {
+        full.current = actions;
+        fullBrand.current = brand;
+      }
+      const next = topbarLayout(available, brand, rowWidth(bar.querySelector(".views")), full.current, actions, compact, gap, Math.max(brand, fullBrand.current));
       setFit((f) => (f.compact === next.compact && f.stacked === next.stacked ? f : next));
     };
     measure();

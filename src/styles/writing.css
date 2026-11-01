@@ -297,6 +297,19 @@
 .sq-list.is-cards .sq-moves { order: 3; }
 .sq-list.is-cards .sq-go { order: 3; }
 .sq-list.is-cards .sq-length { order: 2; display: flex; gap: 10px; text-align: left; margin-top: auto; }
+/* Fiches du séquencier (1.11.2) : en grille, le texte prend la place libre, puis « Ranger dans », la longueur, et une
+   seule rangée de boutons (flèches à gauche, ✎ et ⋯ à droite) : les boutons sont alignés d'une fiche à l'autre. */
+.sq-list.is-cards .sq-scene:has(> .sq-go) {
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: 1fr auto auto auto;
+  grid-template-areas: "body body body" "to to to" "len len len" "moves . go"; align-items: end; row-gap: 8px;
+}
+.sq-list.is-cards .sq-scene:has(> .sq-go) > .sq-body { grid-area: body; align-self: start; }
+.sq-list.is-cards .sq-scene:has(> .sq-go) > .plan-to { grid-area: to; }
+.sq-list.is-cards .sq-scene:has(> .sq-go) > .sq-length { grid-area: len; margin-top: 0; }
+.sq-list.is-cards .sq-scene:has(> .sq-go) > .sq-moves { grid-area: moves; display: flex; gap: 6px; }
+.sq-list.is-cards .sq-scene:has(> .sq-go) > .sq-go { grid-area: go; display: flex; gap: 6px; }
+.sq-list.is-cards .sq-scene:has(> .sq-go) > :is(.sq-moves, .sq-go) .icon-button { width: 36px; height: 36px; }
+@media (pointer: coarse) { .sq-list.is-cards .sq-scene:has(> .sq-go) > :is(.sq-moves, .sq-go) .icon-button { width: 44px; height: 44px; } }
 
 .sq-section { margin-top: 10px; padding: 4px; font-family: var(--font-display); font-weight: 500; font-size: 1.125rem; border-radius: 8px; }
 /* Case du gabarit : au-dessus des sections de l'auteur, comme dans le Plan. */
