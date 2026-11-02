@@ -355,6 +355,51 @@ const scenarios = [
     },
   },
   {
+    name: "point de vue (1.13.0) : narrateur créé depuis le Manuscrit, annulé, rétabli, vu dans la Bible et sur le canevas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Point de vue");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le réveil");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const pill = page.getByRole("button", { name: /^Point de vue de la scène « Le réveil »/ });
+      await pill.waitFor();
+      assert((await pill.getAttribute("aria-label")).endsWith("Aucun"), "la scène a déjà un point de vue");
+      await pill.click();
+      const field = page.getByRole("combobox", { name: "Chercher ou créer un personnage" });
+      await until(() => field.evaluate((el) => el === document.activeElement), "le champ du menu n'a pas le focus");
+      await page.keyboard.type("Ethan");
+      await until(() => page.getByRole("option", { name: "Créer « Ethan »" }).isVisible(), "pas d'option pour créer le personnage");
+      await page.keyboard.press("Enter");
+      await until(async () => (await pill.getAttribute("aria-label")).endsWith("Ethan"), "le point de vue n'est pas Ethan");
+      await until(() => pill.evaluate((el) => el === document.activeElement), "le focus n'est pas revenu à la pastille");
+      await h.saved((f) => {
+        const cards = Object.entries(f).filter(([k]) => k.startsWith("cartes/")).map(([, v]) => v);
+        const ethan = cards.find((c) => c.includes("type: personnage") && c.includes('title: "Ethan"'));
+        const id = ethan?.match(/^id: (\S+)/m)?.[1];
+        return id && cards.some((c) => c.includes("type: scene") && c.includes(`"pov":"${id}"`));
+      }, "le point de vue n'a pas été enregistré dans la fiche de la scène");
+      // Une étape d'historique pour le personnage créé et choisi.
+      await page.keyboard.press("Control+z");
+      await until(async () => (await pill.getAttribute("aria-label")).endsWith("Aucun"), "Annuler n'a pas retiré le point de vue");
+      await page.keyboard.press("Control+Shift+z");
+      await until(async () => (await pill.getAttribute("aria-label")).endsWith("Ethan"), "Rétablir n'a pas remis le point de vue");
+      // Bible : « Narrateur de 1 scène », qui ouvre la scène dans le Manuscrit.
+      await h.view(3);
+      await page.locator(".bible-toc .toc-part-button", { hasText: "Personnages" }).first().click();
+      const narrator = page.getByRole("button", { name: /Narrateur de 1 scène/ });
+      await narrator.first().waitFor();
+      await narrator.first().click();
+      await page.getByRole("button", { name: "Ouvrir la scène « Le réveil »" }).click();
+      await until(() => page.getByRole("button", { name: /^Point de vue de la scène « Le réveil »/ }).isVisible(), "la scène ne s'ouvre pas dans le Manuscrit");
+      // Canevas : la carte Scène montre son narrateur, aussi après rechargement.
+      await h.view(1);
+      await until(() => page.locator(".card.type-scene .pov-picker.is-set").first().isVisible(), "le narrateur n'est pas sur la carte Scène");
+      await h.reloadAndOpen();
+      await until(async () => ((await page.locator(".card.type-scene .pov-name").first().textContent()) ?? "").includes("Ethan"), "après rechargement, la carte a perdu son narrateur");
+    },
+  },
+  {
     name: "corbeille : Suppr met la carte à la corbeille, Ctrl+Z la remet avec son fil",
     async run(h) {
       const { page } = h;

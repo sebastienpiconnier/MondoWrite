@@ -47,6 +47,16 @@ describe("compatibilité avec les versions futures", () => {
     expect(again.keep).toBeUndefined();
   });
 
+  it("une carte Scène garde son point de vue (1.13.0) ; une version d'avant le garde comme champ inconnu", () => {
+    const card = { id: "s1", type: "scene" as const, title: "Au parc", html: "", fiche: { statut: "fini", pov: "p" } };
+    const again = fileToCard(cardToFile(card))!;
+    expect(again).toMatchObject(card);
+    expect(again.keep).toBeUndefined();
+    // Ce que lisait la 1.12.0 : une clé de fiche inconnue est gardée dans `keep` et réécrite telle quelle.
+    const older = fileToCard('---\nid: s2\ntype: scene\ntitle: "Au parc"\nfiche: {"statut":"fini","futur":"x"}\n---\n')!;
+    expect(older.keep?.fiche).toEqual({ futur: "x" });
+  });
+
   it("les clés de la couverture du lot 6 sont relues (la 1.3.1 les garde aussi, comme clés inconnues)", () => {
     const pitch = { saison: "Le signal", finSaison: "En mer", nestPas: "Pas d’horreur", pourquoiMoi: "Mon grand-père" };
     expect(readPitch(pitch)).toEqual(pitch);

@@ -79,7 +79,8 @@ export const isPrincipal = (card: Pick<CardData, "type" | "fiche">) => card.type
 export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<string> {
   // Le statut d'une scène a son propre sélecteur (SceneStatusPicker) : pas une ligne de la fiche.
   // Le dépouillement a sa propre section (BreakdownSheet).
-  if (card.type === "scene") return new Set<string>(["statut", ...BREAKDOWN_FIELDS]);
+  // Le point de vue a sa pastille (PovPicker), à côté du statut.
+  if (card.type === "scene") return new Set<string>(["statut", "pov", ...BREAKDOWN_FIELDS]);
   return card.type === "personnage" ? new Set<string>([...motorFields(card), ...CHARACTER_HEAD_FIELDS]) : new Set<string>();
 }
 
@@ -119,7 +120,33 @@ export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obsta
 export const BREAKDOWN_FIELDS = ["accessoires", "costumes", "figurants", "vehicules", "effets"] as const;
 export type BreakdownField = (typeof BREAKDOWN_FIELDS)[number];
 export const isBreakdownField = (key: string): key is BreakdownField => (BREAKDOWN_FIELDS as readonly string[]).includes(key);
-export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement", "issue", ...BREAKDOWN_FIELDS] as const;
+/** `pov` (1.13.0) : personnage narrateur de la scène (identifiant d'une carte Personnage, voir `CARD_REF_FIELDS`). */
+export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement", "issue", ...BREAKDOWN_FIELDS, "pov"] as const;
+
+/**
+ * Champs qui désignent une autre carte : la fiche garde son identifiant, jamais son nom (un renommage ne touche
+ * à rien). Type attendu de la carte désignée. Exports et IA écrivent son titre (`cardRefTitle`).
+ */
+export const CARD_REF_FIELDS = { pivot: "personnage", pov: "personnage" } as const satisfies Partial<Record<string, CardType>>;
+export type CardRefField = keyof typeof CARD_REF_FIELDS;
+export const isCardRefField = (key: string): key is CardRefField => Object.prototype.hasOwnProperty.call(CARD_REF_FIELDS, key);
+
+/** Carte désignée par un champ-référence, si elle existe encore et a le type attendu (sinon null). */
+export function cardRef<T extends Pick<CardData, "id" | "type">>(card: Pick<CardData, "fiche">, key: CardRefField, cards: readonly T[]): T | null {
+  const id = card.fiche?.[key];
+  if (!id) return null;
+  return cards.find((c) => c.id === id && c.type === CARD_REF_FIELDS[key]) ?? null;
+}
+
+/** Valeur d'un champ pour un export ou l'IA : le titre de la carte désignée pour un champ-référence (vide si elle n'existe plus). */
+export function ficheValue(card: Pick<CardData, "fiche">, key: string, cards: readonly Pick<CardData, "id" | "type" | "title">[]): string {
+  if (isCardRefField(key)) return cardRef(card, key, cards)?.title.trim() ?? "";
+  return card.fiche?.[key]?.trim() ?? "";
+}
+
+/** Point de vue d'une scène : la carte Personnage narratrice, si elle existe encore. */
+export const povOf = <T extends Pick<CardData, "id" | "type">>(scene: Pick<CardData, "type" | "fiche">, cards: readonly T[]): T | null =>
+  scene.type === "scene" ? cardRef(scene, "pov", cards) : null;
 
 /** Statut d'une scène : valeurs écrites dans le fichier (`fiche.statut`), jamais traduites. Libellés : `t.status.values`. */
 export const SCENE_STATUSES = ["brouillon", "revoir", "fini"] as const;

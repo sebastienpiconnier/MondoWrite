@@ -19,6 +19,7 @@ import type { CardData } from "../types";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
 import { sceneSynopsis } from "../screenplay/scenes";
 import { SceneStatusPicker } from "./SceneStatusPicker";
+import { PovPicker } from "./PovPicker";
 
 /** Longueur de l'aperçu (caractères) : quelques lignes, le reste est dans la carte agrandie. */
 const EXCERPT = 280;
@@ -129,7 +130,13 @@ export function SceneCardBody({ card }: { card: CardData }) {
     <>
       {synopsis && <p className="draft-synopsis">{synopsis}</p>}
       <DraftPreview card={card} />
-      {!card.page && <SceneStatusPicker card={card} />}
+      {!card.page && (
+        <div className="scene-pills">
+          <SceneStatusPicker card={card} />
+          {/* Sur le canevas, le point de vue ne s'affiche que s'il est choisi (il se choisit dans la carte agrandie). */}
+          {card.fiche?.pov && <PovPicker card={card} />}
+        </div>
+      )}
     </>
   );
 }

@@ -9,7 +9,7 @@ import { IaFieldNote } from "./Atelier";
 import { useEffect, useId, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
-import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isChoiceField, sheetFields, type SheetField } from "../character";
+import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isCardRefField, isChoiceField, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
 
 export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boolean }) {
@@ -62,7 +62,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
     return (
       <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) || isChoiceField(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}${card.ia?.includes(key) ? " is-ia" : ""}`}>
         <label htmlFor={props.id}>{labels[key]}</label>
-        {key === "pivot" ? (
+        {isCardRefField(key) ? (
           <select id={props.id} value={props.value} onChange={props.onChange}>
             <option value="">{all.fiche.pivotNone}</option>
             {people.map((c) => (

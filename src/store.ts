@@ -125,6 +125,8 @@ export interface CosmosState {
   dropQuestion: (id: string, question: string) => void;
   /** Change un champ de la fiche d'un personnage (vide : retiré). */
   setFiche: (id: string, field: SheetField, value: string) => void;
+  /** Point de vue d'une scène confié à un nouveau personnage (carte créée sur le canevas), en une étape. */
+  createPov: (sceneId: string, name: string) => string | null;
   /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
   openInBible: (id: string, assistant?: boolean) => void;
   /**
@@ -1229,6 +1231,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const ia = withoutIaField(card.ia, field);
       set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ...(ia !== card.ia ? { ia } : {}) } } : n)) });
       touch();
+    },
+    createPov: (sceneId, name) => {
+      const title = name.replace(/\s+/g, " ").trim();
+      if (!title || !get().nodes.some((n) => n.id === sceneId && n.data.type === "scene")) return null;
+      record();
+      const id = get().addTitledCard("personnage", title);
+      get().setFiche(sceneId, "pov", id);
+      return id;
     },
     openInBible: (id, assistant = false) => {
       if (!get().nodes.some((n) => n.id === id)) return;

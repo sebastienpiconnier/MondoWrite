@@ -8,6 +8,7 @@ import { formOf } from "../pitch";
 import { autosize } from "./autosize";
 import { BibleLinks } from "./BibleLinks";
 import { SceneStatusPicker } from "./SceneStatusPicker";
+import { PovPicker, PovScenes } from "./PovPicker";
 import { headingOf } from "../screenplay/sceneText";
 import { DraftPreview } from "./SceneDraft";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -433,11 +434,19 @@ export function Bible() {
               {/* Le texte se modifie ici comme sur le canevas : c'est le corps de la même carte. Pour une scène
                   de roman, c'est son manuscrit : un aperçu, qu'on écrit dans la carte agrandie. */}
               {type === "scene" && (kind !== "scenario" || headingOf(screenplay?.elements ?? [], card.id) >= 0) ? <DraftPreview card={card} className="is-bible" /> : <BibleBody card={card} />}
-              {type === "scene" && !card.page && <SceneStatusPicker card={card} />}
+              {type === "scene" && !card.page && (
+                <div className="scene-pills">
+                  <SceneStatusPicker card={card} />
+                  {/* Scénario : le point de vue se choisit dans la carte agrandie ; ici seulement s'il est choisi. */}
+                  {(kind !== "scenario" || card.fiche?.pov) && <PovPicker card={card} />}
+                </div>
+              )}
               {/* Scène d'un scénario (ou d'un roman qui en garde un) : son dépouillement, sous son texte. */}
               {type === "scene" && !card.page && (kind === "scenario" || BREAKDOWN_FIELDS.some((f) => card.fiche?.[f]?.trim())) && <BreakdownSheet card={card} />}
               {type === "personnage" && (
                 <>
+                  {/* Point de vue : les scènes qu'il raconte (rien s'il n'en raconte aucune). */}
+                  <PovScenes card={card} />
                   {/* Mode Atelier : propositions pour la fiche d'un personnage presque vide. */}
                   <SheetDraft card={card} />
                   <CardSheet card={card} startOpen={false} />

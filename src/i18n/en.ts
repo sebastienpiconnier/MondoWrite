@@ -947,6 +947,22 @@ export const en: Messages = {
     chooseFor: "Status of the scene “{title}”",
     done: "Scenes done",
   },
+  // Point of view of a scene (1.13.0): narrating character, a Character card (`fiche.pov`).
+  pov: {
+    label: "Point of view",
+    none: "None",
+    empty: "Point of view",
+    chooseFor: "Point of view of the scene “{title}”",
+    search: "Search or create a character",
+    create: "Create “{name}”",
+    noCharacter: "No characters yet: type a name to create one.",
+    narratorOne: "Narrator of {n} scene",
+    narratorMany: "Narrator of {n} scenes",
+    words: "{n} words",
+    showScenes: "Show their scenes",
+    hideScenes: "Hide their scenes",
+    openScene: "Open the scene “{title}”",
+  },
   // Paperback for print on demand (KDP): dialog, pages added to the book, cover template.
   paperback: {
     menu: "Paperback (KDP)…",
@@ -2333,6 +2349,7 @@ export const en: Messages = {
       statut: "Status",
       numero: "Number",
       pivot: "Pivot character",
+      pov: "Point of view",
       saison: "Season",
       repere: "Marker",
       quand: "When",

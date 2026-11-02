@@ -8,6 +8,7 @@
 
 import type { Edge } from "@xyflow/react";
 import type { CardData } from "./types";
+import { cardRef } from "./character";
 import { readEpisodes, type Pitch } from "./pitch";
 
 type Linked = Pick<Edge, "source" | "target">;
@@ -55,8 +56,7 @@ const neighbours = (id: string, edges: readonly Linked[]) => new Set(edges.flatM
 
 /** Personnage pivot d'un épisode, s'il existe encore. */
 export function pivotOf(episode: CardData, cards: readonly CardData[]): CardData | null {
-  const id = episode.fiche?.pivot;
-  return (id && cards.find((c) => c.id === id && c.type === "personnage")) || null;
+  return cardRef(episode, "pivot", cards);
 }
 
 /** Intrigues reliées à un épisode par un fil. */

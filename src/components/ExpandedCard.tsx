@@ -14,6 +14,7 @@ import { DraftEditor } from "./SceneDraft";
 import { SynopsisSuggest, novelSceneText } from "./Atelier";
 import { ScriptSceneEditor } from "./ScriptSceneEditor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
+import { PovPicker } from "./PovPicker";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -37,7 +38,13 @@ export function ExpandedCard({ card }: { card: CardData }) {
         <span className="card-dot" aria-hidden="true" />
         {types[card.type].label}
       </p>
-      {card.type === "scene" && !card.page && <SceneStatusPicker card={card} className="expanded-status" />}
+      {card.type === "scene" && !card.page && (
+        <div className="scene-pills expanded-status">
+          <SceneStatusPicker card={card} />
+          {/* Point de vue : roman comme scénario, c'est dans la carte agrandie qu'il se choisit pour un scénario. */}
+          <PovPicker card={card} />
+        </div>
+      )}
       <h2 id="app-dialog-title" className="sr-only">
         {t.card.expandedTitle}
       </h2>

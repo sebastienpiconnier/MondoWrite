@@ -13,6 +13,7 @@ import { useStoryFindings } from "./useStoryFindings";
 import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
+import { PovPicker } from "./PovPicker";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
 import type { BookHandlers } from "./bookExtensions";
 import { SynopsisField } from "./SynopsisField";
@@ -642,6 +643,7 @@ export function Manuscript() {
               </select>
             </label>
             {!pageKind && <SceneStatusPicker card={card} />}
+            {!pageKind && <PovPicker card={card} />}
             <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
               {t.focus.enter}
             </button>

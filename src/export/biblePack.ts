@@ -22,7 +22,7 @@ import { listScenes, sceneSynopsis } from "../screenplay/scenes";
 import { beatOf, sectionLabel } from "../screenplay/template";
 import { screenplaySceneTexts, timeline } from "../timeline";
 import type { CardNode } from "../projectState";
-import { CHARACTER_FIELDS, CHARACTER_HEAD_FIELDS, ficheText, isPrincipal, isSettledQuestion, motorFields, nicknames, sheetFields } from "../character";
+import { CHARACTER_FIELDS, CHARACTER_HEAD_FIELDS, ficheText, ficheValue, isCardRefField, isPrincipal, isSettledQuestion, motorFields, nicknames, sheetFields } from "../character";
 import { valueLabels } from "./projectDocs";
 import { wireFicheOf } from "../wires";
 import { PART_OF, partNumber, type PartKey } from "../bibleParts";
@@ -438,7 +438,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       out.push(...paras(c.html));
       const facts = sheetFields(type)
         .filter((k) => k !== subKey && (forMe || k !== "certitude"))
-        .map((k) => ({ label: labels[k] ?? k, value: clean(c.fiche?.[k] ? ficheText(k, c.fiche[k], values) : "") }))
+        .map((k) => ({ label: labels[k] ?? k, value: clean(isCardRefField(k) ? ficheValue(c, k, cards) : c.fiche?.[k] ? ficheText(k, c.fiche[k], values) : "") }))
         .filter((x) => x.value);
       if (facts.length > 0) out.push({ kind: "para", small: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
       const near = s.edges.flatMap((ed) => (ed.source === c.id ? [ed.target] : ed.target === c.id ? [ed.source] : [])).map(titleOf).filter(Boolean);

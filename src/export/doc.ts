@@ -6,7 +6,7 @@ import type { CardData, CardType, Link } from "../types";
 import { BIBLE_ORDER } from "../types";
 import { isMediaName } from "../media";
 import { isBlank, type Manuscript } from "../manuscript";
-import { ficheText, sheetFields } from "../character";
+import { ficheText, ficheValue, sheetFields } from "../character";
 import { episodeOrder } from "../episodes";
 import { PITCH_CHIPS, PITCH_TEXTS, type Pitch } from "../pitch";
 
@@ -263,9 +263,8 @@ export function bibleDoc(
       // Fiche d'identité d'un personnage : un paragraphe par champ rempli, libellé en gras.
       if (strings.fields && card.fiche) {
         for (const key of sheetFields(card.type)) {
-          const raw = card.fiche[key]?.trim();
-          // Pivot d'un épisode : la fiche garde l'identifiant du personnage, on écrit son nom.
-          const value = key === "pivot" ? (raw ? cards.find((c) => c.id === raw)?.title.trim() : "") : raw;
+          // Pivot d'un épisode, point de vue d'une scène : la fiche garde l'identifiant du personnage, on écrit son nom.
+          const value = ficheValue(card, key, cards);
           // « Personnage principal » sert à ranger (et au dossier), pas à lire : jamais écrit dans la fiche exportée.
           if (key === "principal") continue;
           if (strings.forOther && (key === "certitude" || key === "etat")) continue;

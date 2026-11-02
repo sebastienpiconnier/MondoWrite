@@ -620,7 +620,26 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .status-option[aria-selected="true"] { font-weight: 600; }
 .status-check { margin-left: auto; color: var(--accent); }
 @media (pointer: coarse) { .status-picker-button, .status-option { min-height: 44px; } }
-.card .status-picker { margin-top: 6px; }
+.scene-pills { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.card .scene-pills { margin-top: 6px; }
+/* Point de vue d'une scène (PovPicker) : même pastille et même menu que le statut. */
+.pov-avatar { flex: none; width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+.pov-avatar.is-initial, .pov-avatar.is-plus { display: inline-grid; place-items: center; box-sizing: border-box; color: var(--ink); font: 600 10px/1 var(--font-ui); }
+.pov-avatar.is-initial { border: 1.5px solid var(--type-personnage); }
+.pov-avatar.is-plus { border: 1.5px dashed var(--ink-2); font-size: 12px; }
+.pov-avatar.is-icon { width: 16px; height: 16px; color: var(--ink-2); }
+.pov-picker .pov-name { max-width: 18ch; overflow: hidden; text-overflow: ellipsis; }
+.pov-picker.is-set .status-picker-button { color: var(--ink); }
+.pov-menu { width: 290px; max-width: calc(100vw - 16px); }
+.pov-search { min-height: 36px; margin: 0 0 4px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--ground); color: var(--ink); font: inherit; }
+.pov-search::placeholder { color: var(--ink-2); }
+.pov-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pov-list { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; outline: none; }
+.pov-option.is-active { background: var(--ground); }
+.pov-menu:has(.pov-search:focus-visible) .pov-option.is-active { box-shadow: inset 0 0 0 2px var(--accent); }
+.pov-option.is-create { color: var(--accent-ink, var(--ink)); }
+.pov-hint { max-width: 260px; margin: 6px 8px 2px; color: var(--ink-2); font-size: 13px; }
+@media (pointer: coarse) { .pov-search { min-height: 44px; } }
 .ms-scenes .status-dot { margin-left: 6px; }
 
 /* Fenêtre « Livre broché (KDP) » : mêmes champs que « Rechercher et remplacer », sur deux colonnes quand la place le permet. */

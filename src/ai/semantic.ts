@@ -245,7 +245,7 @@ export function screenplayChunks(elements: ScreenplayElement[], at = "@"): Chunk
 }
 
 /** Champs de fiche qui portent un code ou une adresse, pas du texte de l'auteur. */
-const CODE_FIELDS: ReadonlySet<string> = new Set(["certitude", "statut", "arcType", "principal", "issue", "etat", "repere", "pivot", "url", "consulte", "pages", "numero", "saison"]);
+const CODE_FIELDS: ReadonlySet<string> = new Set(["certitude", "statut", "arcType", "principal", "issue", "etat", "repere", "pivot", "pov", "url", "consulte", "pages", "numero", "saison"]);
 
 /** Cartes : titre, fiche (valeurs écrites par l'auteur) et texte, un passage par groupe de paragraphes. */
 export function cardChunks(cards: CardData[]): Chunk[] {

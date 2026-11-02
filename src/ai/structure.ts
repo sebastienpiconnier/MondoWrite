@@ -11,7 +11,7 @@
 import type { CardData, CardType, Link, ProjectKind } from "../types";
 import type { ScreenplayElement } from "../screenplay/model";
 import { plainText } from "../search";
-import { BREAKDOWN_FIELDS, isPrincipal, type BreakdownField, type SheetField } from "../character";
+import { BREAKDOWN_FIELDS, isCardRefField, isPrincipal, type BreakdownField, type SheetField } from "../character";
 import { namesOf } from "../manuscript";
 import { headingParts } from "../screenplay/scenes";
 import { clip, extractJson, language, nameCards, nameRule, parseQuestion, type CardNames, type Prompt } from "./tasks";
@@ -124,7 +124,8 @@ export const WIRES_MAX = 30;
 
 /** Ce que l'auteur a écrit d'une carte, en texte : titre, notes, valeurs de la fiche, texte de la scène. */
 export function wireCardOf(card: CardData, sceneText = ""): WireCard {
-  const sheet = Object.values(card.fiche ?? {}).filter((v) => v.trim() && v.length > 2);
+  // Un champ-référence (pivot, point de vue) porte un identifiant, pas du texte de l'auteur.
+  const sheet = Object.entries(card.fiche ?? {}).flatMap(([k, v]) => (!isCardRefField(k) && v.trim() && v.length > 2 ? [v] : []));
   return { id: card.id, type: card.type, title: card.title.trim(), text: [plainText(card.html), ...sheet, sceneText].filter(Boolean).join("\n").trim() };
 }
 

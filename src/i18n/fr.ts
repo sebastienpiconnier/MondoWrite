@@ -928,6 +928,22 @@ export const fr = {
     chooseFor: "Statut de la scène « {title} »",
     done: "Scènes terminées",
   },
+  // Point de vue d'une scène (1.13.0) : personnage narrateur, une carte Personnage (`fiche.pov`).
+  pov: {
+    label: "Point de vue",
+    none: "Aucun",
+    empty: "Point de vue",
+    chooseFor: "Point de vue de la scène « {title} »",
+    search: "Chercher ou créer un personnage",
+    create: "Créer « {name} »",
+    noCharacter: "Aucun personnage pour l’instant : tape un nom pour le créer.",
+    narratorOne: "Narrateur de {n} scène",
+    narratorMany: "Narrateur de {n} scènes",
+    words: "{n} mots",
+    showScenes: "Voir ses scènes",
+    hideScenes: "Masquer ses scènes",
+    openScene: "Ouvrir la scène « {title} »",
+  },
   // Livre broché pour l'impression à la demande (KDP) : fenêtre, pages ajoutées au livre, gabarit de couverture.
   paperback: {
     menu: "Livre broché (KDP)…",
@@ -2366,6 +2382,7 @@ export const fr = {
       statut: "Statut",
       numero: "Numéro",
       pivot: "Personnage pivot",
+      pov: "Point de vue",
       saison: "Saison",
       repere: "Repère",
       quand: "Quand",

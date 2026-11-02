@@ -514,3 +514,10 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
 
 /* Retirer un fil : au pied de sa fiche, à droite (1.11.2). */
 .wire-sheet-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+/* Point de vue (1.13.0) : scènes racontées par un personnage, repliées sous une ligne. */
+.pov-scenes { margin: 4px 0 8px; font-size: 0.875rem; color: var(--ink-2); }
+.pov-scenes-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; color: var(--ink-2); }
+.pov-scenes-list { margin: 4px 0 0; padding-left: 28px; display: flex; flex-direction: column; gap: 2px; }
+.pov-scenes-list .link-button { min-height: 28px; text-align: left; }
+@media (pointer: coarse) { .pov-scenes-toggle, .pov-scenes-list .link-button { min-height: 44px; } }
