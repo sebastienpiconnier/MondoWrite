@@ -3020,7 +3020,7 @@ export const fr = {
   scrivener: {
     pickLabel: "Projet Scrivener",
     openScriv: "Ouvrir un projet Scrivener…",
-    openScrivHint: "Choisis le projet .scriv (sur Mac) ou le fichier .scrivx qu’il contient (sous Windows et Linux) : il est lu sans être modifié. Tu peux aussi importer le projet compressé en .zip.",
+    openScrivHint: "Choisis le projet .scriv (sur Mac) ou le fichier .scrivx qu’il contient (sous Windows et Linux) : il est lu sans être modifié. Tu peux aussi choisir le projet compressé en .zip (dans le Finder : clic droit, Compresser).",
     chooseTitle: "Importer « {name} »",
     chooseIntro: "Le manuscrit est toujours importé, chapitres et scènes compris. Coche les autres dossiers à reprendre :",
     count: "{n} éléments",

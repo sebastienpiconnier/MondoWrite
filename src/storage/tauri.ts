@@ -11,7 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
 import { COPIES_DIR, JOURNAL_FILE, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
-import { isMobileOS } from "../platform";
+import { isAppleKeyboard, isMobileOS } from "../platform";
 import { getT } from "../i18n";
 import { MISSING_FOLDER, classifySaveError } from "../saveErrors";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
@@ -754,10 +754,19 @@ export const tauriStorage: Storage = {
   async pickScrivener(label) {
     // Sur Mac, le .scriv est un paquet : le dialogue le montre comme un fichier. Ailleurs c'est un dossier, et l'on
     // choisit le .scrivx qu'il contient. Seuls classeur, textes et médias sont lus (jamais les index ni les aperçus).
-    const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions: ["scriv", "scrivx"] }] });
+    // Pas de filtre sur Mac : l'extension « scriv » y devient un type de fichier ordinaire, que le paquet (type de
+    // Scrivener, rangé parmi les paquets) ne satisfait pas, et le dialogue le grisait (essai de la 1.14.0). Le choix
+    // est donc vérifié ici : .scriv, .scrivx ou .zip, sinon rien n'est lu.
+    const mac = isAppleKeyboard() && !isMobileOS();
+    const path = await open({ multiple: false, directory: false, filters: mac ? undefined : [{ name: label, extensions: ["scriv", "scrivx", "zip"] }] });
     if (typeof path !== "string") return undefined;
+    const { isScrivenerEntry, readScrivenerSource, readScrivenerZip } = await import("../import/scrivener");
+    if (/\.zip$/i.test(path)) {
+      const source = await readScrivenerZip(await readFile(path));
+      return source && source !== "not-scrivener" ? source : null;
+    }
+    if (!/\.scrivx?$/i.test(path)) return null;
     const root = /\.scrivx$/i.test(path) ? await dirname(path) : path;
-    const { isScrivenerEntry, readScrivenerSource } = await import("../import/scrivener");
     const prefix = `${baseName(root)}/`;
     const files = new Map<string, Uint8Array>();
     const take = async (dir: string, rel: string) => {

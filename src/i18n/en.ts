@@ -2972,7 +2972,7 @@ export const en: Messages = {
   scrivener: {
     pickLabel: "Scrivener project",
     openScriv: "Open a Scrivener project…",
-    openScrivHint: "Choose the .scriv project (on Mac) or the .scrivx file inside it (on Windows and Linux): it is read, never changed. You can also import the project compressed as a .zip.",
+    openScrivHint: "Choose the .scriv project (on Mac) or the .scrivx file inside it (on Windows and Linux): it is read, never changed. You can also choose the project compressed as a .zip (in the Finder: right-click, Compress).",
     chooseTitle: "Import “{name}”",
     chooseIntro: "The manuscript is always imported, chapters and scenes included. Tick the other folders to bring along:",
     count: "{n} items",
