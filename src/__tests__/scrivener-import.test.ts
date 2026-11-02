@@ -87,8 +87,10 @@ describe("classeur", () => {
   });
 
   it("reconnaît les statuts en français et en anglais", () => {
-    expect(["To Do", "First Draft", "A faire", "Premier jet"].map(statusOf)).toEqual(["brouillon", "brouillon", "brouillon", "brouillon"]);
-    expect(["Revised Draft", "Version révisée"].map(statusOf)).toEqual(["revoir", "revoir"]);
+    expect(["To Do", "A faire", "À faire"].map(statusOf)).toEqual(["aecrire", "aecrire", "aecrire"]);
+    expect(["First Draft", "Premier jet"].map(statusOf)).toEqual(["brouillon", "brouillon"]);
+    expect(["Revised Draft", "Version révisée"].map(statusOf)).toEqual(["revisee", "revisee"]);
+    expect(statusOf("À revoir")).toBe("revoir");
     expect(["Final Draft", "Done", "Version finale", "Terminé"].map(statusOf)).toEqual(["fini", "fini", "fini", "fini"]);
     expect(statusOf("Envoyé à Paul")).toBeNull();
   });
@@ -165,7 +167,7 @@ describe("projet Scrivener → projet roman", () => {
     expect(a).toMatchObject({ type: "scene", title: "Le monde ordinaire d'Ethan", fiche: { synopsis: "Ethan rencontre Violette.", statut: "fini" } });
     expect(p.manuscript![a.id]).toBe("<p>— Bonjour, dit Ethan.</p><p>Il partit.</p>");
     expect(b.title).toBe("Le soir tomba");
-    expect(byId.get(chapters[1].scenes[0])!.fiche).toEqual({ statut: "revoir" });
+    expect(byId.get(chapters[1].scenes[0])!.fiche).toEqual({ statut: "revisee" });
     // Dossier de chapitre : ses documents à toute profondeur ; une scène sans texte garde son synopsis.
     expect(chapters[2].scenes.map((id) => byId.get(id)!.title)).toEqual(["Le quai", "Le train", "La fuite"]);
     expect(byId.get(chapters[2].scenes[2])!.fiche).toEqual({ synopsis: "Une scène encore à écrire." });
@@ -192,5 +194,19 @@ describe("projet Scrivener → projet roman", () => {
     expect(await importFromFile({ name: "Mon projet.zip", data: other }, { fileName: "Mon projet.zip", locale: "fr", linkLabel: "", newId })).toBe("project-zip");
     const outcome = await importFromFile({ name: "Sacré Bonhomme.zip", data: zip }, { fileName: "Sacré Bonhomme.zip", locale: "fr", linkLabel: "", newId });
     expect(outcome && outcome !== "project-zip" && outcome.source).toBe("scrivener");
+  });
+});
+
+describe("statuts d'une scène (1.14.0)", () => {
+  it("lit les cinq statuts, et garde tel quel un statut que cette version ne connaît pas", async () => {
+    const { fileToCard, cardToFile } = await import("../storage/markdown");
+    const file = (statut: string) => `---\nid: s1\ntype: scene\ntitle: "Le quai"\nfiche: {"statut":"${statut}","synopsis":"Un départ."}\n---\n`;
+    for (const s of ["aecrire", "brouillon", "revoir", "revisee", "fini"]) expect(fileToCard(file(s))!.fiche?.statut).toBe(s);
+    // Une version future ajoute un statut : il n'est pas affiché, mais il revient à l'écriture.
+    const card = fileToCard(file("relu-par-paul"))!;
+    expect(card.fiche?.statut).toBeUndefined();
+    expect(cardToFile(card)).toContain('"statut":"relu-par-paul"');
+    // L'auteur en choisit un connu : c'est lui qui est écrit.
+    expect(cardToFile({ ...card, fiche: { ...card.fiche, statut: "revisee" } })).toContain('"statut":"revisee"');
   });
 });

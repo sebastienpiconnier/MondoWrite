@@ -930,7 +930,7 @@ export const fr = {
   sceneStatus: {
     label: "Statut",
     none: "Sans statut",
-    values: { brouillon: "Brouillon", revoir: "À revoir", fini: "Terminée" },
+    values: { aecrire: "À écrire", brouillon: "Brouillon", revoir: "À revoir", revisee: "Révisée", fini: "Terminée" },
     chooseFor: "Statut de la scène « {title} »",
     done: "Scènes terminées",
   },

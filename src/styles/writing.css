@@ -606,6 +606,9 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .status-dot.is-brouillon, .status-picker.is-brouillon .status-dot { border-color: var(--status-draft); background: var(--status-draft); }
 .status-dot.is-revoir, .status-picker.is-revoir .status-dot { border-color: var(--status-revise); background: var(--status-revise); }
 .status-dot.is-fini, .status-picker.is-fini .status-dot { border-color: var(--status-done); background: var(--status-done); }
+/* À écrire : un rond vide (la scène n'a pas encore de texte) ; révisée : plein. La forme dit autant que la couleur. */
+.status-dot.is-aecrire, .status-picker.is-aecrire .status-dot { border-color: var(--status-todo); background: transparent; border-width: 2px; }
+.status-dot.is-revisee, .status-picker.is-revisee .status-dot { border-color: var(--status-revised); background: var(--status-revised); }
 .status-picker { display: inline-flex; vertical-align: middle; }
 .status-picker-button { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px 0 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 12px var(--font-ui); cursor: pointer; white-space: nowrap; }
 @media (any-hover: hover) { .status-picker-button:hover { background: var(--hover); color: var(--ink); } }

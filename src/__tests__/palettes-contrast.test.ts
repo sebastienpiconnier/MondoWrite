@@ -50,7 +50,7 @@ const PAIRS: [string, string][] = [
   ["ia-mark", "page"],
   ["ia-mark", "ground"],
   ...["idee", "personnage", "lieu", "scene", "theme", "intrigue", "lien", "image", "document", "question", "episode", "groupe", "objet", "evenement", "regle", "secret"].map((t): [string, string] => [`type-${t}`, "surface"]),
-  ...["draft", "revise", "done"].map((s): [string, string] => [`status-${s}`, "surface"]),
+  ...["todo", "draft", "revise", "revised", "done"].map((s): [string, string] => [`status-${s}`, "surface"]),
 ];
 
 describe("contraste AA dans toutes les palettes", () => {

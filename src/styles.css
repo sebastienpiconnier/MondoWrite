@@ -61,9 +61,11 @@
   --pov-6: var(--type-lien);
   --pov-7: var(--type-episode);
   --pov-8: var(--type-theme);
-  /* Statut d'une scène (pastilles) : brouillon, à revoir, terminée */
+  /* Statut d'une scène (pastilles) : à écrire, brouillon, à revoir, révisée, terminée */
+  --status-todo: #5a5fc0;
   --status-draft: #6e7388;
   --status-revise: #b54708;
+  --status-revised: #0a6b8a;
   --status-done: #1f7a3a;
   /* Comparaison des versions : alias de jetons déjà vérifiés (contraste) dans chaque palette. */
   --diff-del: var(--danger);
@@ -133,8 +135,10 @@
   --ia-mark: #d9a3ea;
   --page-ink-dim: #848a98;
   --type-question: #8e93a8;
+  --status-todo: #a9adf5;
   --status-draft: #9ca1b4;
   --status-revise: #f5a35c;
+  --status-revised: #63c7e6;
   --status-done: #6fcf8e;
   --diff-del: var(--danger);
   --diff-add: var(--status-done);

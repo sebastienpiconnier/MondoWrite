@@ -149,7 +149,9 @@ export const povOf = <T extends Pick<CardData, "id" | "type">>(scene: Pick<CardD
   scene.type === "scene" ? cardRef(scene, "pov", cards) : null;
 
 /** Statut d'une scène : valeurs écrites dans le fichier (`fiche.statut`), jamais traduites. Libellés : `t.status.values`. */
-export const SCENE_STATUSES = ["brouillon", "revoir", "fini"] as const;
+// Dans l'ordre où une scène avance. « aecrire » et « revisee » depuis la 1.14.0 (alignés sur Scrivener : To Do,
+// Revised Draft) ; une version d'avant garde une valeur qu'elle ne connaît pas (keep.fiche) sans l'afficher.
+export const SCENE_STATUSES = ["aecrire", "brouillon", "revoir", "revisee", "fini"] as const;
 export type SceneStatus = (typeof SCENE_STATUSES)[number];
 export const isSceneStatus = (v: unknown): v is SceneStatus => typeof v === "string" && (SCENE_STATUSES as readonly string[]).includes(v);
 export const sceneStatus = (card: Pick<CardData, "type" | "fiche">): SceneStatus | null => (card.type === "scene" && isSceneStatus(card.fiche?.statut) ? card.fiche!.statut as SceneStatus : null);

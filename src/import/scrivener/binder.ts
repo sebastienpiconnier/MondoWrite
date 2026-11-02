@@ -2,6 +2,8 @@
 // leurs étiquette, statut et mots-clés, et les réglages du projet utiles à l'import (libellés des statuts et des
 // étiquettes, mots-clés, objectif du manuscrit). Pur : DOMParser seulement.
 
+import type { SceneStatus } from "../../character";
+
 export type BinderType = "DraftFolder" | "ResearchFolder" | "TrashFolder" | "Folder" | "Text" | "PDF" | "Image" | "WebArchive" | "Media" | string;
 
 export interface BinderItem {
@@ -116,14 +118,16 @@ export function readBinder(xml: string): Binder | null {
 }
 
 /** Statut Scrivener → statut d'une scène MondoWrite, d'après son libellé (français ou anglais), sinon rien. */
-export function statusOf(label: string): "brouillon" | "revoir" | "fini" | null {
+export function statusOf(label: string): SceneStatus | null {
   const s = label
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase();
   if (!s.trim()) return null;
   if (/final|done|termin|fini|complet/.test(s)) return "fini";
-  if (/revis|revoir|second|deuxieme|relu/.test(s)) return "revoir";
-  if (/first|premier|to ?do|a faire|brouillon|draft|jet/.test(s)) return "brouillon";
+  if (/revis|second|deuxieme|relu/.test(s)) return "revisee";
+  if (/revoir|a reprendre|to revise/.test(s)) return "revoir";
+  if (/to ?do|a faire|a ecrire|to write|idee|idea|outline/.test(s)) return "aecrire";
+  if (/first|premier|brouillon|draft|jet/.test(s)) return "brouillon";
   return null;
 }

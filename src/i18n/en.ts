@@ -949,7 +949,7 @@ export const en: Messages = {
   sceneStatus: {
     label: "Status",
     none: "No status",
-    values: { brouillon: "Draft", revoir: "To revise", fini: "Done" },
+    values: { aecrire: "To write", brouillon: "Draft", revoir: "To revise", revisee: "Revised", fini: "Done" },
     chooseFor: "Status of the scene “{title}”",
     done: "Scenes done",
   },
