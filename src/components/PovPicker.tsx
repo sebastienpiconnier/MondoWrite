@@ -5,6 +5,7 @@
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { portalRoot } from "./portalRoot";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -233,7 +234,7 @@ export function PovPicker({ card, className = "" }: { card: CardData; className?
             </div>
             {people.length === 0 && !query.trim() && <p className="pov-hint">{t.noCharacter}</p>}
           </div>,
-          document.body,
+          portalRoot(buttonRef.current),
         )}
     </span>
   );
@@ -283,7 +284,7 @@ export function PovScenes({ card }: { card: CardData }) {
           {words > 0 && ` · ${fmt(t.pov.words, { n: num.format(words) })}`}
         </span>
         <span className="sr-only">{open ? t.pov.hideScenes : t.pov.showScenes}</span>
-        <span aria-hidden="true" className="sheet-chevron">{open ? "▴" : "▾"}</span>
+        <span aria-hidden="true" className={`sheet-chevron disclosure${open ? " is-open" : ""}`} />
       </button>
       {open && (
         <ol id={listId} className="pov-scenes-list">

@@ -361,9 +361,7 @@ export function BreakdownSheet({ card }: { card: CardData }) {
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
         <span>{s.breakdownTitle}</span>
         <span className="sheet-count">{fmt(t.character.filled, { n: filled, total: BREAKDOWN_FIELDS.length })}</span>
-        <span aria-hidden="true" className="sheet-chevron">
-          {open ? "▴" : "▾"}
-        </span>
+        <span aria-hidden="true" className={`sheet-chevron disclosure${open ? " is-open" : ""}`} />
       </button>
       {open && (
         <div id={`${id}-fields`}>

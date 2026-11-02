@@ -9,6 +9,7 @@ import { autosize } from "./autosize";
 import { documentExtension, imageExtension } from "../media";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { portalRoot } from "./portalRoot";
 import { useLifted } from "../lifted";
 import { Handle, NodeResizeControl, Position, ResizeControlVariant, useConnection, type NodeProps } from "@xyflow/react";
 import { type Editor, type UseEditorOptions } from "@tiptap/react";
@@ -659,7 +660,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
               onPick={(i) => pick(options[i])}
             />
           </div>,
-          document.body,
+          portalRoot(typeButtonRef.current),
         )}
     </div>
   );

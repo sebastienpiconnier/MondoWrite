@@ -5,6 +5,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { portalRoot } from "./portalRoot";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 import { fmt, useT } from "../i18n";
@@ -139,6 +140,6 @@ export function FootnotePopover({ editor }: { editor: Editor }) {
         </button>
       </div>
     </div>,
-    document.body,
+    portalRoot(editor.view.dom),
   );
 }

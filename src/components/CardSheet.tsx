@@ -97,7 +97,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
         <span>{title}</span>
         <span className="sheet-count">{fmt(t.filled, { n: filled, total: fields.length })}</span>
-        <span aria-hidden="true" className="sheet-chevron">{open ? "▴" : "▾"}</span>
+        <span aria-hidden="true" className={`sheet-chevron disclosure${open ? " is-open" : ""}`} />
       </button>
       {open && (
         <div id={`${id}-fields`}>

@@ -22,7 +22,7 @@ export function CharacterAnswers({ card }: { card: CardData }) {
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-list`} onClick={() => setOpen(!open)}>
         <span>{t.answers}</span>
         <span className="sheet-count">{fmt(t.answersCount, { n: entries.length })}</span>
-        <span aria-hidden="true" className="sheet-chevron">{open ? "▴" : "▾"}</span>
+        <span aria-hidden="true" className={`sheet-chevron disclosure${open ? " is-open" : ""}`} />
       </button>
       {open && (
         <div id={`${id}-list`} className="answers-list">

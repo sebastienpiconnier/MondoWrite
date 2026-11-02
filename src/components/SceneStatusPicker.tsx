@@ -5,6 +5,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { portalRoot } from "./portalRoot";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { SCENE_STATUSES, sceneStatus } from "../character";
@@ -152,7 +153,7 @@ export function SceneStatusPicker({ card, className = "" }: { card: CardData; cl
               </button>
             ))}
           </div>,
-          document.body,
+          portalRoot(buttonRef.current),
         )}
     </span>
   );

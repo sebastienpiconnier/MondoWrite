@@ -12,6 +12,8 @@ import { useCosmos } from "../store";
 import { newId } from "../projectState";
 import { beatText, templateBeats, type CustomTemplate, type PlanTemplate } from "../plan";
 import { storage } from "../storage";
+import { MoreMenu } from "./MoreMenu";
+import { type SavedTemplate } from "../settings";
 import { parseTemplateText, TEMPLATE_IMPORT_EXTENSIONS, templateFileName, templateToMarkdown, type TemplateFile } from "../templateFile";
 
 interface Props {
@@ -41,6 +43,7 @@ const EDIT = "__edit";
 const MINE = "mine:";
 const IMPORT = "__import";
 const EXPORT = "__export";
+const MANAGE = "__manage";
 /** Durée d'affichage du message d'import ou d'export. */
 const NOTICE_MS = 6000;
 
@@ -57,11 +60,25 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     return () => window.clearTimeout(timer);
   }, [notice]);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // « Gérer mes gabarits… » : la bibliothèque de l'appareil, avec Exporter et Retirer (1.13.1).
+  const [managing, setManaging] = useState(false);
+  const manageRef = useRef<HTMLDialogElement>(null);
+  // Gabarit qu'on vient de retirer : « Annuler » le remet à sa place, le temps du message.
+  const [removed, setRemoved] = useState<{ tpl: SavedTemplate; at: number } | null>(null);
+  useEffect(() => {
+    if (!removed) return;
+    const timer = window.setTimeout(() => setRemoved(null), NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [removed]);
 
   useEffect(() => {
     const d = dialogRef.current;
     if (editing && d && !d.open) d.showModal();
   }, [editing]);
+  useEffect(() => {
+    const d = manageRef.current;
+    if (managing && d && !d.open) d.showModal();
+  }, [managing]);
 
   const dict = p.beats as Record<string, { label: string; hint: string }>;
   // Les cases d'un gabarit, à reprendre dans l'éditeur (sans clé : elles en recevront dans le projet).
@@ -94,7 +111,49 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     setEditing({ name: tpl.name, rows: tpl.beats.map((b) => ({ label: b.label, hint: b.hint ?? "", id: newId() })), keep: true, imported: file.name });
   };
 
+  const forget = (tpl: SavedTemplate) => {
+    const at = saved.findIndex((x) => x.id === tpl.id);
+    useSettings.getState().forgetTemplate(tpl.id);
+    setRemoved({ tpl, at: Math.max(0, at) });
+  };
+  const undoForget = () => {
+    if (!removed) return;
+    useSettings.getState().restoreTemplate(removed.tpl, removed.at);
+    setRemoved(null);
+  };
+  const removedNotice = removed && (
+    <p className="tpl-removed" role="status">
+      <span>{fmt(e.forgotten, { name: removed.tpl.name || p.templates.perso })}</span>
+      <button type="button" className="link-button" onClick={undoForget}>
+        {e.undo}
+      </button>
+    </p>
+  );
+  // Les gabarits gardés : nom, nombre de cases, et un menu ⋯ (Exporter ; Retirer, en rouge et en dernier).
+  const library = (
+    <ul className="tpl-library-list">
+      {saved.map((x) => {
+        const name = x.name || p.templates.perso;
+        return (
+          <li key={x.id}>
+            <span>
+              {name} <span className="tpl-count">· {fmt(e.count, { n: x.beats.length })}</span>
+            </span>
+            <MoreMenu
+              label={fmt(e.actions, { name })}
+              items={[
+                { label: e.export, title: fmt(e.exportAria, { name }), onSelect: () => void exportTemplate({ name, beats: x.beats }) },
+                { label: e.forgetShort, title: fmt(e.forget, { name }), danger: true, onSelect: () => forget(x) },
+              ]}
+            />
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   const onChange = (v: string) => {
+    if (v === MANAGE) return setManaging(true);
     if (v === IMPORT) return void importTemplate();
     if (v === EXPORT) {
       if (!value || value === "libre") return;
@@ -169,6 +228,7 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
             {value === "perso" && <option value={EDIT}>{p.editTemplate}</option>}
             <option value={IMPORT}>{p.importTemplate}</option>
             {value && value !== "libre" && <option value={EXPORT}>{p.exportTemplate}</option>}
+            {saved.length > 0 && <option value={MANAGE}>{p.manageTemplates}</option>}
           </optgroup>
         </select>
       </label>
@@ -176,6 +236,25 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
         <span className={`tpl-notice${notice.error ? " is-error" : ""}`} role="status">
           {notice.text}
         </span>
+      )}
+      {!managing && !editing && removedNotice}
+      {managing && (
+        <dialog
+          ref={manageRef}
+          className="app-dialog tpl-manage"
+          aria-labelledby="tpl-manage-title"
+          onClose={() => setManaging(false)}
+        >
+          <h2 id="tpl-manage-title">{e.library}</h2>
+          <p className="tpl-file-hint">{e.manageHint}</p>
+          {saved.length > 0 ? library : <p className="tpl-empty">{e.libraryEmpty}</p>}
+          {removedNotice}
+          <div className="assistant-actions app-dialog-actions">
+            <button type="button" onClick={() => manageRef.current?.close()}>
+              {e.close}
+            </button>
+          </div>
+        </dialog>
       )}
       {editing && (
         <dialog ref={dialogRef} className="app-dialog tpl-editor" aria-labelledby="tpl-editor-title" onClose={() => setEditing(null)}>
@@ -230,28 +309,10 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
               <summary>
                 {e.library} · {saved.length}
               </summary>
-              <ul>
-                {saved.map((s) => (
-                  <li key={s.id}>
-                    <span>
-                      {s.name || p.templates.perso} <span className="tpl-count">· {fmt(e.count, { n: s.beats.length })}</span>
-                    </span>
-                    <button
-                      type="button"
-                      className="ghost-button tpl-export"
-                      aria-label={fmt(e.exportAria, { name: s.name || p.templates.perso })}
-                      onClick={() => void exportTemplate({ name: s.name || p.templates.perso, beats: s.beats })}
-                    >
-                      {e.export}
-                    </button>
-                    <button type="button" className="icon-button" aria-label={fmt(e.forget, { name: s.name || p.templates.perso })} title={fmt(e.forget, { name: s.name || p.templates.perso })} onClick={() => useSettings.getState().forgetTemplate(s.id)}>
-                      <span aria-hidden="true">×</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              {library}
             </details>
           )}
+          {removedNotice}
           <p className="tpl-file-hint">{e.fileHint}</p>
           {named.length === 0 && <p className="tpl-empty" role="status">{e.empty}</p>}
           <div className="assistant-actions app-dialog-actions tpl-actions">

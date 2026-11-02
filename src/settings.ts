@@ -152,6 +152,8 @@ interface SettingsState {
   templates: SavedTemplate[];
   saveTemplate: (template: SavedTemplate) => void;
   forgetTemplate: (id: string) => void;
+  /** Remet un gabarit retiré (« Annuler »), à sa place dans la liste. */
+  restoreTemplate: (template: SavedTemplate, at: number) => void;
   /** Mises à jour de l'app : vérification au lancement (une fois par jour au plus), dernière vérification. */
   updates: UpdateSettings;
   setUpdates: (updates: Partial<UpdateSettings>) => void;
@@ -258,6 +260,11 @@ export const useSettings = create<SettingsState>((set) => ({
   templates: readTemplates(saved.templates),
   saveTemplate: (template) => set((s) => ({ templates: readTemplates([template, ...s.templates.filter((t) => t.id !== template.id)]) })),
   forgetTemplate: (id) => set((s) => ({ templates: s.templates.filter((t) => t.id !== id) })),
+  restoreTemplate: (template, at) =>
+    set((s) => {
+      const rest = s.templates.filter((t) => t.id !== template.id);
+      return { templates: readTemplates([...rest.slice(0, at), template, ...rest.slice(at)]) };
+    }),
   updates: readUpdates(saved.updates),
   setUpdates: (updates) => set((s) => ({ updates: { ...s.updates, ...updates } })),
 }));

@@ -6,6 +6,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { portalRoot } from "./portalRoot";
 import { useT } from "../i18n";
 import { isAppleKeyboard } from "../platform";
 
@@ -144,7 +145,7 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
               </button>
             ))}
           </div>,
-          document.body,
+          portalRoot(buttonRef.current),
         )}
     </>
   );

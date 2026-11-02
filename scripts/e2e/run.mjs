@@ -1160,6 +1160,65 @@ const scenarios = [
       assert(file.suggestedFilename() === "Mon polar.md", `nom proposé : ${file.suggestedFilename()}`);
       const text = (await import("node:fs")).readFileSync(await file.path(), "utf8");
       assert(/^# Mon polar/.test(text) && /## L’enquête/.test(text) && /Le coupable est démasqué/.test(text), `fichier exporté : ${text}`);
+      // 1.13.1 : « Gérer mes gabarits… » retire un gabarit gardé (⋯, en rouge), Annuler le remet, le projet n'y perd rien.
+      const mine = () => select.locator("option", { hasText: "Mon polar" }).count();
+      await select.selectOption("__manage");
+      const manage = page.locator("dialog.tpl-manage[open]");
+      await manage.waitFor();
+      const forget = async () => {
+        await manage.getByRole("button", { name: "Actions pour « Mon polar »" }).click();
+        const item = page.getByRole("menuitem", { name: "Retirer de mes gabarits" });
+        await item.waitFor();
+        assert(await item.evaluate((el) => !!el.closest("dialog")), "le menu ⋯ n'est pas dans la fenêtre (il passerait dessous)");
+        await item.click();
+      };
+      await forget();
+      await until(() => manage.getByText("est retiré de tes gabarits", { exact: false }).isVisible(), "pas de message après le retrait");
+      await manage.getByRole("button", { name: "Annuler", exact: true }).click();
+      await until(() => manage.getByRole("button", { name: "Actions pour « Mon polar »" }).isVisible(), "Annuler n'a pas remis le gabarit");
+      await forget();
+      await manage.getByRole("button", { name: "Fermer", exact: true }).click();
+      await until(async () => !(await page.locator("dialog.tpl-manage[open]").count()), "la fenêtre ne se ferme pas");
+      // Le gabarit en place reste celui du projet ; plus aucun gabarit gardé à part lui.
+      assert((await select.inputValue()) === "perso", "le projet a perdu son gabarit");
+      assert((await select.locator("option[value^='mine:']").count()) === 0 && (await mine()) === 1, "le gabarit retiré est encore proposé");
+    },
+  },
+  {
+    name: "carte agrandie (1.13.1) : statut, point de vue et menu ⋯ s'ouvrent et répondent dans la fenêtre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Carte agrandie");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le réveil");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      await h.wait(300);
+      await h.view(1);
+      const card = page.locator(".react-flow__node", { hasText: "Le réveil" }).first();
+      await card.getByRole("button", { name: "Agrandir la carte" }).click();
+      const dialog = page.locator("dialog[open]");
+      await dialog.waitFor();
+      // Statut : le menu est dans la fenêtre et le choix est pris.
+      await dialog.getByRole("button", { name: /^Statut de la scène « Le réveil »/ }).click();
+      const done = page.getByRole("option", { name: "Terminée" });
+      await done.waitFor();
+      assert(await done.evaluate((el) => !!el.closest("dialog")), "le menu du statut n'est pas dans la fenêtre");
+      await done.click();
+      await until(async () => (await dialog.getByRole("button", { name: /^Statut de la scène « Le réveil »/ }).getAttribute("aria-label")).endsWith("Terminée"), "le statut n'a pas changé");
+      // Point de vue : narrateur créé depuis la carte agrandie.
+      await dialog.getByRole("button", { name: /^Point de vue de la scène « Le réveil »/ }).click();
+      const field = page.getByRole("combobox", { name: "Chercher ou créer un personnage" });
+      await field.waitFor();
+      await field.fill("Ethan");
+      await page.getByRole("option", { name: "Créer « Ethan »" }).click();
+      await until(async () => (await dialog.getByRole("button", { name: /^Point de vue de la scène « Le réveil »/ }).getAttribute("aria-label")).endsWith("Ethan"), "le point de vue n'a pas changé");
+      // Menu ⋯ : « Versions de la scène… » ouvre sa fenêtre.
+      await dialog.locator(".expanded-more").click();
+      const versions = page.getByRole("menuitem", { name: /^Versions de la scène/ });
+      await versions.waitFor();
+      await versions.click();
+      await until(() => page.locator("dialog[open].is-versions").isVisible(), "le menu ⋯ de la carte agrandie ne répond pas");
+      await h.saved((f) => Object.values(f).some((v) => typeof v === "string" && v.includes("type: scene") && v.includes('"statut":"fini"')), "le statut choisi dans la carte agrandie n'est pas enregistré");
     },
   },
 ];

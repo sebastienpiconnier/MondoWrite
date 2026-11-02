@@ -247,8 +247,6 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 .pitch-theme-list .link-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
 .pitch-intention summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; list-style: none; }
 .pitch-intention summary::-webkit-details-marker { display: none; }
-.pitch-intention summary::before { content: "▸"; font-size: 0.875rem; color: var(--accent); transition: transform 0.15s; }
-.pitch-intention[open] summary::before { transform: rotate(90deg); }
 .pitch-intention[open] summary { margin-bottom: 6px; }
 .pitch-field.is-bare > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .pitch-series-body { display: flex; flex-direction: column; gap: 16px; }
@@ -365,7 +363,7 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 /* Fiches repliables : chevron dans l'en-tête de chaque fiche, outils de rubrique (tout replier, tout déplier, +). */
 .bible-entry-body { display: contents; }
 .bible-entry-body[hidden] { display: none; }
-.bible-entry header .bible-fold { flex-shrink: 0; align-self: flex-start; border-color: transparent; background: transparent; color: var(--ink-2); }
+.bible-entry header .bible-fold { flex-shrink: 0; align-self: flex-start; border-color: transparent; background: transparent; color: var(--ink); }
 .bible-fold svg { transition: transform 0.15s; }
 .bible-entry.is-folded .bible-fold svg { transform: rotate(-90deg); }
 .bible-entry.is-folded { padding-top: 14px; padding-bottom: 14px; }
