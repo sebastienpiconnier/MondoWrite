@@ -199,11 +199,14 @@ L'invitation à la rétro-bible (`retroInvite`) reste proposée.
 
 ### Lot 1 : le manuscrit
 
-- [ ] `rtf.ts` et ses tests (accents cp1252, `\u`, insécables, gras/italique/barré, paragraphes vides,
-      groupes imbriqués, `\pict` et `\*\…` ignorés, marqueurs `<$Scr_…>` retirés)
-- [ ] `binder.ts` : arbre, types, statuts, mots-clés, format 3 (`Files/Data/<UUID>/`)
-- [ ] `mapping.ts` : Manuscrit → chapitres et scènes, titres sans « Chapitre N », synopsis, statuts
-- [ ] Entrée `.zip` sur toutes les plateformes ; `projectFromFile` avec médias
+- [x] `rtf.ts` et ses tests (accents cp1252, `\u`, insécables, gras/italique/barré, paragraphes vides,
+      groupes imbriqués, `\pict` et `\*\…` ignorés, marqueurs `<$Scr_…>` retirés, liens web des champs HYPERLINK)
+- [x] `binder.ts` : arbre, types, statuts, étiquettes, mots-clés en arbre, objectif ; format 3 (`Files/Data/<UUID>/`)
+      et, au passage, les fichiers à plat des formats d'avant (`Files/Docs/<ID>.rtf`)
+- [x] `mapping.ts` : Manuscrit → chapitres et scènes, titres sans « Chapitre N », synopsis, statuts, scène sans
+      texte gardée (synopsis seul), prologue et épilogue en pages du livre
+- [x] Entrée `.zip` sur toutes les plateformes (« Importer un manuscrit ou un scénario… » ; un .zip sans .scrivx
+      est ouvert comme un projet MondoWrite exporté) ; `importFromFile` rend projet et médias
 - [ ] Essai sur *Sacré Bonhomme* : 15 chapitres dans l'ordre, nombre de mots à ±1 % de Scrivener, accents et
       tirets de dialogue intacts
 

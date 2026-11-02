@@ -1185,6 +1185,46 @@ const scenarios = [
     },
   },
   {
+    name: "import Scrivener : un .scriv zippé devient un roman, chapitres, scènes, synopsis et statuts",
+    async run(h) {
+      const { page } = h;
+      const { zipSync, strToU8 } = await import("fflate");
+      // Projet à la façon de Scrivener 3 sur Mac : nom encodé, RTF en cp1252, __MACOSX, index à ignorer.
+      const rtf = (body) => `{\\rtf1\\ansi\\ansicpg1252\\cocoartf2761{\\fonttbl\\f0\\fnil Palatino;}{\\colortbl;\\red255\\green255\\blue255;}\\pard\\f0\\fs26 ${body}}`;
+      const item = (uuid, type, title, meta = "", children = "") => `<BinderItem UUID="${uuid}" Type="${type}"><Title>${title}</Title><MetaData>${meta}</MetaData>${children ? `<Children>${children}</Children>` : ""}</BinderItem>`;
+      const binder = item("D", "DraftFolder", "Manuscrit", "", item("C1", "Text", "Chapitre 1 - Le d\u00e9part", "<StatusID>4</StatusID>") + item("F2", "Folder", "Chapitre 2", "", item("S21", "Text", "Le quai") + item("S22", "Text", "Le train")));
+      const scrivx = `<?xml version="1.0" encoding="UTF-8"?><ScrivenerProject Version="2.0"><Binder>${binder}</Binder><StatusSettings><StatusItems><Status ID="4">Termin\u00e9</Status></StatusItems></StatusSettings></ScrivenerProject>`;
+      const root = "Sacr#U00e9 Bonhomme.scriv/";
+      const zip = zipSync({
+        [`${root}Sacr#U00e9 Bonhomme.scrivx`]: strToU8(scrivx),
+        [`${root}Files/Data/C1/content.rtf`]: strToU8(rtf("\\'97 Tu viens\\'a0? demanda Ethan.\\\nL\\'92\\'e9t\\'e9 finissait.\\\n")),
+        [`${root}Files/Data/C1/synopsis.txt`]: strToU8("Ethan quitte la ville."),
+        [`${root}Files/Data/S21/content.rtf`]: strToU8(rtf("Le quai \\'e9tait vide.\\\n")),
+        [`${root}Files/Data/S22/content.rtf`]: strToU8(rtf("Le train partit.\\\n")),
+        [`${root}Files/search.indexes`]: strToU8("x"),
+        [`__MACOSX/${root}._Sacr#U00e9 Bonhomme.scrivx`]: strToU8("x"),
+      });
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer un manuscrit ou un scénario…" }).click();
+      await (await chooser).setFiles({ name: "Sacré Bonhomme.zip", mimeType: "application/zip", buffer: Buffer.from(zip) });
+      await until(() => page.getByText("Le départ", { exact: false }).first().isVisible(), "le premier chapitre n'apparaît pas dans le Manuscrit");
+      await h.saved((f) => {
+        const meta = JSON.parse(f["cosmos.json"] ?? "{}");
+        const texts = Object.entries(f).filter(([k]) => k.startsWith("manuscrit/")).map(([, v]) => v).join("\n");
+        const cards = Object.entries(f).filter(([k]) => k.startsWith("cartes/")).map(([, v]) => v);
+        return (
+          meta.title === "Sacré Bonhomme" &&
+          meta.plan?.chapters?.length === 2 &&
+          meta.plan.chapters[1].scenes.length === 2 &&
+          texts.includes("— Tu viens\u00a0? demanda Ethan.") &&
+          texts.includes("L’été finissait.") &&
+          cards.some((c) => c.includes('title: "Le départ"') && c.includes('"synopsis":"Ethan quitte la ville."') && c.includes('"statut":"fini"'))
+        );
+      }, "le projet importé de Scrivener n'est pas enregistré comme attendu");
+    },
+  },
+  {
     name: "carte agrandie (1.13.1) : statut, point de vue et menu ⋯ s'ouvrent et répondent dans la fenêtre",
     async run(h) {
       const { page } = h;

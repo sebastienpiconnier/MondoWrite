@@ -32,7 +32,7 @@ import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { aiConfig, useSettings } from "./settings";
 import { bibleOrder } from "./bibleParts";
-import { IMPORT_EXTENSIONS, projectFromFile } from "./import";
+import { IMPORT_EXTENSIONS, importFromFile } from "./import";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
 import { documentFiche, documentTitle } from "./documents";
@@ -2377,7 +2377,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         return;
       }
       if (!file) return;
-      const project = await projectFromFile(file, {
+      const outcome = await importFromFile(file, {
         fileName: file.name,
         locale: useSettings.getState().lang,
         linkLabel: t.screenplay.linkSetIn,
@@ -2386,10 +2386,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
         console.error(err);
         return null;
       });
-      if (!project) {
+      // Un .zip qui n'est pas un projet Scrivener : un projet MondoWrite exporté, ouvert comme tel.
+      if (outcome === "project-zip") {
+        try {
+          await importZipData(file.data);
+        } catch (err) {
+          console.error(err);
+          storage.forget();
+          set({ openFailed: true });
+        }
+        return;
+      }
+      if (!outcome) {
         set({ importNotice: "empty" });
         return;
       }
+      const { project, medias } = outcome;
       if (!(await storage.create(project.meta.title))) return;
       // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
       if (await storage.readAll().catch(() => null)) {
@@ -2397,6 +2409,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ importNotice: "taken" });
         return;
       }
+      for (const [name, data] of medias) await storage.writeMedia(name, data).catch((err) => console.error(err));
       const { state } = openProject(project);
       set({
         ...state,

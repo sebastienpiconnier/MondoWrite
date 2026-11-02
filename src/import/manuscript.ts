@@ -27,6 +27,8 @@ export interface ImportedChapter {
   role: "prologue" | "epilogue" | null;
   /** Scènes du chapitre : leurs paragraphes en HTML. */
   scenes: string[][];
+  /** Titre et fiche de chaque scène, quand la source les donne (Scrivener) ; sinon le titre vient du texte. */
+  sceneMeta?: ({ title?: string; fiche?: Record<string, string> } | undefined)[];
 }
 
 export interface ImportedBook {
@@ -80,8 +82,8 @@ const CHAPTER_WORDS = new RegExp(
     ")(?![\\p{L}\\d])",
   "iu",
 );
-const PROLOGUE = /^(prologue|prólogo|prologo|prolog)(?![\p{L}\d])/iu;
-const EPILOGUE = /^(epilogue|épilogue|epílogo|epilogo|epilog)(?![\p{L}\d])/iu;
+export const PROLOGUE = /^(prologue|prólogo|prologo|prolog)(?![\p{L}\d])/iu;
+export const EPILOGUE = /^(epilogue|épilogue|epílogo|epilogo|epilog)(?![\p{L}\d])/iu;
 const SPELLED =
   /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|dix-sept|dix-huit|dix-neuf|vingt)\.?$/i;
 const isNumeral = (t: string) => /^\d{1,3}\.?$/.test(t) || /^[IVXLC]{1,7}\.?$/.test(t) || SPELLED.test(t);
@@ -240,7 +242,9 @@ export function bookToProject(book: ImportedBook, options: ManuscriptImportOptio
       const id = options.newId();
       const html = paras.map((p) => `<p>${p}</p>`).join("");
       const page = chapter.role && chapter.scenes.length === 1 ? chapter.role : undefined;
-      cards.push({ id, type: "scene", title: sceneTitle(html) || chapter.title, html: "", ...(page ? { page } : {}) });
+      const meta = chapter.sceneMeta?.[i];
+      const fiche = meta?.fiche && Object.keys(meta.fiche).length > 0 ? meta.fiche : undefined;
+      cards.push({ id, type: "scene", title: meta?.title?.trim() || sceneTitle(html) || chapter.title, html: "", ...(page ? { page } : {}), ...(fiche ? { fiche } : {}) });
       manuscript[id] = html;
       layout.push({ id, x: 80 + (i % PER_ROW) * STEP_X, y: 80 + (row + Math.floor(i / PER_ROW)) * STEP_Y });
       ids.push(id);
