@@ -458,7 +458,7 @@ export interface CosmosState {
   /** Case « Synchroniser les projets avec iCloud Drive » (iPhone, iPad, Mac), puis liste des projets relue. */
   setIcloud: (on: boolean) => Promise<void>;
   /** L'import n'a pas eu lieu : dossier déjà occupé par un projet, ou fichier sans scénario. */
-  importNotice: "taken" | "empty" | null;
+  importNotice: "taken" | "empty" | "scrivener" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
   tryExample: () => Promise<void>;
   /** Visite guidée : étape affichée (0 à n-1), ou null. État d'affichage, jamais enregistré. */
@@ -3277,7 +3277,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ scrivenerChoice: { source, folders: scrivenerFolders(source.binder) } });
       } catch (err) {
         console.error(err);
-        set({ importNotice: "empty" });
+        set({ importNotice: err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : "empty" });
       }
     },
     // ---------- Mode Atelier (1.8.0) ----------

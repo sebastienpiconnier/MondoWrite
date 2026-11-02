@@ -203,6 +203,7 @@ export const en: Messages = {
     fountainFiles: "Manuscript, screenplay or Scrivener project",
     importTaken: "This folder already contains a project. To import a file, choose an empty folder.",
     importEmpty: "This file doesn’t contain readable text (neither a manuscript nor a screenplay).",
+    importScrivener: "I can’t read inside this Scrivener project. Compress it as a .zip (in the Finder: right-click, Compress) and choose the .zip.",
     projects: "Projects",
     backHint: "Save and go back to the project list",
   },

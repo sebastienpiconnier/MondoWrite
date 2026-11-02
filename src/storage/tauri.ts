@@ -767,10 +767,18 @@ export const tauriStorage: Storage = {
     }
     if (!/\.scrivx?$/i.test(path)) return null;
     const root = /\.scrivx$/i.test(path) ? await dirname(path) : path;
+    // Le dialogue n'autorise que le chemin choisi : on ouvre la lecture du dossier .scriv (hors du dossier personnel,
+    // un disque externe par exemple), et l'on fait venir d'iCloud ce qui n'est pas encore sur l'appareil.
+    if (/\.scriv$/i.test(root)) await invoke("allow_scriv", { path: root }).catch(() => false);
+    await ensureDownloaded(root);
     const prefix = `${baseName(root)}/`;
+    let failed = "";
     const files = new Map<string, Uint8Array>();
     const take = async (dir: string, rel: string) => {
-      const entries = await readDir(dir).catch(() => []);
+      const entries = await readDir(dir).catch((err) => {
+        if (!rel) failed = String(err);
+        return [];
+      });
       const wanted = entries.filter((e) => e.isFile && isScrivenerEntry(`${prefix}${rel}${e.name}`));
       for (let i = 0; i < wanted.length; i += READ_PARALLEL) {
         await Promise.all(wanted.slice(i, i + READ_PARALLEL).map(async (e) => files.set(`${prefix}${rel}${e.name}`, await readFile(await join(dir, e.name)))));
@@ -783,7 +791,13 @@ export const tauriStorage: Storage = {
     const data = await join(filesDir, "Data");
     for (const entry of await readDir(data).catch(() => [])) if (entry.isDirectory) await take(await join(data, entry.name), `Files/Data/${entry.name}/`);
     await take(await join(filesDir, "Docs"), "Files/Docs/");
-    return readScrivenerSource(files);
+    const source = readScrivenerSource(files);
+    // Rien de lisible : on le dit (et la cause pour « Signaler un bug »), l'app propose alors la voie du .zip.
+    if (!source) {
+      console.error(`Scrivener : ${root} illisible (${files.size} fichiers lus${failed ? `, ${failed}` : ""})`);
+      throw new Error("scrivener-unreadable");
+    }
+    return source;
   },
   async pickTextFile(label, extensions) {
     // Le fichier choisi dans le dialogue du système est autorisé en lecture par Tauri.

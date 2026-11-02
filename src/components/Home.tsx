@@ -169,6 +169,8 @@ export function Home() {
               ? h.importTaken
               : importNotice === "empty"
                 ? h.importEmpty
+                : importNotice === "scrivener"
+                  ? h.importScrivener
                 : openFailed
                   ? storage.canPickFolder
                     ? t.app.openFailed

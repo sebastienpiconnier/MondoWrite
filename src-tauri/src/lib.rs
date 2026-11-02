@@ -290,6 +290,16 @@ async fn cloud_restore(app: tauri::AppHandle, bookmark: String) -> Option<CloudF
   }
 }
 
+/// Projet Scrivener choisi dans le dialogue (Mac : un paquet .scriv, vu comme un fichier). Le dialogue n'autorise
+/// que le chemin choisi, pas ce qu'il contient : on ouvre la lecture du dossier, seulement pour un vrai dossier .scriv.
+#[tauri::command]
+async fn allow_scriv(app: tauri::AppHandle, path: String) -> bool {
+  use tauri_plugin_fs::FsExt;
+  let dir = std::path::Path::new(&path);
+  let is_scriv = dir.extension().is_some_and(|e| e.eq_ignore_ascii_case("scriv"));
+  is_scriv && dir.is_dir() && app.fs_scope().allow_directory(dir, true).is_ok()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -298,6 +308,7 @@ pub fn run() {
       icloud_download,
       cloud_pick_folder,
       cloud_restore,
+      allow_scriv,
       apple_fm::fm_availability,
       apple_fm::fm_complete,
       apple_fm::fm_cancel

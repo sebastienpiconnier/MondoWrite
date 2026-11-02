@@ -205,6 +205,7 @@ export const fr = {
     fountainFiles: "Manuscrit, scénario ou projet Scrivener",
     importTaken: "Ce dossier contient déjà un projet. Pour importer un fichier, choisis un dossier vide.",
     importEmpty: "Ce fichier ne contient pas de texte lisible (ni manuscrit, ni scénario).",
+    importScrivener: "Je n’arrive pas à lire l’intérieur de ce projet Scrivener. Compresse-le en .zip (dans le Finder\u00a0: clic droit, Compresser) et choisis le .zip.",
     projects: "Projets",
     backHint: "Enregistrer et revenir à la liste des projets",
   },
