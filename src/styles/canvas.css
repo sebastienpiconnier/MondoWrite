@@ -474,8 +474,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Bouton du filtre quand un filtre est posé : entonnoir plein. */
 .canvas-filter > .is-on svg { fill: currentColor; }
 /* Barre de mise en forme : le chutier montre son icône et son nom (le seul bouton qui n'est pas une mise en forme). */
-.format-bar .format-chutier { padding: 0 8px 0 6px; }
-.format-bar .format-chutier > span { display: inline-flex; align-items: center; gap: 5px; }
+.format-bar .format-chutier, .format-bar .format-comment { padding: 0 8px 0 6px; }
+.format-bar .format-chutier > span, .format-bar .format-comment > span { display: inline-flex; align-items: center; gap: 5px; }
 .format-bar .format-text { font: 600 0.8125rem var(--font-ui); }
 
 /* « À ranger » : cartes capturées dans le Carnet du téléphone (pointillé d'accent tant qu'elles n'ont pas de place). */

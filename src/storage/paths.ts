@@ -10,8 +10,11 @@ export const manuscriptPath = (id: string) => `${MANUSCRIPT_DIR}/${id}.md`;
 /** Corbeille : les cartes supprimées, au même format (plus une ligne `corbeille:`), restaurables. */
 export const TRASH_DIR = "corbeille";
 export const trashPath = (id: string) => `${TRASH_DIR}/${id}.md`;
+/** Commentaires ancrés des scènes (1.13.0) : un fichier par scène commentée, au nom de sa carte. */
+export const COMMENTS_DIR = "commentaires";
+export const commentsFilePath = (id: string) => `${COMMENTS_DIR}/${id}.md`;
 /** Dossiers de fichiers Markdown lus à l'ouverture d'un projet. */
-export const TEXT_DIRS = [CARDS_DIR, MANUSCRIPT_DIR, TRASH_DIR];
+export const TEXT_DIRS = [CARDS_DIR, MANUSCRIPT_DIR, TRASH_DIR, COMMENTS_DIR];
 /** Journal de l'IA (mode Atelier) : une ligne par texte proposé et accepté, lisible hors de l'app. */
 export const JOURNAL_FILE = "ia-journal.md";
 /** Images des cartes, copiées dans le projet. */

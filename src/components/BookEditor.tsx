@@ -11,6 +11,7 @@ import { EditorState, Selection, TextSelection } from "@tiptap/pm/state";
 import { nanoid } from "nanoid";
 import { placePassage, takePassage, type Passage } from "../chutier";
 import { richTextExtensions } from "./editorKit";
+import { commentRange, markComment } from "./commentMark";
 import { MentionNode } from "./MentionNode";
 import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
@@ -49,6 +50,10 @@ export interface BookApi {
   selectText: (id: string, needle: string) => boolean;
   /** L'éditeur du livre (lecture à voix haute). */
   editor: () => Editor | null;
+  /** Marque la sélection comme passage commenté (une scène à la fois) : le nouveau commentaire, ou la raison du refus. */
+  commentSelection: () => { id: string; scene: string; quote: string } | { error: "empty" | "scene" };
+  /** Sélectionne le passage d'un commentaire et le fait défiler ; faux si sa marque n'est plus dans le texte. */
+  selectComment: (id: string) => boolean;
 }
 
 /** Premier ancêtre qui défile vraiment (null : c'est la fenêtre qui défile). */
@@ -400,6 +405,22 @@ export function BookEditor({
         ed.view.focus();
         return { passage: out.passage };
       },
+      commentSelection: () => {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed) return { error: "empty" as const };
+        const out = markComment(ed.state, sceneGroups(ed.state.doc));
+        if ("error" in out) return out;
+        ed.view.dispatch(out.tr);
+        return { id: out.id, scene: out.scene ?? "", quote: out.quote };
+      },
+      selectComment: (id) => {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed) return false;
+        const range = commentRange(ed.state.doc, id);
+        if (!range) return false;
+        ed.chain().focus().setTextSelection(range).scrollIntoView().run();
+        return true;
+      },
       selectText: (id, needle) => {
         const ed = editorRef.current;
         if (!ed || ed.isDestroyed || !needle) return false;
@@ -559,7 +580,7 @@ export function BookEditor({
           onPick={pickCreate}
         />
       )}
-      {editor && <FormatBar editor={editor} atelier={cards.find((c) => c.id === current)?.title ?? ""} revisit onChutier={() => handlers.current?.onChutier()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
+      {editor && <FormatBar editor={editor} atelier={cards.find((c) => c.id === current)?.title ?? ""} revisit onChutier={() => handlers.current?.onChutier()} onComment={() => handlers.current?.onComment()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
       {veil && (
         <>
           <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />

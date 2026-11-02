@@ -158,16 +158,22 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
   );
 }
 
-/** Onglets de la colonne de droite : « Dans cette scène » et « Vérifier ». */
-export function SideTabs({ tab, onTab, count }: { tab: "scene" | "review"; onTab: (tab: "scene" | "review") => void; count: number }) {
-  const t = useT().review;
+/** Onglets de la colonne de droite : « Dans cette scène », « Commentaires » (si `comments` est donné) et « Vérifier ». */
+export type SideTab = "scene" | "comments" | "review";
+export function SideTabs({ tab, onTab, count, comments }: { tab: SideTab; onTab: (tab: SideTab) => void; count: number; comments?: number }) {
+  const t = useT();
   return (
-    <div className="side-tabs" role="group" aria-label={t.tabsLabel}>
+    <div className="side-tabs" role="group" aria-label={t.review.tabsLabel}>
       <button type="button" aria-pressed={tab === "scene"} onClick={() => onTab("scene")}>
-        {t.tabScene}
+        {comments !== undefined ? t.review.tabSceneShort : t.review.tabScene}
       </button>
+      {comments !== undefined && (
+        <button type="button" aria-pressed={tab === "comments"} onClick={() => onTab("comments")}>
+          {comments > 0 ? fmt(t.comments.tabCount, { n: comments }) : t.comments.tab}
+        </button>
+      )}
       <button type="button" aria-pressed={tab === "review"} onClick={() => onTab("review")}>
-        {count > 0 ? fmt(t.buttonCount, { n: count }) : t.tabReview}
+        {count > 0 ? fmt(t.review.buttonCount, { n: count }) : t.review.tabReview}
       </button>
     </div>
   );

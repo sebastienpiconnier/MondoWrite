@@ -451,6 +451,95 @@ const scenarios = [
     },
   },
   {
+    name: "commentaires (1.13.0) : passage commenté au clavier, écrit, dans « À faire », résolu, supprimé puis rétabli, relu après rechargement",
+    async run(h) {
+      const { page } = h;
+      await h.create("Commentaires");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      const editor = page.locator(".ms-page .ProseMirror");
+      await editor.click();
+      await page.keyboard.type("Le réveil sonne à six heures et Ethan rêve encore.");
+      await h.wait(300);
+      // Sélectionner « six heures » à la souris, puis Ctrl + Alt + M.
+      const box = await page.evaluate(() => {
+        const p = document.querySelector(".ms-page .ProseMirror p");
+        const node = [...p.childNodes].find((n) => n.nodeType === 3 && n.textContent.includes("six heures"));
+        const at = node.textContent.indexOf("six heures");
+        const r = document.createRange();
+        r.setStart(node, at);
+        r.setEnd(node, at + "six heures".length);
+        const { left, right, top, bottom } = r.getBoundingClientRect();
+        return { left, right, y: (top + bottom) / 2 };
+      });
+      await page.mouse.move(box.left + 1, box.y);
+      await page.mouse.down();
+      await page.mouse.move(box.right - 1, box.y, { steps: 5 });
+      await page.mouse.up();
+      await until(() => page.getByRole("button", { name: /^Commenter le passage/ }).isVisible(), "pas de bouton Commenter dans la barre de mise en forme");
+      await page.keyboard.press("Control+Alt+m");
+      const field = page.getByRole("textbox", { name: "Commentaire sur « six heures »" });
+      await until(() => field.evaluate((el) => el === document.activeElement), "le champ du commentaire n'a pas le focus");
+      await page.keyboard.type("Trop tôt pour lui ?");
+      await until(() => page.locator('.ms-page [data-comment]', { hasText: "six heures" }).isVisible(), "le passage n'est pas marqué dans le texte");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("commentaires/") && v.includes("Trop tôt pour lui ?") && v.includes("> six heures")), "le commentaire n'est pas enregistré dans commentaires/");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && /<span data-comment="[^"]+">six heures<\/span>/.test(v)), "la marque n'est pas enregistrée dans le manuscrit");
+      // « À faire » le compte, et y mène.
+      await page.keyboard.press("Control+Shift+l");
+      await until(() => page.getByRole("button", { name: /Trop tôt pour lui/ }).isVisible(), "le commentaire n'est pas dans « À faire »");
+      await page.getByRole("button", { name: /Trop tôt pour lui/ }).click();
+      await until(async () => (await page.evaluate(() => window.getSelection()?.toString())) === "six heures", "« À faire » ne sélectionne pas le passage commenté");
+      // Résoudre, rouvrir.
+      const item = page.locator(".comment-item").first();
+      await item.getByRole("button", { name: "Résoudre" }).click();
+      await until(() => page.getByText("Résolus · 1").isVisible(), "le commentaire résolu n'est pas replié");
+      await page.getByText("Résolus · 1").click();
+      await page.getByRole("button", { name: "Rouvrir" }).click();
+      // Supprimer (menu ⋯), puis Annuler : la marque revient.
+      await page.locator(".comment-item").first().getByRole("button", { name: "Autres actions sur le commentaire" }).click();
+      await page.getByRole("menuitem", { name: "Supprimer le commentaire" }).click();
+      await until(async () => (await page.locator(".ms-page [data-comment]").count()) === 0, "la marque est restée après la suppression");
+      await page.getByRole("button", { name: "Annuler", exact: true }).click();
+      await until(async () => (await page.locator(".ms-page [data-comment]").count()) === 1, "Annuler n'a pas remis la marque");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("commentaires/") && v.includes("Trop tôt pour lui ?")), "le commentaire rétabli n'est pas enregistré");
+      // Après rechargement : le commentaire est relu, un clic dans le passage l'ouvre.
+      await h.reloadAndOpen();
+      await h.view(4);
+      await page.locator('.ms-page [data-comment]').click();
+      await until(() => page.getByRole("textbox", { name: "Commentaire sur « six heures »" }).isVisible(), "après rechargement, un clic dans le passage n'ouvre pas son commentaire");
+      assert((await page.getByRole("textbox", { name: "Commentaire sur « six heures »" }).inputValue()) === "Trop tôt pour lui ?", "le texte du commentaire a changé");
+    },
+  },
+  {
+    name: "commentaires dans un scénario (1.13.0) : un élément commenté, noté dans le Fountain, relu après rechargement",
+    async run(h) {
+      const { page } = h;
+      await h.create("Script commenté", "scenario");
+      await h.view(4);
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.click();
+      await page.keyboard.type("INT. PHARE - NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Inès monte les marches en courant.");
+      await h.wait(500);
+      await page.locator(".sp-action", { hasText: "en courant" }).click();
+      await page.keyboard.press("Control+Alt+m");
+      const field = page.getByRole("textbox", { name: /^Commentaire sur « Inès monte/ });
+      await until(() => field.evaluate((el) => el === document.activeElement), "le champ du commentaire n'a pas le focus");
+      await page.keyboard.type("Pourquoi en courant ?");
+      await h.saved((f) => /Inès monte les marches en courant\. \[\[cosmos:comment:[A-Za-z0-9_-]+\]\]/.test(f["scenario.fountain"] ?? ""), "la note du commentaire n'est pas dans le Fountain");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("commentaires/") && v.includes("Pourquoi en courant ?")), "le commentaire n'est pas enregistré");
+      await h.reloadAndOpen();
+      await h.view(4);
+      await page.locator(".sp-action", { hasText: "en courant" }).click();
+      await until(async () => (await page.getByRole("textbox", { name: /^Commentaire sur « Inès monte/ }).inputValue().catch(() => "")) === "Pourquoi en courant ?", "après rechargement, le commentaire ne s'ouvre pas depuis son élément");
+      // Le PDF et l'écran n'impriment jamais la note.
+      assert(!((await editor.textContent()) ?? "").includes("cosmos:comment"), "la note du commentaire paraît dans le texte");
+    },
+  },
+  {
     name: "point de vue, lot 2 : narrateurs posés dans le Plan, ruban coloré en plan libre, filtres du Manuscrit et du canevas",
     async run(h) {
       const { page } = h;

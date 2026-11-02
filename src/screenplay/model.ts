@@ -34,6 +34,8 @@ export interface ScreenplayElement {
   forced?: boolean;
   /** Mode Atelier : texte proposé par l'IA et accepté, note [[ia]] en fin d'élément (action, réplique, didascalie, synopsis). */
   ia?: boolean;
+  /** Commentaires ancrés sur l'élément (action, réplique) : notes [[cosmos:comment:<id>]] en fin d'élément. */
+  comments?: string[];
 }
 
 export interface Screenplay {

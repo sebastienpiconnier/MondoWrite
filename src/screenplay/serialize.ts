@@ -3,6 +3,7 @@
 
 import type { Screenplay, ScreenplayElement } from "./model";
 import { IA_NOTE, IA_TYPES } from "../atelier";
+import { COMMENT_TYPES, commentNote, isCommentId } from "../comments";
 import {
   isNaturalCharacter,
   isNaturalHeading,
@@ -42,7 +43,10 @@ export function serialize(screenplay: Screenplay): string {
       // Personnage, didascalie et réplique d'un même bloc se suivent sans ligne vide.
       body += SPEECH.has(el.type) && IN_DIALOGUE.has(prev.type) ? "\n" : "\n\n";
     }
-    body += (i === 0 && forceFirst ? `!${el.text}` : line(el, elements[i + 1])) + (el.ia && IA_TYPES.has(el.type) ? ` ${IA_NOTE}` : "");
+    body +=
+      (i === 0 && forceFirst ? `!${el.text}` : line(el, elements[i + 1])) +
+      (el.ia && IA_TYPES.has(el.type) ? ` ${IA_NOTE}` : "") +
+      (COMMENT_TYPES.has(el.type) ? (el.comments ?? []).filter(isCommentId).map((id) => ` ${commentNote(id)}`).join("") : "");
   });
   if (body !== "") blocks.push(body);
 

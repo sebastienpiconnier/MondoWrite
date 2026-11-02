@@ -25,6 +25,13 @@ const PERSON = (
     <path d="M2.5 14c0-3 2.4-5 5.5-5s5.5 2 5.5 5z" />
   </svg>
 );
+/** Commentaire : une bulle, avec son nom en toutes lettres. */
+const BUBBLE = (
+  <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" />
+  </svg>
+);
+
 /** Chutier : un bac où le passage descend (il quitte le texte sans être perdu), avec son nom en toutes lettres. */
 const TRAY = (
   <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -43,12 +50,14 @@ interface FormatOptions {
   revisit?: boolean;
   /** Manuscrit : met le passage sélectionné au chutier. */
   onChutier?: () => void;
+  /** Texte d'une scène : commente le passage sélectionné. */
+  onComment?: () => void;
   /** Manuscrit : crée une fiche personnage ou lieu du nom sélectionné (`name` rend "" si ce n'est pas un nom possible). */
   onCreate?: { name: (state: EditorState) => string; run: (type: "personnage" | "lieu") => void };
 }
 
 /** Les boutons de mise en forme d'un éditeur, état actif compris (barre de sélection et barre du clavier). */
-export function useFormatActions(editor: Editor, { revisit = true, onChutier, onCreate }: FormatOptions = {}): Action[] {
+export function useFormatActions(editor: Editor, { revisit = true, onChutier, onComment, onCreate }: FormatOptions = {}): Action[] {
   const f = useT().format;
   const chain = () => editor.chain().focus();
   // Abonnement à la sélection : les boutons actifs suivent le curseur.
@@ -81,6 +90,22 @@ export function useFormatActions(editor: Editor, { revisit = true, onChutier, on
       ? [
           { key: "create-personnage", label: f.createCharacter, glyph: PERSON, active: false, run: () => onCreate.run("personnage") },
           { key: "create-lieu", label: f.createPlace, glyph: PLACE, active: false, run: () => onCreate.run("lieu") },
+        ]
+      : []),
+    ...(onComment
+      ? [
+          {
+            key: "comment",
+            label: f.comment,
+            glyph: (
+              <>
+                {BUBBLE}
+                <span className="format-text">{f.commentShort}</span>
+              </>
+            ),
+            active: false,
+            run: onComment,
+          },
         ]
       : []),
     ...(onChutier

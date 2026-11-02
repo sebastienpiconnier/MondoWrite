@@ -124,5 +124,14 @@ export function changedRange(tr: Transaction): { from: number; to: number } | nu
       to = Math.max(to, rest.map(end, 1));
     });
   });
+  // Une marque posée ou retirée (gras, commentaire…) ne déplace rien : sa carte de positions est vide. On prend
+  // alors les bornes de l'étape elle-même, ramenées dans le document final.
+  tr.steps.forEach((step, i) => {
+    const at = step as unknown as { from?: unknown; to?: unknown };
+    if (typeof at.from !== "number" || typeof at.to !== "number") return;
+    const rest = tr.mapping.slice(i + 1);
+    from = Math.min(from, rest.map(at.from, -1));
+    to = Math.max(to, rest.map(at.to, 1));
+  });
   return from === Infinity ? null : { from, to };
 }

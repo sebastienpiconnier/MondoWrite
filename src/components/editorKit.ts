@@ -18,6 +18,7 @@ import { looksLikeMarkdown, markdownSource } from "../markdownText";
 import { useSettings } from "../settings";
 import { smartType, typographyMode } from "../typography";
 import { IaMark } from "./iaMark";
+import { CommentMark } from "./commentMark";
 
 /** Texte brut collé en Markdown : converti en texte mis en forme. Le HTML collé garde son chemin habituel. */
 export const MarkdownPaste = Extension.create({
@@ -113,7 +114,7 @@ const ProseBulletList = BulletList.extend({
 export function richTextExtensions({ link = true, prose = false }: { link?: boolean; prose?: boolean } = {}) {
   return [
     StarterKit.configure({ heading: { levels: [1, 2, 3] }, strike: false, ...(link ? {} : { link: false }), ...(prose ? { bulletList: false } : {}) }),
-    ...(prose ? [ProseBulletList] : []),
+    ...(prose ? [ProseBulletList, CommentMark] : []),
     StrikeD,
     TaskList,
     TaskItem.configure({ nested: true }),

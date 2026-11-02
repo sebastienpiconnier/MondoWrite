@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { cleanQuote, isCommentId, removeCommentFromElements, removeCommentMark, type Comments, type SceneComment } from "./comments";
 import { localIso, parseVersionPath, readVersionFile, versionFile, versionName, versionPath } from "./versions";
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
 import { isPhone } from "./components/usePhone";
@@ -70,6 +71,24 @@ import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus,
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
 export { CARD_WIDTH, planScenes, unknownMeta } from "./projectState";
 
+
+/** De quoi annuler la suppression d'un commentaire : lui, et le texte de sa scène avant et après. */
+export interface CommentUndo {
+  cardId: string;
+  comment: SceneComment;
+  before: string;
+  after: string;
+  /** Scénario : les éléments avant et après le retrait de la note du commentaire. */
+  script?: { before: Screenplay; after: Screenplay };
+}
+
+/** Commentaire montré dans le volet : `edit`, son champ prend le focus ; `reveal`, la vue ouvre le volet et sélectionne le passage. */
+export interface CommentFocus {
+  cardId: string;
+  id: string;
+  edit?: boolean;
+  reveal?: boolean;
+}
 
 export interface CosmosState {
   title: string;
@@ -145,6 +164,18 @@ export interface CosmosState {
   /** Ouvre la fenêtre des versions d'une scène ; `keep` : le champ « Garder cette version » prend le focus. */
   openVersions: (cardId: string, keep?: boolean) => void;
   versionsKeep: boolean;
+  // ---------- Commentaires ancrés (1.13.0, comments.ts) : hors historique, comme le manuscrit ----------
+  comments: Comments;
+  /** Commentaire montré dans le volet (affichage) ; `edit` : son champ prend le focus. */
+  commentFocus: CommentFocus | null;
+  setCommentFocus: (focus: CommentFocus | null) => void;
+  /** Nouveau commentaire, vide, sur un passage déjà marqué dans le texte (la marque porte `id`). */
+  addComment: (cardId: string, id: string, quote: string) => void;
+  editComment: (cardId: string, id: string, text: string) => void;
+  resolveComment: (cardId: string, id: string, resolved: boolean) => void;
+  /** Supprime un commentaire et sa marque ; rend de quoi l'annuler (`undoDeleteComment`). */
+  deleteComment: (cardId: string, id: string) => CommentUndo | null;
+  undoDeleteComment: (undo: CommentUndo) => void;
   /** Point de vue d'une scène confié à un nouveau personnage (carte créée sur le canevas), en une étape. */
   createPov: (sceneId: string, name: string) => string | null;
   /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
@@ -993,6 +1024,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       filter: NO_FILTER,
       expandedId: null,
       versionsFor: null,
+      commentFocus: null,
       cardMenu: null,
       retroInvite: false,
       screen: "project",
@@ -1306,6 +1338,66 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     versionsFor: null,
     versionsKeep: false,
+    comments: {},
+    commentFocus: null,
+    setCommentFocus: (commentFocus) => set({ commentFocus }),
+    addComment: (cardId, id, quote) => {
+      if (!isCommentId(id) || !get().nodes.some((n) => n.id === cardId)) return;
+      const list = get().comments[cardId] ?? [];
+      if (list.some((c) => c.id === id)) return;
+      const comment: SceneComment = { id, date: localIso(new Date()), text: "", quote: cleanQuote(quote) };
+      set({ comments: { ...get().comments, [cardId]: [...list, comment] }, commentFocus: { cardId, id, edit: true } });
+      touch();
+    },
+    editComment: (cardId, id, text) => {
+      const list = get().comments[cardId];
+      if (!list?.some((c) => c.id === id && c.text !== text)) return;
+      set({ comments: { ...get().comments, [cardId]: list.map((c) => (c.id === id ? { ...c, text } : c)) } });
+      touch();
+    },
+    resolveComment: (cardId, id, resolved) => {
+      const list = get().comments[cardId];
+      if (!list?.some((c) => c.id === id && !!c.resolved !== resolved)) return;
+      set({ comments: { ...get().comments, [cardId]: list.map((c) => (c.id !== id ? c : resolved ? { ...c, resolved: true } : (({ resolved: _r, ...rest }) => rest)(c))) } });
+      touch();
+    },
+    deleteComment: (cardId, id) => {
+      const list = get().comments[cardId];
+      const comment = list?.find((c) => c.id === id);
+      if (!list || !comment) return null;
+      const comments = { ...get().comments };
+      const rest = list.filter((c) => c.id !== id);
+      if (rest.length > 0) comments[cardId] = rest;
+      else delete comments[cardId];
+      const focus = get().commentFocus;
+      set({ comments, ...(focus?.id === id ? { commentFocus: null } : {}) });
+      // La marque part avec lui : le texte du passage reste.
+      const before = get().manuscript[cardId] ?? "";
+      const after = removeCommentMark(before, id);
+      if (after !== before) get().setManuscriptText(cardId, after);
+      // Scénario : la note de l'élément part aussi (comme une frappe de l'éditeur, hors historique du canevas).
+      let script: CommentUndo["script"];
+      const sp = get().screenplay;
+      if (sp) {
+        const elements = removeCommentFromElements(sp.elements, id);
+        if (elements !== sp.elements) {
+          const next = { ...sp, elements };
+          get().setScreenplay(next);
+          script = { before: sp, after: get().screenplay ?? next };
+        }
+      }
+      touch();
+      return { cardId, comment, before, after: get().manuscript[cardId] ?? "", ...(script ? { script } : {}) };
+    },
+    undoDeleteComment: ({ cardId, comment, before, after, script }) => {
+      const list = get().comments[cardId] ?? [];
+      if (list.some((c) => c.id === comment.id)) return;
+      set({ comments: { ...get().comments, [cardId]: [...list, comment] } });
+      // Le texte n'a pas bougé depuis : la marque revient à sa place. Sinon, le commentaire garde sa citation.
+      if ((get().manuscript[cardId] ?? "") === after && before !== after) get().setManuscriptText(cardId, before);
+      if (script && get().screenplay === script.after) get().setScreenplay(script.before);
+      touch();
+    },
     openVersions: (cardId, keep = false) => {
       if (!get().nodes.some((n) => n.id === cardId && n.data.type === "scene")) return;
       set({ versionsFor: cardId, versionsKeep: keep, dialog: "versions", expandedId: null });
@@ -2210,6 +2302,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         filter: NO_FILTER,
         expandedId: null,
         versionsFor: null,
+        commentFocus: null,
         cardMenu: null,
         retroInvite: false,
         screen: "project",
@@ -2317,6 +2410,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         filter: NO_FILTER,
         expandedId: null,
         versionsFor: null,
+        commentFocus: null,
         cardMenu: null,
         // Manuscrit importé : la Bible peut se remplir de ce que le texte dit déjà (rétro-bible).
         retroInvite: true,
@@ -2894,6 +2988,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         filter: NO_FILTER,
         expandedId: null,
         versionsFor: null,
+        commentFocus: null,
         cardMenu: null,
         retroInvite: false,
         loaded: true,

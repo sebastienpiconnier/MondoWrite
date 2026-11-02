@@ -41,6 +41,9 @@ const PAIRS: [string, string][] = [
   ["strong-fg", "strong-bg"],
   ["page-ink", "page"],
   ["page-ink-dim", "page"],
+  // Passages commentés (1.13.0) : le texte de la page sur le fond du commentaire (alias de --accent-soft).
+  ["page-ink", "accent-soft"],
+  ["ink", "accent-soft"],
   ["danger", "surface"],
   // Mode Atelier : le repère « Atelier » et le soulignement des passages de l'IA (sur la page du manuscrit aussi).
   ["ia-mark", "surface"],

@@ -2,6 +2,7 @@
 // Séparé de store.ts pour garder celui-ci centré sur les actions. Rien ici ne lit ni n'écrit l'état.
 
 import { readAiMode, type AiMode } from "./atelier";
+import type { Comments } from "./comments";
 import { relabelMentions } from "./mentions";
 import { readWires, wiresToMeta } from "./wires";
 import { foldNovelNodes, foldScreenplayNotes } from "./sceneNotes";
@@ -97,7 +98,7 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true, beat: typeof f.beat === "string" && (isBeat(f.beat) || isCustomBeat(f.beat)) ? f.beat : undefined }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", comments: p.comments ?? {}, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
@@ -331,6 +332,7 @@ export function toProject(
     manuscript: s.manuscript,
     ...(s.trash.length > 0 ? { trash: s.trash } : {}),
     ...(s.journal.trim() ? { journal: s.journal } : {}),
+    ...(Object.keys(s.comments).length > 0 ? { comments: s.comments } : {}),
   };
 }
 
@@ -350,6 +352,8 @@ export interface ProjectSlice {
   aiMode: AiMode;
   /** Journal de l'IA (ia-journal.md), tel quel : on n'y fait qu'ajouter des lignes. */
   journal: string;
+  /** Commentaires ancrés des scènes (commentaires/<id>.md), hors historique comme le manuscrit. */
+  comments: Comments;
   markdownCopies: boolean;
   nodes: CardNode[];
   frames: FrameNode[];

@@ -95,6 +95,8 @@ async function buildMenu() {
       await MenuItem.new({ id: "goto", text: m.goto, accelerator: "CmdOrCtrl+G", enabled: inProject, action: () => useCosmos.getState().setDialog("goto") }),
       // Versions de la scène en cours (Manuscrit ou Scénario) : la vue sait quelle scène, d'où le raccourci rejoué.
       await MenuItem.new({ id: "keep-version", text: m.keepVersion, accelerator: "CmdOrCtrl+Alt+S", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("s", "KeyS", false, true) }),
+      // Commenter le passage sélectionné (texte d'une scène du roman) : le raccourci rejoué dans le texte.
+      await MenuItem.new({ id: "comment", text: m.comment, accelerator: "CmdOrCtrl+Alt+M", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("m", "KeyM", false, true) }),
       // Onglet « Vérifier » du Manuscrit ou du Scénario.
       await MenuItem.new({ id: "review", text: m.review, enabled: inProject && currentView === "manuscrit", action: () => sendCommand("review") }),
     ],

@@ -27,7 +27,11 @@ import { useSettings } from "../settings";
 import { EdgeHandle } from "./EdgeHandle";
 import { fmt, useT } from "../i18n";
 import { checkManuscript, type Finding } from "../review/checks";
-import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
+import { ReviewPanel, SideTabs, useOpenFindings, type SideTab } from "./ReviewPanel";
+import { CommentsPanel } from "./CommentsPanel";
+import type { Editor } from "@tiptap/react";
+import { commentStyle } from "./commentMark";
+import { commentIdsIn, openCount } from "../comments";
 import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
 import type { SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
@@ -179,7 +183,7 @@ export function Manuscript() {
   const bookApi = useRef<BookApi | null>(null);
 
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
-  const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
+  const [sideTab, setSideTab] = useState<SideTab>("scene");
   const storyFindings = useStoryFindings();
   const findings = useMemo(() => [...checkManuscript(manuscript, order, cards), ...storyFindings], [manuscript, order, cards, storyFindings]);
   const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
@@ -188,6 +192,59 @@ export function Manuscript() {
     if (!panels.side) togglePanel("side");
   };
   useCommand("review", openReview);
+
+  // Commentaires ancrés (1.13.0) : l'onglet du volet, le surlignage des passages ouverts, le passage choisi.
+  const comments = useCosmos((s) => s.comments);
+  const commentFocus = useCosmos((s) => s.commentFocus);
+  const openComments = () => {
+    setSideTab("comments");
+    if (!panels.side) togglePanel("side");
+  };
+  const openIds = useMemo(() => Object.values(comments).flatMap((list) => list.filter((c) => !c.resolved).map((c) => c.id)), [comments]);
+  const currentHtml = useCosmos((s) => (current ? s.manuscript[current] : undefined));
+  const commentAnchors = useMemo(() => commentIdsIn(currentHtml), [currentHtml]);
+  const highlight = useMemo(() => commentStyle(openIds, commentFocus?.id ?? null), [openIds, commentFocus]);
+  const goToComment = (id: string) => {
+    if (!bookApi.current?.selectComment(id)) return;
+    const owner = Object.entries(useCosmos.getState().comments).find(([, list]) => list.some((c) => c.id === id))?.[0];
+    if (owner) useCosmos.getState().setCommentFocus({ cardId: owner, id });
+  };
+  // Choisi depuis « À faire » : la scène s'ouvre (openInManuscript), puis le volet et le passage.
+  useEffect(() => {
+    if (!commentFocus?.reveal) return;
+    const { cardId, id } = commentFocus;
+    openComments();
+    useCosmos.getState().setCommentFocus({ cardId, id });
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => bookApi.current?.selectComment(id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commentFocus]);
+  // Un clic ou un toucher dans un passage commenté ouvre son commentaire dans le volet. Écouté sur le document :
+  // l'éditeur du livre naît après le premier rendu, et renaît quand la structure du livre change.
+  const openCommentsRef = useRef(openComments);
+  openCommentsRef.current = openComments;
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (!(e.target instanceof Element) || !e.target.closest("[data-comment]")) return;
+      // L'éditeur se lit sur la page elle-même (TipTap le pose sur son élément) : jamais un éditeur périmé.
+      const ed = (e.target.closest(".ms-page .ProseMirror") as (HTMLElement & { editor?: Editor }) | null)?.editor;
+      if (!ed || ed.isDestroyed) return;
+      // La position se lit sous le pointeur : la sélection de l'éditeur, elle, suit le clic un peu plus tard.
+      const at = ed.view.posAtCoords({ left: e.clientX, top: e.clientY });
+      if (!at) return;
+      const $pos = ed.state.doc.resolve(at.pos);
+      const ids = [...$pos.marks(), ...($pos.nodeAfter?.marks ?? [])].filter((m) => m.type.name === "comment").map((m) => String(m.attrs.id));
+      const s = useCosmos.getState();
+      for (const id of ids) {
+        const owner = Object.entries(s.comments).find(([, list]) => list.some((c) => c.id === id && !c.resolved));
+        if (!owner) continue;
+        s.setCommentFocus({ cardId: owner[0], id });
+        openCommentsRef.current();
+        return;
+      }
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
   // Une relecture par l'IA vient de partir : ses questions arrivent dans l'onglet « Vérifier ».
   useAiReviewReveal(openReview);
   const goToScene = (id: string, needle?: string) => {
@@ -363,6 +420,18 @@ export function Manuscript() {
       useCosmos.getState().addPassage(out.passage);
       setSaid(b.chutier.sent);
       setNotice({ text: b.chutier.sent, undo: () => putBack(out.passage) });
+    },
+    onComment: () => {
+      const out = bookApi.current?.commentSelection();
+      if (!out) return;
+      if ("error" in out) {
+        const text = out.error === "scene" ? t.comments.oneScene : t.comments.emptySelection;
+        setSaid(text);
+        setNotice({ text });
+        return;
+      }
+      useCosmos.getState().addComment(out.scene, out.id, out.quote);
+      openComments();
     },
     onJoin: (from, into, offset) => {
       const a = cards.find((c) => c.id === from);
@@ -790,9 +859,12 @@ export function Manuscript() {
         </div>
       </div>
 
-      <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : m.inScene}>
-        <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} />
-        {sideTab === "review" ? (
+      {highlight && <style>{highlight}</style>}
+      <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : sideTab === "comments" ? t.comments.title : m.inScene}>
+        <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} comments={openCount(comments[current])} />
+        {sideTab === "comments" ? (
+          <CommentsPanel sceneId={current} anchors={commentAnchors} empty={t.comments.empty} onGo={goToComment} onNotice={setNotice} />
+        ) : sideTab === "review" ? (
           <ReviewPanel
             findings={findings}
             kind="text"

@@ -26,7 +26,10 @@ import { LAYOUTS } from "../screenplay/layout";
 import { checkScreenplay, type Finding } from "../review/checks";
 import { keptScenes as keptBy, speakingNames } from "../review/filter";
 import { setCharacterFilter } from "../screenplay/editor/characterFilter";
-import { ReviewPanel, SideTabs, useOpenFindings } from "./ReviewPanel";
+import { ReviewPanel, SideTabs, useOpenFindings, type SideTab } from "./ReviewPanel";
+import { CommentsPanel } from "./CommentsPanel";
+import { commentStyle } from "./commentMark";
+import { COMMENT_TYPES, commentIdsInElements, openCount } from "../comments";
 import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
 import { elementFor, type SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
@@ -444,6 +447,11 @@ export function ScreenplayView() {
         e.preventDefault();
         openVersionsRef.current(true);
       }
+      // Commenter l'élément où est le curseur (Cmd/Ctrl + Alt + M, comme dans le manuscrit).
+      if ((e.metaKey || e.ctrlKey) && e.altKey && !e.shiftKey && e.code === "KeyM") {
+        e.preventDefault();
+        commentElementRef.current();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -513,7 +521,7 @@ export function ScreenplayView() {
   }, []);
 
   // Onglet « Vérifier » : points à regarder dans le scénario (rien n'est corrigé tout seul).
-  const [sideTab, setSideTab] = useState<"scene" | "review">("scene");
+  const [sideTab, setSideTab] = useState<SideTab>("scene");
   // Téléphone : la barre d'éléments est un volet replié en haut de la feuille (sur iPad et ordinateur, toujours ouverte).
   const [toolsOpen, setToolsOpen] = useState(false);
   // Le mode focus commence volet fermé : seule la feuille compte.
@@ -530,6 +538,95 @@ export function ScreenplayView() {
   useCommand("review", openReview);
   // Une relecture par l'IA vient de partir : ses questions arrivent dans l'onglet « Vérifier ».
   useAiReviewReveal(openReview);
+
+  // Commentaires ancrés (1.13.0) : un commentaire porte sur un élément entier (action, réplique), noté dans le
+  // Fountain par [[cosmos:comment:<id>]] ; le texte du commentaire est dans commentaires/<carte de la scène>.md.
+  const comments = useCosmos((s) => s.comments);
+  const commentFocus = useCosmos((s) => s.commentFocus);
+  const openCommentsTab = () => {
+    setSideTab("comments");
+    if (!panels.side) togglePanel("side");
+  };
+  const sceneEnd = scene ? (scenes[scenes.indexOf(scene) + 1]?.index ?? elements.length) : 0;
+  const commentAnchors = useMemo(() => (scene ? commentIdsInElements(elements.slice(scene.index + 1, sceneEnd)) : []), [elements, scene, sceneEnd]);
+  const openCommentIds = useMemo(() => Object.values(comments).flatMap((list) => list.filter((c) => !c.resolved).map((c) => c.id)), [comments]);
+  const commentHighlight = useMemo(() => commentStyle(openCommentIds, commentFocus?.id ?? null), [openCommentIds, commentFocus]);
+  const commentElement = () => {
+    emit();
+    const { state } = editor;
+    const index = state.selection.$from.index(0);
+    if (index >= state.doc.childCount) return;
+    const node = state.doc.child(index);
+    if (!COMMENT_TYPES.has(node.type.name) || !node.textContent.trim()) {
+      setNotice({ text: t.comments.elementOnly });
+      return;
+    }
+    // La scène de l'élément : l'en-tête qui le précède, et sa carte (où le commentaire est rangé).
+    let cardId: string | null = null;
+    for (let i = index; i >= 0 && !cardId; i--) {
+      const n = state.doc.child(i);
+      if (n.type.name === "sceneHeading") cardId = (n.attrs.cardId as string | null) ?? "";
+    }
+    if (!cardId || !useCosmos.getState().nodes.some((n) => n.id === cardId)) {
+      setNotice({ text: t.comments.noCard });
+      return;
+    }
+    const id = nanoid(12);
+    const pos = posOf(state.doc, index);
+    const ids = Array.isArray(node.attrs.comments) ? (node.attrs.comments as string[]) : [];
+    editor.view.dispatch(state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, comments: [...ids, id] }));
+    // Le scénario du store reçoit la note tout de suite : le commentaire et son élément s'enregistrent ensemble.
+    emit();
+    useCosmos.getState().addComment(cardId, id, node.textContent);
+    openCommentsTab();
+  };
+  const commentElementRef = useRef(commentElement);
+  commentElementRef.current = commentElement;
+  /** Sélectionne l'élément d'un commentaire et le fait défiler ; faux s'il n'est plus dans le texte. */
+  const goToComment = (id: string) => {
+    if (editor.isDestroyed) return false;
+    let found = -1;
+    editor.state.doc.forEach((node, offset) => {
+      if (found < 0 && Array.isArray(node.attrs.comments) && (node.attrs.comments as string[]).includes(id)) found = offset;
+    });
+    if (found < 0) return false;
+    const node = editor.state.doc.nodeAt(found)!;
+    editor.chain().focus().setTextSelection({ from: found + 1, to: found + 1 + node.content.size }).scrollIntoView().run();
+    const owner = Object.entries(useCosmos.getState().comments).find(([, list]) => list.some((c) => c.id === id))?.[0];
+    if (owner) useCosmos.getState().setCommentFocus({ cardId: owner, id });
+    return true;
+  };
+  const goToCommentRef = useRef(goToComment);
+  goToCommentRef.current = goToComment;
+  // Choisi depuis « À faire » : la scène est ouverte (openInManuscript), puis le volet et l'élément.
+  useEffect(() => {
+    if (!commentFocus?.reveal) return;
+    const { cardId, id } = commentFocus;
+    openCommentsTab();
+    useCosmos.getState().setCommentFocus({ cardId, id });
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => goToCommentRef.current(id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commentFocus]);
+  // Un clic ou un toucher dans un élément commenté ouvre son commentaire dans le volet.
+  const openCommentsTabRef = useRef(openCommentsTab);
+  openCommentsTabRef.current = openCommentsTab;
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const el = e.target instanceof Element ? e.target.closest("[data-comments]") : null;
+      const ed = editorRef.current;
+      if (!el || !ed || ed.isDestroyed || !ed.view.dom.contains(el)) return;
+      const s = useCosmos.getState();
+      for (const id of (el.getAttribute("data-comments") ?? "").split(" ")) {
+        const owner = Object.entries(s.comments).find(([, list]) => list.some((c) => c.id === id && !c.resolved));
+        if (!owner) continue;
+        s.setCommentFocus({ cardId: owner[0], id });
+        openCommentsTabRef.current();
+        return;
+      }
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
   // Filtre par personnage : ses scènes, ou ses répliques (le reste estompé). Affichage seulement.
   const charFilter = useCosmos((s) => s.charFilter);
   const setCharFilter = useCosmos((s) => s.setCharFilter);
@@ -953,6 +1050,7 @@ export function ScreenplayView() {
             className="sp-option"
             items={[
               { label: t.book.chutier.title, title: t.format.chutier, hint: key("Mod", "Shift", "K"), onSelect: sendToChutier },
+              { label: t.comments.element, hint: key("Mod", "Alt", "M"), onSelect: commentElement },
               { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), disabled: !scene?.cardId, onSelect: () => openVersions(true) },
               { label: t.versions.listMenu, disabled: !scene?.cardId, onSelect: () => openVersions(false) },
               { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: openReplace },
@@ -1052,9 +1150,16 @@ export function ScreenplayView() {
       <EdgeHandle side="left" open={panels.scenes} label={t.manuscript.panelScenes} onClick={() => togglePanel("scenes")} />
       <EdgeHandle side="right" open={panels.side} label={t.manuscript.panelSide} onClick={() => togglePanel("side")} />
 
-      <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : sp.inSceneTitle}>
-        <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} />
-        {sideTab === "review" ? (
+      {commentHighlight && <style>{commentHighlight}</style>}
+      <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : sideTab === "comments" ? t.comments.title : sp.inSceneTitle}>
+        <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} comments={scene?.cardId ? openCount(comments[scene.cardId]) : 0} />
+        {sideTab === "comments" ? (
+          scene?.cardId ? (
+            <CommentsPanel sceneId={scene.cardId} anchors={commentAnchors} empty={t.comments.emptyScript} onGo={(id) => void goToComment(id)} onNotice={setNotice} />
+          ) : (
+            <p className="sp-empty">{sp.noScene}</p>
+          )
+        ) : sideTab === "review" ? (
           <ReviewPanel
             findings={findings}
             kind="script"

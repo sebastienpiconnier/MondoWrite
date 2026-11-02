@@ -781,6 +781,7 @@ export const fr = {
   // Vérification du texte (onglet « Vérifier » du Manuscrit et du Scénario) : des points à regarder, jamais corrigés tout seuls.
   review: {
     tabScene: "Dans cette scène",
+    tabSceneShort: "Scène",
     tabReview: "Vérifier",
     tabsLabel: "Colonne de droite",
     button: "Vérifier",
@@ -934,6 +935,31 @@ export const fr = {
     done: "Scènes terminées",
   },
   // Point de vue d'une scène (1.13.0) : personnage narrateur, une carte Personnage (`fiche.pov`).
+  // Commentaires ancrés (1.13.0, comments.ts) : un passage du texte d'une scène, un commentaire dans la marge.
+  comments: {
+    tab: "Commentaires",
+    tabCount: "Commentaires · {n}",
+    title: "Commentaires de la scène",
+    empty: "Aucun commentaire dans cette scène. Sélectionne un passage puis « Commenter » dans la barre qui apparaît (Ctrl ou Cmd + Alt + M).",
+    fieldLabel: "Commentaire sur « {quote} »",
+    placeholder: "Ce que tu veux en dire, pour plus tard",
+    goTo: "Aller au passage",
+    detached: "Ce passage n’est plus dans le texte.",
+    resolve: "Résoudre",
+    reopen: "Rouvrir",
+    resolved: "Résolus · {n}",
+    more: "Autres actions sur le commentaire",
+    remove: "Supprimer le commentaire",
+    removed: "Commentaire supprimé.",
+    undo: "Annuler",
+    emptySelection: "Sélectionne d’abord le passage à commenter.",
+    oneScene: "Un commentaire porte sur une seule scène : sélectionne un passage dans une scène.",
+    menu: "Commenter la sélection",
+    emptyScript: "Aucun commentaire dans cette scène. Place le curseur dans une action ou une réplique, puis « Commenter cet élément » dans le menu ⋯ (Ctrl ou Cmd + Alt + M).",
+    element: "Commenter cet élément",
+    elementOnly: "Un commentaire porte sur une action ou une réplique : place le curseur dans l’une d’elles.",
+    noCard: "Cette scène n’a pas encore de carte : écris son en-tête d’abord.",
+  },
   // Versions d'une scène (1.13.0) : garder le texte du moment, le relire, le comparer, y revenir.
   versions: {
     keepMenu: "Garder cette version…",
@@ -2172,6 +2198,7 @@ export const fr = {
     items: {
       help: "Cette liste",
       keepVersion: "Garder une version de la scène",
+      comment: "Commenter le passage sélectionné",
       guide: "Guide de l’utilisateur (aide en ligne)",
       settings: "Réglages",
       views: "Canevas, Plan, Bible, Manuscrit",
@@ -2241,6 +2268,7 @@ export const fr = {
     find: "Rechercher…",
     replace: "Rechercher et remplacer…",
     keepVersion: "Garder une version de la scène…",
+    comment: "Commenter la sélection…",
     goto: "Aller à…",
     duplicate: "Dupliquer",
     review: "Vérifier le texte…",
@@ -2363,7 +2391,7 @@ export const fr = {
     button: "À faire ({n}) · Ctrl ou Cmd + Maj + L",
     title: "À faire",
     empty: "Rien en attente. Coche des cases (- [ ] dans une carte), marque un passage « à reprendre » (Ctrl ou Cmd + Maj + X) ou garde une question pour plus tard : tout se retrouve ici.",
-    kinds: { task: "Cases à cocher", revisit: "À reprendre dans le manuscrit", dig: "À creuser" },
+    kinds: { task: "Cases à cocher", revisit: "À reprendre dans le manuscrit", comment: "Commentaires", dig: "À creuser" },
     inCard: "dans « {title} »",
     inScene: "scène « {title} »",
     check: "Cocher « {text} »",
@@ -2383,6 +2411,8 @@ export const fr = {
     revisit: "À reprendre (Ctrl ou Cmd + Maj + X)",
     chutier: "Mettre au chutier (Ctrl ou Cmd + Maj + K)",
     chutierShort: "Chutier",
+    comment: "Commenter le passage (Ctrl ou Cmd + Alt + M)",
+    commentShort: "Commenter",
     createCharacter: "Créer une fiche personnage avec ce nom (ou taper /)",
     createPlace: "Créer une fiche lieu avec ce nom (ou taper /)",
     boldGlyph: "G",

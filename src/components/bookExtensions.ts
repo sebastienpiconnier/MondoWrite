@@ -23,6 +23,8 @@ export interface BookHandlers {
   onJoin: (from: string, into: string, offset: number) => boolean;
   /** Cmd/Ctrl + Maj + K : le passage sélectionné part au chutier. */
   onChutier: () => void;
+  /** Commente la sélection (Cmd/Ctrl + Alt + M, barre de mise en forme). */
+  onComment: () => void;
 }
 
 /** Repère qui ouvre chaque scène : invisible, ou « * * * », ou ouverture de chapitre (numéro, titre modifiable). */
@@ -269,6 +271,13 @@ export const BookKeys = Extension.create<{ handlers: () => BookHandlers | null }
         const h = handlers();
         if (!h) return false;
         h.onChutier();
+        return true;
+      },
+      // Commenter la sélection (raccourci de Word et de Google Docs).
+      "Mod-Alt-m": () => {
+        const h = handlers();
+        if (!h) return false;
+        h.onComment();
         return true;
       },
       Enter: () => {

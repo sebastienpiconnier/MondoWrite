@@ -2,6 +2,7 @@
 // Ce qui n'est pas reconnu devient de l'action : on ne perd jamais de texte.
 
 import type { Screenplay, ScreenplayElement } from "./model";
+import { COMMENT_TYPES, readCommentNotes } from "../comments";
 import {
   LINK_RE,
   SCENE_NUMBER_RE,
@@ -30,8 +31,15 @@ export function parse(source: string): Screenplay {
   const title = parseTitlePage(lines, start);
   return {
     titlePage: title?.titlePage ?? {},
-    elements: parseBody(lines, title?.next ?? start).map(readIa),
+    elements: parseBody(lines, title?.next ?? start).map(readComments).map(readIa),
   };
+}
+
+/** Notes de commentaire en fin d'élément (après l'éventuelle [[ia]]) : retirées du texte, gardées en `comments`. */
+function readComments(el: ScreenplayElement): ScreenplayElement {
+  if (!COMMENT_TYPES.has(el.type)) return el;
+  const read = readCommentNotes(el.text);
+  return read.ids.length > 0 ? { ...el, text: read.text, comments: read.ids } : el;
 }
 
 /** Note [[ia]] en fin d'élément : retirée du texte, gardée en `ia`. */

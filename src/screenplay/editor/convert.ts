@@ -5,6 +5,7 @@
 import type { JSONContent } from "@tiptap/react";
 import type { Screenplay, ScreenplayElement } from "../model";
 import { IA_TYPES } from "../../atelier";
+import { COMMENT_TYPES, isCommentId } from "../../comments";
 import { PRESERVED, isEditableType, type PreservedKind } from "./nodes";
 
 export function toDoc(screenplay: Screenplay): JSONContent {
@@ -27,6 +28,7 @@ function toNode(el: ScreenplayElement): JSONContent {
   if (el.type === "sceneHeading" || el.type === "character") attrs.known = true;
   if (el.type !== "parenthetical" && el.type !== "dialogue") attrs.forced = el.forced === true;
   if (IA_TYPES.has(el.type)) attrs.ia = el.ia === true;
+  if (COMMENT_TYPES.has(el.type)) attrs.comments = el.comments?.length ? [...el.comments] : [];
   const node: JSONContent = { type: el.type, attrs };
   if (el.text !== "") node.content = [{ type: "text", text: el.text }];
   return node;
@@ -53,5 +55,9 @@ function fromNode(node: JSONContent): ScreenplayElement {
   if (type === "character" && attrs.dual) el.dual = true;
   if (attrs.forced) el.forced = true;
   if (attrs.ia && IA_TYPES.has(type)) el.ia = true;
+  if (COMMENT_TYPES.has(type) && Array.isArray(attrs.comments)) {
+    const ids = (attrs.comments as unknown[]).filter(isCommentId);
+    if (ids.length > 0) el.comments = ids;
+  }
   return el;
 }

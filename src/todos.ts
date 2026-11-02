@@ -3,6 +3,7 @@
 // - les passages « à reprendre » du manuscrit (<mark>, Cmd/Ctrl+Maj+X) ;
 // - les questions gardées pour plus tard d'un personnage (« Je ne sais pas encore ») ;
 // - les cartes Question ouvertes du canevas ;
+// - les commentaires ouverts des scènes (1.13.0, comments.ts) ;
 // - en mode Atelier, les passages proposés par l'IA et pas encore repris (marque `ia`, champs `ia`, note [[ia]]).
 // Chaque ligne renvoie à sa carte ou à sa scène : la tâche vit là où elle se pose.
 
@@ -11,8 +12,9 @@ import type { Manuscript } from "./manuscript";
 import { isSettledQuestion } from "./character";
 import { iaPassagesIn } from "./atelier";
 import type { Screenplay } from "./screenplay/model";
+import type { Comments } from "./comments";
 
-export type TodoKind = "task" | "revisit" | "question" | "open" | "ia";
+export type TodoKind = "task" | "revisit" | "question" | "open" | "ia" | "comment";
 
 export interface Todo {
   kind: TodoKind;
@@ -23,7 +25,7 @@ export interface Todo {
   text: string;
   /** Rang de la case dans son texte (pour la cocher d'ici), ou de la question dans la carte. */
   index: number;
-  /** Passage de l'IA dans un texte : l'identifiant de sa marque. */
+  /** Passage de l'IA dans un texte, ou commentaire : l'identifiant de sa marque. */
   markId?: string;
   /** Champ de la carte proposé par l'IA (« title », « synopsis », clé de fiche). */
   field?: string;
@@ -62,7 +64,7 @@ export function toggleTask(html: string, index: number): string {
 /** Passages « à reprendre » d'un texte. */
 export const revisitsIn = (html: string | undefined) => (html ? [...html.matchAll(/<mark\b[^>]*>([\s\S]*?)<\/mark>/gi)].map((m) => decode(m[1])).filter(Boolean) : []);
 
-export function collectTodos(cards: CardData[], manuscript: Manuscript, screenplay?: Screenplay | null): Todo[] {
+export function collectTodos(cards: CardData[], manuscript: Manuscript, screenplay?: Screenplay | null, comments: Comments = {}): Todo[] {
   const out: Todo[] = [];
   for (const card of cards) {
     tasksIn(card.html).forEach((t, index) => !t.done && t.text && out.push({ kind: "task", cardId: card.id, where: "card", text: t.text, index }));
@@ -75,6 +77,11 @@ export function collectTodos(cards: CardData[], manuscript: Manuscript, screenpl
     if (!known.has(id)) continue;
     tasksIn(html).forEach((t, index) => !t.done && t.text && out.push({ kind: "task", cardId: id, where: "manuscript", text: t.text, index }));
     revisitsIn(html).forEach((text, index) => out.push({ kind: "revisit", cardId: id, where: "manuscript", text, index }));
+  }
+  // Commentaires ouverts : seulement ceux qui ont un texte (un commentaire vide n'est qu'un brouillon).
+  for (const [id, list] of Object.entries(comments)) {
+    if (!known.has(id)) continue;
+    list.forEach((c, index) => !c.resolved && c.text.trim() && out.push({ kind: "comment", cardId: id, where: "manuscript", text: c.text.replace(/\s+/g, " ").trim(), index, markId: c.id }));
   }
   out.push(...iaTodos(cards, manuscript, screenplay));
   return out;

@@ -3,6 +3,7 @@
 
 import { Node, mergeAttributes } from "@tiptap/react";
 import { sectionLabel } from "../template";
+import { isCommentId } from "../../comments";
 import { EDITABLE_TYPES, type ElementType } from "../model";
 
 export type EditableType = (typeof EDITABLE_TYPES)[number];
@@ -28,7 +29,18 @@ const flag = (name: string) => ({
 /** Marque de l'IA (mode Atelier) : jamais reprise par l'élément qui naît d'un Entrée. */
 const iaFlag = () => ({ ...flag("ia"), keepOnSplit: false });
 
-function element(name: EditableType, attributes: Record<string, ReturnType<typeof text> | ReturnType<typeof flag> | ReturnType<typeof iaFlag>>) {
+/** Commentaires ancrés sur l'élément (1.13.0) : identifiants, jamais repris par l'élément qui naît d'un Entrée. */
+const commentList = () => ({
+  default: [] as string[],
+  keepOnSplit: false,
+  parseHTML: (el: HTMLElement) => (el.getAttribute("data-comments") ?? "").split(" ").filter(isCommentId),
+  renderHTML: (attrs: Record<string, unknown>) => {
+    const ids = Array.isArray(attrs.comments) ? (attrs.comments as unknown[]).filter(isCommentId) : [];
+    return ids.length > 0 ? { "data-comments": ids.join(" ") } : {};
+  },
+});
+
+function element(name: EditableType, attributes: Record<string, ReturnType<typeof text> | ReturnType<typeof flag> | ReturnType<typeof iaFlag> | ReturnType<typeof commentList>>) {
   return Node.create({
     name,
     group: "block",
@@ -52,7 +64,7 @@ export const Doc = Node.create({ name: "doc", topNode: true, content: "block+" }
 
 // L'action est déclarée en premier : c'est le type par défaut d'un document vide.
 // « ia » (mode Atelier) : texte proposé par l'IA et accepté, note [[ia]] dans le fichier, souligné en pointillé.
-export const Action = element("action", { forced: flag("forced"), ia: iaFlag() });
+export const Action = element("action", { forced: flag("forced"), ia: iaFlag(), comments: commentList() });
 // « known » : l'élément est déjà connu du projet (lu dans le fichier, ou sa carte a été créée).
 // Un en-tête ou un personnage écrit à l'instant ne l'est pas encore : sa carte est à créer.
 export const SceneHeading = element("sceneHeading", {
@@ -63,7 +75,7 @@ export const SceneHeading = element("sceneHeading", {
 });
 export const Character = element("character", { dual: flag("dual"), forced: flag("forced"), known: flag("known") });
 export const Parenthetical = element("parenthetical", { ia: iaFlag() });
-export const Dialogue = element("dialogue", { ia: iaFlag() });
+export const Dialogue = element("dialogue", { ia: iaFlag(), comments: commentList() });
 export const Transition = element("transition", { forced: flag("forced") });
 
 // Le libellé de chaque sorte (« Note », « Section »…) est posé en CSS : il suit la langue sans redessiner.

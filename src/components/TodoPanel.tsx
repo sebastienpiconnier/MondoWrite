@@ -9,9 +9,10 @@ import { typeColor } from "../types";
 
 // Trois groupes : les questions gardées dans un personnage et les cartes Question forment ensemble « À creuser ».
 // Mode Atelier : un quatrième, « Passages de l'IA », avec « Je l'ai repris » sur chaque ligne.
-const GROUPS: { key: "task" | "revisit" | "dig" | "ia"; kinds: TodoKind[] }[] = [
+const GROUPS: { key: "task" | "revisit" | "comment" | "dig" | "ia"; kinds: TodoKind[] }[] = [
   { key: "task", kinds: ["task"] },
   { key: "revisit", kinds: ["revisit"] },
+  { key: "comment", kinds: ["comment"] },
   { key: "dig", kinds: ["question", "open"] },
   { key: "ia", kinds: ["ia"] },
 ];
@@ -31,13 +32,14 @@ export function TodoPanel() {
   const manuscript = useCosmos((s) => s.manuscript);
   const screenplay = useCosmos((s) => s.screenplay);
   const kind = useCosmos((s) => s.kind);
+  const comments = useCosmos((s) => s.comments);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
 
   const cards = useMemo(() => new Map(nodes.map((n) => [n.id, n.data])), [nodes]);
-  const todos = useMemo(() => collectTodos([...cards.values()], manuscript, kind === "scenario" ? screenplay : null), [cards, manuscript, screenplay, kind]);
+  const todos = useMemo(() => collectTodos([...cards.values()], manuscript, kind === "scenario" ? screenplay : null, comments), [cards, manuscript, screenplay, kind, comments]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -72,7 +74,11 @@ export function TodoPanel() {
   const go = (todo: Todo) => {
     setOpen(false);
     const s = useCosmos.getState();
-    if (todo.where === "manuscript") s.openInManuscript(todo.cardId);
+    // Un commentaire : sa scène s'ouvre et le volet le montre, passage sélectionné.
+    if (todo.kind === "comment" && todo.markId) {
+      s.openInManuscript(todo.cardId);
+      s.setCommentFocus({ cardId: todo.cardId, id: todo.markId, reveal: true });
+    } else if (todo.where === "manuscript") s.openInManuscript(todo.cardId);
     else if (todo.where === "screenplay") s.openInManuscript(`${SCENE_AT}${todo.index}`);
     else if (todo.kind === "question") s.openInBible(todo.cardId, true);
     else s.revealCard(todo.cardId);

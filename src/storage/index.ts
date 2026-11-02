@@ -14,7 +14,8 @@ import { cardToFile, fileToCard, htmlToMarkdown, markdownToHtml } from "./markdo
 import { isCardId } from "../mentions";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
-import { CARDS_DIR, JOURNAL_FILE, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, isConflictCopy, manuscriptPath, trashPath, type FileMap } from "./paths";
+import { commentsFile, readCommentsFile, type Comments } from "../comments";
+import { CARDS_DIR, COMMENTS_DIR, JOURNAL_FILE, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, commentsFilePath, isConflictCopy, manuscriptPath, trashPath, type FileMap } from "./paths";
 import { parse as parseScreenplay } from "../screenplay/parse";
 import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
@@ -177,6 +178,11 @@ export function serialize(project: Project): FileMap {
     const text = htmlToMarkdown(html);
     if (text) files[manuscriptPath(id)] = `${text}\n`;
   }
+  // Commentaires ancrés : un fichier par scène qui en a.
+  for (const [id, list] of Object.entries(project.comments ?? {})) {
+    const text = isCardId(id) ? commentsFile(list) : null;
+    if (text) files[commentsFilePath(id)] = text;
+  }
   return files;
 }
 
@@ -226,6 +232,13 @@ export function deserialize(files: FileMap): Project | null {
     const html = isCardId(id) ? markdownToHtml(text.replace(/\r\n/g, "\n")).trim() : "";
     if (html) manuscript[id] = html;
   }
+  const comments: Comments = {};
+  for (const [path, text] of Object.entries(files)) {
+    if (!path.startsWith(`${COMMENTS_DIR}/`) || !path.endsWith(".md") || isConflictCopy(path)) continue;
+    const id = path.slice(COMMENTS_DIR.length + 1, -3);
+    const list = isCardId(id) ? readCommentsFile(text) : [];
+    if (list.length > 0) comments[id] = list;
+  }
   const journal = files[JOURNAL_FILE];
-  return { meta, cards, screenplay, manuscript, ...(trash.length > 0 ? { trash } : {}), ...(journal?.trim() ? { journal } : {}) };
+  return { meta, cards, screenplay, manuscript, ...(trash.length > 0 ? { trash } : {}), ...(journal?.trim() ? { journal } : {}), ...(Object.keys(comments).length > 0 ? { comments } : {}) };
 }

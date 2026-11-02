@@ -28,6 +28,7 @@ import { MENTION_SCHEME, isCardId, mentionTarget } from "../mentions";
 import { readFiche, readQuestions } from "../character";
 import { isPageKind } from "../book";
 import { isIaId, readIaFields } from "../atelier";
+import { isCommentId } from "../comments";
 import { iaImagesOf, readIaImages } from "../ai/imageGen";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
@@ -53,6 +54,12 @@ turndown.keep(["mark"]);
 turndown.addRule("ia", {
   filter: (node) => node.nodeName === "SPAN" && isIaId((node as HTMLElement).getAttribute("data-ia")),
   replacement: (content, node) => (content ? `<span data-ia="${(node as HTMLElement).getAttribute("data-ia")}">${content}</span>` : ""),
+});
+
+// Passage commenté (1.13.0) : même chose, `<span data-comment="id">…</span>`, le commentaire est dans commentaires/.
+turndown.addRule("comment", {
+  filter: (node) => node.nodeName === "SPAN" && isCommentId((node as HTMLElement).getAttribute("data-comment")),
+  replacement: (content, node) => (content ? `<span data-comment="${(node as HTMLElement).getAttribute("data-comment")}">${content}</span>` : ""),
 });
 
 export function htmlToMarkdown(html: string): string {
@@ -116,6 +123,11 @@ export function sanitizeHtml(html: string): string {
       // Marque de l'IA (mode Atelier) : seulement avec un identifiant sûr, et rien d'autre que lui.
       if (child.tagName === "SPAN" && isIaId(child.getAttribute("data-ia"))) {
         for (const attr of Array.from(child.attributes)) if (attr.name !== "data-ia") child.removeAttribute(attr.name);
+        continue;
+      }
+      // Passage commenté : de même, seulement l'identifiant du commentaire.
+      if (child.tagName === "SPAN" && isCommentId(child.getAttribute("data-comment"))) {
+        for (const attr of Array.from(child.attributes)) if (attr.name !== "data-comment") child.removeAttribute(attr.name);
         continue;
       }
       if (!ALLOWED.has(child.tagName)) {

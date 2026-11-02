@@ -68,6 +68,9 @@
   /* Comparaison des versions : alias de jetons déjà vérifiés (contraste) dans chaque palette. */
   --diff-del: var(--danger);
   --diff-add: var(--status-done);
+  /* Passages commentés (ouverts) : fond doux et trait d'accent ; le texte de la page y garde 4,5:1. */
+  --comment-bg: var(--accent-soft);
+  --comment-line: var(--accent);
   --cover-bg: #23265a; /* jaquette de la couverture du projet (Bible) */
   --cover-ink: #ffffff;
   --cover-muted: #c9cbf3;
@@ -135,6 +138,9 @@
   --status-done: #6fcf8e;
   --diff-del: var(--danger);
   --diff-add: var(--status-done);
+  /* Passages commentés (ouverts) : fond doux et trait d'accent ; le texte de la page y garde 4,5:1. */
+  --comment-bg: var(--accent-soft);
+  --comment-line: var(--accent);
   --cover-bg: #2c2f5c;
   --cover-ink: #f1f2fb;
   --cover-muted: #c4c6ee;

@@ -1,3 +1,4 @@
+import type { Comments } from "./comments";
 // Modèle de données de MondoWrite.
 // Une carte naît "idee" (note libre) et peut être typée plus tard via le menu "/".
 
@@ -186,4 +187,6 @@ export interface Project {
   trash?: CardData[];
   /** Journal de l'IA (ia-journal.md, mode Atelier) : texte tel quel. Absent : aucun. */
   journal?: string;
+  /** Commentaires ancrés des scènes (commentaires/<id>.md), par identifiant de carte. Absent : aucun. */
+  comments?: Comments;
 }

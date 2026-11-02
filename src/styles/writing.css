@@ -738,8 +738,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 
 
 /* Colonne de droite du Manuscrit et du Scénario : onglets « Dans cette scène » et « Vérifier ». */
-.side-tabs { display: flex; gap: 4px; padding: 4px; background: var(--ground); border-radius: 999px; }
-.side-tabs button { flex: 1; min-width: 0; min-height: 36px; padding: 4px 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 0.875rem; cursor: pointer; }
+.side-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--ground); border-radius: 22px; }
+.side-tabs button { flex: 1 1 auto; min-width: 0; white-space: nowrap; min-height: 36px; padding: 4px 8px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 0.875rem; cursor: pointer; }
 .side-tabs button[aria-pressed="true"] { background: var(--surface); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
 @media (pointer: coarse) { .side-tabs button { min-height: 44px; } }
 
@@ -1158,3 +1158,23 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .versions-panel button.is-primary { border-color: transparent; background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 .versions-panel button:disabled { opacity: 0.45; cursor: default; }
 .versions-keep input::placeholder, .versions-rename input::placeholder { color: var(--placeholder); }
+
+/* Commentaires ancrés (1.13.0, CommentsPanel) : un commentaire par carte, passage cité en tête. */
+.comments-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.comment-item { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line-2); border-left: 4px solid var(--comment-line); border-radius: 8px; background: var(--surface); }
+.comment-item.is-focused { box-shadow: 0 0 0 2px var(--comment-line); }
+.comment-item.is-resolved { border-left-color: var(--line-2); }
+.comment-quote { margin: 0; padding: 4px 6px; border: none; border-radius: 4px; background: var(--comment-bg); color: var(--ink); font: inherit; font-size: 0.8125rem; line-height: 1.4; text-align: left; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+button.comment-quote { cursor: pointer; min-height: 32px; }
+.comment-item.is-resolved .comment-quote { background: none; color: var(--muted); }
+.comment-quote.is-detached { display: flex; flex-direction: column; gap: 2px; background: none; color: var(--muted); -webkit-line-clamp: unset; }
+.comment-quote.is-detached span:first-child { text-decoration: line-through; }
+.comment-detached { font-size: 0.75rem; }
+.comment-text { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.9375rem; line-height: 1.45; resize: none; overflow: hidden; }
+.comment-text::placeholder { color: var(--placeholder); }
+.comment-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.comment-date { flex-basis: 100%; font-size: 0.75rem; color: var(--muted); }
+.comment-resolve { margin-right: auto; }
+.comment-resolve { min-height: 44px; }
+.comments-resolved { margin-top: 12px; }
+.comments-resolved summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 0.875rem; color: var(--ink-2); }
