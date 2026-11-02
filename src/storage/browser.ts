@@ -189,7 +189,8 @@ export const browserStorage: Storage = {
     const url = URL.createObjectURL(new Blob([file.data as BlobPart], { type: file.mime }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = file.name;
+    // Le nom reçu n'a pas toujours son extension (le dialogue du système l'ajoute) : on la met, sans la doubler.
+    link.download = file.name.toLowerCase().endsWith(`.${file.extension.toLowerCase()}`) ? file.name : `${file.name}.${file.extension}`;
     document.body.append(link);
     link.click();
     link.remove();
