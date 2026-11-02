@@ -228,6 +228,11 @@ export function Manuscript() {
         e.preventDefault();
         useCosmos.getState().openReplace({ sceneId: currentRef.current });
       }
+      // Garder une version de la scène (Cmd/Ctrl + Alt + S ; Alt change la lettre sur Mac, d'où e.code).
+      if ((e.metaKey || e.ctrlKey) && e.altKey && !e.shiftKey && e.code === "KeyS" && currentRef.current) {
+        e.preventDefault();
+        useCosmos.getState().openVersions(currentRef.current, true);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -732,6 +737,8 @@ export function Manuscript() {
             <MoreMenu
               items={[
                 !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
+                { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), onSelect: () => useCosmos.getState().openVersions(current, true) },
+                { label: t.versions.listMenu, onSelect: () => useCosmos.getState().openVersions(current) },
                 { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },
                 { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
                 { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },

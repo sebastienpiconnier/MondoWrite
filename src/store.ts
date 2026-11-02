@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { localIso, parseVersionPath, readVersionFile, versionFile, versionName, versionPath } from "./versions";
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
 import { isPhone } from "./components/usePhone";
 import { capturedCard, fileCards } from "./inbox";
@@ -8,7 +9,9 @@ import { isTouch } from "./platform";
 import { vracCardHeight, vracGrid, type VracCard, type VracLink } from "./ai/vrac";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
-import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
+import { headingOf, sceneBody, sceneEnd, setSceneBody } from "./screenplay/sceneText";
+import { serialize as serializeFountain } from "./screenplay/serialize";
+import { parse as parseFountain } from "./screenplay/parse";
 import type { CharacterFilter } from "./review/filter";
 import { copyBounds, copyText, linksWithin, pasteCopy, type CardCopy, type CopiedCard } from "./cardClipboard";
 import { appendHtml, fountainElements, notesAreSceneText, sceneBodyHtml, sceneToNotes, textElements, textToHtml, withoutLeadingSynopsis } from "./cardText";
@@ -54,7 +57,7 @@ import type { Photo } from "./imageSources";
 import { readFiche, sourceUrl } from "./character";
 import { cardFromTextFile, clipFromText } from "./clip";
 import { markdownSource } from "./markdownText";
-import { markdownToHtml } from "./storage/markdown";
+import { htmlToMarkdown, markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
 import { fmt, getT } from "./i18n";
@@ -125,6 +128,23 @@ export interface CosmosState {
   dropQuestion: (id: string, question: string) => void;
   /** Change un champ de la fiche d'un personnage (vide : retiré). */
   setFiche: (id: string, field: SheetField, value: string) => void;
+  /**
+   * Versions d'une scène (1.13.0, versions.ts) : texte du moment (manuscrit d'un roman ; synopsis et corps Fountain
+   * d'un scénario), null si la scène n'a rien à garder.
+   */
+  sceneVersionText: (cardId: string) => { text: string; words: number } | null;
+  /** Garde le texte actuel de la scène comme version (titre facultatif). Rend le nom du fichier, ou null (rien à garder). */
+  keepVersion: (cardId: string, title?: string) => Promise<string | null>;
+  /**
+   * Revient à une version : le texte actuel est d'abord gardé comme version (`beforeTitle`), puis remplacé. Faux si
+   * la version manque, n'est pas du même type de projet ou si la scène n'existe plus.
+   */
+  restoreVersion: (cardId: string, name: string, beforeTitle: string) => Promise<boolean>;
+  /** Scène dont la fenêtre « Versions » est ouverte (affichage, jamais enregistré). */
+  versionsFor: string | null;
+  /** Ouvre la fenêtre des versions d'une scène ; `keep` : le champ « Garder cette version » prend le focus. */
+  openVersions: (cardId: string, keep?: boolean) => void;
+  versionsKeep: boolean;
   /** Point de vue d'une scène confié à un nouveau personnage (carte créée sur le canevas), en une étape. */
   createPov: (sceneId: string, name: string) => string | null;
   /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
@@ -190,8 +210,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -972,6 +992,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       wiresShown: [],
       filter: NO_FILTER,
       expandedId: null,
+      versionsFor: null,
       cardMenu: null,
       retroInvite: false,
       screen: "project",
@@ -1134,8 +1155,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const prefix = roots.size === 1 && entries.every(([path]) => path.includes("/")) ? `${[...roots][0]}/` : "";
     const files: FileMap = {};
     const medias: [string, Uint8Array][] = [];
+    const versions: [string, string, string][] = [];
     for (const [path, data] of entries) {
       const name = path.slice(prefix.length);
+      // Versions des scènes : identifiant de carte et nom daté vérifiés (parseVersionPath).
+      const version = parseVersionPath(name);
+      if (version) {
+        versions.push([version[0], version[1], strFromU8(data)]);
+        continue;
+      }
       // Un .zip vient de n'importe où : seuls les fichiers d'un projet, aux noms sûrs, sont repris (jamais de « .. »).
       if (name.startsWith(`${MEDIA_DIR}/`)) {
         const media = name.slice(MEDIA_DIR.length + 1);
@@ -1156,6 +1184,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     }
     await storage.write(files, []);
     for (const [name, data] of medias) await storage.writeMedia(name, data);
+    for (const [id, name, text] of versions) await storage.writeVersion(id, name, text).catch(() => {});
     const written = await storage.readAll();
     if (!written || !openFiles(written)) set({ homeNotice: true });
   };
@@ -1233,6 +1262,53 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const ia = withoutIaField(card.ia, field);
       set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ...(ia !== card.ia ? { ia } : {}) } } : n)) });
       touch();
+    },
+    sceneVersionText: (cardId) => {
+      const { kind, screenplay, manuscript } = get();
+      if (kind === "scenario") {
+        if (!screenplay) return null;
+        const at = headingOf(screenplay.elements, cardId);
+        if (at < 0) return null;
+        const elements = screenplay.elements.slice(at + 1, sceneEnd(screenplay.elements, at));
+        const text = serializeFountain({ titlePage: {}, elements }).trim();
+        return text ? { text, words: countWords(textToHtml(text)) } : null;
+      }
+      const html = manuscript[cardId] ?? "";
+      if (isBlank(html)) return null;
+      return { text: htmlToMarkdown(html).trim(), words: countWords(html) };
+    },
+    keepVersion: async (cardId, title = "") => {
+      const now = get().sceneVersionText(cardId);
+      if (!now) return null;
+      const taken = Object.keys(await storage.readVersions(cardId).catch(() => ({})));
+      const date = new Date();
+      const name = versionName(date, taken);
+      await storage.writeVersion(cardId, name, versionFile({ title, date: localIso(date), words: now.words, kind: get().kind, text: now.text }));
+      return name;
+    },
+    restoreVersion: async (cardId, name, beforeTitle) => {
+      const raw = (await storage.readVersions(cardId))[name];
+      const version = raw === undefined ? null : readVersionFile(name, raw);
+      const { kind } = get();
+      if (!version || version.kind !== kind || !get().nodes.some((n) => n.id === cardId)) return false;
+      // Rien ne se perd : le texte actuel devient une version avant d'être remplacé.
+      await get().keepVersion(cardId, beforeTitle);
+      if (kind === "scenario") {
+        const { screenplay } = get();
+        if (!screenplay) return false;
+        const at = headingOf(screenplay.elements, cardId);
+        if (at < 0) return false;
+        const body = version.text.trim() ? parseFountain(version.text).elements : [];
+        const elements = [...screenplay.elements.slice(0, at + 1), ...body, ...screenplay.elements.slice(sceneEnd(screenplay.elements, at))];
+        get().setScreenplay({ ...screenplay, elements });
+      } else get().setManuscriptText(cardId, version.text.trim() ? markdownToHtml(version.text) : "");
+      return true;
+    },
+    versionsFor: null,
+    versionsKeep: false,
+    openVersions: (cardId, keep = false) => {
+      if (!get().nodes.some((n) => n.id === cardId && n.data.type === "scene")) return;
+      set({ versionsFor: cardId, versionsKeep: keep, dialog: "versions", expandedId: null });
     },
     createPov: (sceneId, name) => {
       const title = name.replace(/\s+/g, " ").trim();
@@ -2133,6 +2209,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,
+        versionsFor: null,
         cardMenu: null,
         retroInvite: false,
         screen: "project",
@@ -2239,6 +2316,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,
+        versionsFor: null,
         cardMenu: null,
         // Manuscrit importé : la Bible peut se remplir de ce que le texte dit déjà (rétro-bible).
         retroInvite: true,
@@ -2815,6 +2893,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,
+        versionsFor: null,
         cardMenu: null,
         retroInvite: false,
         loaded: true,
@@ -2889,6 +2968,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
       for (const name of names) {
         const bytes = await storage.readMedia(name).catch(() => null);
         if (bytes) entries.push({ path: `${MEDIA_DIR}/${name}`, data: bytes });
+      }
+      // Versions des scènes (1.13.0), aussi celles des cartes à la corbeille.
+      const owners = new Set([...get().nodes.filter((n) => n.data.type === "scene").map((n) => n.id), ...get().trash.map((t) => t.id)]);
+      for (const id of owners) {
+        const files = await storage.readVersions(id).catch(() => ({}) as Record<string, string>);
+        for (const [name, text] of Object.entries(files)) {
+          const path = versionPath(id, name);
+          if (path) entries.push({ path, data: text });
+        }
       }
       return { name: `${fileName(get().title, "mondowrite")}.zip`, extension: "zip", mime: "application/zip", data: zip(entries) };
     },

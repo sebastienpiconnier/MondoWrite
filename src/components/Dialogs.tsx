@@ -22,11 +22,12 @@ import { ScriptPdfPanel } from "./ScriptPdfPanel";
 import { BibleExportDialog } from "./BibleExportDialog";
 import { ProfileDialog } from "./ProfileDialog";
 import { VracDialog } from "./VracDialog";
+import { VersionsDialog } from "./VersionsDialog";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
 // Fenêtres qui ont leur propre bouton de fermeture : pas de « Fermer » en bas.
-const OWN_CLOSE = new Set(["document", "paperback", "scriptPdf", "bibleExport", "profile", "card", "stats", "vrac"]);
+const OWN_CLOSE = new Set(["document", "paperback", "scriptPdf", "bibleExport", "profile", "card", "stats", "vrac", "versions"]);
 function hasCloseButton(dialog: string): boolean {
   return !OWN_CLOSE.has(dialog);
 }
@@ -67,7 +68,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -110,6 +111,7 @@ export function Dialogs() {
       {dialog === "replace" && <ReplacePanel />}
       {dialog === "paperback" && <PaperbackPanel />}
       {dialog === "stats" && <StatsPanel />}
+      {dialog === "versions" && <VersionsDialog />}
       {dialog === "goto" && <GoToPanel />}
       {dialog === "scriptPdf" && <ScriptPdfPanel />}
       {dialog === "bibleExport" && <BibleExportDialog />}

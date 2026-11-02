@@ -30,7 +30,7 @@ export function useCommand(command: AppCommand, handler: () => void) {
  * Rejoue un raccourci clavier depuis le menu : il suit alors exactement le chemin du clavier (la vue en cours
  * peut le servir à sa façon, comme Rechercher et remplacer dans le Manuscrit, qui part de la scène ouverte).
  */
-export function replayShortcut(key: string, code: string, shift = false) {
+export function replayShortcut(key: string, code: string, shift = false, alt = false) {
   const target = (document.activeElement as HTMLElement | null) ?? document.body;
-  target.dispatchEvent(new KeyboardEvent("keydown", { key, code, metaKey: true, shiftKey: shift, bubbles: true, cancelable: true }));
+  target.dispatchEvent(new KeyboardEvent("keydown", { key, code, metaKey: true, shiftKey: shift, altKey: alt, bubbles: true, cancelable: true }));
 }

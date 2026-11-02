@@ -22,6 +22,16 @@ function loadMedia(): Record<string, string> {
   }
 }
 
+/** Versions des scènes du projet courant : { carte: { nom: contenu } }, dans une clé à part. */
+const versionsKey = () => `cosmos:versions:${current}`;
+function loadVersions(): Record<string, Record<string, string>> {
+  try {
+    return JSON.parse(localStorage.getItem(versionsKey()) ?? "{}") as Record<string, Record<string, string>>;
+  } catch {
+    return {};
+  }
+}
+
 function load(): FileMap {
   try {
     return JSON.parse(localStorage.getItem(keyOf(current)) ?? "{}") as FileMap;
@@ -62,6 +72,7 @@ export const browserStorage: Storage = {
     try {
       localStorage.removeItem(keyOf(id));
       localStorage.removeItem(`cosmos:medias:${id}`);
+      localStorage.removeItem(`cosmos:versions:${id}`);
     } catch {
       /* rien à effacer */
     }
@@ -95,6 +106,20 @@ export const browserStorage: Storage = {
   },
   async mediaUrl(name) {
     return loadMedia()[name] ?? null;
+  },
+  async readVersions(cardId) {
+    return { ...(loadVersions()[cardId] ?? {}) };
+  },
+  async writeVersion(cardId, name, text) {
+    const all = loadVersions();
+    all[cardId] = { ...(all[cardId] ?? {}), [name]: text };
+    localStorage.setItem(versionsKey(), JSON.stringify(all));
+  },
+  async deleteVersion(cardId, name) {
+    const all = loadVersions();
+    if (!all[cardId]?.[name]) return;
+    delete all[cardId][name];
+    localStorage.setItem(versionsKey(), JSON.stringify(all));
   },
   async readMedia(name) {
     const url = loadMedia()[name];

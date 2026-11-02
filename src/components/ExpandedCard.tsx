@@ -15,6 +15,7 @@ import { SynopsisSuggest, novelSceneText } from "./Atelier";
 import { ScriptSceneEditor } from "./ScriptSceneEditor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
+import { MoreMenu, useKeyHint } from "./MoreMenu";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -25,6 +26,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
   // Redessine quand le texte de la scène grandit (par paliers) : « Proposer un synopsis » paraît dès qu'il a assez de mots.
   useCosmos((s) => (novelScene ? Math.min(20, Math.floor((s.manuscript[card.id]?.length ?? 0) / 40)) : 0));
   const imageUrl = useMediaUrl(card.image);
+  const key = useKeyHint();
 
   return (
     <div className="expanded-card" style={{ ["--type" as string]: typeColor(card.type) }}>
@@ -43,6 +45,14 @@ export function ExpandedCard({ card }: { card: CardData }) {
           <SceneStatusPicker card={card} />
           {/* Point de vue : roman comme scénario, c'est dans la carte agrandie qu'il se choisit pour un scénario. */}
           <PovPicker card={card} />
+          {/* Versions de la scène : la fenêtre remplace la carte agrandie (une fenêtre à la fois). */}
+          <MoreMenu
+            className="expanded-more"
+            items={[
+              { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), onSelect: () => useCosmos.getState().openVersions(card.id, true) },
+              { label: t.versions.listMenu, onSelect: () => useCosmos.getState().openVersions(card.id) },
+            ]}
+          />
         </div>
       )}
       <h2 id="app-dialog-title" className="sr-only">

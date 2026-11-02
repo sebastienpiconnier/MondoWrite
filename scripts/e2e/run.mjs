@@ -400,6 +400,57 @@ const scenarios = [
     },
   },
   {
+    name: "versions d'une scène (1.13.0) : garder, réécrire, comparer, revenir, retrouver après rechargement",
+    async run(h) {
+      const { page } = h;
+      await h.create("Versions");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      const editor = page.locator(".ms-page .ProseMirror");
+      await editor.click();
+      await page.keyboard.type("Le réveil sonne à six heures et Ethan rêve encore de la mer.");
+      await h.wait(400);
+      // Cmd/Ctrl + Alt + S : la fenêtre s'ouvre, le titre de la version a le focus.
+      await page.keyboard.press("Control+Alt+s");
+      const dialog = page.locator(".app-dialog.is-versions");
+      const title = dialog.getByLabel("Titre de la version (facultatif)");
+      await until(() => title.evaluate((el) => el === document.activeElement), "le titre de la version n'a pas le focus");
+      await page.keyboard.type("Avec le rêve");
+      await page.keyboard.press("Enter");
+      const items = dialog.locator(".versions-item");
+      await until(async () => (await items.count()) === 1, "la version n'apparaît pas dans la liste");
+      await until(async () => ((await dialog.locator(".versions-text").textContent()) ?? "").includes("rêve encore de la mer"), "le texte de la version n'est pas affiché");
+      await dialog.getByRole("button", { name: "Fermer" }).click();
+      // Réécrire, puis comparer avec le texte actuel.
+      await editor.click();
+      await page.keyboard.press("Control+a");
+      await page.keyboard.type("Le réveil sonne à six heures et Ethan se lève aussitôt.");
+      await h.wait(400);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: /^Versions de la scène/ }).click();
+      await until(async () => (await items.count()) === 1, "la liste des versions n'est pas relue");
+      await dialog.getByLabel("Comparer avec").selectOption("current");
+      await until(() => dialog.locator(".versions-text del", { hasText: "rêve" }).first().isVisible(), "les mots retirés ne sont pas barrés");
+      await until(() => dialog.locator(".versions-text ins", { hasText: "lève" }).first().isVisible(), "les mots ajoutés ne sont pas soulignés");
+      await until(async () => /mots ajoutés, \d+ retirés/.test((await dialog.locator(".versions-summary").textContent()) ?? ""), "pas de résumé de la comparaison");
+      // Revenir : le texte d'avant devient une version, le texte gardé revient dans la page.
+      await dialog.getByRole("button", { name: "Revenir à cette version" }).click();
+      await until(async () => (await items.count()) === 2, "le texte d'avant n'a pas été gardé en version");
+      await dialog.getByRole("button", { name: "Fermer" }).click();
+      await until(async () => ((await editor.textContent()) ?? "").includes("rêve encore de la mer"), "le texte gardé n'est pas revenu dans la page");
+      await h.saved((f) => (f[Object.keys(f).find((k) => k.startsWith("manuscrit/")) ?? ""] ?? "").includes("rêve encore"), "le texte remis n'a pas été enregistré");
+      // Après rechargement : les deux versions sont toujours là, lues à la demande.
+      await h.reloadAndOpen();
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: /^Versions de la scène/ }).click();
+      await until(async () => (await items.count()) === 2, "après rechargement, les versions ont disparu");
+      assert((await dialog.locator(".versions-item-title").allTextContents()).some((x) => x.startsWith("Avant de revenir")), "la version d'avant n'a pas son titre");
+    },
+  },
+  {
     name: "point de vue, lot 2 : narrateurs posés dans le Plan, ruban coloré en plan libre, filtres du Manuscrit et du canevas",
     async run(h) {
       const { page } = h;

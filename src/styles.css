@@ -65,6 +65,9 @@
   --status-draft: #6e7388;
   --status-revise: #b54708;
   --status-done: #1f7a3a;
+  /* Comparaison des versions : alias de jetons déjà vérifiés (contraste) dans chaque palette. */
+  --diff-del: var(--danger);
+  --diff-add: var(--status-done);
   --cover-bg: #23265a; /* jaquette de la couverture du projet (Bible) */
   --cover-ink: #ffffff;
   --cover-muted: #c9cbf3;
@@ -130,6 +133,8 @@
   --status-draft: #9ca1b4;
   --status-revise: #f5a35c;
   --status-done: #6fcf8e;
+  --diff-del: var(--danger);
+  --diff-add: var(--status-done);
   --cover-bg: #2c2f5c;
   --cover-ink: #f1f2fb;
   --cover-muted: #c4c6ee;

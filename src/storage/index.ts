@@ -84,6 +84,13 @@ export interface Storage {
   forget(): void;
   /** Copie une image dans le dossier medias/ du projet sélectionné. */
   writeMedia(name: string, data: Uint8Array): Promise<void>;
+  /**
+   * Versions d'une scène (1.13.0, `versions/<carte>/`, versions.ts) : lues à la demande, jamais à l'ouverture du
+   * projet. `readVersions` rend { nom du fichier : contenu } ; noms et identifiant sont vérifiés par l'appelant.
+   */
+  readVersions(cardId: string): Promise<Record<string, string>>;
+  writeVersion(cardId: string, name: string, text: string): Promise<void>;
+  deleteVersion(cardId: string, name: string): Promise<void>;
   /** Adresse affichable (blob: ou data:) d'une image de medias/, ou null si le fichier manque. */
   mediaUrl(name: string): Promise<string | null>;
   /** Octets d'un fichier de medias/ (le PDF d'une carte Document), ou null s'il manque. */

@@ -1111,3 +1111,50 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ms-fold { margin: 2px 0; padding-left: 10px; }
 .ms-fold .link-button { color: var(--ink-2); font-size: 0.8125rem; font-style: italic; min-height: 28px; text-align: left; }
 @media (pointer: coarse) { .ms-pov-filter select, .ms-fold .link-button { min-height: 44px; } }
+
+/* Versions d'une scène (1.13.0, VersionsDialog) : liste à gauche, texte ou comparaison à droite. */
+.app-dialog.is-versions { width: min(1040px, calc(100vw - 32px)); }
+.versions-panel { display: flex; flex-direction: column; gap: 14px; }
+.versions-panel h2 { margin: 0; padding-right: 48px; overflow-wrap: anywhere; }
+.versions-body { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.versions-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.versions-keep { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--ground); }
+.versions-keep label { font-size: 0.8125rem; color: var(--muted); }
+.versions-keep input, .versions-rename input { min-height: 44px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.versions-keep button { min-height: 44px; }
+.versions-hint { margin: 0; font-size: 0.875rem; color: var(--muted); line-height: 1.5; }
+.versions-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 50dvh; overflow: auto; }
+.versions-item { width: 100%; min-height: 44px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.versions-item[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+@media (any-hover: hover) { .versions-item:hover { background: var(--hover); } }
+.versions-item-title { font-weight: 600; overflow-wrap: anywhere; }
+.versions-item-meta { font-size: 0.8125rem; color: var(--muted); }
+.versions-item[aria-pressed="true"] .versions-item-meta { color: inherit; }
+.versions-rename { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0; }
+.versions-rename input { flex: 1 1 140px; min-width: 0; }
+.versions-rename button { min-height: 44px; }
+.versions-main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.versions-tools { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; }
+.versions-compare { display: flex; flex-direction: column; gap: 4px; font-size: 0.8125rem; color: var(--muted); min-width: 0; }
+.versions-compare select { min-height: 44px; max-width: 100%; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.9375rem; }
+.versions-actions { display: flex; align-items: center; gap: 6px; }
+.versions-actions > button { min-height: 44px; }
+.versions-summary { margin: 0; font-size: 0.875rem; color: var(--ink-2); }
+.versions-legend { color: var(--muted); }
+.versions-text { max-height: 60dvh; overflow: auto; padding: 16px 20px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font-family: var(--font-text); font-size: 1.0625rem; line-height: 1.6; overflow-wrap: anywhere; }
+.versions-text > :first-child { margin-top: 0; }
+.versions-text p { margin: 0 0 0.8em; }
+.versions-text.is-script { font-family: var(--font-script); font-size: 0.9375rem; white-space: pre-wrap; }
+.versions-text del { color: var(--diff-del); text-decoration: line-through; text-decoration-thickness: 2px; }
+.versions-text ins { color: var(--diff-add); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.versions-notice { min-height: 44px; display: flex; align-items: center; gap: 10px; font-size: 0.875rem; color: var(--ink-2); }
+.versions-notice .ghost-button { min-height: 44px; }
+@media (max-width: 720px) {
+  .versions-body { grid-template-columns: minmax(0, 1fr); }
+  .versions-list { max-height: 30dvh; }
+}
+.expanded-status .expanded-more { margin-left: auto; }
+.versions-keep button, .versions-rename button, .versions-actions > button { padding: 0 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.875rem; cursor: pointer; }
+.versions-panel button.is-primary { border-color: transparent; background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+.versions-panel button:disabled { opacity: 0.45; cursor: default; }
+.versions-keep input::placeholder, .versions-rename input::placeholder { color: var(--placeholder); }

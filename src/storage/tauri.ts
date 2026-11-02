@@ -16,6 +16,7 @@ import { getT } from "../i18n";
 import { MISSING_FOLDER, classifySaveError } from "../saveErrors";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
 import { LOCK_DIR } from "../lock";
+import { SCENE_VERSIONS_DIR, isVersionName, isVersionOwner } from "../versions";
 import { downloadProgress, reportLoad } from "../loadProgress";
 import { freeName, macIcloudState, strayFolders } from "./icloudFolders";
 
@@ -366,7 +367,7 @@ async function adoptMacIcloud() {
 }
 
 /** Ce que MondoWrite écrit dans un dossier projet (fichiers et dossiers, copies de conflit et repères iCloud compris). */
-const PROJECT_DIRS = new Set([...TEXT_DIRS, MEDIA_DIR, COPIES_DIR, LOCK_DIR]);
+const PROJECT_DIRS = new Set([...TEXT_DIRS, MEDIA_DIR, COPIES_DIR, LOCK_DIR, SCENE_VERSIONS_DIR]);
 function isProjectEntry(name: string) {
   const shown = name.startsWith(".") && name.endsWith(".icloud") ? name.slice(1, -".icloud".length) : name;
   // Temporaire d'écriture laissé par une coupure (« cosmos.json.mondowrite-tmp ») : il part avec le projet.
@@ -764,6 +765,34 @@ export const tauriStorage: Storage = {
     await mkdir(media, { recursive: true });
     const path = await join(media, name);
     await writeSafely(path, (target) => writeFile(target, data));
+  },
+  async readVersions(cardId) {
+    const dir = await projectFolder();
+    if (!dir || !isVersionOwner(cardId)) return {};
+    const folder = await join(dir, SCENE_VERSIONS_DIR, cardId);
+    if (!(await exists(folder))) return {};
+    // iCloud : les versions d'un autre appareil ne sont téléchargées qu'à la demande.
+    await ensureDownloaded(folder);
+    const out: Record<string, string> = {};
+    for (const entry of await readDir(folder)) {
+      if (!entry.isFile || !isVersionName(entry.name)) continue;
+      out[entry.name] = await readTextFile(await join(folder, entry.name));
+    }
+    return out;
+  },
+  async writeVersion(cardId, name, text) {
+    const dir = await projectFolder();
+    if (!dir) throw new Error("Aucun dossier projet choisi");
+    if (!isVersionOwner(cardId) || !isVersionName(name)) throw new Error("Version refusée");
+    const folder = await join(dir, SCENE_VERSIONS_DIR, cardId);
+    await mkdir(folder, { recursive: true });
+    await writeText(await join(folder, name), text);
+  },
+  async deleteVersion(cardId, name) {
+    const dir = await projectFolder();
+    if (!dir || !isVersionOwner(cardId) || !isVersionName(name)) return;
+    const path = await join(dir, SCENE_VERSIONS_DIR, cardId, name);
+    if (await exists(path)) await remove(path);
   },
   async mediaUrl(name) {
     const dir = await projectFolder();

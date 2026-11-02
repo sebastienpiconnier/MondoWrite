@@ -427,11 +427,22 @@ export function ScreenplayView() {
   };
   const openReplaceRef = useRef(openReplace);
   openReplaceRef.current = openReplace;
+  // Versions de la scène en cours : la frappe en attente part d'abord, pour garder le texte tel qu'on le voit.
+  const openVersions = (keep: boolean) => {
+    emit();
+    if (scene?.cardId) useCosmos.getState().openVersions(scene.cardId, keep);
+  };
+  const openVersionsRef = useRef(openVersions);
+  openVersionsRef.current = openVersions;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         openReplaceRef.current();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.altKey && !e.shiftKey && e.code === "KeyS") {
+        e.preventDefault();
+        openVersionsRef.current(true);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -942,6 +953,8 @@ export function ScreenplayView() {
             className="sp-option"
             items={[
               { label: t.book.chutier.title, title: t.format.chutier, hint: key("Mod", "Shift", "K"), onSelect: sendToChutier },
+              { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), disabled: !scene?.cardId, onSelect: () => openVersions(true) },
+              { label: t.versions.listMenu, disabled: !scene?.cardId, onSelect: () => openVersions(false) },
               { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: openReplace },
               { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
               { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },

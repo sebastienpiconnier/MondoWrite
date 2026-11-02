@@ -52,6 +52,7 @@ export const SHORTCUT_GROUPS = {
     ["focusHighlight", ["Mod", "Shift", "E"]],
     ["chutier", ["Mod", "Shift", "K"]],
     ["moveScene", ["Alt", "↑ ↓"]],
+    ["keepVersion", ["Mod", "Alt", "S"]],
     ["pageZoom", ["Mod", "+ − 0"]],
   ],
   screenplay: [
