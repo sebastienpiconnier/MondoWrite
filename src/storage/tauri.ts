@@ -6,7 +6,7 @@
 
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { appDataDir, documentDir, homeDir, join } from "@tauri-apps/api/path";
+import { appDataDir, dirname, documentDir, homeDir, join } from "@tauri-apps/api/path";
 import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
 import { COPIES_DIR, JOURNAL_FILE, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
@@ -750,6 +750,31 @@ export const tauriStorage: Storage = {
     }
     dropRecent(id);
     if (current === id) current = null;
+  },
+  async pickScrivener(label) {
+    // Sur Mac, le .scriv est un paquet : le dialogue le montre comme un fichier. Ailleurs c'est un dossier, et l'on
+    // choisit le .scrivx qu'il contient. Seuls classeur, textes et médias sont lus (jamais les index ni les aperçus).
+    const path = await open({ multiple: false, directory: false, filters: [{ name: label, extensions: ["scriv", "scrivx"] }] });
+    if (typeof path !== "string") return undefined;
+    const root = /\.scrivx$/i.test(path) ? await dirname(path) : path;
+    const { isScrivenerEntry, readScrivenerSource } = await import("../import/scrivener");
+    const prefix = `${baseName(root)}/`;
+    const files = new Map<string, Uint8Array>();
+    const take = async (dir: string, rel: string) => {
+      const entries = await readDir(dir).catch(() => []);
+      const wanted = entries.filter((e) => e.isFile && isScrivenerEntry(`${prefix}${rel}${e.name}`));
+      for (let i = 0; i < wanted.length; i += READ_PARALLEL) {
+        await Promise.all(wanted.slice(i, i + READ_PARALLEL).map(async (e) => files.set(`${prefix}${rel}${e.name}`, await readFile(await join(dir, e.name)))));
+      }
+      return entries;
+    };
+    await take(root, "");
+    const filesDir = await join(root, "Files");
+    await take(filesDir, "Files/");
+    const data = await join(filesDir, "Data");
+    for (const entry of await readDir(data).catch(() => [])) if (entry.isDirectory) await take(await join(data, entry.name), `Files/Data/${entry.name}/`);
+    await take(await join(filesDir, "Docs"), "Files/Docs/");
+    return readScrivenerSource(files);
   },
   async pickTextFile(label, extensions) {
     // Le fichier choisi dans le dialogue du système est autorisé en lecture par Tauri.

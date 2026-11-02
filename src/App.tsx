@@ -22,6 +22,7 @@ import { storage } from "./storage";
 import { forgetMediaUrls } from "./components/useMediaUrl";
 import { ConflictNotice } from "./components/ConflictNotice";
 import { RetroInvite } from "./components/StructureTools";
+import { ScrivenerReportNotice } from "./components/ScrivenerImport";
 import { Carnet } from "./components/Carnet";
 import { shownView, usePhone } from "./components/usePhone";
 
@@ -240,6 +241,7 @@ export function App() {
           </div>
         )}
         <ConflictNotice />
+        <ScrivenerReportNotice />
         <RetroInvite />
         <main className="app-main">
           {view === "toile" && <Toile />}

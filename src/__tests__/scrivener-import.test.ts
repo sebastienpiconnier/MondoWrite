@@ -174,10 +174,10 @@ describe("projet Scrivener → projet roman", () => {
     expect(p.manuscript![chapters[2].scenes[2]]).toBe("");
     // Épilogue d'une scène : une page du livre, hors des chapitres.
     expect(p.cards.find((c) => c.page === "epilogue")).toBeTruthy();
-    // Ni la Recherche ni la Corbeille dans le manuscrit (lot 2 pour la Recherche).
+    // Ni la Recherche ni la Corbeille dans le manuscrit : la Recherche est un cadre, la Corbeille n'est pas reprise.
     expect(Object.values(p.manuscript!).join(" ")).not.toMatch(/note|Jeté/i);
     expect(p.meta.plan!.beats.libre).toHaveLength(6);
-    expect(report).toEqual({ chapters: 4, scenes: 7, excluded: ["Chapitre 2 - La rencontre"] });
+    expect(report).toMatchObject({ chapters: 4, scenes: 7, ideas: 1, trash: 1, excluded: ["Chapitre 2 - La rencontre"] });
   });
 
   it("refuse un projet sans manuscrit lisible", () => {
@@ -187,13 +187,13 @@ describe("projet Scrivener → projet roman", () => {
 
   it("lit le zip fait sur Mac, et laisse passer un zip qui n'est pas de Scrivener", async () => {
     const zip = zipSync({ ...project("Sacr#U00e9 Bonhomme.scriv/"), "__MACOSX/Sacr#U00e9 Bonhomme.scriv/._Sacr#U00e9 Bonhomme.scrivx": strToU8("x"), "Sacr#U00e9 Bonhomme.scriv/Files/search.indexes": strToU8("y") });
-    const read = await readScrivenerZip(zip, newId);
-    expect(read && read !== "not-scrivener" && read.project.meta.title).toBe("Sacré Bonhomme");
+    const read = await readScrivenerZip(zip);
+    expect(read && read !== "not-scrivener" && read.name).toBe("Sacré Bonhomme");
     const other = zipSync({ "Mon projet/cosmos.json": strToU8("{}") });
-    expect(await readScrivenerZip(other, newId)).toBe("not-scrivener");
+    expect(await readScrivenerZip(other)).toBe("not-scrivener");
     expect(await importFromFile({ name: "Mon projet.zip", data: other }, { fileName: "Mon projet.zip", locale: "fr", linkLabel: "", newId })).toBe("project-zip");
     const outcome = await importFromFile({ name: "Sacré Bonhomme.zip", data: zip }, { fileName: "Sacré Bonhomme.zip", locale: "fr", linkLabel: "", newId });
-    expect(outcome && outcome !== "project-zip" && outcome.source).toBe("scrivener");
+    expect(outcome && outcome !== "project-zip" && "scrivener" in outcome && outcome.scrivener.name).toBe("Sacré Bonhomme");
   });
 });
 

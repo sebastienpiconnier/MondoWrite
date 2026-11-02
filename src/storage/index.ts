@@ -9,6 +9,7 @@
 // - Navigateur (npm run dev) : les mêmes fichiers simulés dans localStorage, une clé par projet.
 // Plusieurs projets : le stockage en liste les connus (écran d'accueil) et travaille sur celui qu'on sélectionne.
 
+import type { ScrivenerSource } from "../import/scrivener/mapping";
 import type { Project, ProjectMeta } from "../types";
 import { cardToFile, fileToCard, htmlToMarkdown, markdownToHtml } from "./markdown";
 import { isCardId } from "../mentions";
@@ -98,6 +99,11 @@ export interface Storage {
   readMedia(name: string): Promise<Uint8Array | null>;
   /** L'auteur choisit un fichier (un PDF à importer). Renvoie null s'il annule. */
   pickFile(label: string, extensions: string[]): Promise<{ name: string; data: Uint8Array } | null>;
+  /**
+   * Ordinateur seulement : l'auteur choisit un projet Scrivener sur le disque (le paquet .scriv sur Mac, son .scrivx
+   * ailleurs), lu sans le compresser. undefined s'il annule, null si ce n'est pas un projet lisible.
+   */
+  pickScrivener?: (label: string) => Promise<ScrivenerSource | null | undefined>;
   /** L'auteur choisit une image (bouton d'une carte). Renvoie null s'il annule. */
   pickImage(label: string): Promise<{ name: string; data: Uint8Array } | null>;
   /** Plusieurs images d'un coup (galerie d'une fiche). Liste vide si l'auteur annule. */

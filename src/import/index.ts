@@ -4,6 +4,7 @@
 // Null quand le fichier ne contient rien de lisible.
 
 import type { Project } from "../types";
+import type { ScrivenerSource } from "./scrivener/mapping";
 import { importFountain, importScreenplayModel, type ImportOptions } from "../screenplay/import";
 import { parse } from "../screenplay/parse";
 import { parseFdx } from "../screenplay/fdxImport";
@@ -16,21 +17,24 @@ const extensionOf = (name: string) => name.toLowerCase().match(/\.([a-z0-9]+)$/)
 /** Un texte brut est un scénario s'il a au moins deux en-têtes de scène (INT., EXT.) reconnus par Fountain. */
 export const looksLikeScreenplay = (text: string) => parse(text).elements.filter((el) => el.type === "sceneHeading").length >= 2;
 
-/** Ce qu'un fichier importé donne : un projet et ses médias, rien de lisible, ou un .zip qui n'est pas de Scrivener. */
-export type ImportOutcome = { project: Project; medias: [string, Uint8Array][]; source?: "scrivener" } | null | "project-zip";
+/**
+ * Ce qu'un fichier importé donne : un projet et ses médias ; un projet Scrivener lu, dont l'auteur choisit encore
+ * les dossiers (`buildScrivener` le convertit) ; rien de lisible ; ou un .zip qui n'est pas de Scrivener.
+ */
+export type ImportOutcome = { project: Project; medias: [string, Uint8Array][] } | { scrivener: ScrivenerSource } | null | "project-zip";
 
 /**
  * Import complet : comme `projectFromFile`, plus les médias à copier dans medias/. Un .zip qui contient un projet
- * Scrivener est importé ; un autre .zip est sans doute un projet MondoWrite exporté (« project-zip »), que
- * l'appelant ouvre par son propre chemin.
+ * Scrivener est lu ; un autre .zip est sans doute un projet MondoWrite exporté (« project-zip »), que l'appelant
+ * ouvre par son propre chemin.
  */
 export async function importFromFile(file: { name: string; data: Uint8Array }, options: ImportOptions): Promise<ImportOutcome> {
   if (extensionOf(file.name) === "zip") {
     // Chargé seulement ici : le lecteur RTF et celui du classeur restent hors du paquet de démarrage.
     const { readScrivenerZip } = await import("./scrivener");
-    const read = await readScrivenerZip(file.data, options.newId);
+    const read = await readScrivenerZip(file.data);
     if (read === "not-scrivener") return "project-zip";
-    return read && read.project.cards.length > 0 ? { project: read.project, medias: read.medias, source: "scrivener" } : null;
+    return read ? { scrivener: read } : null;
   }
   const project = await projectFromFile(file, options);
   return project ? { project, medias: [] } : null;

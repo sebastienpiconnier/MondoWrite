@@ -2,7 +2,10 @@
 // barré, liens web, accents (\'xx selon \ansicpg, \uN avec \ucN), espaces insécables. Tout le reste (polices,
 // couleurs, tailles, retraits, tableaux de styles, images) est ignoré : la mise en page est celle de MondoWrite.
 // Les marqueurs de styles de Scrivener (<$Scr_Ps::0>, <!$Scr_H::1>…) et les balises de compilation (<$n>, <$t>)
-// sont retirés du texte ; un intertitre Scrivener (Scr_H) marque son paragraphe comme titre.
+// sont retirés du texte ; un intertitre Scrivener (Scr_H) marque son paragraphe comme titre. Ce qui demande le
+// reste du projet est laissé en repères pour mapping.ts : passage commenté (champ scrivcmt://, <span data-scrivcmt>),
+// lien interne (scrivlnk://, <span data-scrivlnk>), note et annotation en ligne (\Scrv_fn, \Scrv_annot : un
+// caractère privé numéroté), images du texte (\pict PNG ou JPEG, rendues à part).
 // Pur et sans dépendance : aucune bibliothèque RTF ne tient dans ce sous-ensemble sans apporter un moteur de rendu.
 
 import type { ImportedPara } from "../manuscript";
@@ -14,6 +17,32 @@ interface Run {
   italic: boolean;
   strike: boolean;
   href?: string;
+}
+
+/** Image trouvée dans le texte (\pict) : rendue à part, elle n'entre pas dans le manuscrit. */
+export interface RtfImage {
+  ext: "png" | "jpg";
+  data: Uint8Array;
+}
+
+/** Note de bas de page ou annotation écrite dans le texte (Scrivener 3) : son texte, et ce qu'elle est. */
+export interface RtfInline {
+  kind: "footnote" | "annotation";
+  text: string;
+}
+
+export interface RtfDocument {
+  paras: ImportedPara[];
+  images: RtfImage[];
+  inline: RtfInline[];
+}
+
+/** Repère d'une note ou annotation en ligne dans le texte d'un paragraphe : U+E010, son rang, U+E011. */
+export const INLINE_MARK = /\uE010(\d+)\uE011/g;
+
+interface PictCollector {
+  ext: RtfImage["ext"] | null;
+  hex: string;
 }
 
 interface GroupState {
@@ -28,6 +57,10 @@ interface GroupState {
   fldinst: boolean;
   /** Groupe du résultat d'un champ (\fldrslt) : lien à poser sur son texte. */
   href?: string;
+  /** Image en cours de lecture (\pict). */
+  pict?: PictCollector;
+  /** Dans \nonshppict : l'image de repli (WMF) d'une image déjà lue, ignorée. */
+  noPict?: boolean;
 }
 
 /** Destinations dont le texte n'est jamais du contenu. */
@@ -52,11 +85,21 @@ function decoderFor(codePage: number): TextDecoder {
   }
 }
 
-/** Adresse d'un champ HYPERLINK, si c'en est un vers le web (les liens internes de Scrivener ne sont pas des adresses). */
+/**
+ * Cible d'un champ HYPERLINK : une adresse web, ou un repère de Scrivener (« scrivcmt:<id> » pour un commentaire de
+ * l'inspecteur, « scrivlnk:<UUID> » pour un lien vers un autre document du classeur). Rien d'autre.
+ */
 function hyperlinkOf(instruction: string): string | undefined {
-  const url = instruction.match(/HYPERLINK\s+"([^"]+)"/i)?.[1];
-  return url && /^(https?:|mailto:)/i.test(url) ? url : undefined;
+  const url = instruction.match(/HYPERLINK\s+"([^"]+)"/i)?.[1]?.trim();
+  if (!url) return undefined;
+  if (/^(https?:|mailto:)/i.test(url)) return url;
+  const comment = url.match(/^scrivcmt:\/*([A-Za-z0-9_-]+)/i)?.[1];
+  if (comment) return `scrivcmt:${comment}`;
+  const internal = url.match(/^(?:scrivlnk|x-scrivener-item|scrivener):\/*(?:[^/]*\/)*?([0-9A-Fa-f]{8}-[0-9A-Fa-f-]{27,}|\d+)$/i)?.[1];
+  return internal ? `scrivlnk:${internal}` : undefined;
 }
+
+const attr = (s: string) => escapeHtml(s).replace(/"/g, "&quot;");
 
 /** HTML d'une suite de morceaux : balises ouvertes et fermées seulement là où l'aspect change. */
 function runsToHtml(runs: Run[]): string {
@@ -67,7 +110,9 @@ function runsToHtml(runs: Run[]): string {
     if (run.strike) piece = `<s>${piece}</s>`;
     if (run.italic) piece = `<em>${piece}</em>`;
     if (run.bold) piece = `<strong>${piece}</strong>`;
-    if (run.href) piece = `<a href="${escapeHtml(run.href).replace(/"/g, "&quot;")}">${piece}</a>`;
+    if (run.href?.startsWith("scrivcmt:")) piece = `<span data-scrivcmt="${attr(run.href.slice(9))}">${piece}</span>`;
+    else if (run.href?.startsWith("scrivlnk:")) piece = `<span data-scrivlnk="${attr(run.href.slice(9))}">${piece}</span>`;
+    else if (run.href) piece = `<a href="${attr(run.href)}">${piece}</a>`;
     html += piece;
   }
   // Deux morceaux voisins de même aspect : une seule balise (</em><em> disparaît).
@@ -92,7 +137,33 @@ function cleanRuns(runs: Run[]): { runs: Run[]; heading: boolean } {
  * scènes dans certains manuscrits ; c'est le découpage qui décide de les garder ou non.
  */
 export function rtfParagraphs(rtf: string): ImportedPara[] {
+  return rtfDocument(rtf).paras;
+}
+
+/**
+ * Notes et annotations en ligne de Scrivener 3 (`\Scrv_fn=…\end_Scrv_fn`, `\Scrv_annot … \text=…\end_Scrv_annot`) :
+ * ce ne sont pas des mots de contrôle RTF (le « _ » les coupe), on les sort du texte avant la lecture et on laisse
+ * un repère à leur place. Leur propre texte est un petit RTF, lu à part.
+ */
+function takeInline(rtf: string): { rtf: string; inline: RtfInline[] } {
+  const inline: RtfInline[] = [];
+  // \uc0 : aucun caractère de repli à sauter, sinon le rang qui suit serait mangé.
+  const mark = (item: RtfInline) => `{\\uc0\\u${0xe010} }${String(inline.push(item) - 1)}{\\uc0\\u${0xe011} }`;
+  const text = (fragment: string) => rtfText(`{\\rtf1\\ansi ${fragment}}`).trim();
+  const out = rtf
+    .replace(/\\Scrv_fn=?([\s\S]*?)\\end_Scrv_fn/g, (_, body: string) => mark({ kind: "footnote", text: text(body.match(/\\text=([\s\S]*)$/)?.[1] ?? body) }))
+    .replace(/\\Scrv_annot([\s\S]*?)\\end_Scrv_annot/g, (_, body: string) => {
+      const content = body.match(/\\text=([\s\S]*)$/)?.[1] ?? body.replace(/\\color=\{[^}]*\}/, "");
+      return mark({ kind: "annotation", text: text(content) });
+    });
+  return { rtf: out, inline };
+}
+
+/** Le texte RTF d'un document : paragraphes, images du texte, notes et annotations en ligne. */
+export function rtfDocument(source: string): RtfDocument {
+  const { rtf, inline } = takeInline(source);
   const paras: ImportedPara[] = [];
+  const images: RtfImage[] = [];
   let runs: Run[] = [];
   let decoder = decoderFor(1252);
   const stack: GroupState[] = [];
@@ -111,6 +182,10 @@ export function rtfParagraphs(rtf: string): ImportedPara[] {
     if (!text) return;
     if (state.fldinst) {
       instruction += text;
+      return;
+    }
+    if (state.pict) {
+      state.pict.hex += text;
       return;
     }
     if (state.skip) return;
@@ -154,6 +229,15 @@ export function rtfParagraphs(rtf: string): ImportedPara[] {
       flushBytes();
       const closing = state;
       state = stack.pop() ?? state;
+      // Fin d'une image : ses octets, s'ils sont dans un format qu'on sait garder.
+      if (closing.pict && closing.pict !== state.pict) {
+        const hex = closing.pict.hex.replace(/[^0-9a-fA-F]/g, "");
+        if (closing.pict.ext && hex.length >= 16) {
+          const data = new Uint8Array(hex.length >> 1);
+          for (let k = 0; k < data.length; k += 1) data[k] = parseInt(hex.slice(k * 2, k * 2 + 2), 16);
+          images.push({ ext: closing.pict.ext, data });
+        }
+      }
       // Fin de l'instruction d'un champ : son adresse ira sur le résultat qui suit.
       if (closing.fldinst && !state.fldinst) {
         pendingHref = hyperlinkOf(instruction);
@@ -291,6 +375,20 @@ export function rtfParagraphs(rtf: string): ImportedPara[] {
       case "fldinst":
         state.fldinst = true;
         break;
+      case "pict":
+        state.skip = true;
+        if (!state.noPict) state.pict = { ext: null, hex: "" };
+        break;
+      case "nonshppict":
+        state.skip = true;
+        state.noPict = true;
+        break;
+      case "pngblip":
+        if (state.pict) state.pict.ext = "png";
+        break;
+      case "jpegblip":
+        if (state.pict) state.pict.ext = "jpg";
+        break;
       case "fldrslt":
         state.href = pendingHref;
         pendingHref = undefined;
@@ -301,7 +399,7 @@ export function rtfParagraphs(rtf: string): ImportedPara[] {
   }
   flushBytes();
   if (runs.some((r) => r.text.trim())) endParagraph();
-  return paras;
+  return { paras, images, inline };
 }
 
 /** Texte brut d'un RTF (notes, synopsis en RTF) : paragraphes non vides séparés par des retours. */

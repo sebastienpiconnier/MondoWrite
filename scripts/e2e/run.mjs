@@ -1185,14 +1185,17 @@ const scenarios = [
     },
   },
   {
-    name: "import Scrivener : un .scriv zippé devient un roman, chapitres, scènes, synopsis et statuts",
+    name: "import Scrivener : un .scriv zippé devient un roman (chapitres, scènes, synopsis, statuts) avec sa Bible, après le choix des dossiers",
     async run(h) {
       const { page } = h;
       const { zipSync, strToU8 } = await import("fflate");
       // Projet à la façon de Scrivener 3 sur Mac : nom encodé, RTF en cp1252, __MACOSX, index à ignorer.
       const rtf = (body) => `{\\rtf1\\ansi\\ansicpg1252\\cocoartf2761{\\fonttbl\\f0\\fnil Palatino;}{\\colortbl;\\red255\\green255\\blue255;}\\pard\\f0\\fs26 ${body}}`;
       const item = (uuid, type, title, meta = "", children = "") => `<BinderItem UUID="${uuid}" Type="${type}"><Title>${title}</Title><MetaData>${meta}</MetaData>${children ? `<Children>${children}</Children>` : ""}</BinderItem>`;
-      const binder = item("D", "DraftFolder", "Manuscrit", "", item("C1", "Text", "Chapitre 1 - Le d\u00e9part", "<StatusID>4</StatusID>") + item("F2", "Folder", "Chapitre 2", "", item("S21", "Text", "Le quai") + item("S22", "Text", "Le train")));
+      const binder =
+        item("D", "DraftFolder", "Manuscrit", "", item("C1", "Text", "Chapitre 1 - Le d\u00e9part", "<StatusID>4</StatusID>") + item("F2", "Folder", "Chapitre 2", "", item("S21", "Text", "Le quai") + item("S22", "Text", "Le train"))) +
+        item("P", "Folder", "Personnages", "", item("E", "Text", "Ethan")) +
+        item("N", "Folder", "Notes", "", item("N1", "Text", "Id\u00e9e"));
       const scrivx = `<?xml version="1.0" encoding="UTF-8"?><ScrivenerProject Version="2.0"><Binder>${binder}</Binder><StatusSettings><StatusItems><Status ID="4">Termin\u00e9</Status></StatusItems></StatusSettings></ScrivenerProject>`;
       const root = "Sacr#U00e9 Bonhomme.scriv/";
       const zip = zipSync({
@@ -1201,6 +1204,8 @@ const scenarios = [
         [`${root}Files/Data/C1/synopsis.txt`]: strToU8("Ethan quitte la ville."),
         [`${root}Files/Data/S21/content.rtf`]: strToU8(rtf("Le quai \\'e9tait vide.\\\n")),
         [`${root}Files/Data/S22/content.rtf`]: strToU8(rtf("Le train partit.\\\n")),
+        [`${root}Files/Data/E/content.rtf`]: strToU8(rtf("Role in Story: H\\'e9ros\\\n")),
+        [`${root}Files/Data/N1/content.rtf`]: strToU8(rtf("Une id\\'e9e.\\\n")),
         [`${root}Files/search.indexes`]: strToU8("x"),
         [`__MACOSX/${root}._Sacr#U00e9 Bonhomme.scrivx`]: strToU8("x"),
       });
@@ -1208,6 +1213,14 @@ const scenarios = [
       const chooser = page.waitForEvent("filechooser");
       await page.getByRole("button", { name: "Importer un manuscrit ou un scénario…" }).click();
       await (await chooser).setFiles({ name: "Sacré Bonhomme.zip", mimeType: "application/zip", buffer: Buffer.from(zip) });
+      // Choix des dossiers : tout est coché ; on décoche « Notes ».
+      const choice = page.locator("dialog.scriv-choice[open]");
+      await choice.waitFor();
+      await choice.getByRole("checkbox", { name: /^Notes/ }).uncheck();
+      await choice.getByRole("button", { name: "Importer", exact: true }).click();
+      await until(() => page.locator(".scriv-report").getByText("Importé de Scrivener", { exact: false }).isVisible(), "pas de rapport d'import");
+      await page.locator(".scriv-report summary").click();
+      await until(() => page.locator(".scriv-report").getByText("Dossiers décochés", { exact: false }).isVisible(), "le rapport ne dit pas le dossier décoché");
       await until(() => page.getByText("Le départ", { exact: false }).first().isVisible(), "le premier chapitre n'apparaît pas dans le Manuscrit");
       await h.saved((f) => {
         const meta = JSON.parse(f["cosmos.json"] ?? "{}");
@@ -1219,7 +1232,10 @@ const scenarios = [
           meta.plan.chapters[1].scenes.length === 2 &&
           texts.includes("— Tu viens\u00a0? demanda Ethan.") &&
           texts.includes("L’été finissait.") &&
-          cards.some((c) => c.includes('title: "Le départ"') && c.includes('"synopsis":"Ethan quitte la ville."') && c.includes('"statut":"fini"'))
+          cards.some((c) => c.includes('title: "Le départ"') && c.includes('"synopsis":"Ethan quitte la ville."') && c.includes('"statut":"fini"')) &&
+          cards.some((c) => c.includes("type: personnage") && c.includes('title: "Ethan"') && c.includes('"role":"Héros"')) &&
+          !cards.some((c) => c.includes('title: "Idée"')) &&
+          meta.frames?.some((fr) => fr.title === "Personnages")
         );
       }, "le projet importé de Scrivener n'est pas enregistré comme attendu");
     },

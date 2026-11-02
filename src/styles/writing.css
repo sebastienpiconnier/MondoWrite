@@ -1196,3 +1196,20 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .footnote-pop-hint { font-size: 0.75rem; color: var(--muted); }
 .footnote-pop .ghost-button { min-height: 44px; }
 .format-bar .format-footnote { padding: 0 8px; }
+
+/* Import Scrivener : choix des dossiers avant l'import, puis ce qui a été repris (ScrivenerImport.tsx). */
+.scriv-choice { width: min(560px, calc(100vw - 32px)); }
+.scriv-choice h2 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 700; font-size: 1.375rem; }
+.scriv-intro { margin: 0 0 10px; color: var(--ink-2); font-size: 0.9375rem; }
+.scriv-folders { margin: 0; padding: 0; list-style: none; }
+.scriv-folders label { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.scriv-folders input { flex: none; width: 18px; height: 18px; }
+.scriv-folder-title { flex: 1; min-width: 0; }
+.scriv-folder-count { color: var(--muted); font-size: 0.875rem; }
+.app-alert.scriv-report { border-bottom-color: var(--accent); }
+.scriv-report-body { flex: 1 1 320px; min-width: 0; }
+.scriv-report-body p { margin: 0; }
+.scriv-left { margin-top: 4px; font-size: 0.875rem; color: var(--ink-2); }
+.scriv-left summary { cursor: pointer; display: flex; align-items: center; min-height: 32px; }
+.scriv-left ul { margin: 4px 0 0; padding-left: 20px; }
+@media (pointer: coarse) { .scriv-left summary { min-height: 44px; } }

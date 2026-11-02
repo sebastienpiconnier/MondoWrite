@@ -20,7 +20,7 @@ import { foldNovelNodes, foldNovelNotes, foldScreenplayNotes } from "./sceneNote
 import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
-import { type CardData, type CardLayout, type CardType, type Frame, type ProjectKind } from "./types";
+import { type CardData, type CardLayout, type CardType, type Frame, type Project, type ProjectKind } from "./types";
 import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { hideProject, showProject, splitHidden } from "./storage/recents";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
@@ -33,6 +33,7 @@ import { defaultPaper, type Paper } from "./screenplay/layout";
 import { aiConfig, useSettings } from "./settings";
 import { bibleOrder } from "./bibleParts";
 import { IMPORT_EXTENSIONS, importFromFile } from "./import";
+import type { ScrivenerReport, ScrivenerSource } from "./import/scrivener/mapping";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
 import { documentFiche, documentTitle } from "./documents";
@@ -584,6 +585,16 @@ export interface CosmosState {
   addBreakdown: (items: { scene: string; field: BreakdownField; entry: string }[]) => number;
   /** Invitation à la rétro-bible après l'import d'un manuscrit. État d'affichage, jamais enregistré. */
   retroInvite: boolean;
+  /** Projet Scrivener lu, en attente du choix de ses dossiers (fenêtre d'import). État d'affichage. */
+  scrivenerChoice: { source: ScrivenerSource; folders: { uuid: string; title: string; count: number }[] } | null;
+  /** Importe le projet Scrivener lu, sans les dossiers décochés. */
+  confirmScrivenerImport: (exclude: string[]) => Promise<void>;
+  cancelScrivenerImport: () => void;
+  /** Ordinateur : choisit un projet .scriv sur le disque (sans le compresser) et l'importe. */
+  importScrivenerFolder: () => Promise<void>;
+  /** Ce que l'import Scrivener a repris et laissé, affiché après l'import. État d'affichage, jamais enregistré. */
+  scrivenerReport: ScrivenerReport | null;
+  dismissScrivenerReport: () => void;
   setRetroInvite: (on: boolean) => void;
 }
 
@@ -1027,6 +1038,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       commentFocus: null,
       cardMenu: null,
       retroInvite: false,
+      scrivenerReport: null,
       screen: "project",
       view: "toile",
       focusId: null,
@@ -1219,6 +1231,42 @@ export const useCosmos = create<CosmosState>((set, get) => {
     for (const [id, name, text] of versions) await storage.writeVersion(id, name, text).catch(() => {});
     const written = await storage.readAll();
     if (!written || !openFiles(written)) set({ homeNotice: true });
+  };
+
+  /** Fin d'un import depuis l'accueil : nouveau projet (jamais par-dessus un autre), médias, ouverture sur le Manuscrit. */
+  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null) => {
+    if (!(await storage.create(project.meta.title))) return;
+    // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
+    if (await storage.readAll().catch(() => null)) {
+      storage.forget();
+      set({ importNotice: "taken" });
+      return;
+    }
+    for (const [name, data] of medias) await storage.writeMedia(name, data).catch((err) => console.error(err));
+    const { state } = openProject(project);
+    set({
+      ...state,
+      savedScreenplay: null,
+      lastFiles: {},
+      conflicts: [],
+      saveError: null,
+      spotlightId: null,
+      charFilter: null,
+      wiresShown: [],
+      filter: NO_FILTER,
+      expandedId: null,
+      versionsFor: null,
+      commentFocus: null,
+      cardMenu: null,
+      // Manuscrit importé : la Bible peut se remplir de ce que le texte dit déjà (rétro-bible).
+      retroInvite: true,
+      scrivenerReport: report,
+      screen: "project",
+      view: "manuscrit",
+      focusId: null,
+      status: "modifie",
+    });
+    await get().save();
   };
 
   const api: CosmosState = {
@@ -2305,6 +2353,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         commentFocus: null,
         cardMenu: null,
         retroInvite: false,
+        scrivenerReport: null,
         screen: "project",
         view: "toile",
         focusId: null,
@@ -2401,38 +2450,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ importNotice: "empty" });
         return;
       }
-      const { project, medias } = outcome;
-      if (!(await storage.create(project.meta.title))) return;
-      // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
-      if (await storage.readAll().catch(() => null)) {
-        storage.forget();
-        set({ importNotice: "taken" });
+      if ("scrivener" in outcome) {
+        // Projet Scrivener : l'auteur choisit d'abord les dossiers à reprendre.
+        const { scrivenerFolders } = await import("./import/scrivener");
+        set({ scrivenerChoice: { source: outcome.scrivener, folders: scrivenerFolders(outcome.scrivener.binder) } });
         return;
       }
-      for (const [name, data] of medias) await storage.writeMedia(name, data).catch((err) => console.error(err));
-      const { state } = openProject(project);
-      set({
-        ...state,
-        savedScreenplay: null,
-        lastFiles: {},
-        conflicts: [],
-        saveError: null,
-        spotlightId: null,
-        charFilter: null,
-        wiresShown: [],
-        filter: NO_FILTER,
-        expandedId: null,
-        versionsFor: null,
-        commentFocus: null,
-        cardMenu: null,
-        // Manuscrit importé : la Bible peut se remplir de ce que le texte dit déjà (rétro-bible).
-        retroInvite: true,
-        screen: "project",
-        view: "manuscrit",
-        focusId: null,
-        status: "modifie",
-      });
-      await get().save();
+      await finishImport(outcome.project, outcome.medias, null);
     },
 
     tryExample: async () => {
@@ -3004,6 +3028,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         commentFocus: null,
         cardMenu: null,
         retroInvite: false,
+        scrivenerReport: null,
         loaded: true,
         screen: "project",
         view: "toile",
@@ -3216,6 +3241,45 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     retroInvite: false,
     setRetroInvite: (retroInvite) => set({ retroInvite }),
+    scrivenerChoice: null,
+    scrivenerReport: null,
+    dismissScrivenerReport: () => set({ scrivenerReport: null }),
+    cancelScrivenerImport: () => set({ scrivenerChoice: null }),
+    confirmScrivenerImport: async (exclude) => {
+      const choice = get().scrivenerChoice;
+      if (!choice) return;
+      set({ scrivenerChoice: null });
+      const t = getT().scrivener;
+      const { buildScrivener } = await import("./import/scrivener");
+      let built: ReturnType<typeof buildScrivener> = null;
+      try {
+        built = buildScrivener(choice.source, { newId, labels: t.frames, exclude: new Set(exclude) });
+      } catch (err) {
+        console.error(err);
+      }
+      if (!built) {
+        set({ importNotice: "empty" });
+        return;
+      }
+      await finishImport(built.project, built.medias, built.report);
+    },
+    importScrivenerFolder: async () => {
+      set({ importNotice: null, homeNotice: false, openFailed: false });
+      if (!storage.pickScrivener) return;
+      try {
+        const source = await storage.pickScrivener(getT().scrivener.pickLabel);
+        if (source === undefined) return;
+        if (!source) {
+          set({ importNotice: "empty" });
+          return;
+        }
+        const { scrivenerFolders } = await import("./import/scrivener");
+        set({ scrivenerChoice: { source, folders: scrivenerFolders(source.binder) } });
+      } catch (err) {
+        console.error(err);
+        set({ importNotice: "empty" });
+      }
+    },
     // ---------- Mode Atelier (1.8.0) ----------
     // L'IA propose, l'auteur accepte : chaque acceptation est une action (une étape d'historique quand elle touche
     // des cartes, le scénario ou le manuscrit), marque ce qui vient de l'IA et ajoute sa ligne au journal. Le

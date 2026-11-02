@@ -107,7 +107,7 @@ Vus en plus dans le tutoriel :
 | `IncludeInCompile = No` | scène importée quand même (rien ne se perd), signalée dans le rapport |
 | `synopsis.txt` | `fiche.synopsis` de la carte Scène |
 | `notes.rtf` d'une scène | carte Idée « Notes : <titre> » reliée à la scène (voir décision 2) |
-| Statut | `fiche.statut` : à faire et premier jet → `brouillon`, révisé → `revoir`, final et terminé → `fini` (reconnu par l'ID par défaut, puis par le libellé en français et en anglais) ; inconnu → rien |
+| Statut | `fiche.statut` (1.14.0, cinq statuts) : à faire → `aecrire`, premier jet → `brouillon`, révisé → `revisee`, à revoir → `revoir`, final et terminé → `fini` (par le libellé, en français et en anglais) ; inconnu → rien, cité dans le rapport |
 | Étiquette (Label) aux noms par défaut (Red, Blue, Rouge…) | rien (une couleur seule ne dit rien), citée dans le rapport |
 | Étiquette renommée POV, Point de vue, Narrateur | chaque valeur devient un Personnage (ou retrouve le sien), et la scène reçoit son point de vue (préalable A) |
 | Étiquette renommée autrement (Intrigue, Fil, Thread…) | chaque valeur devient une carte Intrigue reliée à ses scènes : c'est l'usage « suivre les fils » du tutoriel, et la chronologie du Plan les montre aussitôt |
@@ -210,19 +210,28 @@ L'invitation à la rétro-bible (`retroInvite`) reste proposée.
 - [ ] Essai sur *Sacré Bonhomme* : 15 chapitres dans l'ordre, nombre de mots à ±1 % de Scrivener, accents et
       tirets de dialogue intacts
 
-### Lot 2 : Bible et canevas
+### Lot 2 : Bible et canevas (fait, 2 novembre 2026)
 
-- [ ] Dossiers Personnages et Lieux, fiches « Sketch » remplies → champs, vides → ignorées
-- [ ] Mots-clés → cartes et fils vers les scènes, type tiré du mot-clé parent
-- [ ] Étiquette renommée (POV, Intrigue…) → Personnages ou Intrigues reliés aux scènes
-- [ ] Signets des documents → fils ; liège libre → positions sur le canevas
-- [ ] Commentaires et annotations → commentaires ancrés ; notes de bas de page → notes
-- [ ] Styles nommés (intertitres, citations, italique) et images du texte
-- [ ] Autres dossiers → cadres et cartes Idée ; PDF, images, liens web → Document, Image, Lien
-- [ ] Notes des scènes, liens internes `scrivlnk://` → mentions, images du texte → cartes Image
-- [ ] Entrée « dossier `.scriv` » sur ordinateur (`storage.pickScrivener`, permissions fs dans `desktop.json`)
-- [ ] Fenêtre de choix des dossiers avant import (décision 3)
-- [ ] Rapport d'import
+- [x] Dossiers Personnages et Lieux (reconnus à leur titre, `folderKind`), fiches « Sketch » remplies → champs
+      (`sketch.ts`), vides → ignorées et comptées
+- [x] Mots-clés → cartes et fils vers les scènes, type tiré du mot-clé parent (Characters, Locations, Themes, Plots) ;
+      un mot-clé qui porte le nom d'un personnage importé le retrouve
+- [x] Étiquette renommée POV (Point de vue, Narrateur…) → `fiche.pov` des scènes ; renommée autrement → Intrigues
+      reliées ; étiquette de couleur → citée dans le rapport
+- [x] Signets des documents et liens internes `scrivlnk://` → fils (le texte du lien reste du texte : on ne change
+      pas la prose de l'auteur en « @Titre »)
+- [x] Commentaires de l'inspecteur → commentaires ancrés ; annotations en ligne → commentaire sur leur paragraphe ;
+      notes de bas de page (inspecteur et en ligne) → notes
+- [x] Intertitres (Scr_H) en `<h3>`, sauf celui qui répète le titre du document ; images du texte → cartes Image
+- [x] Autres dossiers → cadres (à droite du récit) et cartes Idée ; PDF, images, pages web → Document, Image, Lien
+- [x] Notes des documents : une ligne → synopsis s'il est vide, sinon carte Idée reliée
+- [x] Entrée « Ouvrir un projet Scrivener… » sur ordinateur (`storage.pickScrivener` : le .scriv sur Mac, son
+      .scrivx ailleurs ; portée `$HOME/**` déjà accordée), fenêtre de choix des dossiers (`ScrivenerChoice`),
+      rapport d'import (`ScrivenerReportNotice`)
+- [x] Objectif du manuscrit (`DraftTarget`) → `goals.total` (avancé du lot 3)
+- [ ] Reporté au lot 3 : liège libre (positions), styles de citation (Block Quote), aperçu de la 1re page des PDF
+      importés. À vérifier sur le tutoriel : format exact des notes et annotations en ligne et des signets
+      (lecture volontairement tolérante, sans fichier réel ici)
 
 ### Lot 3 : finitions
 

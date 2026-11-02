@@ -15,6 +15,10 @@ export interface BinderItem {
   /** Faux seulement si Scrivener l'exclut de la compilation (« Include in Compile » décoché). */
   includeInCompile: boolean;
   keywordIds: string[];
+  /** Documents vers lesquels pointent ses signets (identifiants du classeur). */
+  bookmarks: string[];
+  /** Adresse d'une page web archivée (WebArchive), si le classeur la donne. */
+  url: string | null;
   children: BinderItem[];
 }
 
@@ -44,6 +48,31 @@ export interface Binder {
 const child = (el: Element, name: string): Element | undefined => Array.from(el.children).find((c) => c.tagName === name);
 const childText = (el: Element, name: string) => child(el, name)?.textContent?.trim() ?? "";
 
+const UUID = /[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}/g;
+
+/** Identifiants cités dans les signets d'un document (attributs ou texte : le format varie selon les versions). */
+function bookmarksOf(el: Element): string[] {
+  const list = child(el, "Bookmarks");
+  if (!list) return [];
+  const found = new Set<string>();
+  for (const node of [list, ...Array.from(list.getElementsByTagName("*"))]) {
+    for (const a of Array.from(node.attributes)) for (const m of a.value.match(UUID) ?? []) found.add(m.toUpperCase());
+    if (node.children.length === 0) for (const m of node.textContent?.match(UUID) ?? []) found.add(m.toUpperCase());
+  }
+  return [...found];
+}
+
+/** Adresse web d'un document (page archivée) : la première trouvée dans ses métadonnées. */
+function urlOf(el: Element): string | null {
+  for (const node of Array.from(el.children)) {
+    if (node.tagName === "Children" || node.tagName === "Title") continue;
+    const text = [node.textContent ?? "", ...Array.from(node.getElementsByTagName("*")).flatMap((n) => Array.from(n.attributes).map((a) => a.value)), ...Array.from(node.attributes).map((a) => a.value)].join(" ");
+    const url = text.match(/https?:\/\/[^\s"'<>]+/)?.[0];
+    if (url) return url;
+  }
+  return null;
+}
+
 function readItem(el: Element): BinderItem {
   const meta = child(el, "MetaData");
   const keywords = child(el, "Keywords");
@@ -51,12 +80,14 @@ function readItem(el: Element): BinderItem {
   const label = meta ? childText(meta, "LabelID") : "";
   const status = meta ? childText(meta, "StatusID") : "";
   return {
-    uuid: el.getAttribute("UUID") ?? el.getAttribute("ID") ?? "",
+    uuid: (el.getAttribute("UUID") ?? el.getAttribute("ID") ?? "").toUpperCase(),
     type: el.getAttribute("Type") ?? "Text",
     title: childText(el, "Title"),
     labelId: label && label !== "-1" ? label : null,
     statusId: status && status !== "-1" ? status : null,
     includeInCompile: !meta || childText(meta, "IncludeInCompile").toLowerCase() !== "no",
+    bookmarks: bookmarksOf(el),
+    url: el.getAttribute("Type") === "WebArchive" ? urlOf(el) : null,
     keywordIds: keywords ? Array.from(keywords.children).filter((k) => k.tagName === "KeywordID").map((k) => k.textContent?.trim() ?? "").filter(Boolean) : [],
     children: children ? Array.from(children.children).filter((c) => c.tagName === "BinderItem").map(readItem) : [],
   };

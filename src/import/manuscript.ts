@@ -28,7 +28,7 @@ export interface ImportedChapter {
   /** Scènes du chapitre : leurs paragraphes en HTML. */
   scenes: string[][];
   /** Titre et fiche de chaque scène, quand la source les donne (Scrivener) ; sinon le titre vient du texte. */
-  sceneMeta?: ({ title?: string; fiche?: Record<string, string> } | undefined)[];
+  sceneMeta?: ({ id?: string; title?: string; fiche?: Record<string, string> } | undefined)[];
 }
 
 export interface ImportedBook {
@@ -239,7 +239,7 @@ export function bookToProject(book: ImportedBook, options: ManuscriptImportOptio
   for (const chapter of book.chapters) {
     const ids: string[] = [];
     chapter.scenes.forEach((paras, i) => {
-      const id = options.newId();
+      const id = chapter.sceneMeta?.[i]?.id ?? options.newId();
       const html = paras.map((p) => `<p>${p}</p>`).join("");
       const page = chapter.role && chapter.scenes.length === 1 ? chapter.role : undefined;
       const meta = chapter.sceneMeta?.[i];

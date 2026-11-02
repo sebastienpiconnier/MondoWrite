@@ -10,6 +10,7 @@ import { useCosmos } from "../store";
 import { storage, type ProjectEntry } from "../storage";
 import { PROJECT_KINDS, type ProjectKind } from "../types";
 import { Settings } from "./Settings";
+import { ScrivenerChoice } from "./ScrivenerImport";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { ExamplesPanel } from "./ExamplesPanel";
 import { greeting } from "../greeting";
@@ -256,6 +257,11 @@ export function Home() {
             <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importFile)}>
               {h.importFountain}
             </button>
+            {storage.pickScrivener && (
+              <button type="button" className="ghost-button" disabled={busy} title={t.scrivener.openScrivHint} onClick={() => run(useCosmos.getState().importScrivenerFolder)}>
+                {t.scrivener.openScriv}
+              </button>
+            )}
           </div>
         </section>
 
@@ -316,6 +322,7 @@ export function Home() {
           <ExamplesPanel disabled={busy} />
         </div>
       </main>
+      <ScrivenerChoice />
     </div>
   );
 }
