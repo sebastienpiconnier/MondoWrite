@@ -29,6 +29,7 @@ import { readFiche, readQuestions } from "../character";
 import { isPageKind } from "../book";
 import { isIaId, readIaFields } from "../atelier";
 import { isCommentId } from "../comments";
+import { cleanNote, putFootnotes, readFootnotes, takeFootnotes } from "../footnotes";
 import { iaImagesOf, readIaImages } from "../ai/imageGen";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
@@ -64,12 +65,14 @@ turndown.addRule("comment", {
 
 export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
-  return turndown.turndown(html).trim();
+  // Notes de bas de page : `[^n]` à leur place, définitions en fin de texte (footnotes.ts).
+  const { html: body, notes } = takeFootnotes(html);
+  return putFootnotes(turndown.turndown(body).trim(), notes);
 }
 
 export function markdownToHtml(md: string): string {
   if (!md.trim()) return "";
-  return sanitizeHtml(marked.parse(md, { async: false }) as string);
+  return sanitizeHtml(marked.parse(readFootnotes(md), { async: false }) as string);
 }
 
 // Les fichiers .md viennent du disque : on ne garde que les balises de mise en forme
@@ -123,6 +126,14 @@ export function sanitizeHtml(html: string): string {
       // Marque de l'IA (mode Atelier) : seulement avec un identifiant sûr, et rien d'autre que lui.
       if (child.tagName === "SPAN" && isIaId(child.getAttribute("data-ia"))) {
         for (const attr of Array.from(child.attributes)) if (attr.name !== "data-ia") child.removeAttribute(attr.name);
+        continue;
+      }
+      // Appel de note de bas de page : seulement son texte, borné, et rien dedans (le numéro vient de sa place).
+      if (child.tagName === "SUP" && child.hasAttribute("data-footnote")) {
+        const text = cleanNote(child.getAttribute("data-footnote") ?? "");
+        for (const attr of Array.from(child.attributes)) child.removeAttribute(attr.name);
+        child.setAttribute("data-footnote", text);
+        child.textContent = "";
         continue;
       }
       // Passage commenté : de même, seulement l'identifiant du commentaire.

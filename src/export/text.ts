@@ -1,7 +1,7 @@
 // Exports en texte balisé : Markdown, Word (.docx) et EPUB. Fonctions pures à partir du modèle de doc.ts.
 // Le .docx et le .epub sont des archives ZIP de fichiers XML, fabriquées ici sans dépendance.
 
-import type { Block, DocImage, ExportDoc, Run } from "./doc";
+import { footnotesOf, type Block, type DocImage, type ExportDoc, type Run } from "./doc";
 import { zip } from "./zip";
 
 const xml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -22,6 +22,8 @@ const mdRun = (run: Run) => {
 const mdRuns = (runs: Run[], link?: (id: string) => string | null) =>
   runs
     .map((run) => {
+      // Appel de note : la syntaxe Markdown connue, la note est écrite en fin de chapitre.
+      if (run.footnote !== undefined) return `[^${run.text}]`;
       const url = run.ref && link ? link(run.ref) : null;
       if (!url) return mdRun(run);
       // Le lien enveloppe le texte sans ses espaces de bord.
@@ -97,6 +99,8 @@ export function toMarkdown(doc: ExportDoc, options: MarkdownOptions = {}): strin
       }
     }
     flush();
+    const notes = footnotesOf(chapter.blocks);
+    if (notes.length > 0) out.push(notes.map((x) => `[^${x.n}]: ${x.text.replace(/\s+/g, " ")}`).join("\n"));
   }
   return `${out.join("\n\n")}\n`;
 }
@@ -107,6 +111,8 @@ function docxRuns(runs: Run[], prefix = ""): string {
   const all = prefix ? [{ text: prefix }, ...runs] : runs;
   return all
     .map((run) => {
+      // Appel de note : une vraie note de bas de page de Word (son texte est dans footnotes.xml).
+      if (run.footnote !== undefined) return `<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="${footnoteId(run.text)}"/></w:r>`;
       const props = `${run.bold ? "<w:b/>" : ""}${run.italic ? "<w:i/>" : ""}`;
       const content = run.text
         .split("\n")
@@ -115,6 +121,25 @@ function docxRuns(runs: Run[], prefix = ""): string {
       return `<w:r>${props ? `<w:rPr>${props}</w:rPr>` : ""}${content}</w:r>`;
     })
     .join("");
+}
+
+/** Identifiant Word d'une note : 0 et 1 sont aux séparateurs, la note n est la n + 1. */
+const footnoteId = (n: string) => (Number.parseInt(n, 10) || 0) + 1;
+
+/** footnotes.xml : séparateurs puis une note par appel du document, ou null s'il n'y en a pas. */
+export function footnotesXml(doc: ExportDoc): string | null {
+  const notes = doc.chapters.flatMap((c) => footnotesOf(c.blocks));
+  if (notes.length === 0) return null;
+  const sep = (id: number, tag: string) => `<w:footnote w:type="${id === 0 ? "separator" : "continuationSeparator"}" w:id="${id}"><w:p><w:r><w:${tag}/></w:r></w:p></w:footnote>`;
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+    sep(0, "separator") +
+    sep(1, "continuationSeparator") +
+    notes
+      .map((x) => `<w:footnote w:id="${footnoteId(x.n)}"><w:p><w:pPr><w:pStyle w:val="FootnoteText"/></w:pPr><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r><w:r><w:t xml:space="preserve"> ${xml(x.text)}</w:t></w:r></w:p></w:footnote>`)
+      .join("") +
+    `</w:footnotes>`
+  );
 }
 
 const docxPara = (style: string, inner: string, extra = "") => `<w:p><w:pPr><w:pStyle w:val="${style}"/>${extra}</w:pPr>${inner}</w:p>`;
@@ -193,12 +218,15 @@ function stylesXml(lang: string): string {
     docxStyle("Heading1", "heading 1", 18, { bold: true, before: 480, after: 200, keep: true, level: 0 }) +
     docxStyle("Heading2", "heading 2", 14, { bold: true, before: 320, after: 120, keep: true, level: 1 }) +
     docxStyle("Quote", "Quote", 12, { italic: true, left: 720 }) +
+    docxStyle("FootnoteText", "footnote text", 10, { after: 0 }) +
+    `<w:style w:type="character" w:styleId="FootnoteReference"><w:name w:val="footnote reference"/><w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style>` +
     `</w:styles>`
   );
 }
 
 export function toDocx(doc: ExportDoc): Uint8Array {
   const images = docxImages(doc);
+  const footnotes = footnotesXml(doc);
   return zip([
     {
       path: "[Content_Types].xml",
@@ -206,7 +234,9 @@ export function toDocx(doc: ExportDoc): Uint8Array {
         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
         `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/>` +
         `<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
-        `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`,
+        `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
+        (footnotes ? `<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>` : "") +
+        `</Types>`,
     },
     {
       path: "_rels/.rels",
@@ -219,12 +249,14 @@ export function toDocx(doc: ExportDoc): Uint8Array {
       data:
         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
         `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+        (footnotes ? `<Relationship Id="rIdFootnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>` : "") +
         images.map((x) => `<Relationship Id="${x.rel}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${x.path}"/>`).join("") +
         `</Relationships>`,
     },
     ...images.map((x) => ({ path: `word/${x.path}`, data: x.image.data })),
     { path: "word/document.xml", data: documentXml(doc) },
     { path: "word/styles.xml", data: stylesXml(doc.lang) },
+    ...(footnotes ? [{ path: "word/footnotes.xml", data: footnotes }] : []),
   ]);
 }
 
@@ -233,6 +265,8 @@ export function toDocx(doc: ExportDoc): Uint8Array {
 const htmlRuns = (runs: Run[]) =>
   runs
     .map((run) => {
+      // Appel de note : lien vers la note, en fin de chapitre (les liseuses l'ouvrent en fenêtre).
+      if (run.footnote !== undefined) return `<sup><a epub:type="noteref" id="ref-${xml(run.text)}" href="#fn-${xml(run.text)}">${xml(run.text)}</a></sup>`;
       let text = xml(run.text).replace(/\n/g, "<br/>");
       if (run.italic) text = `<em>${text}</em>`;
       if (run.bold) text = `<strong>${text}</strong>`;
@@ -268,6 +302,12 @@ export function chapterXhtml(blocks: Block[]): string {
     }
   }
   close();
+  const notes = footnotesOf(blocks);
+  if (notes.length > 0) {
+    out.push(`<section epub:type="footnotes" class="notes">`);
+    for (const x of notes) out.push(`<aside epub:type="footnote" id="fn-${xml(x.n)}"><p><a href="#ref-${xml(x.n)}">${xml(x.n)}.</a> ${xml(x.text)}</p></aside>`);
+    out.push(`</section>`);
+  }
   return out.join("\n");
 }
 
@@ -278,7 +318,8 @@ const page = (lang: string, title: string, body: string) =>
 const EPUB_CSS =
   "body { font-family: serif; line-height: 1.5; margin: 5%; }\nh1 { text-align: center; margin: 2em 0 1em; }\nh2 { margin: 1.5em 0 0.5em; }\n" +
   "p { margin: 0; text-indent: 1.2em; }\nh1 + p, h2 + p, blockquote p { text-indent: 0; }\nblockquote { margin: 1em 2em; font-style: italic; }\n" +
-  ".cover { text-align: center; margin-top: 30%; }\n.cover p { text-indent: 0; margin-top: 1em; }\n";
+  ".cover { text-align: center; margin-top: 30%; }\n.cover p { text-indent: 0; margin-top: 1em; }\n" +
+  ".notes { margin-top: 2em; border-top: 1px solid #999; font-size: 0.9em; }\n.notes p { text-indent: 0; margin-top: 0.5em; }\n";
 
 export interface EpubMeta {
   /** Identifiant unique du livre (urn:uuid:…). */

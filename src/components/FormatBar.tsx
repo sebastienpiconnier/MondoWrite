@@ -58,7 +58,8 @@ interface FormatOptions {
 
 /** Les boutons de mise en forme d'un éditeur, état actif compris (barre de sélection et barre du clavier). */
 export function useFormatActions(editor: Editor, { revisit = true, onChutier, onComment, onCreate }: FormatOptions = {}): Action[] {
-  const f = useT().format;
+  const all = useT();
+  const f = all.format;
   const chain = () => editor.chain().focus();
   // Abonnement à la sélection : les boutons actifs suivent le curseur.
   const on = useEditorState({
@@ -90,6 +91,18 @@ export function useFormatActions(editor: Editor, { revisit = true, onChutier, on
       ? [
           { key: "create-personnage", label: f.createCharacter, glyph: PERSON, active: false, run: () => onCreate.run("personnage") },
           { key: "create-lieu", label: f.createPlace, glyph: PLACE, active: false, run: () => onCreate.run("lieu") },
+        ]
+      : []),
+    // Texte d'une scène (le schéma a le nœud) : poser une note de bas de page après la sélection.
+    ...(editor.schema.nodes.footnote
+      ? [
+          {
+            key: "footnote",
+            label: all.footnotes.insert,
+            glyph: <span className="format-text">{all.footnotes.insertShort}</span>,
+            active: false,
+            run: () => chain().insertFootnote().run(),
+          },
         ]
       : []),
     ...(onComment
@@ -161,7 +174,17 @@ export function FormatBar({ editor, atelier = "", ...options }: { editor: Editor
   const ia = useAtelierFormat(editor, atelier);
   return (
     // `shift` : la barre (plus large avec les boutons de l'Atelier) reste dans la fenêtre.
-    <BubbleMenu editor={editor} className="format-bar nodrag nopan" options={{ placement: "top", shift: { padding: 8 } }}>
+    <BubbleMenu
+      editor={editor}
+      className="format-bar nodrag nopan"
+      options={{ placement: "top", shift: { padding: 8 } }}
+      // Un appel de note choisi a sa propre fenêtre : pas de barre de mise en forme par-dessus.
+      shouldShow={({ state, from, to, view }) => {
+        const sel = state.selection as { node?: { type: { name: string } } };
+        if (sel.node?.type.name === "footnote") return false;
+        return view.hasFocus() && from !== to && state.doc.textBetween(from, to).length > 0;
+      }}
+    >
       <FormatButtons actions={[...actions, ...ia.actions]} />
       {ia.panel}
     </BubbleMenu>

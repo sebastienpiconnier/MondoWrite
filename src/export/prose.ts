@@ -2,7 +2,7 @@
 // double interligne et alinéa pour un manuscrit, italique rendu par un soulignement (l'usage en Courier).
 // Fonction pure : elle rend des pages de lignes, pdf.ts ne fait que les dessiner.
 
-import { SCENE_BREAK, runsText, type Block, type ExportDoc, type Run } from "./doc";
+import { SCENE_BREAK, endnotes, runsText, type Block, type ExportDoc, type Run } from "./doc";
 
 export interface ProseGeometry {
   /** Caractères par ligne et lignes par page, entre les marges. */
@@ -138,7 +138,9 @@ function segments(line: Word[], start: number): ProseSegment[] {
 
 const lineLength = (line: Word[]) => line.reduce((sum, w, i) => sum + w.text.length + (i > 0 && !w.glued ? 1 : 0), 0);
 
-export function layoutProse(doc: ExportDoc, { cols, rows }: ProseGeometry): ProsePage[] {
+export function layoutProse(source: ExportDoc, { cols, rows }: ProseGeometry): ProsePage[] {
+  // Notes de bas de page : « [n] » dans le texte, les notes à la fin de leur chapitre.
+  const doc: ExportDoc = { ...source, chapters: source.chapters.map((c) => ({ ...c, blocks: endnotes(c.blocks, source.notesTitle ?? "Notes") })) };
   const pages: ProsePage[] = [];
   // Page de titre : le titre au tiers de la page, l'auteur dessous.
   const titleLines = wrap([{ text: doc.title.toUpperCase(), bold: true }], () => cols);

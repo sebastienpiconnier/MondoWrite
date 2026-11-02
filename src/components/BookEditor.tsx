@@ -12,6 +12,7 @@ import { nanoid } from "nanoid";
 import { placePassage, takePassage, type Passage } from "../chutier";
 import { richTextExtensions } from "./editorKit";
 import { commentRange, markComment } from "./commentMark";
+import { FootnotePopover } from "./FootnotePopover";
 import { MentionNode } from "./MentionNode";
 import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
@@ -580,6 +581,7 @@ export function BookEditor({
           onPick={pickCreate}
         />
       )}
+      {editor && <FootnotePopover editor={editor} />}
       {editor && <FormatBar editor={editor} atelier={cards.find((c) => c.id === current)?.title ?? ""} revisit onChutier={() => handlers.current?.onChutier()} onComment={() => handlers.current?.onComment()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
       {veil && (
         <>

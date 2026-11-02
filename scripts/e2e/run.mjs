@@ -540,6 +540,36 @@ const scenarios = [
     },
   },
   {
+    name: "notes de bas de page (1.13.0) : posée au clavier, écrite, enregistrée en [^1], rouverte au clic, supprimée",
+    async run(h) {
+      const { page } = h;
+      await h.create("Notes");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      await page.locator(".ms-page .ProseMirror").click();
+      await page.keyboard.type("Le réveil sonne à six heures");
+      await page.keyboard.press("Control+Alt+f");
+      const field = page.getByRole("textbox", { name: "Note 1" });
+      await until(() => field.evaluate((el) => el === document.activeElement), "le champ de la note n'a pas le focus");
+      await page.keyboard.type("Heure d’été, en juin.");
+      await page.keyboard.press("Enter");
+      await until(async () => !(await field.isVisible().catch(() => false)), "la fenêtre de la note ne se ferme pas avec Entrée");
+      await page.keyboard.type(" et Ethan rêve encore.");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("six heures[^1] et Ethan rêve encore.") && v.includes("[^1]: Heure d’été, en juin.")), "la note n'est pas enregistrée en [^1]");
+      // Rechargement : l'appel est relu, un clic rouvre sa note.
+      await h.reloadAndOpen();
+      await h.view(4);
+      await page.locator(".ms-page .footnote-ref").click();
+      await until(async () => (await page.getByRole("textbox", { name: "Note 1" }).inputValue().catch(() => "")) === "Heure d’été, en juin.", "après rechargement, la note ne se rouvre pas");
+      // Supprimer la note : l'appel disparaît du texte.
+      await page.getByRole("button", { name: "Supprimer la note" }).click();
+      await until(async () => (await page.locator(".ms-page .footnote-ref").count()) === 0, "l'appel est resté après la suppression");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("six heures et Ethan") && !v.includes("[^")), "la suppression de la note n'est pas enregistrée");
+    },
+  },
+  {
     name: "point de vue, lot 2 : narrateurs posés dans le Plan, ruban coloré en plan libre, filtres du Manuscrit et du canevas",
     async run(h) {
       const { page } = h;

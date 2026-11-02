@@ -8,7 +8,7 @@
 // mot au lecteur et « Du même auteur ».
 
 import type { Block, Run } from "./doc";
-import { SCENE_BREAK, runsText } from "./doc";
+import { SCENE_BREAK, endnotes, runsText } from "./doc";
 import type { PageKind } from "../book";
 import { isSceneBreak } from "../import/manuscript";
 
@@ -34,6 +34,8 @@ export type BookSection =
 
 export interface BookDoc {
   title: string;
+  /** Titre des notes en fin de chapitre (1.13.0). « Notes » par défaut. */
+  notesTitle?: string;
   author: string;
   lang: string;
   year: number;
@@ -699,7 +701,9 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
  * Le livre composé. Le grand fond dépend du nombre de pages : on recompose tant qu'il change (il ne fait
  * que grandir, donc cela s'arrête), puis une dernière fois avec les numéros de page du sommaire.
  */
-export function layoutPaperback(book: BookDoc, options: PrintOptions, strings: BookStrings, metrics: Metrics, pagesGuess = 200): BookLayout {
+export function layoutPaperback(source: BookDoc, options: PrintOptions, strings: BookStrings, metrics: Metrics, pagesGuess = 200): BookLayout {
+  // Notes de bas de page : « [n] » dans le texte, les notes à la fin de leur chapitre ou de leur page du livre.
+  const book: BookDoc = { ...source, sections: source.sections.map((sec) => ({ ...sec, blocks: endnotes(sec.blocks, source.notesTitle ?? "Notes") })) };
   let gutter = gutterFor(Math.max(KDP_MIN_PAGES, pagesGuess));
   let layout = compose(book, options, strings, metrics, gutter);
   for (let pass = 0; pass < 8; pass++) {

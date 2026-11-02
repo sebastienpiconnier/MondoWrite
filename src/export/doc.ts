@@ -16,6 +16,11 @@ export interface Run {
   italic?: boolean;
   /** Carte citée (mention, carte reliée) : un lien vers sa fiche dans les copies Markdown du projet. */
   ref?: string;
+  /**
+   * Appel de note de bas de page (1.13.0) : le texte de la note ; `text` est son numéro, posé par `numberFootnotes`.
+   * Un format qui ne connaît pas les notes écrit le numéro tel quel.
+   */
+  footnote?: string;
 }
 
 export type Block =
@@ -39,6 +44,8 @@ export interface Chapter {
 
 export interface ExportDoc {
   title: string;
+  /** Titre des notes écrites en fin de chapitre (formats sans vraies notes de bas de page). « Notes » par défaut. */
+  notesTitle?: string;
   /** Vide si l'auteur n'a pas donné son nom. */
   author: string;
   /** Coordonnées de l'auteur, une ligne chacune (page de garde d'un manuscrit). Facultatif. */
@@ -69,7 +76,7 @@ function runsOf(el: Element, style: { bold?: boolean; italic?: boolean } = {}): 
   const push = (text: string, s: typeof style & { ref?: string }) => {
     if (!text) return;
     const last = runs[runs.length - 1];
-    if (last && !!last.bold === !!s.bold && !!last.italic === !!s.italic && last.ref === s.ref) last.text += text;
+    if (last && last.footnote === undefined && !!last.bold === !!s.bold && !!last.italic === !!s.italic && last.ref === s.ref) last.text += text;
     else runs.push({ text, ...(s.bold ? { bold: true } : {}), ...(s.italic ? { italic: true } : {}), ...(s.ref ? { ref: s.ref } : {}) });
   };
   for (const node of Array.from(el.childNodes)) {
@@ -78,6 +85,8 @@ function runsOf(el: Element, style: { bold?: boolean; italic?: boolean } = {}): 
     } else if (node.nodeType === 1) {
       const child = node as Element;
       if (child.tagName === "BR") push("\n", style);
+      // Appel de note : un morceau à part (jamais fondu avec le texte voisin), numéroté plus tard.
+      else if (child.tagName === "SUP" && child.hasAttribute("data-footnote")) runs.push({ text: "*", footnote: child.getAttribute("data-footnote") ?? "" });
       else if (BLOCK_TAGS.has(child.tagName)) continue; // un bloc imbriqué est lu à part
       else if (child.hasAttribute("data-mention")) push((child.textContent ?? "").replace(/^@/, ""), { ...style, ref: child.getAttribute("data-mention") || undefined });
       else {
@@ -90,6 +99,34 @@ function runsOf(el: Element, style: { bold?: boolean; italic?: boolean } = {}): 
     }
   }
   return runs;
+}
+
+/**
+ * Numérote les appels de note dans l'ordre du livre (1, 2, 3… sans revenir à 1 à chaque chapitre, comme Word) et
+ * rend les mêmes blocs avec leur numéro. Sans note, les mêmes tableaux.
+ */
+export function numberFootnotes<T extends { blocks: Block[] }>(parts: T[]): T[] {
+  let n = 0;
+  return parts.map((part) => {
+    if (!part.blocks.some((b) => b.kind !== "image" && b.runs.some((r) => r.footnote !== undefined))) return part;
+    const blocks = part.blocks.map((b): Block => (b.kind === "image" ? b : { ...b, runs: b.runs.map((r) => (r.footnote !== undefined ? { ...r, text: String(++n) } : r)) }));
+    return { ...part, blocks };
+  });
+}
+
+/** Notes appelées dans des blocs : numéro et texte, dans l'ordre. */
+export const footnotesOf = (blocks: Block[]): { n: string; text: string }[] =>
+  blocks.flatMap((b) => (b.kind === "image" ? [] : b.runs.filter((r) => r.footnote !== undefined).map((r) => ({ n: r.text, text: r.footnote ?? "" }))));
+
+/**
+ * Pour les formats sans vraies notes (PDF du manuscrit, livre broché) : l'appel devient « [n] » dans le texte et
+ * les notes du chapitre sont écrites à sa fin, sous `title`.
+ */
+export function endnotes(blocks: Block[], title: string): Block[] {
+  const notes = footnotesOf(blocks);
+  if (notes.length === 0) return blocks;
+  const inline = blocks.map((b): Block => (b.kind === "image" ? b : { ...b, runs: b.runs.map((r) => (r.footnote !== undefined ? { text: `[${r.text}]`, ...(r.bold ? { bold: true } : {}), ...(r.italic ? { italic: true } : {}) } : r)) }));
+  return [...inline, { kind: "heading", runs: [{ text: title }] }, ...notes.map((x): Block => ({ kind: "paragraph", runs: [{ text: `${x.n}. ${x.text}` }] }))];
 }
 
 const trimRuns = (runs: Run[]): Run[] => {
@@ -154,6 +191,7 @@ export const runsText = (runs: Run[]) => runs.map((r) => r.text).join("");
 
 export interface DocInfo {
   title: string;
+  notesTitle?: string;
   author: string;
   contact?: string[];
   lang: string;
@@ -189,7 +227,7 @@ export function manuscriptDoc(
       chapters.push({ title: byId.get(id)?.title.trim() || untitled, blocks: htmlToBlocks(manuscript[id]) });
     }
   }
-  return { ...info, chapters: chapters.map(({ key: _key, ...c }) => c), indent: true };
+  return { ...info, chapters: numberFootnotes(chapters.map(({ key: _key, ...c }) => c)), indent: true };
 }
 
 export interface BibleStrings {

@@ -1178,3 +1178,18 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .comment-resolve { min-height: 44px; }
 .comments-resolved { margin-top: 12px; }
 .comments-resolved summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 0.875rem; color: var(--ink-2); }
+
+/* Notes de bas de page (1.13.0, footnote.ts) : l'appel est numéroté par un compteur (toujours juste), sa fenêtre
+   est posée sous lui. Cible de 24 px au moins dans le texte, sans déplacer les lignes. */
+.ProseMirror { counter-reset: footnote; }
+.footnote-ref { counter-increment: footnote; cursor: pointer; color: var(--accent); font-size: 0.7em; line-height: 0; vertical-align: super; padding: 0 0.15em; border-radius: 3px; }
+.footnote-ref::after { content: counter(footnote); font-weight: 600; font-family: var(--font-ui); }
+.footnote-ref.ProseMirror-selectednode { outline: 2px solid var(--accent); background: var(--accent-soft); }
+.footnote-pop { position: fixed; z-index: 60; width: min(340px, calc(100vw - 16px)); box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-card); }
+.footnote-pop-label { font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); }
+.footnote-pop textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.9375rem; line-height: 1.45; resize: vertical; }
+.footnote-pop textarea::placeholder { color: var(--placeholder); }
+.footnote-pop-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.footnote-pop-hint { font-size: 0.75rem; color: var(--muted); }
+.footnote-pop .ghost-button { min-height: 44px; }
+.format-bar .format-footnote { padding: 0 8px; }

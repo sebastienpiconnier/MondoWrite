@@ -7,7 +7,7 @@ import { CARD_TYPES } from "../types";
 import { vocab } from "../vocab";
 import { chapterNumbers, chapterOf, type Plan } from "../plan";
 import { bookOrder, isPageKind } from "../book";
-import { SCENE_BREAK, bibleDoc, htmlToBlocks, manuscriptDoc, type ExportDoc } from "./doc";
+import { SCENE_BREAK, bibleDoc, htmlToBlocks, manuscriptDoc, type ExportDoc, numberFootnotes } from "./doc";
 import type { BookDoc, BookSection } from "./paperback";
 import { countWords, isBlank } from "../manuscript";
 import { roundWords } from "./prose";
@@ -35,7 +35,7 @@ export interface DocContext {
   author: string;
 }
 
-const info = (s: ProjectDocSource, ctx: DocContext) => ({ title: s.title.trim() || ctx.t.home.untitled, author: ctx.author.trim(), lang: ctx.lang });
+const info = (s: ProjectDocSource, ctx: DocContext) => ({ title: s.title.trim() || ctx.t.home.untitled, author: ctx.author.trim(), lang: ctx.lang, notesTitle: ctx.t.footnotes.notesTitle });
 const linksOf = (s: ProjectDocSource) => s.edges.map((e) => ({ source: e.source, target: e.target, label: String(e.label ?? "") }));
 const typeLabels = (t: Messages, kind: ProjectKind, key: "section" | "label") => {
   const types = vocab(t, kind).types;
@@ -107,7 +107,7 @@ export function bookOf(s: ProjectDocSource, ctx: DocContext, year: number): Book
       sections.push({ kind: "chapter", label: "", title, toc: title, blocks });
     }
   }
-  return { ...info(s, ctx), year, sections: sections.map(({ key: _key, ...rest }) => rest as BookSection) };
+  return { ...info(s, ctx), year, sections: numberFootnotes(sections.map(({ key: _key, ...rest }) => rest as BookSection)) };
 }
 
 /** Libellés des valeurs écrites dans les fiches (type d'arc, statut, champs à choix), par valeur. */

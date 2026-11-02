@@ -54,6 +54,7 @@ export const SHORTCUT_GROUPS = {
     ["moveScene", ["Alt", "↑ ↓"]],
     ["keepVersion", ["Mod", "Alt", "S"]],
     ["comment", ["Mod", "Alt", "M"]],
+    ["footnote", ["Mod", "Alt", "F"]],
     ["pageZoom", ["Mod", "+ − 0"]],
   ],
   screenplay: [

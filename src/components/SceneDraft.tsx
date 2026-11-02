@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { EditorContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
 import { richTextExtensions } from "./editorKit";
+import { FootnotePopover } from "./FootnotePopover";
 import { FormatBar } from "./FormatBar";
 import { MentionNode } from "./MentionNode";
 import { useCosmos } from "../store";
@@ -118,6 +119,7 @@ export function DraftEditor({ card, autofocus = false }: { card: CardData; autof
   return (
     <div className="draft-body">
       <EditorContent editor={editor} />
+      {editor && <FootnotePopover editor={editor} />}
       {editor && <FormatBar editor={editor} atelier={card.title} revisit />}
     </div>
   );

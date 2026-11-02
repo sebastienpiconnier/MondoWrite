@@ -935,6 +935,16 @@ export const fr = {
     done: "Scènes terminées",
   },
   // Point de vue d'une scène (1.13.0) : personnage narrateur, une carte Personnage (`fiche.pov`).
+  // Notes de bas de page (1.13.0, footnotes.ts) : un appel dans le texte d'une scène, son texte dans une petite fenêtre.
+  footnotes: {
+    title: "Note {n}",
+    placeholder: "Texte de la note (source, précision…)",
+    hint: "Entrée : revenir au texte",
+    remove: "Supprimer la note",
+    insert: "Note de bas de page (Ctrl ou Cmd + Alt + F)",
+    insertShort: "Note",
+    notesTitle: "Notes",
+  },
   // Commentaires ancrés (1.13.0, comments.ts) : un passage du texte d'une scène, un commentaire dans la marge.
   comments: {
     tab: "Commentaires",
@@ -2199,6 +2209,7 @@ export const fr = {
       help: "Cette liste",
       keepVersion: "Garder une version de la scène",
       comment: "Commenter le passage sélectionné",
+      footnote: "Insérer une note de bas de page",
       guide: "Guide de l’utilisateur (aide en ligne)",
       settings: "Réglages",
       views: "Canevas, Plan, Bible, Manuscrit",
@@ -2269,6 +2280,7 @@ export const fr = {
     replace: "Rechercher et remplacer…",
     keepVersion: "Garder une version de la scène…",
     comment: "Commenter la sélection…",
+    footnote: "Note de bas de page",
     goto: "Aller à…",
     duplicate: "Dupliquer",
     review: "Vérifier le texte…",

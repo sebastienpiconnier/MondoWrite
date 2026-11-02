@@ -158,6 +158,8 @@ async function buildMenu() {
       await MenuItem.new({ id: "italic", text: m.italic, accelerator: "CmdOrCtrl+I", enabled: inProject, action: () => replayShortcut("i", "KeyI") }),
       await MenuItem.new({ id: "strike", text: m.strike, accelerator: "CmdOrCtrl+Shift+D", enabled: inProject, action: () => replayShortcut("D", "KeyD", true) }),
       await MenuItem.new({ id: "revisit", text: m.revisit, accelerator: "CmdOrCtrl+Shift+X", enabled: inProject, action: () => replayShortcut("X", "KeyX", true) }),
+      // Note de bas de page au curseur (texte d'une scène du roman), raccourci rejoué dans le texte.
+      await MenuItem.new({ id: "footnote", text: m.footnote, accelerator: "CmdOrCtrl+Alt+F", enabled: inProject, action: () => replayShortcut("f", "KeyF", false, true) }),
     ],
   });
   const win = await Submenu.new({
