@@ -83,19 +83,34 @@ fiche: {"synopsis":"Ethan croise Ambre au parc.","statut":"fini","pov":"p4t8w2zq
 
 ## Lot 2 : voir l'alternance
 
-- [ ] **Plan** (roman) : pastille du narrateur sur chaque scène ; **Séquencier** (scénario) : la même, dès qu'une scène du projet a un point de vue
-- [ ] **Ruban du récit** : mode « Par point de vue » ; chaque segment de scène prend la couleur de son
+- [x] **Plan** (roman) : pastille du narrateur sur chaque scène ; **Séquencier** (scénario) : la même, dès qu'une scène du projet a un point de vue
+- [x] **Ruban du récit** : mode « Par point de vue » ; chaque segment de scène prend la couleur de son
       narrateur (couleurs dérivées des jetons existants, contraste vérifié en clair et en sombre, nom au survol
       **et** au toucher, légende sous le ruban). On voit d'un coup d'œil qu'Ethan raconte huit scènes de
       suite. Le mode est un réglage de l'appareil, pas du projet
-- [ ] **Chronologie** (`timeline.ts`) : nouvel état de case `"pov"` (plus fort que `"linked"`) sur la ligne du
+- [x] **Chronologie** (`timeline.ts`) : nouvel état de case `"pov"` (plus fort que `"linked"`) sur la ligne du
       personnage narrateur, dessiné plein
-- [ ] **Chiffres des personnages** (`review/report.ts`, Bible › Personnages › Chiffres) : colonnes « En point
+- [x] **Chiffres des personnages** (`review/report.ts`, Bible › Personnages › Chiffres) : colonnes « En point
       de vue : scènes, mots, part du livre », et dans l'export CSV
-- [ ] **Filtre « Ses scènes en point de vue »** : dans le Manuscrit, ne montrer que les scènes d'un narrateur,
+- [x] **Filtre « Ses scènes en point de vue »** : dans le Manuscrit, ne montrer que les scènes d'un narrateur,
       dans l'ordre du livre, pour relire son fil d'un trait (les autres scènes sont repliées en une ligne
       « 3 scènes de Violette », jamais cachées sans trace) ; et dans le filtre du canevas. Un affichage, rien
       n'est écrit
+
+Fait comme prévu, avec ces précisions :
+
+- Couleurs : `--pov-1` à `--pov-8` reprennent huit couleurs de type (`styles.css`), donc chaque palette et les
+  deux thèmes ; contraste 3:1 sur `--surface` et `--ground` vérifié dans toutes les palettes
+  (`pov-colors.test.ts`). Attribution stable par identifiant (`narratorColors`, pov.ts), jamais par la place
+  dans le récit.
+- Ruban : il apparaît aussi en **plan libre** dès qu'une scène a un narrateur (il n'y a alors que les points de
+  vue à montrer, toujours colorés) ; avec un gabarit, « Par point de vue » le colore (réglage de l'appareil
+  `ribbonPov`). Légende sous le ruban : chaque narrateur et son nombre de scènes, puis « Sans point de vue ».
+- Chronologie : la case du narrateur n'est pas un bouton (il n'y a pas de fil à tirer ou retirer).
+- Filtre du Manuscrit : il agit sur le volet des scènes et les flèches ; le texte du livre reste entier. Une
+  ligne repliée (« 2 autres scènes ») ramène tout et mène à la première de ces scènes.
+- Filtre du canevas : liste « Scènes en point de vue » dans le panneau Filtrer ; seules les scènes du narrateur
+  restent, les autres cartes aussi, et le narrateur reste toujours visible.
 
 ## Lot 3 : aller plus loin
 

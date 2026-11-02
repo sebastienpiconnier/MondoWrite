@@ -145,3 +145,55 @@ describe("Exports", () => {
     expect(line && line.kind === "paragraph" ? line.runs[1].text : null).toBe("Ethan");
   });
 });
+
+describe("Lot 2 : couleurs des narrateurs", () => {
+  it("une couleur par narrateur, de 1 à 8, stable quel que soit l'ordre des scènes", async () => {
+    const { narratorColors, POV_COLORS } = await import("../pov");
+    const a = narratorColors(["p1", "p2", "p3"]);
+    const b = narratorColors(["p3", "p1", "p2", "p1"]);
+    expect([...a].sort()).toEqual([...b].sort());
+    expect(new Set(a.values()).size).toBe(3);
+    for (const c of a.values()) expect(c).toBeGreaterThanOrEqual(1), expect(c).toBeLessThanOrEqual(POV_COLORS);
+    // Au-delà de huit narrateurs, les couleurs reviennent sans erreur.
+    const many = narratorColors(Array.from({ length: 11 }, (_, i) => `n${i}`));
+    expect(many.size).toBe(11);
+    expect(new Set(many.values()).size).toBe(POV_COLORS);
+  });
+});
+
+describe("Lot 2 : chronologie, chiffres et filtre du canevas", () => {
+  const cards = [ethan, violette, scene("a", "p1"), scene("b", "p2"), scene("c")];
+
+  it("la chronologie marque le narrateur d'une scène, plus fort qu'un fil", async () => {
+    const { timeline } = await import("../timeline");
+    const people = timeline(cards, [{ source: "a", target: "p1" }, { source: "c", target: "p1" }], {}, ["a", "b", "c"], "fr").find((g) => g.type === "personnage")!;
+    expect(people.rows.find((r) => r.card.id === "p1")!.cells).toEqual(["pov", "none", "linked"]);
+    expect(people.rows.find((r) => r.card.id === "p2")!.cells).toEqual(["none", "pov", "none"]);
+  });
+
+  it("les chiffres ajoutent les scènes racontées, leurs mots et leur part du livre ; rien sans point de vue", async () => {
+    const { novelReport, withPov, reportCsv } = await import("../review/report");
+    const manuscript = { a: "<p>Un deux trois quatre</p>", b: "<p>Cinq six</p>", c: "<p>Sept huit</p>" };
+    const words = (id: string) => (manuscript as Record<string, string>)[id].replace(/<[^>]+>/g, "").split(/\s+/).length;
+    const rows = withPov(novelReport(manuscript, ["a", "b", "c"], cards), cards, ["a", "b", "c"], words);
+    expect(rows.find((r) => r.id === "p1")!.pov).toEqual({ scenes: 1, words: 4, share: 0.5 });
+    expect(rows.find((r) => r.id === "p2")!.pov).toEqual({ scenes: 1, words: 2, share: 0.25 });
+    const none = [ethan, scene("x")];
+    const plain = novelReport({}, ["x"], none);
+    expect(withPov(plain, none, ["x"])).toBe(plain);
+    const csv = reportCsv(rows, ["Personnage", "Genre", "Scènes", "Répliques", "Mots", "Part (%)", "Première", "Dernière"], "fr", ["Scènes PDV", "Mots PDV", "Part PDV (%)"]);
+    const [head, ...lines] = csv.trim().split("\r\n");
+    expect(head.endsWith("Scènes PDV;Mots PDV;Part PDV (%)")).toBe(true);
+    expect(lines.find((l) => l.startsWith("Ethan"))!.endsWith(";1;4;50")).toBe(true);
+    // Scénario : deux colonnes (scènes, part).
+    expect(reportCsv(rows, ["P"], "en", ["POV scenes", "Share"]).split("\r\n")[0]).toBe("P,POV scenes,Share");
+  });
+
+  it("le filtre du canevas sur un narrateur ne masque que les autres scènes, et garde le narrateur", async () => {
+    const { hiddenCards, filterActive, NO_FILTER } = await import("../canvasFilter");
+    const f = { ...NO_FILTER, pov: "p1", base: null };
+    expect(filterActive(f)).toBe(true);
+    expect([...hiddenCards(cards, [], f)].sort()).toEqual(["b", "c"]);
+    expect(hiddenCards(cards, [], { ...f, types: ["personnage"] }).has("p1")).toBe(false);
+  });
+});

@@ -14,13 +14,15 @@ export interface CanvasFilter {
   types: CardType[];
   /** Carte dont on ne montre que le voisinage. */
   card: string | null;
+  /** Point de vue (1.13.0) : seules les scènes que raconte ce personnage restent ; les autres cartes aussi. */
+  pov?: string | null;
   /** Cartes présentes quand le filtre a été posé : les autres, créées depuis, restent visibles. */
   base: string[] | null;
 }
 
 export const NO_FILTER: CanvasFilter = { types: [], card: null, base: null };
 
-export const filterActive = (f: CanvasFilter) => f.types.length > 0 || f.card !== null;
+export const filterActive = (f: CanvasFilter) => f.types.length > 0 || f.card !== null || !!f.pov;
 
 /** La carte et ses voisines directes : fils dans les deux sens, mentions dans les deux sens. */
 export function neighbourhood(id: string, cards: Pick<CardData, "id" | "html">[], edges: Pick<Edge, "source" | "target">[]): Set<string> {
@@ -36,17 +38,18 @@ export function neighbourhood(id: string, cards: Pick<CardData, "id" | "html">[]
 }
 
 /** Cartes masquées par le filtre. */
-export function hiddenCards(cards: Pick<CardData, "id" | "type" | "html">[], edges: Pick<Edge, "source" | "target">[], f: CanvasFilter): Set<string> {
+export function hiddenCards(cards: Pick<CardData, "id" | "type" | "html" | "fiche">[], edges: Pick<Edge, "source" | "target">[], f: CanvasFilter): Set<string> {
   if (!filterActive(f)) return new Set();
   const base = f.base ? new Set(f.base) : null;
   const near = f.card ? neighbourhood(f.card, cards, edges) : null;
   const hidden = new Set<string>();
   for (const c of cards) {
     if (base && !base.has(c.id)) continue; // créée pendant le filtre
-    if (f.types.includes(c.type) || (near && !near.has(c.id))) hidden.add(c.id);
+    if (f.types.includes(c.type) || (near && !near.has(c.id)) || (f.pov && c.type === "scene" && c.fiche?.pov !== f.pov)) hidden.add(c.id);
   }
   // La carte du filtre reste toujours visible, même si son type est décoché.
   if (f.card) hidden.delete(f.card);
+  if (f.pov) hidden.delete(f.pov);
   return hidden;
 }
 

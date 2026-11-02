@@ -202,6 +202,9 @@
 .tl-mark { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid transparent; vertical-align: -3px; }
 .tl-mark.is-linked { background: var(--accent); border-color: var(--accent); }
 .tl-mark.is-cited { border-color: var(--accent); }
+.tl-mark.is-pov { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent); }
+span.tl-cell.is-pov { cursor: default; }
+.tl-legend .tl-mark.is-pov { margin: 0 4px 0 18px; }
 .tl-mark.is-none { width: 6px; height: 6px; background: var(--line-2); }
 .tl-legend { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 0.8125rem; color: var(--ink-2); }
 .tl-legend .tl-mark.is-cited { margin-left: 12px; }
@@ -918,6 +921,16 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ribbon-toggle { padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 @media (pointer: coarse) { .ribbon-toggle { min-height: 44px; } }
 /* Chaque intrigue a toute la largeur, pour que ses scènes tombent sous celles du ruban ; son nom au-dessus. */
+/* Ruban par point de vue (1.13.0) : chaque scène de la couleur de son narrateur, les cases en fond neutre. */
+.ribbon.is-pov .ribbon-beat { background: var(--ground); }
+.ribbon.is-pov .ribbon-beat.is-odd { background: var(--line); }
+.ribbon-scene.has-pov { background: var(--scene-pov); }
+.ribbon-scene.has-pov.is-current { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); border-radius: 2px; z-index: 1; }
+@media (any-hover: hover) { .ribbon-scene.has-pov:hover { background: var(--scene-pov); opacity: 0.75; } }
+.ribbon-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; padding: 0; list-style: none; color: var(--ink-2); font-size: 0.8125rem; }
+.ribbon-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.ribbon-legend-swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--scene-pov); }
+.ribbon-legend .is-none .ribbon-legend-swatch { background: transparent; border: 1.5px solid var(--line-2); box-sizing: border-box; }
 .ribbon-lane { margin-top: 4px; }
 .ribbon-lane-name { display: block; overflow: hidden; color: var(--ink-2); font-size: 0.75rem; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--ground); }
@@ -1091,3 +1104,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .more-menu button.has-rule::before { content: ""; position: absolute; left: 8px; right: 8px; top: -4px; border-top: 1px solid var(--line); }
 .more-menu kbd { font: 0.75rem var(--font-ui); color: var(--ink-2); }
 @media (pointer: coarse) { .more-menu button { min-height: 44px; } .more-button { min-width: 44px; min-height: 44px; } }
+
+/* Manuscrit : filtre « Ses scènes en point de vue » (1.13.0), les scènes des autres narrateurs repliées. */
+.ms-pov-filter { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 10px; color: var(--ink-2); font-size: 0.8125rem; }
+.ms-pov-filter select { min-height: 36px; }
+.ms-fold { margin: 2px 0; padding-left: 10px; }
+.ms-fold .link-button { color: var(--ink-2); font-size: 0.8125rem; font-style: italic; min-height: 28px; text-align: left; }
+@media (pointer: coarse) { .ms-pov-filter select, .ms-fold .link-button { min-height: 44px; } }

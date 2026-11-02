@@ -51,6 +51,16 @@
   --ia-mark: #8a3a9e; /* mode Atelier : soulignement des passages de l'IA, et repère « Atelier » (texte, 4,5:1) */
   --page-ink-dim: #6f7584; /* texte hors focus (mode focus), estompé mais lisible : 4,5:1 au moins */
   --type-question: #6b7085;
+  /* Narrateurs (point de vue d'une scène, ruban du récit) : huit couleurs reprises des types, donc de chaque
+     palette et des deux thèmes (contraste vérifié par palettes-contrast.test.ts). Pas de couleur propre. */
+  --pov-1: var(--type-personnage);
+  --pov-2: var(--type-intrigue);
+  --pov-3: var(--type-lieu);
+  --pov-4: var(--type-scene);
+  --pov-5: var(--type-image);
+  --pov-6: var(--type-lien);
+  --pov-7: var(--type-episode);
+  --pov-8: var(--type-theme);
   /* Statut d'une scène (pastilles) : brouillon, à revoir, terminée */
   --status-draft: #6e7388;
   --status-revise: #b54708;

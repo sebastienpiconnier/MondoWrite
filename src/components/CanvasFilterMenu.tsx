@@ -3,12 +3,17 @@
 // rien n'est enregistré, rien n'entre dans l'historique d'annulation.
 
 import { formOf } from "../pitch";
-import { useEffect, useId, useRef, useState } from "react";
-import { useT } from "../i18n";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { fmt, useT } from "../i18n";
+import { useSettings } from "../settings";
+import { narratorCounts } from "../pov";
+import type { CardData } from "../types";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { filterActive } from "../canvasFilter";
 import { typesFor, typeColor } from "../types";
+
+const NO_NODES: readonly { id: string; data: CardData }[] = [];
 
 export function CanvasFilterMenu() {
   const t = useT().filter;
@@ -16,9 +21,20 @@ export function CanvasFilterMenu() {
   const film = useCosmos((s) => formOf(kind, s.pitch) === "film");
   const menuTypes = typesFor(kind, false, film);
   const filter = useCosmos((s) => s.filter);
-  const setFilterTypes = useCosmos((s) => s.setFilterTypes);
-  const clearFilter = useCosmos((s) => s.clearFilter);
   const [open, setOpen] = useState(false);
+  const setFilterTypes = useCosmos((s) => s.setFilterTypes);
+  const setFilterPov = useCosmos((s) => s.setFilterPov);
+  const lang = useSettings((s) => s.lang);
+  // Point de vue (1.13.0) : les narrateurs du projet, lus seulement menu ouvert.
+  const nodes = useCosmos((s) => (open ? s.nodes : NO_NODES));
+  const narrators = useMemo(() => {
+    const counts = narratorCounts(nodes.map((n) => n.data));
+    return nodes
+      .filter((n) => counts.has(n.id))
+      .map((n) => ({ id: n.id, name: n.data.title.trim() || t.untitled, n: counts.get(n.id)! }))
+      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, lang));
+  }, [nodes, lang, t.untitled]);
+  const clearFilter = useCosmos((s) => s.clearFilter);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -79,6 +95,19 @@ export function CanvasFilterMenu() {
               </label>
             );
           })}
+          {(narrators.length > 0 || filter.pov) && (
+            <label className="canvas-filter-pov">
+              <span>{t.povLabel}</span>
+              <select value={filter.pov ?? ""} onChange={(e) => setFilterPov(e.target.value || null)}>
+                <option value="">{t.povAll}</option>
+                {narrators.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {fmt(t.povOption, { name: x.name, n: x.n })}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <div className="canvas-filter-actions">
             <button type="button" className="ghost-button" disabled={!active} onClick={clearFilter}>
               {t.showAll}

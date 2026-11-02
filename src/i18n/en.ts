@@ -38,6 +38,11 @@ export const en: Messages = {
     typesOne: "Filter on: one type hidden",
     typesMany: "Filter on: {n} types hidden",
     card: "Filter on: “{title}” and its neighbours",
+    pov: "Filter on: scenes told by {name}",
+    povLabel: "Point-of-view scenes",
+    povAll: "All scenes",
+    povOption: "{name} ({n})",
+    untitled: "Unnamed",
   },
 
   spotlight: {
@@ -1031,6 +1036,13 @@ export const en: Messages = {
   },
 
   manuscript: {
+    // Point of view (1.13.0): filter of the scenes panel.
+    povFilter: "Their point-of-view scenes",
+    povAll: "All narrators",
+    povOption: "{name} ({n})",
+    povFoldOne: "1 other scene",
+    povFoldMany: "{n} other scenes",
+    povFoldHint: "Show everything and go to this scene",
     scenesAria: "Manuscript scenes, in outline order",
     panelScenes: "Outline",
     panelSide: "Info",
@@ -1132,6 +1144,8 @@ export const en: Messages = {
     timelineThemes: "Storylines and themes",
     timelineLinked: "Linked by a thread",
     timelineCited: "Mentioned in the scene",
+    timelinePov: "Tells the scene (point of view)",
+    timelinePovCell: "{card} tells “{scene}” (point of view)",
     timelineOn: "{card} in “{scene}”: linked. Remove the thread",
     timelineCitedCell: "{card} in “{scene}”: mentioned in the scene. Link",
     timelineOff: "{card} in “{scene}”: absent. Link",
@@ -1274,6 +1288,16 @@ export const en: Messages = {
     hideCurve: "Hide the curve",
     curveHint: "The hero’s fortune, scene by scene: it rises when a scene ends better for them, falls when it ends worse (the “For the hero, the scene ends” box of the sheet).",
     curveAria: "Story curve: the hero’s fortune, scene by scene",
+    // Point of view (1.13.0): each scene takes the colour of its narrator.
+    freeCaption: "{n}% into the story",
+    story: "Story",
+    showPov: "By point of view",
+    hidePov: "Without points of view",
+    povHint: "Each scene takes the colour of the character telling it (the scene’s “Point of view” pill).",
+    povScene: "{scene} · point of view: {name}",
+    povLegend: "Narrators",
+    povCount: "{name}: {n}",
+    noPov: "No point of view",
   },
 
   kinds: {
@@ -1691,6 +1715,7 @@ export const en: Messages = {
       shareScript: "Speaking time",
       shareText: "Presence",
       appear: "Appearances",
+      pov: "Point of view",
     },
     sortBy: "Sort by {column}",
     appearRange: "{first} to {last}",
@@ -1700,6 +1725,9 @@ export const en: Messages = {
     openAria: "Open {name}’s entry",
     export: "Export as CSV…",
     csvHeaders: ["Character", "Gender", "Scenes", "Lines", "Words", "Share (%)", "First scene", "Last scene"],
+    csvPovText: ["POV scenes", "POV words", "Share of the book in POV (%)"],
+    csvPovScript: ["POV scenes", "Share of scenes in POV (%)"],
+    povCell: "{n} · {share}",
     byGender: "By gender",
     genderNone: "Not filled in",
     noteScript: "Percentages of speaking time. Genders are the ones written in the entries, grouped as written.",

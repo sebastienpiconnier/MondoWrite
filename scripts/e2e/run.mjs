@@ -400,6 +400,53 @@ const scenarios = [
     },
   },
   {
+    name: "point de vue, lot 2 : narrateurs posés dans le Plan, ruban coloré en plan libre, filtres du Manuscrit et du canevas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Choral");
+      await h.view(2);
+      for (const title of ["Le réveil", "La rencontre", "Le parc"]) {
+        await page.getByPlaceholder("Nouvelle scène…").first().fill(title);
+        await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+        await h.wait(150);
+      }
+      const choose = async (scene, name) => {
+        await page.getByRole("button", { name: new RegExp(`^Point de vue de la scène « ${scene} »`) }).click();
+        const option = page.getByRole("option", { name, exact: true });
+        if (await option.count()) await option.click();
+        else {
+          await page.keyboard.type(name);
+          await page.getByRole("option", { name: `Créer « ${name} »` }).click();
+        }
+        await until(async () => (await page.getByRole("button", { name: new RegExp(`^Point de vue de la scène « ${scene} »`) }).getAttribute("aria-label")).endsWith(name), `${scene} : point de vue absent`);
+      };
+      await choose("Le réveil", "Ethan");
+      await choose("La rencontre", "Violette");
+      await choose("Le parc", "Ethan");
+      // Manuscrit en plan libre : le ruban apparaît pour les points de vue, avec sa légende.
+      await h.view(4);
+      await until(async () => (await page.locator(".ribbon.is-pov .ribbon-scene.has-pov").count()) === 3, "le ruban ne colore pas les trois scènes");
+      const legend = await page.locator(".ribbon-legend li").allInnerTexts();
+      assert(legend.length === 2 && legend[0].startsWith("Ethan") && legend[0].endsWith("2"), `légende inattendue : ${JSON.stringify(legend)}`);
+      // Filtre « Ses scènes en point de vue » : la scène de Violette est repliée, les flèches sautent par-dessus.
+      await page.getByLabel("Ses scènes en point de vue").selectOption({ label: "Ethan (2)" });
+      await until(async () => (await page.locator(".ms-fold").count()) === 1, "la scène de Violette n'est pas repliée");
+      assert((await page.locator(".ms-fold").innerText()).includes("1 autre scène"), "libellé de la ligne repliée");
+      await page.locator(".ms-scenes button", { hasText: "Le réveil" }).click();
+      await page.getByRole("button", { name: "Scène suivante" }).click();
+      await until(async () => (await page.locator("input.ms-title").inputValue()) === "Le parc", "la flèche ne saute pas à la scène suivante d'Ethan");
+      // Canevas : filtre sur Violette, une seule scène reste.
+      await h.view(1);
+      await page.getByRole("button", { name: "Filtrer les cartes", exact: true }).click();
+      await page.getByLabel("Scènes en point de vue").selectOption({ label: "Violette (1)" });
+      const visibleScenes = () => page.locator(".react-flow__node-card .card.type-scene").evaluateAll((els) => els.filter((e) => e.getClientRects().length > 0).length);
+      await until(async () => (await visibleScenes()) === 1, "le filtre du canevas laisse d'autres scènes");
+      // Le bandeau est caché tant que le panneau du filtre est ouvert : Échap le ferme.
+      await page.keyboard.press("Escape");
+      await until(() => page.locator(".filter-banner", { hasText: /scènes racontées par Violette/ }).isVisible(), "bandeau du filtre absent");
+    },
+  },
+  {
     name: "corbeille : Suppr met la carte à la corbeille, Ctrl+Z la remet avec son fil",
     async run(h) {
       const { page } = h;

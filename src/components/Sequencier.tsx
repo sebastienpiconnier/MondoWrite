@@ -4,6 +4,7 @@
 // Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
+import { PovPicker } from "./PovPicker";
 import { templateBeats, type PlanBeat } from "../plan";
 import { MoreMenu } from "./MoreMenu";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,6 +41,7 @@ export function Sequencier() {
   const setMode = useSettings((s) => s.setSequencerMode);
   const screenplay = useCosmos((s) => s.screenplay);
   const nodes = useCosmos((s) => s.nodes);
+  const anyPov = useMemo(() => nodes.some((n) => n.data.type === "scene" && n.data.fiche?.pov), [nodes]);
   const setScreenplay = useCosmos((s) => s.setScreenplay);
   const revealCard = useCosmos((s) => s.revealCard);
   const pagination = usePagination();
@@ -268,7 +270,13 @@ export function Sequencier() {
                     atelier={card ? { sceneId: card.id, text: screenplaySceneText(block.start) } : undefined}
                   />
                   {cardText && <p className="sq-desc">{cardText.length > 140 ? `${cardText.slice(0, 140)}…` : cardText}</p>}
-                  {card && <SceneStatusPicker card={card} />}
+                  {card && (
+                    <div className="scene-pills">
+                      <SceneStatusPicker card={card} />
+                      {/* Scénario : le point de vue n'apparaît ici que dès qu'une scène du projet en a un. */}
+                      {anyPov && <PovPicker card={card} />}
+                    </div>
+                  )}
                   {speakers.length > 0 && (
                     <ul className="sq-speakers" aria-label={sq.charactersAria}>
                       {speakers.map((speaker) => {

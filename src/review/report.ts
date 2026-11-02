@@ -25,6 +25,35 @@ export interface CharacterRow {
   /** Numéros des scènes de première et dernière apparition (1 = la première du récit). */
   first: number | null;
   last: number | null;
+  /** Point de vue (1.13.0) : scènes qu'il raconte, leurs mots (roman), et leur part du récit. Absent sans point de vue. */
+  pov?: { scenes: number; words: number; share: number };
+}
+
+/**
+ * Ajoute à chaque ligne d'une carte Personnage les scènes qu'elle raconte (`fiche.pov` des scènes de `order`,
+ * l'ordre du récit). Part : des mots du livre (roman écrit), sinon du nombre de scènes. Mêmes lignes si aucune
+ * scène n'a de point de vue.
+ */
+export function withPov(rows: CharacterRow[], cards: CardData[], order: string[], words: (id: string) => number = () => 0): CharacterRow[] {
+  const byId = new Map(cards.map((c) => [c.id, c]));
+  const told = new Map<string, { scenes: number; words: number }>();
+  let total = 0;
+  for (const id of order) {
+    const w = words(id);
+    total += w;
+    const pov = byId.get(id)?.fiche?.pov;
+    if (!pov || byId.get(pov)?.type !== "personnage") continue;
+    const t = told.get(pov) ?? { scenes: 0, words: 0 };
+    t.scenes++;
+    t.words += w;
+    told.set(pov, t);
+  }
+  if (told.size === 0) return rows;
+  return rows.map((r) => {
+    if (!r.id) return r;
+    const t = told.get(r.id) ?? { scenes: 0, words: 0 };
+    return { ...r, pov: { ...t, share: total > 0 ? t.words / total : order.length ? t.scenes / order.length : 0 } };
+  });
 }
 
 /** Mots d'une réplique (la ponctuation seule, « ? » ou « — », n'en est pas un). */
@@ -145,25 +174,34 @@ export function genderSummary(rows: CharacterRow[]): GenderGroup[] {
   return [...groups.values()].sort((a, b) => (a.gender === "") === (b.gender === "") ? b.share - a.share : a.gender === "" ? 1 : -1);
 }
 
-export type SortKey = "name" | "gender" | "scenes" | "lines" | "words" | "share" | "first";
+export type SortKey = "name" | "gender" | "scenes" | "lines" | "words" | "share" | "first" | "pov";
 
 /** Tri d'une colonne (nombres décroissants d'abord, textes dans l'ordre alphabétique de la langue). */
 export function sortRows(rows: CharacterRow[], key: SortKey, desc: boolean, locale = "fr"): CharacterRow[] {
   const sorted = [...rows].sort((a, b) => {
     if (key === "name" || key === "gender") return a[key].localeCompare(b[key], locale);
+    if (key === "pov") return (a.pov?.scenes ?? -1) - (b.pov?.scenes ?? -1) || (a.pov?.words ?? 0) - (b.pov?.words ?? 0);
     return (a[key] ?? Infinity) - (b[key] ?? Infinity);
   });
   return desc ? sorted.reverse() : sorted;
 }
 
-/** CSV (séparateur « ; » en français, « , » ailleurs, comme les tableurs de chaque langue), avec en-tête. */
-export function reportCsv(rows: CharacterRow[], headers: string[], locale = "fr"): string {
+/**
+ * CSV (séparateur « ; » en français, « , » ailleurs, comme les tableurs de chaque langue), avec en-tête. Avec
+ * `povHeaders` (des points de vue existent), trois colonnes de plus : scènes racontées, leurs mots, leur part.
+ */
+export function reportCsv(rows: CharacterRow[], headers: string[], locale = "fr", povHeaders: string[] = []): string {
   const sep = locale.startsWith("fr") ? ";" : ",";
   const cell = (v: string | number | null) => {
     const s = v === null ? "" : String(v);
     return s.includes(sep) || /["\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const percent = (n: number) => (Math.round(n * 1000) / 10).toLocaleString(locale);
-  const lines = rows.map((r) => [r.name, r.gender, r.scenes, r.lines, r.words, percent(r.share), r.first, r.last].map(cell).join(sep));
-  return [headers.map(cell).join(sep), ...lines].join("\r\n") + "\r\n";
+  const pov = povHeaders.length > 0;
+  // Roman : scènes, mots, part ; scénario (deux en-têtes) : scènes, part.
+  const povCells = (r: CharacterRow) => (povHeaders.length >= 3 ? [r.pov?.scenes ?? 0, r.pov?.words ?? 0, percent(r.pov?.share ?? 0)] : [r.pov?.scenes ?? 0, percent(r.pov?.share ?? 0)]);
+  const lines = rows.map((r) =>
+    [r.name, r.gender, r.scenes, r.lines, r.words, percent(r.share), r.first, r.last, ...(pov ? povCells(r) : [])].map(cell).join(sep),
+  );
+  return [[...headers, ...(pov ? povHeaders : [])].map(cell).join(sep), ...lines].join("\r\n") + "\r\n";
 }

@@ -213,6 +213,8 @@ export interface CosmosState {
   filter: CanvasFilter;
   /** Types masqués (filtre par type). La sélection des cartes masquées est retirée. */
   setFilterTypes: (types: CardType[]) => void;
+  /** Filtre du canevas sur un narrateur : seules ses scènes restent (null : toutes les scènes). */
+  setFilterPov: (pov: string | null) => void;
   /** « Filtrer sur cette carte » : elle et ses voisines directes ; null l'enlève. */
   setFilterCard: (id: string | null) => void;
   /** « Tout afficher ». */
@@ -1256,6 +1258,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     filter: NO_FILTER,
     setFilterTypes: (types) => applyFilter({ ...get().filter, types }),
     setFilterCard: (card) => applyFilter({ ...get().filter, card }),
+    setFilterPov: (pov) => applyFilter({ ...get().filter, pov }),
     clearFilter: () => set({ filter: NO_FILTER }),
     expandedId: null,
     expandCard: (id) => {

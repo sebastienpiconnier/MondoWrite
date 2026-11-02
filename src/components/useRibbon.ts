@@ -8,8 +8,11 @@ import { paginate, pagesBetween } from "../screenplay/paginate";
 import { LAYOUTS } from "../screenplay/layout";
 import { countWords } from "../manuscript";
 
-/** Le ruban, ou null sans gabarit (plan libre) ou sans scène. */
-export function useRibbon(): Ribbon | null {
+/**
+ * Le ruban, ou null sans gabarit (plan libre) ou sans scène. `evenFree` : aussi en plan libre, d'une seule
+ * traite (le ruban par point de vue a un sens sans gabarit).
+ */
+export function useRibbon(evenFree = false): Ribbon | null {
   const kind = useCosmos((s) => s.kind);
   const screenplay = useCosmos((s) => s.screenplay);
   const paper = useCosmos((s) => s.paper);
@@ -23,12 +26,13 @@ export function useRibbon(): Ribbon | null {
       if (!screenplay) return null;
       const pagination = paginate(screenplay.elements, LAYOUTS[paper]);
       const { template, groups } = screenplayGroups(screenplay.elements, (start, end) => pagesBetween(pagination, start, end));
-      if (template === "libre" || !groups.some((g) => g.scenes.length > 0)) return null;
+      if (!groups.some((g) => g.scenes.length > 0)) return null;
+      if (template === "libre") return evenFree ? buildRibbon("libre", [{ key: null, scenes: groups.flatMap((g) => g.scenes) }]) : null;
       return buildRibbon(template, groups);
     }
-    if (plan.template === "libre") return null;
+    if (plan.template === "libre" && !evenFree) return null;
     const ids = sceneKey ? sceneKey.split(" ") : [];
     if (ids.length === 0) return null;
     return buildRibbon(plan.template, novelGroups(plan, ids, (id) => countWords(manuscript[id])));
-  }, [kind, screenplay, paper, plan, manuscript, sceneKey]);
+  }, [kind, screenplay, paper, plan, manuscript, sceneKey, evenFree]);
 }

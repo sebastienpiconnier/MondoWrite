@@ -122,6 +122,9 @@ interface SettingsState {
   palette: Palette;
   setPalette: (palette: Palette) => void;
   sequencerMode: SequencerMode;
+  /** Ruban du récit coloré par narrateur (point de vue des scènes), 1.13.0. */
+  ribbonPov: boolean;
+  setRibbonPov: (on: boolean) => void;
   wheelMode: WheelMode;
   setWheelMode: (mode: WheelMode) => void;
   setSequencerMode: (mode: SequencerMode) => void;
@@ -205,7 +208,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -231,6 +234,8 @@ export const useSettings = create<SettingsState>((set) => ({
   setPalette: (palette) => set({ palette }),
   sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
+  ribbonPov: saved.ribbonPov === true,
+  setRibbonPov: (ribbonPov) => set({ ribbonPov }),
   wheelMode: saved.wheelMode === "zoom" ? "zoom" : "pan",
   setWheelMode: (wheelMode) => set({ wheelMode }),
   profile: initialProfile,
@@ -268,7 +273,7 @@ const contrastQuery = () => (typeof window !== "undefined" ? window.matchMedia?.
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -280,7 +285,7 @@ export function initSettings() {
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

@@ -26,6 +26,7 @@ export function Timeline({ order }: { order: string[] }) {
 
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
   const groups = useMemo(() => timeline(cards, edges, texts, order, lang), [cards, edges, texts, order, lang]);
+  const hasPov = useMemo(() => groups.some((g) => g.rows.some((r) => r.cells.includes("pov"))), [groups]);
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() || p.untitled;
 
   if (order.length === 0) return <p className="sp-empty">{p.empty}</p>;
@@ -37,6 +38,11 @@ export function Timeline({ order }: { order: string[] }) {
       <p className="tl-legend">
         <span className="tl-mark is-linked" aria-hidden="true" /> {p.timelineLinked}
         <span className="tl-mark is-cited" aria-hidden="true" /> {p.timelineCited}
+        {hasPov && (
+          <>
+            <span className="tl-mark is-pov" aria-hidden="true" /> {p.timelinePov}
+          </>
+        )}
       </p>
       <div className="tl-scroll" role="region" aria-label={p.timeline} tabIndex={0}>
         <table className="tl-table">
@@ -73,6 +79,15 @@ export function Timeline({ order }: { order: string[] }) {
                   </th>
                   {row.cells.map((cell, i) => {
                     const names = { card: row.card.title, scene: titleOf(order[i]) };
+                    // Narrateur de la scène : il y est forcément ; la case le dit, sans fil à tirer ou retirer.
+                    if (cell === "pov")
+                      return (
+                        <td key={order[i]}>
+                          <span className="tl-cell is-pov" role="img" aria-label={fmt(p.timelinePovCell, names)} title={fmt(p.timelinePovCell, names)}>
+                            <span className="tl-mark is-pov" aria-hidden="true" />
+                          </span>
+                        </td>
+                      );
                     return (
                       <td key={order[i]}>
                         <button

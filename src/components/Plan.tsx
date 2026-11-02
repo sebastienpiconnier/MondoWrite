@@ -6,6 +6,7 @@
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
+import { PovPicker } from "./PovPicker";
 import { MoreMenu } from "./MoreMenu";
 import { SynopsisField } from "./SynopsisField";
 import { novelSceneText } from "./Atelier";
@@ -245,6 +246,7 @@ export function Plan() {
                 </label>
               )}
               <SceneStatusPicker card={card} />
+              <PovPicker card={card} />
             </div>
           </div>
         </div>

@@ -14,6 +14,7 @@ import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
+import { narratorCounts } from "../pov";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
 import type { BookHandlers } from "./bookExtensions";
 import { SynopsisField } from "./SynopsisField";
@@ -127,6 +128,30 @@ export function Manuscript() {
   // Tout le livre : pages de début, récit dans l'ordre du Plan, pages de fin.
   const order = useMemo(() => bookOrder(nodes, plan), [nodes, plan]);
   const orphans = useMemo(() => orphanTexts(manuscript, order), [manuscript, order]);
+  // Point de vue (1.13.0) : « Ses scènes en point de vue » ne garde dans le volet que les scènes d'un narrateur
+  // (les autres repliées en une ligne) et les flèches passent de l'une à l'autre. État d'affichage, rien d'écrit.
+  const narrators = useMemo(() => {
+    const counts = narratorCounts(cards);
+    return cards
+      .filter((c) => counts.has(c.id))
+      .map((c) => ({ id: c.id, name: c.title.trim() || m.untitled, n: counts.get(c.id)! }))
+      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, lang));
+  }, [cards, lang, m.untitled]);
+  const [povFilter, setPovFilter] = useState<string | null>(null);
+  const povOn = povFilter && narrators.some((x) => x.id === povFilter) ? povFilter : null;
+  const told = useMemo(() => new Set(povOn ? cards.filter((c) => c.type === "scene" && !c.page && c.fiche?.pov === povOn).map((c) => c.id) : []), [cards, povOn]);
+  /** Scènes d'un groupe du volet : celles du narrateur, et les autres repliées par suites. */
+  const withFolds = (ids: string[]): (string | { fold: string[] })[] => {
+    if (!povOn) return ids;
+    const out: (string | { fold: string[] })[] = [];
+    for (const id of ids) {
+      const last = out[out.length - 1];
+      if (told.has(id)) out.push(id);
+      else if (last && typeof last !== "string") last.fold.push(id);
+      else out.push({ fold: [id] });
+    }
+    return out;
+  };
 
   const [chosen, setChosen] = useState<string | null>(null);
   const current = chosen && order.includes(chosen) ? chosen : (order[0] ?? null);
@@ -401,6 +426,9 @@ export function Manuscript() {
   };
 
   const at = order.indexOf(current);
+  // Flèches : la scène d'avant et d'après, parmi celles du narrateur si le filtre est posé.
+  const prevId = order.slice(0, Math.max(at, 0)).reverse().find((id) => !povOn || told.has(id)) ?? null;
+  const nextId = order.slice(at + 1).find((id) => !povOn || told.has(id)) ?? null;
   const title = card.title.trim() || m.untitled;
   const detected = detectCards(manuscript[current], cards);
   const chapter = chapterOf(plan, current);
@@ -429,6 +457,19 @@ export function Manuscript() {
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
+        {narrators.length > 0 && (
+          <label className="ms-pov-filter">
+            <span>{m.povFilter}</span>
+            <select value={povOn ?? ""} onChange={(e) => setPovFilter(e.target.value || null)}>
+              <option value="">{m.povAll}</option>
+              {narrators.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {fmt(m.povOption, { name: x.name, n: x.n })}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {groupByChapter(plan, order).map((group) => (
           <div
             key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`}
@@ -487,7 +528,27 @@ export function Manuscript() {
               </h3>
             )}
             <ol className="sp-scene-list">
-              {group.ids.map((id) => {
+              {withFolds(group.ids).map((entry) => {
+                if (typeof entry !== "string") {
+                  // Scènes d'autres narrateurs : une ligne, jamais cachées sans trace ; la toucher montre tout et y mène.
+                  const label = fmt(entry.fold.length === 1 ? m.povFoldOne : m.povFoldMany, { n: num(entry.fold.length) });
+                  return (
+                    <li key={`fold-${entry.fold[0]}`} className="ms-fold">
+                      <button
+                        type="button"
+                        className="link-button"
+                        title={m.povFoldHint}
+                        onClick={() => {
+                          setPovFilter(null);
+                          go(entry.fold[0]);
+                        }}
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  );
+                }
+                const id = entry;
                 const c = cards.find((x) => x.id === id);
                 const count = stats.perScene.get(id) ?? 0;
                 const movable = story.includes(id);
@@ -618,10 +679,10 @@ export function Manuscript() {
             {/* Ruban du récit, en tête de la barre (il reste en vue en défilant) : chaque case du gabarit à la place
                 que ses scènes prennent. */}
             <StoryRibbon currentId={current} onGo={go} />
-            <button type="button" className="icon-button" disabled={at === 0} aria-label={m.previous} title={m.previous} onClick={() => go(order[at - 1])}>
+            <button type="button" className="icon-button" disabled={!prevId} aria-label={m.previous} title={m.previous} onClick={() => prevId && go(prevId)}>
               <span aria-hidden="true">←</span>
             </button>
-            <button type="button" className="icon-button" disabled={at === order.length - 1} aria-label={m.next} title={m.next} onClick={() => go(order[at + 1])}>
+            <button type="button" className="icon-button" disabled={!nextId} aria-label={m.next} title={m.next} onClick={() => nextId && go(nextId)}>
               <span aria-hidden="true">→</span>
             </button>
             <input

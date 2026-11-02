@@ -40,3 +40,25 @@ export function matchChoices(people: readonly CardData[], query: string): CardDa
   const q = foldName(query);
   return q ? people.filter((c) => foldName(c.title).includes(q)) : [...people];
 }
+
+/** Couleurs des narrateurs : huit jetons `--pov-1` à `--pov-8` (styles.css). */
+export const POV_COLORS = 8;
+
+const hash = (id: string) => [...id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+
+/**
+ * Couleur de chaque narrateur (1 à POV_COLORS), stable : tirée de son identifiant, jamais de sa place dans le
+ * récit (déplacer une scène ne change aucune couleur). Deux narrateurs qui tomberaient sur la même prennent,
+ * dans l'ordre de leurs identifiants, la suivante libre ; au-delà de huit, les couleurs reviennent.
+ */
+export function narratorColors(ids: Iterable<string>): Map<string, number> {
+  const out = new Map<string, number>();
+  const taken = new Set<number>();
+  for (const id of [...new Set(ids)].sort()) {
+    let slot = hash(id) % POV_COLORS;
+    if (taken.size < POV_COLORS) while (taken.has(slot)) slot = (slot + 1) % POV_COLORS;
+    taken.add(slot);
+    out.set(id, slot + 1);
+  }
+  return out;
+}

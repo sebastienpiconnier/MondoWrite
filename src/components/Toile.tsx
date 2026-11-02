@@ -621,6 +621,7 @@ export function Toile() {
   const filterSummary = [
     filter.types.length === 1 ? t.filter.typesOne : filter.types.length > 1 ? fmt(t.filter.typesMany, { n: filter.types.length }) : "",
     filter.card ? fmt(t.filter.card, { title: nodes.find((n) => n.id === filter.card)?.data.title.trim() || t.bible.untitled }) : "",
+    filter.pov ? fmt(t.filter.pov, { name: nodes.find((n) => n.id === filter.pov)?.data.title.trim() || t.bible.untitled }) : "",
   ]
     .filter(Boolean)
     .join(" · ");

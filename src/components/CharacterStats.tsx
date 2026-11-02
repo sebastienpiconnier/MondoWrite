@@ -23,6 +23,7 @@ export function CharacterStats({ rows, kind, onOpen, onSeeLines }: Props) {
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: kind === "script" ? "lines" : "scenes", desc: true });
   const sorted = useMemo(() => sortRows(rows, sort.key, sort.desc, lang), [rows, sort, lang]);
   const groups = useMemo(() => genderSummary(rows), [rows]);
+  const hasPov = rows.some((r) => r.pov);
   const number = (n: number) => new Intl.NumberFormat(lang).format(n);
   const percent = (n: number) => new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 0 }).format(n);
   const plural = (n: number, one: string, many: string) => (n === 1 ? one : fmt(many, { n: number(n) }));
@@ -35,10 +36,12 @@ export function CharacterStats({ rows, kind, onOpen, onSeeLines }: Props) {
     { key: "words", label: kind === "script" ? t.columns.wordsScript : t.columns.wordsText, numeric: true },
     { key: "share", label: kind === "script" ? t.columns.shareScript : t.columns.shareText },
     { key: "first", label: t.columns.appear },
+    // Point de vue (1.13.0) : seulement si des scènes en ont un.
+    ...(hasPov ? [{ key: "pov" as SortKey, label: t.columns.pov }] : []),
   ];
 
   const exportCsv = async () => {
-    const csv = `﻿${reportCsv(sorted, t.csvHeaders, lang)}`;
+    const csv = `﻿${reportCsv(sorted, t.csvHeaders, lang, hasPov ? (kind === "script" ? t.csvPovScript : t.csvPovText) : [])}`;
     await storage.saveAs({ name: `${title || "MondoWrite"} - ${t.columns.name}`, extension: "csv", mime: "text/csv", data: new TextEncoder().encode(csv) }, "CSV");
   };
 
@@ -97,6 +100,7 @@ export function CharacterStats({ rows, kind, onOpen, onSeeLines }: Props) {
                   </span>
                 </td>
                 <td>{r.first === null ? "" : r.first === r.last ? number(r.first) : fmt(t.appearRange, { first: number(r.first), last: number(r.last!) })}</td>
+                {hasPov && <td>{r.pov && r.pov.scenes > 0 ? fmt(t.povCell, { n: plural(r.pov.scenes, t.scenesOne, t.scenesMany), share: percent(r.pov.share) }) : ""}</td>}
                 {onSeeLines && (
                   <td>
                     {r.lines > 0 && (

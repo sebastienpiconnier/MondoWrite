@@ -39,6 +39,11 @@ export const fr = {
     typesOne: "Filtre actif : un type masqué",
     typesMany: "Filtre actif : {n} types masqués",
     card: "Filtre actif : « {title} » et ses voisines",
+    pov: "Filtre actif : scènes racontées par {name}",
+    povLabel: "Scènes en point de vue",
+    povAll: "Toutes les scènes",
+    povOption: "{name} ({n})",
+    untitled: "Sans nom",
   },
 
   spotlight: {
@@ -1012,6 +1017,13 @@ export const fr = {
   },
 
   manuscript: {
+    // Point de vue (1.13.0) : filtre du volet des scènes.
+    povFilter: "Ses scènes en point de vue",
+    povAll: "Tous les narrateurs",
+    povOption: "{name} ({n})",
+    povFoldOne: "1 autre scène",
+    povFoldMany: "{n} autres scènes",
+    povFoldHint: "Tout afficher et aller à cette scène",
     scenesAria: "Scènes du manuscrit, dans l’ordre du plan",
     panelScenes: "Plan",
     panelSide: "Infos",
@@ -1115,6 +1127,8 @@ export const fr = {
     timelineThemes: "Intrigues et thèmes",
     timelineLinked: "Relié par un fil",
     timelineCited: "Cité dans la scène",
+    timelinePov: "Raconte la scène (point de vue)",
+    timelinePovCell: "{card} raconte « {scene} » (point de vue)",
     timelineOn: "{card} dans « {scene} » : relié. Retirer le fil",
     timelineCitedCell: "{card} dans « {scene} » : cité dans la scène. Relier",
     timelineOff: "{card} dans « {scene} » : absent. Relier",
@@ -1259,6 +1273,16 @@ export const fr = {
     hideCurve: "Masquer la courbe",
     curveHint: "La fortune du héros, scène après scène : elle monte quand une scène finit mieux pour lui, descend quand elle finit moins bien (case « Pour le héros, la scène finit » de la fiche).",
     curveAria: "Courbe du récit : la fortune du héros, scène après scène",
+    // Point de vue (1.13.0) : chaque scène prend la couleur de son narrateur.
+    freeCaption: "À {n} % du récit",
+    story: "Récit",
+    showPov: "Par point de vue",
+    hidePov: "Sans les points de vue",
+    povHint: "Chaque scène prend la couleur du personnage qui la raconte (pastille « Point de vue » de la scène).",
+    povScene: "{scene} · point de vue : {name}",
+    povLegend: "Narrateurs",
+    povCount: "{name} : {n}",
+    noPov: "Sans point de vue",
   },
 
   kinds: {
@@ -1958,6 +1982,7 @@ export const fr = {
       shareScript: "Temps de parole",
       shareText: "Présence",
       appear: "Apparitions",
+      pov: "Point de vue",
     },
     sortBy: "Trier par {column}",
     appearRange: "{first} à {last}",
@@ -1967,6 +1992,9 @@ export const fr = {
     openAria: "Ouvrir la fiche de {name}",
     export: "Exporter en CSV…",
     csvHeaders: ["Personnage", "Genre", "Scènes", "Répliques", "Mots", "Part (%)", "Première scène", "Dernière scène"],
+    csvPovText: ["Scènes en point de vue", "Mots en point de vue", "Part du livre en point de vue (%)"],
+    csvPovScript: ["Scènes en point de vue", "Part des scènes en point de vue (%)"],
+    povCell: "{n} · {share}",
     byGender: "Par genre",
     genderNone: "Non renseigné",
     noteScript: "Pourcentages du temps de parole. Les genres sont ceux écrits dans les fiches, regroupés tels quels.",

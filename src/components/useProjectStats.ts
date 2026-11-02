@@ -7,7 +7,9 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { bookOrder } from "../book";
 import { usePagination } from "./usePagination";
-import { novelReport, screenplayReport } from "../review/report";
+import { novelReport, screenplayReport, withPov } from "../review/report";
+import { listScenes } from "../screenplay/scenes";
+import { countWords } from "../manuscript";
 import { novelPlaces, screenplayPlaces, settingSummary } from "../review/places";
 import { novelCast, screenplayCast } from "../review/crossings";
 
@@ -24,7 +26,12 @@ export function useProjectStats() {
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
   const order = useMemo(() => (script ? [] : bookOrder(nodes, plan)), [script, nodes, plan]);
   const characters = useMemo(
-    () => (script ? (screenplay ? screenplayReport(screenplay.elements, cards, lang) : []) : novelReport(manuscript, order, cards)),
+    () =>
+      script
+        ? screenplay
+          ? withPov(screenplayReport(screenplay.elements, cards, lang), cards, listScenes(screenplay.elements).flatMap((s) => (s.cardId ? [s.cardId] : [])))
+          : []
+        : withPov(novelReport(manuscript, order, cards), cards, order, (id) => countWords(manuscript[id])),
     [script, screenplay, cards, lang, manuscript, order],
   );
   const places = useMemo(

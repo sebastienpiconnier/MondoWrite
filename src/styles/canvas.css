@@ -504,3 +504,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Mettre à la corbeille, dans le menu ⋯ d'une carte (1.11.1) : en rouge, après un filet. */
 .card-actions-menu button.is-danger { color: var(--danger); margin-top: 5px; position: relative; }
 .card-actions-menu button.is-danger::before { content: ""; position: absolute; left: 8px; right: 8px; top: -4px; border-top: 1px solid var(--line); }
+
+/* Filtre du canevas par narrateur (point de vue, 1.13.0). */
+.canvas-filter-pov { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 4px; font-size: 0.8125rem; color: var(--ink-2); }
+.canvas-filter-pov select { min-height: 36px; }
+@media (pointer: coarse) { .canvas-filter-pov select { min-height: 44px; } }

@@ -8,8 +8,11 @@ import { mentionedIds } from "./mentions";
 import type { ScreenplayElement } from "./screenplay/model";
 import { characterName, headingParts, listScenes } from "./screenplay/scenes";
 
-/** « linked » : un fil relie la carte à la scène. « cited » : la scène la cite, sans fil. */
-export type Presence = "linked" | "cited" | "none";
+/**
+ * « pov » : le personnage raconte la scène (son point de vue, 1.13.0). « linked » : un fil relie la carte à la
+ * scène. « cited » : la scène la cite, sans fil.
+ */
+export type Presence = "pov" | "linked" | "cited" | "none";
 
 export interface TimelineRow {
   card: CardData;
@@ -49,7 +52,15 @@ export function timeline(
     rows: cards
       .filter((card) => card.type === type && card.title.trim())
       .map((card) => {
-        const cells = order.map((scene, i): Presence => (linked.has(`${scene}|${card.id}`) ? "linked" : cited[i].has(card.id) ? "cited" : "none"));
+        const cells = order.map((scene, i): Presence =>
+          card.type === "personnage" && byId.get(scene)?.fiche?.pov === card.id
+            ? "pov"
+            : linked.has(`${scene}|${card.id}`)
+              ? "linked"
+              : cited[i].has(card.id)
+                ? "cited"
+                : "none",
+        );
         return { card, cells, count: cells.filter((c) => c !== "none").length };
       })
       // Les lignes les plus présentes en haut ; à égalité, par titre.
