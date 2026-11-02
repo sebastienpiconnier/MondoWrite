@@ -29,7 +29,7 @@ export function Home() {
   const openFailed = useCosmos((s) => s.openFailed);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
-  const { openProject, openFolder, createProject, tryExample, hideProject, showProject, deleteProject, importFile, importProjectZip, chooseCloudFolder, leaveCloudFolder, gatherStrayProjects } = useCosmos.getState();
+  const { openProject, openFolder, createProject, tryExample, hideProject, showProject, deleteProject, importFile, chooseCloudFolder, leaveCloudFolder, gatherStrayProjects } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
@@ -251,19 +251,9 @@ export function Home() {
                 {storage.canPickFolder ? h.cloudLeavePc : storage.icloud?.enabled() ? h.cloudLeaveIcloud : h.cloudLeave}
               </button>
             )}
-            {storage.canImportZip && (
-              <button type="button" className="ghost-button" disabled={busy} title={h.importZipHint} onClick={() => run(importProjectZip)}>
-                {h.importZip}
-              </button>
-            )}
             <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importFile)}>
               {h.importFountain}
             </button>
-            {storage.pickScrivener && (
-              <button type="button" className="ghost-button" disabled={busy} title={t.scrivener.openScrivHint} onClick={() => run(useCosmos.getState().importScrivenerFolder)}>
-                {t.scrivener.openScriv}
-              </button>
-            )}
           </div>
         </section>
 

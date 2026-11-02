@@ -100,10 +100,11 @@ export interface Storage {
   /** L'auteur choisit un fichier (un PDF à importer). Renvoie null s'il annule. */
   pickFile(label: string, extensions: string[]): Promise<{ name: string; data: Uint8Array } | null>;
   /**
-   * Ordinateur seulement : l'auteur choisit un projet Scrivener sur le disque (le paquet .scriv sur Mac, son .scrivx
-   * ailleurs), lu sans le compresser. undefined s'il annule, null si ce n'est pas un projet lisible.
+   * Ordinateur seulement : un seul choix pour tout ce qui s'importe (fichier d'une des extensions, ou projet
+   * Scrivener sur le disque : le paquet .scriv sur Mac, son .scrivx ailleurs, lu sans le compresser). undefined
+   * s'il annule, null si le fichier choisi n'est d'aucun format connu. Sans lui, `pickFile`.
    */
-  pickScrivener?: (label: string) => Promise<ScrivenerSource | null | undefined>;
+  pickImport?: (label: string, extensions: string[]) => Promise<{ name: string; data: Uint8Array } | { scrivener: ScrivenerSource } | null | undefined>;
   /** L'auteur choisit une image (bouton d'une carte). Renvoie null s'il annule. */
   pickImage(label: string): Promise<{ name: string; data: Uint8Array } | null>;
   /** Plusieurs images d'un coup (galerie d'une fiche). Liste vide si l'auteur annule. */

@@ -102,8 +102,6 @@ export const en: Messages = {
     cloudGone: "The “{name}” cloud folder can’t be found (sync service stopped, drive unplugged, folder moved?). Its projects aren’t lost: they’ll show up again as soon as it’s back.",
     cloudLeaveHintPc: "New projects will no longer be created in this folder, and the ones it holds will no longer show up by themselves. Nothing is deleted.",
     cloudActive: "Cloud folder: {name}. Your projects are its subfolders.",
-    importZip: "Import a project (.zip)…",
-    importZipHint: "First export the project as a .zip on the other machine (Export, Full project), send it over (OneDrive, Dropbox, iCloud Drive, USB drive…), then pick it here. Images and PDFs are included.",
     hide: "Hide “{title}”",
     hideShort: "Hide from the list",
     removeShort: "Delete project…",
@@ -198,9 +196,9 @@ export const en: Messages = {
       signsAs: "Signs as “{name}”",
       newProjects: "Used in every new project.",
     },
-    importFountain: "Import a manuscript or a screenplay…",
-    importHint: "Word (.docx), Markdown or text: a novel project, with its chapters and scenes. Fountain or Final Draft (.fdx): a screenplay project, with its Scene, Character and Location cards. A PDF becomes one or the other, depending on what it holds. A Scrivener project compressed as a .zip becomes a novel project.",
-    fountainFiles: "Manuscript, screenplay or Scrivener project",
+    importFountain: "Import…",
+    importHint: "A Word (.docx), Markdown or text manuscript becomes a novel, with its chapters and scenes. Fountain or Final Draft (.fdx), a screenplay with its cards. A PDF, one or the other depending on what it holds. A Scrivener project (.scriv, or compressed as a .zip) becomes a novel with its Bible. A MondoWrite project exported as a .zip (Export, Full project) reopens as it was, images and PDFs included.",
+    fountainFiles: "Manuscript, screenplay or project",
     importTaken: "This folder already contains a project. To import a file, choose an empty folder.",
     importEmpty: "This file doesn’t contain readable text (neither a manuscript nor a screenplay).",
     importScrivener: "I can’t read inside this Scrivener project. Compress it as a .zip (in the Finder: right-click, Compress) and choose the .zip.",
@@ -2971,9 +2969,6 @@ export const en: Messages = {
   // AI batch 2 (1.9.0), "Structure and Bible": tidy the wires, a question for an empty beat, retro-bible, breakdown.
   // Scrivener import (docs/plan-import-scrivener.md): choosing folders, frames created, report.
   scrivener: {
-    pickLabel: "Scrivener project",
-    openScriv: "Open a Scrivener project…",
-    openScrivHint: "Choose the .scriv project (on Mac) or the .scrivx file inside it (on Windows and Linux): it is read, never changed. You can also choose the project compressed as a .zip (in the Finder: right-click, Compress).",
     chooseTitle: "Import “{name}”",
     chooseIntro: "The manuscript is always imported, chapters and scenes included. Tick the other folders to bring along:",
     count: "{n} items",

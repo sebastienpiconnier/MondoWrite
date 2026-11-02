@@ -446,7 +446,6 @@ export interface CosmosState {
   /** Accueil : un manuscrit (.docx, .md, .txt) ou un scénario (.fountain, .fdx) devient un nouveau projet. */
   importFile: () => Promise<void>;
   /** Mobile : ouvre un projet exporté en .zip (« Exporter une copie ») depuis Fichiers, en le copiant dans l'app. */
-  importProjectZip: () => Promise<void>;
   /** Exemple du site (examples.ts) : téléchargé, vérifié, importé comme un .zip, puis ouvert. */
   openExample: (entry: ExampleEntry) => Promise<void>;
   /** Mobile : l'auteur choisit dans Fichiers le dossier cloud (OneDrive, Dropbox…) qui contient ses projets. */
@@ -591,7 +590,6 @@ export interface CosmosState {
   confirmScrivenerImport: (exclude: string[]) => Promise<void>;
   cancelScrivenerImport: () => void;
   /** Ordinateur : choisit un projet .scriv sur le disque (sans le compresser) et l'importe. */
-  importScrivenerFolder: () => Promise<void>;
   /** Ce que l'import Scrivener a repris et laissé, affiché après l'import. État d'affichage, jamais enregistré. */
   scrivenerReport: ScrivenerReport | null;
   dismissScrivenerReport: () => void;
@@ -2381,19 +2379,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
       await storage.icloud?.set(on);
       await refreshProjects();
     },
-    importProjectZip: async () => {
-      set({ importNotice: null, homeNotice: false, openFailed: false });
-      try {
-        const picked = await storage.pickFile("ZIP", ["zip"]);
-        if (!picked) return;
-        await importZipData(picked.data);
-      } catch (err) {
-        console.error(err);
-        storage.forget();
-        set({ openFailed: true });
-      }
-    },
-
     openExample: async (entry) => {
       set({ importNotice: null, homeNotice: false, openFailed: false });
       useExamples.setState({ busy: { id: entry.id, share: 0 }, error: null });
@@ -2419,13 +2404,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const t = getT();
       let file: { name: string; data: Uint8Array } | null = null;
       try {
-        file = await storage.pickFile(t.home.fountainFiles, IMPORT_EXTENSIONS);
+        // Un seul bouton : manuscrit, scénario, projet MondoWrite (.zip) ou projet Scrivener (.scriv sur le disque).
+        // pickFile rend null quand l'auteur annule ; pickImport, undefined (null : format inconnu).
+        const picked = storage.pickImport ? await storage.pickImport(t.home.fountainFiles, IMPORT_EXTENSIONS) : ((await storage.pickFile(t.home.fountainFiles, IMPORT_EXTENSIONS)) ?? undefined);
+        if (picked === undefined) return;
+        if (picked && "scrivener" in picked) {
+          const { scrivenerFolders } = await import("./import/scrivener");
+          set({ scrivenerChoice: { source: picked.scrivener, folders: scrivenerFolders(picked.scrivener.binder) } });
+          return;
+        }
+        if (!picked) {
+          set({ importNotice: "empty" });
+          return;
+        }
+        file = picked;
       } catch (err) {
         console.error(err);
-        set({ importNotice: "empty" });
+        set({ importNotice: err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : "empty" });
         return;
       }
-      if (!file) return;
       const outcome = await importFromFile(file, {
         fileName: file.name,
         locale: useSettings.getState().lang,
@@ -3262,23 +3259,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
         return;
       }
       await finishImport(built.project, built.medias, built.report);
-    },
-    importScrivenerFolder: async () => {
-      set({ importNotice: null, homeNotice: false, openFailed: false });
-      if (!storage.pickScrivener) return;
-      try {
-        const source = await storage.pickScrivener(getT().scrivener.pickLabel);
-        if (source === undefined) return;
-        if (!source) {
-          set({ importNotice: "empty" });
-          return;
-        }
-        const { scrivenerFolders } = await import("./import/scrivener");
-        set({ scrivenerChoice: { source, folders: scrivenerFolders(source.binder) } });
-      } catch (err) {
-        console.error(err);
-        set({ importNotice: err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : "empty" });
-      }
     },
     // ---------- Mode Atelier (1.8.0) ----------
     // L'IA propose, l'auteur accepte : chaque acceptation est une action (une étape d'historique quand elle touche

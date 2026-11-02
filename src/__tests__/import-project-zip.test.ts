@@ -22,7 +22,7 @@ afterEach(() => vi.restoreAllMocks());
 describe("importer un projet .zip", () => {
   it.each([["à la racine", ""], ["dans un dossier", "Mon roman/"]])("ouvre le projet (%s)", async (_label, prefix) => {
     vi.spyOn(storage, "pickFile").mockResolvedValueOnce({ name: "roman.zip", data: archive(prefix) });
-    await state().importProjectZip();
+    await state().importFile();
     expect(state().openFailed).toBe(false);
     expect(state().homeNotice).toBe(false);
     expect(state().title).toBe("Roman importé");
@@ -31,14 +31,14 @@ describe("importer un projet .zip", () => {
 
   it("un zip qui n'est pas un projet prévient l'auteur", async () => {
     vi.spyOn(storage, "pickFile").mockResolvedValueOnce({ name: "autre.zip", data: zipSync({ "notes.txt": strToU8("bonjour") }) });
-    await state().importProjectZip();
+    await state().importFile();
     expect(state().homeNotice).toBe(true);
     expect(state().screen).not.toBe("project");
   });
 
   it("annuler le choix ne change rien", async () => {
     vi.spyOn(storage, "pickFile").mockResolvedValueOnce(null);
-    await state().importProjectZip();
+    await state().importFile();
     expect(state().homeNotice).toBe(false);
     expect(state().openFailed).toBe(false);
   });

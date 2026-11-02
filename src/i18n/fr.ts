@@ -104,8 +104,6 @@ export const fr = {
     cloudGone: "Le dossier cloud « {name} » est introuvable (service de synchronisation arrêté, disque débranché, dossier déplacé ?). Ses projets ne sont pas perdus : ils réapparaîtront dès qu’il sera de nouveau accessible.",
     cloudLeaveHintPc: "Les nouveaux projets ne seront plus créés dans ce dossier et ceux qu’il contient ne s’afficheront plus d’eux-mêmes. Rien n’est supprimé.",
     cloudActive: "Dossier cloud : {name}. Tes projets sont ses sous-dossiers.",
-    importZip: "Importer un projet (.zip)…",
-    importZipHint: "Exporte d’abord le projet en .zip sur l’autre machine (Exporter, Projet complet), transmets-le (OneDrive, Dropbox, iCloud Drive, clé USB…), puis choisis-le ici. Les images et les PDF sont inclus.",
     hide: "Masquer « {title} »",
     hideShort: "Masquer de la liste",
     removeShort: "Supprimer le projet…",
@@ -200,9 +198,9 @@ export const fr = {
       signsAs: "Signe « {name} »",
       newProjects: "Repris dans chaque nouveau projet.",
     },
-    importFountain: "Importer un manuscrit ou un scénario…",
-    importHint: "Word (.docx), Markdown ou texte : un projet roman, avec ses chapitres et ses scènes. Fountain ou Final Draft (.fdx) : un projet scénario, avec ses cartes Scène, Personnage et Décor. Un PDF devient l’un ou l’autre, selon ce qu’il contient. Un projet Scrivener compressé (.zip) devient un projet roman.",
-    fountainFiles: "Manuscrit, scénario ou projet Scrivener",
+    importFountain: "Importer…",
+    importHint: "Un manuscrit Word (.docx), Markdown ou texte devient un roman, avec ses chapitres et ses scènes. Fountain ou Final Draft (.fdx), un scénario avec ses cartes. Un PDF, l’un ou l’autre selon ce qu’il contient. Un projet Scrivener (.scriv, ou compressé en .zip) devient un roman avec sa Bible. Un projet MondoWrite exporté en .zip (Exporter, Projet complet) se rouvre tel quel, images et PDF compris.",
+    fountainFiles: "Manuscrit, scénario ou projet",
     importTaken: "Ce dossier contient déjà un projet. Pour importer un fichier, choisis un dossier vide.",
     importEmpty: "Ce fichier ne contient pas de texte lisible (ni manuscrit, ni scénario).",
     importScrivener: "Je n’arrive pas à lire l’intérieur de ce projet Scrivener. Compresse-le en .zip (dans le Finder\u00a0: clic droit, Compresser) et choisis le .zip.",
@@ -3019,9 +3017,6 @@ export const fr = {
   // Lot IA 2 (1.9.0), « Structure et Bible » : ranger les fils, question d'une case vide, rétro-bible, dépouillement.
   // Import d'un projet Scrivener (docs/plan-import-scrivener.md) : choix des dossiers, cadres créés, rapport.
   scrivener: {
-    pickLabel: "Projet Scrivener",
-    openScriv: "Ouvrir un projet Scrivener…",
-    openScrivHint: "Choisis le projet .scriv (sur Mac) ou le fichier .scrivx qu’il contient (sous Windows et Linux) : il est lu sans être modifié. Tu peux aussi choisir le projet compressé en .zip (dans le Finder : clic droit, Compresser).",
     chooseTitle: "Importer « {name} »",
     chooseIntro: "Le manuscrit est toujours importé, chapitres et scènes compris. Coche les autres dossiers à reprendre :",
     count: "{n} éléments",

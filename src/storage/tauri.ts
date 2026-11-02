@@ -12,6 +12,7 @@ import type { Storage } from "./index";
 import { COPIES_DIR, JOURNAL_FILE, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isAppleKeyboard, isMobileOS } from "../platform";
+import type { ScrivenerSource } from "../import/scrivener";
 import { getT } from "../i18n";
 import { MISSING_FOLDER, classifySaveError } from "../saveErrors";
 import { byRecency, dropRecent, readRecents, touchRecent } from "./recents";
@@ -179,6 +180,51 @@ async function mobileRoot() {
  * iPhone et iPad dans le conteneur de l'app ; sur Mac aussi quand le dossier cloud est celui de l'iPhone (le système ne
  * répond que si l'app porte le droit iCloud, et rien n'est parcouru hors du conteneur).
  */
+/** Projet Scrivener choisi sur le disque (le .scriv ou son .scrivx), lu sans être modifié : seuls classeur,
+ *  textes et médias. Lance « scrivener-unreadable » si rien n'est lisible. */
+async function readScrivenerAt(path: string): Promise<ScrivenerSource> {
+  const { isScrivenerEntry, readScrivenerSource, readScrivenerZip } = await import("../import/scrivener");
+  const root = /\.scrivx$/i.test(path) ? await dirname(path) : path;
+  // Le dialogue n'autorise que le chemin choisi : on ouvre la lecture du dossier .scriv (hors du dossier personnel,
+  // un disque externe par exemple), et l'on fait venir d'iCloud ce qui n'est pas encore sur l'appareil.
+  if (/\.scriv$/i.test(root)) await invoke("allow_scriv", { path: root }).catch(() => false);
+  // Un .scriv qui n'est pas un dossier est un projet zippé puis renommé (téléchargé depuis iCloud.com ou Dropbox,
+  // envoyé par courriel) : on le lit comme un .zip (cas réel, 1.14.0).
+  if (/\.scriv$/i.test(root) && !(await readDir(root).then(() => true, () => false))) {
+    const source = await readScrivenerZip(await readFile(root)).catch(() => null);
+    if (source && source !== "not-scrivener") return source;
+    throw new Error("scrivener-unreadable");
+  }
+  await ensureDownloaded(root);
+  const prefix = `${baseName(root)}/`;
+  let failed = "";
+  const files = new Map<string, Uint8Array>();
+  const take = async (dir: string, rel: string) => {
+    const entries = await readDir(dir).catch((err) => {
+      if (!rel) failed = String(err);
+      return [];
+    });
+    const wanted = entries.filter((e) => e.isFile && isScrivenerEntry(`${prefix}${rel}${e.name}`));
+    for (let i = 0; i < wanted.length; i += READ_PARALLEL) {
+      await Promise.all(wanted.slice(i, i + READ_PARALLEL).map(async (e) => files.set(`${prefix}${rel}${e.name}`, await readFile(await join(dir, e.name)))));
+    }
+    return entries;
+  };
+  await take(root, "");
+  const filesDir = await join(root, "Files");
+  await take(filesDir, "Files/");
+  const data = await join(filesDir, "Data");
+  for (const entry of await readDir(data).catch(() => [])) if (entry.isDirectory) await take(await join(data, entry.name), `Files/Data/${entry.name}/`);
+  await take(await join(filesDir, "Docs"), "Files/Docs/");
+  const source = readScrivenerSource(files);
+  // Rien de lisible : on le dit (et la cause pour « Signaler un bug »), l'app propose alors la voie du .zip.
+  if (!source) {
+    console.error(`Scrivener : ${root} illisible (${files.size} fichiers lus${failed ? `, ${failed}` : ""})`);
+    throw new Error("scrivener-unreadable");
+  }
+  return source;
+}
+
 async function ensureDownloaded(dir: string) {
   // Sur Mac, aussi un projet rangé ailleurs dans iCloud Drive : « Optimiser le stockage du Mac » retire de l'appareil
   // les fichiers peu ouverts, qui restaient sinon des repères (1.7.2).
@@ -368,6 +414,9 @@ async function adoptMacIcloud() {
 
 /** Ce que MondoWrite écrit dans un dossier projet (fichiers et dossiers, copies de conflit et repères iCloud compris). */
 const PROJECT_DIRS = new Set([...TEXT_DIRS, MEDIA_DIR, COPIES_DIR, LOCK_DIR, SCENE_VERSIONS_DIR]);
+/** Fichiers que le système pose seul dans un dossier (Mac, Windows) : ils n'empêchent pas de retirer un dossier vide. */
+const SYSTEM_JUNK = new Set([".DS_Store", "Thumbs.db", "desktop.ini", ".localized"]);
+
 function isProjectEntry(name: string) {
   const shown = name.startsWith(".") && name.endsWith(".icloud") ? name.slice(1, -".icloud".length) : name;
   // Temporaire d'écriture laissé par une coupure (« cosmos.json.mondowrite-tmp ») : il part avec le projet.
@@ -659,6 +708,16 @@ export const tauriStorage: Storage = {
           // Dossier cloud absent ou pas encore synchronisé : on garde la liste mémorisée.
         }
       }
+      // Un dossier encore là mais qui n'a plus de projet (supprimé sur une autre machine : le dossier reste quand le
+      // Finder y avait laissé un .DS_Store, ou le temps que la synchronisation l'efface) quitte la liste. Un dossier
+      // absent reste, hors du dossier cloud : ce peut être un disque débranché. Le projet ouvert reste (pas encore écrit).
+      for (const e of [...list]) {
+        if (e.id === current) continue;
+        if ((await exists(e.id).catch(() => false)) && !(await isProjectDir(e.id))) {
+          dropRecent(e.id);
+          list.splice(list.indexOf(e), 1);
+        }
+      }
       return byRecency(list);
     }
     // Mobile : la liste mémorisée, complétée par les dossiers présents (réinstallation, ancien projet unique).
@@ -746,65 +805,29 @@ export const tauriStorage: Storage = {
         if (!isProjectEntry(entry.name)) continue;
         await remove(await join(id, entry.name), entry.isDirectory ? { recursive: true } : undefined);
       }
-      if ((await readDir(id)).length === 0) await remove(id);
+      // Les fichiers que le système pose seul (Finder, Explorateur) ne gardent pas le dossier : avec un .DS_Store, il
+      // restait, et l'autre machine le listait encore. Retiré d'un bloc (le plugin fs refuse un nom qui commence par
+      // un point), seulement quand il ne reste que ces fichiers-là.
+      const left = await readDir(id);
+      if (left.every((e) => !e.isDirectory && SYSTEM_JUNK.has(e.name))) await remove(id, left.length ? { recursive: true } : undefined);
     }
     dropRecent(id);
     if (current === id) current = null;
   },
-  async pickScrivener(label) {
-    // Sur Mac, le .scriv est un paquet : le dialogue le montre comme un fichier. Ailleurs c'est un dossier, et l'on
-    // choisit le .scrivx qu'il contient. Seuls classeur, textes et médias sont lus (jamais les index ni les aperçus).
-    // Pas de filtre sur Mac : l'extension « scriv » y devient un type de fichier ordinaire, que le paquet (type de
-    // Scrivener, rangé parmi les paquets) ne satisfait pas, et le dialogue le grisait (essai de la 1.14.0). Le choix
-    // est donc vérifié ici : .scriv, .scrivx ou .zip, sinon rien n'est lu.
+  async pickImport(label, extensions) {
+    // Un seul choix pour tout ce qui s'importe : manuscrit, scénario, projet MondoWrite (.zip), projet Scrivener.
+    // Sur Mac, le .scriv est un paquet que le dialogue montre comme un fichier ; ailleurs c'est un dossier, et l'on
+    // choisit le .scrivx qu'il contient. Pas de filtre sur Mac : l'extension « scriv » y devient un type de fichier
+    // ordinaire, que le paquet de Scrivener ne satisfait pas (grisé, essai de la 1.14.0). Le choix est vérifié ici.
     const mac = isAppleKeyboard() && !isMobileOS();
-    const path = await open({ multiple: false, directory: false, filters: mac ? undefined : [{ name: label, extensions: ["scriv", "scrivx", "zip"] }] });
+    const path = await open({ multiple: false, directory: false, filters: mac ? undefined : [{ name: label, extensions: [...extensions, "scriv", "scrivx"] }] });
     if (typeof path !== "string") return undefined;
-    const { isScrivenerEntry, readScrivenerSource, readScrivenerZip } = await import("../import/scrivener");
-    if (/\.zip$/i.test(path)) {
-      const source = await readScrivenerZip(await readFile(path));
-      return source && source !== "not-scrivener" ? source : null;
+    if (!/\.scrivx?$/i.test(path)) {
+      const ext = path.split(".").pop()?.toLowerCase() ?? "";
+      if (!extensions.includes(ext)) return null;
+      return { name: baseName(path), data: await readFile(path) };
     }
-    if (!/\.scrivx?$/i.test(path)) return null;
-    const root = /\.scrivx$/i.test(path) ? await dirname(path) : path;
-    // Le dialogue n'autorise que le chemin choisi : on ouvre la lecture du dossier .scriv (hors du dossier personnel,
-    // un disque externe par exemple), et l'on fait venir d'iCloud ce qui n'est pas encore sur l'appareil.
-    if (/\.scriv$/i.test(root)) await invoke("allow_scriv", { path: root }).catch(() => false);
-    // Un .scriv qui n'est pas un dossier est un projet zippé puis renommé (téléchargé depuis iCloud.com ou Dropbox,
-    // envoyé par courriel) : on le lit comme un .zip (cas réel, 1.14.0).
-    if (/\.scriv$/i.test(root) && !(await readDir(root).then(() => true, () => false))) {
-      const source = await readScrivenerZip(await readFile(root)).catch(() => null);
-      if (source && source !== "not-scrivener") return source;
-      throw new Error("scrivener-unreadable");
-    }
-    await ensureDownloaded(root);
-    const prefix = `${baseName(root)}/`;
-    let failed = "";
-    const files = new Map<string, Uint8Array>();
-    const take = async (dir: string, rel: string) => {
-      const entries = await readDir(dir).catch((err) => {
-        if (!rel) failed = String(err);
-        return [];
-      });
-      const wanted = entries.filter((e) => e.isFile && isScrivenerEntry(`${prefix}${rel}${e.name}`));
-      for (let i = 0; i < wanted.length; i += READ_PARALLEL) {
-        await Promise.all(wanted.slice(i, i + READ_PARALLEL).map(async (e) => files.set(`${prefix}${rel}${e.name}`, await readFile(await join(dir, e.name)))));
-      }
-      return entries;
-    };
-    await take(root, "");
-    const filesDir = await join(root, "Files");
-    await take(filesDir, "Files/");
-    const data = await join(filesDir, "Data");
-    for (const entry of await readDir(data).catch(() => [])) if (entry.isDirectory) await take(await join(data, entry.name), `Files/Data/${entry.name}/`);
-    await take(await join(filesDir, "Docs"), "Files/Docs/");
-    const source = readScrivenerSource(files);
-    // Rien de lisible : on le dit (et la cause pour « Signaler un bug »), l'app propose alors la voie du .zip.
-    if (!source) {
-      console.error(`Scrivener : ${root} illisible (${files.size} fichiers lus${failed ? `, ${failed}` : ""})`);
-      throw new Error("scrivener-unreadable");
-    }
-    return source;
+    return { scrivener: await readScrivenerAt(path) };
   },
   async pickTextFile(label, extensions) {
     // Le fichier choisi dans le dialogue du système est autorisé en lecture par Tauri.

@@ -1211,7 +1211,7 @@ const scenarios = [
       });
       await h.home();
       const chooser = page.waitForEvent("filechooser");
-      await page.getByRole("button", { name: "Importer un manuscrit ou un scénario…" }).click();
+      await page.getByRole("button", { name: "Importer…", exact: true }).click();
       await (await chooser).setFiles({ name: "Sacré Bonhomme.zip", mimeType: "application/zip", buffer: Buffer.from(zip) });
       // Choix des dossiers : tout est coché ; on décoche « Notes ».
       const choice = page.locator("dialog.scriv-choice[open]");

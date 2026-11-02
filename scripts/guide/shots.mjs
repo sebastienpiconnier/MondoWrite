@@ -590,7 +590,7 @@ await page.goto(URL);
 await wait(600);
 await step("import", async () => {
   const chooser = page.waitForEvent("filechooser");
-  await page.locator(".ghost-button", { hasText: T("Importer un manuscrit", "Import a manuscript") }).click();
+  await page.locator(".ghost-button", { hasText: T("Importer…", "Import…") }).click();
   await (await chooser).setFiles(SAMPLE);
   await wait(2000);
   await closeTour();
