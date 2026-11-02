@@ -233,12 +233,30 @@ L'invitation à la rétro-bible (`retroInvite`) reste proposée.
       importés. À vérifier sur le tutoriel : format exact des notes et annotations en ligne et des signets
       (lecture volontairement tolérante, sans fichier réel ici)
 
+### Essai sur un vrai roman (2 novembre 2026, 15 chapitres, 22 418 mots)
+
+- [x] Texte : 22 406 mots repris sur 22 418, l'écart est fait des seules balises de style de Scrivener
+- [x] Un .scriv qui est un fichier (projet zippé puis renommé, téléchargé ou envoyé) se lit comme un .zip ;
+      sur Mac, plus de filtre dans le dialogue (il grisait le paquet), lecture du dossier autorisée
+      (`allow_scriv`, lib.rs), message clair si rien n'est lisible
+- [x] Puces en double (repère `\listtext` et puce collée) : une seule
+- [x] Liste de personnages dans un seul document (intitulés « NOM - accroche » suivis de « Âge : … ») : une
+      carte par personnage (`readCharacterList`), accroche, « Personnage principal » pour la partie des
+      principaux ; libellés Physique, Évolution (arc), Situation, Particularités, Race
+- [x] Mots-clés qui nomment un personnage de la Bible (« Ethan », « Dubois », « Soeur d'Ethan ») : fils vers
+      sa carte au lieu d'une Idée de plus (`byFirstName`)
+- [x] Statut d'un document coupé en scènes (« *** ») : sur chacune
+- [ ] À regarder : les anciennes versions des chapitres rangées dans la Recherche (« Version 1 »,
+      « Archives ») arrivent en grandes cartes Idée ; le dossier se décoche à l'import. Piste : en faire des
+      versions des scènes (avec les instantanés, ci-dessous)
+
 ### Lot 3 : finitions
 
 - [ ] Instantanés → versions des scènes
 - [ ] Objectif et historique d'écriture → `goals`, `progress`
-- [ ] Ancien format Scrivener 2 Mac et 1 Windows (`.scrivx` version 1.x, `Files/Docs/<ID>.rtf`,
-      `<ID>_synopsis.txt`, `<ID>_notes.rtf`)
+- [ ] Ancien format Scrivener 2 Mac et 1 Windows : **abandonné** (décidé le 2 novembre 2026). Un tel projet
+      reçoit un message : l'ouvrir d'abord dans Scrivener 3, qui le convertit. La lecture tolérante de
+      `Files/Docs/` déjà écrite reste, sans être promise
 - [ ] Pages liminaires reconnues (Dédicace, Remerciements, Épigraphe) → pages hors récit (`page`)
 - [ ] Collections choisies → cadres ; plusieurs livres dans le Manuscrit → choix du livre
 - [ ] Image de carte (synopsis en image), son et vidéo de la Recherche

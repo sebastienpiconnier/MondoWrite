@@ -14,7 +14,7 @@ import { bookToProject, EPILOGUE, isSceneBreak, PROLOGUE, sceneTitle, type Impor
 import { statusOf, type Binder, type BinderItem } from "./binder";
 import type { InspectorNote } from "./comments";
 import { INLINE_MARK, type RtfImage, type RtfInline } from "./rtf";
-import { readSketch, type SketchKind } from "./sketch";
+import { readCharacterList, readSketch, type SketchKind } from "./sketch";
 
 /** Ce qu'on sait lire d'un document du classeur. */
 export interface ScrivenerDoc {
@@ -105,6 +105,9 @@ export function chapterTitle(title: string): string {
   const m = t.match(NUMBERED);
   return m ? t.slice(m[0].length).trim() : t;
 }
+
+/** Articles et titres ignorés pour reconnaître un nom (« La Sœur d'Ethan », « Monsieur Dubois »). */
+const NAME_ARTICLES = new Set(["la", "le", "les", "the", "un", "une", "an", "monsieur", "madame", "mademoiselle", "mr", "mrs", "ms", "miss"]);
 
 const fold = (s: string) =>
   s
@@ -303,13 +306,14 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
         ids.push(id);
         scenes.push(paras.map((p) => p.html));
         const fiche: Record<string, string> = {};
+        // Le statut vaut pour tout le document, donc pour chacune de ses scènes ; le synopsis, pour la première.
+        const label = item.statusId ? binder.statuses[item.statusId] ?? "" : "";
+        const status = statusOf(label);
+        if (status) fiche.statut = status;
         if (k === 0) {
           const synopsis = doc.synopsis.trim();
           if (synopsis) fiche.synopsis = synopsis;
-          const label = item.statusId ? binder.statuses[item.statusId] ?? "" : "";
-          const status = statusOf(label);
-          if (status) fiche.statut = status;
-          else if (label) statusMiss.set(label, (statusMiss.get(label) ?? 0) + 1);
+          if (!status && label) statusMiss.set(label, (statusMiss.get(label) ?? 0) + 1);
         }
         const sceneTitleText = k === 0 && ownTitle ? (first ? chapterTitle(item.title) : item.title.trim()) : "";
         sceneMeta.push({ id, ...(sceneTitleText ? { title: sceneTitleText } : {}), ...(Object.keys(fiche).length ? { fiche } : {}) });
@@ -409,6 +413,23 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
         report.links += 1;
       } else if (item.type === "Text" || item.type === "Folder") {
         const synopsis = doc.synopsis.trim();
+        const list = kind === "personnage" ? readCharacterList(doc.paras) : null;
+        if (list) {
+          // Une liste de personnages : une carte par personnage, toutes dans le cadre du dossier.
+          const ids = list.map((one) => {
+            const own = newId();
+            const fiche: Record<string, string> = { ...one.fiche };
+            if (one.accroche && one.accroche.length <= 120) fiche.accroche = one.accroche;
+            if (one.principal) fiche.principal = "oui";
+            extraCards.push({ id: own, type: "personnage", title: one.title, html: one.body.join(""), ...(Object.keys(fiche).length ? { fiche } : {}) });
+            groupFor(frameTitle).ids.push(own);
+            report.characters += 1;
+            return own;
+          });
+          cardOf.set(item.uuid, ids[0]);
+          cardsOf.set(item.uuid, ids);
+          continue;
+        }
         if (kind === "personnage" || kind === "lieu") {
           const sketch = readSketch(doc.paras, kind);
           const notes = notesHtml(doc);
@@ -472,6 +493,27 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
     }
     return "idee";
   };
+  /** Mot-clé qui nomme un seul personnage ou lieu de la Bible (« Ethan » pour « Ethan Moreau »,
+   *  « Dubois » pour « Monsieur Dubois ») : le fil va à sa carte, pas à une Idée de plus. */
+  const byFirstName = (title: string, type: CardType): string | null => {
+    if (type !== "idee") return null;
+    const words = (s: string) =>
+      s
+        .replace(/œ/gi, "oe")
+        .replace(/æ/gi, "ae")
+        .split(/[\s'’-]+/)
+        .map(fold)
+        .filter((w) => w.length > 1 && !NAME_ARTICLES.has(w));
+    const kw = words(title);
+    if (kw.length === 0) return null;
+    const people = allCards().filter((c) => c.type === "personnage" || c.type === "lieu").map((c) => ({ id: c.id, words: words(c.title) }));
+    const only = (found: { id: string }[]) => (found.length === 1 ? found[0].id : null);
+    return (
+      only(people.filter((p) => p.words.join(" ") === kw.join(" "))) ??
+      (kw.length === 1 ? only(people.filter((p) => p.words[0] === kw[0])) : null) ??
+      only(people.filter((p) => kw.every((w) => p.words.includes(w))))
+    );
+  };
   const keywordCard = new Map<string, string>();
   for (const item of flatten(binder.items)) {
     const targets = cardsOf.get(item.uuid);
@@ -480,7 +522,7 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
       const keyword = binder.keywords[kw];
       if (!keyword?.title.trim()) continue;
       let card = keywordCard.get(kw);
-      if (!card) keywordCard.set(kw, (card = ensureCard(keyword.title, keywordType(kw))));
+      if (!card) keywordCard.set(kw, (card = byFirstName(keyword.title, keywordType(kw)) ?? ensureCard(keyword.title, keywordType(kw))));
       for (const target of targets) link(target, card);
     }
   }

@@ -560,6 +560,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 7. (fait) IA optionnelle : « Ranger les idées », questions sur mesure dans l'assistant personnage, alertes de cohérence. Services : Claude, OpenAI, OpenRouter, Ollama, LM Studio. 1.8.0 : Interroger le personnage, Du vrac aux cartes, mode Atelier ; 1.9.0 : relecture par l'IA (cohérence scène par scène, chronologie, voix, lecteur bêta), Ranger les fils, question pour une case vide, rétro-bible, dépouillement, recherche par le sens locale. 1.10.0 : images de référence (Atelier) et Apple Foundation Models (modèle d'Apple Intelligence sur l'appareil, à essayer sur Mac et iPhone). Reste : clé dans le trousseau du système
 8. (fait) Export : manuscrit en PDF (format Shunn), Word, EPUB et Markdown, livre broché KDP (intérieur et gabarit de couverture), bible en PDF, Word et Markdown, sans outil externe. Le nom d'auteur et les coordonnées viennent du profil (page des projets). Reste : EPUB de la bible
 9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand le canevas est très dézoomé (menu hors du zoom de React Flow)
+9 bis. Lecture à voix haute : essayer une voix locale en français (Kokoro, licence Apache 2.0, environ 300 Mo téléchargés à la demande). Pas Piper : son moteur est sous GPL
 10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 
 ## Changer de machine (PC Windows ↔ Mac)

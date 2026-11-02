@@ -120,6 +120,22 @@ function runsToHtml(runs: Run[]): string {
 }
 
 /** Fusionne les morceaux voisins de même aspect, puis retire les marqueurs de Scrivener du texte. */
+/** Puce en tête d'un élément de liste : le repère de la liste (\\listtext) et une puce collée dans le texte se
+ *  suivaient (« •\t\t•\tÂge »). Une seule puce, suivie d'une espace (testé sur un vrai projet, 1.14.0). */
+function oneBullet(runs: Run[]): Run[] {
+  let bullet = false;
+  const out = runs.map((r) => ({ ...r }));
+  for (const r of out) {
+    const lead = r.text.match(/^[\t ]*(?:[•◦▪][\t ]*)*/)?.[0] ?? "";
+    if (/[•◦▪]/.test(lead)) bullet = true;
+    r.text = r.text.slice(lead.length);
+    if (r.text) break;
+  }
+  if (!bullet) return runs;
+  const rest = out.filter((r) => r.text);
+  return rest.length ? [{ ...rest[0], text: `• ${rest[0].text}` }, ...rest.slice(1)] : rest;
+}
+
 function cleanRuns(runs: Run[]): { runs: Run[]; heading: boolean } {
   const merged: Run[] = [];
   for (const run of runs) {
@@ -201,7 +217,8 @@ export function rtfDocument(source: string): RtfDocument {
   };
   const endParagraph = () => {
     flushBytes();
-    const { runs: clean, heading } = cleanRuns(runs);
+    const { runs: listed, heading } = cleanRuns(runs);
+    const clean = oneBullet(listed);
     const html = runsToHtml(clean);
     const text = clean.map((r) => r.text).join("");
     paras.push({ html: html.trim() ? html : "", text: text.trim(), ...(heading ? { heading: true } : {}) });

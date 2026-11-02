@@ -770,6 +770,13 @@ export const tauriStorage: Storage = {
     // Le dialogue n'autorise que le chemin choisi : on ouvre la lecture du dossier .scriv (hors du dossier personnel,
     // un disque externe par exemple), et l'on fait venir d'iCloud ce qui n'est pas encore sur l'appareil.
     if (/\.scriv$/i.test(root)) await invoke("allow_scriv", { path: root }).catch(() => false);
+    // Un .scriv qui n'est pas un dossier est un projet zippé puis renommé (téléchargé depuis iCloud.com ou Dropbox,
+    // envoyé par courriel) : on le lit comme un .zip (cas réel, 1.14.0).
+    if (/\.scriv$/i.test(root) && !(await readDir(root).then(() => true, () => false))) {
+      const source = await readScrivenerZip(await readFile(root)).catch(() => null);
+      if (source && source !== "not-scrivener") return source;
+      throw new Error("scrivener-unreadable");
+    }
     await ensureDownloaded(root);
     const prefix = `${baseName(root)}/`;
     let failed = "";
