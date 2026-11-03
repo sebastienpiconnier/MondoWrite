@@ -511,7 +511,7 @@ export function Bible() {
       {onCover || !shown ? (
         <section className="bible-main is-cover" aria-label={t.pitch.toc} ref={mainRef}>
           <h1 className="sr-only">{t.pitch.toc}</h1>
-          <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} onAddEpisode={() => create("episode")} />
+          <ProjectCover onOpenTheme={openCard} onAddTheme={() => create("theme")} />
         </section>
       ) : (
         // Toutes les rubriques affichées, l'une sous l'autre : la Bible se lit comme le document exporté

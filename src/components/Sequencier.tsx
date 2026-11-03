@@ -8,8 +8,11 @@ import { PovPicker } from "./PovPicker";
 import { templateBeats, type PlanBeat } from "../plan";
 import { MoreMenu } from "./MoreMenu";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
-import { EpisodePicker } from "./EpisodePicker";
+import { SCENE_AT, useCosmos } from "../store";
+import { useEpisodeLabel } from "./EpisodePicker";
+import { isSeries, seriesMark, seriesOf, type Episode, type Season } from "../screenplay/series";
+import { isSeries as isSeriesPitch } from "../review/checks";
+import { formOf } from "../pitch";
 import { useSettings, type SequencerMode } from "../settings";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
@@ -40,14 +43,17 @@ export function Sequencier() {
   const lang = useSettings((s) => s.lang);
   const mode = useSettings((s) => s.sequencerMode);
   const setMode = useSettings((s) => s.setSequencerMode);
-  // Série : le texte de l'épisode ouvert (les rangs de ses éléments sont locaux, `offset` les ramène à la saison).
-  const screenplay = useCosmos(currentScript);
-  const offset = useCosmos(scriptOffset);
+  // Toute la série : saisons, épisodes et scènes (screenplay/series.ts).
+  const screenplay = useCosmos((s) => s.screenplay);
+  const pitch = useCosmos((s) => s.pitch);
   const nodes = useCosmos((s) => s.nodes);
   const anyPov = useMemo(() => nodes.some((n) => n.data.type === "scene" && n.data.fiche?.pov), [nodes]);
-  const setScreenplay = useCosmos((s) => s.setScript);
+  const setScreenplay = useCosmos((s) => s.setScreenplay);
   const revealCard = useCosmos((s) => s.revealCard);
-  const pagination = usePagination();
+  const pagination = usePagination(true);
+  const episodeLabel = useEpisodeLabel();
+  // Saisons et épisodes repliés : un affichage, jamais enregistré.
+  const [folded, setFolded] = useState<Set<string>>(() => new Set());
 
   const list = useMemo(() => (screenplay ? blocks(screenplay.elements) : []), [screenplay]);
   const characterCards = useMemo(() => nodes.filter((n) => n.data.type === "personnage"), [nodes]);
@@ -101,7 +107,17 @@ export function Sequencier() {
   }, [screenplay.elements]);
   // Scènes rangées dans chaque case : une case vide reçoit « Une question » (IA branchée).
   const beatScenes = useMemo(() => screenplayPlan(screenplay.elements).beats, [screenplay.elements]);
+  // Série : saisons et épisodes, par identifiant.
+  const series = seriesOf(screenplay.elements);
+  const seasonById = new Map(series.flatMap((x) => (x.id ? [[x.id, x] as [string, Season]] : [])));
+  const episodeById = new Map(series.flatMap((x) => x.episodes.map((e) => [e.id, e] as [string, Episode])));
+  const inSeries = isSeries(screenplay);
+  // Une série se commence ici dès que le scénario n'est pas un film (format pas encore choisi compris).
+  const offerSeries = inSeries || isSeriesPitch(pitch) || formOf("scenario", pitch) !== "film";
   const labelOf = (text: string) => {
+    const mark = seriesMark({ type: "section", text });
+    if (mark?.kind === "episode" && episodeById.has(mark.id)) return episodeLabel(episodeById.get(mark.id)!);
+    if (mark?.kind === "season") return seasonById.get(mark.id)?.title || t.season.seasonUntitled;
     const key = beatOf(text);
     return key && key in t.plan.beats ? t.plan.beats[key as PlanBeat].label : sectionLabel(text);
   };
@@ -126,6 +142,33 @@ export function Sequencier() {
   };
 
   const scenes = list.filter((b) => b.kind === "scene").length;
+  const ts = t.season;
+  const toggleFold = (id: string) =>
+    setFolded((before) => {
+      const next = new Set(before);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  // Blocs cachés par une saison ou un épisode replié (jusqu'à la saison, ou l'épisode, suivant).
+  const hidden = new Set<number>();
+  {
+    let season: string | null = null;
+    let episode: string | null = null;
+    list.forEach((b, i) => {
+      const mark = b.kind === "section" ? seriesMark(screenplay.elements[b.start]) : null;
+      if (mark?.kind === "season") {
+        season = folded.has(mark.id) ? mark.id : null;
+        episode = null;
+        return;
+      }
+      if (season) return void hidden.add(i);
+      if (mark?.kind === "episode") {
+        episode = folded.has(mark.id) ? mark.id : null;
+        return;
+      }
+      if (episode) hidden.add(i);
+    });
+  }
   const cards = !phoneSq() && mode === "cards";
   const sceneCards = useMemo(() => list.filter((b) => b.kind === "scene" && b.cardId).map((b) => b.cardId as string), [list]);
 
@@ -134,7 +177,6 @@ export function Sequencier() {
       <div className={`sq-inner${cards || timeline ? " is-cards" : ""}`}>
         <header className="sq-head">
           <h1>{sq.title}</h1>
-          <EpisodePicker onNotice={setAnnounce} />
           <div className="sq-modes" role="group" aria-label={sq.modeAria}>
             {MODES.map((m) => (
               <button
@@ -153,7 +195,19 @@ export function Sequencier() {
               {t.plan.timeline}
             </button>
           </div>
-          <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />
+          {offerSeries && (
+            <div className="sq-series-add">
+              <button type="button" className="ghost-button" onClick={() => useCosmos.getState().addSeriesEpisode()}>
+                + {ts.newEpisode}
+              </button>
+              {inSeries && (
+                <button type="button" className="ghost-button" onClick={() => useCosmos.getState().addSeriesSeason()}>
+                  + {ts.newSeason}
+                </button>
+              )}
+            </div>
+          )}
+          {!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
           {pagination.pages > 0 && (
             <p className="sq-total">
               <strong>{fmt(sp.minutes, { n: minutesFor(pagination.pages) })}</strong> ·{" "}
@@ -165,9 +219,10 @@ export function Sequencier() {
           <Timeline order={sceneCards} />
         ) : (
           <>
-        {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
-        {template && <p className="plan-about">{t.plan.templateAbout[template]}</p>}
-        {template && <p className="sp-empty">{sq.templateHint}</p>}
+        {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : inSeries ? <p className="sp-empty">{ts.hint}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
+        {inSeries && template && <p className="sp-empty">{ts.templateLater}</p>}
+        {template && !inSeries && <p className="plan-about">{t.plan.templateAbout[template]}</p>}
+        {template && !inSeries && <p className="sp-empty">{sq.templateHint}</p>}
         {template === "cercleHarmon" && (
           <StoryCircle
             counts={Object.fromEntries(Object.entries(screenplayPlan(screenplay.elements).beats).map(([k, ids]) => [k, ids.length]))}
@@ -176,7 +231,16 @@ export function Sequencier() {
         )}
 
         <ol className={`sq-list${cards ? " is-cards" : ""}`} ref={listRef} aria-label={sq.listAria}>
+          {/* Série : des scènes écrites avant le premier épisode. */}
+          {inSeries && list[0]?.kind === "scene" && (
+            <li className="sq-section sq-outside">
+              <span className="sq-section-name">
+                <span className="beat-title">{ts.outside}</span>
+              </span>
+            </li>
+          )}
           {list.map((block, i) => {
+            if (hidden.has(i)) return null;
             const dropClass = over === i && dragged !== null && dragged !== i ? " is-over" : "";
             const drop = {
               onDragOver: (e: React.DragEvent) => {
@@ -191,6 +255,70 @@ export function Sequencier() {
                 setOver(null);
               },
             };
+
+            const mark = block.kind === "section" ? seriesMark(screenplay.elements[block.start]) : null;
+            if (mark) {
+              const season = mark.kind === "season" ? seasonById.get(mark.id) : undefined;
+              const episode = mark.kind === "episode" ? episodeById.get(mark.id) : undefined;
+              if (!season && !episode) return null;
+              const title = season ? season.title || ts.seasonUntitled : episodeLabel(episode!);
+              const open = !folded.has(mark.id);
+              const pages = season ? pagesBetween(pagination, season.at + 1, season.end) : pagesBetween(pagination, episode!.start, episode!.end);
+              const s = useCosmos.getState;
+              return (
+                <li key={`${mark.kind}-${mark.id}`} className={`sq-section sq-${mark.kind}${dropClass}`} data-series={mark.id} {...drop}>
+                  <button type="button" className="icon-button sq-fold" aria-expanded={open} aria-label={fmt(open ? ts.fold : ts.unfold, { title })} onClick={() => toggleFold(mark.id)}>
+                    <span className={`disclosure${open ? " is-open" : ""}`} aria-hidden="true" />
+                  </button>
+                  <span className="sq-section-name">
+                    {episode && <span className="beat-rank">{fmt(ts.episodeNumber, { n: episode.number })}</span>}
+                    <input
+                      key={`${mark.id}:${season?.title ?? episode?.title}`}
+                      className="sq-series-title beat-title"
+                      defaultValue={season?.title ?? episode?.title}
+                      placeholder={season ? ts.seasonUntitled : ts.untitled}
+                      aria-label={season ? ts.seasonTitleAria : fmt(ts.episodeTitleAria, { n: episode!.number })}
+                      onBlur={(e) => s().renameSeriesPart(mark.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      }}
+                    />
+                    {episode && (
+                      <SynopsisField value={episode.synopsis} scene={title} onSave={(text) => s().setEpisodeSynopsis(mark.id, text)} />
+                    )}
+                  </span>
+                  {pages > 0 && (
+                    <span className="sq-section-length">
+                      {fmt(sp.lengthShort, { n: number.format(pages) })}
+                      {pages >= 0.5 && <> · {fmt(sp.minutes, { n: minutesFor(pages) })}</>}
+                    </span>
+                  )}
+                  <MoreMenu
+                    label={fmt(ts.menuFor, { title })}
+                    items={[
+                      episode && {
+                        label: ts.write,
+                        onSelect: () => {
+                          s().openEpisode(mark.id);
+                          s().setView("manuscrit");
+                        },
+                      },
+                      season && { label: ts.newEpisodeIn, onSelect: () => s().addSeriesEpisode(mark.id) },
+                      { label: ts.moveUp, onSelect: () => s().moveSeriesPart(mark.id, -1) },
+                      { label: ts.moveDown, onSelect: () => s().moveSeriesPart(mark.id, 1) },
+                      {
+                        label: season ? ts.removeSeason : ts.removeEpisode,
+                        danger: true,
+                        onSelect: () => {
+                          s().removeSeriesPart(mark.id);
+                          setAnnounce(fmt(ts.removed, { title }));
+                        },
+                      },
+                    ]}
+                  />
+                </li>
+              );
+            }
 
             if (block.kind === "section") {
               return (
@@ -271,7 +399,7 @@ export function Sequencier() {
                     scene={title}
                     onSave={(text) => setScreenplay({ ...screenplay, elements: setSceneSynopsis(screenplay.elements, block.start, text) }, true)}
                     ia={synopsisIsIa(screenplay.elements, block.start)}
-                    atelier={card ? { sceneId: card.id, text: screenplaySceneText(offset + block.start) } : undefined}
+                    atelier={card ? { sceneId: card.id, text: screenplaySceneText(block.start) } : undefined}
                   />
                   {cardText && <p className="sq-desc">{cardText.length > 140 ? `${cardText.slice(0, 140)}…` : cardText}</p>}
                   {card && (
@@ -331,7 +459,7 @@ export function Sequencier() {
                     className="icon-button"
                     aria-label={fmt(sq.openText, { title })}
                     title={fmt(sq.openText, { title })}
-                    onClick={() => useCosmos.getState().openInManuscript(block.cardId ?? `${SCENE_AT}${offset + block.start}`)}
+                    onClick={() => useCosmos.getState().openInManuscript(block.cardId ?? `${SCENE_AT}${block.start}`)}
                   >
                     <span aria-hidden="true">✎</span>
                   </button>
@@ -339,7 +467,7 @@ export function Sequencier() {
                     label={fmt(t.app.moreActionsFor, { title })}
                     items={[
                       !!block.cardId && { label: t.bible.seeOnCanvas, title: fmt(sq.show, { title }), onSelect: () => revealCard(block.cardId!) },
-                      { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().trashScreenplayScene(offset + block.start) },
+                      { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().trashScreenplayScene(block.start) },
                     ]}
                   />
                 </div>

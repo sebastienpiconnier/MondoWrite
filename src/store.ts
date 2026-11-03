@@ -21,7 +21,7 @@ import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
 import { type CardData, type CardLayout, type CardType, type Frame, type Project, type ProjectKind } from "./types";
-import { MEDIA_DIR, SCREENPLAY_FILE, episodePath, isScriptPath, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
+import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { hideProject, showProject, splitHidden } from "./storage/recents";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
@@ -62,8 +62,7 @@ import { markdownSource } from "./markdownText";
 import { htmlToMarkdown, markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
-import { episodeOrder } from "./episodes";
-import { addEpisode, episodeAt, episodeOfCard, episodeOffset, episodeRange, episodeScript, inEpisode, isSeason, newEpisodeTitlePage, removeEpisode, resolveEpisode, splitSeason, startSeason, withEpisodeScript } from "./screenplay/season";
+import { addEpisode, addSeason, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript } from "./screenplay/series";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
@@ -415,17 +414,25 @@ export interface CosmosState {
    */
   setTitlePageField: (field: TitleField, value: string) => Screenplay | null;
   /**
-   * Série (docs/plan-episodes.md, season.ts) : carte Épisode dont le texte est ouvert dans la vue Scénario et le
-   * séquencier. null hors d'une saison. État d'affichage, jamais enregistré : à l'ouverture, le premier épisode.
+   * Série (docs/plan-episodes.md, screenplay/series.ts) : épisode ouvert dans la vue Scénario. null : tout le
+   * scénario. État d'affichage, jamais enregistré (tout le scénario à l'ouverture).
    */
   currentEpisode: string | null;
+  /** Ouvre un épisode dans la vue Scénario (null : tout le scénario). Ne change pas de vue. */
+  openEpisode: (id: string | null) => void;
   /**
-   * Ouvre le texte d'un épisode (« Écrire l'épisode », sélecteur de la vue Scénario). Le premier épisode écrit
-   * fait de tout le scénario déjà écrit son texte (le pilote, celui de scenario.fountain) ; un épisode sans texte
-   * en reçoit un, avec la page de titre du premier. Rien ne se passe pour une carte qui n'est pas un Épisode. Ne
-   * change pas de vue.
+   * Série (docs/plan-episodes.md) : nouvel épisode à la fin d'une saison (la dernière par défaut), en une étape
+   * d'historique. Le premier crée « Saison 1 » et reçoit le texte déjà écrit. Rend son identifiant.
    */
-  openEpisode: (id: string) => void;
+  addSeriesEpisode: (season?: string | null) => string | null;
+  /** Nouvelle saison, à la fin. Rend son identifiant. */
+  addSeriesSeason: () => string | null;
+  renameSeriesPart: (id: string, title: string) => void;
+  setEpisodeSynopsis: (id: string, text: string) => void;
+  /** Un cran vers le haut (-1) ou le bas : un épisode passe dans la saison voisine à son bord. */
+  moveSeriesPart: (id: string, way: -1 | 1) => void;
+  /** Retire une saison ou un épisode : seule la section part, le texte rejoint ce qui précède. */
+  removeSeriesPart: (id: string) => void;
   /** Remplace le texte de l'épisode ouvert (ou tout le scénario hors d'une saison), comme `setScreenplay`. */
   setScript: (script: Screenplay, undoable?: boolean, episode?: string | null) => void;
   /** Historique d'annulation : états précédents et états annulés (cartes, fils, scénario). */
@@ -750,16 +757,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
   };
 
   /**
-   * Texte d'un épisode remis (sa carte sort de la corbeille). Hors d'une saison, le texte déjà écrit devient celui
-   * du premier autre épisode (ou d'un épisode à part) ; un scénario encore vide laisse toute la place à celui-ci.
-   */
-  const restoreEpisodeText = (sp: Screenplay, id: string, script: Screenplay, cards: CardData[]): Screenplay => {
-    if (isSeason(sp)) return addEpisode(sp, id, script);
-    if (sp.elements.length === 0) return startSeason(script, id);
-    const other = episodeOrder(cards).find((c) => c.id !== id)?.id ?? "pilote";
-    return addEpisode(startSeason(sp, other), id, script);
-  };
-  /**
    * Cartes `ids` à la corbeille, à partir de l'état donné : leurs fils et leur scène du scénario partent
    * avec elles, leurs mentions dans les autres cartes redeviennent du texte. Pas d'étape d'historique ici.
    */
@@ -772,14 +769,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const node = from.nodes.find((n) => n.id === id);
       if (!node) continue;
       const out = trashCard(node.data, { x: node.position.x, y: node.position.y, width: typeof node.style?.width === "number" ? node.style.width : undefined }, from.edges, screenplay, date);
-      screenplay = out.screenplay;
-      // Série : une carte Épisode emporte le texte de son épisode (il revient avec elle).
-      if (node.data.type === "episode" && screenplay) {
-        const cut = removeEpisode(screenplay, id);
-        screenplay = cut.screenplay;
-        if (cut.removed) out.entry.trashed.script = serializeFountain(cut.removed);
-      }
       entries.push(out.entry);
+      screenplay = out.screenplay;
     }
     let nodes = from.nodes.filter((n) => !gone.has(n.id));
     for (const id of ids) nodes = nodes.map((n) => withHtml(n, removeMentions(n.data.html, id)));
@@ -1096,20 +1087,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const files = serialize(toProject(get()));
     // Scénario inchangé depuis le disque : on garde le fichier tel quel, à l'octet près
     // (il peut venir d'un autre logiciel, que la sérialisation normaliserait).
-    if (screenplay && screenplay === savedScreenplay && SCREENPLAY_FILE in prev && !isSeason(screenplay)) files[SCREENPLAY_FILE] = prev[SCREENPLAY_FILE];
-    // Série : de même pour chaque épisode dont le texte n'a pas changé (le premier est scenario.fountain). Le texte
-    // d'avant la saison est celui du premier épisode.
-    if (screenplay && savedScreenplay && isSeason(screenplay)) {
-      const saved = isSeason(savedScreenplay) ? splitSeason(savedScreenplay) : [{ id: splitSeason(screenplay)[0].id, script: savedScreenplay }];
-      splitSeason(screenplay).forEach(({ id, script }, i) => {
-        const path = i === 0 ? SCREENPLAY_FILE : episodePath(id);
-        const j = saved.findIndex((e) => e.id === id);
-        // Même place (premier épisode ou non) et même texte que sur le disque.
-        if (!(path in prev) || j < 0 || (i === 0) !== (j === 0)) return;
-        const before = saved[j].script;
-        if (before === script || serializeFountain(before) === serializeFountain(script)) files[path] = prev[path];
-      });
-    }
+    if (screenplay && screenplay === savedScreenplay && SCREENPLAY_FILE in prev) files[SCREENPLAY_FILE] = prev[SCREENPLAY_FILE];
     return files;
   };
   /**
@@ -1129,7 +1107,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       awaitingLayout: awaitingLayout.filter((l) => !present.has(l.id)),
       // Scénario non repris : on garde l'objet à l'écran, et ce qu'il reste à enregistrer. Série : l'épisode ouvert
       // le reste.
-      ...(Object.keys(patch).some(isScriptPath) ? { currentEpisode: resolveEpisode(state.screenplay, currentEpisode) } : { screenplay, savedScreenplay, currentEpisode }),
+      ...(SCREENPLAY_FILE in patch ? { currentEpisode: resolveEpisode(state.screenplay, currentEpisode) } : { screenplay, savedScreenplay, currentEpisode }),
       lastFiles: patchFiles(lastFiles, patch),
     });
   };
@@ -1213,7 +1191,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({
           lastFiles: known,
           // Scénario qui attend iCloud : pas écrit, donc pas « enregistré » (il le sera à son arrivée).
-          savedScreenplay: [...waiting].some(isScriptPath) ? get().savedScreenplay : screenplay,
+          savedScreenplay: waiting.has(SCREENPLAY_FILE) ? get().savedScreenplay : screenplay,
           conflicts,
           saveError: null,
           status: get().status === "enregistrement" ? (unwritten ? "modifie" : "enregistre") : get().status,
@@ -1333,18 +1311,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
     setTitle: (title) => {
       const { title: previous, screenplay } = get();
       // La page de titre suit tant qu'elle portait le titre du projet ; un titre écrit à la main n'est pas touché.
-      // Série : celle de chaque épisode (le titre de la série).
       const follow = (page: Record<string, string>) => {
         const key = Object.keys(page).find((k) => k.trim().toLowerCase() === "title");
         return key && title.trim() && page[key].trim() === previous.trim() ? { ...page, [key]: title.trim() } : page;
       };
       let next = screenplay;
-      if (screenplay && isSeason(screenplay)) {
-        for (const { id, script } of splitSeason(screenplay)) {
-          const page = follow(script.titlePage);
-          if (page !== script.titlePage) next = withEpisodeScript(next!, id, { ...script, titlePage: page });
-        }
-      } else if (screenplay) {
+      if (screenplay) {
         const page = follow(screenplay.titlePage);
         if (page !== screenplay.titlePage) next = { ...screenplay, titlePage: page };
       }
@@ -2043,9 +2015,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const full = get().screenplay;
       // Série : la scène revient à la fin de l'épisode ouvert.
       const out = restoreCard(entry, new Set(nodes.map((n) => n.id)), full ? episodeScript(full, get().currentEpisode) : null);
-      let screenplay = full && out.screenplay ? withEpisodeScript(full, get().currentEpisode, out.screenplay) : out.screenplay;
-      // Une carte Épisode retrouve le texte de son épisode.
-      if (entry.trashed.script && screenplay && get().kind === "scenario") screenplay = restoreEpisodeText(screenplay, id, parseFountain(entry.trashed.script), nodes.map((n) => n.data));
+      const screenplay = full && out.screenplay ? withEpisodeScript(full, get().currentEpisode, out.screenplay) : out.screenplay;
       // Sa place d'avant si elle est libre, sinon la première place libre à côté.
       const width = entry.trashed.width ?? CARD_WIDTH;
       const spot = placeCard({ x: entry.trashed.x, y: entry.trashed.y }, occupied(nodes, frames), { width, height: CARD_SIZE.height });
@@ -2313,30 +2283,52 @@ export const useCosmos = create<CosmosState>((set, get) => {
     screenplay: null,
     savedScreenplay: null,
     currentEpisode: null,
-    openEpisode: (id) => {
-      const card = get().nodes.find((n) => n.id === id)?.data;
-      const full = get().screenplay;
-      if (!card || card.type !== "episode" || get().kind !== "scenario" || !full) return;
-      let next = full;
-      if (!isSeason(full)) {
-        // Le texte déjà écrit devient celui du premier épisode de la série (ou de celui-ci, s'il n'y a encore rien).
-        const order = episodeOrder(get().nodes.map((n) => n.data));
-        const pilot = full.elements.length > 0 ? (order[0]?.id ?? id) : id;
-        next = startSeason(full, pilot);
-      }
-      if (!episodeRange(next, id)) next = addEpisode(next, id, { titlePage: newEpisodeTitlePage(episodeScript(next, null).titlePage), elements: [] });
-      if (next !== full) {
-        record();
-        set({ screenplay: next });
-        touch();
-      }
-      set({ currentEpisode: id });
-    },
+    openEpisode: (id) => set({ currentEpisode: resolveEpisode(get().screenplay, id) }),
     setScript: (script, undoable = false, episode) => {
       const full = get().screenplay;
-      // Un épisode donné qui n'est plus dans la saison (sa carte vient de partir à la corbeille) : rien n'est écrit ailleurs.
-      if (episode && full && isSeason(full) && !episodeRange(full, episode)) return;
+      // L'éditeur montrait un épisode qui n'existe plus (retiré dans le séquencier, son texte a rejoint l'épisode
+      // d'avant) : rien n'est écrit, sinon ce texte-là remplacerait tout le scénario.
+      if (episode && full && !resolveEpisode(full, episode)) return;
       get().setScreenplay(full ? withEpisodeScript(full, episode === undefined ? get().currentEpisode : episode, script) : script, undoable);
+    },
+    addSeriesEpisode: (season) => {
+      const full = get().screenplay;
+      if (!full || get().kind !== "scenario") return null;
+      const id = newId();
+      const n = seriesOf(full.elements).filter((s) => s.id !== null).length;
+      const next = addEpisode(full, id, "", { season, seasonId: newId(), seasonTitle: fmt(getT().season.seasonDefault, { n: n + 1 }) });
+      get().setScreenplay(next, true);
+      return id;
+    },
+    addSeriesSeason: () => {
+      const full = get().screenplay;
+      if (!full || get().kind !== "scenario") return null;
+      const id = newId();
+      const n = seriesOf(full.elements).filter((s) => s.id !== null).length;
+      get().setScreenplay(addSeason(full, id, fmt(getT().season.seasonDefault, { n: n + 1 })), true);
+      return id;
+    },
+    renameSeriesPart: (id, title) => {
+      const full = get().screenplay;
+      const next = full ? renameSeriesPart(full, id, title) : full;
+      if (next && next !== full) get().setScreenplay(next, true);
+    },
+    setEpisodeSynopsis: (id, text) => {
+      const full = get().screenplay;
+      const next = full ? setEpisodeSynopsis(full, id, text) : full;
+      if (next && next !== full) get().setScreenplay(next, true);
+    },
+    moveSeriesPart: (id, way) => {
+      const full = get().screenplay;
+      const next = full ? moveSeriesPart(full, id, way) : full;
+      if (next && next !== full) get().setScreenplay(next, true);
+    },
+    removeSeriesPart: (id) => {
+      const full = get().screenplay;
+      const next = full ? removeSeriesPart(full, id) : full;
+      if (!next || next === full) return;
+      get().setScreenplay(next, true);
+      if (get().currentEpisode === id) set({ currentEpisode: null });
     },
     setSceneText: (cardId, body) => {
       const { screenplay } = get();

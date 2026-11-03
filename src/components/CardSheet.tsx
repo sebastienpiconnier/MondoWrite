@@ -8,7 +8,6 @@
 import { IaFieldNote } from "./Atelier";
 import { useEffect, useId, useState } from "react";
 import { useCosmos } from "../store";
-import { WriteEpisodeButton } from "./EpisodePicker";
 import { fmt, useT } from "../i18n";
 import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isCardRefField, isChoiceField, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
@@ -94,9 +93,6 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   };
 
   return (
-    <>
-    {/* Série : le texte de l'épisode s'écrit dans la vue Scénario. */}
-    {card.type === "episode" && <WriteEpisodeButton id={card.id} />}
     <section className="sheet" aria-label={title}>
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
         <span>{title}</span>
@@ -135,6 +131,5 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
         </div>
       )}
     </section>
-    </>
   );
 }

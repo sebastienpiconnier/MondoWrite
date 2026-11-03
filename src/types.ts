@@ -42,12 +42,13 @@ export const isProjectKind = (v: unknown): v is ProjectKind => v === "roman" || 
 export const CARD_TYPES: CardType[] = ["idee", "personnage", "lieu", "scene", "intrigue", "episode", "groupe", "objet", "evenement", "regle", "secret", "theme", "question", "image", "lien", "document"];
 
 /**
- * Types proposés dans un projet (menus, filtres, rubriques) : l'Épisode (lot 6 de la Bible v2) ne sert qu'à une
- * série, donc ni à un roman ni à un film (`film` : pastille Format d'un long métrage, d'un court ou d'un
- * téléfilm, formOf). Un projet qui a déjà des cartes Épisode (scénario rebasculé, format changé) les garde visibles.
+ * Types proposés dans un projet (menus, filtres, rubriques). L'Épisode n'est plus proposé (novembre 2026) : les
+ * épisodes d'une série sont des sections du scénario (screenplay/series.ts). Le type reste lisible (anciens
+ * fichiers, roman qui aurait gardé ses cartes) et visible tant qu'une carte Épisode existe (`present`).
+ * `kind` et `film` restent pour les appels existants.
  */
-export const typesFor = (kind: ProjectKind, present = false, film = false): CardType[] =>
-  (kind === "scenario" && !film) || present ? CARD_TYPES : CARD_TYPES.filter((t) => t !== "episode");
+export const typesFor = (_kind: ProjectKind, present = false, _film = false): CardType[] =>
+  present ? CARD_TYPES : CARD_TYPES.filter((t) => t !== "episode");
 
 /** Ordre des parties de la bible : les personnages d'abord, les idées en vrac à la fin. */
 export const BIBLE_ORDER: CardType[] = ["personnage", "intrigue", "lieu", "groupe", "objet", "evenement", "regle", "episode", "secret", "scene", "theme", "question", "image", "lien", "document", "idee"];
@@ -173,18 +174,14 @@ export interface ProjectMeta {
   /** Réglages de l'export de la Bible (pour qui, parties, rendu) et réglages nommés, voir bibleExport.ts. Absent : valeurs par défaut. */
   bibleExport?: unknown;
   viewport?: { x: number; y: number; zoom: number };
-  /** Série : carte Épisode dont le texte est dans scenario.fountain (les autres sont dans episodes/). Absent : pas de série écrite. */
-  pilot?: string;
 }
 
 /** Projet complet en mémoire. */
 export interface Project {
   meta: ProjectMeta;
   cards: CardData[];
-  /** Texte du scénario (scenario.fountain). null tant que le projet n'en a pas. Dans une série : le premier épisode écrit (`meta.pilot`). */
+  /** Texte du scénario (scenario.fountain). null tant que le projet n'en a pas. */
   screenplay: Screenplay | null;
-  /** Série : texte des autres épisodes (episodes/<id>.fountain), par identifiant de carte Épisode. Absent : aucun. */
-  episodes?: Record<string, Screenplay>;
   /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte. Absent : rien d'écrit. */
   manuscript?: Record<string, string>;
   /** Cartes de la corbeille (corbeille/<id>.md). Absent : corbeille vide. */

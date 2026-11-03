@@ -3,7 +3,7 @@
 
 import { readAiMode, type AiMode } from "./atelier";
 import type { Comments } from "./comments";
-import { relabelMentions } from "./mentions";
+import { relabelMentions, removeMentions } from "./mentions";
 import { readWires, wiresToMeta } from "./wires";
 import { foldNovelNodes, foldScreenplayNotes } from "./sceneNotes";
 import { renamedZone } from "./research";
@@ -16,8 +16,10 @@ import type { Screenplay } from "./screenplay/model";
 import { defaultPaper, isPaper, type Paper } from "./screenplay/layout";
 import { useSettings } from "./settings";
 import { CARD_SIZE, firstFreeCell, type Box } from "./placement";
-import { adoptPitchEpisodes, episodeOrder } from "./episodes";
-import { isSeason, joinSeason, resolveEpisode, splitSeason } from "./screenplay/season";
+import { adoptPitchEpisodes, episodeOrder, seasonOf } from "./episodes";
+import { adoptEpisodeCards } from "./screenplay/series";
+import { trashCard } from "./trash";
+import { dayKey } from "./stats";
 import { type Manuscript } from "./manuscript";
 import { readGoals, readProgress, type Goals, type Progress } from "./stats";
 import { addQuestion, legacyParkedCards } from "./character";
@@ -30,7 +32,7 @@ import { bibleExportToMeta, cleanBibleExport, type BibleExportState } from "./bi
 import { cleanScriptPrint, scriptPrintToMeta, type ScriptPrint } from "./screenplay/export/scriptPrint";
 import { writeTitleField } from "./screenplay/titlePage";
 import { headingTitles, initialScreenplay, type SceneCard } from "./screenplay/link";
-import { DICTIONARIES, getT } from "./i18n";
+import { DICTIONARIES, fmt, getT } from "./i18n";
 import { allQuestionTexts, extractAnswers } from "./assistant";
 
 export type CardNode = Node<CardData, "card">;
@@ -103,7 +105,7 @@ export function fromProject(p: Project) {
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "wires", "viewport", "pilot"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "wires", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -238,53 +240,57 @@ export function openProject(p: Project) {
     renamed = true;
     return { ...f, data: { ...f.data, title } };
   });
-  // Épisodes écrits dans la couverture (avant le lot 6) : une carte Épisode chacun, posée dans un espace libre.
+  // Épisodes écrits dans la couverture (avant le lot 6) : ils deviennent des épisodes de la série, plus bas.
   const episodes = adoptPitchEpisodes(read.pitch, adopted.nodes.map((n) => n.data), newId);
-  if (episodes) {
-    const placed = [...adopted.nodes];
-    for (const card of episodes.cards) {
-      const at = firstFreeCell([...boxes(placed), ...frames.map(frameBox)]);
-      placed.push(toNode(card, at.x, at.y));
-    }
-    adopted.nodes = placed;
-  }
-  const base = { ...read, ...adopted, frames, pitch: episodes?.pitch ?? read.pitch };
-  // Série : les fichiers des épisodes se lisent comme une seule saison (season.ts).
-  const joined = readSeason(p, base.nodes.map((n) => n.data));
+  let base = { ...read, ...adopted, frames, pitch: episodes?.pitch ?? read.pitch };
   // Projet scénario sans fichier (créé avant l'éditeur) : on le prépare à partir des cartes Scène.
   const screenplayRead =
-    joined ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
+    p.screenplay ?? (base.kind === "scenario" ? firstScreenplay(base.title, base.nodes) : null);
   const headed = screenplayRead ? titlesFromHeadings(base.nodes, screenplayRead) : base.nodes;
   // Le corps d'une carte Scène est son texte (manuscrit, ou scène du scénario) : ses anciennes notes
   // passent dans son synopsis (fiche d'un roman, ligne « = … » du Fountain d'un scénario).
   const folded = base.kind === "scenario" ? foldScreenplayNotes(headed, screenplayRead) : { nodes: foldNovelNodes(headed), screenplay: screenplayRead };
-  const nodes = folded.nodes;
-  const screenplay = folded.screenplay;
+  let nodes = folded.nodes;
+  let screenplay = folded.screenplay;
+  // Série (novembre 2026) : plus de cartes Épisode. Chacune devient un épisode du scénario (section Fountain, même
+  // identifiant, synopsis gardé), rangé dans sa saison ; la carte part à la corbeille avec ses fils, d'où l'auteur
+  // peut la remettre. Les épisodes de la couverture d'avant le lot 6 aussi (eux n'avaient pas de carte).
+  const oldCards = nodes.filter((n) => n.data.type === "episode");
+  const pitchCards = episodes?.cards ?? [];
+  let seriesAdopted = false;
+  if (base.kind === "scenario" && screenplay && (oldCards.length > 0 || pitchCards.length > 0)) {
+    const order = episodeOrder([...oldCards.map((n) => n.data), ...pitchCards]);
+    const t = getT().season;
+    screenplay = adoptEpisodeCards(
+      screenplay,
+      order.map((c) => ({ id: c.id, title: c.title, season: seasonOf(c), synopsis: c.fiche?.synopsis ?? "" })),
+      (n) => fmt(t.seasonDefault, { n }),
+      newId,
+    );
+    const today = dayKey(new Date());
+    const gone = new Set(oldCards.map((n) => n.id));
+    const trashed = oldCards.map((n) => trashCard(n.data, { x: n.position.x, y: n.position.y }, base.edges, null, today).entry);
+    nodes = nodes.filter((n) => !gone.has(n.id));
+    for (const id of gone) nodes = nodes.map((n) => withHtml(n, removeMentions(n.data.html, id)));
+    base = { ...base, edges: base.edges.filter((e) => !gone.has(e.source) && !gone.has(e.target)), trash: [...trashed, ...base.trash.filter((c) => !gone.has(c.id))] };
+    seriesAdopted = true;
+  } else if (pitchCards.length > 0) {
+    // Roman (ou scénario sans texte) : les lignes de la couverture restent des cartes, comme avant.
+    const placed = [...nodes];
+    for (const card of pitchCards) {
+      const at = firstFreeCell([...boxes(placed), ...frames.map(frameBox)]);
+      placed.push(toNode(card, at.x, at.y));
+    }
+    nodes = placed;
+  }
   // Un scénario fixe son format de page une fois pour toutes (selon la langue du moment), pour que
   // la pagination ne change pas d'un appareil à l'autre.
   const paperChosen = base.paperChosen || base.kind === "scenario";
   return {
     // Un projet qu'on ouvre repart d'un historique vide.
-    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: joined, currentEpisode: resolveEpisode(screenplay, null), past: [], future: [], awaitingLayout: [] as CardLayout[] },
-    dirty: renamed || !!episodes || screenplay !== joined || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
+    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, currentEpisode: null as string | null, past: [], future: [], awaitingLayout: [] as CardLayout[] },
+    dirty: renamed || !!episodes || seriesAdopted || screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
   };
-}
-
-/**
- * Saison d'un projet lu : scenario.fountain est l'épisode `meta.pilot`, puis chaque fichier de episodes/, dans
- * l'ordre des cartes Épisode (un fichier dont la carte n'existe plus suit, son texte n'est jamais perdu). Sans
- * fichier d'épisode : le scénario tel quel. `pilot` perdu (cosmos.json réécrit par une version d'avant) : le
- * premier épisode sans fichier à lui, sinon un identifiant à part.
- */
-export function readSeason(p: Pick<Project, "screenplay" | "episodes" | "meta">, cards: CardData[]): Screenplay | null {
-  const others = p.episodes ?? {};
-  const ids = Object.keys(others);
-  const pilotMeta = typeof p.meta.pilot === "string" && p.meta.pilot ? p.meta.pilot : null;
-  if (!p.screenplay || (ids.length === 0 && !pilotMeta)) return p.screenplay;
-  const order = episodeOrder(cards).map((c) => c.id);
-  const pilot = pilotMeta && !ids.includes(pilotMeta) ? pilotMeta : (order.find((id) => !ids.includes(id)) ?? "pilote");
-  const rest = [...order.filter((id) => ids.includes(id)), ...ids.filter((id) => !order.includes(id))];
-  return joinSeason([{ id: pilot, script: p.screenplay }, ...rest.map((id) => ({ id, script: others[id] }))]);
 }
 
 export function toProject(
@@ -346,22 +352,14 @@ export function toProject(
       ...(scriptPrintToMeta(s.scriptPdf) ? { scriptPdf: scriptPrintToMeta(s.scriptPdf) } : {}),
       ...(bibleExportToMeta(s.bibleExport) ? { bibleExport: bibleExportToMeta(s.bibleExport) } : {}),
       ...(wiresToMeta(s.edges) ? { wires: wiresToMeta(s.edges) } : {}),
-      ...(isSeason(s.screenplay) ? { pilot: splitSeason(s.screenplay!)[0].id } : {}),
     },
     cards: s.nodes.map((n) => n.data),
-    ...seasonFiles(s.screenplay),
+    screenplay: s.screenplay,
     manuscript: s.manuscript,
     ...(s.trash.length > 0 ? { trash: s.trash } : {}),
     ...(s.journal.trim() ? { journal: s.journal } : {}),
     ...(Object.keys(s.comments).length > 0 ? { comments: s.comments } : {}),
   };
-}
-
-/** Fichiers Fountain d'une saison : le premier épisode dans scenario.fountain, les autres à part. Hors d'une saison : le scénario. */
-function seasonFiles(screenplay: Screenplay | null): Pick<Project, "screenplay" | "episodes"> {
-  if (!screenplay || !isSeason(screenplay)) return { screenplay };
-  const [first, ...rest] = splitSeason(screenplay);
-  return { screenplay: first.script, ...(rest.length > 0 ? { episodes: Object.fromEntries(rest.map((e) => [e.id, e.script])) } : {}) };
 }
 
 export const p = (text: string) => `<p>${text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!)}</p>`;

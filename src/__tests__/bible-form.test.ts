@@ -89,7 +89,7 @@ describe("forme du projet", () => {
   it("pas de carte Épisode dans un film, sauf s'il en a déjà", () => {
     expect(typesFor("scenario", false, true)).not.toContain("episode");
     expect(typesFor("scenario", true, true)).toContain("episode");
-    expect(typesFor("scenario")).toContain("episode");
+    expect(typesFor("scenario")).not.toContain("episode");
   });
 
   it("les nouvelles clés se relisent", () => {

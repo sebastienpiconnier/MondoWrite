@@ -679,7 +679,7 @@ const scenarios = [
     },
   },
   {
-    name: "série : deux épisodes, chacun son texte, le premier dans scenario.fountain (plan des épisodes, lot 1)",
+    name: "série : saison et épisodes dans le séquencier, un seul scenario.fountain (plan des épisodes, lot 1)",
     async run(h) {
       const { page } = h;
       await h.create("Le Phare", "scenario");
@@ -691,42 +691,47 @@ const scenarios = [
       await page.keyboard.press("Enter");
       await page.keyboard.type("La lanterne tourne.");
       await h.wait(500);
-      // Deux cartes Épisode sur le canevas.
-      await h.view(1);
-      const ids = [];
-      for (const title of ["Le signal", "Tempête"]) {
-        const id = await h.newCard(title);
-        await h.node(id).locator(".card-type").click();
-        await page.getByRole("option", { name: "Épisode", exact: true }).click();
-        await until(() => h.node(id).locator(".card.type-episode").count(), "la carte n'est pas devenue Épisode");
-        ids.push(id);
-      }
-      // « Écrire l'épisode » depuis le menu ⋯ du deuxième : le texte déjà écrit va au premier.
-      await h.pane();
-      await h.node(ids[1]).getByRole("button", { name: "Plus d’actions" }).click();
+      // Séquencier : un premier épisode prend le texte déjà écrit, sous une saison créée.
+      await h.view(2);
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      const first = page.getByRole("textbox", { name: "Titre de l’épisode 1" });
+      await until(() => first.count(), "pas d'épisode 1 dans le séquencier");
+      await first.fill("Le signal");
+      await first.press("Enter");
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      const second = page.getByRole("textbox", { name: "Titre de l’épisode 2" });
+      await until(() => second.count(), "pas d'épisode 2 dans le séquencier");
+      await second.fill("Tempête");
+      await second.press("Enter");
+      assert(await page.getByRole("textbox", { name: "Titre de la saison" }).count(), "pas de saison dans le séquencier");
+      // Aucune carte Épisode : la série est dans le scénario.
+      assert((await page.locator(".card.type-episode").count()) === 0, "une carte Épisode a été créée");
+      // « Écrire l'épisode » depuis le menu de l'épisode 2.
+      await page.getByRole("button", { name: "Actions de « Ép. 2 · Tempête »" }).click();
       await page.getByRole("menuitem", { name: "Écrire l’épisode" }).click();
-      await until(() => page.getByRole("textbox", { name: "Texte du scénario" }).count(), "la vue Scénario ne s'est pas ouverte");
       await until(() => page.locator(".episode-picker-label").filter({ hasText: "Ép. 2 · Tempête" }).count(), "le sélecteur ne montre pas l'épisode 2");
-      const empty = await page.evaluate(() => document.querySelectorAll(".sp-editor > [data-el]").length);
       await page.getByRole("textbox", { name: "Texte du scénario" }).click();
       await page.keyboard.type("EXT. PORT – JOUR");
       await page.keyboard.press("Enter");
       await page.keyboard.type("Les bateaux rentrent.");
       await h.wait(400);
-      assert(!(await page.locator(".sp-editor").innerText()).includes("La lanterne tourne."), `le texte du pilote est dans l'épisode 2 (éléments au départ : ${empty})`);
+      assert(!(await page.locator(".sp-editor").innerText()).includes("La lanterne tourne."), "le texte du pilote est dans l'épisode 2");
       // Retour au premier par la flèche : son texte est là, sans celui du deuxième.
       await page.getByRole("button", { name: "Épisode précédent" }).click();
       await until(async () => (await page.locator(".sp-editor").innerText()).includes("La lanterne tourne."), "le texte du pilote n'est pas revenu");
       assert(!(await page.locator(".sp-editor").innerText()).includes("Les bateaux rentrent."), "le texte de l'épisode 2 est dans le pilote");
-      const f = await h.saved(
-        (f) => /La lanterne tourne\./.test(f["scenario.fountain"] ?? "") && /Les bateaux rentrent\./.test(f[`episodes/${ids[1]}.fountain`] ?? "") ? f : null,
-        "les deux épisodes ne sont pas enregistrés chacun dans son fichier",
-      );
-      assert(JSON.parse(f["cosmos.json"]).pilot === ids[0], "cosmos.json ne note pas le premier épisode");
-      // Relu après rechargement : le premier épisode s'ouvre, le deuxième se retrouve.
+      const f = await h.saved((f) => {
+        const text = f["scenario.fountain"] ?? "";
+        return /La lanterne tourne\./.test(text) && /Les bateaux rentrent\./.test(text) && (text.match(/\[\[cosmos:episode:/g) ?? []).length === 2 ? f : null;
+      }, "les deux épisodes ne sont pas dans scenario.fountain");
+      assert(!Object.keys(f).some((k) => k.startsWith("episodes/")), "un fichier par épisode a été écrit");
+      const text = f["scenario.fountain"];
+      assert(text.indexOf("Le signal") < text.indexOf("La lanterne tourne.") && text.indexOf("Tempête") < text.indexOf("Les bateaux rentrent."), "l'ordre du fichier est faux");
+      // Relu après rechargement : tout le scénario s'ouvre, l'épisode 2 se retrouve.
       await h.reloadAndOpen();
       await h.view(4);
-      await until(() => page.locator(".episode-picker-label").filter({ hasText: "Ép. 1 · Le signal" }).count(), "le premier épisode ne s'ouvre pas après rechargement");
+      await until(() => page.locator(".episode-picker-label").filter({ hasText: "Tout le scénario" }).count(), "le scénario entier ne s'ouvre pas après rechargement");
+      await page.getByRole("button", { name: "Épisode suivant" }).click();
       await page.getByRole("button", { name: "Épisode suivant" }).click();
       await until(async () => (await page.locator(".sp-editor").innerText()).includes("Les bateaux rentrent."), "le texte de l'épisode 2 n'est pas relu");
     },

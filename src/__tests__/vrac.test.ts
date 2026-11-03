@@ -28,7 +28,7 @@ describe("types proposés", () => {
     expect(types).not.toContain("lien");
     expect(types).not.toContain("document");
     expect(types).not.toContain("episode");
-    expect(vracTypes("scenario")).toContain("episode");
+    expect(vracTypes("scenario")).not.toContain("episode");
     expect(vracTypes("scenario", true)).not.toContain("episode");
     expect(types).toContain("scene");
   });

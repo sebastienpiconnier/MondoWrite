@@ -5,9 +5,8 @@
 import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useT } from "../i18n";
 import { useCosmos } from "../store";
-import { writeEpisode } from "./EpisodePicker";
 
-export function CardActions({ id, hasImage, title = "", type }: { id: string; hasImage: boolean; title?: string; type?: string }) {
+export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage: boolean; title?: string }) {
   const all = useT();
   const t = all.card;
   const open = useCosmos((s) => s.cardMenu === id);
@@ -29,10 +28,7 @@ export function CardActions({ id, hasImage, title = "", type }: { id: string; ha
     setCardMenu(null);
     action();
   };
-  const scenario = useCosmos((s) => s.kind === "scenario");
   const items: [string, () => void, boolean?][] = [
-    // Série : le texte de l'épisode, dans la vue Scénario.
-    ...(type === "episode" && scenario ? [[all.season.write, () => writeEpisode(id)] as [string, () => void]] : []),
     // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
     [hasImage ? t.changeImage : t.addImage, () => useCosmos.getState().openPhotos({ kind: "card", id })],
     [t.filterHere, () => useCosmos.getState().setFilterCard(id)],

@@ -131,7 +131,9 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
                       className="review-primary"
                       onClick={() => {
                         const s = useCosmos.getState();
-                        s.openInBible(s.addTitledCard("episode", ""));
+                        const id = s.addSeriesEpisode();
+                        if (id) s.openEpisode(id);
+                        s.setView("plan");
                       }}
                     >
                       {t.newEpisode}

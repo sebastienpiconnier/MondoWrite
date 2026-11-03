@@ -14,7 +14,7 @@ import { CoverAssistant } from "./CoverAssistant";
 import { IaFieldNote, PitchDraft } from "./Atelier";
 import { bookWords, countWords } from "../manuscript";
 import { typeColor } from "../types";
-import { episodeOrder } from "../episodes";
+import { allEpisodes } from "../screenplay/series";
 import { minutesFor, usePagination } from "./usePagination";
 
 /** Pastille : montre la valeur, ou « + Genre ». Toucher ouvre les suggestions et une saisie libre. */
@@ -164,7 +164,7 @@ function Feasibility() {
   const screenplay = useCosmos((s) => s.screenplay);
   const nodes = useCosmos((s) => s.nodes);
   const stored = useCosmos((s) => s.pitch.faisabilite ?? "");
-  const pagination = usePagination();
+  const pagination = usePagination(true);
   const computed = useMemo(
     () => feasibilityText(screenplay?.elements ?? [], nodes.map((n) => n.data), pagination, p, lang),
     [screenplay, nodes, pagination, p, lang],
@@ -188,7 +188,7 @@ function Volume() {
   const lang = useSettings((s) => s.lang);
   const manuscript = useCosmos((s) => s.manuscript);
   const goal = useCosmos((s) => s.goals.total);
-  const pagination = usePagination();
+  const pagination = usePagination(true);
   const nodes = useCosmos((s) => s.nodes);
   // Seulement les scènes qui ont une carte : ni la corbeille ni les textes sans carte.
   const words = useMemo(() => bookWords(manuscript, nodes.map((n) => n.data)), [manuscript, nodes]);
@@ -221,7 +221,7 @@ function Volume() {
 /** Mots d'une page de note d'intention, à peu près (repère, jamais une limite). */
 const INTENTION_PAGE = 450;
 
-export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpenTheme: (id: string) => void; onAddTheme: () => void; onAddEpisode: () => void }) {
+export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: string) => void; onAddTheme: () => void }) {
   const { t, kind, types } = useVocab();
   const p = t.pitch;
   const title = useCosmos((s) => s.title);
@@ -244,7 +244,16 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
   // Pas de point de vue ni de temps du récit pour un scénario (toujours au présent, caméra).
   // Forme et type de pilote pour une série seulement (lot 7) ; une pastille déjà remplie reste visible.
   const chips = [...chipsFor(kind, form), ...(kind === "scenario" ? SERIES_CHIPS.filter((c) => pitch[c]?.trim() && !chipsFor(kind, form).includes(c)) : [])];
-  const episodes = useMemo(() => episodeOrder(nodes.map((n) => n.data)), [nodes]);
+  // Les épisodes sont des sections du scénario (screenplay/series.ts) : ils se gèrent dans le séquencier.
+  const fullScript = useCosmos((s) => s.screenplay);
+  const episodes = useMemo(() => (fullScript ? allEpisodes(fullScript.elements) : []), [fullScript]);
+  const toPlan = () => useCosmos.getState().setView("plan");
+  const onAddEpisode = () => {
+    const s = useCosmos.getState();
+    const id = s.addSeriesEpisode();
+    if (id) s.openEpisode(id);
+    toPlan();
+  };
   const writing = writingTexts(form);
   const others = otherTexts(pitch, form);
   const writingFilled = writing.some((k) => pitch[k]?.trim()) || (isSeriesForm(form) && episodes.length > 0);
@@ -354,7 +363,7 @@ export function ProjectCover({ onOpenTheme, onAddTheme, onAddEpisode }: { onOpen
                       <p className="pitch-hint">{episodes.length === 0 ? p.episodesNone : episodes.length === 1 ? p.episodesOne : fmt(p.episodesCount, { n: episodes.length })}</p>
                       <div className="pitch-theme-list">
                         {episodes.length > 0 && (
-                          <button type="button" className="chip pitch-theme" onClick={() => onOpenTheme(episodes[0].id)}>
+                          <button type="button" className="chip pitch-theme" onClick={toPlan}>
                             <span className="card-dot" style={{ background: typeColor("episode") }} />
                             {p.episodesOpen}
                           </button>

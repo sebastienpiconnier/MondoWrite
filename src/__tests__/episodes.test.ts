@@ -1,3 +1,4 @@
+import { allEpisodes } from "../screenplay/series";
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
 import { adoptPitchEpisodes, appearances, episodeCast, episodeGrid, episodeOrder, episodeThreads } from "../episodes";
@@ -59,22 +60,41 @@ describe("épisodes d'une série", () => {
     expect(adoptPitchEpisodes({ logline: "x" }, [], () => "z")).toBeNull();
   });
 
-  it("à l'ouverture, les épisodes de la couverture deviennent des cartes posées sans chevauchement", () => {
+  it("à l'ouverture d'un scénario, les épisodes de la couverture deviennent des sections du scénario", () => {
     const project: Project = {
       meta: { version: 1, title: "Veilleurs", kind: "scenario", layout: [{ id: "c1", x: 80, y: 80 }], links: [], pitch: { episodes: "Un : début\nDeux : suite" } },
       cards: [{ id: "c1", type: "personnage", title: "Inès", html: "" }],
+      screenplay: { titlePage: [], elements: [] },
     } as unknown as Project;
     const { state, dirty } = openProject(project);
     expect(dirty).toBe(true);
     expect(state.pitch.episodes).toBeUndefined();
-    const eps = state.nodes.filter((n) => n.data.type === "episode");
-    expect(eps.map((n) => n.data.title)).toEqual(["Un", "Deux"]);
-    const spots = state.nodes.map((n) => `${n.position.x},${n.position.y}`);
-    expect(new Set(spots).size).toBe(spots.length);
+    expect(state.nodes.filter((n) => n.data.type === "episode")).toEqual([]);
+    const eps = allEpisodes(state.screenplay!.elements);
+    expect(eps.map((e) => e.title)).toEqual(["Un", "Deux"]);
+    expect(eps.map((e) => e.synopsis)).toEqual(["début", "suite"]);
   });
 
-  it("n'apparaissent que dans une série (ou un roman qui en a déjà)", () => {
-    expect(typesFor("scenario")).toContain("episode");
+  it("à l'ouverture d'un scénario, les cartes Épisode deviennent des sections et partent à la corbeille", () => {
+    const project: Project = {
+      meta: { version: 1, title: "Veilleurs", kind: "scenario", layout: [{ id: "e1", x: 0, y: 0 }, { id: "e2", x: 300, y: 0 }], links: [] },
+      cards: [
+        { id: "e1", type: "episode", title: "Le signal", html: "", fiche: { numero: "1", synopsis: "Un signal." } },
+        { id: "e2", type: "episode", title: "La relève", html: "", fiche: { numero: "2" } },
+      ],
+      screenplay: { titlePage: [], elements: [{ type: "sceneHeading", text: "INT. PHARE - NUIT" }] },
+    } as unknown as Project;
+    const { state, dirty } = openProject(project);
+    expect(dirty).toBe(true);
+    expect(state.nodes).toEqual([]);
+    expect(state.trash.map((c) => c.id).sort()).toEqual(["e1", "e2"]);
+    const eps = allEpisodes(state.screenplay!.elements);
+    expect(eps.map((e) => [e.id, e.title, e.synopsis])).toEqual([["e1", "Le signal", "Un signal."], ["e2", "La relève", ""]]);
+    expect(state.screenplay!.elements.slice(eps[0].start, eps[0].end).map((e) => e.text)).toEqual(["INT. PHARE - NUIT"]);
+  });
+
+  it("ne sont plus proposés comme type de carte, sauf s'il en reste", () => {
+    expect(typesFor("scenario")).not.toContain("episode");
     expect(typesFor("roman")).not.toContain("episode");
     expect(typesFor("roman", true)).toContain("episode");
   });

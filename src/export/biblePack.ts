@@ -15,6 +15,7 @@ import { NOVEL_CHIPS, formOf, isSeriesForm, readEpisodes, type PitchText } from 
 import { feasibilityText, pitchLabels } from "../feasibility";
 import { paginate } from "../screenplay/paginate";
 import { LAYOUTS, type Paper } from "../screenplay/layout";
+import { seriesOf } from "../screenplay/series";
 import { appearances, bySeason, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, manySeasons, pivotOf } from "../episodes";
 import { bookWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
@@ -162,8 +163,16 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   const labels = pitchLabels(t.pitch, form);
   const kindLabel = forMe ? e.kinds.work : film ? e.kinds.film : s.kind === "scenario" && isSeriesForm(form) ? e.kinds.series : e.kinds.pitch;
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
-  // Épisodes de la série (cartes Épisode, lot 6), dans l'ordre de la saison.
-  const episodes = s.kind === "scenario" ? episodeOrder(cards) : [];
+  // Épisodes de la série : sections du scénario (screenplay/series.ts), lues comme des cartes Épisode le temps de
+  // l'export (numéro, saison, synopsis) ; à défaut, les anciennes cartes Épisode (lot 6), dans l'ordre de la saison.
+  const sectionEpisodes: CardData[] =
+    s.kind === "scenario" && s.screenplay
+      ? seriesOf(s.screenplay.elements).flatMap((season, k) =>
+          season.episodes.map((ep) => ({ id: ep.id, type: "episode" as const, title: ep.title, html: "", fiche: { numero: String(ep.number), saison: String(k + 1), ...(ep.synopsis ? { synopsis: ep.synopsis } : {}) } })),
+        )
+      : [];
+  const episodes = s.kind === "scenario" ? (sectionEpisodes.length > 0 ? sectionEpisodes : episodeOrder(cards)) : [];
+  const gridCards = sectionEpisodes.length > 0 ? [...cards.filter((c) => c.type !== "episode"), ...sectionEpisodes] : cards;
   // Comme la couverture de la Bible : seulement les scènes qui ont une carte.
   const words = bookWords(s.manuscript, cards);
 
@@ -450,7 +459,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   /** Grille des fils de la saison : intrigues × épisodes, s'il y a au moins deux épisodes et un fil. */
   function seasonGrid(): PackBlock[] {
     if (episodes.length < 2 || episodes.length > MAX_GRID_COLS) return [];
-    const grid = episodeGrid(cards, s.edges);
+    const grid = episodeGrid(gridCards, s.edges);
     if (grid.rows.length === 0) return [];
     return [{ kind: "label", text: e.gridSeason }, { kind: "grid", cols: episodes.map((c) => c.title.trim() || t.bible.untitled), marks: grid.cols, rows: grid.rows }];
   }

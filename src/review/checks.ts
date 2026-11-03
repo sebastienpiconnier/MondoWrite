@@ -228,6 +228,8 @@ export interface StoryExtras {
   named?: ReadonlyMap<string, number>;
   /** Cases du gabarit loin de leur place habituelle (ruban du récit). */
   drifts?: readonly { key: string; at: number; target: number; sceneId: string }[];
+  /** Scénario : nombre d'épisodes (sections d'épisode du Fountain). Sans lui, les cartes Épisode comptent. */
+  episodes?: number;
 }
 
 export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman" | "scenario", pitch: Pitch, extras: StoryExtras = {}): Finding[] {
@@ -245,7 +247,7 @@ export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman
   for (const c of principals) {
     if (!c.fiche?.objectif?.trim() && c.title.trim()) out.push({ key: `noGoal:${c.id}`, rule: "noGoal", at: -1, scene: 0, sceneId: c.id, text: "", names: [c.title.trim()] });
   }
-  if (kind === "scenario" && isSeries(pitch) && !cards.some((c) => c.type === "episode")) out.push({ key: "noEpisodes", rule: "noEpisodes", at: -1, scene: 0, sceneId: null, text: "" });
+  if (kind === "scenario" && isSeries(pitch) && (extras.episodes ?? cards.filter((c) => c.type === "episode").length) === 0) out.push({ key: "noEpisodes", rule: "noEpisodes", at: -1, scene: 0, sceneId: null, text: "" });
 
   // Lot 7. Longueur du pilote d'après le format de la couverture (repères de Final Draft).
   const range = kind === "scenario" ? expectedPages(pitch.format) : null;

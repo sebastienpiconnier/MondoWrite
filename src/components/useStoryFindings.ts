@@ -13,10 +13,12 @@ import { paginate } from "../screenplay/paginate";
 import { LAYOUTS } from "../screenplay/layout";
 import { scenesNaming } from "../manuscript";
 import { useRibbon } from "./useRibbon";
+import { allEpisodes, episodeScript } from "../screenplay/series";
 
 export function useStoryFindings(): Finding[] {
   const kind = useCosmos((s) => s.kind);
   const screenplay = useCosmos(currentScript);
+  const full = useCosmos((s) => s.screenplay);
   const paper = useCosmos((s) => s.paper);
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
@@ -29,7 +31,10 @@ export function useStoryFindings(): Finding[] {
     const order = kind === "scenario" ? [] : bookOrder(nodes, plan);
     const rows = kind === "scenario" ? (screenplay ? screenplayReport(screenplay.elements, cards, lang) : []) : novelReport(manuscript, order, cards);
     const elements = screenplay?.elements ?? [];
-    const pages = kind === "scenario" && elements.length > 0 ? paginate(elements, LAYOUTS[paper]).pages : 0;
+    // Série : la longueur attendue est celle du pilote (premier épisode), pas de toute la saison.
+    const episodes = full ? allEpisodes(full.elements) : [];
+    const pilot = full && episodes.length > 0 ? episodeScript(full, episodes[0].id).elements : elements;
+    const pages = kind === "scenario" && pilot.length > 0 ? paginate(pilot, LAYOUTS[paper]).pages : 0;
     // Scènes qui nomment chaque objet (titre entier, sans casse ni accents).
     const named = new Map<string, number>();
     for (const c of cards) {
@@ -37,6 +42,6 @@ export function useStoryFindings(): Finding[] {
       if (kind === "scenario") named.set(c.id, scriptScenesNaming(elements, c.title.trim()).length);
       else named.set(c.id, scenesNaming(c, manuscript, order));
     }
-    return checkStory(cards, rows, kind, pitch, { pages, named, drifts });
-  }, [kind, screenplay, paper, nodes, plan, manuscript, pitch, lang, drifts]);
+    return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined });
+  }, [kind, screenplay, full, paper, nodes, plan, manuscript, pitch, lang, drifts]);
 }

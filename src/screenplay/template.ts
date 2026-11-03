@@ -6,6 +6,7 @@
 
 import type { Screenplay, ScreenplayElement } from "./model";
 import { blocks, moveBlock } from "./sequence";
+import { plainSection } from "./series";
 import { EMPTY_PLAN, PLAN_TEMPLATES, isCustomBeat, type CustomTemplate, type Plan, type PlanTemplate } from "../plan";
 
 /** Gabarits proposés pour un scénario, dans l'ordre du menu. */
@@ -18,8 +19,8 @@ const BEAT_RE = /\s*\[\[cosmos:beat:([A-Za-z0-9_]+)\]\]/;
 /** Clé de case portée par une section, sinon null. */
 export const beatOf = (text: string): string | null => BEAT_RE.exec(text)?.[1] ?? null;
 
-/** Texte d'une section sans sa note de gabarit (ce que l'auteur lit). */
-export const sectionLabel = (text: string): string => text.replace(BEAT_RE, "").trim();
+/** Texte d'une section sans sa note de gabarit, de saison ou d'épisode (ce que l'auteur lit). */
+export const sectionLabel = (text: string): string => plainSection(text);
 
 const isBeat = (el: ScreenplayElement) => el.type === "section" && beatOf(el.text) !== null;
 

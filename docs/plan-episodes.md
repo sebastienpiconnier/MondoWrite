@@ -61,19 +61,23 @@ INT. PHARE, LANTERNE - NUIT [[cosmos:s8k2m4q9xa]]
 
 ## Lot 1 : le plan de la série
 
-- [ ] `screenplay/series.ts` (pur) : saisons et épisodes lus dans les sections (titre, identifiant, rang, synopsis,
+- [x] `screenplay/series.ts` (pur) : saisons et épisodes lus dans les sections (titre, identifiant, rang, synopsis,
       scènes), épisode d'une scène, ajouter, renommer, déplacer, supprimer une saison ou un épisode, déplacer une
       scène d'un épisode à un autre (avec son texte) ; tests à 90 % comme le reste de `src/screenplay/`
-- [ ] Séquencier en arbre : Saison › Épisode › (case) › scènes ; « Nouvelle saison », « Nouvel épisode » (dans la
+- [x] Séquencier en arbre : Saison › Épisode › (case) › scènes ; « Nouvelle saison », « Nouvel épisode » (dans la
       saison choisie), titres modifiables sur place, synopsis de l'épisode, replier et déplier, déplacer par
       glisser et par flèches (un épisode change de saison, une scène d'épisode), pages et minutes par épisode et
       par saison. Supprimer une saison ou un épisode : son texte n'est jamais perdu (il rejoint l'épisode
       précédent, après confirmation, comme un chapitre du roman)
-- [ ] Vue Scénario : le sélecteur montre l'épisode ouvert (liste tirée des sections) ; l'éditeur ne montre que
+- [x] Vue Scénario : le sélecteur montre l'épisode ouvert (liste tirée des sections) ; l'éditeur ne montre que
       cet épisode, comme dans le premier essai ; « Tout » pour voir la saison d'un bloc
-- [ ] Reprise des cartes Épisode et des lignes de la couverture (voir plus haut), une fois, à l'ouverture
-- [ ] Retrait du format du premier essai (`episodes/`, `pilot`, repères en mémoire, « Écrire l'épisode »)
-- [ ] Textes fr et en, guide (fr, en), CLAUDE.md (format, pièges), tests unitaires et de bout en bout
+- [x] Reprise des cartes Épisode et des lignes de la couverture (voir plus haut), une fois, à l'ouverture
+- [x] Retrait du format du premier essai (`episodes/`, `pilot`, repères en mémoire, « Écrire l'épisode »)
+- [x] Textes fr et en, guide (fr, en), CLAUDE.md (format, pièges), tests unitaires et de bout en bout
+
+Reste du lot 1 : un épisode se déplace par son menu (Monter, Descendre), pas encore en le glissant ; retirer une
+saison ou un épisode ne demande pas de confirmation (le texte reste, Cmd/Ctrl + Z l'annule). La bible de série
+lit les sections comme des épisodes (numéro, saison, synopsis) en attendant le lot 3.
 
 ## Lot 2 : le canevas en cadres
 

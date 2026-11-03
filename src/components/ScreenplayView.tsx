@@ -46,7 +46,7 @@ import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
-import { resolveEpisode } from "../screenplay/season";
+import { resolveEpisode } from "../screenplay/series";
 import { EpisodePicker } from "./EpisodePicker";
 import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";

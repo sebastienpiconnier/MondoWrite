@@ -9,7 +9,7 @@ import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, watch, 
 import { appDataDir, dirname, documentDir, homeDir, join } from "@tauri-apps/api/path";
 import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
-import { COPIES_DIR, EPISODES_DIR, EPISODE_EXT, JOURNAL_FILE, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
+import { COPIES_DIR, JOURNAL_FILE, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
 import { IMAGE_EXTENSIONS, mimeOf } from "../media";
 import { isAppleKeyboard, isMobileOS } from "../platform";
 import type { ScrivenerSource } from "../import/scrivener";
@@ -416,7 +416,7 @@ async function adoptMacIcloud() {
 }
 
 /** Ce que MondoWrite écrit dans un dossier projet (fichiers et dossiers, copies de conflit et repères iCloud compris). */
-const PROJECT_DIRS = new Set([...TEXT_DIRS, EPISODES_DIR, MEDIA_DIR, COPIES_DIR, LOCK_DIR, SCENE_VERSIONS_DIR]);
+const PROJECT_DIRS = new Set([...TEXT_DIRS, MEDIA_DIR, COPIES_DIR, LOCK_DIR, SCENE_VERSIONS_DIR]);
 /** Fichiers que le système pose seul dans un dossier (Mac, Windows) : ils n'empêchent pas de retirer un dossier vide. */
 const SYSTEM_JUNK = new Set([".DS_Store", "Thumbs.db", "desktop.ini", ".localized"]);
 
@@ -921,18 +921,16 @@ export const tauriStorage: Storage = {
     // Cartes et manuscrit : un fichier Markdown par carte, dans chacun de ces dossiers. On liste d'abord, pour
     // annoncer l'avancement (un fichier iCloud peut mettre du temps à arriver).
     const paths: [string, string][] = [];
-    // Dossiers de Markdown, puis les textes des épisodes d'une série (Fountain).
-    const folders: [string, string][] = [...TEXT_DIRS.map((name): [string, string] => [name, ".md"]), [EPISODES_DIR, EPISODE_EXT]];
-    for (const [name, ext] of folders) {
+    for (const name of TEXT_DIRS) {
       const folder = await join(dir, name);
       if (!(await exists(folder))) continue;
       // join passe aussi par le système : les chemins se calculent ensemble.
       const entries = await readDir(folder);
-      const names = entries.filter((entry) => entry.isFile && entry.name.endsWith(ext) && !isConflictCopy(entry.name) && !isTempFile(entry.name)).map((entry) => entry.name);
+      const names = entries.filter((entry) => entry.isFile && entry.name.endsWith(".md") && !isConflictCopy(entry.name) && !isTempFile(entry.name)).map((entry) => entry.name);
       // Pas encore téléchargé (ou retiré de l'appareil par iCloud) : présent, mais illisible pour l'instant.
       for (const entry of entries) {
         const real = icloudPlaceholder(entry.name);
-        if (real && real.endsWith(ext) && !isConflictCopy(real) && !names.includes(real)) placeholders.push(`${name}/${real}`);
+        if (real && real.endsWith(".md") && !isConflictCopy(real) && !names.includes(real)) placeholders.push(`${name}/${real}`);
       }
       const fulls = await Promise.all(names.map((file) => join(folder, file)));
       names.forEach((file, i) => paths.push([`${name}/${file}`, fulls[i]]));
@@ -975,8 +973,8 @@ export const tauriStorage: Storage = {
     // Sur mobile, le dossier privé d'un nouveau projet est créé ici.
     if (mobile) await mkdir(dir, { recursive: true });
     else if (!(await exists(dir))) throw new Error(MISSING_FOLDER);
-    for (const name of [...TEXT_DIRS, EPISODES_DIR]) {
-      // Le dossier du manuscrit (ou des épisodes) n'est créé que s'il y a un texte à y écrire.
+    for (const name of TEXT_DIRS) {
+      // Le dossier du manuscrit n'est créé que s'il y a un texte à y écrire.
       if (name === TEXT_DIRS[0] || Object.keys(files).some((path) => path.startsWith(`${name}/`))) await mkdir(await join(dir, name), { recursive: true });
     }
     for (const [path, content] of Object.entries(files)) {

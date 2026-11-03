@@ -1213,3 +1213,36 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .scriv-left summary { cursor: pointer; display: flex; align-items: center; min-height: 32px; }
 .scriv-left ul { margin: 4px 0 0; padding-left: 20px; }
 @media (pointer: coarse) { .scriv-left summary { min-height: 44px; } }
+
+/* Série dans le séquencier : saison > épisode > scènes (docs/plan-episodes.md, lot 1). */
+.sq-series-add { display: flex; flex-wrap: wrap; gap: 8px; }
+.sq-section.sq-season,
+.sq-section.sq-episode { align-items: center; flex-wrap: nowrap; }
+.sq-section.sq-season { margin-top: 28px; padding: 12px 4px 6px; border-top: 3px solid var(--accent); border-radius: 0; }
+.sq-list > .sq-section.sq-season:first-child { margin-top: 4px; }
+.sq-section.sq-episode { margin-top: 16px; padding: 8px 4px 4px; border-top: 1px solid var(--line); border-radius: 0; }
+.sq-season .sq-section-name,
+.sq-episode .sq-section-name { flex: 1 1 auto; }
+.sq-series-title {
+  width: 100%;
+  min-width: 0;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+.sq-series-title::placeholder { color: var(--ink-2); }
+.sq-series-title:focus { border-color: var(--accent); outline: none; background: var(--surface); }
+@media (any-hover: hover) {
+  .sq-series-title:hover { border-color: var(--line); }
+}
+.sq-season .sq-series-title { font-weight: 700; font-size: 1.625rem; line-height: 1.2; }
+.sq-episode .sq-series-title { font-weight: 600; font-size: 1.25rem; line-height: 1.25; }
+.sq-episode .beat-rank { flex-basis: auto; }
+.sq-fold { flex: none; }
+.sq-section.sq-season .sq-section-length,
+.sq-section.sq-episode .sq-section-length { flex: none; }
+.sq-outside .beat-title { color: var(--ink-2); font-size: 1rem; }

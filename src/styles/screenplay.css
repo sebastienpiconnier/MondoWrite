@@ -198,5 +198,4 @@
   padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.8125rem; font-weight: 600; color: var(--ink);
 }
 .episode-picker-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.episode-write { margin: 0 0 10px; }
 @media (pointer: coarse) { .episode-picker .icon-button, .episode-picker .episode-picker-menu { min-height: 44px; } .episode-picker .icon-button { min-width: 44px; } }

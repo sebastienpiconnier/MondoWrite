@@ -5,8 +5,9 @@ import { currentScript, useCosmos } from "../store";
 import { LAYOUTS } from "../screenplay/layout";
 import { paginate, type Pagination } from "../screenplay/paginate";
 
-export function usePagination(): Pagination | null {
-  const screenplay = useCosmos(currentScript);
+/** `whole` : tout le scénario (séquencier, couverture) ; sinon l'épisode ouvert d'une série (vue Scénario). */
+export function usePagination(whole = false): Pagination | null {
+  const screenplay = useCosmos((s) => (whole ? s.screenplay : currentScript(s)));
   const paper = useCosmos((s) => s.paper);
   return useMemo(() => (screenplay ? paginate(screenplay.elements, LAYOUTS[paper]) : null), [screenplay, paper]);
 }
