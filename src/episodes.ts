@@ -122,3 +122,33 @@ export function adoptPitchEpisodes(pitch: Pitch, cards: readonly CardData[], new
     cards: lines.map((ep, i) => ({ id: newId(), type: "episode", title: ep.title, html: "", fiche: { numero: String(i + 1), ...(ep.synopsis ? { synopsis: ep.synopsis } : {}) } })),
   };
 }
+
+const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toUpperCase().trim();
+
+/**
+ * Série écrite dans le Fountain (screenplay/series.ts) : les épisodes sont des sections, pas des cartes. Pour
+ * que la bible de série (grille des fils, mémo, détail des épisodes) les lise comme des cartes Épisode, chaque
+ * épisode reçoit des fils virtuels, jamais enregistrés : vers les intrigues et les personnages reliés à l'une
+ * de ses scènes, et vers les personnages qui parlent dans ses scènes (nom de la carte ou son premier mot).
+ */
+export function seriesLinks(
+  episodes: readonly { id: string; scenes: { cardId?: string; speakers: string[] }[] }[],
+  cards: readonly CardData[],
+  edges: readonly Linked[],
+): Linked[] {
+  const people = cards.filter((c) => c.type === "personnage" && c.title.trim());
+  const wanted = new Set(cards.filter((c) => c.type === "intrigue" || c.type === "personnage").map((c) => c.id));
+  const out: Linked[] = [];
+  for (const ep of episodes) {
+    const found = new Set<string>();
+    for (const scene of ep.scenes) {
+      if (scene.cardId) for (const id of neighbours(scene.cardId, edges)) if (wanted.has(id)) found.add(id);
+      for (const name of scene.speakers.map(fold)) {
+        const who = people.find((c) => fold(c.title) === name) ?? people.find((c) => fold(c.title.split(/\s+/)[0]) === name);
+        if (who) found.add(who.id);
+      }
+    }
+    for (const id of found) out.push({ source: ep.id, target: id });
+  }
+  return out;
+}

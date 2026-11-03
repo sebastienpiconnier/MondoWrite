@@ -70,6 +70,10 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
         return t.items.noEpisodes;
       case "pilotLength":
         return fmt(t.items.pilotLength, { n: f.counts![0], min: f.counts![1], max: f.counts![2], format: f.text });
+      case "episodeLength":
+        return fmt(t.items.episodeLength, { episode: f.text, n: f.counts![0], min: f.counts![1], max: f.counts![2] });
+      case "principalAbsent":
+        return fmt(t.items.principalAbsent, { name: f.names![0], from: f.names![1], to: f.names![2], n: f.counts![0] });
       case "secretNoReveal":
         return fmt(t.items.secretNoReveal, { name: f.names![0] });
       case "secretNoClue":
@@ -86,6 +90,11 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
     const s = useCosmos.getState();
     // Une case loin de sa place : on va à sa première scène, dans le texte.
     if (f.rule === "beatDrift" && f.sceneId) return s.openInManuscript(f.sceneId);
+    // La longueur d'un épisode : on ouvre cet épisode dans le séquencier.
+    if (f.rule === "episodeLength" && f.sceneId) {
+      s.openEpisode(f.sceneId);
+      return s.setView("plan");
+    }
     if (f.sceneId) s.openInBible(f.sceneId);
     else s.setView("bible");
   };

@@ -6,22 +6,28 @@ import { useMemo } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { bookOrder } from "../book";
-import { usePagination } from "./usePagination";
+import { paginate } from "../screenplay/paginate";
+import { LAYOUTS } from "../screenplay/layout";
+import { seriesPart } from "../screenplay/series";
 import { novelReport, screenplayReport, withPov } from "../review/report";
 import { listScenes } from "../screenplay/scenes";
 import { countWords } from "../manuscript";
 import { novelPlaces, screenplayPlaces, settingSummary } from "../review/places";
 import { novelCast, screenplayCast } from "../review/crossings";
 
-export function useProjectStats() {
+/** `part` (série, lot 3) : une saison ou un épisode seul ; sans lui, tout le scénario. */
+export function useProjectStats(part: string | null = null) {
   const kind = useCosmos((s) => s.kind);
-  const screenplay = useCosmos((s) => s.screenplay);
+  const full = useCosmos((s) => s.screenplay);
+  const paper = useCosmos((s) => s.paper);
+  const screenplay = useMemo(() => (full && part ? seriesPart(full, part, "") : full), [full, part]);
   const nodes = useCosmos((s) => s.nodes);
   const edges = useCosmos((s) => s.edges);
   const plan = useCosmos((s) => s.plan);
   const manuscript = useCosmos((s) => s.manuscript);
   const lang = useSettings((s) => s.lang);
-  const pagination = usePagination();
+  // Pagination du texte compté (toute la série, ou la partie choisie) : les rangs d'éléments sont les siens.
+  const pagination = useMemo(() => (screenplay ? paginate(screenplay.elements, LAYOUTS[paper]) : null), [screenplay, paper]);
   const script = kind === "scenario";
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
   const order = useMemo(() => (script ? [] : bookOrder(nodes, plan)), [script, nodes, plan]);

@@ -340,3 +340,36 @@ export function placeSceneInEpisode(sp: Screenplay, cardId: string, episodeId: s
   const next = [...without.slice(0, to), ...chunk, ...without.slice(to)];
   return next.every((e, i) => e === el[i]) ? sp : withElements(sp, next);
 }
+
+/**
+ * Gabarit d'un épisode (lot 3) : ses cases sont des sections de niveau 3 marquées [[cosmos:beat:<clé>]], posées
+ * dans le texte de l'épisode seul (`apply` reçoit ce texte et rend le nouveau, par applyTemplate de
+ * template.ts). Les cases d'un autre épisode ne bougent pas. Même objet si rien ne change.
+ */
+export function withEpisodeTemplate(sp: Screenplay, episodeId: string, apply: (script: Screenplay) => Screenplay): Screenplay {
+  if (!findEpisode(sp, episodeId)) return sp;
+  return inEpisode(sp, episodeId, (script) => {
+    const next = apply(script);
+    if (next === script) return script;
+    // Une case posée par le gabarit est d'un niveau sous l'épisode (## épisode, ### case).
+    return { ...next, elements: next.elements.map((el) => (el.type === "section" && el.depth !== 3 && / \[\[cosmos:beat:/.test(el.text) ? { ...el, depth: 3 } : el)) };
+  });
+}
+
+/**
+ * Texte à exporter d'une partie de la série (lot 3) : une saison (de sa section à la saison suivante) ou un
+ * épisode, avec la page de titre du projet dont le titre reçoit, sur une seconde ligne, le nom de la partie
+ * (`label`) : chaque épisode exporté a ainsi sa page de titre. Sans partie connue : le scénario entier.
+ */
+export function seriesPart(sp: Screenplay, id: string | null | undefined, label: string): Screenplay {
+  if (!id) return sp;
+  const seasons = seriesOf(sp.elements);
+  const season = seasons.find((s) => s.id === id);
+  const ep = season ? undefined : findEpisode(sp, id);
+  if (!season && !ep) return sp;
+  const elements = season ? sp.elements.slice(season.at + 1, season.end) : sp.elements.slice(ep!.start, ep!.end);
+  const key = Object.keys(sp.titlePage).find((k) => k.trim().toLowerCase() === "title") ?? "Title";
+  const title = (sp.titlePage[key] ?? "").trim();
+  const titlePage = label.trim() ? { ...sp.titlePage, [key]: title ? `${title}\n${label.trim()}` : label.trim() } : sp.titlePage;
+  return { titlePage, elements };
+}

@@ -756,7 +756,9 @@ export function ScreenplayView() {
     const elements = currentScript(state)?.elements ?? [];
     // Rang du scénario entier (série : toute la saison), ramené à celui de l'épisode ouvert.
     const at = target.startsWith(SCENE_AT) ? Number(target.slice(SCENE_AT.length)) - scriptOffset(state) : -1;
-    const index = at >= 0 ? (at < elements.length ? at : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
+    // Une section d'épisode (« Aller à » un épisode) est juste avant le texte de l'épisode ouvert : son début.
+    const at0 = target.startsWith(SCENE_AT) && at < 0 && elements.length > 0 ? 0 : at;
+    const index = at0 >= 0 ? (at0 < elements.length ? at0 : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
     if (index >= 0) requestAnimationFrame(() => goToRef.current(index));
   }, [target]);
 

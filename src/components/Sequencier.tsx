@@ -6,11 +6,14 @@
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { templateBeats, type PlanBeat } from "../plan";
+
+/** Gabarits proposés à un épisode : « Épisode de série » d'abord. */
+const EPISODE_TEMPLATES = ["episode", ...SCREENPLAY_TEMPLATES.filter((k) => k !== "episode")] as const;
 import { MoreMenu } from "./MoreMenu";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SCENE_AT, useCosmos } from "../store";
 import { useEpisodeLabel } from "./EpisodePicker";
-import { isSeries, seriesMark, seriesOf, type Episode, type Season } from "../screenplay/series";
+import { episodeAt, episodeScript, isSeries, seriesMark, withEpisodeTemplate, seriesOf, type Episode, type Season } from "../screenplay/series";
 import { isSeries as isSeriesPitch } from "../review/checks";
 import { formOf } from "../pitch";
 import { useSettings, type SequencerMode } from "../settings";
@@ -121,7 +124,14 @@ export function Sequencier() {
     const key = beatOf(text);
     return key && key in t.plan.beats ? t.plan.beats[key as PlanBeat].label : sectionLabel(text);
   };
-  const sections = list.flatMap((b, i) => (b.kind === "section" ? [{ index: i, label: labelOf(b.text) }] : []));
+  // Série : une case porte le nom de son épisode dans « Ranger dans » (chaque épisode a les mêmes cases).
+  const sectionLabelAt = (b: (typeof list)[number]) => {
+    const label = labelOf(b.text);
+    if (!inSeries || !beatOf(b.text)) return label;
+    const ep = episodeAt(screenplay, b.start);
+    return ep && episodeById.has(ep) ? `${episodeLabel(episodeById.get(ep)!)} · ${label}` : label;
+  };
+  const sections = list.flatMap((b, i) => (b.kind === "section" ? [{ index: i, label: sectionLabelAt(b) }] : []));
   // Section de chaque bloc (la dernière placée avant lui), et longueur de chaque section.
   const owner: number[] = [];
   const sectionPages = new Map<number, number>();
@@ -129,6 +139,26 @@ export function Sequencier() {
     owner[i] = b.kind === "section" ? i : (owner[i - 1] ?? -1);
     if (b.kind === "scene" && owner[i] >= 0) sectionPages.set(owner[i], (sectionPages.get(owner[i]) ?? 0) + pagesBetween(pagination, b.start, b.end));
   });
+  // Série : gabarit de chaque épisode, lu dans son texte ; « Épisode de série » en tête de la liste.
+  const episodeTemplate = (id: string) => currentTemplate(episodeScript(screenplay, id).elements);
+  const setEpisodeTemplate = (id: string, value: string) => {
+    if (value === "perso") return;
+    const next = withEpisodeTemplate(screenplay, id, (script) =>
+      applyTemplate(script, isScreenplayTemplate(value) ? value : null, (key) => t.plan.beats[key as PlanBeat].label),
+    );
+    if (next !== screenplay) setScreenplay(next, true);
+  };
+  // Rang d'une case dans le gabarit de son épisode (« Case 3 sur 6 »), ou dans le gabarit du scénario.
+  const rankOf = (start: number): { n: number; total: number } | null => {
+    const key = beatOf(screenplay.elements[start]?.text ?? "");
+    if (!key) return null;
+    if (!inSeries) return beatKeys.includes(key) ? { n: beatKeys.indexOf(key) + 1, total: beatKeys.length } : null;
+    const ep = episodeAt(screenplay, start);
+    if (!ep) return null;
+    const plan = screenplayPlan(episodeScript(screenplay, ep).elements);
+    const keys = plan.template === "libre" ? [] : templateBeats(plan.template, plan.custom);
+    return keys.includes(key) ? { n: keys.indexOf(key) + 1, total: keys.length } : null;
+  };
   const setTemplate = (value: string) =>
     setScreenplay(applyTemplate(screenplay, isScreenplayTemplate(value) ? value : null, (key) => t.plan.beats[key as PlanBeat].label), true);
   const moveTo = (from: number, section: number) => {
@@ -220,7 +250,6 @@ export function Sequencier() {
         ) : (
           <>
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : inSeries ? <p className="sp-empty">{ts.hint}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
-        {inSeries && template && <p className="sp-empty">{ts.templateLater}</p>}
         {template && !inSeries && <p className="plan-about">{t.plan.templateAbout[template]}</p>}
         {template && !inSeries && <p className="sp-empty">{sq.templateHint}</p>}
         {template === "cercleHarmon" && (
@@ -286,6 +315,21 @@ export function Sequencier() {
                     {episode && (
                       <SynopsisField value={episode.synopsis} scene={title} onSave={(text) => s().setEpisodeSynopsis(mark.id, text)} />
                     )}
+                    {/* Gabarit de cet épisode seul : ses cases se posent dans son texte (lot 3). */}
+                    {episode && (
+                      <label className="sq-episode-template">
+                        <span>{ts.templateOf}</span>
+                        <select value={episodeTemplate(episode.id) ?? ""} onChange={(e) => setEpisodeTemplate(episode.id, e.target.value)}>
+                          <option value="">{t.plan.noTemplate}</option>
+                          {EPISODE_TEMPLATES.map((k) => (
+                            <option key={k} value={k}>
+                              {t.plan.templates[k]}
+                            </option>
+                          ))}
+                          {episodeTemplate(episode.id) === "perso" && <option value="perso">{t.plan.templates.perso}</option>}
+                        </select>
+                      </label>
+                    )}
                   </span>
                   {pages > 0 && (
                     <span className="sq-section-length">
@@ -322,16 +366,14 @@ export function Sequencier() {
 
             if (block.kind === "section") {
               return (
-                <li key={`section-${block.start}`} className={`sq-section${beatOf(block.text) ? " is-beat" : ""}${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
+                <li key={`section-${block.start}`} className={`sq-section${beatOf(block.text) ? " is-beat" : ""}${inSeries && beatOf(block.text) ? " in-episode" : ""}${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
                   <span className="sq-section-name">
-                    {beatKeys.indexOf(beatOf(block.text) ?? "") >= 0 && (
-                      <span className="beat-rank">{fmt(t.plan.beatRank, { n: beatKeys.indexOf(beatOf(block.text)!) + 1, total: beatKeys.length })}</span>
-                    )}
+                    {rankOf(block.start) && <span className="beat-rank">{fmt(t.plan.beatRank, rankOf(block.start)!)}</span>}
                     <span className="beat-title">{labelOf(block.text)}</span>
                     {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}
                     {beatOf(block.text) && beatInfo(beatOf(block.text)!).hint && <span className="sq-section-hint">{beatInfo(beatOf(block.text)!).hint}</span>}
                   </span>
-                  {beatKeys.includes(beatOf(block.text) ?? "") && !beatScenes[beatOf(block.text)!]?.length && <BeatQuestion beatKey={beatOf(block.text)!} />}
+                  {!inSeries && beatKeys.includes(beatOf(block.text) ?? "") && !beatScenes[beatOf(block.text)!]?.length && <BeatQuestion beatKey={beatOf(block.text)!} />}
                   {(sectionPages.get(i) ?? 0) > 0 && (
                     <span className="sq-section-length">
                       {fmt(sp.lengthShort, { n: number.format(sectionPages.get(i)!) })}

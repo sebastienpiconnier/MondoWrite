@@ -791,6 +791,46 @@ const scenarios = [
     },
   },
   {
+    name: "série, lot 3 : gabarit d'un épisode, rubrique Épisodes de la Bible, « Aller à » un épisode",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("INT. PHARE – NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne.");
+      await h.wait(500);
+      await h.view(2);
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      await until(() => page.getByRole("textbox", { name: "Titre de l’épisode 1" }).count(), "pas d'épisode 1");
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      const second = page.getByRole("textbox", { name: "Titre de l’épisode 2" });
+      await until(() => second.count(), "pas d'épisode 2");
+      await second.fill("Tempête");
+      await second.press("Enter");
+      // Gabarit de l'épisode 2 seul : « Épisode de série ».
+      await page.getByLabel("Gabarit de l’épisode").nth(1).selectOption("episode");
+      await h.saved((f) => {
+        const text = f["scenario.fountain"] ?? "";
+        const ep2 = text.indexOf("Tempête [[cosmos:episode:");
+        const beat = text.indexOf("### ");
+        return ep2 > 0 && beat > ep2 && text.indexOf("[[cosmos:beat:") > ep2;
+      }, "le gabarit n'est pas posé dans l'épisode 2 seul");
+      // La Bible liste les épisodes, titres modifiables.
+      await h.view(3);
+      await page.locator(".bible-toc, nav").getByText("Épisodes", { exact: true }).first().click();
+      await until(() => page.locator(".series-bible").getByRole("textbox", { name: "Titre de l’épisode 2" }).count(), "la rubrique Épisodes de la Bible ne montre pas l'épisode 2");
+      assert((await page.locator(".series-bible").getByRole("textbox", { name: "Titre de l’épisode 2" }).inputValue()) === "Tempête", "le titre de l'épisode 2 n'est pas dans la Bible");
+      // « Aller à » mène à l'épisode 2 dans la vue Scénario.
+      await page.keyboard.press("Control+g");
+      await page.keyboard.type("Tempête");
+      await until(() => page.locator(".goto-kind").filter({ hasText: "Épisode" }).count(), "« Aller à » ne propose pas l'épisode");
+      await page.keyboard.press("Enter");
+      await until(() => page.locator(".episode-picker-label").filter({ hasText: "Ép. 2 · Tempête" }).count(), "« Aller à » n'a pas ouvert l'épisode 2");
+    },
+  },
+  {
     name: "Bible : une fiche Lieu créée dans la Bible a sa carte sur le canevas",
     async run(h) {
       const { page } = h;

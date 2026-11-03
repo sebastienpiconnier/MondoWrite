@@ -13,6 +13,7 @@ import { CharacterStats } from "./CharacterStats";
 import { PlaceStats } from "./PlaceStats";
 import { BreakdownStats } from "./StructureTools";
 import { useProjectStats } from "./useProjectStats";
+import { exportParts } from "./useExportScript";
 import { castForMatrix, neverMeet, shared, topDuo, type Cast, type Presence } from "../review/crossings";
 import type { SettingSummary } from "../review/places";
 import { iaPercent, iaShareOfManuscript, iaShareOfScreenplay } from "../atelier";
@@ -28,7 +29,11 @@ const NEVER_SHOWN = 8;
 export function StatsPanel() {
   const { t, types } = useVocab();
   const s = t.projectStats;
-  const { script, characters, places, summary, cast } = useProjectStats();
+  // Série (lot 3) : les chiffres de toute la série, d'une saison ou d'un épisode (état d'affichage).
+  const [part, setPart] = useState<string | null>(null);
+  const parts = exportParts(useCosmos((x) => x.screenplay), t);
+  const shownPart = part && parts.some((p) => p.id === part) ? part : null;
+  const { script, characters, places, summary, cast } = useProjectStats(shownPart);
   const [tab, setTab] = useState<Tab>("characters");
   const close = () => useCosmos.getState().setDialog(null);
   const openCard = (id: string) => {
@@ -56,6 +61,19 @@ export function StatsPanel() {
         </svg>
       </button>
       <h2 id="app-dialog-title">{s.title}</h2>
+      {script && parts.length > 0 && (
+        <label className="stats-part">
+          <span>{s.part}</span>
+          <select value={shownPart ?? ""} onChange={(e) => setPart(e.target.value || null)}>
+            <option value="">{t.season.whole}</option>
+            {parts.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="sq-modes stats-tabs" role="group" aria-label={s.tabsAria}>
         {tabs.map(([key, label]) => (
           <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>

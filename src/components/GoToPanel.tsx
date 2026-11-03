@@ -31,6 +31,7 @@ export function GoToPanel() {
       page: g.page,
       untitledScene: t.screenplay.untitledScene,
       chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
+      episode: (n, title) => fmt(t.season.episodeTitled, { n, title: title || t.season.untitled }),
     }),
     [g, t],
   );

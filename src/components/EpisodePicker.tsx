@@ -2,7 +2,7 @@
 // du scénario (saisons et épisodes, screenplay/series.ts) : « Tout le scénario », puis chaque épisode, et
 // « Nouvel épisode ». Les flèches passent à l'épisode précédent ou suivant. Rien n'est affiché hors d'une série.
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { MoreMenu, type MoreItem } from "./MoreMenu";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
@@ -11,7 +11,8 @@ import { allEpisodes, isSeries, resolveEpisode, seriesOf, type Episode } from ".
 /** Libellé d'un épisode : « Ép. 3 · Tempête », ou « Ép. 3 · Épisode sans titre ». */
 export function useEpisodeLabel(): (ep: Episode) => string {
   const t = useT().season;
-  return (ep) => fmt(t.episodeTitled, { n: ep.number, title: ep.title || t.untitled });
+  // Même fonction tant que la langue ne change pas : elle sert de dépendance à des calculs mémorisés.
+  return useCallback((ep: Episode) => fmt(t.episodeTitled, { n: ep.number, title: ep.title || t.untitled }), [t]);
 }
 
 export function EpisodePicker({ beforeSwitch, onNotice }: { beforeSwitch?: () => void; onNotice?: (text: string) => void }) {

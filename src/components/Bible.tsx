@@ -38,6 +38,8 @@ import { SheetDraft } from "./Atelier";
 import { CharacterAnswers } from "./CharacterAnswers";
 import { ProjectCover } from "./ProjectCover";
 import { RelationsMap } from "./RelationsMap";
+import { SeriesEpisodes } from "./SeriesEpisodes";
+import { allEpisodes } from "../screenplay/series";
 import type { PlaceRow } from "../review/places";
 import type { CharacterRow } from "../review/report";
 import { useProjectStats } from "./useProjectStats";
@@ -185,7 +187,8 @@ export function Bible() {
   // Ni Épisodes pour un film (pastille Format).
   const film = useCosmos((s) => formOf(kind, s.pitch) === "film");
   const shownTypes = useMemo(() => {
-    const allowed = typesFor(kind, nodes.some((n) => n.data.type === "episode"), film);
+    // Série : la rubrique Épisodes lit les sections du scénario (SeriesEpisodes), dans tout scénario qui n'est pas un film.
+    const allowed = kind === "scenario" && !film ? [...typesFor(kind, true, film)] : typesFor(kind, nodes.some((n) => n.data.type === "episode"), film);
     return bibleOrder(prefs).filter((type) => allowed.includes(type));
   }, [prefs, kind, nodes, film]);
   const sections = useMemo(
@@ -204,11 +207,13 @@ export function Bible() {
       }),
     [nodes, lang, fresh, shownTypes],
   );
+  const seriesCount = useCosmos((s) => (kind === "scenario" && s.screenplay ? allEpisodes(s.screenplay.elements).length : null));
   const counts = useMemo(() => {
     const out = new Map<CardType, number>();
     for (const n of nodes) out.set(n.data.type, (out.get(n.data.type) ?? 0) + 1);
+    if (seriesCount !== null) out.set("episode", seriesCount);
     return out;
-  }, [nodes]);
+  }, [nodes, seriesCount]);
   // « projet » : la couverture du projet, première page de la Bible (et page d'arrivée), sans données propres.
   const [current, setCurrent] = useState<CardType | "projet">("projet");
   const onCover = current === "projet";
@@ -493,7 +498,7 @@ export function Bible() {
     <EdgeHandle side="left" open={tocOpen} label={t.bible.tocTitle} onClick={toggleToc} />
     <div className="bible" ref={rootRef} onScroll={onScroll}>
       <BibleToc
-        sections={sections.map((g) => ({ type: g.type, count: g.cards.length }))}
+        sections={sections.map((g) => ({ type: g.type, count: g.type === "episode" && seriesCount !== null ? seriesCount : g.cards.length }))}
         counts={counts}
         prefs={prefs}
         setPrefs={setPrefs}
@@ -530,7 +535,7 @@ export function Bible() {
                 <h2 className="bible-group-title">
                   <span className="card-dot" style={{ background: typeColor(group.type) }} />
                   {types[group.type].section}
-                  <span className="toc-count">{group.cards.length}</span>
+                  <span className="toc-count">{group.type === "episode" && seriesCount !== null ? seriesCount : group.cards.length}</span>
                 </h2>
                 <div className="bible-section-tools">
                   {group.cards.length > 0 && !(group.type === "personnage" && relations) && (
@@ -560,7 +565,12 @@ export function Bible() {
                     className="icon-button bible-section-add"
                     aria-label={fmt(t.bible.addType, { type: types[group.type].label })}
                     title={fmt(t.bible.addType, { type: types[group.type].label })}
-                    onClick={() => create(group.type)}
+                    onClick={() => {
+                      if (group.type !== "episode" || kind !== "scenario") return create(group.type);
+                      const s = useCosmos.getState();
+                      const id = s.addSeriesEpisode();
+                      if (id) s.openEpisode(id);
+                    }}
                   >
                     <span aria-hidden="true">+</span>
                   </button>
@@ -576,7 +586,9 @@ export function Bible() {
                   </div>
                 )}
               </div>
-              {group.type === "personnage" && relations && group.cards.length > 0 ? (
+              {group.type === "episode" && kind === "scenario" ? (
+                <SeriesEpisodes />
+              ) : group.type === "personnage" && relations && group.cards.length > 0 ? (
                 <div className="bible-entry">
                   <RelationsMap onOpen={openCard} />
                 </div>

@@ -6,7 +6,8 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { fmt, useT } from "../i18n";
-import { currentScript, useCosmos } from "../store";
+import { useCosmos } from "../store";
+import { useExportScript } from "./useExportScript";
 import { useSettings } from "../settings";
 import { storage } from "../storage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -23,7 +24,8 @@ export function ScriptPdfPanel() {
   const k = t.scriptPdf;
   const lang = useSettings((s) => s.lang);
   const author = useSettings((s) => s.author);
-  const screenplay = useCosmos(currentScript);
+  const { script: screenplay, parts, part } = useExportScript();
+  const setExportPart = useCosmos((s) => s.setExportPart);
   const projectTitle = useCosmos((s) => s.title);
   const paper = useCosmos((s) => s.paper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
@@ -107,6 +109,21 @@ export function ScriptPdfPanel() {
         }}
       >
         <h2 id="app-dialog-title">{k.title}</h2>
+        {/* Série (lot 3) : tout le scénario, une saison ou un épisode ; aussi pour Fountain et FDX. */}
+        {parts.length > 0 && (
+          <fieldset>
+            <legend>{k.part}</legend>
+            <select aria-label={k.part} value={part ?? ""} onChange={(e) => setExportPart(e.target.value)}>
+              <option value="">{t.season.whole}</option>
+              {parts.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            <p className="spdf-hint">{k.partHint}</p>
+          </fieldset>
+        )}
         <fieldset>
           <legend>{k.content}</legend>
           <label className="spdf-choice">

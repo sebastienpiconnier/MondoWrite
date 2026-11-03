@@ -16,8 +16,8 @@ import { cardNames, type CharacterRow } from "./report";
 export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
-export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift";
-export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "secretNoReveal", "secretNoClue", "objectOnce", "beatDrift"];
+export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent";
+export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "episodeLength", "principalAbsent", "secretNoReveal", "secretNoClue", "objectOnce", "beatDrift"];
 
 export const RULE_ORDER: RuleKey[] = [
   "similarNames",
@@ -30,6 +30,8 @@ export const RULE_ORDER: RuleKey[] = [
   "noGoal",
   "noEpisodes",
   "pilotLength",
+  "episodeLength",
+  "principalAbsent",
   "secretNoReveal",
   "secretNoClue",
   "objectOnce",
@@ -230,7 +232,12 @@ export interface StoryExtras {
   drifts?: readonly { key: string; at: number; target: number; sceneId: string }[];
   /** Scénario : nombre d'épisodes (sections d'épisode du Fountain). Sans lui, les cartes Épisode comptent. */
   episodes?: number;
+  /** Série (lot 3) : chaque épisode, dans l'ordre, avec sa longueur et les personnages qui y paraissent. */
+  series?: readonly { id: string; label: string; pages: number; cast: ReadonlySet<string> }[];
 }
+
+/** Épisodes écrits de suite sans un personnage principal avant d'en faire une question. */
+const ABSENT_RUN = 3;
 
 export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman" | "scenario", pitch: Pitch, extras: StoryExtras = {}): Finding[] {
   const out: Finding[] = [];
@@ -251,7 +258,28 @@ export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman
 
   // Lot 7. Longueur du pilote d'après le format de la couverture (repères de Final Draft).
   const range = kind === "scenario" ? expectedPages(pitch.format) : null;
-  if (range && extras.pages && (extras.pages < range[0] || extras.pages > range[1])) {
+  // Série : chaque épisode déjà écrit (une page au moins) a la longueur que dit le format, le pilote compris.
+  const eps = extras.series ?? [];
+  if (range && eps.length > 0) {
+    for (const ep of eps)
+      if (ep.pages >= 1 && (ep.pages < range[0] || ep.pages > range[1]))
+        out.push({ key: `episodeLength:${ep.id}:${range.join("-")}`, rule: "episodeLength", at: -1, scene: 0, sceneId: ep.id, text: ep.label, counts: [Math.round(ep.pages), range[0], range[1]] });
+  }
+  // Un personnage principal absent de plusieurs épisodes écrits de suite (trois au moins) : la série le perd de vue.
+  const written = eps.filter((ep) => ep.pages > 0);
+  if (written.length >= ABSENT_RUN + 1) {
+    for (const c of principals) {
+      let run: typeof written = [];
+      let longest: typeof written = [];
+      for (const ep of written) {
+        run = ep.cast.has(c.id) ? [] : [...run, ep];
+        if (run.length > longest.length) longest = run;
+      }
+      if (longest.length >= ABSENT_RUN && c.title.trim())
+        out.push({ key: `principalAbsent:${c.id}:${longest[0].id}`, rule: "principalAbsent", at: -1, scene: 0, sceneId: c.id, text: "", names: [c.title.trim(), longest[0].label, longest[longest.length - 1].label], counts: [longest.length] });
+    }
+  }
+  if (range && eps.length === 0 && extras.pages && (extras.pages < range[0] || extras.pages > range[1])) {
     out.push({ key: `pilotLength:${range.join("-")}`, rule: "pilotLength", at: -1, scene: 0, sceneId: null, text: pitch.format?.trim() ?? "", counts: [extras.pages, range[0], range[1]] });
   }
   for (const c of cards) {

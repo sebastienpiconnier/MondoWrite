@@ -43,7 +43,7 @@ import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./
 import { interviewKey, isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
 import { addEntries, breakdownEntries } from "./ai/structure";
-import { EMPTY_PLAN, beatText, withKeys, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
+import { EMPTY_PLAN, beatText, templateBeats, withKeys, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
 import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
@@ -420,6 +420,9 @@ export interface CosmosState {
    * scénario. État d'affichage, jamais enregistré (tout le scénario à l'ouverture).
    */
   currentEpisode: string | null;
+  /** Export d'une série (lot 3), état d'affichage : null suit l'épisode ouvert, "" tout le scénario, sinon une saison ou un épisode. */
+  exportPart: string | null;
+  setExportPart: (part: string | null) => void;
   /** Ouvre un épisode dans la vue Scénario (null : tout le scénario). Ne change pas de vue. */
   openEpisode: (id: string | null) => void;
   /**
@@ -904,7 +907,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
               seasons: readSeries(sp.elements).map((season) => ({
                 id: season.id,
                 title: season.title,
-                episodes: season.episodes.map((ep) => ({ id: ep.id, title: ep.title, number: ep.number, scenes: byEpisode.get(ep.id) ?? [] })),
+                episodes: season.episodes.map((ep) => {
+                  // Cases du gabarit de l'épisode (lot 3) : lues dans son texte seul.
+                  const own = screenplayPlan(episodeScript(sp, ep.id).elements);
+                  const keys = own.template === "libre" ? [] : templateBeats(own.template, own.custom);
+                  const beats = keys.map((key) => ({ key, label: beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, own.custom).label, scenes: own.beats[key] ?? [] }));
+                  return { id: ep.id, title: ep.title, number: ep.number, scenes: byEpisode.get(ep.id) ?? [], ...(beats.length > 0 ? { beats } : {}) };
+                }),
               })),
               outside,
             };
@@ -1017,12 +1026,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!c || !story.has(id) || held.has(id)) continue;
       // On tient une carte par son en-tête : c'est lui qui dit dans quelle case elle tombe (une case vide
       // est moins haute qu'une scène).
-      const frame = beatFrames.find((f) => insideBox(c.x, c.top, frameBox(f)));
+      // Le cadre le plus profond l'emporte : une case dans un épisode, plutôt que l'épisode.
+      const frame = beatFrames.filter((f) => insideBox(c.x, c.top, frameBox(f))).pop();
       const episode = frame?.data.episode;
       const beat = frame?.data.beat;
       if (!beat && !episode) continue;
       const before = (o: { x: number; y: number }) => (Math.abs(o.y - c.y) > c.h / 2 ? o.y < c.y : o.x < c.x);
-      const members = episode ? (inEpisodes.get(episode) ?? []) : (current.beats[beat!] ?? []);
+      // Case d'un épisode : ses scènes sont celles de la case dans le texte de cet épisode.
+      const members = episode && beat ? (screenplay ? (screenplayPlan(episodeScript(screenplay, episode).elements).beats[beat] ?? []) : []) : episode ? (inEpisodes.get(episode) ?? []) : (current.beats[beat!] ?? []);
       const others = members.filter((s) => s !== id && story.has(s));
       const index = others.filter((s) => {
         const o = center.get(s);
@@ -1034,7 +1045,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // défait les deux. Le scénario passe par setScreenplay(…, true), qui garde ainsi aussi l'historique.
       quiet = true;
       try {
-        if (episode) get().placeInEpisode(id, episode, index);
+        if (episode && beat) {
+          // D'abord dans l'épisode (s'il en change), puis dans la case, à sa place.
+          if (screenplay && episodeOfCard(screenplay, id) !== episode) get().placeInEpisode(id, episode);
+          get().placeInBeat(id, beat, index);
+        } else if (episode) get().placeInEpisode(id, episode, index);
         else get().placeInBeat(id, beat!, index);
       } finally {
         quiet = false;
@@ -2319,6 +2334,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     screenplay: null,
     savedScreenplay: null,
     currentEpisode: null,
+    exportPart: null,
+    setExportPart: (part) => set({ exportPart: part }),
     openEpisode: (id) => set({ currentEpisode: resolveEpisode(get().screenplay, id) }),
     setScript: (script, undoable = false, episode) => {
       const full = get().screenplay;

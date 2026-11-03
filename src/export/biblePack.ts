@@ -15,11 +15,11 @@ import { NOVEL_CHIPS, formOf, isSeriesForm, readEpisodes, type PitchText } from 
 import { feasibilityText, pitchLabels } from "../feasibility";
 import { paginate } from "../screenplay/paginate";
 import { LAYOUTS, type Paper } from "../screenplay/layout";
-import { seriesOf } from "../screenplay/series";
-import { appearances, bySeason, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, manySeasons, pivotOf } from "../episodes";
+import { allEpisodes, seriesOf } from "../screenplay/series";
+import { seriesLinks, appearances, bySeason, episodeCast, episodeGrid, episodeNumbers, episodeOrder, episodeThreads, manySeasons, pivotOf } from "../episodes";
 import { bookWords, type Manuscript } from "../manuscript";
 import type { Screenplay } from "../screenplay/model";
-import { listScenes, sceneSynopsis } from "../screenplay/scenes";
+import { listScenes, sceneCharacters, sceneSynopsis } from "../screenplay/scenes";
 import { beatOf, sectionLabel } from "../screenplay/template";
 import { screenplaySceneTexts, timeline } from "../timeline";
 import type { CardNode } from "../projectState";
@@ -173,6 +173,24 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       : [];
   const episodes = s.kind === "scenario" ? (sectionEpisodes.length > 0 ? sectionEpisodes : episodeOrder(cards)) : [];
   const gridCards = sectionEpisodes.length > 0 ? [...cards.filter((c) => c.type !== "episode"), ...sectionEpisodes] : cards;
+  // Fils virtuels des épisodes-sections (intrigues et personnages de leurs scènes), le temps de l'export.
+  const epEdges =
+    sectionEpisodes.length > 0 && s.screenplay
+      ? [
+          ...s.edges,
+          ...seriesLinks(
+            allEpisodes(s.screenplay.elements).map((ep) => ({
+              id: ep.id,
+              scenes: listScenes(s.screenplay!.elements.slice(ep.start, ep.end)).map((sc) => ({
+                cardId: sc.cardId,
+                speakers: sceneCharacters(s.screenplay!.elements.slice(ep.start, ep.end), sc).map((c) => c.name),
+              })),
+            })),
+            cards,
+            s.edges,
+          ),
+        ]
+      : s.edges;
   // Comme la couverture de la Bible : seulement les scènes qui ont une carte.
   const words = bookWords(s.manuscript, cards);
 
@@ -232,7 +250,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       const others = full === principals ? all.filter((c) => !isPrincipal(c)) : [];
       // Bible de série : tout le monde en une page, d'un coup d'œil, avant les fiches.
       // Avec des épisodes, le mémo dit aussi où chacun paraît (pivot ou relié par un fil).
-      const seen = series ? appearances(cards, s.edges) : new Map<string, string[]>();
+      const seen = series ? appearances(gridCards, epEdges) : new Map<string, string[]>();
       const memoNote = (c: CardData) => {
         const where = seen.get(c.id) ?? [];
         const inEps = where.length === 0 ? "" : where.length === 1 ? fmt(e.inEpisode, { n: where[0] }) : fmt(e.inEpisodes, { list: where.join(", ") });
@@ -422,8 +440,8 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
       out.push({ kind: "h3", text: `${numbers.get(c.id)}. ${named(c)}`, sub: [marker(c), pivotOf(c, cards)?.title.trim()].filter(Boolean).join(" · ") });
       if (clean(c.fiche?.synopsis)) out.push({ kind: "para", runs: [{ text: clean(c.fiche?.synopsis) }] });
       const facts = [
-        { label: v.types.intrigue.section, value: episodeThreads(c, cards, s.edges).map(named).join(", ") },
-        { label: v.types.personnage.section, value: episodeCast(c, cards, s.edges).map(named).join(", ") },
+        { label: v.types.intrigue.section, value: episodeThreads(c, gridCards, epEdges).map(named).join(", ") },
+        { label: v.types.personnage.section, value: episodeCast(c, gridCards, epEdges).map(named).join(", ") },
       ].filter((f) => f.value);
       if (facts.length > 0) out.push({ kind: "para", small: true, runs: facts.flatMap((f, i) => [...(i > 0 ? [{ text: " · " }] : []), { text: `${f.label} : `, bold: true }, { text: f.value }]) });
       out.push(...paras(c.html));
@@ -459,7 +477,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
   /** Grille des fils de la saison : intrigues × épisodes, s'il y a au moins deux épisodes et un fil. */
   function seasonGrid(): PackBlock[] {
     if (episodes.length < 2 || episodes.length > MAX_GRID_COLS) return [];
-    const grid = episodeGrid(gridCards, s.edges);
+    const grid = episodeGrid(gridCards, epEdges);
     if (grid.rows.length === 0) return [];
     return [{ kind: "label", text: e.gridSeason }, { kind: "grid", cols: episodes.map((c) => c.title.trim() || t.bible.untitled), marks: grid.cols, rows: grid.rows }];
   }

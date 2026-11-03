@@ -519,3 +519,31 @@ td.cross-cell.is-self { height: 44px; min-width: 3.25em; border-radius: 8px; bac
 .pov-scenes-list { margin: 4px 0 0; padding-left: 28px; display: flex; flex-direction: column; gap: 2px; }
 .pov-scenes-list .link-button { min-height: 28px; text-align: left; }
 @media (pointer: coarse) { .pov-scenes-toggle, .pov-scenes-list .link-button { min-height: 44px; } }
+
+/* Rubrique Épisodes d'une série : les sections du scénario (SeriesEpisodes). */
+.series-bible { display: flex; flex-direction: column; gap: 22px; }
+.series-bible-season { display: flex; flex-direction: column; gap: 10px; }
+.series-bible-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.series-bible-episode { display: flex; flex-direction: column; gap: 6px; }
+.series-bible-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.series-bible-head .beat-rank { flex-basis: auto; }
+.series-bible-title {
+  flex: 1 1 14em;
+  min-width: 0;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: 600 1.125rem/1.3 var(--font-display);
+}
+.series-bible-season > .series-bible-title { flex: none; }
+.series-bible-title.is-season { font-size: 1.5rem; font-weight: 700; padding-top: 6px; border-top: 3px solid var(--accent); border-radius: 0; }
+.series-bible-title::placeholder { color: var(--ink-2); }
+.series-bible-title:focus { border-color: var(--accent); outline: none; background: var(--surface); }
+@media (any-hover: hover) {
+  .series-bible-title:not(.is-season):hover { border-color: var(--line); }
+}
+.series-bible-pages { font-size: 0.8125rem; }
+.series-bible-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }

@@ -8,8 +8,9 @@ import { chapterNumbers, chapterOf, type Plan } from "./plan";
 import { countWords, type Manuscript } from "./manuscript";
 import { firstPageOf } from "./stats";
 import { revisitsIn } from "./todos";
+import { allEpisodes } from "./screenplay/series";
 
-export type GoKind = "page" | "scene" | "chapter" | "revisit" | "note";
+export type GoKind = "page" | "scene" | "chapter" | "revisit" | "note" | "episode";
 
 export interface GoTarget {
   key: string;
@@ -27,6 +28,8 @@ export interface GoLabels {
   page: string; // « Page {n} »
   untitledScene: string;
   chapter: (n: number, title: string) => string;
+  /** Série : « Ép. 3 · Tempête » (lot 3 du plan des épisodes). */
+  episode?: (n: number, title: string) => string;
 }
 
 const AT = "@";
@@ -46,8 +49,15 @@ export function screenplayPlaces(elements: ScreenplayElement[], startPage: numbe
   const targets: GoTarget[] = [];
   let scene = 0;
   let sceneLabel = "";
+  // Série : chaque épisode est un endroit où aller (sa section, dans le scénario entier).
+  const episodes = new Map(allEpisodes(elements).map((ep) => [ep.at, ep]));
   elements.forEach((el, i) => {
     const page = startPage[i] ?? 1;
+    const ep = episodes.get(i);
+    if (ep && labels.episode) {
+      targets.push({ key: `e${i}`, kind: "episode", label: labels.episode(ep.number, ep.title.trim()), detail: ep.synopsis, target: `${AT}${i}`, page });
+      return;
+    }
     if (el.type === "sceneHeading") {
       scene++;
       const number = el.sceneNumber ?? String(scene);
@@ -109,7 +119,7 @@ export function novelPlaces(order: string[], titles: Map<string, string>, plan: 
  */
 export function findPlaces(query: string, places: GoPlaces, labels: GoLabels, limit = 60): GoTarget[] {
   const q = fold(query);
-  if (q === "") return places.targets.filter((t) => t.kind === "scene" || t.kind === "chapter").slice(0, limit);
+  if (q === "") return places.targets.filter((t) => t.kind === "scene" || t.kind === "chapter" || t.kind === "episode").slice(0, limit);
   const out: GoTarget[] = [];
   if (/^\d+$/.test(q)) {
     const n = Number(q);

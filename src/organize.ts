@@ -46,7 +46,12 @@ export interface OrganizeLabels {
 /** Série écrite dans le Fountain (screenplay/series.ts) : saisons, épisodes et leurs scènes, dans l'ordre. */
 export interface OrganizeSeries {
   /** Saison `id: null` : les épisodes écrits avant toute section de saison (sans cadre de saison). */
-  seasons: { id: string | null; title: string; episodes: { id: string; title: string; number: number; scenes: string[] }[] }[];
+  seasons: {
+    id: string | null;
+    title: string;
+    /** `beats` : cases du gabarit de l'épisode (lot 3), dans l'ordre, avec leurs scènes. */
+    episodes: { id: string; title: string; number: number; scenes: string[]; beats?: { key: string; label: string; scenes: string[] }[] }[];
+  }[];
   /** Scènes écrites avant le premier épisode. */
   outside: string[];
 }
@@ -231,6 +236,19 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
         const ids = keep(ep.scenes);
         seriesOrder.push(...ids);
         const title = labels.episode ? labels.episode(ep.number, ep.title.trim()) : ep.title;
+        if (ep.beats && ep.beats.length > 0) {
+          // Cases du gabarit de l'épisode, de gauche à droite, chacune avec ses scènes ; une case vide compte pour une.
+          const inBeats = new Set(ep.beats.flatMap((b) => b.scenes));
+          const loose = ids.filter((id) => !inBeats.has(id));
+          const beatItems: Item[] = ep.beats.map((b) => {
+            const own = keep(b.scenes);
+            return { kind: "frame", title: b.label, beat: b.key, episode: ep.id, body: { items: own.flatMap(cardItem), columns: sceneColumns(own.length), gap: GAP } };
+          });
+          const items: Item[] = [...(loose.length > 0 ? [{ kind: "box" as const, body: { items: loose.flatMap(cardItem), columns: sceneColumns(loose.length), gap: GAP } }] : []), ...beatItems];
+          const count = loose.length + ep.beats.reduce((a, b) => a + Math.max(1, keep(b.scenes).length), 0);
+          const item: Item = { kind: "frame", title, episode: ep.id, body: { items, columns: items.length, gap: GROUP_GAP } };
+          return { item, count };
+        }
         const item: Item = { kind: "frame", title, episode: ep.id, body: { items: ids.flatMap(cardItem), columns: sceneColumns(ids.length), gap: GAP } };
         return { item, count: Math.max(1, ids.length) };
       });

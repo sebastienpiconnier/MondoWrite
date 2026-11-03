@@ -8,7 +8,8 @@ import { useCommand } from "../commands";
 import { authorName, contactLines } from "../profile";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
-import { currentScript, useCosmos } from "../store";
+import { useCosmos } from "../store";
+import { exportScriptOf } from "./useExportScript";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
@@ -105,7 +106,8 @@ export function ExportMenu() {
     const state = useCosmos.getState();
     const { screenplay: full, savedScreenplay, lastFiles, title, paper, sceneNumbers, underlineHeadings } = state;
     // Série : le texte de l'épisode ouvert.
-    const screenplay = currentScript(state);
+    // Série : l'épisode ouvert, ou la partie choisie dans la fenêtre PDF (useExportScript).
+    const screenplay = exportScriptOf(state);
     if (!screenplay) return null;
     return exportScreenplay(screenplay, format, {
       title,

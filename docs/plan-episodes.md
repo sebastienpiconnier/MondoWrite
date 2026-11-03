@@ -94,13 +94,16 @@ des titres vient de la profondeur des cadres (`frameDepth`), la saison prend le 
 
 ## Lot 3 : Bible, vérifications, exports
 
-- [ ] Bible : la rubrique « Épisodes » liste les sections (saison, titre, synopsis modifiable), « Nouvel épisode »
+- [x] Bible : la rubrique « Épisodes » liste les sections (saison, titre, synopsis modifiable), « Nouvel épisode »
       de la couverture crée une section ; export de la bible de série et grille des fils calculée
-- [ ] Gabarit par épisode : chaque épisode a ses propres cases (niveau 3), « épisode de série » proposé par défaut
-- [ ] « Vérifier » : série sans épisode, longueur de chaque épisode selon le format de la couverture, personnage
+- [x] Gabarit par épisode : chaque épisode a ses propres cases (niveau 3), « épisode de série » proposé par défaut
+- [x] « Vérifier » : série sans épisode, longueur de chaque épisode selon le format de la couverture, personnage
       principal absent de plusieurs épisodes de suite
-- [ ] Exports : PDF, Fountain et FDX d'un épisode, d'une saison ou de toute la série (une page de titre par épisode)
-- [ ] Statistiques et « Aller à » par épisode
+- [x] Exports : PDF, Fountain et FDX d'un épisode, d'une saison ou de toute la série (une page de titre par épisode)
+- [x] Statistiques et « Aller à » par épisode
+
+Fait (3 novembre). Reste : l'export de toute la série met une seule page de titre (une par épisode quand on
+exporte un épisode ou une saison) ; le gabarit de l'auteur (« Mes gabarits ») ne se pose pas encore par épisode.
 
 ## Fichiers touchés (lot 1)
 

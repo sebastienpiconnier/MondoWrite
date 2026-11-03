@@ -291,7 +291,7 @@ export function openProject(p: Project) {
   const paperChosen = base.paperChosen || base.kind === "scenario";
   return {
     // Un projet qu'on ouvre repart d'un historique vide.
-    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, currentEpisode: null as string | null, past: [], future: [], awaitingLayout: [] as CardLayout[] },
+    state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, currentEpisode: null as string | null, exportPart: null as string | null, past: [], future: [], awaitingLayout: [] as CardLayout[] },
     dirty: renamed || !!episodes || seriesAdopted || screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
   };
 }
