@@ -45,31 +45,46 @@ MaSerie/
 - Changer le numéro des épisodes ne renomme aucun fichier (le nom est l'identifiant de la carte). Quand le pilote
   change (un épisode passe en tête), les deux textes échangent leur fichier en une étape.
 
-**Décision à prendre (auteur)** : le pilote dans `scenario.fountain` (compatibilité, choix proposé) ou tous les
-épisodes dans `episodes/` (plus régulier, mais une version d'avant ne verrait plus aucun texte).
+**Décision prise (lot 1)** : le premier épisode reste dans `scenario.fountain` (une version d'avant ouvre toujours
+le projet et y voit ce texte). C'est le premier épisode **écrit**, noté `pilot` dans `cosmos.json`, et non le plus
+petit numéro : il ne change pas de fichier quand on renumérote, ce qui évite tout échange de fichiers. S'il part à la
+corbeille, le suivant prend `scenario.fountain`.
 
-## Modèle en mémoire
+## Modèle en mémoire (fait autrement que prévu)
 
-- Le store garde le texte de **l'épisode ouvert** dans `screenplay` (tout le code actuel continue de lire ce
-  seul scénario) et les autres dans `episodeTexts: Record<id, Screenplay>`, chargés à l'ouverture (fichiers
-  courts) ou à la demande si un gros projet le demande.
-- `openEpisode(id)` : envoie ce qui attend dans l'éditeur, range le texte courant, met celui de l'épisode dans
-  `screenplay`. L'historique d'annulation du canevas repart de zéro, comme pour toute frappe venue de l'éditeur.
-- `savedScreenplay` et la règle « réécrit à l'octet près » valent pour chaque fichier.
+Le plan prévoyait de garder l'épisode ouvert seul dans `screenplay` et les autres à part. Toutes les actions qui
+cherchent une scène par sa carte (renommage, corbeille, carte agrandie, recherche, remplacer, versions,
+commentaires) auraient alors dû savoir dans quel épisode chercher, sous peine de doubler une scène dans l'épisode
+ouvert. Fait à la place (`screenplay/season.ts`) :
+
+- `screenplay` est **toute la saison** : chaque épisode commence par un repère en mémoire (section vide avec
+  l'identifiant de sa carte et sa page de titre), jamais écrit. Ces actions voient donc la saison sans rien changer.
+- La vue Scénario, le séquencier, la page de titre, la pagination, le ruban, « Vérifier » et l'export lisent
+  l'épisode ouvert (`currentScript`) et y écrivent (`setScript`). Leurs rangs d'éléments sont locaux ;
+  `scriptOffset` les ramène à la saison pour les actions du store.
+- `currentEpisode` est un état d'affichage : le premier épisode à l'ouverture.
+- Chaque fichier d'épisode inchangé est réécrit à l'octet près.
 
 ## Lot 1 : un texte par épisode
 
-- [ ] Format : `EPISODES_DIR`, lecture, écriture, suppression, .zip, surveillance, conflits ; tests d'aller-retour
-- [ ] Store : `episodeTexts`, `openEpisode`, `currentEpisode` ; recherche, remplacer, « Aller à » et
-      statistiques sur tous les épisodes (pas seulement l'ouvert)
-- [ ] Vue Scénario : sélecteur d'épisode en tête de la liste des scènes (« Ép. 3 · Le phare »), flèches pour
-      passer au suivant ; Cmd/Ctrl + Alt + ↑ / ↓ ; menu ⋯ « Nouvel épisode »
-- [ ] Carte Épisode : bouton « Écrire l'épisode » (carte agrandie, Bible), qui crée le fichier s'il n'existe pas
-      (page de titre reprise du pilote, titre de l'épisode)
-- [ ] Une scène, un personnage ou un décor écrits dans un épisode reçoivent leur carte (`adoptNew`) ; la scène est
-      reliée à son épisode par un fil « dans » (proposé, à confirmer : le fil rend visible l'appartenance sur le
-      canevas et dans la grille)
-- [ ] Supprimer une carte Épisode : son texte part à la corbeille avec elle (comme une Scène), jamais perdu
+- [x] Format : `EPISODES_DIR`, lecture, écriture, suppression, .zip, surveillance, conflits ; tests d'aller-retour
+      (`season.test.ts`, `store-season.test.ts`)
+- [x] Store : saison en mémoire, `openEpisode`, `currentEpisode` ; recherche, remplacer et statistiques sur toute
+      la saison ; aller à une scène d'un autre épisode (recherche, « À faire », « Aller à ») ouvre cet épisode
+- [x] Vue Scénario et séquencier : sélecteur d'épisode (« Ép. 2 · Tempête »), flèches précédent et suivant, menu
+      avec « Nouvel épisode » et « à écrire » pour un épisode sans texte. Pas de raccourci clavier pour l'instant
+      (le sélecteur se joint à la tabulation) : Cmd/Ctrl + Alt + ↑ / ↓ reste à confirmer sur Mac et Windows
+- [x] Carte Épisode : « Écrire l'épisode » dans sa fiche (Bible, carte agrandie) et dans son menu ⋯ ; le texte est
+      créé s'il n'existe pas (page de titre du premier épisode, sans date ni version)
+- [x] Une scène, un personnage ou un décor écrits dans un épisode reçoivent leur carte (`adoptNew`, inchangé)
+- [ ] Fil « dans » entre une scène et son épisode : **pas fait**, à confirmer avec l'auteur (il rendrait
+      l'appartenance visible sur le canevas, au prix de beaucoup de fils)
+- [x] Supprimer une carte Épisode : son texte part à la corbeille avec elle et revient avec elle
+- [ ] Reste à vérifier à la main : app Mac (fichiers `episodes/`, iCloud entre Mac et iPad), iPad (sélecteur au doigt)
+
+Limites connues du lot 1, pour le lot 2 : « Aller à » numérote les pages sur toute la saison ; « Organiser le
+canevas » range les scènes de tous les épisodes ensemble (les cases d'un même gabarit dans deux épisodes se
+mêlent) ; la grille des fils ne lit pas encore les scènes des épisodes.
 
 ## Lot 2 : la saison d'un coup d'œil
 

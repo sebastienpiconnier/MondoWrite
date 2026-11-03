@@ -8,6 +8,7 @@ import { formOf } from "../pitch";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
+import { episodeScript } from "../screenplay/season";
 import { useSettings } from "../settings";
 import { storage } from "../storage";
 import { BIBLE_PARTS, bibleOrder, isPrivatePart, partNumber, type PartKey } from "../bibleParts";
@@ -55,7 +56,7 @@ export function BibleExportDialog() {
   const plan = useCosmos((s) => s.plan);
   const manuscript = useCosmos((s) => s.manuscript);
   const pitch = useCosmos((s) => s.pitch);
-  const screenplay = useCosmos((s) => s.screenplay);
+  const screenplay = useCosmos((s) => (s.screenplay ? episodeScript(s.screenplay, null) : null));
   const goals = useCosmos((s) => s.goals);
   const paper = useCosmos((s) => s.paper);
   const options = state.current;

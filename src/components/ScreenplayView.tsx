@@ -45,7 +45,9 @@ import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { SCENE_AT, useCosmos } from "../store";
+import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
+import { resolveEpisode } from "../screenplay/season";
+import { EpisodePicker } from "./EpisodePicker";
 import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";
 import { FocusBar, FocusCounter, useFocusChrome } from "./FocusBar";
@@ -91,7 +93,9 @@ export function ScreenplayView() {
   const sp = t.screenplay;
   const lang = useSettings((s) => s.lang);
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
-  const screenplay = useCosmos((s) => s.screenplay);
+  // Série : le texte de l'épisode ouvert (season.ts) ; les rangs d'éléments de cette vue sont ceux de ce texte.
+  const screenplay = useCosmos(currentScript);
+  const currentEpisode = useCosmos((s) => resolveEpisode(s.screenplay, s.currentEpisode));
   const nodes = useCosmos((s) => s.nodes);
   const revealCard = useCosmos((s) => s.revealCard);
   const paper = useCosmos((s) => s.paper);
@@ -117,7 +121,7 @@ export function ScreenplayView() {
 
   // À l'ouverture d'un scénario déjà commencé, on arrive sur le texte : la page de titre est juste au-dessus.
   useEffect(() => {
-    if ((useCosmos.getState().screenplay?.elements.length ?? 0) === 0) return;
+    if ((currentScript(useCosmos.getState())?.elements.length ?? 0) === 0) return;
     const sheet = pageRef.current;
     const scroller = sheet?.closest<HTMLElement>(".sp-scroll");
     if (sheet && scroller && scroller.scrollHeight > scroller.clientHeight) scroller.scrollTop = sheet.offsetTop - scroller.offsetTop - 16;
@@ -194,6 +198,8 @@ export function ScreenplayView() {
 
   // Dernier modèle échangé avec le store : s'il change sans nous (autre dossier ouvert), on recharge.
   const synced = useRef(screenplay);
+  // Série : épisode dont le texte est dans l'éditeur.
+  const editorEpisode = useRef(currentEpisode);
   // Document modifié mais pas encore reconverti.
   const pending = useRef<PMNode | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -226,7 +232,8 @@ export function ScreenplayView() {
     }
     const next = fromDoc(doc.toJSON(), synced.current?.titlePage ?? {});
     synced.current = next;
-    useCosmos.getState().setScreenplay(next);
+    // Toujours dans l'épisode que montre l'éditeur, même si un autre vient d'être ouvert.
+    useCosmos.getState().setScript(next, false, editorEpisode.current);
   }, []);
 
   const pickRef = useRef<(index: number) => void>(() => {});
@@ -341,11 +348,14 @@ export function ScreenplayView() {
   // Le scénario a été remplacé ailleurs (ouverture d'un autre dossier) : on recharge l'éditeur.
   useEffect(() => {
     if (!editor || editor.isDestroyed || !screenplay || screenplay === synced.current) return;
+    // Un autre épisode s'ouvre : ce qui attendait part d'abord dans le sien.
+    if (pending.current && editorEpisode.current !== currentEpisode) emit();
+    editorEpisode.current = currentEpisode;
     synced.current = screenplay;
     pending.current = null;
     clearTimeout(timer.current);
     editor.commands.setContent(toDoc(screenplay), { emitUpdate: false });
-  }, [editor, screenplay]);
+  }, [editor, screenplay, currentEpisode, emit]);
 
   // Changement de langue : ce que TipTap a figé à la création (libellé, textes indicatifs).
   useEffect(() => {
@@ -398,9 +408,11 @@ export function ScreenplayView() {
     () => nodes.filter((n) => n.data.type === "scene").map((n) => ({ id: n.id, title: n.data.title })),
     [nodes],
   );
+  // Série : une scène écrite dans un autre épisode n'est pas « à écrire » ici (toute la saison compte).
+  const season = useCosmos((s) => s.screenplay);
   const toWrite = useMemo(
-    () => (screenplay ? cardsWithoutScene(screenplay, sceneCards) : []),
-    [screenplay, sceneCards],
+    () => (season ? cardsWithoutScene(season, sceneCards) : []),
+    [season, sceneCards],
   );
   const scene = sceneAt(scenes, current.index);
   // Statistiques du volet de droite : mots, pages (mise en page cinéma), scènes écrites.
@@ -648,7 +660,7 @@ export function ScreenplayView() {
    */
   const moveScene = (from: number, to: number, keepFocus = false) => {
     emit();
-    const current = useCosmos.getState().screenplay;
+    const current = currentScript(useCosmos.getState());
     if (!current) return;
     const list = blocks(current.elements);
     const a = list.findIndex((b) => b.start === from);
@@ -660,7 +672,7 @@ export function ScreenplayView() {
     const next = { ...current, elements };
     // L'éditeur est rechargé ici même (pas d'aller-retour par l'effet), puis le curseur va dans la scène déplacée.
     synced.current = next;
-    useCosmos.getState().setScreenplay(next, true);
+    useCosmos.getState().setScript(next, true);
     editor.commands.setContent(toDoc(next), { emitUpdate: false });
     editor.commands.setTextSelection(posOf(editor.state.doc, blocks(elements)[b].start) + 1);
     const dom = editor.view.nodeDOM(posOf(editor.state.doc, blocks(elements)[b].start));
@@ -672,7 +684,7 @@ export function ScreenplayView() {
   // Question de l'IA : l'élément de la scène qui contient le passage cité, sinon son en-tête.
   const goToAiScene = (ref: SceneRef, quote?: string) => {
     emit();
-    const at = elementFor(useCosmos.getState().screenplay?.elements ?? [], ref, quote);
+    const at = elementFor(currentScript(useCosmos.getState())?.elements ?? [], ref, quote);
     if (at < 0) return false;
     goToElement(at);
     return true;
@@ -740,8 +752,10 @@ export function ScreenplayView() {
   useEffect(() => {
     if (!target) return;
     useCosmos.getState().clearManuscriptTarget();
-    const elements = useCosmos.getState().screenplay?.elements ?? [];
-    const at = target.startsWith(SCENE_AT) ? Number(target.slice(SCENE_AT.length)) : -1;
+    const state = useCosmos.getState();
+    const elements = currentScript(state)?.elements ?? [];
+    // Rang du scénario entier (série : toute la saison), ramené à celui de l'épisode ouvert.
+    const at = target.startsWith(SCENE_AT) ? Number(target.slice(SCENE_AT.length)) - scriptOffset(state) : -1;
     const index = at >= 0 ? (at < elements.length ? at : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
     if (index >= 0) requestAnimationFrame(() => goToRef.current(index));
   }, [target]);
@@ -855,6 +869,7 @@ export function ScreenplayView() {
         />
       )}
       <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
+        <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
         <div className="eyebrow">{sp.scenesTitle}</div>
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
         {(speakingList.length > 0 || charFilter) && (
@@ -967,7 +982,7 @@ export function ScreenplayView() {
                 scene={s.text || sp.untitledScene}
                 onSave={(text) => saveSynopsis(s.index, text)}
                 ia={synopsisIsIa(elements, s.index)}
-                atelier={elements[s.index]?.cardId ? { sceneId: elements[s.index].cardId!, text: screenplaySceneText(s.index), accept: (text) => saveSynopsis(s.index, text, true) } : undefined}
+                atelier={elements[s.index]?.cardId ? { sceneId: elements[s.index].cardId!, text: screenplaySceneText(scriptOffset(useCosmos.getState()) + s.index), accept: (text) => saveSynopsis(s.index, text, true) } : undefined}
               />
               </div>
             </li>

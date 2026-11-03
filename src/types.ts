@@ -173,14 +173,18 @@ export interface ProjectMeta {
   /** Réglages de l'export de la Bible (pour qui, parties, rendu) et réglages nommés, voir bibleExport.ts. Absent : valeurs par défaut. */
   bibleExport?: unknown;
   viewport?: { x: number; y: number; zoom: number };
+  /** Série : carte Épisode dont le texte est dans scenario.fountain (les autres sont dans episodes/). Absent : pas de série écrite. */
+  pilot?: string;
 }
 
 /** Projet complet en mémoire. */
 export interface Project {
   meta: ProjectMeta;
   cards: CardData[];
-  /** Texte du scénario (scenario.fountain). null tant que le projet n'en a pas. */
+  /** Texte du scénario (scenario.fountain). null tant que le projet n'en a pas. Dans une série : le premier épisode écrit (`meta.pilot`). */
   screenplay: Screenplay | null;
+  /** Série : texte des autres épisodes (episodes/<id>.fountain), par identifiant de carte Épisode. Absent : aucun. */
+  episodes?: Record<string, Screenplay>;
   /** Manuscrit d'un roman : texte de chaque scène (HTML), par identifiant de carte. Absent : rien d'écrit. */
   manuscript?: Record<string, string>;
   /** Cartes de la corbeille (corbeille/<id>.md). Absent : corbeille vide. */

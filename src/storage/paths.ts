@@ -19,8 +19,19 @@ export const TEXT_DIRS = [CARDS_DIR, MANUSCRIPT_DIR, TRASH_DIR, COMMENTS_DIR];
 export const JOURNAL_FILE = "ia-journal.md";
 /** Images des cartes, copiées dans le projet. */
 export const MEDIA_DIR = "medias";
-/** Texte du scénario (Fountain). Absent des projets roman. */
+/** Texte du scénario (Fountain). Absent des projets roman. Dans une série, le texte du premier épisode écrit. */
 export const SCREENPLAY_FILE = "scenario.fountain";
+/** Série (docs/plan-episodes.md) : le texte de chaque autre épisode, au nom de sa carte Épisode. */
+export const EPISODES_DIR = "episodes";
+export const EPISODE_EXT = ".fountain";
+export const episodePath = (id: string) => `${EPISODES_DIR}/${id}${EPISODE_EXT}`;
+/** Identifiant de l'épisode d'un chemin episodes/<id>.fountain, ou null. */
+export const episodeIdOf = (path: string): string | null => {
+  const m = /^episodes\/([^/\\.][^/\\]*)\.fountain$/.exec(path);
+  return m && !path.includes("..") ? m[1] : null;
+};
+/** Fichier Fountain du projet : le scénario, ou le texte d'un épisode. */
+export const isScriptPath = (path: string) => path === SCREENPLAY_FILE || episodeIdOf(path) !== null;
 /**
  * Copies Markdown lisibles hors de l'app (manuscrit, bible, canevas), réécrites à chaque enregistrement et
  * jamais relues. Une version par jour dans versions/AAAA-MM-JJ/. Hors de TEXT_DIRS, exprès.
@@ -51,4 +62,4 @@ export const isTempFile = (path: string) => path.endsWith(TEMP_SUFFIX);
  * ne doit rien écrire hors du projet.
  */
 export const isProjectFilePath = (path: string) =>
-  path === META_FILE || path === SCREENPLAY_FILE || path === JOURNAL_FILE || (!isTempFile(path) && TEXT_DIRS.some((dir) => new RegExp(`^${dir}/[^/\\\\.][^/\\\\]*\\.md$`).test(path) && !path.includes("..")));
+  path === META_FILE || path === SCREENPLAY_FILE || path === JOURNAL_FILE || (!isTempFile(path) && !isConflictCopy(path) && episodeIdOf(path) !== null) || (!isTempFile(path) && TEXT_DIRS.some((dir) => new RegExp(`^${dir}/[^/\\\\.][^/\\\\]*\\.md$`).test(path) && !path.includes("..")));

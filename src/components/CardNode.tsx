@@ -512,7 +512,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         </button>
         {/* Mettre à la corbeille : dans le menu ⋯ (1.11.1), en rouge et en dernier ; un × se lisait comme « fermer ».
             Suppr au clavier reste le chemin rapide. */}
-        <CardActions id={id} hasImage={!!data.image} title={data.title} />
+        <CardActions id={id} hasImage={!!data.image} title={data.title} type={data.type} />
       </div>
 
       {/* Titre sur plusieurs lignes si besoin (zone qui grandit), mais sans retour à la ligne :

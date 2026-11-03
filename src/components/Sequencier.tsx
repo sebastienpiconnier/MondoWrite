@@ -8,7 +8,8 @@ import { PovPicker } from "./PovPicker";
 import { templateBeats, type PlanBeat } from "../plan";
 import { MoreMenu } from "./MoreMenu";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SCENE_AT, useCosmos } from "../store";
+import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
+import { EpisodePicker } from "./EpisodePicker";
 import { useSettings, type SequencerMode } from "../settings";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
@@ -39,10 +40,12 @@ export function Sequencier() {
   const lang = useSettings((s) => s.lang);
   const mode = useSettings((s) => s.sequencerMode);
   const setMode = useSettings((s) => s.setSequencerMode);
-  const screenplay = useCosmos((s) => s.screenplay);
+  // Série : le texte de l'épisode ouvert (les rangs de ses éléments sont locaux, `offset` les ramène à la saison).
+  const screenplay = useCosmos(currentScript);
+  const offset = useCosmos(scriptOffset);
   const nodes = useCosmos((s) => s.nodes);
   const anyPov = useMemo(() => nodes.some((n) => n.data.type === "scene" && n.data.fiche?.pov), [nodes]);
-  const setScreenplay = useCosmos((s) => s.setScreenplay);
+  const setScreenplay = useCosmos((s) => s.setScript);
   const revealCard = useCosmos((s) => s.revealCard);
   const pagination = usePagination();
 
@@ -131,6 +134,7 @@ export function Sequencier() {
       <div className={`sq-inner${cards || timeline ? " is-cards" : ""}`}>
         <header className="sq-head">
           <h1>{sq.title}</h1>
+          <EpisodePicker onNotice={setAnnounce} />
           <div className="sq-modes" role="group" aria-label={sq.modeAria}>
             {MODES.map((m) => (
               <button
@@ -267,7 +271,7 @@ export function Sequencier() {
                     scene={title}
                     onSave={(text) => setScreenplay({ ...screenplay, elements: setSceneSynopsis(screenplay.elements, block.start, text) }, true)}
                     ia={synopsisIsIa(screenplay.elements, block.start)}
-                    atelier={card ? { sceneId: card.id, text: screenplaySceneText(block.start) } : undefined}
+                    atelier={card ? { sceneId: card.id, text: screenplaySceneText(offset + block.start) } : undefined}
                   />
                   {cardText && <p className="sq-desc">{cardText.length > 140 ? `${cardText.slice(0, 140)}…` : cardText}</p>}
                   {card && (
@@ -327,7 +331,7 @@ export function Sequencier() {
                     className="icon-button"
                     aria-label={fmt(sq.openText, { title })}
                     title={fmt(sq.openText, { title })}
-                    onClick={() => useCosmos.getState().openInManuscript(block.cardId ?? `${SCENE_AT}${block.start}`)}
+                    onClick={() => useCosmos.getState().openInManuscript(block.cardId ?? `${SCENE_AT}${offset + block.start}`)}
                   >
                     <span aria-hidden="true">✎</span>
                   </button>
@@ -335,7 +339,7 @@ export function Sequencier() {
                     label={fmt(t.app.moreActionsFor, { title })}
                     items={[
                       !!block.cardId && { label: t.bible.seeOnCanvas, title: fmt(sq.show, { title }), onSelect: () => revealCard(block.cardId!) },
-                      { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().trashScreenplayScene(block.start) },
+                      { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().trashScreenplayScene(offset + block.start) },
                     ]}
                   />
                 </div>

@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { useT } from "../i18n";
-import { useCosmos } from "../store";
+import { currentScript, useCosmos } from "../store";
 import { readTitleField, type TitleField } from "../screenplay/titlePage";
 
 interface Props {
@@ -36,7 +36,7 @@ function Field({ name, value, label, className = "", onChange }: { name: TitleFi
 
 export function TitlePage({ paper, onChange }: Props) {
   const t = useT().screenplay.titlePage;
-  const titlePage = useCosmos((s) => s.screenplay?.titlePage);
+  const titlePage = useCosmos((s) => currentScript(s)?.titlePage);
   if (!titlePage) return null;
 
   const field = (name: TitleField, className?: string) => (

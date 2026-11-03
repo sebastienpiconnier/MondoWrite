@@ -6,7 +6,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { fmt, useT } from "../i18n";
-import { useCosmos } from "../store";
+import { currentScript, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { storage } from "../storage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -23,7 +23,7 @@ export function ScriptPdfPanel() {
   const k = t.scriptPdf;
   const lang = useSettings((s) => s.lang);
   const author = useSettings((s) => s.author);
-  const screenplay = useCosmos((s) => s.screenplay);
+  const screenplay = useCosmos(currentScript);
   const projectTitle = useCosmos((s) => s.title);
   const paper = useCosmos((s) => s.paper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);

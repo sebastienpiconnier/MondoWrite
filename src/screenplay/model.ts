@@ -36,6 +36,13 @@ export interface ScreenplayElement {
   ia?: boolean;
   /** Commentaires ancrés sur l'élément (action, réplique) : notes [[cosmos:comment:<id>]] en fin d'élément. */
   comments?: string[];
+  /**
+   * Repère d'épisode (série, voir season.ts) : en mémoire seulement, jamais écrit. Une section vide qui ouvre le
+   * texte de l'épisode de cette carte, jusqu'au repère suivant ; elle porte la page de titre de son fichier.
+   */
+  episode?: string;
+  /** Repère d'épisode : la page de titre du fichier de l'épisode. */
+  titlePage?: Record<string, string>;
 }
 
 export interface Screenplay {

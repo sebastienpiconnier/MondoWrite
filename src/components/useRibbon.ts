@@ -2,7 +2,7 @@
 // Partagé par le ruban lui-même et les questions de « Vérifier ». Rien n'est enregistré.
 
 import { useMemo } from "react";
-import { useCosmos, planScenes } from "../store";
+import { currentScript, useCosmos, planScenes } from "../store";
 import { buildRibbon, novelGroups, screenplayGroups, type Ribbon } from "../ribbon";
 import { paginate, pagesBetween } from "../screenplay/paginate";
 import { LAYOUTS } from "../screenplay/layout";
@@ -14,7 +14,7 @@ import { countWords } from "../manuscript";
  */
 export function useRibbon(evenFree = false): Ribbon | null {
   const kind = useCosmos((s) => s.kind);
-  const screenplay = useCosmos((s) => s.screenplay);
+  const screenplay = useCosmos(currentScript);
   const paper = useCosmos((s) => s.paper);
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);

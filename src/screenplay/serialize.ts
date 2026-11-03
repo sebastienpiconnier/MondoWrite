@@ -31,7 +31,8 @@ export function serialize(screenplay: Screenplay): string {
   // (Maj+Entrée au début) feraient une ligne vide sous le nom, qui ne serait plus relu comme un personnage.
   const elements = screenplay.elements
     .map((el) => (el.type === "dialogue" && el.text.startsWith("\n") ? { ...el, text: el.text.replace(/^\n+/, "") } : el))
-    .filter((el) => el.type === "pageBreak" || el.text !== "");
+    // Un repère d'épisode (season.ts) n'existe qu'en mémoire : jamais écrit, même si un texte entier lui parvenait.
+    .filter((el) => !el.episode && (el.type === "pageBreak" || el.text !== ""));
   let body = "";
   // Sans page de titre, une première action « Title: … » serait relue comme page de titre.
   const first = elements[0];

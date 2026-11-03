@@ -3,7 +3,7 @@
 // les scènes qui nomment chaque objet. Rien n'est enregistré.
 
 import { useMemo } from "react";
-import { useCosmos } from "../store";
+import { currentScript, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { bookOrder } from "../book";
 import { novelReport, screenplayReport } from "../review/report";
@@ -16,7 +16,7 @@ import { useRibbon } from "./useRibbon";
 
 export function useStoryFindings(): Finding[] {
   const kind = useCosmos((s) => s.kind);
-  const screenplay = useCosmos((s) => s.screenplay);
+  const screenplay = useCosmos(currentScript);
   const paper = useCosmos((s) => s.paper);
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);

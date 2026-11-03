@@ -3,7 +3,7 @@
 // (`known`, lastFiles du store), celle du projet à l'écran (`mine`) et celle du disque (`disk`).
 // Règle : ne jamais perdre une version. Fonctions pures.
 
-import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, type FileMap } from "./storage/paths";
+import { CARDS_DIR, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, episodeIdOf, type FileMap } from "./storage/paths";
 
 /** Ce qu'il faut faire de chaque fichier regardé. `null` : le fichier n'existe pas (ou plus). */
 export interface DiskDiff {
@@ -48,7 +48,7 @@ export type ConflictSubject =
 
 export function conflictSubject(path: string): ConflictSubject {
   if (path === META_FILE) return { kind: "project" };
-  if (path === SCREENPLAY_FILE) return { kind: "screenplay" };
+  if (path === SCREENPLAY_FILE || episodeIdOf(path)) return { kind: "screenplay" };
   const m = /^([^/]+)\/([^/]+)\.md$/.exec(path);
   if (m && (m[1] === CARDS_DIR || m[1] === TRASH_DIR)) return { kind: "card", id: m[2] };
   if (m && m[1] === MANUSCRIPT_DIR) return { kind: "manuscript", id: m[2] };

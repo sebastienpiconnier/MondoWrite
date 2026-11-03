@@ -3,7 +3,7 @@
 // Discret : il n'apparaît qu'avec un gabarit, et le mode focus le cache.
 
 import { useMemo, useState } from "react";
-import { useCosmos } from "../store";
+import { currentScript, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { screenplaySceneTexts, timeline } from "../timeline";
 import { fmt } from "../i18n";
@@ -35,7 +35,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   const hasPlots = useMemo(() => nodes.some((n) => n.data.type === "intrigue" && n.data.title.trim()), [nodes]);
   const edges = useCosmos((s) => s.edges);
   const manuscript = useCosmos((s) => s.manuscript);
-  const screenplay = useCosmos((s) => s.screenplay);
+  const screenplay = useCosmos(currentScript);
   const lang = useSettings((s) => s.lang);
   const lanes = useMemo(() => {
     if (!lanesOpen || !ribbon || !hasPlots) return [];

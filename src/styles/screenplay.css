@@ -187,3 +187,16 @@
 .sp-filter-banner { flex-basis: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; margin: 4px 0 0; padding: 4px 6px 4px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: 0.875rem; font-weight: 500; }
 .sp-filter-banner button { min-width: 32px; min-height: 32px; border: 0; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 1.1rem; cursor: pointer; }
 @media (pointer: coarse) { .sp-filter-banner button { min-width: 44px; min-height: 44px; } }
+
+/* Série (docs/plan-episodes.md) : choix de l'épisode écrit, en tête des scènes et du séquencier. */
+.episode-picker { display: flex; align-items: center; gap: 2px; margin: 0 0 12px; min-width: 0; }
+.sq-head .episode-picker { margin: 0; }
+.episode-picker .icon-button { flex: none; font-size: 1.125rem; line-height: 1; }
+.episode-picker .icon-button:disabled { opacity: 0.4; cursor: default; }
+.episode-picker .episode-picker-menu {
+  flex: 1 1 auto; min-width: 0; width: auto; max-width: 100%; display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.8125rem; font-weight: 600; color: var(--ink);
+}
+.episode-picker-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.episode-write { margin: 0 0 10px; }
+@media (pointer: coarse) { .episode-picker .icon-button, .episode-picker .episode-picker-menu { min-height: 44px; } .episode-picker .icon-button { min-width: 44px; } }

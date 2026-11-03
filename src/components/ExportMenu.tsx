@@ -8,7 +8,7 @@ import { useCommand } from "../commands";
 import { authorName, contactLines } from "../profile";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
-import { useCosmos } from "../store";
+import { currentScript, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
@@ -102,7 +102,10 @@ export function ExportMenu() {
   const ctx = () => ({ t: all, lang: useSettings.getState().lang, author: useSettings.getState().author });
 
   const screenplayFile = (format: ExportFormat) => async () => {
-    const { screenplay, savedScreenplay, lastFiles, title, paper, sceneNumbers, underlineHeadings } = useCosmos.getState();
+    const state = useCosmos.getState();
+    const { screenplay: full, savedScreenplay, lastFiles, title, paper, sceneNumbers, underlineHeadings } = state;
+    // Série : le texte de l'épisode ouvert.
+    const screenplay = currentScript(state);
     if (!screenplay) return null;
     return exportScreenplay(screenplay, format, {
       title,
@@ -112,7 +115,7 @@ export function ExportMenu() {
       numberScenes: sceneNumbers,
       underlineHeadings,
       // Scénario inchangé depuis le disque : on exporte le fichier lui-même, à l'octet près.
-      source: screenplay === savedScreenplay ? lastFiles[SCREENPLAY_FILE] : undefined,
+      source: full === savedScreenplay && screenplay === full ? lastFiles[SCREENPLAY_FILE] : undefined,
     });
   };
 

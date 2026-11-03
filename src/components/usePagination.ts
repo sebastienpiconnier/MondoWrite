@@ -1,12 +1,12 @@
 // Estimation des pages du scénario courant, recalculée quand le texte ou le format de page change.
 
 import { useMemo } from "react";
-import { useCosmos } from "../store";
+import { currentScript, useCosmos } from "../store";
 import { LAYOUTS } from "../screenplay/layout";
 import { paginate, type Pagination } from "../screenplay/paginate";
 
 export function usePagination(): Pagination | null {
-  const screenplay = useCosmos((s) => s.screenplay);
+  const screenplay = useCosmos(currentScript);
   const paper = useCosmos((s) => s.paper);
   return useMemo(() => (screenplay ? paginate(screenplay.elements, LAYOUTS[paper]) : null), [screenplay, paper]);
 }

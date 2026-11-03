@@ -16,9 +16,10 @@ import { isCardId } from "../mentions";
 import { browserStorage } from "./browser";
 import { tauriStorage } from "./tauri";
 import { commentsFile, readCommentsFile, type Comments } from "../comments";
-import { CARDS_DIR, COMMENTS_DIR, JOURNAL_FILE, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, commentsFilePath, isConflictCopy, manuscriptPath, trashPath, type FileMap } from "./paths";
+import { CARDS_DIR, COMMENTS_DIR, JOURNAL_FILE, MANUSCRIPT_DIR, META_FILE, SCREENPLAY_FILE, TRASH_DIR, cardPath, commentsFilePath, episodeIdOf, episodePath, isConflictCopy, manuscriptPath, trashPath, type FileMap } from "./paths";
 import { parse as parseScreenplay } from "../screenplay/parse";
 import { serialize as serializeScreenplay } from "../screenplay/serialize";
+import type { Screenplay } from "../screenplay/model";
 import { isTauri } from "../platform";
 import type { ProjectKind } from "../types";
 import type { ProjectEntry } from "./recents";
@@ -178,6 +179,8 @@ export function serialize(project: Project): FileMap {
   for (const card of project.trash ?? []) if (card.trashed) files[trashPath(card.id)] = cardToFile(card);
   // Un projet roman n'a pas de scénario : le fichier n'est jamais créé pour lui.
   if (project.screenplay) files[SCREENPLAY_FILE] = serializeScreenplay(project.screenplay);
+  // Série : le texte de chaque autre épisode, au nom de sa carte.
+  for (const [id, script] of Object.entries(project.episodes ?? {})) if (isCardId(id)) files[episodePath(id)] = serializeScreenplay(script);
   // Journal de l'IA (mode Atelier) : écrit tel quel, seulement s'il a commencé.
   if (project.journal?.trim()) files[JOURNAL_FILE] = project.journal;
   // Manuscrit : un fichier par scène écrite. Une scène sans texte n'a pas de fichier.
@@ -232,6 +235,11 @@ export function deserialize(files: FileMap): Project | null {
     .map(([, text]) => fileToCard(text))
     .filter((c): c is NonNullable<typeof c> => c !== null && !!c.trashed && !live.has(c.id));
   const screenplay = SCREENPLAY_FILE in files ? parseScreenplay(files[SCREENPLAY_FILE]) : null;
+  const episodes: Record<string, Screenplay> = {};
+  for (const [path, text] of Object.entries(files)) {
+    const id = isConflictCopy(path) ? null : episodeIdOf(path);
+    if (id && isCardId(id)) episodes[id] = parseScreenplay(text);
+  }
   const manuscript: Record<string, string> = {};
   for (const [path, text] of Object.entries(files)) {
     if (!path.startsWith(`${MANUSCRIPT_DIR}/`) || !path.endsWith(".md")) continue;
@@ -247,5 +255,5 @@ export function deserialize(files: FileMap): Project | null {
     if (list.length > 0) comments[id] = list;
   }
   const journal = files[JOURNAL_FILE];
-  return { meta, cards, screenplay, manuscript, ...(trash.length > 0 ? { trash } : {}), ...(journal?.trim() ? { journal } : {}), ...(Object.keys(comments).length > 0 ? { comments } : {}) };
+  return { meta, cards, screenplay, manuscript, ...(Object.keys(episodes).length > 0 ? { episodes } : {}), ...(trash.length > 0 ? { trash } : {}), ...(journal?.trim() ? { journal } : {}), ...(Object.keys(comments).length > 0 ? { comments } : {}) };
 }

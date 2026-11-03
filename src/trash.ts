@@ -29,6 +29,8 @@ export interface TrashInfo {
   links: TrashLink[];
   /** Scénario : la scène de la carte (en-tête et texte), en Fountain. */
   scene?: string;
+  /** Série : le texte entier de l'épisode d'une carte Épisode (page de titre comprise), en Fountain. */
+  script?: string;
 }
 
 const isLink = (v: unknown): v is TrashLink => {
@@ -54,6 +56,7 @@ export function readTrashInfo(raw: unknown): TrashInfo | undefined {
         })
       : [],
     ...(typeof r.scene === "string" && r.scene.trim() ? { scene: r.scene } : {}),
+    ...(typeof r.script === "string" && r.script.trim() ? { script: r.script } : {}),
   };
 }
 
