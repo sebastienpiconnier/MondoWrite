@@ -62,7 +62,7 @@ import { markdownSource } from "./markdownText";
 import { htmlToMarkdown, markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
-import { addEpisode, addSeason, allEpisodes, seriesMark as seriesMarkOf, episodeScenes, placeSceneInEpisode, seriesOf as readSeries, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript } from "./screenplay/series";
+import { addEpisode, addSeason, allEpisodes, seriesMark as seriesMarkOf, episodeScenes, placeSceneInEpisode, seriesOf as readSeries, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript, withEpisodeTemplate } from "./screenplay/series";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
@@ -105,7 +105,8 @@ export interface CosmosState {
    * Pose un gabarit de l'auteur (« Mes gabarits ») ou met à jour celui en place : `rows` dans l'ordre du récit,
    * avec la clé d'une case déjà là (ses scènes la suivent) ou sans clé pour une case nouvelle. Annulable.
    */
-  setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[]) => void;
+  /** Gabarit de l'auteur posé dans le projet ; série : dans l'épisode `episode` (sinon l'épisode ouvert). */
+  setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[], episode?: string) => void;
   /** Range une scène dans une case du gabarit, roman (plan) ou scénario (section du Fountain). Annulable. */
   placeInBeat: (id: string, beat: string, index?: number) => void;
   /** Série : range la scène de cette carte dans un épisode, avec son texte (à la fin sans index). */
@@ -2118,10 +2119,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       followStory();
       touch();
     },
-    setCustomTemplate: (name, rows) => {
+    setCustomTemplate: (name, rows, episode) => {
       const { kind, screenplay, plan } = get();
       if (kind === "scenario") {
         if (!screenplay) return;
+        // Série : gabarit de l'épisode choisi dans le séquencier (sinon de l'épisode ouvert), ses cases dans son
+        // seul texte (### sous l'épisode).
+        const target = resolveEpisode(screenplay, episode ?? get().currentEpisode);
+        if (target) {
+          const next = withEpisodeTemplate(screenplay, target, (script) => {
+            const used = script.elements.flatMap((el) => (el.type === "section" ? [beatOf(el.text) ?? ""] : []));
+            const beats = withKeys(rows, used);
+            return beats.length === 0 ? script : applyCustom(script, { name, beats }, fromMap(rows, beats));
+          });
+          if (next !== screenplay) get().setScreenplay(next, true);
+          return;
+        }
         // Série : le gabarit est celui de l'épisode ouvert (ses sections), comme dans le séquencier.
         const script = episodeScript(screenplay, get().currentEpisode);
         // Clés déjà prises dans le fichier : une case nouvelle n'en reprend jamais une.

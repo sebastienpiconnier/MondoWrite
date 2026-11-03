@@ -26,6 +26,11 @@ interface Props {
   /** Cases de l'auteur en place (gabarit « perso »). */
   custom?: CustomTemplate;
   onBuiltin: (template: PlanTemplate | null) => void;
+  /** Série : gabarit de cet épisode seul (ses cases dans son texte). Absent : le projet, ou l'épisode ouvert. */
+  episode?: string;
+  /** Libellé du menu (par défaut « Gabarit »). */
+  label?: string;
+  className?: string;
 }
 
 interface Row {
@@ -47,7 +52,7 @@ const MANAGE = "__manage";
 /** Durée d'affichage du message d'import ou d'export. */
 const NOTICE_MS = 6000;
 
-export function TemplatePicker({ value, options, allowNone = false, custom, onBuiltin }: Props) {
+export function TemplatePicker({ value, options, allowNone = false, custom, onBuiltin, episode, label, className }: Props) {
   const t = useT();
   const p = t.plan;
   const e = p.editor;
@@ -90,7 +95,7 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
         })
       : [];
 
-  const apply = (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[]) => useCosmos.getState().setCustomTemplate(name, rows);
+  const apply = (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[]) => useCosmos.getState().setCustomTemplate(name, rows, episode);
 
   const exportTemplate = async (tpl: TemplateFile) => {
     try {
@@ -208,8 +213,8 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
 
   return (
     <>
-      <label className="plan-template">
-        {p.template}
+      <label className={className ?? "plan-template"}>
+        {className ? <span>{label ?? p.template}</span> : (label ?? p.template)}
         <select value={value === "perso" ? "perso" : (value ?? "")} onChange={(ev) => onChange(ev.target.value)}>
           {allowNone && <option value="">{p.noTemplate}</option>}
           {options.map((key) => (

@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { fmt, getT, useT } from "../i18n";
 import { type CosmosState, useCosmos } from "../store";
 import type { Screenplay } from "../screenplay/model";
-import { allEpisodes, resolveEpisode, seriesOf, seriesPart } from "../screenplay/series";
+import { allEpisodes, resolveEpisode, seriesBooks, seriesOf, seriesPart } from "../screenplay/series";
 
 type Part = { id: string; label: string };
 
@@ -35,6 +35,16 @@ export function exportScriptOf(s: Pick<CosmosState, "screenplay" | "exportPart" 
   const id = exportPartOf(s);
   const label = exportParts(s.screenplay).find((p) => p.id === id)?.label ?? "";
   return seriesPart(s.screenplay, id, label);
+}
+
+/**
+ * PDF de toute la série ou d'une saison : un livre par épisode, chacun avec sa page de titre. null : un épisode
+ * seul, ou hors d'une série (le texte de `exportScriptOf` suffit).
+ */
+export function exportBooksOf(s: Pick<CosmosState, "screenplay" | "exportPart" | "currentEpisode">, t = getT()): Screenplay[] | null {
+  if (!s.screenplay) return null;
+  const labels = new Map(exportParts(s.screenplay, t).map((p) => [p.id, p.label]));
+  return seriesBooks(s.screenplay, exportPartOf(s), labels);
 }
 
 export function useExportScript(): { script: Screenplay | null; parts: Part[]; part: string | null } {

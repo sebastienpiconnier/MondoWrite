@@ -1760,7 +1760,7 @@ export const en: Messages = {
   },
   scriptPdf: {
     part: "What is exported",
-    partHint: "A season or an episode gets its own title page: the project title, then its name. Fountain and Final Draft exports follow the same choice.",
+    partHint: "Each episode gets its own title page: the project title, the season, then its name, with pages numbered from 1. Fountain and Final Draft exports follow the same choice, as a single script.",
     title: "Export the screenplay as PDF",
     content: "Content",
     all: "The whole screenplay",

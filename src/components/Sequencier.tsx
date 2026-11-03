@@ -317,18 +317,16 @@ export function Sequencier() {
                     )}
                     {/* Gabarit de cet épisode seul : ses cases se posent dans son texte (lot 3). */}
                     {episode && (
-                      <label className="sq-episode-template">
-                        <span>{ts.templateOf}</span>
-                        <select value={episodeTemplate(episode.id) ?? ""} onChange={(e) => setEpisodeTemplate(episode.id, e.target.value)}>
-                          <option value="">{t.plan.noTemplate}</option>
-                          {EPISODE_TEMPLATES.map((k) => (
-                            <option key={k} value={k}>
-                              {t.plan.templates[k]}
-                            </option>
-                          ))}
-                          {episodeTemplate(episode.id) === "perso" && <option value="perso">{t.plan.templates.perso}</option>}
-                        </select>
-                      </label>
+                      <TemplatePicker
+                        className="sq-episode-template"
+                        label={ts.templateOf}
+                        episode={episode.id}
+                        value={episodeTemplate(episode.id)}
+                        options={EPISODE_TEMPLATES}
+                        allowNone
+                        custom={episodeTemplate(episode.id) === "perso" ? customOf(episodeScript(screenplay, episode.id).elements) : undefined}
+                        onBuiltin={(key) => setEpisodeTemplate(episode.id, key ?? "")}
+                      />
                     )}
                   </span>
                   {pages > 0 && (

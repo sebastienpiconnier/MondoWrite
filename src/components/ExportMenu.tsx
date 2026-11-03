@@ -9,7 +9,7 @@ import { authorName, contactLines } from "../profile";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
-import { exportScriptOf } from "./useExportScript";
+import { exportBooksOf, exportScriptOf } from "./useExportScript";
 import { useSettings } from "../settings";
 import { SCREENPLAY_FILE, storage } from "../storage";
 import { EXPORT_FORMATS, exportScreenplay, type ExportFormat, type ExportedFile } from "../screenplay/export";
@@ -105,7 +105,6 @@ export function ExportMenu() {
   const screenplayFile = (format: ExportFormat) => async () => {
     const state = useCosmos.getState();
     const { screenplay: full, savedScreenplay, lastFiles, title, paper, sceneNumbers, underlineHeadings } = state;
-    // Série : le texte de l'épisode ouvert.
     // Série : l'épisode ouvert, ou la partie choisie dans la fenêtre PDF (useExportScript).
     const screenplay = exportScriptOf(state);
     if (!screenplay) return null;
@@ -118,6 +117,8 @@ export function ExportMenu() {
       underlineHeadings,
       // Scénario inchangé depuis le disque : on exporte le fichier lui-même, à l'octet près.
       source: full === savedScreenplay && screenplay === full ? lastFiles[SCREENPLAY_FILE] : undefined,
+      // Toute la série ou une saison en PDF : une page de titre par épisode.
+      books: format === "pdf" ? exportBooksOf(state, all) : null,
     });
   };
 

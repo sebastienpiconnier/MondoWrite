@@ -30,6 +30,8 @@ export interface ExportOptions {
   /** scenario.fountain tel qu'il est sur disque, quand le scénario n'a pas changé depuis. */
   source?: string;
   /** PDF seulement : choix de la fenêtre « Exporter le scénario en PDF » (en-tête déjà rempli). */
+  /** PDF seulement : épisodes d'une série, imprimés l'un après l'autre avec chacun sa page de titre (`seriesBooks`). */
+  books?: Screenplay[] | null;
   print?: { titlePage: boolean; synopsis: boolean; sections: boolean; notes: boolean; character: string; header: string; watermark: string };
 }
 
@@ -72,6 +74,7 @@ export async function exportScreenplay(
       numberScenes: options.numberScenes,
       underlineHeadings: options.underlineHeadings,
       ...(options.print ?? {}),
+      ...(options.books ? { books: options.books } : {}),
     });
   }
   return { name: `${fileName(options.title, "scenario")}.${format}`, extension: format, mime: MIME[format], data };

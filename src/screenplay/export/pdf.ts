@@ -41,6 +41,11 @@ export interface PdfOptions {
   /** (À SUIVRE) / (SUITE) aux coupures de réplique (oui par défaut), et (SUITE) quand un personnage reprend. */
   breaks?: boolean;
   resumes?: boolean;
+  /**
+   * Série : les épisodes à imprimer l'un après l'autre (`seriesBooks`), chacun avec sa page de titre, ses pages
+   * numérotées depuis 1 et ses numéros de scène. Absent : le scénario tel quel.
+   */
+  books?: Screenplay[];
 }
 
 const GRAY = rgb(0.38, 0.38, 0.38);
@@ -103,21 +108,26 @@ export async function buildPdf(
     }
   };
 
-  const titleLines = options.titlePage === false ? [] : typesetTitlePage(screenplay.titlePage, layout);
-  if (titleLines.length > 0) draw(titleLines);
-  const pages = typeset(screenplay.elements, layout, locale, strings, {
-    numberScenes,
-    underlineHeadings,
-    synopsis: options.synopsis,
-    sections: options.sections,
-    notes: options.notes,
-    character: options.character,
-    breaks: options.breaks,
-    resumes: options.resumes,
-  });
-  for (const page of pages) draw(page.lines, page.number);
+  let drawn = 0;
+  for (const book of options.books?.length ? options.books : [screenplay]) {
+    const titleLines = options.titlePage === false ? [] : typesetTitlePage(book.titlePage, layout);
+    if (titleLines.length > 0) draw(titleLines);
+    const pages = typeset(book.elements, layout, locale, strings, {
+      numberScenes,
+      underlineHeadings,
+      synopsis: options.synopsis,
+      sections: options.sections,
+      notes: options.notes,
+      character: options.character,
+      breaks: options.breaks,
+      resumes: options.resumes,
+    });
+    for (const page of pages) draw(page.lines, page.number);
+    drawn += titleLines.length > 0 ? 1 : 0;
+    drawn += pages.length;
+  }
   // Un PDF sans page n'est pas valide : scénario vide, une feuille blanche.
-  if (titleLines.length === 0 && pages.length === 0) pdf.addPage([width, height]);
+  if (drawn === 0) pdf.addPage([width, height]);
 
   const title = Object.entries(screenplay.titlePage).find(([key]) => key.trim().toLowerCase() === "title")?.[1];
   const author = Object.entries(screenplay.titlePage).find(([key]) => /^authors?$/i.test(key.trim()))?.[1];

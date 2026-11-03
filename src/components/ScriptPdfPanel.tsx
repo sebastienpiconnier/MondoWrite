@@ -7,7 +7,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
-import { useExportScript } from "./useExportScript";
+import { exportBooksOf, useExportScript } from "./useExportScript";
 import { useSettings } from "../settings";
 import { storage } from "../storage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -81,6 +81,8 @@ export function ScriptPdfPanel() {
         numberScenes: sceneNumbers,
         underlineHeadings,
         print: { ...options, header },
+        // Toute la série ou une saison : une page de titre par épisode.
+        books: exportBooksOf(useCosmos.getState(), t),
       });
       const saved = await storage.saveAs(file, "PDF");
       setMessage(saved ? t.screenplay.export.done : "");

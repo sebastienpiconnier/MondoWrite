@@ -373,3 +373,34 @@ export function seriesPart(sp: Screenplay, id: string | null | undefined, label:
   const titlePage = label.trim() ? { ...sp.titlePage, [key]: title ? `${title}\n${label.trim()}` : label.trim() } : sp.titlePage;
   return { titlePage, elements };
 }
+
+/**
+ * Toute la série, ou une saison, en épisodes à imprimer l'un après l'autre : chacun a sa page de titre (titre du
+ * projet, nom de la saison s'il y en a plusieurs, puis l'épisode), ses pages et ses numéros de scène à lui. Ce qui
+ * précède le premier épisode (texte hors épisode) vient d'abord, avec la page de titre de la partie. null : un seul
+ * épisode demandé, ou rien à découper (hors d'une série).
+ */
+export function seriesBooks(sp: Screenplay, id: string | null | undefined, labels: Map<string, string>): Screenplay[] | null {
+  const seasons = seriesOf(sp.elements);
+  if (seasons.length === 0) return null;
+  if (id && !seasons.some((s) => s.id === id)) return null; // un épisode, ou une partie inconnue
+  const chosen = id ? seasons.filter((s) => s.id === id) : seasons;
+  const episodes = chosen.flatMap((s) => s.episodes);
+  if (episodes.length === 0) return null;
+  const key = Object.keys(sp.titlePage).find((k) => k.trim().toLowerCase() === "title") ?? "Title";
+  const title = (sp.titlePage[key] ?? "").trim();
+  const named = seasons.filter((s) => s.id).length > 1;
+  const page = (...lines: (string | undefined)[]) => {
+    const text = [title, ...lines].map((l) => l?.trim() ?? "").filter(Boolean).join("\n");
+    return text ? { ...sp.titlePage, [key]: text } : sp.titlePage;
+  };
+  const books: Screenplay[] = [];
+  const from = id ? chosen[0].at + 1 : 0;
+  const front = sp.elements.slice(from, episodes[0].at).filter((el) => !seriesMark(el));
+  if (front.length > 0) books.push({ titlePage: id ? page(labels.get(id)) : sp.titlePage, elements: front });
+  for (const season of chosen) {
+    const seasonLabel = season.id && (named || id) ? labels.get(season.id) : undefined;
+    for (const ep of season.episodes) books.push({ titlePage: page(seasonLabel, labels.get(ep.id)), elements: sp.elements.slice(ep.start, ep.end) });
+  }
+  return books;
+}

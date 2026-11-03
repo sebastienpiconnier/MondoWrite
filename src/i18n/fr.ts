@@ -2029,7 +2029,7 @@ export const fr = {
   // Fenêtre « Exporter le scénario en PDF » (menu Exporter) : choix gardés dans le projet (`scriptPdf`).
   scriptPdf: {
     part: "Ce qui est exporté",
-    partHint: "Une saison ou un épisode a sa page de titre : le titre du projet, puis son nom. Les exports Fountain et Final Draft prennent le même choix.",
+    partHint: "Chaque épisode a sa page de titre : le titre du projet, la saison, puis son nom, et ses pages numérotées depuis 1. Les exports Fountain et Final Draft prennent le même choix, en un seul texte.",
     title: "Exporter le scénario en PDF",
     content: "Contenu",
     all: "Tout le scénario",

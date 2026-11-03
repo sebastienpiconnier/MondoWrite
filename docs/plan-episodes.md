@@ -102,8 +102,9 @@ des titres vient de la profondeur des cadres (`frameDepth`), la saison prend le 
 - [x] Exports : PDF, Fountain et FDX d'un épisode, d'une saison ou de toute la série (une page de titre par épisode)
 - [x] Statistiques et « Aller à » par épisode
 
-Fait (3 novembre). Reste : l'export de toute la série met une seule page de titre (une par épisode quand on
-exporte un épisode ou une saison) ; le gabarit de l'auteur (« Mes gabarits ») ne se pose pas encore par épisode.
+Fait (3 novembre), puis fini : le PDF de toute la série ou d'une saison donne à chaque épisode sa page de titre et
+ses pages depuis 1 (`seriesBooks`, option `books` de `buildPdf`) ; Fountain et FDX restent un seul texte ;
+« Mes gabarits » se posent aussi épisode par épisode (`TemplatePicker` avec `episode`, `setCustomTemplate(…, episode)`).
 
 ## Fichiers touchés (lot 1)
 
