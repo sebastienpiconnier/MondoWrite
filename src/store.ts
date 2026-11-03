@@ -3257,7 +3257,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const { buildScrivener } = await import("./import/scrivener");
       let built: ReturnType<typeof buildScrivener> = null;
       try {
-        built = buildScrivener(choice.source, { newId, labels: t.frames, exclude: new Set(exclude) });
+        built = buildScrivener(choice.source, { newId, labels: { ...t.frames, setIn: getT().screenplay.linkSetIn }, locale: useSettings.getState().lang, exclude: new Set(exclude) });
       } catch (err) {
         console.error(err);
       }

@@ -267,8 +267,12 @@ L'invitation à la rétro-bible (`retroInvite`) reste proposée.
 
 ### Plus tard
 
-- Projets de **scénario** Scrivener (mode script) → `scenario.fountain`. En attendant, Scrivener exporte en
-  Fountain et en FDX, que MondoWrite importe déjà : le dire dans le guide.
+- [x] Projets de **scénario** Scrivener (mode script, fait le 3 novembre 2026, `script.ts`) : Manuscrit dont la
+  plupart des documents ont `TextMode` Script (`isScriptDraft`) ; élément reconnu au retrait `\li` du paragraphe,
+  mesuré depuis le plus petit (modèle Screenplay : en-tête et action 720, dialogue 2160, didascalie 2880,
+  personnage 3600, transition alignée à droite), `#n#` du titre gardé en numéro de scène ; dossier = section ;
+  projet par `importScreenplayModel` ; instantanés en versions Fountain (sans l'en-tête) ; la « Title Page »
+  (modèle à `<$PROJECTTITLE>`) est laissée. Vérifié sur un vrai scénario (24 scènes) ; test sur un projet fabriqué
 ## Préalables : chantiers MondoWrite, à faire avant l'import
 
 **Décidé le 2 novembre 2026** : les fonctions propres à MondoWrite passent d'abord. Elles servent à tous les

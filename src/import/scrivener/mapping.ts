@@ -15,6 +15,11 @@ import { statusOf, type Binder, type BinderItem } from "./binder";
 import type { InspectorNote } from "./comments";
 import { INLINE_MARK, type RtfImage, type RtfInline } from "./rtf";
 import { readCharacterList, readSketch, type SketchKind } from "./sketch";
+import { isScriptDraft, scriptElements } from "./script";
+import { importScreenplayModel } from "../../screenplay/import";
+import { serialize } from "../../screenplay/serialize";
+import type { ScreenplayElement } from "../../screenplay/model";
+import type { SceneStatus } from "../../character";
 import { countWords } from "../../manuscript";
 import { htmlToMarkdown } from "../../storage/markdown";
 import { versionFile } from "../../versions";
@@ -66,6 +71,8 @@ export interface ScrivenerLabels {
   other: string;
   /** Cadre des pages du livre (dédicace, remerciements…). */
   pages: string;
+  /** Étiquette du fil scène → décor d'un scénario. */
+  setIn?: string;
   /** Titre d'une version tirée d'un instantané (« Instantané Scrivener »), suivi du titre de l'instantané s'il en a un. */
   snapshot: string;
 }
@@ -87,6 +94,8 @@ export interface ScrivenerOptions {
   exclude?: ReadonlySet<string>;
   /** Date des commentaires importés (ISO). */
   now?: string;
+  /** Langue de l'interface : titres des personnages et décors nés d'un scénario. */
+  locale?: string;
 }
 
 /** Ce que l'import a repris et ce qu'il a laissé : dit à l'auteur après l'import. */
@@ -380,6 +389,63 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
     report.pages += 1;
   };
 
+  // ---- Scénario : le Manuscrit écrit en mode script devient scenario.fountain ----------------------------------
+  const script = isScriptDraft(flatten(draft.children));
+  /** Documents du Manuscrit écrits en scénario, pour leurs instantanés (versions en Fountain). */
+  const scriptDocs = new Set<string>();
+  let project: Project;
+  if (script) {
+    const elements: ScreenplayElement[] = [];
+    /** Document et statut de chaque en-tête, dans l'ordre du texte. */
+    const heads: { uuid: string; status: SceneStatus | null }[] = [];
+    const walk = (items: BinderItem[], depth: number) => {
+      for (const item of items) {
+        if (item.type === "Text") {
+          const doc = docOf(item.uuid);
+          if (!item.includeInCompile) report.excluded.push(item.title);
+          const label = item.statusId ? binder.statuses[item.statusId] ?? "" : "";
+          const status = statusOf(label);
+          if (!status && label) statusMiss.set(label, (statusMiss.get(label) ?? 0) + 1);
+          let first = true;
+          for (const el of scriptElements(doc.paras, item.title)) {
+            elements.push(el);
+            if (el.type !== "sceneHeading") continue;
+            heads.push({ uuid: item.uuid, status });
+            // Le synopsis de Scrivener : la ligne « = … » sous l'en-tête, celui de la carte Scène.
+            const synopsis = doc.synopsis.replace(/\s+/g, " ").trim();
+            if (first && synopsis) elements.push({ type: "synopsis", text: synopsis });
+            first = false;
+          }
+          scriptDocs.add(item.uuid);
+          walk(item.children, depth);
+        } else if (item.type === "Folder") {
+          // Un dossier du Manuscrit (acte, séquence) : une section du Fountain.
+          if (item.title.trim()) elements.push({ type: "section", text: item.title.trim(), depth: Math.min(depth, 3) });
+          walk(item.children, depth + 1);
+        } else walk(item.children, depth);
+      }
+    };
+    walk(draft.children, 1);
+    if (!elements.some((e) => e.type === "sceneHeading")) return null;
+    project = importScreenplayModel({ titlePage: { Title: source.name }, elements }, { fileName: source.name, locale: opts.locale ?? "fr", linkLabel: labels.setIn ?? "se passe à", newId });
+    const sceneIds = (project.screenplay?.elements ?? []).filter((e) => e.type === "sceneHeading").map((e) => e.cardId ?? "");
+    const byScene = new Map(project.cards.map((c) => [c.id, c]));
+    heads.forEach((head, k) => {
+      const id = sceneIds[k];
+      if (!id) return;
+      if (!cardOf.has(head.uuid)) {
+        cardOf.set(head.uuid, id);
+        sceneNotes.push({ scene: id, title: "", doc: docOf(head.uuid) });
+      }
+      cardsOf.set(head.uuid, [...(cardsOf.get(head.uuid) ?? []), id]);
+      scenesOfDoc.set(head.uuid, { ids: cardsOf.get(head.uuid)!, title: "" });
+      const card = byScene.get(id);
+      if (card && head.status) card.fiche = { ...(card.fiche ?? {}), statut: head.status };
+    });
+    report.scenes = sceneIds.length;
+    report.characters += project.cards.filter((c) => c.type === "personnage").length;
+    report.places += project.cards.filter((c) => c.type === "lieu").length;
+  } else {
   for (const top of draft.children) {
     const title = chapterTitle(top.title);
     // Une dédicace, une épigraphe… rangées dans le Manuscrit sont des pages du livre, pas des chapitres.
@@ -438,7 +504,7 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
   }
   if (chapters.length === 0) return null;
 
-  const project = bookToProject({ title: source.name, author: null, chapters }, { fileName: source.name, newId });
+  project = bookToProject({ title: source.name, author: null, chapters }, { fileName: source.name, newId });
   report.chapters = chapters.length;
   report.scenes = project.cards.filter((c) => c.type === "scene").length;
 
@@ -450,6 +516,7 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
     manuscript[piece.id] = paras.map((p) => convert(p, piece.doc, piece.id, piece.id)).join("");
   }
   project.manuscript = manuscript;
+  }
   const byId = new Map(project.cards.map((c) => [c.id, c]));
 
   // Notes des documents du Manuscrit : une ligne va dans le synopsis s'il est vide, sinon une carte Idée reliée.
@@ -460,7 +527,8 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
     const card = byId.get(scene);
     if (!card) continue;
     const one = notes.length === 1 ? notes[0].text.trim() : "";
-    if (one && one.length <= SYNOPSIS_MAX && !card.fiche?.synopsis) {
+    // Le synopsis d'une scène de scénario est dans le Fountain : ses notes vont toujours dans une carte.
+    if (!script && one && one.length <= SYNOPSIS_MAX && !card.fiche?.synopsis) {
       card.fiche = { ...(card.fiche ?? {}), synopsis: one };
       continue;
     }
@@ -509,6 +577,9 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
       } else if (item.type === "WebArchive") {
         card = { id, type: "lien", title: item.title, html: "", ...(item.url ? { fiche: { url: item.url } } : {}) };
         report.links += 1;
+      } else if (item.type === "Text" && /^(title page|page de titre)$/.test(fold(item.title))) {
+        // La page de titre de Scrivener n'est qu'un modèle (<$PROJECTTITLE>, <$fullname>) : MondoWrite fait la sienne.
+        continue;
       } else if (item.type === "Text" && pageKindOf(item.title) && doc.paras.some((p) => p.text)) {
         // Pages liminaires et de fin (dossier « Front Matter », « Pages liminaires »…) : pages du livre.
         addPage(item, pageKindOf(item.title)!);
@@ -546,6 +617,15 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
             else body.unshift(`<p><em>${escapeHtml(synopsis)}</em></p>`);
           }
           const title = item.title.trim() || sketch.title || fallbackTitle();
+          // Un personnage ou un décor déjà né du scénario (« ETHAN » qui parle) reçoit la fiche, sans doublon.
+          const same = project.cards.find((c) => c.type === kind && fold(c.title) === fold(title));
+          if (same) {
+            same.fiche = { ...fiche, ...(same.fiche ?? {}) };
+            same.html = [same.html, ...body, ...notes].filter(Boolean).join("");
+            cardOf.set(item.uuid, same.id);
+            cardsOf.set(item.uuid, [same.id]);
+            continue;
+          }
           card = { id, type: kind, title, html: [...body, ...notes].join(""), ...(Object.keys(fiche).length ? { fiche } : {}) };
           if (kind === "personnage") report.characters += 1;
           else report.places += 1;
@@ -678,15 +758,32 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
   if (source.snapshots) {
     for (const [uuid, { ids, title: docTitle }] of scenesOfDoc) {
       for (const snap of source.snapshots(uuid)) {
+        const own = fold(snap.title);
+        const title = own && !UNTITLED_SNAPSHOT.test(own) ? `${labels.snapshot} : ${snap.title.trim()}` : labels.snapshot;
+        const name = `${snap.date.slice(0, 10)}-${snap.date.slice(11, 19).replace(/:/g, "")}.md`;
+        if (scriptDocs.has(uuid)) {
+          // Scénario : synopsis et corps en Fountain, sans l'en-tête (il reste le titre de la carte), scène par scène.
+          const els = scriptElements(snap.paras, "");
+          const bodies: ScreenplayElement[][] = [];
+          for (const el of els) {
+            if (el.type === "sceneHeading") bodies.push([]);
+            else (bodies[bodies.length - 1] ?? (bodies[0] = [])).push(el);
+          }
+          const pieces = bodies.length === ids.length ? bodies : [bodies.flat()];
+          pieces.forEach((body, k) => {
+            if (body.length === 0) return;
+            const text = serialize({ titlePage: {}, elements: body }).trim();
+            const words = body.reduce((n, e) => n + (e.text.match(/[\p{L}\p{N}’'-]+/gu)?.length ?? 0), 0);
+            versions.push([ids[k], name, versionFile({ title, date: snap.date, words, kind: "scenario", text })]);
+            report.versions += 1;
+          });
+          continue;
+        }
         const parts = splitScenes(snap.paras);
         // Comme pour le texte de la scène : l'intertitre en tête qui répète le titre du document n'est pas du texte.
         const head = parts[0]?.[0];
         if (head?.heading && fold(chapterTitle(head.text)) === fold(chapterTitle(docTitle))) parts[0] = parts[0].slice(1);
         const pieces = parts.length === ids.length ? parts : [parts.flat()];
-        const own = fold(snap.title);
-        const title = own && !UNTITLED_SNAPSHOT.test(own) ? `${labels.snapshot} : ${snap.title.trim()}` : labels.snapshot;
-        // Nom du fichier : la date de l'instantané, telle qu'écrite par Scrivener (heure locale de l'auteur).
-        const name = `${snap.date.slice(0, 10)}-${snap.date.slice(11, 19).replace(/:/g, "")}.md`;
         pieces.forEach((paras, k) => {
           const html = paras.filter((p) => p.text).map(snapHtml).join("");
           if (!html) return;

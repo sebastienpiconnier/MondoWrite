@@ -19,6 +19,10 @@ export interface ImportedPara {
   heading?: boolean;
   /** Style « Title » (titre du livre, ou d'un onglet de Google Docs). */
   title?: boolean;
+  /** Retrait à gauche en twips (RTF de Scrivener) : reconnaît les éléments d'un scénario. */
+  indent?: number;
+  /** Paragraphe aligné à droite ou centré (RTF de Scrivener). */
+  align?: "r" | "c";
 }
 
 export interface ImportedChapter {

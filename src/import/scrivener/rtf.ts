@@ -189,6 +189,10 @@ export function rtfDocument(source: string): RtfDocument {
   let pendingHref: string | undefined;
   /** Caractères de repli encore à sauter après un \uN. */
   let toSkip = 0;
+  /** Mise en forme du paragraphe en cours (\pard la remet à zéro) : retrait à gauche en twips, alignement. Sert à
+   *  reconnaître les éléments d'un scénario, que Scrivener ne nomme pas (lot scénario). */
+  let indent = 0;
+  let align: "r" | "c" | undefined;
   /** Octets \'xx qui se suivent : décodés ensemble (pages de codes à plusieurs octets). */
   let bytes: number[] = [];
   let i = 0;
@@ -221,7 +225,7 @@ export function rtfDocument(source: string): RtfDocument {
     const clean = oneBullet(listed);
     const html = runsToHtml(clean);
     const text = clean.map((r) => r.text).join("");
-    paras.push({ html: html.trim() ? html : "", text: text.trim(), ...(heading ? { heading: true } : {}) });
+    paras.push({ html: html.trim() ? html : "", text: text.trim(), ...(heading ? { heading: true } : {}), ...(indent ? { indent } : {}), ...(align ? { align } : {}) });
     runs = [];
   };
   /** Un caractère de repli à sauter (après \uN) : rend vrai s'il a été mangé. */
@@ -383,6 +387,23 @@ export function rtfDocument(source: string): RtfDocument {
       case "strike":
       case "striked":
         state.strike = param !== 0;
+        break;
+      case "pard":
+        indent = 0;
+        align = undefined;
+        break;
+      case "li":
+        indent = param ?? 0;
+        break;
+      case "qr":
+        align = "r";
+        break;
+      case "qc":
+        align = "c";
+        break;
+      case "ql":
+      case "qj":
+        align = undefined;
         break;
       case "plain":
         state.bold = false;

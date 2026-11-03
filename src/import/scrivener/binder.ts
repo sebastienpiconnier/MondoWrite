@@ -19,6 +19,8 @@ export interface BinderItem {
   bookmarks: string[];
   /** Adresse d'une page web archivée (WebArchive), si le classeur la donne. */
   url: string | null;
+  /** Document écrit en mode script (scénario) : `<TextSettings><TextMode>Script</TextMode>`. */
+  script?: boolean;
   children: BinderItem[];
 }
 
@@ -88,6 +90,7 @@ function readItem(el: Element): BinderItem {
     includeInCompile: !meta || childText(meta, "IncludeInCompile").toLowerCase() !== "no",
     bookmarks: bookmarksOf(el),
     url: el.getAttribute("Type") === "WebArchive" ? urlOf(el) : null,
+    ...(/^script$/i.test(childText(child(el, "TextSettings") ?? el, "TextMode")) && child(el, "TextSettings") ? { script: true } : {}),
     keywordIds: keywords ? Array.from(keywords.children).filter((k) => k.tagName === "KeywordID").map((k) => k.textContent?.trim() ?? "").filter(Boolean) : [],
     children: children ? Array.from(children.children).filter((c) => c.tagName === "BinderItem").map(readItem) : [],
   };
