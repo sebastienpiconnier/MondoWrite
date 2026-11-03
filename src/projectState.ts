@@ -37,17 +37,20 @@ import { allQuestionTexts, extractAnswers } from "./assistant";
 
 export type CardNode = Node<CardData, "card">;
 /** Cadre de regroupement sur le canevas. Tenu à part des cartes : toutes les vues lisent `nodes` sans s'en soucier. */
-export type FrameNode = Node<{ title: string; kind?: "research"; locked?: boolean; beat?: string }, "frame">;
+export type FrameNode = Node<{ title: string; kind?: "research"; locked?: boolean; beat?: string; season?: string; episode?: string }, "frame">;
 
 export const FRAME_SIZE = { width: 520, height: 360 };
 /** Marge autour des cartes qu'un cadre entoure (plus haute en tête, pour son titre). */
+/** Identifiant d'une saison ou d'un épisode lu dans un cadre de cosmos.json (même forme que les notes du Fountain). */
+const seriesRef = (v: unknown): string | undefined => (typeof v === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(v) ? v : undefined);
+
 export const FRAME_PADDING = { side: 32, top: 64, bottom: 32 };
 
 export const toFrameNode = (frame: Frame): FrameNode => ({
   id: frame.id,
   type: "frame",
   position: { x: frame.x, y: frame.y },
-  data: { title: frame.title, ...(frame.kind === "research" ? { kind: "research" as const } : {}), ...(frame.locked ? { locked: true } : {}), ...(frame.beat ? { beat: frame.beat } : {}) },
+  data: { title: frame.title, ...(frame.kind === "research" ? { kind: "research" as const } : {}), ...(frame.locked ? { locked: true } : {}), ...(frame.beat ? { beat: frame.beat } : {}), ...(frame.season ? { season: frame.season } : {}), ...(frame.episode ? { episode: frame.episode } : {}) },
   width: frame.width,
   height: frame.height,
   // Derrière les cartes ; l'intérieur laisse passer les clics (voir styles.css).
@@ -100,7 +103,7 @@ export function fromProject(p: Project) {
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
-    .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true, beat: typeof f.beat === "string" && (isBeat(f.beat) || isCustomBeat(f.beat)) ? f.beat : undefined }));
+    .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true, beat: typeof f.beat === "string" && (isBeat(f.beat) || isCustomBeat(f.beat)) ? f.beat : undefined, season: seriesRef(f.season), episode: seriesRef(f.episode) }));
   return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", comments: p.comments ?? {}, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
@@ -339,6 +342,8 @@ export function toProject(
                 ...(f.data.kind === "research" ? { kind: "research" as const } : {}),
                 ...(f.data.locked ? { locked: true } : {}),
                 ...(f.data.beat ? { beat: f.data.beat } : {}),
+                ...(f.data.season ? { season: f.data.season } : {}),
+                ...(f.data.episode ? { episode: f.data.episode } : {}),
               };
             }),
           }

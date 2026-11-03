@@ -125,6 +125,10 @@ export interface Frame {
   locked?: boolean;
   /** Case du gabarit que ce cadre représente (posé par « Organiser ») : y déposer une scène l'y range. */
   beat?: string;
+  /** Série (posé par « Organiser ») : saison que ce cadre représente (section du Fountain). */
+  season?: string;
+  /** Série (posé par « Organiser ») : épisode que ce cadre représente ; y déposer une scène l'y range. */
+  episode?: string;
 }
 
 /** Fil entre deux cartes, avec une étiquette libre ("soupçonne", "se passe à"…). */

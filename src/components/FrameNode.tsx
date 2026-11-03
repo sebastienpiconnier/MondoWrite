@@ -24,9 +24,9 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const deleteFrame = useCosmos((s) => s.deleteFrame);
   const toggleFrameLock = useCosmos((s) => s.toggleFrameLock);
   const locked = data.locked === true;
-  // Case du gabarit : vide tant qu'aucune carte n'a son centre dedans.
+  // Case du gabarit ou épisode d'une série : vide tant qu'aucune carte n'a son centre dedans.
   const empty = useCosmos((s) => {
-    if (!data.beat) return false;
+    if (!data.beat && !data.episode) return false;
     const frame = s.frames.find((f) => f.id === id);
     if (!frame) return false;
     const box = frameBox(frame);
@@ -45,7 +45,7 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
 
   return (
     <div
-      className={`frame is-level-${level}${data.beat ? " is-beat" : ""}${far && data.title.trim() ? " is-far" : ""}${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}${locked ? " is-locked" : ""}${lifted ? " is-lifted" : ""}`}
+      className={`frame is-level-${level}${data.beat || data.season ? " is-beat" : ""}${data.episode ? " is-episode" : ""}${far && data.title.trim() ? " is-far" : ""}${selected ? " is-selected" : ""}${data.kind === "research" ? " is-research" : ""}${locked ? " is-locked" : ""}${lifted ? " is-lifted" : ""}`}
     >
       <NodeResizer minWidth={220} minHeight={140} isVisible={selected && !locked} lineClassName="frame-resize-line" handleClassName="frame-resize-handle" />
       <div className="frame-handle">
@@ -91,7 +91,7 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
         )}
       </div>
       {/* Case du gabarit encore vide : on voit le trou dans la structure, et où déposer une scène. */}
-      {empty && <p className="frame-empty">{t.beatEmpty}</p>}
+      {empty && <p className="frame-empty">{data.episode ? t.episodeEmpty : t.beatEmpty}</p>}
     </div>
   );
 }

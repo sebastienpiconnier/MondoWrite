@@ -81,13 +81,16 @@ lit les sections comme des épisodes (numéro, saison, synopsis) en attendant le
 
 ## Lot 2 : le canevas en cadres
 
-- [ ] « Organiser » dessine les cadres imbriqués : un par saison, un par épisode dedans (titre « Ép. 3 · Tempête »),
+- [x] « Organiser » dessine les cadres imbriqués : un par saison, un par épisode dedans (titre « Ép. 3 · Tempête »),
       les cases du gabarit de l'épisode dedans, les scènes à l'intérieur ; « À placer » pour les cartes Scène pas
       encore écrites dans un épisode
-- [ ] Le cadre d'un épisode porte son identifiant (comme `beat` pour une case) : une scène lâchée dans un cadre
+- [x] Le cadre d'un épisode porte son identifiant (comme `beat` pour une case) : une scène lâchée dans un cadre
       d'épisode y passe, son texte avec elle, à la place que donne sa position (comme `dropIntoBeats`)
-- [ ] Le canevas suit le récit (`followStory`) quand l'ordre change dans le séquencier
-- [ ] Hiérarchie des titres de cadres (saison > épisode > case) dans `frameLevels.ts`
+- [x] Le canevas suit le récit (`followStory`) quand l'ordre change dans le séquencier
+- [x] Hiérarchie des titres de cadres (saison > épisode > case) dans `frameLevels.ts`
+
+Fait (3 novembre) : les cases du gabarit dans l'épisode attendent le lot 3 (gabarit par épisode) ; la hiérarchie
+des titres vient de la profondeur des cadres (`frameDepth`), la saison prend le style d'une case de gabarit.
 
 ## Lot 3 : Bible, vérifications, exports
 

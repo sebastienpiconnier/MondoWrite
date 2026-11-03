@@ -737,6 +737,60 @@ const scenarios = [
     },
   },
   {
+    name: "série sur le canevas : Organiser dessine saison › épisodes, une scène lâchée dans un épisode y passe (plan des épisodes, lot 2)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [heading, action] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. PORT – JOUR", "Les bateaux rentrent."]]) {
+        await page.keyboard.type(heading);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(action);
+        await page.keyboard.press("Enter");
+      }
+      await h.wait(500);
+      await h.view(2);
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      await until(() => page.getByRole("textbox", { name: "Titre de l’épisode 1" }).count(), "pas d'épisode 1");
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      await until(() => page.getByRole("textbox", { name: "Titre de l’épisode 2" }).count(), "pas d'épisode 2");
+      await h.view(1);
+      await page.getByRole("button", { name: "Organiser le canevas" }).first().click();
+      const titles = () => page.locator(".frame-title").evaluateAll((els) => els.map((e) => e.value));
+      await until(async () => {
+        const list = await titles();
+        return ["Saison 1", "Ép. 1", "Ép. 2"].every((t) => list.includes(t)) ? list : null;
+      }, "« Organiser » n'a pas dessiné saison et épisodes");
+      await h.wait(1000);
+      // La scène du port, lâchée dans le cadre de l'épisode 2, y passe avec son texte.
+      const id = await until(
+        () => page.locator(".react-flow__node-card").evaluateAll((els) => els.find((e) => (e.querySelector(".card-title")?.value ?? "").includes("PORT"))?.dataset.id),
+        "carte de la scène du port introuvable",
+      );
+      // On tient la carte par son en-tête, juste à droite de l'étiquette du type (le reste porte des boutons).
+      const type = await h.node(id).locator(".card-type").boundingBox();
+      const handle = type && { x: type.x + type.width + 6, y: type.y, width: 0, height: type.height };
+      const frame = await page.locator(".react-flow__node-frame").filter({ has: page.locator(".frame.is-episode") }).evaluateAll((els) =>
+        els.map((e) => ({ title: e.querySelector(".frame-title")?.value, box: e.getBoundingClientRect().toJSON() })),
+      );
+      const target = frame.find((f) => f.title === "Ép. 2");
+      assert(handle && target, "cadre de l'épisode 2 introuvable");
+      const tx = target.box.x + target.box.width / 2, ty = target.box.y + target.box.height / 2;
+      await page.mouse.move(handle.x, handle.y + handle.height / 2);
+      await page.mouse.down();
+      for (let i = 1; i <= 15; i++) await page.mouse.move(handle.x + ((tx - handle.x - handle.width * 0.6) * i) / 15, handle.y + handle.height / 2 + ((ty - handle.y - handle.height / 2) * i) / 15);
+      await page.mouse.up();
+      await h.saved((f) => {
+        const text = f["scenario.fountain"] ?? "";
+        const ep2 = text.indexOf("[[cosmos:episode:", text.indexOf("[[cosmos:episode:") + 1);
+        return ep2 > 0 && text.indexOf("EXT. PORT") > ep2 && text.indexOf("Les bateaux rentrent.") > ep2;
+      }, "la scène lâchée n'est pas passée dans l'épisode 2 du Fountain");
+      const frames = JSON.parse((await h.files())["cosmos.json"]).frames ?? [];
+      assert(frames.some((f) => f.season) && frames.filter((f) => f.episode).length === 2, `cadres enregistrés : ${JSON.stringify(frames.map((f) => [f.title, f.season, f.episode]))}`);
+    },
+  },
+  {
     name: "Bible : une fiche Lieu créée dans la Bible a sa carte sur le canevas",
     async run(h) {
       const { page } = h;

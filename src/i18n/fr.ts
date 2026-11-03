@@ -376,6 +376,7 @@ export const fr = {
     addFrameHint: "Nouveau cadre, autour des cartes sélectionnées (touche C)",
     frameTitle: "Nom du cadre",
     beatEmpty: "Rien encore ici. Dépose une scène dans ce cadre pour la ranger dans cette case.",
+    episodeEmpty: "Rien encore ici. Dépose une scène dans ce cadre pour la ranger dans cet épisode, avec son texte.",
     frameTitleAria: "Nom du cadre",
     beatRank: "Case {n} sur {total}",
     beatTitleAria: "Nom de la case {n} sur {total} du gabarit",

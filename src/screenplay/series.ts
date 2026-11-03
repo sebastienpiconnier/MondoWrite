@@ -301,3 +301,42 @@ export function adoptEpisodeCards(
   if (known.size === 0) return withElements(sp, [...parts[0], ...sp.elements, ...parts.slice(1).flat()]);
   return withElements(sp, [...sp.elements, ...parts.flat()]);
 }
+
+/**
+ * Scènes de chaque épisode, dans l'ordre du fichier (identifiants des cartes), et celles écrites avant le
+ * premier épisode (`outside`). Sert au rangement du canevas.
+ */
+export function episodeScenes(elements: ScreenplayElement[]): { byEpisode: Map<string, string[]>; outside: string[] } {
+  const byEpisode = new Map<string, string[]>();
+  const outside: string[] = [];
+  let current: string[] = outside;
+  for (const el of elements) {
+    const mark = seriesMark(el);
+    if (mark?.kind === "episode") byEpisode.set(mark.id, (current = []));
+    else if (mark?.kind === "season") current = outside;
+    else if (el.type === "sceneHeading" && el.cardId) current.push(el.cardId);
+  }
+  return { byEpisode, outside };
+}
+
+/**
+ * Range la scène de la carte `cardId` dans l'épisode `episodeId`, avec tout son texte, à la place `index`
+ * parmi les scènes de l'épisode (à la fin sans index). Même objet si rien ne bouge ou si la scène ou
+ * l'épisode n'existent pas.
+ */
+export function placeSceneInEpisode(sp: Screenplay, cardId: string, episodeId: string, index?: number): Screenplay {
+  const el = sp.elements;
+  const from = el.findIndex((e) => e.type === "sceneHeading" && e.cardId === cardId);
+  if (from < 0 || !findEpisode(sp, episodeId)) return sp;
+  // Fin de la scène : la scène suivante ou n'importe quelle section (case, saison, épisode).
+  let end = from + 1;
+  while (end < el.length && el[end].type !== "sceneHeading" && el[end].type !== "section") end++;
+  const chunk = el.slice(from, end);
+  const without = [...el.slice(0, from), ...el.slice(end)];
+  const ep = findEpisode({ ...sp, elements: without }, episodeId)!;
+  const heads: number[] = [];
+  for (let i = ep.start; i < ep.end; i++) if (without[i].type === "sceneHeading") heads.push(i);
+  const to = index !== undefined && index < heads.length ? heads[Math.max(0, index)] : ep.end;
+  const next = [...without.slice(0, to), ...chunk, ...without.slice(to)];
+  return next.every((e, i) => e === el[i]) ? sp : withElements(sp, next);
+}

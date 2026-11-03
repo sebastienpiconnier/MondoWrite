@@ -124,9 +124,9 @@ function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
       const title = data.title.trim();
       if (hidden?.has(box.id) || !title) return [];
       const far = titleBoost(zoom, level);
-      const boost = far > 1 ? fitBoost(title, box.width, titleSize(level, !!data.beat), far) : 1;
+      const boost = far > 1 ? fitBoost(title, box.width, titleSize(level, !!data.beat || !!data.season), far) : 1;
       const rank = data.beat ? keys.indexOf(data.beat) + 1 : 0;
-      return [{ ...box, level, far: far > 1, boost, title, beat: !!data.beat, kicker: rank > 0 ? fmt(t.beatRank, { n: rank, total: keys.length }) : "" }];
+      return [{ ...box, level, far: far > 1, boost, title, beat: !!data.beat || !!data.season, kicker: rank > 0 ? fmt(t.beatRank, { n: rank, total: keys.length }) : "" }];
     });
   }, [frames, zoom, keys, t, hidden]);
 

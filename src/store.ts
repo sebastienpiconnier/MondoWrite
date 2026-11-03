@@ -62,7 +62,7 @@ import { markdownSource } from "./markdownText";
 import { htmlToMarkdown, markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
-import { addEpisode, addSeason, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript } from "./screenplay/series";
+import { addEpisode, addSeason, allEpisodes, seriesMark as seriesMarkOf, episodeScenes, placeSceneInEpisode, seriesOf as readSeries, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript } from "./screenplay/series";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
@@ -108,6 +108,8 @@ export interface CosmosState {
   setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[]) => void;
   /** Range une scène dans une case du gabarit, roman (plan) ou scénario (section du Fountain). Annulable. */
   placeInBeat: (id: string, beat: string, index?: number) => void;
+  /** Série : range la scène de cette carte dans un épisode, avec son texte (à la fin sans index). */
+  placeInEpisode: (id: string, episode: string, index?: number) => void;
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Scénario : le corps d'une scène (après son en-tête et son synopsis), écrit depuis sa carte agrandie. */
@@ -892,7 +894,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const sizes = boxes(arranged);
     // Un scénario a son plan dans le fichier Fountain : ses sections de gabarit font les cases.
     const story = kind === "scenario" ? screenplayPlan(get().screenplay?.elements ?? []) : plan;
+    // Série : cadres saison › épisode, d'après les sections du Fountain (screenplay/series.ts).
+    const sp = get().screenplay;
+    const series =
+      kind === "scenario" && sp && allEpisodes(sp.elements).length > 0
+        ? (() => {
+            const { byEpisode, outside } = episodeScenes(sp.elements);
+            return {
+              seasons: readSeries(sp.elements).map((season) => ({
+                id: season.id,
+                title: season.title,
+                episodes: season.episodes.map((ep) => ({ id: ep.id, title: ep.title, number: ep.number, scenes: byEpisode.get(ep.id) ?? [] })),
+              })),
+              outside,
+            };
+          })()
+        : undefined;
     const result = organize({
+      series,
       cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
       plan: story,
       sceneIds: kind === "scenario" ? storyOrder(arranged) : planScenes(arranged),
@@ -904,6 +923,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
         unplaced: t.plan.unplaced,
         story: types.scene.section,
         pages: t.organize.pages,
+        episode: (n, title) => (title ? fmt(t.season.episodeTitled, { n, title }) : fmt(t.season.episodeNumber, { n })),
+        seasonUntitled: t.season.seasonUntitled,
+        outside: t.season.outside,
       },
       origin:
         locked.length > 0
@@ -957,8 +979,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
       t.types.scene.section,
       t.scenario.types.scene?.section ?? t.types.scene.section,
     ]);
+    known.add(t.season.outside);
     const organized =
-      storyFrames.length > 0 && storyFrames.every((f) => known.has(f.data.title) || chapterTitle.some((re) => re.test(f.data.title)));
+      storyFrames.length > 0 &&
+      storyFrames.every((f) => f.data.season || f.data.episode || known.has(f.data.title) || chapterTitle.some((re) => re.test(f.data.title)));
     if (organized) return arrangeCanvas(() => {});
     const free = nodes.filter((n) => sceneIds.has(n.id) && !held.has(n.id));
     const moved = reorderSlots(
@@ -980,8 +1004,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
    */
   const dropIntoBeats = (ids: Set<string>) => {
     const { nodes, frames, kind, screenplay, plan } = get();
-    const beatFrames = frames.filter((f) => f.data.beat && !f.data.locked);
+    const beatFrames = frames.filter((f) => (f.data.beat || (kind === "scenario" && f.data.episode)) && !f.data.locked);
     if (beatFrames.length === 0) return;
+    const inEpisodes = screenplay ? episodeScenes(screenplay.elements).byEpisode : new Map<string, string[]>();
     const held = heldCardIds(nodes, frames);
     const story = new Set(planScenes(nodes));
     const current = kind === "scenario" ? screenplayPlan(screenplay?.elements ?? []) : plan;
@@ -993,20 +1018,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // On tient une carte par son en-tête : c'est lui qui dit dans quelle case elle tombe (une case vide
       // est moins haute qu'une scène).
       const frame = beatFrames.find((f) => insideBox(c.x, c.top, frameBox(f)));
+      const episode = frame?.data.episode;
       const beat = frame?.data.beat;
-      if (!beat) continue;
+      if (!beat && !episode) continue;
       const before = (o: { x: number; y: number }) => (Math.abs(o.y - c.y) > c.h / 2 ? o.y < c.y : o.x < c.x);
-      const others = (current.beats[beat] ?? []).filter((s) => s !== id && story.has(s));
+      const members = episode ? (inEpisodes.get(episode) ?? []) : (current.beats[beat!] ?? []);
+      const others = members.filter((s) => s !== id && story.has(s));
       const index = others.filter((s) => {
         const o = center.get(s);
         return o ? before(o) : false;
       }).length;
-      if ((current.beats[beat] ?? []).filter((s) => story.has(s)).indexOf(id) === index) continue;
+      if (episode && !inEpisodes.has(episode)) continue;
+      if (members.filter((s) => story.has(s)).indexOf(id) === index) continue;
       // Le glisser a déjà pris son étape d'historique (« move ») : le rangement en fait partie, un seul Annuler
       // défait les deux. Le scénario passe par setScreenplay(…, true), qui garde ainsi aussi l'historique.
       quiet = true;
       try {
-        get().placeInBeat(id, beat, index);
+        if (episode) get().placeInEpisode(id, episode, index);
+        else get().placeInBeat(id, beat!, index);
       } finally {
         quiet = false;
       }
@@ -2109,6 +2138,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (elements === script.elements) return;
       get().setScript({ ...script, elements }, true, episode);
     },
+    placeInEpisode: (id, episode, index) => {
+      const { screenplay } = get();
+      if (!screenplay) return;
+      const next = placeSceneInEpisode(screenplay, id, episode, index);
+      // Le canevas suit (setScreenplay voit que la scène a changé d'épisode).
+      if (next !== screenplay) get().setScreenplay(next, true);
+    },
     placeInPlan: (id, beat, index) => {
       const plan = placeScene(get().plan, planScenes(get().nodes), id, beat, index);
       if (plan === get().plan) return;
@@ -2358,7 +2394,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const totalBefore = progress[day]?.end ?? (before ? screenplayWords(before) : totalAfter);
       set({ screenplay, nodes: headedNodes(get().nodes, screenplay), progress: recordProgress(progress, day, totalBefore, totalAfter) });
       // Scènes déplacées (séquencier, liste des scènes) : le canevas suit l'ordre du fichier.
-      const order = (sp: Screenplay | null) => (sp ? listScenes(sp.elements).map((s) => s.cardId ?? "").join(" ") : "");
+      // Série : une scène qui change d'épisode, un épisode déplacé ou renommé comptent aussi (titres des cadres).
+      const order = (sp: Screenplay | null) =>
+        sp ? sp.elements.flatMap((el) => (el.type === "sceneHeading" ? [el.cardId ?? ""] : seriesMarkOf(el) ? [`|${el.text}`] : [])).join(" ") : "";
       if (undoable && before && order(before) !== order(screenplay)) followStory();
       touch();
     },

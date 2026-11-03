@@ -37,6 +37,18 @@ export interface OrganizeLabels {
   story: string;
   /** Cartes Scène hors récit (page de titre, dédicace, épilogue…). */
   pages: string;
+  /** Série : titre du cadre d'un épisode (« Ép. 3 · Tempête »), d'une saison sans titre, des scènes hors épisode. */
+  episode?: (n: number, title: string) => string;
+  seasonUntitled?: string;
+  outside?: string;
+}
+
+/** Série écrite dans le Fountain (screenplay/series.ts) : saisons, épisodes et leurs scènes, dans l'ordre. */
+export interface OrganizeSeries {
+  /** Saison `id: null` : les épisodes écrits avant toute section de saison (sans cadre de saison). */
+  seasons: { id: string | null; title: string; episodes: { id: string; title: string; number: number; scenes: string[] }[] }[];
+  /** Scènes écrites avant le premier épisode. */
+  outside: string[];
 }
 
 export interface OrganizeInput {
@@ -45,6 +57,8 @@ export interface OrganizeInput {
   /** Cartes Scène dans l'ordre par défaut (celui du canevas), comme pour les fonctions de plan.ts. */
   sceneIds: string[];
   labels: OrganizeLabels;
+  /** Série : remplace les cases du gabarit par les cadres saison › épisode ; les autres scènes vont « À placer ». */
+  series?: OrganizeSeries;
   /** Coin haut gauche de l'ensemble. */
   origin: { x: number; y: number };
   newId: () => string;
@@ -63,7 +77,7 @@ const ROW_GAP = 96; // entre deux rangées de l'ensemble
 const PAD = { side: 32, top: 64, bottom: 32 }; // marge intérieure d'un cadre (titre en haut)
 /** Marge du haut d'une case de gabarit : son titre est plus grand et porte son rang (« Case 3 sur 15 », FrameNode). */
 const BEAT_TOP = 96;
-const padTop = (item: { beat?: string }) => (item.beat ? BEAT_TOP : PAD.top);
+const padTop = (item: { beat?: string; season?: string }) => (item.beat || item.season ? BEAT_TOP : PAD.top);
 /** Une rangée du récit compte au moins 4 scènes (un petit récit reste sur une ligne)… */
 const MIN_SCENES_PER_ROW = 4;
 /** … et au plus 20. */
@@ -76,7 +90,7 @@ export const typeColumns = (n: number) => (n <= 4 ? Math.max(1, n) : Math.ceil(M
 
 type Item =
   | { kind: "card"; id: string; width: number; height: number }
-  | { kind: "frame"; title: string; body: Layout; beat?: string }
+  | { kind: "frame"; title: string; body: Layout; beat?: string; season?: string; episode?: string }
   | { kind: "box"; body: Layout }; // groupe sans cadre
 
 interface Layout {
@@ -99,7 +113,7 @@ function size(item: Item): Sized {
   if (item.kind === "card") return { width: item.width, height: item.height };
   const inner = layoutSize(item.body);
   // Un cadre étroit (une seule carte) s'élargit pour que son titre se lise en entier.
-  return item.kind === "box" ? inner : { width: Math.max(inner.width + PAD.side * 2, titleWidth(item.title, item.beat)), height: inner.height + padTop(item) + PAD.bottom };
+  return item.kind === "box" ? inner : { width: Math.max(inner.width + PAD.side * 2, titleWidth(item.title, item.beat ?? item.season)), height: inner.height + padTop(item) + PAD.bottom };
 }
 
 /** Largeur de chaque colonne et hauteur de chaque ligne d'une grille. */
@@ -135,14 +149,14 @@ function place(layout: Layout, x: number, y: number, out: OrganizeResult, newId:
     } else {
       const s = size(item);
       // Le cadre extérieur d'abord : il se dessine derrière ceux qu'il contient.
-      out.frames.push({ id: newId(), title: item.title, x: Math.round(ix), y: Math.round(iy), width: Math.round(s.width), height: Math.round(s.height), ...(item.beat ? { beat: item.beat } : {}) });
+      out.frames.push({ id: newId(), title: item.title, x: Math.round(ix), y: Math.round(iy), width: Math.round(s.width), height: Math.round(s.height), ...(item.beat ? { beat: item.beat } : {}), ...(item.season ? { season: item.season } : {}), ...(item.episode ? { episode: item.episode } : {}) });
       place(item.body, ix + PAD.side, iy + padTop(item), out, newId);
     }
   });
 }
 
 /** Rangées de l'ensemble pour N scènes par rangée, et l'ordre des scènes à relier. */
-function build({ cards, plan, sceneIds, labels }: OrganizeInput, perRow: number): { rows: Layout[]; told: string[] } {
+function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow: number): { rows: Layout[]; told: string[] } {
   const byId = new Map(cards.map((c) => [c.id, c]));
   const cardItem = (id: string): Item[] => {
     const c = byId.get(id);
@@ -200,9 +214,34 @@ function build({ cards, plan, sceneIds, labels }: OrganizeInput, perRow: number)
       }
       return { item, count: g.ids.length };
     });
-  const free = plan.template === "libre" || templateBeats(plan.template, plan.custom).length <= 1;
+  const free = !series && (plan.template === "libre" || templateBeats(plan.template, plan.custom).length <= 1);
   let story: Item[];
-  if (free) {
+  let seriesOrder: string[] = [];
+  if (series) {
+    // Série : un cadre par saison, un cadre par épisode dedans (de gauche à droite, en rangées), ses scènes à
+    // l'intérieur. Un épisode vide compte pour une scène : on y dépose une scène.
+    const known = new Set(scenes);
+    const keep = (ids: string[]) => ids.filter((id) => known.has(id));
+    story = [];
+    const outside = keep(series.outside);
+    if (outside.length > 0) story.push({ kind: "frame", title: labels.outside ?? labels.unplaced, body: { items: outside.flatMap(cardItem), columns: sceneColumns(outside.length), gap: GAP } });
+    seriesOrder = [...outside];
+    for (const season of series.seasons) {
+      const episodes = season.episodes.map((ep) => {
+        const ids = keep(ep.scenes);
+        seriesOrder.push(...ids);
+        const title = labels.episode ? labels.episode(ep.number, ep.title.trim()) : ep.title;
+        const item: Item = { kind: "frame", title, episode: ep.id, body: { items: ids.flatMap(cardItem), columns: sceneColumns(ids.length), gap: GAP } };
+        return { item, count: Math.max(1, ids.length) };
+      });
+      const rows = inRows(episodes);
+      if (season.id === null) story.push(...rows);
+      else story.push({ kind: "frame", title: season.title.trim() || labels.seasonUntitled || "", season: season.id, body: { items: rows, columns: 1, gap: GROUP_GAP } });
+    }
+    const placed = new Set(seriesOrder);
+    const waiting = scenes.filter((id) => !placed.has(id));
+    if (waiting.length > 0) story.push({ kind: "frame", title: labels.unplaced, body: { items: waiting.flatMap(cardItem), columns: sceneColumns(waiting.length), gap: GAP } });
+  } else if (free) {
     const groups = chaptered(beats[0]?.ids ?? []);
     const anyChapter = groups.some((g) => g.item.kind === "frame");
     story =
@@ -257,7 +296,7 @@ function build({ cards, plan, sceneIds, labels }: OrganizeInput, perRow: number)
     ]),
   ].filter((r) => r.items.length > 0);
 
-  return { rows, told: free ? order : beats.flatMap((b) => b.ids) };
+  return { rows, told: series ? seriesOrder : free ? order : beats.flatMap((b) => b.ids) };
 }
 
 /** Taille de l'ensemble : les rangées l'une sous l'autre. */

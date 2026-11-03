@@ -372,6 +372,7 @@ export const en: Messages = {
     addFrameHint: "New frame, around the selected cards (C key)",
     frameTitle: "Frame name",
     beatEmpty: "Nothing here yet. Drop a scene in this frame to put it in this beat.",
+    episodeEmpty: "Nothing here yet. Drop a scene in this frame to move it into this episode, with its text.",
     frameTitleAria: "Frame name",
     beatRank: "Beat {n} of {total}",
     beatTitleAria: "Name of beat {n} of {total} in the template",
