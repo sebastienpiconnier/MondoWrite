@@ -1,7 +1,7 @@
 # Plan : écrire les épisodes d'une série
 
 Suite de la Bible v2 (lots 6 et 7 : cartes Épisode, saisons, pivot, grille intrigues × épisodes). Demande de
-l'auteur du 26 octobre 2026 (`docs/demandes-evolution.md`, reprise ici) : « un projet scénario n'a pas
+l'auteur du 26 octobre 2026 : « un projet scénario n'a pas
 d'épisodes, un projet = un seul scénario ». Version visée : 1.15.0 (à confirmer).
 
 Aujourd'hui une série se **prépare** dans MondoWrite (les épisodes sont des cartes, avec leurs intrigues et leurs
