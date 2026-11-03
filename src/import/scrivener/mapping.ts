@@ -15,6 +15,11 @@ import { statusOf, type Binder, type BinderItem } from "./binder";
 import type { InspectorNote } from "./comments";
 import { INLINE_MARK, type RtfImage, type RtfInline } from "./rtf";
 import { readCharacterList, readSketch, type SketchKind } from "./sketch";
+import { countWords } from "../../manuscript";
+import { htmlToMarkdown } from "../../storage/markdown";
+import { versionFile } from "../../versions";
+import type { Progress } from "../../stats";
+import type { PageKind } from "../../book";
 
 /** Ce qu'on sait lire d'un document du classeur. */
 export interface ScrivenerDoc {
@@ -33,11 +38,23 @@ export interface ScrivenerDoc {
   media?: { ext: string; data: Uint8Array } | null;
 }
 
+/** Un instantané d'un document (Snapshots/) : titre donné dans Scrivener, date ISO avec fuseau, texte. */
+export interface ScrivenerSnapshot {
+  title: string;
+  date: string;
+  paras: ImportedPara[];
+  inline?: RtfInline[];
+}
+
 export interface ScrivenerSource {
   /** Nom du projet (nom du .scriv, sans extension). */
   name: string;
   binder: Binder;
   doc: (uuid: string) => ScrivenerDoc;
+  /** Instantanés d'un document, du plus ancien au plus récent (lot 3). */
+  snapshots?: (uuid: string) => ScrivenerSnapshot[];
+  /** Historique d'écriture (Files/writing.history), tel quel. */
+  history?: string;
 }
 
 /** Textes que l'import écrit dans le projet (titres de cadres) : dans la langue de l'interface. */
@@ -47,9 +64,21 @@ export interface ScrivenerLabels {
   textImages: string;
   notesOf: string;
   other: string;
+  /** Cadre des pages du livre (dédicace, remerciements…). */
+  pages: string;
+  /** Titre d'une version tirée d'un instantané (« Instantané Scrivener »), suivi du titre de l'instantané s'il en a un. */
+  snapshot: string;
 }
 
-const DEFAULT_LABELS: ScrivenerLabels = { keywords: "Mots-clés", sceneNotes: "Notes des scènes", textImages: "Images du texte", notesOf: "Notes : {title}", other: "Divers" };
+const DEFAULT_LABELS: ScrivenerLabels = {
+  keywords: "Mots-clés",
+  sceneNotes: "Notes des scènes",
+  textImages: "Images du texte",
+  notesOf: "Notes : {title}",
+  other: "Divers",
+  pages: "Pages du livre",
+  snapshot: "Instantané Scrivener",
+};
 
 export interface ScrivenerOptions {
   newId: () => string;
@@ -88,6 +117,51 @@ export interface ScrivenerReport {
   trash: number;
   /** Dossiers décochés par l'auteur. */
   skippedFolders: string[];
+  /** Instantanés repris en versions des scènes (lot 3). */
+  versions: number;
+  /** Pages du livre reconnues (dédicace, épigraphe, remerciements…). */
+  pages: number;
+  /** Jours de l'historique d'écriture repris dans les statistiques. */
+  days: number;
+}
+
+/** Titres de documents qui sont des pages du livre, repliés (lot 3). Le prologue et l'épilogue restent des chapitres. */
+const PAGE_TITLES: [RegExp, PageKind][] = [
+  [/^(dedicace|dedication)s?$/, "dedicace"],
+  [/^(epigraphe|epigraph|exergue)s?$/, "epigraphe"],
+  [/^(remerciements?|acknowledge?ments?)$/, "remerciements"],
+  [/^(copyright|mentions legales|droits)$/, "copyright"],
+  [/^(a propos de l auteur|de l auteur|l auteur|about the author|author bio|biographie de l auteur)$/, "auteur"],
+];
+export const pageKindOf = (title: string): PageKind | null => {
+  const t = fold(title);
+  return PAGE_TITLES.find(([re]) => re.test(t))?.[1] ?? null;
+};
+
+/** Titres que Scrivener donne d'office à un instantané sans nom : il prend alors seulement le titre de l'import. */
+const UNTITLED_SNAPSHOT = /^(untitled snapshot|instantane sans titre|sans titre|untitled)$/;
+
+/**
+ * Historique d'écriture de Scrivener (`<Day dwc="…">AAAA-MM-JJ</Day>`, `dwc` : mots du manuscrit gagnés ce jour-là)
+ * → `progress` de MondoWrite (total au début et à la fin de chaque jour), reconstitué en remontant depuis le total
+ * importé : la série de jours d'écriture et les statistiques ne repartent pas de zéro. Jamais sous zéro.
+ */
+export function historyProgress(xml: string, total: number): Progress {
+  const days: [string, number][] = [];
+  for (const m of xml.matchAll(/<Day\b([^>]*)>\s*(\d{4}-\d{2}-\d{2})\s*<\/Day>/g)) {
+    const dwc = Number(m[1].match(/\bdwc="(-?\d+)"/)?.[1] ?? NaN);
+    if (Number.isFinite(dwc) && dwc !== 0) days.push([m[2], dwc]);
+  }
+  days.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  const progress: Progress = {};
+  let end = Math.max(0, total);
+  for (let i = days.length - 1; i >= 0; i--) {
+    const [day, dwc] = days[i];
+    const start = Math.max(0, end - dwc);
+    if (start !== end) progress[day] = { start, end };
+    end = start;
+  }
+  return progress;
 }
 
 /** Nom d'un projet écrit dans un zip fait sur Mac : « Sacr#U00e9 Bonhomme » → « Sacré Bonhomme ». */
@@ -171,7 +245,7 @@ const FRAME_TOP = 90;
 const FRAME_PAD = 40;
 const FRAME_GAP = 120;
 
-export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOptions | (() => string)): { project: Project; medias: [string, Uint8Array][]; report: ScrivenerReport } | null {
+export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOptions | (() => string)): { project: Project; medias: [string, Uint8Array][]; report: ScrivenerReport; versions: [string, string, string][] } | null {
   const opts: ScrivenerOptions = typeof options === "function" ? { newId: options } : options;
   const { newId } = opts;
   const labels = opts.labels ?? DEFAULT_LABELS;
@@ -183,7 +257,12 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
   const report: ScrivenerReport = {
     chapters: 0, scenes: 0, characters: 0, places: 0, ideas: 0, documents: 0, images: 0, links: 0, keywords: 0, comments: 0, footnotes: 0, wires: 0,
     excluded: [], statuses: [], labels: [], emptySketches: 0, unsupported: [], trash: 0, skippedFolders: [],
+    versions: 0, pages: 0, days: 0,
   };
+  /** Scènes de chaque document du Manuscrit, dans l'ordre (pour ses instantanés). */
+  const scenesOfDoc = new Map<string, { ids: string[]; title: string }>();
+  /** Versions des scènes : carte, nom du fichier, contenu. */
+  const versions: [string, string, string][] = [];
   const docs = new Map<string, ScrivenerDoc>();
   const docOf = (uuid: string) => {
     let d = docs.get(uuid);
@@ -289,8 +368,26 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
   /** Notes de document du Manuscrit, à poser après la création des scènes. */
   const sceneNotes: { scene: string; title: string; doc: ScrivenerDoc }[] = [];
 
+  /** Page du livre (dédicace, épigraphe…) : une carte Scène hors récit, avec son texte. */
+  const addPage = (item: BinderItem, kind: PageKind) => {
+    const doc = docOf(item.uuid);
+    const id = newId();
+    extraCards.push({ id, type: "scene", title: item.title.trim(), html: "", page: kind });
+    manuscript[id] = doc.paras.filter((p) => p.text).map((p) => convert(p, doc, id, id)).join("");
+    groupFor(labels.pages).ids.push(id);
+    cardOf.set(item.uuid, id);
+    cardsOf.set(item.uuid, [id]);
+    report.pages += 1;
+  };
+
   for (const top of draft.children) {
     const title = chapterTitle(top.title);
+    // Une dédicace, une épigraphe… rangées dans le Manuscrit sont des pages du livre, pas des chapitres.
+    const pageKind = top.type === "Text" ? pageKindOf(top.title) : null;
+    if (pageKind && docOf(top.uuid).paras.some((p) => p.text)) {
+      addPage(top, pageKind);
+      continue;
+    }
     const role: ImportedChapter["role"] = PROLOGUE.test(top.title.trim()) ? "prologue" : EPILOGUE.test(top.title.trim()) ? "epilogue" : null;
     const scenes: string[][] = [];
     const sceneMeta: NonNullable<ImportedChapter["sceneMeta"]> = [];
@@ -321,6 +418,7 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
       });
       cardOf.set(item.uuid, ids[0]);
       cardsOf.set(item.uuid, ids);
+      scenesOfDoc.set(item.uuid, { ids, title: item.title });
       sceneNotes.push({ scene: ids[0], title: item.title || title, doc });
     };
     if (isFolder(top)) {
@@ -411,6 +509,10 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
       } else if (item.type === "WebArchive") {
         card = { id, type: "lien", title: item.title, html: "", ...(item.url ? { fiche: { url: item.url } } : {}) };
         report.links += 1;
+      } else if (item.type === "Text" && pageKindOf(item.title) && doc.paras.some((p) => p.text)) {
+        // Pages liminaires et de fin (dossier « Front Matter », « Pages liminaires »…) : pages du livre.
+        addPage(item, pageKindOf(item.title)!);
+        continue;
       } else if (item.type === "Text" || item.type === "Folder") {
         const synopsis = doc.synopsis.trim();
         const list = kind === "personnage" ? readCharacterList(doc.paras) : null;
@@ -566,6 +668,39 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
     if (to) link(from, to);
   }
 
+  // ---- Instantanés : des versions des scènes (lot 3) -------------------------------------------------------------
+  // Un instantané couvre tout le document : coupé aux mêmes séparateurs, chaque morceau va à sa scène ; si le
+  // découpage a changé depuis, tout le texte va à la première scène du document.
+  const snapHtml = (p: ImportedPara) => {
+    const inner = p.html.replace(/<span data-scriv(?:cmt|lnk)="[^"]*">([\s\S]*?)<\/span>/g, "$1").replace(INLINE_MARK, "");
+    return p.heading ? `<h3>${inner}</h3>` : `<p>${inner}</p>`;
+  };
+  if (source.snapshots) {
+    for (const [uuid, { ids, title: docTitle }] of scenesOfDoc) {
+      for (const snap of source.snapshots(uuid)) {
+        const parts = splitScenes(snap.paras);
+        // Comme pour le texte de la scène : l'intertitre en tête qui répète le titre du document n'est pas du texte.
+        const head = parts[0]?.[0];
+        if (head?.heading && fold(chapterTitle(head.text)) === fold(chapterTitle(docTitle))) parts[0] = parts[0].slice(1);
+        const pieces = parts.length === ids.length ? parts : [parts.flat()];
+        const own = fold(snap.title);
+        const title = own && !UNTITLED_SNAPSHOT.test(own) ? `${labels.snapshot} : ${snap.title.trim()}` : labels.snapshot;
+        // Nom du fichier : la date de l'instantané, telle qu'écrite par Scrivener (heure locale de l'auteur).
+        const name = `${snap.date.slice(0, 10)}-${snap.date.slice(11, 19).replace(/:/g, "")}.md`;
+        pieces.forEach((paras, k) => {
+          const html = paras.filter((p) => p.text).map(snapHtml).join("");
+          if (!html) return;
+          versions.push([ids[k], name, versionFile({ title, date: snap.date, words: countWords(html), kind: "roman", text: htmlToMarkdown(html) })]);
+          report.versions += 1;
+        });
+      }
+    }
+  }
+
+  // ---- Historique d'écriture : les statistiques ne repartent pas de zéro ---------------------------------------
+  const progress = source.history ? historyProgress(source.history, Object.values(manuscript).reduce((n, html) => n + countWords(html), 0)) : {};
+  report.days = Object.keys(progress).length;
+
   // ---- Disposition : les cadres à droite du récit, l'un sous l'autre ---------------------------------------------
   const layout = [...project.meta.layout];
   const frames: Frame[] = [];
@@ -585,7 +720,7 @@ export function scrivenerToProject(source: ScrivenerSource, options: ScrivenerOp
   report.statuses = [...statusMiss].map(([label, count]) => ({ label, count }));
   report.labels = [...labelMiss].map(([label, count]) => ({ label, count }));
   project.cards = allCards();
-  project.meta = { ...project.meta, layout, links, ...(frames.length ? { frames } : {}), ...(binder.draftTarget ? { goals: { total: binder.draftTarget } } : {}) };
+  project.meta = { ...project.meta, layout, links, ...(frames.length ? { frames } : {}), ...(binder.draftTarget ? { goals: { total: binder.draftTarget } } : {}), ...(report.days ? { progress } : {}) };
   if (Object.keys(comments).length > 0) project.comments = comments;
-  return { project, medias, report };
+  return { project, medias, report, versions };
 }

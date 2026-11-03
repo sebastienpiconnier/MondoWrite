@@ -457,7 +457,7 @@ export interface CosmosState {
   /** Case « Synchroniser les projets avec iCloud Drive » (iPhone, iPad, Mac), puis liste des projets relue. */
   setIcloud: (on: boolean) => Promise<void>;
   /** L'import n'a pas eu lieu : dossier déjà occupé par un projet, ou fichier sans scénario. */
-  importNotice: "taken" | "empty" | "scrivener" | null;
+  importNotice: "taken" | "empty" | "scrivener" | "scrivenerOld" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
   tryExample: () => Promise<void>;
   /** Visite guidée : étape affichée (0 à n-1), ou null. État d'affichage, jamais enregistré. */
@@ -1232,7 +1232,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
   };
 
   /** Fin d'un import depuis l'accueil : nouveau projet (jamais par-dessus un autre), médias, ouverture sur le Manuscrit. */
-  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null) => {
+  /** Message de l'accueil après un import manqué : projet Scrivener illisible, trop ancien, ou rien de lisible. */
+  const noticeFor = (err: unknown): "scrivener" | "scrivenerOld" | "empty" =>
+    err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : err instanceof Error && err.message === "scrivener-old" ? "scrivenerOld" : "empty";
+  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null, versions: [string, string, string][] = []) => {
     if (!(await storage.create(project.meta.title))) return;
     // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
     if (await storage.readAll().catch(() => null)) {
@@ -1241,6 +1244,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       return;
     }
     for (const [name, data] of medias) await storage.writeMedia(name, data).catch((err) => console.error(err));
+    // Instantanés de Scrivener : des versions des scènes, écrites une fois (lues seulement à la demande).
+    for (const [card, name, text] of versions) await storage.writeVersion(card, name, text).catch((err) => console.error(err));
     const { state } = openProject(project);
     set({
       ...state,
@@ -2420,9 +2425,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
         file = picked;
       } catch (err) {
         console.error(err);
-        set({ importNotice: err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : "empty" });
+        set({ importNotice: noticeFor(err) });
         return;
       }
+      let failure: unknown = null;
       const outcome = await importFromFile(file, {
         fileName: file.name,
         locale: useSettings.getState().lang,
@@ -2430,6 +2436,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         newId,
       }).catch((err) => {
         console.error(err);
+        failure = err;
         return null;
       });
       // Un .zip qui n'est pas un projet Scrivener : un projet MondoWrite exporté, ouvert comme tel.
@@ -2444,7 +2451,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         return;
       }
       if (!outcome) {
-        set({ importNotice: "empty" });
+        set({ importNotice: noticeFor(failure) });
         return;
       }
       if ("scrivener" in outcome) {
@@ -3258,7 +3265,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ importNotice: "empty" });
         return;
       }
-      await finishImport(built.project, built.medias, built.report);
+      await finishImport(built.project, built.medias, built.report, built.versions);
     },
     // ---------- Mode Atelier (1.8.0) ----------
     // L'IA propose, l'auteur accepte : chaque acceptation est une action (une étape d'historique quand elle touche

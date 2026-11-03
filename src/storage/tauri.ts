@@ -216,6 +216,9 @@ async function readScrivenerAt(path: string): Promise<ScrivenerSource> {
   const data = await join(filesDir, "Data");
   for (const entry of await readDir(data).catch(() => [])) if (entry.isDirectory) await take(await join(data, entry.name), `Files/Data/${entry.name}/`);
   await take(await join(filesDir, "Docs"), "Files/Docs/");
+  // Instantanés : un dossier par document (<UUID>.snapshots), repris en versions des scènes.
+  const shots = await join(root, "Snapshots");
+  for (const entry of await readDir(shots).catch(() => [])) if (entry.isDirectory && entry.name.endsWith(".snapshots")) await take(await join(shots, entry.name), `Snapshots/${entry.name}/`);
   const source = readScrivenerSource(files);
   // Rien de lisible : on le dit (et la cause pour « Signaler un bug »), l'app propose alors la voie du .zip.
   if (!source) {

@@ -252,12 +252,15 @@ L'invitation à la rétro-bible (`retroInvite`) reste proposée.
 
 ### Lot 3 : finitions
 
-- [ ] Instantanés → versions des scènes
-- [ ] Objectif et historique d'écriture → `goals`, `progress`
-- [ ] Ancien format Scrivener 2 Mac et 1 Windows : **abandonné** (décidé le 2 novembre 2026). Un tel projet
-      reçoit un message : l'ouvrir d'abord dans Scrivener 3, qui le convertit. La lecture tolérante de
-      `Files/Docs/` déjà écrite reste, sans être promise
-- [ ] Pages liminaires reconnues (Dédicace, Remerciements, Épigraphe) → pages hors récit (`page`)
+- [x] Instantanés → versions des scènes (`Snapshots/<UUID>.snapshots/`, titres de `index.xml`, date du nom du
+      fichier) : chaque scène reçoit son morceau (mêmes séparateurs), sinon tout va à la première ; titre
+      « Instantané Scrivener : <titre> » ; écrites par `finishImport` (`storage.writeVersion`)
+- [x] Objectif et historique d'écriture → `goals`, `progress` (`historyProgress` : `dwc` de chaque jour, total
+      reconstitué en remontant depuis les mots importés, jamais sous zéro)
+- [x] Ancien format Scrivener 2 Mac et 1 Windows : **abandonné** (décidé le 2 novembre 2026). Classeur en version
+      1.x : `scrivener-old`, message de l'accueil (`importScrivenerOld`) : l'ouvrir d'abord dans Scrivener 3
+- [x] Pages liminaires reconnues à leur titre (Dédicace, Épigraphe, Remerciements, Copyright, À propos de
+      l'auteur, en français et en anglais, `pageKindOf`), dans le Manuscrit ou ailleurs → pages du livre (`page`)
 - [ ] Collections choisies → cadres ; plusieurs livres dans le Manuscrit → choix du livre
 - [ ] Image de carte (synopsis en image), son et vidéo de la Recherche
 - [ ] Essai de couverture sur le tutoriel : rien de ce qu'il montre ne disparaît sans être dans le rapport

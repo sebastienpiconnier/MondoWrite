@@ -64,7 +64,7 @@ export function ScrivenerChoice() {
 }
 
 type Counted = Exclude<keyof ScrivenerReport, "excluded" | "statuses" | "labels" | "unsupported" | "skippedFolders" | "emptySketches" | "trash">;
-const ORDER: Counted[] = ["chapters", "scenes", "characters", "places", "ideas", "documents", "images", "links", "keywords", "comments", "footnotes", "wires"];
+const ORDER: Counted[] = ["chapters", "scenes", "characters", "places", "ideas", "documents", "images", "links", "keywords", "comments", "footnotes", "wires", "pages", "versions", "days"];
 
 export function ScrivenerReportNotice() {
   const t = useT().scrivener;
