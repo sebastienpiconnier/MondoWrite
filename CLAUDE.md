@@ -293,7 +293,7 @@ src/
     ScriptPdfPanel.tsx  Fenêtre « Exporter le scénario en PDF » : contenu, impressions en plus, en-tête, filigrane, aperçu de la 1re page
     ExportMenu.tsx      Bouton « Exporter » : scénario (PDF, Fountain, FDX) ou manuscrit (PDF, Word, EPUB, Markdown), et bible (sa fenêtre)
     usePagination.ts    Pagination du scénario courant (hook)
-    Manuscript.tsx      Vue Manuscrit d'un roman : une scène à la fois dans l'ordre du Plan, mise en pages comme un livre, statistiques et objectifs, panneau « Dans cette scène »
+    Manuscript.tsx      Vue Manuscrit d'un roman : tout le livre dans un seul éditeur (BookEditor.tsx, scènes à la suite dans l'ordre du Plan), mise en pages comme un livre, statistiques et objectifs, panneau « Dans cette scène »
   screenplay/           Scénario Fountain, sans dépendance à React (testé par Vitest)
     model.ts            Screenplay, ScreenplayElement : liste plate d'éléments
     rules.ts            Règles de détection Fountain, partagées par le parseur et le sérialiseur
@@ -559,7 +559,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 2. (fait) Canevas : annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C), images (dépôt ou bouton, copiées dans `medias/`), largeur des cartes (bord droit, Alt + flèches)
 3. (fait) Mentions `@` dans les cartes : menu des cartes du projet, création à la volée, fil tiré automatiquement, suivi des renommages
 4. (fait) **Plan** : gabarits (libre, trois actes, Save the Cat, voyage du héros), cases où ranger les scènes, scènes créées depuis une case, chronologie par intrigue. Reste : la chronologie dans le séquencier d'un scénario
-5. (fait) **Manuscrit** : une scène à la fois dans l'ordre du Plan, mots par scène et au total, panneau « Dans cette scène » (personnages et lieux cités, notes de la carte)
+5. (fait) **Manuscrit** : tout le livre à la suite dans l'ordre du Plan, chaque scène dans son fichier, mots par scène et au total, panneau « Dans cette scène » (personnages et lieux cités, notes de la carte)
 5 bis. (fait) **Scénario** : éditeur au format standard en Fountain, complétion, pages et minutes, séquencier minimal, exports PDF, Fountain et FDX, import, numéros de scène, mode focus. Notes et vérifications restantes : `docs/plan-editeur-scenario.md`
 6. (fait) **Assistant personnage** : dans la Bible, 24 questions sur trois niveaux (Essentiel, Approfondi, Intime), plus un onglet « Par thème » (dix thèmes : passé, corps, voix, quotidien, émotions, colère, relations, espoirs, façon de penser, zones sombres), réponses ajoutées à la fiche, « Je ne sais pas encore » crée une carte Question reliée
 7. (fait) IA optionnelle : « Ranger les idées », questions sur mesure dans l'assistant personnage, alertes de cohérence. Services : Claude, OpenAI, OpenRouter, Ollama, LM Studio. 1.8.0 : Interroger le personnage, Du vrac aux cartes, mode Atelier ; 1.9.0 : relecture par l'IA (cohérence scène par scène, chronologie, voix, lecteur bêta), Ranger les fils, question pour une case vide, rétro-bible, dépouillement, recherche par le sens locale. 1.10.0 : images de référence (Atelier) et Apple Foundation Models (modèle d'Apple Intelligence sur l'appareil, à essayer sur Mac et iPhone). Reste : clé dans le trousseau du système
