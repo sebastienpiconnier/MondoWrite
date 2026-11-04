@@ -1,5 +1,7 @@
 # Plan : l'iPhone en Carnet (branche `iphone-carnet`)
 
+> **Statut : Terminé.**
+
 Demande du 27 octobre 2026 : sur iPhone, simplifier. Le téléphone sert à **écrire**, **consulter** et **capturer** ; ce qu'on capture arrive dans une boîte de réception, rangée plus tard sur le canevas depuis l'iPad ou l'ordinateur.
 
 ## Principes

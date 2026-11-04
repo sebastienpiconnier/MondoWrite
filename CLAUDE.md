@@ -555,6 +555,8 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 
 ## Feuille de route
 
+Historique des grandes étapes. **Ce qui reste à faire est tenu dans un seul fichier, `docs/feuille-de-route.md`** (une ligne par chantier, dans l'ordre, lien vers son plan) : toute demande validée par l'auteur y entre, et en sort une fois faite. Un plan `docs/plan-*.md` garde le détail d'un chantier, avec `> **Statut : …**` en tête. On n'y cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité (import, formats de fichier) ou pour du code repris (licence).
+
 1. (fait) Canevas, cartes TipTap, menu `/`, fils étiquetés, sauvegarde Markdown, Bible simple, gestes tactiles, CI multiplateforme, français/anglais, mode sombre, type de projet roman/scénario (vocabulaire, en-têtes de scène), éditeur de scénario complet (voir 5 bis), accueil et projets multiples
 2. (fait) Canevas : annuler/rétablir, recherche, placement sans chevauchement, clic droit et touche N, cadres de regroupement (touche C), images (dépôt ou bouton, copiées dans `medias/`), largeur des cartes (bord droit, Alt + flèches)
 3. (fait) Mentions `@` dans les cartes : menu des cartes du projet, création à la volée, fil tiré automatiquement, suivi des renommages
@@ -566,7 +568,7 @@ Le format est un contrat : toute évolution doit rester lisible par les versions
 8. (fait) Export : manuscrit en PDF (format Shunn), Word, EPUB et Markdown, livre broché KDP (intérieur et gabarit de couverture), bible en PDF, Word et Markdown, sans outil externe. Le nom d'auteur et les coordonnées viennent du profil (page des projets). Reste : EPUB de la bible
 9. Mobile : `tauri ios init` / `android init`, icônes, test sur appareil, mise en page téléphone de la Bible et du Manuscrit, menus et cartes lisibles quand le canevas est très dézoomé (menu hors du zoom de React Flow)
 9 bis. (fait) Lecture à voix haute avec les voix de l'appareil. Voix locale Kokoro écartée par l'auteur (novembre 2026 : une seule voix française, environ 300 Mo, phonémisation du français à brancher). Pas Piper : son moteur est sous GPL
-9 ter. Plans de novembre 2026, dans cet ordre : épisodes d'une série (`docs/plan-episodes.md`, lots 1 à 3 faits : sections du Fountain, arbre du séquencier, cadres saison › épisode sur le canevas, Bible, gabarit par épisode, Vérifier, exports, statistiques), synonymes (`docs/plan-synonymes.md`) et noms de personnages (`docs/plan-noms.md`), révisions de scénario (`docs/plan-revisions-scenario.md`), univers partagé entre projets (`docs/plan-univers-partage.md`)
+9 ter. (fait) Épisodes d'une série (`docs/plan-episodes.md`, lots 1 à 3). La suite (synonymes, noms, révisions de scénario, univers partagé, sauvegardes hors projet…) est dans `docs/feuille-de-route.md`
 10. Synchronisation entre appareils puis collaboration (Yjs). En attendant : dossier projet dans iCloud Drive / Dropbox / OneDrive sur ordinateur
 
 ## Changer de machine (PC Windows ↔ Mac)
@@ -577,12 +579,12 @@ Le projet se développe sur plusieurs machines. **Git est le seul lien** entre e
 
 1. `git pull`
 2. `npm install` si `package-lock.json` a changé depuis la dernière session sur cette machine
-3. Relire ce fichier et le plan en cours (`docs/plan-*.md`), puis résumer en trois lignes : phase en cours, ce qui est fait, prochaine étape
+3. Relire ce fichier, `docs/feuille-de-route.md` et le plan en cours (`docs/plan-*.md`), puis résumer en trois lignes : phase en cours, ce qui est fait, prochaine étape
 
 **Fin de session** :
 
 1. `npm run build` et `npm test` au vert, et `npm run e2e` si l'interface a changé (Chromium : `npx playwright-core install chromium` une fois par machine)
-2. Mettre à jour le plan en cours : cocher ce qui est fait (`- [x]`), noter en une ligne ce qui reste ou ce qui bloque
+2. Mettre à jour le plan en cours : cocher ce qui est fait (`- [x]`), noter en une ligne ce qui reste ou ce qui bloque ; retirer de `docs/feuille-de-route.md` ce qui est fini
 3. Commit, puis `git push`. Le dire explicitement à l'auteur : du travail non poussé reste bloqué sur la machine
 
 **Pièges multiplateformes** :

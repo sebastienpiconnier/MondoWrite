@@ -1,5 +1,7 @@
 # Plan : écrire une série, saison par saison, épisode par épisode
 
+> **Statut : Terminé (lots 1 à 3).**
+
 Demande de l'auteur du 26 octobre 2026 (un projet scénario n'a pas d'épisodes), puis du 3 novembre 2026 après un
 premier essai : **pas de carte Saison ni de carte Épisode** (trop de types de cartes), mais une structure en
 cadres sur le canevas, Saison › Épisode › scènes, et un plan de série dans le séquencier.

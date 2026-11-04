@@ -1,5 +1,7 @@
 # Plan : point de vue d'une scène (préalable A)
 
+> **Statut : Lots 1 et 2 terminés (1.13.0) ; le lot 3 est dans `docs/feuille-de-route.md`.**
+
 Premier des chantiers préalables à l'import Scrivener (`docs/plan-import-scrivener.md`, « Préalables »).
 Version visée : 1.13.0 (à confirmer).
 

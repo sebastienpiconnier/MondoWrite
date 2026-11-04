@@ -1,5 +1,7 @@
 # Plan : commentaires ancrés (préalable C)
 
+> **Statut : Terminé (1.13.0).**
+
 Troisième des chantiers préalables à l'import Scrivener (`docs/plan-import-scrivener.md`, « Préalables »),
 après le point de vue et les versions d'une scène. Version visée : avec eux dans la 1.13.0 (à décider à la
 publication).
@@ -97,5 +99,5 @@ Déjà résolu.
 
 ## Reste
 
-- [ ] À la main : Mac, iPad, Windows
-- [ ] Captures du guide (onglet Commentaires)
+- [x] À la main : Mac, iPad, Windows
+- [x] Captures du guide (onglet Commentaires)

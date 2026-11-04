@@ -1,5 +1,7 @@
 # Plan : Bible v2 (branche `bible-v2`)
 
+> **Statut : Terminé (lots 1 à 4, 6 et 7 en production ; lot 5 écarté).**
+
 Mise en œuvre de la « Proposition retenue (v2) » du document de travail *MondoWrite : repenser la Bible* (octobre 2026). Principe : **la Bible a la forme d'une bible professionnelle, ce que l'auteur remplit est déjà le document** ; l'export ne fait que choisir le lecteur et le rendu.
 
 Cocher chaque case à la fin d'une session (`- [x]`), comme le demande `CLAUDE.md`. Tout se fait dans une branche à part. Rien n'est fusionné dans `main` tant qu'un lot n'a pas passé ses critères (fin du document).
@@ -284,7 +286,7 @@ Registre de continuité complet (qui sait quoi, scène par scène) : c'était le
 
 ## Demandes d'évolution
 
-- **Vrais épisodes de série** (demandée le 26 octobre 2026, au lot 4) : aujourd'hui un projet scénario contient un seul scénario, et le gabarit « épisode » ne découpe qu'un épisode. Les épisodes s'écrivent donc dans la couverture (`pitch.episodes`, une ligne « Titre : ce qui s'y passe »), et la grille des fils croise les intrigues avec les parties du pilote, pas avec les épisodes de la saison. À faire évoluer : des épisodes comme objets du projet (plusieurs scénarios, ou un découpage du Fountain par épisode), pour une grille intrigues × épisodes et des synopsis par épisode tirés du séquencier. Reprendre alors `episodes` de la couverture sans rien perdre.
+- (Fait, `docs/plan-episodes.md`.) **Vrais épisodes de série** (demandée le 26 octobre 2026, au lot 4) : aujourd'hui un projet scénario contient un seul scénario, et le gabarit « épisode » ne découpe qu'un épisode. Les épisodes s'écrivent donc dans la couverture (`pitch.episodes`, une ligne « Titre : ce qui s'y passe »), et la grille des fils croise les intrigues avec les parties du pilote, pas avec les épisodes de la saison. À faire évoluer : des épisodes comme objets du projet (plusieurs scénarios, ou un découpage du Fountain par épisode), pour une grille intrigues × épisodes et des synopsis par épisode tirés du séquencier. Reprendre alors `episodes` de la couverture sans rien perdre.
 
 ## Critères pour fusionner dans `main`
 

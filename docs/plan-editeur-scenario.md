@@ -1,5 +1,7 @@
 # Plan : éditeur de scénario (Fountain)
 
+> **Statut : Terminé.**
+
 Étape 5 bis de la feuille de route (voir `CLAUDE.md`). Ce document est le plan de travail à suivre phase par phase. Chaque phase se termine par `npm run build` et `npm test` au vert, un commit, et un court compte rendu.
 
 Pour lancer une phase dans Claude Code : « Attaque la phase N de `docs/plan-editeur-scenario.md` ». Avant de coder, relire la phase, proposer la liste des fichiers touchés, puis avancer.

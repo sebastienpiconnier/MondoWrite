@@ -1,6 +1,8 @@
 # Plan : outils de relecture (lot 1)
 
-Idée reprise de WriterSolo (version hors ligne de WriterDuet), adaptée aux principes de MondoWrite : l'outil
+> **Statut : Terminé.**
+
+Adapté aux principes de MondoWrite : l'outil
 **signale**, l'auteur **décide**. Rien n'est corrigé tout seul, aucune IA, aucun appel réseau. Tout est calculé
 sur l'appareil, à partir du texte déjà là.
 

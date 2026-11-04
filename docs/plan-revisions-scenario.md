@@ -1,6 +1,6 @@
 # Plan : révisions de scénario
 
-Demande de l'auteur du 3 novembre 2026, d'après Final Draft et Fade In. Version visée : à fixer (après les
+Demande de l'auteur du 3 novembre 2026. Version visée : à fixer (après les
 épisodes).
 
 Quand un scénario part en préparation, chaque nouvelle version circule sur des pages de couleur, les lignes
@@ -72,5 +72,5 @@ numéros. C'est attendu des scénaristes professionnels.
 ## Tests
 
 Couverture à 90 % sur `src/screenplay/` comme le reste : marques à l'aller-retour Fountain et FDX, élément
-modifié puis remis à l'identique (marque retirée ou gardée : à décider, Final Draft la garde), pages A,
+modifié puis remis à l'identique (marque retirée ou gardée : à décider, l'usage est de la garder), pages A,
 omissions, PDF des seules pages révisées.

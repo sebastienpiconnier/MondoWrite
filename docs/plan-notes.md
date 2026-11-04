@@ -1,5 +1,7 @@
 # Plan : notes de bas de page (préalable D)
 
+> **Statut : Terminé (1.13.0).**
+
 Dernier des chantiers préalables à l'import Scrivener (`docs/plan-import-scrivener.md`, « Préalables »), après le
 point de vue, les versions d'une scène et les commentaires. Version : 1.13.0, avec eux.
 
@@ -62,5 +64,5 @@ la scène, elle peut les échapper (`\[^1\]`). Le texte de la note n'est pas per
 
 ## Reste
 
-- [ ] Les vérifications à la main ci-dessus
-- [ ] Capture du guide (fenêtre d'une note)
+- [x] Les vérifications à la main ci-dessus
+- [x] Capture du guide (fenêtre d'une note)

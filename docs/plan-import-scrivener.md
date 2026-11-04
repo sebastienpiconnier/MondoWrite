@@ -1,5 +1,7 @@
 # Plan : importer un projet Scrivener
 
+> **Statut : Lots 1 et 2 terminés, lot 3 en grande partie ; les finitions restantes sont dans `docs/feuille-de-route.md`.**
+
 Beaucoup de romanciers arrivent de Scrivener avec un projet déjà avancé : manuscrit découpé, fiches de
 personnages, notes, recherche. Aujourd'hui ils doivent compiler un .docx, l'importer, et perdre tout le reste.
 Le but : **ouvrir un `.scriv` et retrouver son roman dans MondoWrite**, manuscrit, Bible et canevas compris,
@@ -207,7 +209,7 @@ L'invitation à la rétro-bible (`retroInvite`) reste proposée.
       texte gardée (synopsis seul), prologue et épilogue en pages du livre
 - [x] Entrée `.zip` sur toutes les plateformes (« Importer un manuscrit ou un scénario… » ; un .zip sans .scrivx
       est ouvert comme un projet MondoWrite exporté) ; `importFromFile` rend projet et médias
-- [ ] Essai sur *Sacré Bonhomme* : 15 chapitres dans l'ordre, nombre de mots à ±1 % de Scrivener, accents et
+- [x] Essai sur *Sacré Bonhomme* : 15 chapitres dans l'ordre, nombre de mots à ±1 % de Scrivener, accents et
       tirets de dialogue intacts
 
 ### Lot 2 : Bible et canevas (fait, 2 novembre 2026)

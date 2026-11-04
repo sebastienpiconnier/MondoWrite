@@ -1,5 +1,7 @@
 # Plan : versions d'une scène (préalable B)
 
+> **Statut : Terminé (1.13.0).**
+
 Deuxième des chantiers préalables à l'import Scrivener (`docs/plan-import-scrivener.md`, « Préalables »),
 après le point de vue (`docs/plan-point-de-vue.md`). Version visée : avec le point de vue dans la 1.13.0, ou
 1.14.0 (à décider à la publication).
@@ -139,6 +141,6 @@ synopsis, sans l'en-tête ; 4, oui, lots 1 et 2 ensemble.
 
 ## Reste
 
-- [ ] À la main : app Mac (dossier iCloud et dossier ordinaire), iPad (versions créées sur un appareil, vues
+- [x] À la main : app Mac (dossier iCloud et dossier ordinaire), iPad (versions créées sur un appareil, vues
       sur l'autre), raccourci Cmd + Alt + S sur un clavier Mac
-- [ ] Captures du guide (fenêtre des versions, pastille du point de vue)
+- [x] Captures du guide (fenêtre des versions, pastille du point de vue)
