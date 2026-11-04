@@ -49,7 +49,8 @@ import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
-import { resolveEpisode } from "../screenplay/series";
+import { resolveEpisode, seriesOf } from "../screenplay/series";
+import { useEpisodeLabel } from "./EpisodePicker";
 import { EpisodePicker } from "./EpisodePicker";
 import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";
@@ -438,6 +439,20 @@ export function ScreenplayView() {
 
   const elements = useMemo(() => screenplay?.elements ?? [], [screenplay]);
   const scenes = useMemo(() => listScenes(elements), [elements]);
+  // Tout le scénario d'une série : la liste des scènes reprend le découpage en saisons et en épisodes (un épisode
+  // encore vide y paraît aussi, on y va d'un clic). Dans un épisode ouvert, ses seules scènes.
+  const episodeLabel = useEpisodeLabel();
+  const sceneRows = useMemo(() => {
+    type Row = { kind: "season"; id: string; at: number; title: string } | { kind: "episode"; id: string; at: number; title: string } | { kind: "scene"; at: number; k: number };
+    const rows: Row[] = scenes.map((sc, k) => ({ kind: "scene", at: sc.index, k }));
+    const seasons = seriesOf(elements);
+    const named = seasons.filter((x) => x.id !== null).length;
+    seasons.forEach((season, i) => {
+      if (season.id !== null && named > 0) rows.push({ kind: "season", id: season.id, at: season.at, title: season.title || fmt(t.season.seasonDefault, { n: i + 1 - (seasons[0].id === null ? 1 : 0) }) });
+      for (const ep of season.episodes) rows.push({ kind: "episode", id: ep.id, at: ep.at, title: episodeLabel(ep) });
+    });
+    return rows.sort((a, b) => a.at - b.at);
+  }, [scenes, elements, episodeLabel, t]);
   // Scène en cours pour le ruban : la dernière dont l'en-tête est avant le curseur.
   const ribbonScene = scenes.filter((s) => s.index <= current.index).pop();
   const ribbonCurrent = ribbonScene ? (ribbonScene.cardId ?? `@${ribbonScene.index}`) : null;
@@ -756,6 +771,19 @@ export function ScreenplayView() {
       if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
       return;
     }
+    // Une section déjà suivie d'une scène (saison, épisode de la liste) : le curseur va dans le premier élément
+    // qu'on écrit après elle, la section reste en haut de l'écran.
+    if (index < editor.state.doc.childCount && editor.state.doc.child(index).type.name === PRESERVED) {
+      let next = index + 1;
+      while (next < editor.state.doc.childCount && editor.state.doc.child(next).type.name === PRESERVED) next++;
+      if (next < editor.state.doc.childCount) {
+        editor.chain().setTextSelection(posOf(editor.state.doc, next) + 1).focus(undefined, { scrollIntoView: false }).run();
+        track(editor);
+        const dom = editor.view.nodeDOM(pos);
+        if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
+        return;
+      }
+    }
     editor.chain().setTextSelection(pos + 1).focus(undefined, { scrollIntoView: false }).run();
     // Le volet de droite suit tout de suite la scène choisie, sans attendre l'éditeur.
     track(editor);
@@ -952,7 +980,13 @@ export function ScreenplayView() {
           </div>
         )}
         <ol className="sp-scene-list">
-          {scenes.map((s, k) => keptScenes && !keptScenes.has(s.index) ? null : (
+          {sceneRows.map((row) => row.kind !== "scene" ? (
+            <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
+              <button type="button" onClick={() => goTo(row.at)}>
+                {row.title}
+              </button>
+            </li>
+          ) : ((s: (typeof scenes)[number], k: number) => keptScenes && !keptScenes.has(s.index) ? null : (
             <li
               key={s.index}
               className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}`}
@@ -1034,7 +1068,7 @@ export function ScreenplayView() {
               />
               </div>
             </li>
-          ))}
+          ))(scenes[row.k], row.k))}
         </ol>
 
         <div className="sr-only" aria-live="polite">

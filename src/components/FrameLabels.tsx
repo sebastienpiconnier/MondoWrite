@@ -7,7 +7,7 @@
 // le cadre et ses cartes répondent dessous comme d'habitude.
 
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { useStore, useStoreApi, ViewportPortal } from "@xyflow/react";
+import { useStore, ViewportPortal } from "@xyflow/react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { frameBox } from "../projectState";
@@ -48,25 +48,48 @@ export function beatKeys(s: CosmosState): readonly string[] {
  *  l'en-tête des cadres (FrameNode), sinon le titre s'afficherait deux fois près du seuil. */
 export const zoomStep = (s: { transform: [number, number, number] }) => Math.round(s.transform[2] * 20) / 20;
 
-/** Place du titre (et du rang) dans l'en-tête d'un cadre, en unités du canevas, depuis le coin du cadre. */
+/** Place du titre et du rang dans l'en-tête d'un cadre, en unités du canevas, depuis le coin du cadre. */
 interface HeadRect {
   dx: number;
   dy: number;
   w: number;
   h: number;
-  /** Largeur du champ du titre seul (le rang vient après lui). */
-  iw: number;
+  /** Rang de la case (« Case 3 sur 15 ») : il peut passer à la ligne sous le titre dans un cadre étroit. */
+  kicker?: { dx: number; dy: number; w: number; h: number };
 }
 
+const near = (x: number, y: number) => Math.abs(x - y) < 0.5;
+const sameBox = (a?: { dx: number; dy: number; w: number; h: number }, b?: { dx: number; dy: number; w: number; h: number }) =>
+  a === b || (!!a && !!b && near(a.dx, b.dx) && near(a.dy, b.dy) && near(a.w, b.w) && near(a.h, b.h));
 const sameRects = (a: Record<string, HeadRect>, b: Record<string, HeadRect>) => {
   const ka = Object.keys(a);
   if (ka.length !== Object.keys(b).length) return false;
-  return ka.every((k) => {
-    const x = a[k];
-    const y = b[k];
-    return !!y && Math.abs(x.dx - y.dx) < 0.5 && Math.abs(x.dy - y.dy) < 0.5 && Math.abs(x.w - y.w) < 0.5 && Math.abs(x.h - y.h) < 0.5 && Math.abs(x.iw - y.iw) < 0.5;
-  });
+  return ka.every((k) => !!b[k] && sameBox(a[k], b[k]) && sameBox(a[k].kicker, b[k].kicker));
 };
+
+/**
+ * Place d'un élément dans son nœud, en unités du canevas : offsetLeft et offsetTop, cumulés jusqu'au nœud. Ce
+ * sont des mesures de mise en page, que le zoom de la vue ne touche pas. Le premier essai divisait la place à
+ * l'écran par le zoom lu dans React Flow : pendant le « tout voir » animé, les deux n'étaient pas du même instant,
+ * et la copie était coupée (« Saiso… ») et décalée sous le titre de l'en-tête.
+ */
+export function boxIn(el: HTMLElement, node: HTMLElement): { dx: number; dy: number; w: number; h: number } {
+  let dx = 0;
+  let dy = 0;
+  let cur: HTMLElement | null = el;
+  while (cur && cur !== node) {
+    dx += cur.offsetLeft;
+    dy += cur.offsetTop;
+    const parent = cur.offsetParent as HTMLElement | null;
+    // Un parent positionné entre l'élément et le nœud compte aussi sa bordure.
+    if (parent && parent !== node) {
+      dx += parent.clientLeft;
+      dy += parent.clientTop;
+    }
+    cur = parent;
+  }
+  return { dx, dy, w: el.offsetWidth, h: el.offsetHeight };
+}
 
 /** Cadre dont on modifie le titre en ce moment (la copie s'efface pour laisser voir le curseur). */
 function useEditingFrame(): string | null {
@@ -112,7 +135,6 @@ export function stackLabels(labels: { id: string; x: number; y: number; width: n
 function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
   const t = useT().toile;
   const zoom = useStore(zoomStep);
-  const flow = useStoreApi();
   const frames = useCosmos((s) => s.frames);
   const keys = useCosmos(beatKeys);
   const editing = useEditingFrame();
@@ -135,26 +157,31 @@ function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
   const nearIds = useMemo(() => labels.filter((l) => !l.far).map((l) => l.id).join(" "), [labels]);
   useEffect(() => {
     if (!nearIds) return;
+    const ids = nearIds.split(" ");
     const measure = () => {
-      const scale = flow.getState().transform[2] || 1;
       const next: Record<string, HeadRect> = {};
-      for (const id of nearIds.split(" ")) {
+      for (const id of ids) {
         const node = document.querySelector<HTMLElement>(`.react-flow__node[data-id="${CSS.escape(id)}"]`);
         const input = node?.querySelector<HTMLElement>(".frame-title");
-        if (!node || !input) continue;
-        const kicker = node.querySelector<HTMLElement>(".frame-kicker");
-        const n = node.getBoundingClientRect();
-        const a = input.getBoundingClientRect();
-        const right = kicker ? Math.max(a.right, kicker.getBoundingClientRect().right) : a.right;
-        next[id] = { dx: (a.left - n.left) / scale, dy: (a.top - n.top) / scale, w: (right - a.left) / scale, h: a.height / scale, iw: a.width / scale };
+        if (!node || !input || input.offsetWidth === 0) continue;
+        const kicker = node.querySelector<HTMLElement>(".frame-handle > .frame-kicker");
+        next[id] = { ...boxIn(input, node), kicker: kicker ? boxIn(kicker, node) : undefined };
       }
       setHeads((prev) => (sameRects(prev, next) ? prev : next));
     };
     const frame = requestAnimationFrame(measure);
-    // Polices chargées après coup : la largeur des titres change.
+    // Le titre change de largeur (frappe ailleurs, polices chargées après coup, cadre redimensionné) : on remesure.
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => requestAnimationFrame(measure));
+    for (const id of ids) {
+      const node = document.querySelector<HTMLElement>(`.react-flow__node[data-id="${CSS.escape(id)}"]`);
+      node?.querySelectorAll<HTMLElement>(".frame-title, .frame-handle").forEach((el) => observer?.observe(el));
+    }
     void document.fonts?.ready.then(measure);
-    return () => cancelAnimationFrame(frame);
-  }, [nearIds, frames, t, flow]);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [nearIds, frames, t]);
 
   // De loin : hauteur de chaque titre dessiné, pour poser les titres des sous-cadres dessous.
   const refs = useRef(new Map<string, HTMLDivElement>());
@@ -194,16 +221,23 @@ function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
           }
           const head = heads[l.id];
           if (!head || editing === l.id) return null;
-          return (
-            <div
-              key={l.id}
-              className={`frame-label is-near is-level-${l.level}${l.beat ? " is-beat" : ""}`}
-              style={{ transform: `translate(${l.x + head.dx}px, ${l.y + head.dy}px)`, width: head.w, height: head.h }}
-            >
-              <span className="frame-near-title" style={{ width: head.iw }}>{l.title}</span>
-              {l.kicker && <span className="frame-kicker">{l.kicker}</span>}
-            </div>
-          );
+          const cls = `frame-label is-near is-level-${l.level}${l.beat ? " is-beat" : ""}`;
+          return [
+            // Largeur du texte lui-même, bornée au cadre : offsetWidth est arrondi au pixel, et une copie à la largeur
+            // mesurée coupait son dernier caractère (« Act… » sur « Acte 1 »).
+            <div key={l.id} className={cls} style={{ transform: `translate(${l.x + head.dx}px, ${l.y + head.dy}px)`, minWidth: head.w, maxWidth: Math.max(head.w, l.width - head.dx - 8), height: head.h }}>
+              <span className="frame-near-title">{l.title}</span>
+            </div>,
+            l.kicker && head.kicker && (
+              <div
+                key={`${l.id}:rank`}
+                className={`${cls} is-rank`}
+                style={{ transform: `translate(${l.x + head.kicker.dx}px, ${l.y + head.kicker.dy}px)`, minWidth: head.kicker.w, height: head.kicker.h }}
+              >
+                <span className="frame-kicker">{l.kicker}</span>
+              </div>
+            ),
+          ];
         })}
       </div>
     </ViewportPortal>

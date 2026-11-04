@@ -13,6 +13,7 @@ import {
   MiniMap,
   ReactFlow,
   SelectionMode,
+  useNodesInitialized,
   useReactFlow,
   type Edge,
 } from "@xyflow/react";
@@ -111,6 +112,14 @@ export function Toile() {
     useCosmos();
   const frames = useCosmos((s) => s.frames);
   const addFrame = useCosmos((s) => s.addFrame);
+  // Cartes enfin mesurées (le canevas s'ouvre, ou une carte vient de naître) : une scène posée dans son cadre
+  // d'après une hauteur estimée (écrite dans la vue Scénario, canevas fermé) et qui en dépasse fait ranger de nouveau.
+  const measured = useNodesInitialized();
+  useEffect(() => {
+    if (!measured) return;
+    const frame = requestAnimationFrame(() => useCosmos.getState().refitStory());
+    return () => cancelAnimationFrame(frame);
+  }, [measured]);
   // Les cadres d'abord : ils se dessinent derrière les cartes.
   // Une carte tenue par un cadre verrouillé ne se déplace pas : React Flow ne la laisse pas glisser.
   // Filtre (cartes masquées, avec leurs fils) et mise en avant (une carte nette, le reste estompé) :

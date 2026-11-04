@@ -108,6 +108,12 @@ Fait (3 novembre), puis fini : le PDF de toute la série ou d'une saison donne �
 ses pages depuis 1 (`seriesBooks`, option `books` de `buildPdf`) ; Fountain et FDX restent un seul texte ;
 « Mes gabarits » se posent aussi épisode par épisode (`TemplatePicker` avec `episode`, `setCustomTemplate(…, episode)`).
 
+Retours de l'auteur (4 novembre, 1.15.1) : une scène écrite dans un épisode rejoint son cadre sur le canevas (aussi
+dans la saison 2, même en-tête qu'une autre), le cadre grandit si la carte mesurée est plus haute que prévu, pas de
+fil « puis » entre deux épisodes ; titres des cadres de près jamais coupés ni doublés ; curseur vertical sous une
+case ; sections nommées Saison, Épisode n, Case (épisode sans titre : « Sans titre ») ; liste des scènes de tout le
+scénario groupée par saison et épisode ; pas de ruban des cases sur toute la série.
+
 ## Fichiers touchés (lot 1)
 
 `screenplay/series.ts` (nouveau), `screenplay/template.ts` (cases au niveau 3 dans une série),

@@ -853,6 +853,76 @@ const scenarios = [
     },
   },
   {
+    name: "série en deux saisons : la scène de la saison 2 dans son cadre, liste groupée par saison et épisode, titres des cadres entiers",
+    async run(h) {
+      const { page } = h;
+      await h.create("Odyssée", "scenario");
+      await h.view(2);
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      const e1 = page.getByRole("textbox", { name: "Titre de l’épisode 1" });
+      await until(() => e1.count(), "pas d'épisode 1");
+      await e1.fill("Le départ");
+      await e1.press("Enter");
+      await page.locator(".sq-episode-template select").first().selectOption("episode");
+      await page.getByRole("button", { name: "+ Nouvelle saison" }).click();
+      await page.getByRole("button", { name: "+ Nouvel épisode" }).click();
+      await h.wait(300);
+      // Écrire dans l'épisode 1 : le curseur attend sous « Pré-générique ».
+      await page.getByRole("button", { name: "Actions de « Ép. 1 · Le départ »" }).click();
+      await page.getByRole("menuitem", { name: "Écrire l’épisode" }).click();
+      await until(() => page.locator(".sp-editor .ProseMirror-gapcursor").count(), "pas de curseur sous la première case");
+      assert((await page.locator('.sp-preserved[data-series="beat"]').count()) === 6, "les cases ne sont pas marquées comme cases");
+      await page.keyboard.type("int. navette spatiale - nuit");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Le vaisseau dérive.");
+      await h.wait(400);
+      // L'épisode de la saison 2, même en-tête.
+      await page.getByRole("button", { name: "Épisode suivant" }).click();
+      await h.wait(400);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("int. navette spatiale - nuit");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Rien ne bouge.");
+      await h.wait(400);
+      // Tout le scénario : la liste des scènes reprend saisons et épisodes, le ruban des cases n'y est pas.
+      await page.locator(".episode-picker-menu").click();
+      await page.getByRole("menuitem", { name: "Tout le scénario" }).click();
+      await until(async () => (await page.locator(".sp-scene-group.is-season").count()) === 2, "la liste des scènes n'a pas ses deux saisons");
+      assert((await page.locator(".sp-scene-group.is-episode").count()) === 2, "la liste des scènes n'a pas ses deux épisodes");
+      assert((await page.locator(".sp-center nav.ribbon").count()) === 0, "le ruban des cases mêle les épisodes de toute la série");
+      assert((await page.locator('.sp-preserved[data-series="episode"]').count()) === 2, "les sections d'épisode ne sont pas marquées");
+      // Canevas : chaque scène dans le cadre de son épisode.
+      await h.view(1);
+      await h.wait(800);
+      const placed = await until(
+        () =>
+          page.evaluate(() => {
+            const frames = [...document.querySelectorAll(".react-flow__node-frame")].map((n) => ({ title: n.querySelector(".frame-title")?.value ?? "", r: n.getBoundingClientRect() }));
+            const scenes = [...document.querySelectorAll(".react-flow__node-card")].filter((n) => n.querySelector(".card.type-scene")).map((n) => ({ text: n.textContent ?? "", r: n.getBoundingClientRect() }));
+            const holder = (sc) => frames.filter((f) => sc.r.left >= f.r.left && sc.r.right <= f.r.right + 1 && sc.r.top >= f.r.top && sc.r.bottom <= f.r.bottom + 1).map((f) => f.title);
+            const a = scenes.find((x) => x.text.includes("Le vaisseau dérive."));
+            const b = scenes.find((x) => x.text.includes("Rien ne bouge."));
+            if (!a || !b) return null;
+            const ha = holder(a);
+            const hb = holder(b);
+            return ha.includes("Pré-générique") && ha.includes("Saison 1") && hb.includes("Ép. 1") && hb.includes("Saison 2") ? { ha, hb } : null;
+          }),
+        "une scène n'est pas tout entière dans le cadre de son épisode",
+      );
+      assert(placed, "scènes mal rangées");
+      // Titres des cadres, de près : la copie au premier plan n'est jamais coupée.
+      for (let i = 0; i < 4; i++) {
+        await page.locator(".react-flow__controls-zoomin").click();
+        await h.wait(200);
+      }
+      await h.wait(400);
+      const cut = await page.evaluate(() =>
+        [...document.querySelectorAll(".frame-label.is-near .frame-near-title")].filter((el) => el.scrollWidth > el.clientWidth + 0.5).map((el) => el.textContent),
+      );
+      assert(cut.length === 0, `titres de cadre coupés : ${cut.join(", ")}`);
+    },
+  },
+  {
     name: "Bible : une fiche Lieu créée dans la Bible a sa carte sur le canevas",
     async run(h) {
       const { page } = h;

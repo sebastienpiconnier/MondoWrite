@@ -2,7 +2,8 @@
 // Le texte d'un élément peut contenir des retours à la ligne (« \n », gardés tels quels).
 
 import { Node, mergeAttributes } from "@tiptap/react";
-import { sectionLabel } from "../template";
+import { beatOf, sectionLabel } from "../template";
+import { seriesMark } from "../series";
 import { isCommentId } from "../../comments";
 import { EDITABLE_TYPES, type ElementType } from "../model";
 
@@ -119,6 +120,12 @@ export const Preserved = Node.create({
       contenteditable: "false",
     };
     if (depth) attrs["data-depth"] = String(depth);
+    // Section d'une série ou case d'un gabarit : son libellé dit ce qu'elle est (Saison, Épisode 2, Case).
+    if (kind === "section") {
+      const series = seriesMark({ type: "section", text: content });
+      const role = series?.kind ?? (beatOf(content) ? "beat" : null);
+      if (role) attrs["data-series"] = role;
+    }
     if (ia) attrs["data-ia"] = "";
     return ["div", attrs, kind === "section" ? sectionLabel(content) : content.trim()];
   },

@@ -1105,7 +1105,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .more-menu button.is-danger { color: var(--danger); }
 .more-menu button.has-rule { margin-top: 5px; position: relative; }
 .more-menu button.has-rule::before { content: ""; position: absolute; left: 8px; right: 8px; top: -4px; border-top: 1px solid var(--line); }
-.more-menu kbd { font: 0.75rem var(--font-ui); color: var(--ink-2); }
+.more-menu kbd { flex: none; white-space: nowrap; font: 0.75rem var(--font-ui); color: var(--ink-2); }
 @media (pointer: coarse) { .more-menu button { min-height: 44px; } .more-button { min-width: 44px; min-height: 44px; } }
 
 /* Manuscrit : filtre « Ses scènes en point de vue » (1.13.0), les scènes des autres narrateurs repliées. */

@@ -34,6 +34,14 @@
 .sp-scene-list li[draggable] { cursor: grab; border-radius: 8px; }
 .sp-scene-list li.is-dragged { opacity: 0.5; }
 .sp-scene-list li.is-over { outline: 2px dashed var(--accent); outline-offset: 1px; }
+/* Série, tout le scénario : intertitres de saison et d'épisode dans la liste des scènes. */
+.sp-scene-list .sp-scene-group { align-self: stretch; }
+.sp-scene-list .sp-scene-group button { width: 100%; font-weight: 600; color: var(--ink); }
+.sp-scene-list .sp-scene-group.is-season { margin-top: 14px; }
+.sp-scene-list .sp-scene-group.is-season:first-child { margin-top: 0; }
+.sp-scene-list .sp-scene-group.is-season button { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.9375rem; }
+.sp-scene-list .sp-scene-group.is-episode { margin-top: 6px; }
+.sp-scene-list .sp-scene-group.is-episode button { color: var(--accent-ink); font-size: 0.8125rem; }
 .sp-scene-moves { display: flex; gap: 4px; padding: 2px 0 2px 10px; }
 .sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 0.8125rem; }
 .sp-scene-moves .icon-button:disabled { opacity: 0.3; cursor: default; }
@@ -119,7 +127,7 @@
 /* Numéros de scène (option du projet) : dans la marge gauche, comme sur le PDF. Un numéro écrit
    dans le fichier (#12A#) passe devant le compteur. */
 .sp-page[data-underline] .sp-sceneHeading { text-decoration: underline; text-underline-offset: 0.15em; }
-.sp-page[data-numbers] .sp-editor { counter-reset: scene; }
+.sp-page[data-numbers] .sp-editor { counter-reset: scene episode; }
 .sp-page[data-numbers] .sp-sceneHeading { counter-increment: scene; position: relative; }
 .sp-page[data-numbers] .sp-sceneHeading::after { content: counter(scene); position: absolute; top: 0; right: 100%; margin-right: 2ch; white-space: nowrap; }
 .sp-page[data-numbers] .sp-sceneHeading[data-number]::after { content: attr(data-number); }
@@ -138,6 +146,19 @@
 .sp-preserved[data-preserved="note"]::before { content: var(--sp-label-note); }
 .sp-preserved[data-preserved="boneyard"]::before { content: var(--sp-label-boneyard); }
 .sp-preserved[data-preserved="section"]::before { content: var(--sp-label-section); }
+/* Série et gabarit : le libellé dit ce qu'est la section. Les épisodes se numérotent dans leur saison (vue
+   « Tout le scénario » ; dans un épisode ouvert, sa section n'est pas dans le texte). */
+.sp-editor { counter-reset: episode; }
+.sp-preserved[data-series="season"] { counter-reset: episode; }
+.sp-preserved[data-series="episode"] { counter-increment: episode; }
+.sp-preserved[data-series="season"]::before { content: var(--sp-label-season); }
+.sp-preserved[data-series="episode"]::before { content: var(--sp-label-episode) " " counter(episode); }
+.sp-preserved[data-series="beat"]::before { content: var(--sp-label-beat); }
+.sp-preserved[data-series]:empty::after { content: var(--sp-label-episodeUntitled); font-weight: 400; font-style: italic; color: var(--muted); }
+/* Une saison et un épisode ouvrent une partie : plus d'air au-dessus, et l'accent pour les distinguer des cases. */
+.sp-preserved[data-series="season"], .sp-preserved[data-series="episode"] { margin-top: 2.4em; border-left-color: var(--accent); }
+.sp-preserved[data-series="season"] { font-size: 17px; }
+.sp-preserved[data-series]:first-child { margin-top: 0; }
 .sp-preserved[data-preserved="synopsis"]::before { content: var(--sp-label-synopsis); }
 .sp-preserved[data-preserved="pageBreak"]::before { content: var(--sp-label-pageBreak); }
 .sp-preserved[data-preserved="section"] { font-weight: 600; color: var(--page-ink); }
@@ -199,5 +220,8 @@
 }
 .episode-picker-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (pointer: coarse) { .episode-picker .icon-button, .episode-picker .episode-picker-menu { min-height: 44px; } .episode-picker .icon-button { min-width: 44px; } }
-/* Curseur entre deux sections (gabarit, épisode) : à l'encre du thème, sinon noir et invisible en sombre. */
-.sp-editor .ProseMirror-gapcursor:after { border-top: 2px solid var(--ink); width: 2.4em; }
+/* Curseur entre deux sections (gabarit, épisode) : une ligne vide s'ouvre là où la frappe écrira l'en-tête, avec
+   un curseur vertical comme dans le texte (ProseMirror dessine un trait horizontal, pris pour un séparateur).
+   À l'encre du thème, sinon noir et invisible en sombre. */
+.sp-editor.ProseMirror-focused .ProseMirror-gapcursor { position: relative; height: 1em; margin: 1.3em 0 0; }
+.sp-editor .ProseMirror-gapcursor:after { top: 0; left: 0; width: 0; height: 1em; border-top: 0; border-left: 2px solid var(--ink); }

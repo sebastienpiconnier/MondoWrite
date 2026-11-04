@@ -1466,6 +1466,11 @@ export const fr = {
       synopsis: "Synopsis",
       note: "Note",
       boneyard: "Texte mis de côté",
+      // Sections d'une série et cases d'un gabarit : ce qu'elles sont, au lieu de « Section ».
+      season: "Saison",
+      episode: "Épisode",
+      beat: "Case",
+      episodeUntitled: "Sans titre",
     },
     focus: "Mode focus",
     focusExit: "Quitter le focus",

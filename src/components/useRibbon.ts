@@ -7,6 +7,7 @@ import { buildRibbon, novelGroups, screenplayGroups, type Ribbon } from "../ribb
 import { paginate, pagesBetween } from "../screenplay/paginate";
 import { LAYOUTS } from "../screenplay/layout";
 import { countWords } from "../manuscript";
+import { isSeries, resolveEpisode } from "../screenplay/series";
 
 /**
  * Le ruban, ou null sans gabarit (plan libre) ou sans scène. `evenFree` : aussi en plan libre, d'une seule
@@ -15,6 +16,9 @@ import { countWords } from "../manuscript";
 export function useRibbon(evenFree = false): Ribbon | null {
   const kind = useCosmos((s) => s.kind);
   const screenplay = useCosmos(currentScript);
+  // Toute une série : chaque épisode a ses cases, un seul ruban les mêlerait (« Épilogue à 43 % du récit »). Le
+  // ruban des cases vient avec l'épisode ouvert ; ici, seulement le ruban sans cases (points de vue).
+  const wholeSeries = useCosmos((s) => s.kind === "scenario" && isSeries(s.screenplay) && resolveEpisode(s.screenplay, s.currentEpisode) === null);
   const paper = useCosmos((s) => s.paper);
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
@@ -27,12 +31,12 @@ export function useRibbon(evenFree = false): Ribbon | null {
       const pagination = paginate(screenplay.elements, LAYOUTS[paper]);
       const { template, groups } = screenplayGroups(screenplay.elements, (start, end) => pagesBetween(pagination, start, end));
       if (!groups.some((g) => g.scenes.length > 0)) return null;
-      if (template === "libre") return evenFree ? buildRibbon("libre", [{ key: null, scenes: groups.flatMap((g) => g.scenes) }]) : null;
+      if (template === "libre" || wholeSeries) return evenFree ? buildRibbon("libre", [{ key: null, scenes: groups.flatMap((g) => g.scenes) }]) : null;
       return buildRibbon(template, groups);
     }
     if (plan.template === "libre" && !evenFree) return null;
     const ids = sceneKey ? sceneKey.split(" ") : [];
     if (ids.length === 0) return null;
     return buildRibbon(plan.template, novelGroups(plan, ids, (id) => countWords(manuscript[id])));
-  }, [kind, screenplay, paper, plan, manuscript, sceneKey, evenFree]);
+  }, [kind, screenplay, paper, plan, manuscript, sceneKey, evenFree, wholeSeries]);
 }

@@ -141,6 +141,9 @@ export interface CosmosState {
   movePlanChapter: (id: string, before: string | null) => void;
   /** Range toutes les cartes du canevas en cadres (type, gabarit, chapitres) et relie les scènes. */
   organizeCanvas: () => void;
+  /** Canevas rangé par saison, épisode ou case : une carte mesurée plus haute que prévu (posée canevas fermé, sur une
+   *  hauteur estimée) qui dépasse de son cadre fait ranger de nouveau. Rien ne change sinon. */
+  refitStory: () => void;
   /** Assistant personnage : ajoute la question (en gras) et la réponse au texte de la fiche. */
   /** Réponse à une question de l'assistant : le champ lié de la fiche s'il est vide, sinon les réponses rangées. */
   answerQuestion: (id: string, key: string, question: string, answer: string) => void;
@@ -949,8 +952,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     before();
     let nextEdges = edges;
     const linked = (a: string, b: string) => nextEdges.some((e) => (e.source === a && e.target === b) || (e.source === b && e.target === a));
+    // Série : le fil « puis » suit les scènes d'un même épisode, il ne court pas d'un épisode (ou d'une saison) à l'autre.
+    const episodeOf = series && sp ? (id: string) => episodeOfCard(sp, id) : null;
     for (const [source, target] of result.sequence) {
       if (linked(source, target)) continue;
+      if (episodeOf && episodeOf(source) !== episodeOf(target)) continue;
       nextEdges = addEdge({ id: newId(), source, target, sourceHandle: null, targetHandle: null, label: t.chapters.next, type: "floating" }, nextEdges);
     }
     const positions = result.positions;
@@ -2311,6 +2317,23 @@ export const useCosmos = create<CosmosState>((set, get) => {
       followStory();
       touch();
     },
+    refitStory: () => {
+      const { nodes, frames } = get();
+      const story = frames.filter((f) => !f.data.locked && (f.data.season || f.data.episode || f.data.beat)).map(frameBox);
+      if (story.length === 0) return;
+      const sizes = boxes(nodes);
+      // Les scènes seulement : elles sont rangées par le récit ; une autre carte posée à cheval sur un cadre est à l'auteur.
+      const spills = sizes.some((b, i) => {
+        if (nodes[i].data.type !== "scene") return false;
+        const cx = b.x + b.width / 2;
+        // Le plus petit cadre du récit qui contient le haut de la carte (son centre peut déjà en être sorti) :
+        // celui où elle est rangée.
+        const cy = b.y + Math.min(24, b.height / 2);
+        const home = story.filter((f) => insideBox(cx, cy, f)).sort((a, c) => a.width * a.height - c.width * c.height)[0];
+        return !!home && (b.y + b.height > home.y + home.height + 1 || b.x + b.width > home.x + home.width + 1);
+      });
+      if (spills) arrangeCanvas(() => {});
+    },
     organizeCanvas: () => {
       // « Organiser » range tout le projet : le filtre et la mise en avant s'effacent d'abord.
       set({ filter: NO_FILTER, spotlightId: null });
@@ -2443,7 +2466,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
               )
               .join(" ")
           : "";
-      if (undoable && before && order(before) !== order(screenplay)) followStory();
+      if (before && order(before) !== order(screenplay)) {
+        if (undoable) followStory();
+        // Frappe dans l'éditeur : une scène écrite à l'instant (sa carte vient de naître, adopt.ts) ou une section
+        // ajoutée rejoint son cadre, si le canevas est rangé par saison, épisode ou case. Sinon rien ne bouge :
+        // le canevas de l'auteur n'est jamais réordonné pendant qu'il écrit.
+        else if (get().frames.some((f) => !f.data.locked && (f.data.season || f.data.episode || f.data.beat))) arrangeCanvas(() => {});
+      }
       touch();
     },
     setTitlePageField: (field, value) => {
