@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Série : « Aller à » nomme les saisons ; le PDF du scénario numérote toutes ses pages, la première aussi.
+// Série : « Aller à » nomme les saisons ; le PDF du scénario numérote ses pages, sauf la première (l'usage).
 
 import { describe, expect, it } from "vitest";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -55,16 +55,16 @@ describe("numéros de page du PDF", () => {
   const options = { layout: LAYOUTS.letter, locale: "fr", strings: { more: "(À SUIVRE)", contd: "(SUITE)" }, titlePage: false };
   const folio = (page: { items: { text: string; y: number }[] }) => page.items.filter((i) => /^\d+\.$/.test(i.text.trim()) && i.y < 60).map((i) => i.text.trim());
 
-  it("la première page porte « 1. », les suivantes leur numéro", async () => {
+  it("la première page n'a pas de numéro, les suivantes oui", async () => {
     const long: Screenplay = { titlePage: {}, elements: Array.from({ length: 90 }, (_, i) => ({ type: "action" as const, text: `Ligne ${i} avec assez de texte pour remplir.` })) };
     const pages = await readPdfText(await buildPdf(long, options));
     expect(pages.length).toBeGreaterThan(1);
-    expect(pages.map(folio)).toEqual(pages.map((_, i) => [`${i + 1}.`]));
+    expect(pages.map(folio)).toEqual(pages.map((_, i) => (i === 0 ? [] : [`${i + 1}.`])));
   }, 30000);
 
-  it("série : chaque épisode repart de 1", async () => {
+  it("série : chaque épisode repart de 1, sa première page sans numéro", async () => {
     const books = seriesBooks(sp, null, new Map([["e1", "Ép. 1"], ["e2", "Ép. 2"], ["e3", "Ép. 1"], ["sa1", "Saison 1"], ["sa2", "Saison 2"]]))!;
     const pages = await readPdfText(await buildPdf(sp, { ...options, books }));
-    expect(pages.map(folio)).toEqual(pages.map(() => ["1."]));
+    expect(pages.map(folio)).toEqual(pages.map(() => []));
   }, 30000);
 });

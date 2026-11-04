@@ -99,8 +99,9 @@ export async function buildPdf(
       if (line.underline) page.drawLine({ start: { x, y: y - 2 }, end: { x: x + line.text.length * CHAR, y: y - 2 }, thickness: 0.6 });
     }
     if (number === undefined) return;
-    // Toutes les pages du texte sont numérotées, la première aussi (dans une série, chaque épisode repart de 1).
-    const label = `${number}.`;
+    // Usage du scénario : la première page n'a pas de numéro, les suivantes oui (dans une série, chaque épisode
+    // repart de 1).
+    const label = number > 1 ? `${number}.` : "";
     const headY = height - 0.5 * POINT - ASCENT;
     if (label) text(label, width - layout.margin.right * POINT - label.length * CHAR, headY, regular);
     if (header) {
