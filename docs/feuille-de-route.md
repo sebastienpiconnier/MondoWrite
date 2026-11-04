@@ -26,5 +26,5 @@ Dernière mise à jour : 4 novembre 2026.
    scènes, #24 police et interligne, #25 point de vue (à confirmer)
 4. Ergonomie / Usability : #26 palette de commandes, #27 page des projets
 5. Import : #28 finitions de l'import Scrivener
-6. Petits restes / Leftovers : #29 chronologie dans le séquencier, #30 clés d'IA dans le trousseau, #31 EPUB de
-   la Bible, #32 mobile (iPad réel, Android)
+6. Petits restes / Leftovers : #29 chronologie dans le séquencier, #30 clés d'IA dans le trousseau,
+   #32 mobile (iPad réel, Android)
