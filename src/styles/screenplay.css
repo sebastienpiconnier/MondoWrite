@@ -199,3 +199,5 @@
 }
 .episode-picker-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (pointer: coarse) { .episode-picker .icon-button, .episode-picker .episode-picker-menu { min-height: 44px; } .episode-picker .icon-button { min-width: 44px; } }
+/* Curseur entre deux sections (gabarit, épisode) : à l'encre du thème, sinon noir et invisible en sombre. */
+.sp-editor .ProseMirror-gapcursor:after { border-top: 2px solid var(--ink); width: 2.4em; }

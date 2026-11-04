@@ -3,9 +3,11 @@
 // Retour arrière supprime un élément vide, Maj+Entrée va à la ligne dans le même élément.
 
 import { Extension } from "@tiptap/react";
-import { Selection, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
+import { Plugin, Selection, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
+import { GapCursor } from "@tiptap/pm/gapcursor";
+import type { ResolvedPos } from "@tiptap/pm/model";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { isEditableType, type EditableType } from "./nodes";
+import { PRESERVED, isEditableType, type EditableType } from "./nodes";
 import { isTransitionCue } from "../rules";
 import { RETYPE_META, UPPERCASE, attrMemory, caseMemory } from "./autodetect";
 
@@ -101,7 +103,60 @@ export function setElementType(to: EditableType) {
 /** Une action validée par Entrée devient une transition si son texte en est une (« CUT TO: », « COUPE À : »). */
 const looksLikeTransition = (text: string) => !text.includes("\n") && isTransitionCue(text);
 
+/** Ce qui ouvre un passage du récit : après une section (case du gabarit, épisode, saison), on écrit une scène. */
+const OPENS_SCENES = new Set(["section", "synopsis", "pageBreak"]);
+
+/**
+ * Élément qui naît entre deux blocs non éditables (curseur entre deux sections, sous la dernière) : un en-tête de
+ * scène sous une section ou en tête du texte, de l'action ailleurs (sous une note, un texte mis de côté).
+ */
+export function gapType($pos: ResolvedPos): EditableType {
+  const before = $pos.nodeBefore;
+  if (!before) return "sceneHeading";
+  if (before.type.name === PRESERVED) return OPENS_SCENES.has(String(before.attrs.kind)) ? "sceneHeading" : "action";
+  return "action";
+}
+
+/** Curseur entre deux blocs : l'élément qui convient y naît, avec le texte tapé, et le curseur va dedans. */
+export function insertAtGap(state: EditorState, dispatch: Dispatch, text = ""): boolean {
+  if (!(state.selection instanceof GapCursor)) return false;
+  const $pos = state.selection.$from;
+  const type = gapType($pos);
+  if (dispatch) {
+    const schema = state.schema;
+    const node = schema.nodes[type].create(null, text ? schema.text(text) : null);
+    const tr = state.tr.insert($pos.pos, node);
+    tr.setSelection(TextSelection.create(tr.doc, $pos.pos + 1 + text.length));
+    dispatch(tr.scrollIntoView());
+  }
+  return true;
+}
+
+/**
+ * Où poser le curseur à l'ouverture : sous les sections du début (gabarit posé, épisode vide) quand aucune scène
+ * ne les suit encore, pour que la frappe commence par l'en-tête de la première scène. null : rien à faire.
+ */
+export function startGap(doc: PMNode, from = 0): number | null {
+  let pos = 0;
+  for (let i = 0; i < from && i < doc.childCount; i++) pos += doc.child(i).nodeSize;
+  let depth = 0;
+  // Les sections et synopsis de tête (ou à partir de l'élément `from`). Une section suivie d'une plus profonde
+  // (saison › épisode › case) la contient : le curseur descend jusqu'à la première section qui ne contient rien.
+  for (let index = from; index < doc.childCount; index++) {
+    const child = doc.child(index);
+    if (child.type.name !== PRESERVED || !OPENS_SCENES.has(String(child.attrs.kind))) return null;
+    if (child.attrs.kind === "section") depth = Number(child.attrs.depth) || 1;
+    pos += child.nodeSize;
+    const next = index + 1 < doc.childCount ? doc.child(index + 1) : null;
+    if (!next) return pos;
+    if (next.type.name !== PRESERVED) return null; // une scène suit déjà : le curseur ira dans son en-tête
+    if (next.attrs.kind === "section" && (Number(next.attrs.depth) || 1) <= depth) return pos;
+  }
+  return null;
+}
+
 export function enter(state: EditorState, dispatch: Dispatch): boolean {
+  if (state.selection instanceof GapCursor) return insertAtGap(state, dispatch);
   const tr = state.tr;
   if (!state.selection.empty) tr.deleteSelection();
   const $from = tr.selection.$from;
@@ -196,5 +251,16 @@ export const ScreenplayKeymap = Extension.create<KeymapOptions>({
         return true;
       },
     };
+  },
+  // Frappe entre deux blocs non éditables : par défaut ProseMirror y créerait de l'action (premier type du
+  // schéma) ; sous une section, c'est un en-tête de scène qu'on commence.
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          handleTextInput: (view, _from, _to, text) => insertAtGap(view.state, view.dispatch, text),
+        },
+      }),
+    ];
   },
 });

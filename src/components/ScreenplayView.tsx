@@ -38,6 +38,9 @@ import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { screenplayUtterances, type ReadNode } from "../reading";
 import { PRESERVED } from "../screenplay/editor/nodes";
+import { startGap } from "../screenplay/editor/keymap";
+import { GapCursor } from "@tiptap/pm/gapcursor";
+import type { ResolvedPos } from "@tiptap/pm/model";
 import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
@@ -86,6 +89,35 @@ function posOf(doc: PMNode, index: number): number {
   let pos = 0;
   for (let i = 0; i < index && i < doc.childCount; i++) pos += doc.child(i).nodeSize;
   return pos;
+}
+
+/**
+ * Un texte qui ne commence que par des sections (gabarit posé, épisode encore vide) : le curseur se pose sous la
+ * première case, et la frappe y commence l'en-tête de la première scène (keymap.ts, `insertAtGap`). Sans scène
+ * du tout, l'éditeur prend aussi le focus, sauf si l'auteur écrit dans un autre champ.
+ */
+// `valid` existe dans prosemirror-gapcursor sans être déclaré : un curseur entre deux blocs non éditables.
+const isGap = ($pos: ResolvedPos) => (GapCursor as unknown as { valid($p: ResolvedPos): boolean }).valid($pos);
+
+function placeStart(editor: Editor) {
+  const at = startGap(editor.state.doc);
+  if (at === null) return;
+  const $pos = editor.state.doc.resolve(at);
+  if (!isGap($pos)) return;
+  editor.view.dispatch(editor.state.tr.setSelection(new GapCursor($pos)));
+  let editable = false;
+  editor.state.doc.forEach((node) => {
+    if (node.type.name !== PRESERVED) editable = true;
+  });
+  // Sans scène du tout, on écrit ici : le focus vient à l'éditeur, sauf si l'auteur est dans un autre champ.
+  const active = document.activeElement as HTMLElement | null;
+  const typing = !!active && active !== editor.view.dom && (active.matches("input, textarea, select") || active.isContentEditable);
+  if (!editable && !typing) {
+    editor.view.focus();
+    // Le focus peut relire la sélection du DOM : le curseur revient sous la première case.
+    const again = editor.state.doc.resolve(at);
+    if (!(editor.state.selection instanceof GapCursor)) editor.view.dispatch(editor.state.tr.setSelection(new GapCursor(again)));
+  }
 }
 
 export function ScreenplayView() {
@@ -355,7 +387,12 @@ export function ScreenplayView() {
     pending.current = null;
     clearTimeout(timer.current);
     editor.commands.setContent(toDoc(screenplay), { emitUpdate: false });
+    placeStart(editor);
   }, [editor, screenplay, currentEpisode, emit]);
+  // Premier texte de l'éditeur : même chose qu'à chaque rechargement.
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) placeStart(editor);
+  }, [editor]);
 
   // Changement de langue : ce que TipTap a figé à la création (libellé, textes indicatifs).
   useEffect(() => {
@@ -710,6 +747,15 @@ export function ScreenplayView() {
   const goTo = (index: number) => {
     emit();
     const pos = posOf(editor.state.doc, index);
+    // Une section suivie d'aucune scène (épisode ou case vides, « Aller à ») : le curseur se pose dessous.
+    const gap = index < editor.state.doc.childCount && editor.state.doc.child(index).type.name === PRESERVED ? startGap(editor.state.doc, index) : null;
+    if (gap !== null && isGap(editor.state.doc.resolve(gap))) {
+      editor.view.dispatch(editor.state.tr.setSelection(new GapCursor(editor.state.doc.resolve(gap))));
+      editor.view.focus();
+      const dom = editor.view.nodeDOM(pos);
+      if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "start" });
+      return;
+    }
     editor.chain().setTextSelection(pos + 1).focus(undefined, { scrollIntoView: false }).run();
     // Le volet de droite suit tout de suite la scène choisie, sans attendre l'éditeur.
     track(editor);

@@ -828,6 +828,28 @@ const scenarios = [
       await until(() => page.locator(".goto-kind").filter({ hasText: "Épisode" }).count(), "« Aller à » ne propose pas l'épisode");
       await page.keyboard.press("Enter");
       await until(() => page.locator(".episode-picker-label").filter({ hasText: "Ép. 2 · Tempête" }).count(), "« Aller à » n'a pas ouvert l'épisode 2");
+      // Épisode encore vide : le curseur attend sous la première case, et la frappe commence un en-tête de scène.
+      await h.wait(300);
+      await page.keyboard.type("int. manoir - jour");
+      await h.wait(400);
+      await page.keyboard.press("Control+s");
+      await h.saved((f) => /\[\[cosmos:beat:e_teaser\]\]\n\nINT\. MANOIR - JOUR/i.test(f["scenario.fountain"] ?? ""), "la frappe sous la première case n'a pas fait un en-tête de scène");
+    },
+  },
+  {
+    name: "gabarit posé dans le séquencier : la vue Scénario attend sous la première case, et la frappe y fait un en-tête",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Manoir", "scenario");
+      await h.view(2);
+      await page.locator(".plan-template select").first().selectOption("episode");
+      await h.wait(300);
+      await h.view(4);
+      await h.wait(300);
+      await page.keyboard.type("int. manoir - jour");
+      await h.wait(400);
+      await page.keyboard.press("Control+s");
+      await h.saved((f) => /\[\[cosmos:beat:e_teaser\]\]\n\nINT\. MANOIR - JOUR/i.test(f["scenario.fountain"] ?? ""), "la frappe sous la première case n'a pas fait un en-tête de scène");
     },
   },
   {

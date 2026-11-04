@@ -892,7 +892,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const locked = get().frames.filter((f) => f.data.locked).map(frameBox);
     const held = heldCardIds(nodes, get().frames);
     const arranged = nodes.filter((n) => !held.has(n.id));
-    if (arranged.length === 0) return;
     const t = getT();
     const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
     const sizes = boxes(arranged);
@@ -920,6 +919,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
             };
           })()
         : undefined;
+    // Série encore sans carte : ses cadres saison › épisode se posent quand même, en haut à gauche.
+    if (arranged.length === 0 && !series) return;
     const result = organize({
       series,
       cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
@@ -940,7 +941,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       origin:
         locked.length > 0
           ? { x: Math.min(...locked.map((f) => f.x), ...sizes.map((b) => b.x)), y: Math.max(...locked.map((f) => f.y + f.height)) + LOCKED_GAP }
-          : { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) },
+          : sizes.length > 0
+            ? { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) }
+            : { x: 0, y: 0 },
       newId,
     });
     before();
@@ -970,6 +973,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
    */
   const followStory = () => {
     const { nodes, frames } = get();
+    // Série : saisons et épisodes posés dans le séquencier ont leurs cadres sur le canevas, même avant la
+    // première scène, dès que le canevas est déjà rangé en série ou n'a encore aucun cadre de l'auteur.
+    const sp = get().screenplay;
+    if (get().kind === "scenario" && sp && allEpisodes(sp.elements).length > 0) {
+      const free = frames.filter((f) => !f.data.locked);
+      if (free.length === 0 || free.some((f) => f.data.season || f.data.episode)) return arrangeCanvas(() => {});
+    }
     const held = heldCardIds(nodes, frames);
     const t = getT();
     const sizes = boxes(nodes);
@@ -2426,7 +2436,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Scènes déplacées (séquencier, liste des scènes) : le canevas suit l'ordre du fichier.
       // Série : une scène qui change d'épisode, un épisode déplacé ou renommé comptent aussi (titres des cadres).
       const order = (sp: Screenplay | null) =>
-        sp ? sp.elements.flatMap((el) => (el.type === "sceneHeading" ? [el.cardId ?? ""] : seriesMarkOf(el) ? [`|${el.text}`] : [])).join(" ") : "";
+        sp
+          ? sp.elements
+              .flatMap((el) =>
+                el.type === "sceneHeading" ? [el.cardId ?? ""] : seriesMarkOf(el) || (el.type === "section" && beatOf(el.text)) ? [`|${el.text}`] : [],
+              )
+              .join(" ")
+          : "";
       if (undoable && before && order(before) !== order(screenplay)) followStory();
       touch();
     },
