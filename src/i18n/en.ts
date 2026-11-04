@@ -912,7 +912,7 @@ export const en: Messages = {
     placeholder: "Page or scene number, title, word…",
     page: "Page {n}",
     pageShort: "p. {n}",
-    kinds: { page: "Page", scene: "Scene", chapter: "Chapter", revisit: "To revisit", note: "Note", episode: "Episode" },
+    kinds: { page: "Page", scene: "Scene", chapter: "Chapter", revisit: "To revisit", note: "Note", episode: "Episode", season: "Season" },
     results: "Places found",
     empty: "Nothing matches.",
     hint: "Enter to go there, arrows to choose.",

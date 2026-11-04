@@ -893,7 +893,7 @@ export const fr = {
     placeholder: "Numéro de page ou de scène, titre, mot…",
     page: "Page {n}",
     pageShort: "p. {n}",
-    kinds: { page: "Page", scene: "Scène", chapter: "Chapitre", revisit: "À reprendre", note: "Note", episode: "Épisode" },
+    kinds: { page: "Page", scene: "Scène", chapter: "Chapitre", revisit: "À reprendre", note: "Note", episode: "Épisode", season: "Saison" },
     results: "Endroits trouvés",
     empty: "Rien ne correspond.",
     hint: "Entrée pour y aller, flèches pour choisir.",

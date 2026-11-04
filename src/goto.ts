@@ -8,9 +8,9 @@ import { chapterNumbers, chapterOf, type Plan } from "./plan";
 import { countWords, type Manuscript } from "./manuscript";
 import { firstPageOf } from "./stats";
 import { revisitsIn } from "./todos";
-import { allEpisodes } from "./screenplay/series";
+import { allEpisodes, seriesOf } from "./screenplay/series";
 
-export type GoKind = "page" | "scene" | "chapter" | "revisit" | "note" | "episode";
+export type GoKind = "page" | "scene" | "chapter" | "revisit" | "note" | "episode" | "season";
 
 export interface GoTarget {
   key: string;
@@ -30,6 +30,8 @@ export interface GoLabels {
   chapter: (n: number, title: string) => string;
   /** Série : « Ép. 3 · Tempête » (lot 3 du plan des épisodes). */
   episode?: (n: number, title: string) => string;
+  /** Série : nom d'une saison (« Saison 2 » quand elle n'a pas de titre, n = son rang). */
+  season?: (n: number, title: string) => string;
 }
 
 const AT = "@";
@@ -51,11 +53,23 @@ export function screenplayPlaces(elements: ScreenplayElement[], startPage: numbe
   let sceneLabel = "";
   // Série : chaque épisode est un endroit où aller (sa section, dans le scénario entier).
   const episodes = new Map(allEpisodes(elements).map((ep) => [ep.at, ep]));
+  // Saisons : un endroit aussi, et leur nom sous chaque épisode (deux saisons ont chacune leur « Ép. 1 »).
+  const seasons = seriesOf(elements);
+  const seasonName = new Map(seasons.map((s, n) => [s.id, labels.season ? labels.season(n + 1, s.title.trim()) : s.title.trim()]));
+  const seasonAt = new Map(seasons.flatMap((s, n) => (s.id && s.at >= 0 ? [[s.at, n] as [number, number]] : [])));
+  const named = seasons.some((s) => s.id);
   elements.forEach((el, i) => {
     const page = startPage[i] ?? 1;
     const ep = episodes.get(i);
+    const sn = seasonAt.get(i);
+    if (sn !== undefined && labels.season) {
+      targets.push({ key: `a${i}`, kind: "season", label: seasonName.get(seasons[sn].id) ?? "", detail: "", target: `${AT}${i}`, page });
+      return;
+    }
     if (ep && labels.episode) {
-      targets.push({ key: `e${i}`, kind: "episode", label: labels.episode(ep.number, ep.title.trim()), detail: ep.synopsis, target: `${AT}${i}`, page });
+      const where = named && ep.season ? seasonName.get(ep.season) ?? "" : "";
+      const detail = [where, ep.synopsis].filter(Boolean).join(" · ");
+      targets.push({ key: `e${i}`, kind: "episode", label: labels.episode(ep.number, ep.title.trim()), detail, target: `${AT}${i}`, page });
       return;
     }
     if (el.type === "sceneHeading") {
@@ -119,7 +133,7 @@ export function novelPlaces(order: string[], titles: Map<string, string>, plan: 
  */
 export function findPlaces(query: string, places: GoPlaces, labels: GoLabels, limit = 60): GoTarget[] {
   const q = fold(query);
-  if (q === "") return places.targets.filter((t) => t.kind === "scene" || t.kind === "chapter" || t.kind === "episode").slice(0, limit);
+  if (q === "") return places.targets.filter((t) => t.kind === "scene" || t.kind === "chapter" || t.kind === "episode" || t.kind === "season").slice(0, limit);
   const out: GoTarget[] = [];
   if (/^\d+$/.test(q)) {
     const n = Number(q);
