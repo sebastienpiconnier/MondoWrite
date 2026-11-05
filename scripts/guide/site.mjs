@@ -1,13 +1,13 @@
 // Fabrique le guide de l'utilisateur en site web (aide en ligne de l'app, publiée par GitHub Pages) :
 //   <sortie>/index.html            choix de la langue (celle du navigateur)
-//   <sortie>/fr/index.html, en/    le guide, sommaire à gauche, une ancre par chapitre (F1 dans l'app y mène)
+//   <sortie>/fr/index.html, en/, es/  le guide, sommaire à gauche, une ancre par chapitre (F1 dans l'app y mène)
 //   <sortie>/images, fonts, *.css  captures, polices et feuilles de style
 //   <sortie>/MondoWrite-guide-*.pdf  les PDF, s'ils ont été fabriqués avant (npm run guide)
 // Usage : node scripts/guide/site.mjs [dossier de sortie, par défaut docs/guide/.site]
 
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
-import { dir, prepare, root } from "./common.mjs";
+import { CONTENTS_TITLES, dir, prepare, root } from "./common.mjs";
 
 const out = resolve(process.argv[2] || join(dir, ".site"));
 rmSync(out, { recursive: true, force: true });
@@ -26,8 +26,9 @@ cpSync(join(root, "src-tauri/icons/sources/icon-32.svg"), join(out, "favicon.svg
 cpSync(join(root, "src-tauri/icons/icon.svg"), join(out, "icon.svg"));
 
 const LANGS = {
-  fr: { other: "en", otherName: "English", pdf: "Télécharger le PDF", contents: "Sommaire", title: "MondoWrite, guide de l’utilisateur" },
-  en: { other: "fr", otherName: "Français", pdf: "Download the PDF", contents: "Contents", title: "MondoWrite, user guide" },
+  fr: { name: "Français", pdf: "Télécharger le PDF", contents: "Sommaire", title: "MondoWrite, guide de l’utilisateur" },
+  en: { name: "English", pdf: "Download the PDF", contents: "Contents", title: "MondoWrite, user guide" },
+  es: { name: "Español", pdf: "Descargar el PDF", contents: "Índice", title: "MondoWrite, guía del usuario" },
 };
 
 for (const [lang, L] of Object.entries(LANGS)) {
@@ -38,10 +39,12 @@ for (const [lang, L] of Object.entries(LANGS)) {
   // Sommaire du site : des liens, sans numéros de page.
   const toc = [...html.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)]
     .map(([, lvl, id, inner]) => [lvl, id, inner.replace(/<span class="num">.*?<\/span>/, "").replace(/<[^>]+>/g, "").trim()])
-    .filter(([, , text]) => text && !/^(Sommaire|Contents)$/.test(text))
+    .filter(([, , text]) => text && !CONTENTS_TITLES.test(text))
     .map(([lvl, id, text]) => `<li class="lvl${lvl}"><a href="#${id}">${text}</a></li>`)
     .join("\n");
-  const tools = `<p class="site-tools"><a href="../${L.other}/" hreflang="${L.other}" lang="${L.other}">${L.otherName}</a>${hasPdf ? ` · <a href="../${pdfName}">${L.pdf}</a>` : ""}</p>`;
+  // Les autres langues du guide, puis le PDF.
+  const others = Object.entries(LANGS).filter(([l]) => l !== lang).map(([l, o]) => `<a href="../${l}/" hreflang="${l}" lang="${l}">${o.name}</a>`);
+  const tools = `<p class="site-tools">${others.join(" · ")}${hasPdf ? ` · <a href="../${pdfName}">${L.pdf}</a>` : ""}</p>`;
   const page = html
     .replace('<link rel="stylesheet" href="guide.css">', `<meta name="viewport" content="width=device-width, initial-scale=1">\n<link rel="icon" href="../favicon.svg" type="image/svg+xml">\n<link rel="stylesheet" href="../guide.css">\n<link rel="stylesheet" href="../site.css">`)
     .replace(/src="\.\.\/\.\.\/src-tauri\/icons\/icon\.svg"/g, 'src="../icon.svg"')
@@ -53,13 +56,13 @@ for (const [lang, L] of Object.entries(LANGS)) {
   writeFileSync(join(out, lang, "index.html"), page);
 }
 
-// Accueil : la langue du navigateur, l'anglais sinon (le chapitre demandé dans l'adresse est gardé).
+// Accueil : la langue du navigateur si le guide y existe, l'anglais sinon (le chapitre demandé dans l'adresse est gardé).
 writeFileSync(
   join(out, "index.html"),
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>MondoWrite</title>
 <meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="favicon.svg" type="image/svg+xml">
-<script>location.replace((/^fr\\b/i.test(navigator.language) ? "fr/" : "en/") + location.hash);</script></head>
-<body><p><a href="fr/">Guide de l’utilisateur (français)</a> · <a href="en/">User guide (English)</a></p></body></html>`,
+<script>location.replace((/^es\\b/i.test(navigator.language) ? "es/" : /^fr\\b/i.test(navigator.language) ? "fr/" : "en/") + location.hash);</script></head>
+<body><p><a href="fr/">Guide de l’utilisateur (français)</a> · <a href="en/">User guide (English)</a> · <a href="es/">Guía del usuario (español)</a></p></body></html>`,
 );
 writeFileSync(join(out, ".nojekyll"), "");
 console.log("site écrit :", out);

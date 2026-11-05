@@ -2,7 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!-- Fusionné par Tauri dans l'Info.plist de l'app Mac. Les langues déclarées ici permettent au système de
      traduire ses propres textes (sélecteur de fichiers, entrées ajoutées aux menus, comme « Rechercher » du
-     menu Aide) quand le Mac est en français. -->
+     menu Aide) quand le Mac est en français ou en espagnol. Une langue de la communauté
+     traduite entièrement s'ajoute aussi ici. -->
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key>
@@ -11,6 +12,7 @@
   <array>
     <string>en</string>
     <string>fr</string>
+    <string>es</string>
   </array>
   <key>CFBundleAllowMixedLocalizations</key>
   <true/>

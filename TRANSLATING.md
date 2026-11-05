@@ -41,6 +41,7 @@ Dans le fichier, seuls les **textes entre guillemets droits, à droite des deux-
 - Les **clés** (`settings`, `language`) ne changent jamais.
 - Les **variables** entre accolades (`{name}`, `{n}`) restent telles quelles, vous pouvez les déplacer dans la phrase.
 - Un texte retiré ou laissé en anglais s'affiche en anglais : rien ne casse.
+- Un texte **voulu identique** à l'anglais (« Plan », « Sepia », « INT. ») compterait comme non traduit : listez son chemin dans `meta.same` (`same: ["settings.palettes.sepia"]`) pour qu'il compte comme fait.
 - Les **listes** (`["…", "…"]`) gardent le même nombre d'éléments, sauf les suggestions (`pitch.suggest`, `pitch.suggestScenario`, `home.greeting`, `screenplay.moments`), que vous pouvez allonger ou raccourcir. Une liste d'une autre longueur est ignorée (l'anglais reste).
 - Ne traduisez pas les noms de formats et de logiciels (Fountain, Final Draft, PDF, EPUB), ni « MondoWrite ».
 - Le **projet d'exemple** (`demo`, « Le Petit Chaperon rouge » de Perrault, 1697) se traduit depuis le texte français, par vous : ne recopiez jamais une traduction publiée, elle est protégée par le droit d'auteur.
@@ -87,7 +88,7 @@ L'apostrophe est toujours `’` (U+2019). Les espaces insécables du français s
 
 ## Ce qui reste en français et en anglais
 
-Le guide de l'utilisateur (`docs/guide/`) et les consignes envoyées à l'IA restent pour l'instant en français et en anglais ; l'IA répond quand même dans la langue de l'auteur. Les fichiers d'un projet ne se traduisent jamais (`cartes/`, `cosmos.json`, valeurs de `type:`) : un projet s'ouvre dans toutes les langues.
+Le guide de l'utilisateur (`docs/guide/`) existe en français, en anglais et en espagnol ; une autre langue de la communauté ouvre le guide anglais. Les consignes envoyées à l'IA restent en français et en anglais ; l'IA répond quand même dans la langue de l'auteur. Les fichiers d'un projet ne se traduisent jamais (`cartes/`, `cosmos.json`, valeurs de `type:`) : un projet s'ouvre dans toutes les langues.
 
 ## Licence et signature
 
@@ -129,6 +130,7 @@ In the file, only the **texts in straight quotes, right of the colon**, are tran
 - **Keys** (`settings`, `language`) never change.
 - **Variables** in braces (`{name}`, `{n}`) stay as they are; you may move them within the sentence.
 - A text you remove or leave in English shows in English: nothing breaks.
+- A text **meant to be identical** to English (“Plan”, “Sepia”, “INT.”) would count as untranslated: list its path in `meta.same` (`same: ["settings.palettes.sepia"]`) so it counts as done.
 - **Lists** (`["…", "…"]`) keep the same number of items, except suggestions (`pitch.suggest`, `pitch.suggestScenario`, `home.greeting`, `screenplay.moments`), which may be longer or shorter. A list of another length is ignored (English stays).
 - Don't translate format and software names (Fountain, Final Draft, PDF, EPUB), nor “MondoWrite”.
 - The **example project** (`demo`, Perrault's “Little Red Riding Hood”, 1697) is translated by you, from the French text: never copy a published translation, it is protected by copyright.
@@ -150,7 +152,7 @@ The apostrophe is always `’` (U+2019).
 
 ### What stays in French and English
 
-The user guide (`docs/guide/`) and the instructions sent to the AI stay in French and English for now; the AI still answers in the writer's language. Project files are never translated (`cartes/`, `cosmos.json`, `type:` values): a project opens in every language.
+The user guide (`docs/guide/`) exists in French, English and Spanish; any other community language opens the English guide. The instructions sent to the AI stay in French and English; the AI still answers in the writer's language. Project files are never translated (`cartes/`, `cosmos.json`, `type:` values): a project opens in every language.
 
 ### License and sign-off
 

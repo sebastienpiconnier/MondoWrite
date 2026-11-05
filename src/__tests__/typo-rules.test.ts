@@ -5,6 +5,7 @@ import { NBSP, NNBSP, TYPO_LANGS, TYPO_RULES, csvSeparator, punct, quote, typoCo
 import { isTypographySetting, smartType, typographyMode } from "../typography";
 import { defaultPaper } from "../screenplay/layout";
 import { language } from "../ai/tasks";
+import { momentOf } from "../review/places";
 
 describe("table des règles", () => {
   it("chaque langue a deux paires de guillemets, un tiret et une apostrophe", () => {
@@ -111,6 +112,14 @@ describe("ce qui dépend de la langue ailleurs", () => {
     expect(defaultPaper("fr")).toBe("a4");
     expect(defaultPaper("de")).toBe("a4");
     expect(defaultPaper("en-GB")).toBe("a4");
+  });
+
+  it("moments d'un en-tête espagnol : DÍA, NOCHE, MÁS TARDE", () => {
+    expect(momentOf("DÍA")).toBe("day");
+    expect(momentOf("NOCHE")).toBe("night");
+    expect(momentOf("TARDE")).toBe("day");
+    expect(momentOf("MÁS TARDE")).toBe("other");
+    expect(momentOf("PLUS TARD")).toBe("other");
   });
 
   it("consignes de l'IA : la langue nommée en anglais", () => {
