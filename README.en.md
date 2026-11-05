@@ -272,7 +272,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 
 - **Several projects:** a home screen to choose the one to work on, or to create one.
 - **Autosave** to Markdown files, or `Cmd+S` / `Ctrl+S`.
-- **English and French**, each with its own typography.
+- **English, French and Spanish** (community translation), each with its own typography.
 - **Typography as you type** (manuscript, cards, Bible): curly quotes “ ”, apostrophe ’, ellipsis …, a dash from two hyphens; in French, « » with non-breaking spaces and a thin space before ; ! ?. Follows the interface language, or pick one of about twenty languages in Settings (German „ “, Spanish « » without spaces, Swedish ” ”…), or turn it off.
 - **Light, dark or system appearance.**
 - **Mouse, touch and keyboard:** every action has all three paths.

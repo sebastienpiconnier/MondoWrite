@@ -48,19 +48,22 @@ export function settingOf(prefix: string): Setting {
   return "";
 }
 
-const NIGHT = new Set(["NUIT", "NIGHT", "SOIR", "SOIREE", "EVENING", "CREPUSCULE", "DUSK", "MINUIT", "MIDNIGHT"]);
-const DAY = new Set(["JOUR", "DAY", "MATIN", "MATINEE", "MORNING", "MIDI", "NOON", "AFTERNOON", "AUBE", "DAWN", "AURORE"]);
+// Français, anglais et espagnol (DÍA, NOCHE…), accents repliés par foldName.
+const NIGHT = new Set(["NUIT", "NIGHT", "SOIR", "SOIREE", "EVENING", "CREPUSCULE", "DUSK", "MINUIT", "MIDNIGHT", "NOCHE", "ANOCHECER", "ATARDECER", "CREPUSCULO", "MEDIANOCHE"]);
+const DAY = new Set(["JOUR", "DAY", "MATIN", "MATINEE", "MORNING", "MIDI", "NOON", "AFTERNOON", "AUBE", "DAWN", "AURORE", "DIA", "MANANA", "MEDIODIA", "TARDE", "AMANECER", "ALBA"]);
+/** « MÁS TARDE » (espagnol) continue la scène d'avant : « TARDE » seul, lui, est un moment de jour. */
+const words = (time: string) => foldName(time).replace(/\bMAS TARDE\b/g, "LATER").split(/[^A-Z]+/);
 
 /** Le moment d'un en-tête : jour, nuit ou autre (« APRÈS-MIDI » est un jour, « PLUS TARD » autre). */
 export function momentOf(time: string): Moment {
-  const words = foldName(time).split(/[^A-Z]+/);
-  if (words.some((w) => NIGHT.has(w))) return "night";
-  if (words.some((w) => DAY.has(w))) return "day";
+  const list = words(time);
+  if (list.some((w) => NIGHT.has(w))) return "night";
+  if (list.some((w) => DAY.has(w))) return "day";
   return "other";
 }
 
 // Moments qui continuent la scène d'avant : « PLUS TARD », « CONTINU », « MÊME MOMENT », « LATER »…
-const CONTINUING = new Set(["PLUS", "TARD", "CONTINU", "CONTINUE", "CONTINUOUS", "CONT", "LATER", "SAME", "MEME", "MOMENT", "MOMENTS", "SUITE", "INSTANT", "TIME", "APRES", "PEU", "UN", "LE", "AU"]);
+const CONTINUING = new Set(["PLUS", "TARD", "CONTINU", "CONTINUE", "CONTINUOUS", "CONT", "LATER", "SAME", "MEME", "MOMENT", "MOMENTS", "SUITE", "INSTANT", "TIME", "APRES", "PEU", "UN", "LE", "AU", "CONTINUO", "CONTINUA", "MISMO", "MOMENTO", "POCO", "DESPUES", "EL", "AL"]);
 
 /** Le moment de chaque scène, dans l'ordre du scénario. Un moment absent ou qui continue la scène d'avant
  *  (« PLUS TARD ») reprend le jour ou la nuit de la scène précédente : `inherited` le signale. */
@@ -69,8 +72,7 @@ export function sceneMoments(elements: ScreenplayElement[]): { moment: Moment; i
   return listScenes(elements).map((scene) => {
     const { time } = headingParts(scene.text);
     const own = momentOf(time);
-    const words = foldName(time).split(/[^A-Z]+/).filter(Boolean);
-    const continues = own === "other" && words.every((w) => CONTINUING.has(w));
+    const continues = own === "other" && words(time).filter(Boolean).every((w) => CONTINUING.has(w));
     const result = continues && previous !== "other" ? { moment: previous, inherited: true } : { moment: own, inherited: false };
     previous = result.moment;
     return result;

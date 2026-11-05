@@ -273,7 +273,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 
 - **Plusieurs projets :** un écran d'accueil pour choisir celui sur lequel travailler, ou en créer un.
 - **Sauvegarde automatique** dans des fichiers Markdown, ou Cmd+S / Ctrl+S.
-- **Français et anglais**, avec la typographie propre à chaque langue.
+- **Français, anglais et espagnol** (traduit par la communauté), avec la typographie propre à chaque langue.
 - **Typographie à la frappe** (manuscrit, cartes, Bible) : guillemets « » avec leurs espaces insécables, espace fine avant ; ! ?, apostrophe ’, points de suspension …, tiret à partir de deux traits d'union. Selon la langue de l'interface, ou celle d'une vingtaine de langues au choix („ “ de l'allemand, « » sans espaces de l'espagnol, ” ” du suédois…), ou désactivée, dans les Réglages.
 - **Mode clair, sombre** ou comme le système.
 - **Souris, doigt et clavier :** chaque action a les trois chemins.

@@ -11,6 +11,7 @@
 import { fr, type Messages } from "./fr";
 import { en } from "./en";
 import { allStrings, complete, FREE_LISTS, missingPaths, translatedShare } from "./coverage";
+import { es } from "./es";
 // i18n:imports (ligne repère pour scripts/i18n.mjs, ne pas retirer)
 
 export { allStrings, complete, FREE_LISTS };
@@ -23,11 +24,15 @@ export type DeepPartial<T> = T extends string
     : { [K in keyof T]?: DeepPartial<T[K]> };
 
 /** Fichier d'une langue de la communauté : au moins son nom, dans la langue elle-même. */
-export type Translation = DeepPartial<Messages> & { meta: { name: string } };
+export type Translation = DeepPartial<Messages> & {
+  /** `same` : chemins gardés identiques à l'anglais à dessein, comptés comme traduits (coverage.ts). */
+  meta: { name: string; same?: readonly string[] };
+};
 
 /** Langues de la communauté, par étiquette BCP 47 (`de`, `pt-BR`). */
 const COMMUNITY = {
   // i18n:community (ligne repère pour scripts/i18n.mjs, ne pas retirer)
+  es,
 } as const satisfies Record<string, Translation>;
 
 /** Chaînes encore en anglais dans une traduction (chemins), voir coverage.ts. */

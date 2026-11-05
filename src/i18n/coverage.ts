@@ -53,16 +53,26 @@ function listAt(dict: unknown, path: string): unknown {
  */
 export function missingPaths(partial: unknown, reference: unknown, french: unknown): string[] {
   const merged = complete(reference, partial);
+  const same = sameAsEnglish(partial);
   const done = allStrings(merged);
   const frs = allStrings(french);
   const missing: string[] = [];
   for (const [path, text] of allStrings(reference)) {
-    if (frs.get(path) === text) continue;
+    if (frs.get(path) === text || same.has(path)) continue;
     const list = path.replace(/\[\d+\]$/, "");
     if (list !== path && isFreeList(list) && JSON.stringify(listAt(merged, list)) !== JSON.stringify(listAt(reference, list))) continue;
     if (done.get(path) === text) missing.push(path);
   }
   return missing;
+}
+
+/**
+ * Chemins qu'une traduction garde identiques à l'anglais à dessein (`meta.same` : « General », « Ep. {n} »,
+ * « Debate ») : ils comptent comme traduits.
+ */
+export function sameAsEnglish(partial: unknown): Set<string> {
+  const meta = partial && typeof partial === "object" ? (partial as { meta?: { same?: unknown } }).meta : undefined;
+  return new Set(Array.isArray(meta?.same) ? meta.same.filter((p): p is string => typeof p === "string") : []);
 }
 
 /** Nombre de chaînes à traduire : celles qui diffèrent entre le français et l'anglais. */
