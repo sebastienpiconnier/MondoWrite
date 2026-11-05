@@ -381,6 +381,8 @@ html[data-platform="mac"] .topbar :is(input, textarea) { -webkit-user-select: te
 .settings-links { grid-column: 1 / -1; }
 .settings-panel label, .settings-label { font-size: 0.8125rem; font-weight: 600; margin-top: 6px; }
 .settings-value { margin: 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
+/* Lien « Traduire MondoWrite » sous le choix de la langue : aligné à gauche, sur sa seule largeur. */
+.settings-panel .settings-link { align-self: flex-start; text-align: left; font-size: 0.8125rem; padding: 4px 0; }
 
 /* Menu Exporter : une colonne à la largeur de ses libellés (jamais de défilement horizontal), qui défile en hauteur au besoin. */
 .export-panel {

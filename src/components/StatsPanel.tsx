@@ -18,6 +18,7 @@ import { castForMatrix, neverMeet, shared, topDuo, type Cast, type Presence } fr
 import type { SettingSummary } from "../review/places";
 import { iaPercent, iaShareOfManuscript, iaShareOfScreenplay } from "../atelier";
 import { IaImageStats } from "./ImageGen";
+import { csvSeparator } from "../typoRules";
 
 type Tab = "characters" | "places" | "crossings" | "setting" | "breakdown";
 
@@ -130,7 +131,7 @@ function Crossings({ cast, script, onOpen }: { cast: Cast; script: boolean; onOp
   if (people.length < 2) return <p className="muted">{s.empty}</p>;
 
   const exportCsv = async () => {
-    const sep = lang.startsWith("fr") ? ";" : ",";
+    const sep = csvSeparator(lang);
     const cell = (v: string) => (v.includes(sep) || /["\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
     const lines = [
       [s.corner, ...people.map((p) => p.name)].map(cell).join(sep),

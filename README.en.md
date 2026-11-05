@@ -273,7 +273,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 - **Several projects:** a home screen to choose the one to work on, or to create one.
 - **Autosave** to Markdown files, or `Cmd+S` / `Ctrl+S`.
 - **English and French**, each with its own typography.
-- **Typography as you type** (manuscript, cards, Bible): curly quotes “ ”, apostrophe ’, ellipsis …, a dash from two hyphens; in French, « » with non-breaking spaces and a thin space before ; ! ?. Follows the language, or set it in Settings (or turn it off).
+- **Typography as you type** (manuscript, cards, Bible): curly quotes “ ”, apostrophe ’, ellipsis …, a dash from two hyphens; in French, « » with non-breaking spaces and a thin space before ; ! ?. Follows the interface language, or pick one of about twenty languages in Settings (German „ “, Spanish « » without spaces, Swedish ” ”…), or turn it off.
 - **Light, dark or system appearance.**
 - **Mouse, touch and keyboard:** every action has all three paths.
 - **Offline:** bundled fonts, no account, no server.
@@ -390,6 +390,6 @@ The PDF embeds the Courier Prime font (SIL OFL license, see [OFL.txt](src/assets
 
 Manuscript import and the paperback export reuse rules from Hugh Howey’s [NEO](https://github.com/hughhowey/neo) (MIT license). Copyright notices and licenses for everything MondoWrite reuses or bundles are gathered in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-To contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
+To contribute, see [CONTRIBUTING.md](CONTRIBUTING.md). To translate MondoWrite into another language, see [TRANSLATING.md](TRANSLATING.md): a translation can be partial, the rest shows in English.
 
 The example project uses Charles Perrault’s “Le Petit Chaperon rouge” (*Histoires ou contes du temps passé*, 1697) and three engravings by Gustave Doré, wood-engraved by Pannemaker (Hetzel edition, 1862), all in the public domain. The English translation of the tale was made for MondoWrite.

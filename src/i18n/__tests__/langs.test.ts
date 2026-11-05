@@ -16,7 +16,7 @@ describe("isLang", () => {
   });
 
   it("refuse le reste", () => {
-    expect(isLang("de")).toBe(false);
+    expect(isLang("zz")).toBe(false);
     expect(isLang("FR")).toBe(false);
     expect(isLang(undefined)).toBe(false);
   });
@@ -29,12 +29,12 @@ describe("detectLang", () => {
   });
 
   it("suit l'ordre de préférence du système", () => {
-    withSystemLangs("de-DE", "FR-fr", "en-US");
+    withSystemLangs("zz-ZZ", "FR-fr", "en-US");
     expect(detectLang()).toBe("fr");
   });
 
   it("retombe sur l'anglais sinon", () => {
-    withSystemLangs("de-DE", "ja");
+    withSystemLangs("zz-ZZ", "yy");
     expect(detectLang()).toBe("en");
   });
 });

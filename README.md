@@ -274,7 +274,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 - **Plusieurs projets :** un écran d'accueil pour choisir celui sur lequel travailler, ou en créer un.
 - **Sauvegarde automatique** dans des fichiers Markdown, ou Cmd+S / Ctrl+S.
 - **Français et anglais**, avec la typographie propre à chaque langue.
-- **Typographie à la frappe** (manuscrit, cartes, Bible) : guillemets « » avec leurs espaces insécables, espace fine avant ; ! ?, apostrophe ’, points de suspension …, tiret à partir de deux traits d'union. Selon la langue, à l'anglaise (“ ”) ou désactivée, dans les Réglages.
+- **Typographie à la frappe** (manuscrit, cartes, Bible) : guillemets « » avec leurs espaces insécables, espace fine avant ; ! ?, apostrophe ’, points de suspension …, tiret à partir de deux traits d'union. Selon la langue de l'interface, ou celle d'une vingtaine de langues au choix („ “ de l'allemand, « » sans espaces de l'espagnol, ” ” du suédois…), ou désactivée, dans les Réglages.
 - **Mode clair, sombre** ou comme le système.
 - **Souris, doigt et clavier :** chaque action a les trois chemins.
 - **Hors ligne :** polices embarquées, aucun compte, aucun serveur.
@@ -389,6 +389,6 @@ Le PDF embarque la police Courier Prime (licence SIL OFL, voir [OFL.txt](src/ass
 
 L'import de manuscrits et l'export en livre broché reprennent des règles de [NEO](https://github.com/hughhowey/neo) de Hugh Howey (licence MIT). Les mentions de copyright et les licences de tout ce que MondoWrite reprend ou embarque sont réunies dans [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-Pour contribuer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
+Pour contribuer, voir [CONTRIBUTING.md](CONTRIBUTING.md). Pour traduire MondoWrite dans une autre langue, voir [TRANSLATING.md](TRANSLATING.md) : une traduction peut être partielle, le reste s'affiche en anglais.
 
 Le projet d'exemple reprend « Le Petit Chaperon rouge » de Charles Perrault (*Histoires ou contes du temps passé*, 1697) et trois gravures de Gustave Doré, gravées sur bois par Pannemaker (édition Hetzel, 1862), tous du domaine public. La traduction anglaise du conte a été faite pour MondoWrite.

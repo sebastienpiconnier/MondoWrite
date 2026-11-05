@@ -1,0 +1,39 @@
+# Signature des contributions (CONTRIBUTING.md) : chaque commit d'une pull request porte une ligne
+# « Signed-off-by: Prénom Nom <adresse> », par laquelle le contributeur accepte les conditions du projet.
+# Les pull requests de l'auteur du projet n'en ont pas besoin. Lecture seule : rien n'est écrit sur le dépôt.
+name: Signature
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-off:
+    if: github.event.pull_request.user.login != github.repository_owner
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Chaque commit porte Signed-off-by
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          for commit in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            if ! git log -1 --format=%B "$commit" | grep -qiE '^Signed-off-by: .+ <[^>]+@[^>]+>'; then
+              echo "::error::$(git log -1 --format='%h %s' "$commit") : sans Signed-off-by / without Signed-off-by"
+              missing=1
+            fi
+          done
+          if [ "$missing" = 1 ]; then
+            echo "Ajoutez la signature puis repoussez / Add the sign-off, then push again:"
+            echo "  git rebase --signoff $BASE && git push --force-with-lease"
+            echo "Voir / See CONTRIBUTING.md"
+            exit 1
+          fi
+          echo "Tous les commits sont signés / All commits are signed off."

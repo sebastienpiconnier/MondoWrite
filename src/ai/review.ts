@@ -16,6 +16,7 @@ import type { ScreenplayElement } from "../screenplay/model";
 import { characterName, headingParts, listScenes, sceneSynopsis } from "../screenplay/scenes";
 import { sceneBody, sceneText } from "../screenplay/sceneText";
 import { brief, clip, extractJson, language, nameCards, nameRule, type CardNames, type Prompt } from "./tasks";
+import { quote as quoted } from "../typoRules";
 
 export const REVIEW_TASKS = ["continuity", "timeline", "voices", "beta"] as const;
 export type ReviewTask = (typeof REVIEW_TASKS)[number];
@@ -494,7 +495,7 @@ export function parseReview(reply: string, task: ReviewTask, scenes: ReviewScene
       question = question.replace(/(?<![\p{L}\p{N}])[sS](\d{1,4})(?![\p{L}\p{N}])/gu, (m, n: string) => {
         const s = byRef.get(`s${Number(n)}`);
         if (!s) return m;
-        return lang.startsWith("fr") ? `«\u00a0${s.title || m}\u00a0»` : `“${s.title || m}”`;
+        return quoted(s.title || m, lang);
       });
       if (names) question = nameCards(question, cards, names);
       const key = `${task}:${fold(question).replace(/[^\p{L}\p{N}]+/gu, " ").trim().slice(0, 120)}`;

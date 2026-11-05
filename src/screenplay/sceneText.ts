@@ -4,6 +4,7 @@
 import { isEditableType } from "./editor/nodes";
 import type { ScreenplayElement } from "./model";
 import { synopsisEnd } from "./scenes";
+import { punct } from "../typoRules";
 
 /** Index de l'en-tête relié à cette carte, ou -1. */
 export const headingOf = (elements: ScreenplayElement[], cardId: string): number =>
@@ -38,8 +39,8 @@ export function setSceneBody(elements: ScreenplayElement[], headingIndex: number
 
 /** Texte lisible d'une scène, pour son aperçu sur le canevas : répliques précédées du personnage. */
 export function sceneText(body: ScreenplayElement[], lang = "en"): string {
-  // Deux-points précédé d'une espace insécable en français.
-  const colon = lang.startsWith("fr") ? "\u00a0:" : ":";
+  // Deux-points précédé de l'espace de la langue (insécable en français).
+  const colon = punct(":", lang);
   const parts: string[] = [];
   for (const el of body) {
     if (!isEditableType(el.type) || !el.text.trim()) continue;
