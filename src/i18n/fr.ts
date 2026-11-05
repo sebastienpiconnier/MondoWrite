@@ -275,6 +275,9 @@ export const fr = {
     tabGeneral: "Général",
     tabAi: "IA",
     language: "Langue",
+    /** Langue de la communauté pas encore entièrement traduite (le reste s’affiche en anglais). */
+    languagePartial: "{name} · {percent} traduit",
+    translateHelp: "Traduire MondoWrite dans ta langue",
     theme: "Apparence",
     themeSystem: "Comme le système",
     themeLight: "Claire",
@@ -301,8 +304,10 @@ export const fr = {
     icloudOffMac: "Pas de dossier iCloud de MondoWrite sur ce Mac. Pour synchroniser avec l’iPhone ou l’iPad : active iCloud Drive (Réglages Système › ton nom › iCloud) avec le même compte, puis ouvre une fois MondoWrite sur l’iPhone ou l’iPad avec iCloud activé.",
     icloudHintMac: "Les projets de l’iPhone et de l’iPad apparaissent ici et les nouveaux y sont créés (Finder > iCloud Drive > MondoWrite). En le désactivant, ils restent dans iCloud.",
     typography: "Typographie à la frappe",
-    typographyModes: { auto: "Selon la langue", fr: "Française (« », espaces insécables)", en: "Anglaise (“ ”)", off: "Aucune" },
-    typographyHint: "Guillemets, apostrophe ’, points de suspension …, tiret à partir de deux traits d’union. Dans le manuscrit, les cartes et la Bible.",
+    typographyModes: { auto: "Selon la langue de l’interface", off: "Aucune" },
+    /** Une langue du menu : nom de la langue, puis ses guillemets. */
+    typographyLang: "{language} ({quotes})",
+    typographyHint: "Guillemets et espaces de la langue choisie (en français, espaces insécables avant les deux-points, le point-virgule, le point d’interrogation et le point d’exclamation), apostrophe ’, points de suspension …, tiret à partir de deux traits d’union. Dans le manuscrit, les cartes et la Bible.",
     spellcheck: "Correcteur orthographique",
     spellcheckModes: {
       notes: "Sauf manuscrit et scénario",
@@ -970,12 +975,12 @@ export const fr = {
     removed: "Commentaire supprimé.",
     undo: "Annuler",
     emptySelection: "Sélectionne d’abord le passage à commenter.",
-    oneScene: "Un commentaire porte sur une seule scène : sélectionne un passage dans une scène.",
+    oneScene: "Un commentaire porte sur une seule scène : sélectionne un passage dans une scène.",
     menu: "Commenter la sélection",
     emptyScript: "Aucun commentaire dans cette scène. Place le curseur dans une action ou une réplique, puis « Commenter cet élément » dans le menu ⋯ (Ctrl ou Cmd + Alt + M).",
     element: "Commenter cet élément",
-    elementOnly: "Un commentaire porte sur une action ou une réplique : place le curseur dans l’une d’elles.",
-    noCard: "Cette scène n’a pas encore de carte : écris son en-tête d’abord.",
+    elementOnly: "Un commentaire porte sur une action ou une réplique : place le curseur dans l’une d’elles.",
+    noCard: "Cette scène n’a pas encore de carte : écris son en-tête d’abord.",
   },
   // Versions d'une scène (1.13.0) : garder le texte du moment, le relire, le comparer, y revenir.
   versions: {

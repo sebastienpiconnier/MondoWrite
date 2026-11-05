@@ -20,7 +20,11 @@ Pour le confirmer, ajoutez à chacun de vos commits la ligne suivante (`git comm
 Signed-off-by: Prénom Nom <adresse@exemple.fr>
 ```
 
-Une pull request sans cette ligne ne pourra pas être fusionnée.
+Une pull request sans cette ligne ne pourra pas être fusionnée (une vérification automatique la demande).
+
+## Traductions
+
+Toute langue est la bienvenue, et une traduction peut être partielle : le mode d'emploi, les règles typographiques de chaque langue et l'outil `npm run i18n` sont décrits dans [TRANSLATING.md](TRANSLATING.md).
 
 ## Règles du projet
 
@@ -48,7 +52,11 @@ To confirm, add this line to each of your commits (`git commit -s` does it for y
 Signed-off-by: First Last <address@example.com>
 ```
 
-A pull request without this line cannot be merged.
+A pull request without this line cannot be merged (an automatic check asks for it).
+
+### Translations
+
+Every language is welcome, and a translation can be partial: the how-to, each language's typography rules and the `npm run i18n` tool are described in [TRANSLATING.md](TRANSLATING.md).
 
 ### Project rules
 

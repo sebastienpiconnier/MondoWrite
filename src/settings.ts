@@ -70,7 +70,7 @@ export interface WritingSettings {
   typewriter: boolean;
   /** Ce qui reste en pleine encre ; le reste s'estompe. */
   highlight: FocusHighlight;
-  /** Typographie automatique à la frappe : selon la langue de l'interface, française, anglaise, ou aucune. */
+  /** Typographie automatique à la frappe : selon la langue de l'interface, celle d'une langue de typoRules.ts, ou aucune. */
   typography: TypographySetting;
   /** Zoom de la page du manuscrit et de la feuille du scénario (1 = taille normale, qui suit la fenêtre). */
   zoom: number;

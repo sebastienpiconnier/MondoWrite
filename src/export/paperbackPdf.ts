@@ -10,6 +10,7 @@ import italicData from "../assets/fonts/CrimsonText-Italic.ttf?inline";
 import boldData from "../assets/fonts/CrimsonText-Bold.ttf?inline";
 import boldItalicData from "../assets/fonts/CrimsonText-BoldItalic.ttf?inline";
 import { addOutline } from "./outline";
+import { typoCode, typoRules } from "../typoRules";
 import {
   KDP_MAX_PAGES,
   KDP_MIN_PAGES,
@@ -42,16 +43,18 @@ async function embedFonts(pdf: PDFDocument): Promise<Record<FontStyle, PDFFont>>
   return { regular, italic, bold, boldItalic };
 }
 
-/** Césure de la langue du livre (français, anglais) ; aucune pour une autre langue. */
+/** Motifs de césure livrés (typoRules.ts, `hyphen`) : imports écrits en entier pour que Vite les découpe. */
+const HYPHEN_PATTERNS = {
+  fr: () => import("hyphen/fr"),
+  "en-us": () => import("hyphen/en-us"),
+  "en-gb": () => import("hyphen/en-gb"),
+} as const;
+
+/** Césure de la langue du livre (français, anglais) ; aucune pour une langue dont les motifs ne sont pas livrés. */
 async function hyphenator(lang: string): Promise<((word: string) => string) | null> {
   const code = lang.toLowerCase();
-  const load = code.startsWith("fr")
-    ? () => import("hyphen/fr")
-    : code === "en-gb" || code === "en-au"
-      ? () => import("hyphen/en-gb")
-      : code.startsWith("en")
-        ? () => import("hyphen/en-us")
-        : null;
+  const patterns = code === "en-au" ? "en-gb" : typoRules(code).hyphen;
+  const load = patterns && (code.startsWith("en") || typoCode(code) !== "en") ? HYPHEN_PATTERNS[patterns] : null;
   if (!load) return null;
   try {
     type Hyphenator = { hyphenateSync: (text: string, options?: { hyphenChar?: string; minWordLength?: number }) => string };

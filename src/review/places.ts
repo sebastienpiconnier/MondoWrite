@@ -8,6 +8,7 @@ import { pagesBetween, type Pagination } from "../screenplay/paginate";
 import type { CardData } from "../types";
 import { countWords, detectCards } from "../manuscript";
 import { foldName } from "./names";
+import { csvSeparator } from "../typoRules";
 
 /** Intérieur, extérieur, ou les deux (INT./EXT.) ; « » quand l'en-tête ne le dit pas. */
 export type Setting = "int" | "ext" | "both" | "";
@@ -204,9 +205,9 @@ export function sortPlaces(rows: PlaceRow[], key: PlaceSortKey, desc: boolean, l
   return desc ? sorted.reverse() : sorted;
 }
 
-/** CSV (« ; » et virgule décimale en français), avec en-tête. */
+/** CSV (« ; » là où la virgule est décimale, typoRules.ts), avec en-tête. */
 export function placesCsv(rows: PlaceRow[], headers: string[], script: boolean, locale = "fr"): string {
-  const sep = locale.startsWith("fr") ? ";" : ",";
+  const sep = csvSeparator(locale);
   const cell = (v: string | number | null) => {
     const s = v === null ? "" : String(v);
     return s.includes(sep) || /["\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;

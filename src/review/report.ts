@@ -8,6 +8,7 @@ import type { CardData } from "../types";
 import { countWords, detectCards } from "../manuscript";
 import { foldName } from "./names";
 import { scenesWith } from "./filter";
+import { csvSeparator } from "../typoRules";
 
 export interface CharacterRow {
   /** Carte Personnage, ou null pour un nom qui parle sans carte. */
@@ -187,11 +188,11 @@ export function sortRows(rows: CharacterRow[], key: SortKey, desc: boolean, loca
 }
 
 /**
- * CSV (séparateur « ; » en français, « , » ailleurs, comme les tableurs de chaque langue), avec en-tête. Avec
+ * CSV (séparateur « ; » là où la virgule est décimale, « , » ailleurs, typoRules.ts, comme les tableurs de chaque langue), avec en-tête. Avec
  * `povHeaders` (des points de vue existent), trois colonnes de plus : scènes racontées, leurs mots, leur part.
  */
 export function reportCsv(rows: CharacterRow[], headers: string[], locale = "fr", povHeaders: string[] = []): string {
-  const sep = locale.startsWith("fr") ? ";" : ",";
+  const sep = csvSeparator(locale);
   const cell = (v: string | number | null) => {
     const s = v === null ? "" : String(v);
     return s.includes(sep) || /["\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;

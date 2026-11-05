@@ -4,12 +4,18 @@
 import { SPELLCHECK_MODES, isSpellcheckMode } from "../writingAids";
 import { openGuide } from "../help";
 import { isTypographySetting } from "../typography";
+import { typoOptions } from "../typoRules";
 import { UpdateSettings } from "./Updates";
 import { usePhone } from "./usePhone";
 import { storage } from "../storage";
 import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useCommand } from "../commands";
-import { DICTIONARIES, LANGS, isLang, useT } from "../i18n";
+import { DICTIONARIES, langCoverage, offeredLangs, isLang, useT } from "../i18n";
+import { openExternal } from "../platform";
+import { REPO } from "../updates";
+
+/** Guide des traducteurs sur GitHub. */
+const TRANSLATE_URL = `https://github.com/${REPO}/blob/main/TRANSLATING.md`;
 import { useSettings, PAGE_ZOOMS, PALETTES, type Palette, type ThemePref, type WheelMode } from "../settings";
 import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS } from "../focusText";
 import { canFullscreen } from "./FocusBar";
@@ -342,13 +348,19 @@ export function Settings({ project = true }: { project?: boolean }) {
           {/* Réglages de l'appareil (langue, apparence, profil, mises à jour, clés de photos) */}
           <label htmlFor={ids.lang}>{t.settings.language}</label>
           <select id={ids.lang} value={lang} onChange={(e) => isLang(e.target.value) && setLang(e.target.value)}>
-            {LANGS.map((code) => (
+            {(offeredLangs().includes(lang) ? offeredLangs() : [...offeredLangs(), lang]).map((code) => (
               // Chaque langue est écrite dans sa propre langue (« English », « Français »).
               <option key={code} value={code} lang={code}>
-                {DICTIONARIES[code].meta.name}
+                {langCoverage(code) < 1
+                  ? fmt(t.settings.languagePartial, { name: DICTIONARIES[code].meta.name, percent: new Intl.NumberFormat(lang, { style: "percent" }).format(Math.floor(langCoverage(code) * 100) / 100) })
+                  : DICTIONARIES[code].meta.name}
               </option>
             ))}
           </select>
+          {/* Guide des traducteurs (TRANSLATING.md) : toute langue est la bienvenue. */}
+          <button type="button" className="link-button settings-link" onClick={() => void openExternal(TRANSLATE_URL)}>
+            {t.settings.translateHelp} <span aria-hidden="true">↗</span>
+          </button>
           <label htmlFor={ids.theme}>{t.settings.theme}</label>
           <select id={ids.theme} value={themePref} onChange={(e) => setThemePref(e.target.value as ThemePref)}>
             {themes.map((th) => (
@@ -484,11 +496,13 @@ export function Settings({ project = true }: { project?: boolean }) {
             value={writing.typography}
             onChange={(e) => isTypographySetting(e.target.value) && setWriting({ ...writing, typography: e.target.value })}
           >
-            {(["auto", "fr", "en", "off"] as const).map((v) => (
-              <option key={v} value={v}>
-                {t.settings.typographyModes[v]}
+            <option value="auto">{t.settings.typographyModes.auto}</option>
+            {typoOptions(lang).map(({ code, language, quotes }) => (
+              <option key={code} value={code}>
+                {fmt(t.settings.typographyLang, { language, quotes })}
               </option>
             ))}
+            <option value="off">{t.settings.typographyModes.off}</option>
           </select>
           <p className="settings-hint" id={ids.typographyHint}>{t.settings.typographyHint}</p>
           {/* Correcteur et suggestions du système (writingAids.ts) : réglages de l'appareil. */}

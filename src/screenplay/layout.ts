@@ -6,8 +6,8 @@ import type { ElementType } from "./model";
 export type Paper = "letter" | "a4";
 export const PAPERS: Paper[] = ["letter", "a4"];
 export const isPaper = (v: unknown): v is Paper => v === "letter" || v === "a4";
-/** Format proposé à un nouveau scénario : A4 en français, US Letter (l'usage anglo-saxon) sinon. */
-export const defaultPaper = (lang: string): Paper => (lang === "fr" ? "a4" : "letter");
+/** Format proposé à un nouveau scénario : US Letter en anglais (l'usage d'Amérique du Nord), A4 dans toute autre langue. */
+export const defaultPaper = (lang: string): Paper => (/^en(-us|-ca)?$/i.test(lang) ? "letter" : "a4");
 
 export interface Layout {
   paper: Paper;

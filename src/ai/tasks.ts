@@ -9,6 +9,7 @@ import type { CardData, CardType, Link } from "../types";
 import { plainText } from "../search";
 import { CHARACTER_FIELDS, ficheText } from "../character";
 import { questionText, splitAnswers, type Answered } from "../assistant";
+import { languageName } from "../typoRules";
 
 const MAX_CARDS = 80;
 const MAX_TEXT = 500;
@@ -43,7 +44,8 @@ export const brief = (card: CardData, questions?: Record<string, string>) => {
 
 /** Nom de la langue de l'interface, pour demander la réponse dans cette langue. */
 const LANGUAGE: Record<string, string> = { fr: "français", en: "English" };
-export const language = (lang: string) => LANGUAGE[lang] ?? lang;
+/** Nom de la langue de l'auteur dans une consigne (en anglais : « German », « Brazilian Portuguese »). */
+export const language = (lang: string) => LANGUAGE[lang] ?? languageName(lang, "en");
 
 export interface Prompt {
   system: string;

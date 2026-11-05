@@ -1,0 +1,41 @@
+name: Traduction · Translation
+description: Traduire MondoWrite dans une langue, ou signaler une erreur de traduction · Translate MondoWrite, or report a translation error
+title: "Traduction · Translation : "
+labels: ["traduction · translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci ! Le mode d'emploi est dans [TRANSLATING.md](https://github.com/sebastienpiconnier/MondoWrite/blob/main/TRANSLATING.md).
+        Thank you! The how-to is in [TRANSLATING.md](https://github.com/sebastienpiconnier/MondoWrite/blob/main/TRANSLATING.md).
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Votre demande · Your request
+      options:
+        - Je veux traduire dans une nouvelle langue · I want to translate into a new language
+        - Je veux compléter une traduction · I want to complete a translation
+        - Une traduction est fausse ou maladroite · A translation is wrong or clumsy
+        - Une règle typographique est fausse ou manque · A typography rule is wrong or missing
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: Langue · Language
+      description: Son nom et, si vous le connaissez, son code (de, es, pt-BR…) · Its name and, if you know it, its code (de, es, pt-BR…)
+      placeholder: Deutsch (de)
+    validations:
+      required: true
+  - type: checkboxes
+    id: setup
+    attributes:
+      label: Comment traduirez-vous ? · How will you translate?
+      options:
+        - label: Avec Node.js, sur mon ordinateur (npm run i18n) · With Node.js, on my computer (npm run i18n)
+        - label: Sur GitHub, sans rien installer (créez-moi le fichier) · On GitHub, without installing anything (please create the file)
+  - type: textarea
+    id: details
+    attributes:
+      label: Détails · Details
+      description: Pour une erreur, le texte affiché, où il apparaît, et ce que vous proposez. Pour une règle typographique, votre source. · For an error, the text shown, where it appears, and your suggestion. For a typography rule, your source.

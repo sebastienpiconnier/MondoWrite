@@ -5,6 +5,7 @@
 // des erreurs (watchErrors).
 
 import { REPO } from "./updates";
+import { punct } from "./typoRules";
 
 /** Dernières erreurs de l'app, les plus récentes en dernier. Gardées en mémoire, le temps de la session. */
 const MAX_ERRORS = 5;
@@ -80,8 +81,8 @@ export interface BugTexts {
   labels: { version: string; system: string; shell: string; lang: string; project: string; ai: string; errors: string };
 }
 
-/** « Version : 1.10.3 » en français, « Version: 1.10.3 » en anglais. */
-const pair = (label: string, value: string, lang: string) => `- ${label}${lang.startsWith("fr") ? "\u00a0:" : ":"} ${value}`;
+/** « Version : 1.10.3 » en français, « Version: 1.10.3 » en anglais (espace de la langue, typoRules.ts). */
+const pair = (label: string, value: string, lang: string) => `- ${label}${punct(":", lang)} ${value}`;
 
 /** Corps de l'issue, en Markdown : questions à remplir, puis ce que l'app sait d'elle-même. */
 export function bugBody(ctx: BugContext, t: BugTexts): string {
