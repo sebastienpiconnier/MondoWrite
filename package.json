@@ -12,8 +12,8 @@
     "tauri": "tauri",
     "ios:prepare": "sh scripts/ios-prepare.sh",
     "coverage": "vitest run --coverage",
-    "guide:shots": "node scripts/guide/shots.mjs fr && node scripts/guide/shots.mjs en",
-    "guide": "node scripts/guide/build.mjs fr && node scripts/guide/build.mjs en",
+    "guide:shots": "node scripts/guide/shots.mjs fr && node scripts/guide/shots.mjs en && node scripts/guide/shots.mjs es",
+    "guide": "node scripts/guide/build.mjs fr && node scripts/guide/build.mjs en && node scripts/guide/build.mjs es",
     "guide:site": "node scripts/guide/site.mjs",
     "e2e": "node scripts/e2e/run.mjs",
     "i18n": "node --experimental-strip-types --no-warnings scripts/i18n.mjs"

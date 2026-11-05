@@ -1,7 +1,7 @@
 // Captures d'écran du guide (docs/guide/images/<langue>/), prises sur le projet d'exemple et sur un court
 // scénario importé (docs/guide/exemples/). Il faut l'app servie sur http://localhost:4319 :
 //   npm run build && npx vite preview --port 4319
-// puis : node scripts/guide/shots.mjs fr   (ou en)
+// puis : node scripts/guide/shots.mjs fr   (ou en, es)
 
 import { chromium } from "playwright-core";
 import { mkdirSync } from "node:fs";
@@ -9,10 +9,12 @@ import { join, resolve } from "node:path";
 
 const LANG = process.argv[2] || "fr";
 const FR = LANG === "fr";
-const T = (fr, en) => (FR ? fr : en);
+const ES = LANG === "es";
+// Le texte de la langue des captures : français, anglais ou espagnol.
+const T = (fr, en, es) => (FR ? fr : ES ? es : en);
 const root = resolve(import.meta.dirname, "../..");
 const OUT = join(root, "docs/guide/images", LANG);
-const SAMPLE = join(root, "docs/guide/exemples", FR ? "chaperon.fountain" : "chaperon.en.fountain");
+const SAMPLE = join(root, "docs/guide/exemples", FR ? "chaperon.fountain" : ES ? "chaperon.es.fountain" : "chaperon.en.fountain");
 const URL = process.env.GUIDE_URL || "http://localhost:4319/";
 const only = process.argv[3] ? new Set(process.argv[3].split(",")) : null;
 mkdirSync(OUT, { recursive: true });
@@ -25,7 +27,7 @@ const browser = await chromium.launch(
 );
 let page;
 async function open(o = {}) {
-  page = await browser.newPage({ viewport: o.viewport ?? { width: 1440, height: 900 }, deviceScaleFactor: o.scale ?? 1.5, locale: FR ? "fr-FR" : "en-US", colorScheme: o.scheme ?? "light", hasTouch: !!o.touch, isMobile: !!o.mobile, acceptDownloads: true });
+  page = await browser.newPage({ viewport: o.viewport ?? { width: 1440, height: 900 }, deviceScaleFactor: o.scale ?? 1.5, locale: FR ? "fr-FR" : ES ? "es-ES" : "en-US", colorScheme: o.scheme ?? "light", hasTouch: !!o.touch, isMobile: !!o.mobile, acceptDownloads: true });
   page.on("pageerror", (e) => console.log("PAGEERROR", e.message));
 }
 const wait = (ms) => page.waitForTimeout(ms);
@@ -104,37 +106,37 @@ async function startExample(profile = true) {
   await wait(600);
   if (profile) {
     // Le profil se remplit dans la fenêtre « Toi, l'auteur », ouverte sous « Nouveau projet » tant qu'il est vide.
-    await page.getByRole("button", { name: T("Renseigner mon profil", "Fill in my profile") }).click();
+    await page.getByRole("button", { name: T("Renseigner mon profil", "Fill in my profile", "Completar mi perfil") }).click();
     await wait(300);
-    await page.getByLabel(T("Prénom", "First name"), { exact: true }).fill("Charles");
-    await page.getByLabel(T("Nom", "Last name"), { exact: true }).fill("Perrault");
-    await page.getByLabel(T("Courriel", "Email")).fill(T("charles.perrault@exemple.fr", "charles.perrault@example.com"));
-    await page.locator(".home-create", { hasText: T("Enregistrer", "Save") }).click();
+    await page.getByLabel(T("Prénom", "First name", "Nombre"), { exact: true }).fill("Charles");
+    await page.getByLabel(T("Nom", "Last name", "Apellidos"), { exact: true }).fill("Perrault");
+    await page.getByLabel(T("Courriel", "Email", "Correo electrónico")).fill(T("charles.perrault@exemple.fr", "charles.perrault@example.com", "charles.perrault@ejemplo.es"));
+    await page.locator(".home-create", { hasText: T("Enregistrer", "Save", "Guardar") }).click();
   }
-  await page.locator(".ghost-button", { hasText: T("Essayer avec un exemple", "Try with an example") }).click();
+  await page.locator(".ghost-button", { hasText: T("Essayer avec un exemple", "Try with an example", "Probar con un ejemplo") }).click();
   await wait(1500);
 }
 async function closeTour() {
-  const b = page.getByRole("button", { name: T("Fermer la visite", "Close the tour") });
+  const b = page.getByRole("button", { name: T("Fermer la visite", "Close the tour", "Cerrar la visita") });
   if (await b.count()) await b.click();
   await wait(300);
 }
 
 // Textes du projet d'exemple, dans la langue de l'interface.
 const D = {
-  wolf: T("Compère le Loup", "Old Father Wolf"),
-  idea: T("Et si on racontait", "What if we told"),
-  meeting: T("La rencontre dans le bois", "The meeting in the woods"),
-  mother: T("Elle a cuit des galettes", "She has baked cakes"),
-  grandma: T("Elle est malade et garde le lit", "She is ill and keeps to her bed"),
-  newTitle: T("Le bûcheron", "The woodcutter"),
-  newBody: T("Il coupe du bois avec son frère. Il a vu passer ", "He chops wood with his brother. He saw "),
-  mention: T("@Lou", "@The Wo"),
-  after: T(" ce matin.", " this morning."),
-  search: T("galette", "cake"),
-  find: T("Mère-grand", "Grandmother"),
-  repl: T("grand-mère", "Granny"),
-  lastLine: T("C'est pour te manger.", "All the better to eat you with."),
+  wolf: T("Compère le Loup", "Old Father Wolf", "El compadre Lobo"),
+  idea: T("Et si on racontait", "What if we told", "¿Y si contáramos"),
+  meeting: T("La rencontre dans le bois", "The meeting in the woods", "El encuentro en el bosque"),
+  mother: T("Elle a cuit des galettes", "She has baked cakes", "Ha hecho tortas"),
+  grandma: T("Elle est malade et garde le lit", "She is ill and keeps to her bed", "Está enferma y guarda cama"),
+  newTitle: T("Le bûcheron", "The woodcutter", "El leñador"),
+  newBody: T("Il coupe du bois avec son frère. Il a vu passer ", "He chops wood with his brother. He saw ", "Corta leña con su hermano. Ha visto pasar a "),
+  mention: T("@Lou", "@The Wo", "@El Lo"),
+  after: T(" ce matin.", " this morning.", " esta mañana."),
+  search: T("galette", "cake", "torta"),
+  find: T("Mère-grand", "Grandmother", "Abuela"),
+  repl: T("grand-mère", "Granny", "Abuelita"),
+  lastLine: T("C'est pour te manger.", "All the better to eat you with.", "Son para comerte."),
 };
 
 // ---------------------------------------------------------------------------------------------------
@@ -144,10 +146,10 @@ await page.goto(URL);
 await wait(800);
 await shot("accueil-vide");
 // La fenêtre du profil, à moitié remplie.
-await page.getByRole("button", { name: T("Renseigner mon profil", "Fill in my profile") }).click();
+await page.getByRole("button", { name: T("Renseigner mon profil", "Fill in my profile", "Completar mi perfil") }).click();
 await wait(300);
-await page.getByLabel(T("Prénom", "First name"), { exact: true }).fill("Charles");
-await page.getByLabel(T("Nom", "Last name"), { exact: true }).fill("Perrault");
+await page.getByLabel(T("Prénom", "First name", "Nombre"), { exact: true }).fill("Charles");
+await page.getByLabel(T("Nom", "Last name", "Apellidos"), { exact: true }).fill("Perrault");
 await shot("profil", { el: "dialog[open]" });
 await page.keyboard.press("Escape");
 await wait(300);
@@ -191,33 +193,33 @@ await step("nouvelle carte", async () => {
   await page.keyboard.press("Escape");
 });
 await step("fils", async () => {
-  await zoomOnCard(T("La plus jolie petite fille", "The prettiest little girl"));
+  await zoomOnCard(T("La plus jolie petite fille", "The prettiest little girl", "La niña más bonita"));
   await shot("canevas-fils", { clip: { x: 0, y: 70, width: 1200, height: 700 } });
   await fit();
 });
 await step("fils masqués", async () => {
-  await page.getByRole("button", { name: T("Masquer les fils", "Hide threads") }).click();
+  await page.getByRole("button", { name: T("Masquer les fils", "Hide threads", "Ocultar los hilos") }).click();
   await wait(300);
   // La carte du personnage (son nom figure aussi dans d'autres cartes) : celle dont le titre est exactement ce nom.
-  const name = T("Le Petit Chaperon rouge", "Little Red Riding Hood");
+  const name = T("Le Petit Chaperon rouge", "Little Red Riding Hood", "Caperucita Roja");
   const id = await page.evaluate((n) => [...document.querySelectorAll(".react-flow__node")].find((el) => [...el.querySelectorAll("textarea, input")].some((f) => f.value.trim() === n))?.getAttribute("data-id"), name);
   await page.locator(`.react-flow__node[data-id="${id}"] .card-links-toggle`).click();
-  await zoomOnCard(T("La plus jolie petite fille", "The prettiest little girl"));
+  await zoomOnCard(T("La plus jolie petite fille", "The prettiest little girl", "La niña más bonita"));
   await shot("fils-masques", { clip: { x: 0, y: 70, width: 1200, height: 700 } });
-  await page.getByRole("button", { name: T("Masquer les fils", "Hide threads") }).click();
+  await page.getByRole("button", { name: T("Masquer les fils", "Hide threads", "Ocultar los hilos") }).click();
   await fit();
 });
 await step("menu carte", async () => {
   const n = node(D.wolf);
   await n.hover();
-  await n.getByRole("button", { name: T("Plus d’actions", "More actions") }).click();
+  await n.getByRole("button", { name: T("Plus d’actions", "More actions", "Más acciones") }).click();
   await wait(300);
   await shot("carte-menu", { clip: await union([n, page.locator("[role=menu]").first()]) });
   await page.keyboard.press("Escape");
   await bg();
 });
 await step("filtre", async () => {
-  const b = page.getByRole("button", { name: T("Filtrer les cartes", "Filter cards") });
+  const b = page.getByRole("button", { name: T("Filtrer les cartes", "Filter cards", "Filtrar las tarjetas") });
   await b.click();
   await wait(300);
   await shot("filtre", { clip: await union([page.locator(".filter-panel, [role=dialog], [role=group]").last(), b], 30) });
@@ -234,12 +236,12 @@ await step("sélection et cadre", async () => {
   await shot("selection");
   await page.keyboard.press("c");
   await wait(600);
-  await page.locator(`[aria-label='${T("Nom du cadre", "Frame name")}']`).first().fill(T("La famille", "The family"), { force: true });
+  await page.locator(`[aria-label='${T("Nom du cadre", "Frame name", "Nombre del marco")}']`).first().fill(T("La famille", "The family", "La familia"), { force: true });
   await bg();
   await shot("cadre", { clip: await union([page.locator(".react-flow__node-frame").first()], 30) });
 });
 await step("organiser", async () => {
-  await page.getByRole("button", { name: T("Organiser le canevas", "Organize the canvas") }).click();
+  await page.getByRole("button", { name: T("Organiser le canevas", "Organize the canvas", "Organizar el lienzo") }).click();
   await wait(900);
   await fit();
   await shot("organiser");
@@ -263,31 +265,31 @@ await step("recherche", async () => {
   await fit();
 });
 await step("cartes agrandies", async () => {
-  await cardButton(D.meeting, T("Agrandir la carte", "Expand card"));
+  await cardButton(D.meeting, T("Agrandir la carte", "Expand card", "Ampliar la tarjeta"));
   await wait(800);
   await shot("carte-agrandie-scene");
   await closeDialog();
   await wait(300);
-  await cardButton(D.mother, T("Agrandir la carte", "Expand card"));
+  await cardButton(D.mother, T("Agrandir la carte", "Expand card", "Ampliar la tarjeta"));
   await wait(800);
   await shot("carte-agrandie-personnage", { el: "dialog[open]" });
   await closeDialog();
   await wait(300);
 });
 await step("à faire", async () => {
-  await page.getByRole("button", { name: T(/À faire/, /To do/) }).click();
+  await page.getByRole("button", { name: T(/À faire/, /To do/, /Pendientes/) }).click();
   await wait(400);
   await shot("a-faire", { clip: { x: 640, y: 0, width: 800, height: 600 } });
   await page.keyboard.press("Escape");
 });
 await step("corbeille", async () => {
-  await cardButton(D.idea, T("Plus d’actions", "More actions"));
-  await page.getByRole("menuitem", { name: T("Mettre à la corbeille", "Move to trash") }).click();
+  await cardButton(D.idea, T("Plus d’actions", "More actions", "Más acciones"));
+  await page.getByRole("menuitem", { name: T("Mettre à la corbeille", "Move to trash", "Mover a la papelera") }).click();
   await wait(400);
   await shot("corbeille-message", { clip: { x: 0, y: 600, width: 1440, height: 300 } });
-  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
-  await settingsTab(T("Ce projet", "This project"));
-  await page.getByRole("button", { name: T(/Corbeille \(/, /Trash \(/) }).click();
+  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
+  await settingsTab(T("Ce projet", "This project", "Este proyecto"));
+  await page.getByRole("button", { name: T(/Corbeille \(/, /Trash \(/, /Papelera \(/) }).click();
   await wait(500);
   await shot("corbeille", { el: "dialog[open]" });
   await closeDialog();
@@ -299,7 +301,7 @@ await step("photos", async () => {
   await shot("photos", { el: "dialog[open]" });
   await closeDialog();
 });
-await page.getByRole("button", { name: T("Projets", "Projects") }).click();
+await page.getByRole("button", { name: T("Projets", "Projects", "Proyectos") }).click();
 await wait(800);
 await shot("accueil");
 await page.close();
@@ -309,48 +311,48 @@ await page.close();
 await open();
 await startExample();
 await closeTour();
-await view("Bible");
+await view(T("Bible", "Bible", "Biblia"));
 await shot("bible-couverture");
 await step("personnage", async () => {
-  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/, /^Personajes/) }).click();
   await wait(900);
   await scrollToText(D.grandma, 20);
   await wait(400);
   await shot("bible-personnage");
 });
 await step("assistant", async () => {
-  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/, /^Personajes/) }).click();
   await wait(600);
-  await page.getByRole("button", { name: T(/Questionner/, /Ask about/) }).first().click();
+  await page.getByRole("button", { name: T(/Questionner/, /Ask about/, /Preguntar sobre/) }).first().click();
   await wait(600);
   await page.locator(".assistant, .character-assistant").first().scrollIntoViewIfNeeded();
   await wait(300);
   await shot("bible-assistant");
 });
 await step("relations", async () => {
-  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/, /^Personajes/) }).click();
   await wait(500);
-  await page.getByRole("button", { name: T("Relations", "Relationships"), exact: true }).first().click();
+  await page.getByRole("button", { name: T("Relations", "Relationships", "Relaciones"), exact: true }).first().click();
   await wait(800);
   await shot("bible-relations");
-  await page.getByRole("button", { name: T("Fiches", "Sheets"), exact: true }).first().click();
+  await page.getByRole("button", { name: T("Fiches", "Sheets", "Fichas"), exact: true }).first().click();
 });
 await step("lieux", async () => {
-  await page.getByRole("button", { name: T(/Univers|^Lieux/, /World|^Places/) }).click();
+  await page.getByRole("button", { name: T(/Univers|^Lieux/, /World|^Places/, /Universo|^Lugares/) }).click();
   await wait(800);
   await shot("bible-lieux");
 });
 // Lot 7 : une carte Secret, sa fiche remplie (rubrique Secrets de la Structure).
 await step("secret", async () => {
-  await page.getByRole("button", { name: T(/^Secrets/, /^Secrets/) }).first().click();
+  await page.getByRole("button", { name: T(/^Secrets/, /^Secrets/, /^Secretos/) }).first().click();
   await wait(600);
-  await page.getByRole("button", { name: T("Nouvelle fiche : Secret", "New entry: Secret") }).first().click();
+  await page.getByRole("button", { name: T("Nouvelle fiche : Secret", "New entry: Secret", "Ficha nueva: Secreto") }).first().click();
   await wait(600);
-  await page.keyboard.type(T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother"));
+  await page.keyboard.type(T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother", "El Lobo conoce a la Abuela"));
   await page.keyboard.press("Enter");
   // Fiche vide : repliée, on l'ouvre.
   // Le titre d'une fiche est une zone de texte (il passe à la ligne) : on la reconnaît à sa valeur.
-  const title = T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother");
+  const title = T("Le Loup connaît la Mère-grand", "The Wolf knows Grandmother", "El Lobo conoce a la Abuela");
   const id = await page.locator("textarea.bible-title").evaluateAll((els, t) => els.find((el) => el.value === t)?.getAttribute("data-card"), title);
   const entry = page.locator(`.bible-entry[data-entry="${id}"]`);
   await entry.locator(".sheet-toggle").first().click();
@@ -359,21 +361,21 @@ await step("secret", async () => {
     await entry.getByLabel(label, { exact: true }).first().fill(text);
     await wait(150);
   };
-  await fill(T("La vérité", "The truth"), T("Ils se sont croisés jadis, quand elle chassait au bois.", "They met long ago, when she hunted in the woods."));
-  await fill(T("Enjeu", "Stakes"), T("L’enfant croirait-elle encore sa Mère-grand ?", "Would the child still trust her grandmother?"));
-  await fill(T("Quand et comment il éclate", "When and how it comes out"), T("Dans le lit, par une phrase de trop du Loup.", "In the bed, when the Wolf says one word too many."));
-  await entry.getByLabel(T("Certitude", "Certainty"), { exact: true }).first().selectOption("provisoire");
+  await fill(T("La vérité", "The truth", "La verdad"), T("Ils se sont croisés jadis, quand elle chassait au bois.", "They met long ago, when she hunted in the woods.", "Se cruzaron hace tiempo, cuando ella cazaba en el bosque."));
+  await fill(T("Enjeu", "Stakes", "Lo que está en juego"), T("L’enfant croirait-elle encore sa Mère-grand ?", "Would the child still trust her grandmother?", "¿Seguiría la niña creyendo a su abuela?"));
+  await fill(T("Quand et comment il éclate", "When and how it comes out", "Cuándo y cómo estalla"), T("Dans le lit, par une phrase de trop du Loup.", "In the bed, when the Wolf says one word too many.", "En la cama, cuando el Lobo dice una frase de más."));
+  await entry.getByLabel(T("Certitude", "Certainty", "Certeza"), { exact: true }).first().selectOption("provisoire");
   await wait(400);
   await entry.scrollIntoViewIfNeeded();
   await shot("bible-secret");
 });
 await step("rubriques", async () => {
-  await page.getByRole("button", { name: T("Choisir et ranger les rubriques", "Choose and order sections") }).click();
+  await page.getByRole("button", { name: T("Choisir et ranger les rubriques", "Choose and order sections", "Elegir y ordenar las secciones") }).click();
   await wait(400);
   await shot("bible-rubriques", { clip: { x: 0, y: 64, width: 520, height: 836 } });
-  await page.getByRole("button", { name: T("Terminé", "Done") }).click();
+  await page.getByRole("button", { name: T("Terminé", "Done", "Listo") }).click();
 });
-await view(T("Plan", "Outline"));
+await view(T("Plan", "Outline", "Esquema"));
 await shot("plan-liste");
 await step("plan", async () => {
   const sel = page.locator("select").first();
@@ -384,30 +386,30 @@ await step("plan", async () => {
   await wait(800);
   await shot("plan-cercle", { clip: await union([".story-circle"], 24) });
   // L'éditeur de « Mes gabarits », prérempli avec les cases en place.
-  await sel.selectOption({ label: T("Trois actes", "Three acts") });
+  await sel.selectOption({ label: T("Trois actes", "Three acts", "Tres actos") });
   await wait(500);
   await sel.selectOption("__new");
   await wait(600);
   await shot("gabarit-editeur", { clip: await union(["dialog[open]"], 16) });
   await page.keyboard.press("Escape");
   await wait(300);
-  await sel.selectOption({ label: T("Trois actes", "Three acts") });
+  await sel.selectOption({ label: T("Trois actes", "Three acts", "Tres actos") });
   await wait(600);
-  await page.getByRole("button", { name: T("Fiches", "Index cards"), exact: true }).click();
+  await page.getByRole("button", { name: T("Fiches", "Index cards", "Fichas"), exact: true }).click();
   await wait(800);
   await shot("plan-fiches");
-  await page.getByRole("button", { name: T("Chronologie", "Timeline"), exact: true }).click();
+  await page.getByRole("button", { name: T("Chronologie", "Timeline", "Cronología"), exact: true }).click();
   await wait(800);
   await shot("plan-chronologie");
-  await page.getByRole("button", { name: T("Liste", "List"), exact: true }).click();
+  await page.getByRole("button", { name: T("Liste", "List", "Lista"), exact: true }).click();
 });
-await view(T("Manuscrit", "Manuscript"));
+await view(T("Manuscrit", "Manuscript", "Manuscrito"));
 await shot("manuscrit");
 await step("ruban", async () => {
-  await page.getByRole("button", { name: T("Voir les intrigues", "Show plotlines") }).click();
+  await page.getByRole("button", { name: T("Voir les intrigues", "Show plotlines", "Ver las tramas") }).click();
   await wait(500);
   await shot("ruban", { clip: await union([".ms-meta"], 12) });
-  await page.getByRole("button", { name: T("Masquer les intrigues", "Hide plotlines") }).click();
+  await page.getByRole("button", { name: T("Masquer les intrigues", "Hide plotlines", "Ocultar las tramas") }).click();
 });
 await shot("manuscrit-colonne", { clip: { x: 0, y: 64, width: 360, height: 836 } });
 await shot("manuscrit-stats", { clip: { x: 1080, y: 64, width: 360, height: 836 } });
@@ -421,7 +423,7 @@ await step("manuscrit-chiffres", async () => {
   await stats.click();
 });
 await step("remplacer", async () => {
-  await moreItem(".ms-meta", T("Remplacer", "Replace"));
+  await moreItem(".ms-meta", T("Remplacer", "Replace", "Reemplazar"));
   await wait(400);
   await page.keyboard.type(D.find);
   await page.keyboard.press("Tab");
@@ -431,14 +433,14 @@ await step("remplacer", async () => {
   await closeDialog();
 });
 await step("statistiques du roman", async () => {
-  await moreItem(".ms-meta", T("Statistiques", "Statistics"));
+  await moreItem(".ms-meta", T("Statistiques", "Statistics", "Estadísticas"));
   await wait(600);
   await shot("stats-personnages", { el: "dialog[open]" });
   await closeDialog();
   await wait(300);
 });
 await step("focus", async () => {
-  await page.getByRole("button", { name: T("Mode focus", "Focus mode") }).click();
+  await page.getByRole("button", { name: T("Mode focus", "Focus mode", "Modo concentración") }).click();
   await wait(800);
   await page.locator(".ProseMirror").first().click();
   await wait(500);
@@ -452,18 +454,18 @@ await step("focus", async () => {
   await wait(400);
 });
 await step("exporter", async () => {
-  await page.getByRole("button", { name: T("Exporter", "Export") }).click();
+  await page.getByRole("button", { name: T("Exporter", "Export", "Exportar") }).click();
   await wait(400);
   await shot("exporter", { clip: await union([".export-panel"], 20) });
-  await page.getByRole("button", { name: T("Livre broché (KDP)…", "Paperback (KDP)…") }).click();
-  await page.waitForSelector(T("text=pages, dos de", "text=pages, spine"), { timeout: 20000 });
+  await page.getByRole("button", { name: T("Livre broché (KDP)…", "Paperback (KDP)…", "Libro en rústica (KDP)…") }).click();
+  await page.waitForSelector(T("text=pages, dos de", "text=pages, spine", "text=páginas, lomo de"), { timeout: 20000 });
   await shot("livre-broche", { el: "dialog[open]" });
   await closeDialog();
 });
 await step("export-bible", async () => {
-  await page.getByRole("button", { name: T("Exporter", "Export") }).click();
+  await page.getByRole("button", { name: T("Exporter", "Export", "Exportar") }).click();
   await wait(400);
-  await page.getByRole("button", { name: T("Bible…", "Bible…") }).click();
+  await page.getByRole("button", { name: T("Bible…", "Bible…", "Biblia…") }).click();
   // L'aperçu est le vrai PDF : on attend le nombre de pages.
   await page.waitForSelector(".bexp-pages:not(.is-working) canvas", { timeout: 30000 });
   await wait(800);
@@ -471,15 +473,15 @@ await step("export-bible", async () => {
   await closeDialog();
 });
 await step("réglages", async () => {
-  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
+  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
   await wait(400);
   await shot("reglages", { clip: await union([".settings-panel"], 20) });
-  await page.getByRole("button", { name: T("Raccourcis clavier", "Keyboard shortcuts") }).click();
+  await page.getByRole("button", { name: T("Raccourcis clavier", "Keyboard shortcuts", "Atajos de teclado") }).click();
   await wait(400);
   await shot("raccourcis", { el: "dialog[open]" });
   await closeDialog();
-  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
-  await page.getByRole("button", { name: T("À propos de MondoWrite", "About MondoWrite") }).click();
+  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
+  await page.getByRole("button", { name: T("À propos de MondoWrite", "About MondoWrite", "Acerca de MondoWrite") }).click();
   await wait(400);
   await shot("a-propos", { el: "dialog[open]" });
   await closeDialog();
@@ -505,15 +507,15 @@ async function mockAi() {
 }
 await step("ia", async () => {
   await mockAi();
-  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
-  await settingsTab(T("IA", "AI"));
+  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
+  await settingsTab(T("IA", "AI", "IA"));
   await page.locator('.settings-panel select:has(option[value="lmstudio"])').selectOption("lmstudio");
   await wait(1200);
   await shot("reglages-ia", { clip: await union([".settings-panel"], 20) });
   await page.keyboard.press("Escape");
   await page.mouse.click(700, 500);
-  await view(T("Canevas", "Canvas"));
-  const b = page.getByRole("button", { name: T("IA", "AI"), exact: true });
+  await view(T("Canevas", "Canvas", "Lienzo"));
+  const b = page.getByRole("button", { name: T("IA", "AI", "IA"), exact: true });
   await b.click();
   await wait(300);
   await shot("ia-menu", { clip: await union([b, page.locator("[role=menu], .ai-panel, .settings-panel").last()], 24) });
@@ -526,19 +528,20 @@ await step("ia relecture", async () => {
         question: T(
           "Le Loup prend le chemin le plus court : comment sait-il déjà où se trouve la maison de la Mère-grand, que la petite fille vient seulement de lui décrire ?",
           "The Wolf takes the shortest path: how does he already know where the Grandmother’s house is, when the little girl has only just described it?",
+          "El Lobo toma el camino más corto: ¿cómo sabe ya dónde está la casa de la Abuela, si la niña acaba de describírsela?",
         ),
         scenes: ["s3"],
-        quote: T("par le chemin qui était le plus court", "along the shortest path"),
+        quote: T("par le chemin qui était le plus court", "along the shortest path", "por el camino más corto"),
       },
       {
-        question: T("La Mère-grand est malade et garde le lit : qui lui a appris que sa petite-fille venait ce jour-là ?", "The Grandmother is ill and keeps to her bed: who told her that her granddaughter was coming that day?"),
+        question: T("La Mère-grand est malade et garde le lit : qui lui a appris que sa petite-fille venait ce jour-là ?", "The Grandmother is ill and keeps to her bed: who told her that her granddaughter was coming that day?", "La Abuela está enferma y guarda cama: ¿quién le dijo que su nieta iría a verla ese día?"),
         scenes: ["s4"],
-        quote: T("Tire la chevillette, la bobinette cherra.", "Pull the peg, and the latch will fall."),
+        quote: T("Tire la chevillette, la bobinette cherra.", "Pull the peg, and the latch will fall.", "Tira de la clavija y caerá el pestillo."),
       },
     ],
   });
-  await page.getByRole("button", { name: T("IA", "AI"), exact: true }).click();
-  await page.getByRole("button", { name: T("Cohérence scène par scène", "Scene-by-scene continuity") }).click();
+  await page.getByRole("button", { name: T("IA", "AI", "IA"), exact: true }).click();
+  await page.getByRole("button", { name: T("Cohérence scène par scène", "Scene-by-scene continuity", "Coherencia escena a escena") }).click();
   await wait(2500);
   await page.locator(".ai-review").first().scrollIntoViewIfNeeded();
   await shot("ia-relecture", { clip: await union([".ai-review"], 16) });
@@ -547,37 +550,39 @@ await step("ia interroger", async () => {
   aiReply = T(
     "Ma mère m’avait dit de porter une galette et un petit pot de beurre à ma Mère-grand. Je ne savais pas qu’il était dangereux de s’arrêter à écouter un loup.",
     "My mother had told me to take a cake and a little pot of butter to my grandmother. I did not know it was dangerous to stop and listen to a wolf.",
+    "Mi madre me había dicho que le llevara una torta y un tarrito de mantequilla a mi abuela. No sabía que es peligroso pararse a escuchar a un lobo.",
   );
-  await view("Bible");
-  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/) }).click();
+  await view(T("Bible", "Bible", "Biblia"));
+  await page.getByRole("button", { name: T(/^Personnages/, /^Characters/, /^Personajes/) }).click();
   await wait(600);
-  await page.getByRole("button", { name: T(/Questionner .*Chaperon/, /Ask about Little Red/) }).first().click();
+  await page.getByRole("button", { name: T(/Questionner .*Chaperon/, /Ask about Little Red/, /Preguntar sobre Caperucita/) }).first().click();
   await wait(400);
-  await page.getByRole("tab", { name: T("Interroger", "Ask them") }).first().click().catch(() => page.getByRole("button", { name: T("Interroger", "Ask them") }).first().click());
+  await page.getByRole("tab", { name: T("Interroger", "Ask them", "Preguntar"), exact: true }).first().click().catch(() => page.getByRole("button", { name: T("Interroger", "Ask them", "Preguntar"), exact: true }).first().click());
   await wait(300);
-  const box = page.getByLabel(T(/Ta question pour/, /Your question for/)).first();
-  await box.fill(T("Pourquoi t’es-tu arrêtée pour parler au Loup ?", "Why did you stop to talk to the Wolf?"));
-  await page.getByRole("button", { name: T("Demander", "Ask"), exact: true }).first().click();
+  const box = page.getByLabel(T(/Ta question pour/, /Your question for/, /Tu pregunta para/)).first();
+  await box.fill(T("Pourquoi t’es-tu arrêtée pour parler au Loup ?", "Why did you stop to talk to the Wolf?", "¿Por qué te paraste a hablar con el Lobo?"));
+  // En espagnol, l’onglet et le bouton s’appellent tous deux « Preguntar » : le bouton vient en dernier.
+  await page.getByRole("button", { name: T("Demander", "Ask", "Preguntar"), exact: true }).last().click();
   await wait(1500);
   // L'assistant ouvert est celui qui a la question posée (la fiche de la Mère vient avant dans la Bible).
-  const asked = page.getByText(T("Pourquoi t’es-tu arrêtée", "Why did you stop"), { exact: false }).first();
+  const asked = page.getByText(T("Pourquoi t’es-tu arrêtée", "Why did you stop", "¿Por qué te paraste"), { exact: false }).first();
   const panel = asked.locator("xpath=ancestor::*[contains(@class,'assistant')][last()]");
   await panel.scrollIntoViewIfNeeded();
   await shot("ia-interroger", { clip: await union([panel], 16) });
 });
 await step("atelier", async () => {
   aiReply = JSON.stringify([
-    T("Le Petit Chaperon rouge cueille trop de fleurs et perd de vue le chemin.", "Little Red Riding Hood picks too many flowers and loses sight of the path."),
-    T("Un bûcheron entend le Loup frapper chez la Mère-grand.", "A woodcutter hears the Wolf knocking at the Grandmother’s door."),
-    T("La Mère-grand, méfiante, ne répond pas à la voix trop douce.", "The Grandmother, wary, does not answer the too-gentle voice."),
+    T("Le Petit Chaperon rouge cueille trop de fleurs et perd de vue le chemin.", "Little Red Riding Hood picks too many flowers and loses sight of the path.", "Caperucita Roja recoge demasiadas flores y pierde de vista el camino."),
+    T("Un bûcheron entend le Loup frapper chez la Mère-grand.", "A woodcutter hears the Wolf knocking at the Grandmother’s door.", "Un leñador oye al Lobo llamar a la puerta de la Abuela."),
+    T("La Mère-grand, méfiante, ne répond pas à la voix trop douce.", "The Grandmother, wary, does not answer the too-gentle voice.", "La Abuela, desconfiada, no contesta a esa voz tan dulce."),
   ]);
-  await page.getByRole("button", { name: T("Réglages", "Settings") }).click();
-  await settingsTab(T("Ce projet", "This project"));
-  await page.getByLabel(T("Activer le mode Atelier pour ce projet", "Turn on Workshop mode for this project")).check();
+  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
+  await settingsTab(T("Ce projet", "This project", "Este proyecto"));
+  await page.getByLabel(T("Activer le mode Atelier pour ce projet", "Turn on Workshop mode for this project", "Activar el modo Taller para este proyecto")).check();
   await page.keyboard.press("Escape");
   await page.mouse.click(700, 500);
-  await view(T("Manuscrit", "Manuscript"));
-  await page.getByRole("button", { name: T("Trois directions", "Three directions") }).first().click();
+  await view(T("Manuscrit", "Manuscript", "Manuscrito"));
+  await page.getByRole("button", { name: T("Trois directions", "Three directions", "Tres direcciones") }).first().click();
   await wait(1500);
   await shot("atelier-directions", { clip: await union([".atelier-directions .atelier-panel"], 0) });
 });
@@ -590,31 +595,31 @@ await page.goto(URL);
 await wait(600);
 await step("import", async () => {
   const chooser = page.waitForEvent("filechooser");
-  await page.locator(".ghost-button", { hasText: T("Importer…", "Import…") }).click();
+  await page.locator(".ghost-button", { hasText: T("Importer…", "Import…", "Importar…") }).click();
   await (await chooser).setFiles(SAMPLE);
   await wait(2000);
   await closeTour();
 });
-await view(T("Scénario", "Screenplay"));
+await view(T("Scénario", "Screenplay", "Guion"));
 await shot("scenario");
 await step("vérifier et filtre", async () => {
   // Une faute de frappe le temps de la capture (« LE LOUPP »), pour que l'onglet ait quelque chose à montrer.
-  const cue = page.locator(".sp-editor [data-type=character], .sp-editor .sp-character, .sp-editor p", { hasText: new RegExp(`^${T("LE LOUP", "THE WOLF")}$`) }).nth(1);
+  const cue = page.locator(".sp-editor [data-type=character], .sp-editor .sp-character, .sp-editor p", { hasText: new RegExp(`^${T("LE LOUP", "THE WOLF", "EL LOBO")}$`) }).nth(1);
   await cue.click();
   await page.keyboard.press("End");
   await page.keyboard.type("P");
   await page.keyboard.press("Enter");
-  await page.keyboard.type(T("Ici.", "Here."));
+  await page.keyboard.type(T("Ici.", "Here.", "Aquí."));
   await wait(800);
-  await moreItem(".sp-bar", T(/^Vérifier/, /^Check/));
+  await moreItem(".sp-bar", T(/^Vérifier/, /^Check/, /^Revisar/));
   await wait(600);
   await shot("scenario-verifier");
   // On retire la faute : annuler dans l'éditeur.
   await page.locator(".sp-editor").first().click();
   for (let i = 0; i < 4; i++) await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
   await wait(600);
-  await page.selectOption("#sp-filter-name", T("LE LOUP", "THE WOLF"));
-  await page.getByRole("button", { name: T("Ses répliques", "Their lines"), exact: true }).click();
+  await page.selectOption("#sp-filter-name", T("LE LOUP", "THE WOLF", "EL LOBO"));
+  await page.getByRole("button", { name: T("Ses répliques", "Their lines", "Sus réplicas"), exact: true }).click();
   await wait(800);
   await shot("scenario-filtre");
   // On rend tout le scénario et l'onglet « Dans cette scène » pour la suite.
@@ -624,18 +629,18 @@ await step("vérifier et filtre", async () => {
 });
 await step("statistiques", async () => {
   // Fenêtre Statistiques, ouverte depuis la barre du Scénario.
-  await moreItem(".sp-bar", T(/^Statistiques$/, /^Statistics$/));
+  await moreItem(".sp-bar", T(/^Statistiques$/, /^Statistics$/, /^Estadísticas$/));
   await wait(600);
   const dlg = "dialog[open]";
-  await page.locator(dlg).getByRole("button", { name: T("Décors", "Locations"), exact: true }).click();
+  await page.locator(dlg).getByRole("button", { name: T("Décors", "Locations", "Localizaciones"), exact: true }).click();
   await wait(500);
   await shot("stats-decors", { el: dlg });
-  await page.locator(dlg).getByRole("button", { name: T("Qui croise qui", "Who meets whom"), exact: true }).click();
+  await page.locator(dlg).getByRole("button", { name: T("Qui croise qui", "Who meets whom", "Quién se cruza con quién"), exact: true }).click();
   await wait(500);
   await page.locator(`${dlg} .cross-cell:not(.is-self)`).first().click();
   await wait(400);
   await shot("stats-croisements", { el: dlg });
-  await page.locator(dlg).getByRole("button", { name: T("Int./Ext. et Jour/Nuit", "Int./Ext. and Day/Night"), exact: true }).click();
+  await page.locator(dlg).getByRole("button", { name: T("Int./Ext. et Jour/Nuit", "Int./Ext. and Day/Night", "Int./Ext. y Día/Noche"), exact: true }).click();
   await wait(400);
   await shot("stats-int-ext", { el: dlg });
   await closeDialog();
@@ -649,7 +654,7 @@ await step("complétion", async () => {
   await page.mouse.click(bb.x + 40, bb.y + bb.height + 60);
   await wait(200);
   await page.keyboard.press("Enter");
-  await page.keyboard.type(T("ext. b", "ext. w"));
+  await page.keyboard.type(T("ext. b", "ext. w", "ext. b"));
   await wait(600);
   await shot("scenario-completion");
   await page.keyboard.press("Escape");
@@ -657,53 +662,53 @@ await step("complétion", async () => {
   await wait(300);
 });
 await step("page de titre", async () => {
-  await page.locator(`[aria-label='${T("Page de titre du scénario", "Screenplay title page")}']`).first().scrollIntoViewIfNeeded();
+  await page.locator(`[aria-label='${T("Page de titre du scénario", "Screenplay title page", "Portada del guion")}']`).first().scrollIntoViewIfNeeded();
   await wait(400);
   await shot("scenario-page-titre");
 });
 await step("séquencier", async () => {
-  await view(T("Séquencier", "Outline"));
+  await view(T("Séquencier", "Outline", "Escaleta"));
   await shot("sequencier");
   await page.locator("select").first().selectOption({ index: 1 });
   await wait(800);
-  await page.getByRole("button", { name: T("Fiches", "Index cards"), exact: true }).click();
+  await page.getByRole("button", { name: T("Fiches", "Index cards", "Fichas"), exact: true }).click();
   await wait(600);
   await shot("sequencier-fiches");
-  await page.getByRole("button", { name: T("Liste", "List"), exact: true }).click();
+  await page.getByRole("button", { name: T("Liste", "List", "Lista"), exact: true }).click();
 });
 await step("export scénario", async () => {
-  await page.getByRole("button", { name: T("Exporter", "Export") }).click();
+  await page.getByRole("button", { name: T("Exporter", "Export", "Exportar") }).click();
   await wait(300);
   await shot("exporter-scenario", { clip: await union([".export-panel"], 20) });
   // Fenêtre du PDF : texte d'un comédien, en-tête et filigrane (réglages remis à zéro après).
   await page.locator(".export-panel button", { hasText: "PDF…" }).click();
   await wait(600);
   const dlg = page.locator("dialog[open]");
-  await dlg.getByLabel(T("Le texte d’un personnage", "One character’s part")).check();
-  await dlg.getByLabel(T("Personnage", "Character"), { exact: true }).selectOption(T("LE LOUP", "THE WOLF"));
-  await dlg.getByLabel(T("Synopsis des scènes", "Scene synopses")).check();
-  await dlg.getByLabel(T("En-tête", "Header")).fill(T("Version 3 · {date}", "Draft 3 · {date}"));
-  await dlg.getByLabel(T("Filigrane", "Watermark")).fill(T("Confidentiel", "Confidential"));
+  await dlg.getByLabel(T("Le texte d’un personnage", "One character’s part", "El texto de un personaje")).check();
+  await dlg.getByLabel(T("Personnage", "Character", "Personaje"), { exact: true }).selectOption(T("LE LOUP", "THE WOLF", "EL LOBO"));
+  await dlg.getByLabel(T("Synopsis des scènes", "Scene synopses", "Sinopsis de las escenas")).check();
+  await dlg.getByLabel(T("En-tête", "Header", "Encabezado")).fill(T("Version 3 · {date}", "Draft 3 · {date}", "Versión 3 · {date}"));
+  await dlg.getByLabel(T("Filigrane", "Watermark", "Marca de agua")).fill(T("Confidentiel", "Confidential", "Confidencial"));
   await wait(500);
   await shot("scenario-export-pdf", { el: "dialog[open]" });
   if (process.env.GUIDE_PDF) {
     const download = page.waitForEvent("download");
-    await dlg.getByRole("button", { name: T("Enregistrer le PDF…", "Save the PDF…") }).click();
+    await dlg.getByRole("button", { name: T("Enregistrer le PDF…", "Save the PDF…", "Guardar el PDF…") }).click();
     await (await download).saveAs(process.env.GUIDE_PDF);
   }
-  await dlg.getByLabel(T("Tout le scénario", "The whole screenplay")).check();
-  await dlg.getByLabel(T("Synopsis des scènes", "Scene synopses")).uncheck();
-  await dlg.getByLabel(T("En-tête", "Header")).fill("");
-  await dlg.getByLabel(T("Filigrane", "Watermark")).fill("");
+  await dlg.getByLabel(T("Tout le scénario", "The whole screenplay", "Todo el guion")).check();
+  await dlg.getByLabel(T("Synopsis des scènes", "Scene synopses", "Sinopsis de las escenas")).uncheck();
+  await dlg.getByLabel(T("En-tête", "Header", "Encabezado")).fill("");
+  await dlg.getByLabel(T("Filigrane", "Watermark", "Marca de agua")).fill("");
   await closeDialog();
 });
 await step("canevas scénario", async () => {
-  await view(T("Canevas", "Canvas"));
+  await view(T("Canevas", "Canvas", "Lienzo"));
   await fit();
   await shot("scenario-canevas");
   const sc = page.locator(".react-flow__node:has(.type-scene)").nth(1);
   await sc.hover();
-  await sc.getByRole("button", { name: T("Agrandir la carte", "Expand card") }).click();
+  await sc.getByRole("button", { name: T("Agrandir la carte", "Expand card", "Ampliar la tarjeta") }).click();
   await wait(800);
   await shot("carte-agrandie-scenario", { el: "dialog[open]" });
   await closeDialog();
@@ -716,7 +721,7 @@ await open({ scheme: "dark" });
 await startExample();
 await closeTour();
 await shot("sombre-canevas");
-await view(T("Manuscrit", "Manuscript"));
+await view(T("Manuscrit", "Manuscript", "Manuscrito"));
 await shot("sombre-manuscrit");
 await page.close();
 
@@ -725,14 +730,14 @@ await open({ viewport: { width: 390, height: 844 }, scale: 2, mobile: true, touc
 await startExample();
 await closeTour();
 await step("carnet", async () => {
-  await page.getByRole("radio", { name: T("Question", "Question") }).tap();
-  await page.getByLabel(T(/Ta note/, /Your note/)).fill(T("Pourquoi le Loup ne mange-t-il pas l’enfant dans le bois ?\nÀ cause des bûcherons, mais pas seulement.", "Why doesn’t the Wolf eat the child in the woods?\nBecause of the woodcutters, but not only."));
-  await page.getByRole("button", { name: T("Garder", "Keep") }).tap();
-  await page.getByRole("radio", { name: T("Objet", "Object") }).tap();
-  await page.getByLabel(T(/Ta note/, /Your note/)).fill(T("Le petit pot de beurre", "The little pot of butter"));
-  await page.getByRole("button", { name: T("Garder", "Keep") }).tap();
-  await page.getByRole("radio", { name: T("Idée", "Idea") }).tap();
-  await page.getByLabel(T(/Ta note/, /Your note/)).fill(T("Et si le Loup racontait", "What if the Wolf told it"));
+  await page.getByRole("radio", { name: T("Question", "Question", "Pregunta") }).tap();
+  await page.getByLabel(T(/Ta note/, /Your note/, /Tu nota/)).fill(T("Pourquoi le Loup ne mange-t-il pas l’enfant dans le bois ?\nÀ cause des bûcherons, mais pas seulement.", "Why doesn’t the Wolf eat the child in the woods?\nBecause of the woodcutters, but not only.", "¿Por qué el Lobo no se come a la niña en el bosque?\nPor los leñadores, pero no solo por eso."));
+  await page.getByRole("button", { name: T("Garder", "Keep", "Guardar"), exact: true }).tap();
+  await page.getByRole("radio", { name: T("Objet", "Object", "Objeto") }).tap();
+  await page.getByLabel(T(/Ta note/, /Your note/, /Tu nota/)).fill(T("Le petit pot de beurre", "The little pot of butter", "El tarrito de mantequilla"));
+  await page.getByRole("button", { name: T("Garder", "Keep", "Guardar"), exact: true }).tap();
+  await page.getByRole("radio", { name: T("Idée", "Idea", "Idea") }).tap();
+  await page.getByLabel(T(/Ta note/, /Your note/, /Tu nota/)).fill(T("Et si le Loup racontait", "What if the Wolf told it", "Y si lo contara el Lobo"));
   await page.locator(".carnet-field").blur();
   await shot("iphone-carnet");
 });

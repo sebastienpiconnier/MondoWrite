@@ -10,10 +10,17 @@ export const dir = join(root, "docs/guide");
 const slug = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const strip = (s) => s.replace(/<span class="num">.*?<\/span>/, "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
 
+/** Langues du guide (docs/guide/guide.<langue>.html) et leur format de date. */
+export const LOCALES = { fr: "fr-FR", en: "en-US", es: "es-ES" };
+export const GUIDE_LANGS = Object.keys(LOCALES);
+
+/** Titre du sommaire dans chaque langue (il n'entre pas dans la liste des titres). */
+export const CONTENTS_TITLES = /^(Sommaire|Contents|Índice)$/;
+
 /** Le guide d'une langue, prêt à composer : `html` (avec {{TOC}} à remplir) et ses titres `heads`. */
 export function prepare(lang) {
   const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
-  const date = new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-US", { month: "long", year: "numeric" }).format(new Date());
+  const date = new Intl.DateTimeFormat(LOCALES[lang] ?? "en-US", { month: "long", year: "numeric" }).format(new Date());
   let html = readFileSync(join(dir, `guide.${lang}.html`), "utf8").replaceAll("{{VERSION}}", version).replaceAll("{{DATE}}", date);
   // Typographie française : espaces insécables dans les guillemets et avant : ; ? ! (hors balises).
   if (lang === "fr") {
@@ -23,7 +30,7 @@ export function prepare(lang) {
   const heads = [];
   html = html.replace(/<h([23])( id="([^"]+)")?>([\s\S]*?)<\/h\1>/g, (m, lvl, _a, id, inner) => {
     const text = strip(inner);
-    if (!text || /^(Sommaire|Contents)$/.test(text)) return m;
+    if (!text || CONTENTS_TITLES.test(text)) return m;
     const key = id || `${slug(text)}-${heads.length}`;
     heads.push({ lvl: Number(lvl), text, id: key });
     return `<h${lvl} id="${key}">${inner}</h${lvl}>`;

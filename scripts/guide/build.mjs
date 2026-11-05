@@ -1,6 +1,6 @@
 // Fabrique le guide de l'utilisateur en PDF (docs/guide/guide.<langue>.html → docs/guide/MondoWrite-guide-<langue>.pdf).
 // Chromium compose les pages ; un premier passage trouve la page de chaque titre, le second écrit le sommaire.
-// Usage : node scripts/guide/build.mjs fr   (voir docs/guide/README.md)
+// Usage : node scripts/guide/build.mjs fr   (ou en, es ; voir docs/guide/README.md)
 
 import { chromium } from "playwright-core";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -12,7 +12,12 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const lang = process.argv[2] || "fr";
-const L = lang === "fr" ? { guide: "MondoWrite · Guide de l’utilisateur", title: "MondoWrite, guide de l’utilisateur" } : { guide: "MondoWrite · User guide", title: "MondoWrite, user guide" };
+const LABELS = {
+  fr: { guide: "MondoWrite · Guide de l’utilisateur", title: "MondoWrite, guide de l’utilisateur" },
+  en: { guide: "MondoWrite · User guide", title: "MondoWrite, user guide" },
+  es: { guide: "MondoWrite · Guía del usuario", title: "MondoWrite, guía del usuario" },
+};
+const L = LABELS[lang] ?? LABELS.en;
 const { html, heads } = prepare(lang);
 const toc = (pages) => heads.map((h, i) => `<li class="lvl${h.lvl}"><a href="#${h.id}">${h.text}</a><span class="dots"></span><span class="pg">${pages?.[i] ?? "00"}</span></li>`).join("\n");
 

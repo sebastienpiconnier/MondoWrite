@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>MondoWrite, guía del usuario</title>
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <img class="logo" src="../../src-tauri/icons/icon.svg" alt="">
+    <p class="brand">Mondo<em>Write</em></p>
+    <p class="slogan">Del caos a un mundo ordenado</p>
+  </div>
+  <div>
+    <h1>Guía del usuario</h1>
+    <p class="sub">Todo MondoWrite, paso a paso: el lienzo, la Biblia, el Esquema, el Manuscrito, el Guion, la IA opcional y las exportaciones, hasta el libro en rústica listo para imprimir.</p>
+  </div>
+  <p class="meta">Versión {{VERSION}} <span class="star">✦</span> {{DATE}}</p>
+</section>
+
+<nav class="toc">
+  <h2>Índice</h2>
+  <ol>{{TOC}}</ol>
+</nav>
+
+<!-- ===================================================================================== -->
+<h2 id="bienvenida"><span class="num">Capítulo 1</span>Bienvenido a MondoWrite</h2>
+
+<p class="lead">MondoWrite es un taller de escritura para novelistas y guionistas a quienes les gusta construir su historia antes de escribirla. Empiezas soltando tus ideas en cualquier parte, las relacionas, las ordenas poco a poco y luego escribes. De ahí su lema: <em>del caos a un mundo ordenado</em>.</p>
+
+<h3>Un solo contenido, cuatro vistas</h3>
+<p>Tu proyecto es un único conjunto de tarjetas y de textos. Las cuatro vistas de la barra superior son cuatro maneras de leerlo: nunca se copia nada de una a otra.</p>
+<table>
+  <tr><th>Vista</th><th>Para qué sirve</th></tr>
+  <tr><td><span class="ui">Lienzo</span></td><td>La pizarra libre donde nacen las ideas: tarjetas que sueltas, unes con hilos y agrupas en marcos.</td></tr>
+  <tr><td><span class="ui">Biblia</span></td><td>Las fichas de tu mundo (personajes, lugares, tramas, temas…), ordenadas solas por tipo, con la portada del proyecto en cabeza.</td></tr>
+  <tr><td><span class="ui">Esquema</span></td><td>El orden del relato: plantillas (tres actos, Save the Cat…) en las que colocar las escenas, capítulos y una cronología.</td></tr>
+  <tr><td><span class="ui">Manuscrito</span></td><td>El texto, escena a escena, maquetado como un libro. En un proyecto de guion, esta vista se convierte en <span class="ui">Guion</span>, y el Esquema en <span class="ui">Escaleta</span>, que lista las escenas en el orden del guion.</td></tr>
+</table>
+<p>Una escena creada en el Esquema tiene enseguida su tarjeta en el lienzo; un personaje escrito en el guion tiene su ficha en la Biblia; el texto escrito en una tarjeta Escena es el texto del Manuscrito.</p>
+
+<h3>Los principios de la app</h3>
+<ul>
+  <li><strong>La estructura surge, no se configura.</strong> Ningún campo obligatorio, ningún formulario que rellenar: una tarjeta nace «Idea» y se convierte en Personaje, Lugar o Escena cuando tú lo decides.</li>
+  <li><strong>Bastan tres gestos:</strong> escribir (para crear y redactar), tirar de un hilo (para relacionar), soltar (una imagen, un enlace, un archivo).</li>
+  <li><strong>Tus textos son tuyos:</strong> todo se guarda en una carpeta de archivos Markdown, legibles con cualquier editor de texto. Sin cuenta, sin servidor.</li>
+  <li><strong>La IA es opcional</strong> y solo hace preguntas y propuestas. Nunca escribe en tu lugar.</li>
+  <li><strong>Ratón, dedo o teclado:</strong> cada acción tiene un camino para cada uno. La app existe en español, francés e inglés, en claro y en oscuro.</li>
+</ul>
+
+<h3>Cómo leer esta guía</h3>
+<p>Las capturas muestran el proyecto de ejemplo que viene con la app, <em>Caperucita Roja</em> de Charles Perrault (1697), ilustrado con los grabados de Gustave Doré. Los nombres de los botones se escriben <span class="ui">así</span>. Los atajos se dan para Windows y Linux con <kbd>Ctrl</kbd>; en un Mac, usa <kbd>⌘</kbd> (Cmd) en su lugar.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="instalar"><span class="num">Capítulo 2</span>Instalar y actualizar</h2>
+
+<h3>Descargar la app</h3>
+<p>MondoWrite es una aplicación de escritorio para macOS, Windows y Linux. Los instaladores se publican en la página de versiones del proyecto: <a href="https://github.com/sebastienpiconnier/MondoWrite/releases">github.com/sebastienpiconnier/MondoWrite/releases</a>. Toma la última versión y luego el archivo de tu sistema:</p>
+<table>
+  <tr><th>Sistema</th><th>Archivo</th></tr>
+  <tr><td>Mac con chip Apple (M1 y posteriores)</td><td><code>MondoWrite_x.y.z_aarch64.dmg</code></td></tr>
+  <tr><td>Mac con procesador Intel</td><td><code>MondoWrite_x.y.z_x64.dmg</code></td></tr>
+  <tr><td>Windows</td><td><code>MondoWrite_x.y.z_x64-setup.exe</code> (o el <code>.msi</code>)</td></tr>
+  <tr><td>Linux</td><td><code>.AppImage</code> (cualquier distribución), <code>.deb</code> (Debian, Ubuntu) o <code>.rpm</code> (Fedora)</td></tr>
+</table>
+<p>En un Mac, abre el <code>.dmg</code> y arrastra MondoWrite a la carpeta Aplicaciones. En Windows, ejecuta el instalador. En Linux, haz ejecutable el AppImage o instala el paquete de tu distribución.</p>
+<div class="tip" data-label="Consejo"><p>Si macOS se niega a abrir una app descargada fuera de la App Store, haz clic derecho en MondoWrite en Aplicaciones, elige <span class="ui">Abrir</span> y confirma. Windows puede mostrar un aviso de SmartScreen: <span class="ui">Más información</span> y luego <span class="ui">Ejecutar de todas formas</span>.</p></div>
+
+<h3>Actualizaciones</h3>
+<p>Al iniciarse, la app comprueba (como mucho una vez al día) si se ha publicado una versión nueva. Si es así, un aviso lo dice: <span class="ui">Actualizar</span> descarga e instala la versión nueva, después de guardar tu proyecto; MondoWrite se reinicia solo. <span class="ui">Novedades</span> abre la página de la versión, <span class="ui">Más tarde</span> cierra el aviso.</p>
+<p>También puedes comprobarlo tú: <span class="ui">Ajustes</span>, sección <span class="ui">Actualizaciones</span>, <span class="ui">Buscar actualizaciones</span> (también en <span class="ui">Acerca de MondoWrite</span>). La casilla <span class="ui">Buscar actualizaciones al iniciar</span> desactiva la comprobación automática. Nunca se instala nada sin tu consentimiento.</p>
+
+<h3>La versión para navegador</h3>
+<p>MondoWrite también funciona en un navegador web, para descubrir la app. Los proyectos se guardan entonces en el almacenamiento del navegador, no en una carpeta: para trabajar de verdad, usa la app de escritorio.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="primeros-pasos"><span class="num">Capítulo 3</span>Primeros pasos</h2>
+
+<h3>La página de los proyectos</h3>
+<p>MondoWrite siempre se abre en la página de los proyectos. Allí te espera un saludo: te da los buenos días según la hora, con tu nombre si figura en tu perfil, y te propone retomar el último proyecto que abriste (o te dice cuántos días han pasado). Debajo, dos columnas: <span class="ui">Tus proyectos</span> (los que has abierto en este dispositivo) a un lado, <span class="ui">Proyecto nuevo</span> y <span class="ui">Grandes ejemplos</span> al otro.</p>
+<figure><img src="images/es/accueil-vide.jpg"><figcaption>La página de los proyectos la primera vez que abres la app.</figcaption></figure>
+
+<h3>Tu perfil de autor</h3>
+<p>Rellena de una vez por todas la ventana <span class="ui">Tú, el autor</span>, que se abre con <span class="ui">Editar mi perfil…</span> en los <span class="ui">Ajustes</span> (y, mientras tu perfil esté vacío, con <span class="ui">Completar mi perfil</span> bajo <span class="ui">Proyecto nuevo</span>): nombre, apellidos, seudónimo (opcional: el nombre con el que firmas tu obra, si no es el tuyo), correo electrónico, teléfono, dirección y, si quieres, tu <span class="ui">Trayectoria</span> y tu <span class="ui">Filmografía o publicaciones</span> (una obra por línea). Estos datos se quedan en tu dispositivo, nunca en un proyecto. Sirven para:</p>
+<ul>
+  <li>firmar tus exportaciones (el seudónimo si lo hay, si no, nombre y apellidos);</li>
+  <li>rellenar con tus datos de contacto la portada del manuscrito exportado;</li>
+  <li>rellenar la portada de cada guion nuevo;</li>
+  <li>escribir la página «Sobre el autor» de los documentos que envías (Biblia), con tu trayectoria y tus obras.</li>
+</ul>
+<figure class="medium"><img src="images/es/profil.jpg"><figcaption>La ventana «Tú, el autor».</figcaption></figure>
+<p>Los <span class="ui">Ajustes</span> muestran luego tu nombre de autor; <span class="ui">Editar mi perfil…</span> vuelve a abrir la ventana, tanto desde la página de los proyectos como desde un proyecto abierto. La ventana de exportación de la Biblia también lleva allí, para completar la página «Sobre el autor» de un documento.</p>
+<figure><img src="images/es/accueil.jpg"><figcaption>El saludo y el proyecto de ejemplo en la lista.</figcaption></figure>
+
+<h3>Crear un proyecto</h3>
+<ol class="steps">
+  <li>En <span class="ui">Proyecto nuevo</span>, escribe un <span class="ui">Título provisional</span> (podrás cambiarlo).</li>
+  <li>Elige <span class="ui">Una novela</span> o <span class="ui">Un guion</span>. El lienzo y la Biblia son los mismos; solo cambian el taller de escritura y el vocabulario. Podrás cambiar más adelante.</li>
+  <li>Haz clic en <span class="ui">Crear el proyecto</span> y elige la carpeta donde guardarlo (con iCloud o una carpeta en la nube, se crea allí directamente, en una carpeta con su nombre). Un proyecto es una carpeta: ponla donde quieras, también en iCloud Drive, Dropbox u OneDrive.</li>
+</ol>
+<div class="note" data-label="Conviene saber"><p>Si la carpeta elegida ya contiene un proyecto de MondoWrite, la app lo abre en lugar de sobrescribirlo. Crear nunca sobrescribe nada.</p></div>
+
+<h3>Abrir o quitar un proyecto</h3>
+<p>Haz clic en un proyecto de la lista para abrirlo. Si la apertura tarda (un proyecto de iCloud abierto por primera vez en el dispositivo, cuyos archivos siguen llegando), una ventana muestra cómo avanza. <span class="ui">Abrir una carpeta…</span> abre un proyecto que aún no está en la lista (copiado desde otra computadora, por ejemplo). El botón <span class="ui">⋯</span> junto a un proyecto propone <span class="ui">Ocultar de la lista</span> (no se toca ningún archivo; <span class="ui">Proyectos ocultos</span> lo hace volver) y, en rojo, <span class="ui">Eliminar el proyecto…</span>, que pide confirmación: sus archivos se borran, en todos tus dispositivos si está en iCloud. Expórtalo antes en .zip si quieres conservar una copia.</p>
+
+<h3>Probar con un ejemplo</h3>
+<p><span class="ui">Probar con un ejemplo</span> crea el proyecto <em>Caperucita Roja</em> sin preguntar nada (en iCloud o en tu carpeta en la nube si tienes una; si no, en Documentos › MondoWrite en una computadora): personajes, lugares, escenas relacionadas, un esquema en dos capítulos, el texto completo del cuento y tres grabados de Doré. Es la mejor manera de descubrir la app. Se abre una <span class="ui">Visita guiada</span> de seis pasos; sigue disponible en los <span class="ui">Ajustes</span>.</p>
+<p><span class="ui">Grandes ejemplos</span>, en la página de los proyectos, propone obras de dominio público más completas, ilustradas, con su biblia, su esquema y su texto: <em>El conde de Montecristo</em> (novela y serie) y <em>El sabueso de los Baskerville</em> (novela y largometraje), en francés y en inglés. Se descargan desde mondowrite.app (necesitas conexión): <span class="ui">Descargar</span> trae el proyecto, comprueba que es el anunciado y lo abre como un proyecto importado (en una computadora, eliges la carpeta donde guardarlo). Los ejemplos en otro idioma se pliegan bajo <span class="ui">En otros idiomas</span>.</p>
+<figure><img src="images/es/visite.jpg"><figcaption>La visita guiada presenta cada vista en unas líneas.</figcaption></figure>
+
+<h3>Importar</h3>
+<p><span class="ui">Importar…</span>, en la página de los proyectos, crea un proyecto a partir de un archivo existente:</p>
+<ul>
+  <li><strong>Word (<code>.docx</code>), Markdown (<code>.md</code>) o texto (<code>.txt</code>)</strong>: un proyecto de novela. Se reconocen los capítulos (títulos de Word, «Capítulo 3», números solos, saltos de página), los separadores como <code>* * *</code> dividen las escenas, y un título y un «por Fulano» al principio se convierten en el título del proyecto. Un prólogo o un epílogo de una sola escena se convierte en una página del libro.</li>
+  <li><strong>Fountain (<code>.fountain</code>) o Final Draft (<code>.fdx</code>)</strong>: un proyecto de guion, con sus tarjetas Escena, Personaje y Localización. Un archivo de texto con al menos dos encabezados de escena (INT., EXT.) también se lee como un guion.</li>
+  <li><strong>PDF (<code>.pdf</code>)</strong>: un guion si contiene encabezados de escena; si no, una novela. En un guion, cada elemento se reconoce por su sangría (encabezado de escena, acción, personaje, acotación, diálogo, transición); se quitan los números de página y los (MORE) y (CONT’D) añadidos por el programa de origen, y una réplica cortada por un salto de página se vuelve a unir. En una novela, los párrafos se encuentran por la sangría de su primera línea, los títulos por su mayor tamaño, y se dejan aparte los titulillos, los números de página y las letras capitulares. Un PDF escaneado (imágenes, sin texto) no puede importarse. Relee el resultado: un PDF conserva la maquetación, no la estructura original.</li>
+  <li><strong>Proyecto de MondoWrite (<code>.zip</code>)</strong>: un proyecto exportado con <span class="ui">Exportar</span> › <span class="ui">Proyecto completo (.zip)</span> vuelve a abrirse tal como estaba, imágenes y PDF incluidos.</li>
+  <li><strong>Proyecto de Scrivener (<code>.scriv</code>, o comprimido en <code>.zip</code>)</strong>: una novela, o un guion si está escrito en modo guion. En Mac, elige el <code>.scriv</code>; en Windows y Linux, el archivo <code>.scrivx</code> que contiene. Si el proyecto no puede leerse, comprímelo (clic derecho, <span class="ui">Comprimir</span>) y elige el <code>.zip</code>. Una ventana lista entonces las carpetas de la carpeta Binder: el Borrador (Draft) se importa siempre; desmarca las que no quieras.
+    <ul>
+      <li><strong>Borrador</strong>: capítulos y escenas en el orden del Binder; cada documento conserva su título (sin «Capítulo 1 -»), su sinopsis y su estado («To Do» pasa a <span class="ui">Por escribir</span>, «First Draft» a <span class="ui">Borrador</span>, «Revised Draft» a <span class="ui">Revisada</span>, «Final Draft» y «Done» a <span class="ui">Terminada</span>); un documento dividido por <code>* * *</code> da varias escenas. Los comentarios y las notas al pie (del inspector o escritos en el texto) se quedan en su sitio; las imágenes del texto se convierten en tarjetas Imagen vinculadas a la escena.</li>
+      <li><strong>Personajes y lugares</strong>: una ficha de la Biblia por documento; una ficha de plantilla rellenada («Character Sketch», «Setting Sketch») completa los campos de la ficha, una que nunca se rellenó se deja de lado. Una lista de personajes en un solo documento (un título «NOMBRE - frase gancho» por personaje, seguido de líneas como «Edad: …», «Profesión: …») da una ficha por personaje, con su frase gancho; los de una parte «Personajes principales» se marcan como principales.</li>
+      <li><strong>Investigación y demás carpetas</strong>: un marco por carpeta en el lienzo; un PDF se convierte en tarjeta Documento, una imagen en tarjeta Imagen, una página web en tarjeta Enlace, un texto en tarjeta Idea.</li>
+      <li><strong>Palabras clave</strong>: una tarjeta cada una (Personaje, Lugar o Tema cuando la palabra clave está bajo «Characters», «Locations» o «Themes»), unida con un hilo a cada escena que la lleva. Una palabra clave que nombra a un personaje de la Biblia («Ethan» para «Ethan Moreau») se une directamente a esa ficha. Una etiqueta renombrada «POV» da a cada escena su punto de vista; renombrada de otra forma («Trama»…), da tarjetas Trama unidas a sus escenas.</li>
+      <li><strong>Notas de documento</strong>: una línea va a la sinopsis si está vacía; una nota más larga se convierte en una tarjeta Idea unida a la escena. Los marcadores y los enlaces internos se convierten en hilos.</li>
+      <li><strong>Instantáneas</strong>: cada una se convierte en una versión de su escena (<span class="ui">Versiones de la escena…</span>), con su título y su fecha; puedes leerla, compararla o volver a ella.</li>
+      <li><strong>Páginas del libro</strong>: un documento titulado Dedicatoria, Epígrafe, Agradecimientos, Créditos o Sobre el autor (o sus títulos ingleses) se convierte en la página del libro correspondiente, esté donde esté.</li>
+      <li><strong>Historial de escritura</strong>: las palabras escritas cada día pasan a las estadísticas, y tu racha de escritura continúa.</li>
+      <li><strong>Guion</strong> (modo guion de Scrivener): cada elemento se reconoce por su maquetación (encabezado de escena, acción, personaje, acotación, diálogo, transición) y el guion se escribe en formato estándar, números de escena incluidos; personajes y localizaciones reciben sus tarjetas, y una ficha de la carpeta de personajes completa al personaje del mismo nombre. La portada de Scrivener no es más que una plantilla: MondoWrite hace la suya.</li>
+      <li>Un proyecto de Scrivener 2 (Mac) o 1 (Windows) no se importa: ábrelo antes en Scrivener 3, que lo actualiza.</li>
+    </ul>
+    Después de la importación, un aviso dice lo que se ha traído, y <span class="ui">Lo que no se ha traído</span>, lo que se ha quedado fuera (estados inventados, etiquetas de color, sonido y vídeo, papelera…). El proyecto de Scrivener nunca se modifica.</li>
+</ul>
+<p>Una importación siempre va a una carpeta vacía: nunca sustituye a un proyecto existente.</p>
+
+<h3>La barra superior</h3>
+<p>Una vez abierto un proyecto, la barra superior reúne todo lo que usas en todas partes:</p>
+<ul>
+  <li>a la izquierda, <span class="ui">‹ Proyectos</span>, que guarda y vuelve a la lista;</li>
+  <li>el <strong>título del proyecto</strong>, que se edita con un clic;</li>
+  <li>las <strong>cuatro vistas</strong> (<kbd>Ctrl</kbd> <kbd>1</kbd> a <kbd>4</kbd>);</li>
+  <li>el <strong>estado del guardado</strong> (<span class="ui">Guardado</span>, <span class="ui">Sin guardar</span>, <span class="ui">Guardando…</span>): un clic guarda enseguida, como <kbd>Ctrl</kbd> <kbd>S</kbd>;</li>
+  <li><span class="ui">Exportar</span>; <span class="ui">Pendientes</span> (la marca de verificación, con el número de cosas que esperan); la lupa de búsqueda (<kbd>Ctrl</kbd> <kbd>F</kbd>); <span class="ui">Ajustes</span>; y el botón <span class="ui">IA</span> si has conectado una.</li>
+</ul>
+<div class="note" data-label="Guardar"><p>Nunca necesitas guardar: la app lo hace sola, menos de un segundo después de tu último cambio. Un clic en el estado del guardado, o <kbd>Ctrl</kbd> <kbd>S</kbd>, fuerza un guardado inmediato.</p></div>
+<p>Cuando falta espacio (un iPad en horizontal), la barra se queda en una sola línea para dejar la altura a tu trabajo: <span class="ui">Proyectos</span> conserva solo su flecha, <span class="ui">Exportar</span> se convierte en un icono y el estado del guardado se reduce a un punto mientras no está guardado. Las vistas solo pasan bajo el logotipo si eso no basta, en vertical por ejemplo. La duración y las páginas de un guion están en la vista Guion.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="recorridos"><span class="num">Capítulo 4</span>Tu recorrido</h2>
+
+<p class="lead">No hay un orden correcto: toma MondoWrite por el extremo que te convenga. Aquí tienes siete recorridos, del más planificado al más libre. Elige el tuyo y deja lo demás de lado hasta que lo necesites.</p>
+
+<p>Para cada recorrido, la tabla muestra las vistas que cuentan desde el principio (●) y las que te ayudarán más tarde (○).</p>
+<table class="paths">
+  <tr><th>Recorrido</th><th>Lienzo</th><th>Biblia</th><th>Esquema</th><th>Manuscrito o Guion</th><th>Libreta (iPhone)</th></tr>
+  <tr><td>El arquitecto</td><td>●</td><td>●</td><td>●</td><td>○</td><td></td></tr>
+  <tr><td>El jardinero</td><td>○</td><td>○</td><td>○</td><td>●</td><td></td></tr>
+  <tr><td>El proyecto en desarrollo</td><td>○</td><td>●</td><td></td><td></td><td></td></tr>
+  <tr><td>El autor de series</td><td>●</td><td>●</td><td>○</td><td>●</td><td></td></tr>
+  <tr><td>La reescritura</td><td>○</td><td>○</td><td>●</td><td>●</td><td></td></tr>
+  <tr><td>La novela documentada</td><td>●</td><td>●</td><td>○</td><td>○</td><td></td></tr>
+  <tr><td>El autor nómada</td><td>○</td><td>○</td><td></td><td>●</td><td>●</td></tr>
+</table>
+
+<h3>El arquitecto: planificarlo todo antes de escribir</h3>
+<p>Para quienes quieren conocer el final antes de la primera línea.</p>
+<ol>
+  <li>En el <a href="#lienzo">lienzo</a>, vacía tu cabeza: una idea por tarjeta, sin orden. Luego conviértelas en Personajes, Lugares, Tramas, Escenas con <kbd>/</kbd>.</li>
+  <li>En la <a href="#biblia">Biblia</a>, da a tus personajes principales su motor (<span class="ui">Quiere</span>, <span class="ui">Necesita</span>, <span class="ui">Herida, conflicto interior</span>) y a cada trama su pregunta dramática.</li>
+  <li>En el <a href="#esquema">Esquema</a>, elige una plantilla (tres actos, Save the Cat, viaje del héroe) y coloca cada escena en su casilla.</li>
+  <li><span class="ui">Organizar</span>, en el lienzo, muestra entonces toda la estructura de un vistazo.</li>
+  <li>Escribe en el <a href="#manuscrito">Manuscrito</a>, escena tras escena, en el orden del Esquema.</li>
+  <li>Relee con <span class="ui">Revisar</span> y luego <a href="#exportar">exporta</a>.</li>
+</ol>
+<div class="tip" data-label="Déjalo para más tarde"><p>Al principio: la Libreta, la exportación de la Biblia.</p></div>
+
+<h3>El jardinero: escribir primero, estructurar después</h3>
+<p>Para quienes descubren su historia escribiéndola.</p>
+<ol>
+  <li>Abre enseguida el <a href="#manuscrito">Manuscrito</a> y escribe. <kbd>Intro</kbd> dos veces en una línea vacía divide la escena; tres veces abre un capítulo nuevo.</li>
+  <li>Escribe <kbd>@</kbd> para mencionar a un personaje o un lugar: su tarjeta se crea si no existe. Los nombres que vuelven sin tarjeta aparecen en <span class="ui">Revisar</span>, con <span class="ui">Crear la tarjeta</span>.</li>
+  <li>La <a href="#biblia">Biblia</a> se llena sola: bajo cada ficha, las escenas donde aparece.</li>
+  <li>Más tarde, el <a href="#esquema">Esquema</a> sin plantilla muestra el orden de tus escenas; una plantilla te ayuda entonces a comprobar el ritmo.</li>
+  <li>Lo que cortas va al <span class="ui">Congelador</span>: nada se pierde.</li>
+</ol>
+<div class="tip" data-label="Déjalo para más tarde"><p>Las fichas que rellenar y el asistente de personaje: te servirán en la reescritura.</p></div>
+
+<h3>El proyecto en desarrollo: la Biblia y el dosier</h3>
+<p>Para quienes tienen que convencer antes de escribir: una editorial, una productora, una comisión de ayudas.</p>
+<ol>
+  <li>Rellena la portada, primera página de la <a href="#biblia">Biblia</a>: logline, tagline, etiquetas, nota de intenciones. <span class="ui">Hazme preguntas</span> hace una pregunta por cada campo vacío.</li>
+  <li>Marca a tus personajes principales con la estrella; dales una frase gancho, un motor y un arco.</li>
+  <li>Construye el mundo y la estructura: lugares, grupos, reglas, tramas y, para una serie, los episodios y <span class="ui">Escribir la serie</span>.</li>
+  <li>Mira las preguntas sobre la historia en <span class="ui">Revisar</span>.</li>
+  <li><span class="ui">Exportar</span> › <span class="ui">Biblia…</span> para otra persona: elige el aspecto, vigila el número de páginas, añade la página «Sobre el autor» y, si quieres, las primeras páginas como anexo.</li>
+</ol>
+<div class="tip" data-label="Déjalo para más tarde"><p>El Esquema y el Manuscrito, hasta que firmes el contrato.</p></div>
+
+<h3>El autor de series</h3>
+<ol>
+  <li>Crea un proyecto de <span class="ui">Guion</span>, elige el formato en la portada y luego rellena <span class="ui">Escribir la serie</span> (universo, antes del piloto, mecánica, la pregunta de la temporada) o <span class="ui">Escribir la película</span> (nota de dirección, viabilidad).</li>
+  <li>En la escaleta, <span class="ui">+ Episodio nuevo</span> convierte tu guion en una serie: nombra la temporada y cada episodio allí mismo, y dale a cada uno su sinopsis.</li>
+  <li>El cuadro de las tramas, en la exportación de la Biblia, muestra qué tramas viven en qué episodios.</li>
+  <li>Escribe cada episodio en la vista <a href="#guion">Guion</a> (<span class="ui">Escribir el episodio</span>, en el menú ⋯ del episodio en la escaleta).</li>
+  <li><span class="ui">Revisar</span> te dice si el piloto es demasiado corto o demasiado largo para su formato.</li>
+  <li>Exporta la biblia de la serie para una productora, con las primeras páginas del piloto como anexo.</li>
+</ol>
+
+<h3>La reescritura: partir de un texto existente</h3>
+<p>Para quienes ya tienen un manuscrito o un guion escritos en otro lugar.</p>
+<ol>
+  <li>En la página de los proyectos, <span class="ui">Importar…</span> (Word, Markdown, texto, Fountain, Final Draft, Scrivener): capítulos, escenas, personajes y localizaciones se convierten en tarjetas.</li>
+  <li><span class="ui">Organizar</span> el lienzo para ver capítulos y escenas de un vistazo.</li>
+  <li><span class="ui">Revisar</span> detecta los nombres escritos de dos maneras y los personajes sin tarjeta; la ventana <span class="ui">Estadísticas</span> muestra quién está presente y quién se cruza con quién.</li>
+  <li>Da a cada escena un estado (borrador, por revisar, terminada) y resalta los pasajes «por revisar».</li>
+  <li><span class="ui">Buscar y reemplazar</span>, o <span class="ui">Renombrar en todas partes…</span> desde el menú de una tarjeta.</li>
+</ol>
+
+<h3>La novela documentada: primero la investigación</h3>
+<p>Para una novela histórica, una investigación, un mundo por inventar.</p>
+<ol>
+  <li>Pega enlaces, imágenes y PDF en el <a href="#lienzo">lienzo</a>: cada uno se convierte en una tarjeta, con su ficha de fuente (autor, fecha, lo que me quedo de ella, fiabilidad).</li>
+  <li>Coloca las tarjetas del mundo: Acontecimiento para la cronología, Regla para sus leyes, Grupo para las familias y las instituciones, Objeto, Secreto.</li>
+  <li>Indica la <span class="ui">Certeza</span> de cada ficha: establecido, provisional, por explorar.</li>
+  <li>Tus fuentes se quedan en «Para ti»: nunca en un documento que envías.</li>
+</ol>
+
+<h3>El autor nómada: iPhone, iPad, computadora</h3>
+<ol>
+  <li>Sincroniza tus proyectos por iCloud Drive (ver <a href="#archivos">Tus archivos</a>).</li>
+  <li>En el iPhone, la <span class="ui">Libreta</span> captura una idea al vuelo; el Manuscrito permite escribir unas líneas.</li>
+  <li>En el iPad o en la computadora, <span class="ui">Por ordenar · N</span>, en el lienzo, lista lo que has capturado: coloca cada nota y sale de la lista.</li>
+  <li>El <span class="ui">Modo concentración</span> apaga todo lo que rodea la página mientras escribes.</li>
+</ol>
+
+<!-- ===================================================================================== -->
+<h2 id="lienzo"><span class="num">Capítulo 5</span>El lienzo</h2>
+
+<p class="lead">El lienzo es una gran pizarra sin bordes. En él sueltas tarjetas, las unes con hilos, las agrupas en marcos. Es el lugar del caos fértil.</p>
+<figure><img src="images/es/canevas.jpg"><figcaption>El lienzo del proyecto de ejemplo: personajes e imágenes arriba, lugares en el centro, escenas abajo, unidos por hilos con nombre.</figcaption></figure>
+
+<p>Para desplazarte, arrastra el fondo o desliza dos dedos sobre un trackpad (la rueda del ratón también sirve, con <kbd>Mayús</kbd> para ir de lado). Para hacer zoom, pellizca el trackpad o la pantalla, o mantén <kbd>Ctrl</kbd> mientras giras la rueda: el zoom funciona también sobre una tarjeta, incluso con los dos dedos encima. Una tarjeta cuyo texto se desplaza conserva el gesto mientras le quede texto por desplazar. Con un ratón, puedes recuperar el zoom con la rueda: en los <span class="ui">Ajustes</span>, en <span class="ui">Rueda y trackpad (lienzo)</span>, elige <span class="ui">Hacer zoom (como antes)</span>. Los botones <span class="ui">+</span>, <span class="ui">−</span> y el del marco, abajo a la derecha, acercan, alejan y muestran toda la pizarra. El minimapa, arriba a la derecha, muestra dónde estás; cada tipo de tarjeta tiene allí su color.</p>
+
+<h3>Crear una tarjeta</h3>
+<p>Hay cuatro maneras de crear una tarjeta, para el ratón, el dedo y el teclado:</p>
+<ul>
+  <li>un <strong>doble clic</strong> en el fondo, o un <strong>clic derecho</strong>;</li>
+  <li>el botón <span class="ui">Tarjeta nueva</span>, abajo a la izquierda;</li>
+  <li>la tecla <kbd>N</kbd>, cuando no estás escribiendo en una tarjeta.</li>
+</ul>
+<p>La tarjeta nace donde has hecho clic, nunca encima de otra. El cursor está en su <strong>título</strong>; <kbd>Intro</kbd> pasa al <strong>texto</strong> de la tarjeta.</p>
+<p>La flecha a la derecha de <span class="ui">Tarjeta nueva</span> abre la lista de todos los tipos: una tarjeta vacía, un personaje, un lugar, una escena, una trama, un grupo, un objeto, un acontecimiento, una regla, un secreto, un tema, una pregunta, una imagen (foto libre o imagen del dispositivo), un enlace o un documento PDF.</p>
+<figure class="small"><img src="images/es/nouvelle-carte-menu.jpg"><figcaption>El menú «Tarjeta nueva».</figcaption></figure>
+
+<h3>Los tipos de tarjeta</h3>
+<table>
+  <tr><th>Tipo</th><th>Lo que representa</th></tr>
+  <tr><td><span class="ui">Idea</span></td><td>El tipo de partida: una nota suelta, que se convertirá en otra cosa o seguirá siendo una idea.</td></tr>
+  <tr><td><span class="ui">Personaje</span></td><td>Una persona de la historia, con su ficha, su motor y su arco en la Biblia.</td></tr>
+  <tr><td><span class="ui">Lugar</span> (<span class="ui">Localización</span> en un guion)</td><td>Un escenario, con su época, su ambiente, lo que ocurre en él.</td></tr>
+  <tr><td><span class="ui">Escena</span></td><td>Una escena del relato. Su texto es el del Manuscrito o del Guion.</td></tr>
+  <tr><td><span class="ui">Trama</span></td><td>Una línea argumental (principal, secundaria, romántica…) con su pregunta dramática.</td></tr>
+  <tr><td><span class="ui">Grupo</span></td><td>Una familia, un clan, una empresa, una banda: lo que quiere, cómo funciona, sus medios. Sus miembros son los personajes unidos a él por un hilo.</td></tr>
+  <tr><td><span class="ui">Objeto</span></td><td>Una cosa que cuenta en la historia: de dónde viene, para qué sirve, lo que simboliza, dónde está.</td></tr>
+  <tr><td><span class="ui">Acontecimiento</span></td><td>Algo que ocurrió, a menudo antes del relato: cuándo, lo que cambió, lo que se cuenta de ello.</td></tr>
+  <tr><td><span class="ui">Regla</span></td><td>Una regla del mundo (una magia, una ley, una costumbre): a qué se aplica, sus excepciones, lo que cuesta, lo que le pasa a quien la infringe.</td></tr>
+  <tr><td><span class="ui">Secreto</span></td><td>Lo que algunos ocultan: la verdad, lo que está en juego, las pistas sembradas, cuándo y cómo estalla. Quienes lo saben son los personajes unidos a él por un hilo.</td></tr>
+  <tr><td><span class="ui">Tema</span></td><td>Una idea que atraviesa la historia.</td></tr>
+  <tr><td><span class="ui">Pregunta</span></td><td>Algo que explorar más tarde. Las preguntas se reúnen en «Por explorar».</td></tr>
+  <tr><td><span class="ui">Imagen</span>, <span class="ui">Enlace</span>, <span class="ui">Documento</span></td><td>Tus fuentes: una imagen, una página web, un PDF, con autor y fecha.</td></tr>
+</table>
+
+<h3>Cambiar el tipo: la barra</h3>
+<p>Escribe <kbd>/</kbd> al principio de una línea del texto de la tarjeta (o en un título vacío): se abre el menú <span class="ui">Convertir en…</span>. Elige con las flechas e <kbd>Intro</kbd>, o con el ratón. Con el dedo o el ratón, también puedes tocar la etiqueta del tipo, arriba a la izquierda de la tarjeta. Cambiar el tipo no pierde nada: el texto y los hilos se quedan.</p>
+<div class="pair">
+  <figure><img src="images/es/carte-type.jpg"><figcaption>«/» abre el menú de los tipos.</figcaption></figure>
+  <figure><img src="images/es/carte-mention.jpg"><figcaption>«@» propone las tarjetas del proyecto.</figcaption></figure>
+</div>
+
+<h3>Escribir en una tarjeta</h3>
+<p>El texto de una tarjeta se formatea como en un procesador de textos ligero. Selecciona un pasaje: una pequeña barra propone negrita, cursiva, tachado, título, lista, casilla, cita y <span class="ui">Por revisar</span> (un resaltado para los pasajes que retomar). También puedes escribir en Markdown, que se convierte en formato a medida que escribes: <code>**negrita**</code>, <code>*cursiva*</code>, <code># Título</code>, <code>- lista</code>, <code>[ ]</code> para una casilla. Un texto en Markdown pegado se formatea igual. En el texto de una escena (el Manuscrito, la tarjeta Escena ampliada), una raya al principio de línea sigue siendo una raya de diálogo: empieza allí una lista con <code>* </code>.</p>
+<p>Una tarjeta cuyo texto supera cierta altura se pliega, con <span class="ui">Más detalles</span> para desplegarla; se queda abierta mientras escribes.</p>
+
+<h3>Mencionar otra tarjeta: @</h3>
+<p>Escribe <kbd>@</kbd> (o <kbd>[[</kbd>, como en Obsidian) seguido del principio de un nombre: aparece la lista de las tarjetas del proyecto. Elige una: su nombre se inserta como <strong>mención</strong>, y se tira solo un hilo entre las dos tarjetas. Si la tarjeta aún no existe, <span class="ui">Crear «…»</span> la crea al momento. También funciona en el texto de una ficha de la Biblia y en una tarjeta ampliada.</p>
+<p>Una mención sigue a su tarjeta: si renombras la tarjeta, el nombre cambia allí donde se la menciona; si la eliminas, la mención vuelve a ser texto normal.</p>
+<figure class="small"><img src="images/es/carte-mention-faite.jpg"><figcaption>La mención «El Lobo».</figcaption></figure>
+
+<h3>Unir con hilos</h3>
+<p>Pasa el puntero por encima de una tarjeta: aparece un punto en el centro de cada borde. Arrastra desde uno de ellos hasta otra tarjeta (a cualquier parte de la tarjeta): un hilo las une. Haz clic en el hilo para darle una <strong>etiqueta</strong>, la naturaleza del vínculo: «madre de», «transcurre en», «sospecha de»… Estas etiquetas vuelven a aparecer en la Biblia (<span class="ui">Vinculada a</span>) y en el mapa de relaciones. Para quitar un hilo, haz clic en él y luego en <span class="ui">Desvincular</span>.</p>
+<p>Un hilo también tiene su ficha. En la Biblia, toca una tarjeta bajo <span class="ui">Vinculada a</span>: se abren tres casillas bajo la lista, <span class="ui">Su historia</span>, <span class="ui">Lo que está en juego entre ellos</span> y <span class="ui">Cómo evoluciona</span>. Un punto señala los hilos que tienen ficha. Lo que está en juego entre dos personajes acompaña a su relación en el dosier de presentación. Para quitar el hilo, usa <span class="ui">Desvincular de «…»</span> al pie de esa ficha.</p>
+<figure><img src="images/es/canevas-fils.jpg"><figcaption>Hilos con nombre.</figcaption></figure>
+<p>Al pie de cada tarjeta vinculada, una línea discreta dice a qué está vinculada: <span class="ui">Vinculada a</span> El Lobo, La Abuela… Toca esa línea para desplegarla y luego un nombre: el lienzo se centra en esa tarjeta y la destaca.</p>
+<p>Cuando los hilos se cruzan demasiado, el botón <span class="ui">Hilos</span> (abajo, junto a <span class="ui">Filtrar</span>) los oculta todos. No se elimina nada, y la elección se guarda con el proyecto. Las tarjetas dicen entonces con todas las letras a qué están vinculadas; toca <span class="ui">Vinculada a</span> en una tarjeta para mostrar solo sus hilos, vuelve a tocar para ocultarlos. <span class="ui">Hilos</span> otra vez los hace volver todos.</p>
+<figure class="medium"><img src="images/es/fils-masques.jpg"><figcaption>Hilos ocultos: cada tarjeta dice a qué está vinculada, y Caperucita Roja muestra los suyos.</figcaption></figure>
+
+<h3>Mover, ensanchar, ampliar</h3>
+<ul>
+  <li><strong>Mover</strong>: agarra la tarjeta por su cabecera (o por su imagen) y arrástrala.</li>
+  <li><strong>Ensanchar</strong>: arrastra el tirador de la esquina inferior derecha de la tarjeta, o <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd>. La altura siempre sigue al texto.</li>
+  <li><strong>Ampliar</strong>: el botón de las dos flechas (o <kbd>Ctrl</kbd> <kbd>Intro</kbd> en la tarjeta seleccionada) abre la tarjeta en grande, con su ficha completa. Un clic al lado la cierra.</li>
+</ul>
+<figure class="medium"><img src="images/es/carte-agrandie-personnage.jpg"><figcaption>Una tarjeta Personaje ampliada: su texto y su ficha.</figcaption></figure>
+
+<h3>El menú ⋯ de una tarjeta</h3>
+<p>El botón <span class="ui">⋯</span> (o un clic derecho fuera del texto de la tarjeta) propone:</p>
+<ul>
+  <li><span class="ui">Añadir una imagen</span> o <span class="ui">Cambiar la imagen</span>;</li>
+  <li><span class="ui">Filtrar por esta tarjeta</span>: mostrar solo esta tarjeta y sus vecinas (unidas por un hilo o una mención);</li>
+  <li><span class="ui">Copiar la tarjeta</span> y <span class="ui">Duplicar la tarjeta</span>;</li>
+  <li><span class="ui">Renombrar en todas partes…</span>: cambiar el nombre de la tarjeta y sustituirlo también en todo el texto (ver el Manuscrito, «Buscar y reemplazar»).</li>
+</ul>
+<figure class="small"><img src="images/es/carte-menu.jpg"><figcaption>El menú ⋯ de una tarjeta.</figcaption></figure>
+<p>El botón de la ficha (la pequeña página) de una tarjeta con tipo abre su ficha en la Biblia.</p>
+
+<h3>Imágenes, enlaces y documentos</h3>
+<p>El lienzo también tiene tus fuentes a mano:</p>
+<ul>
+  <li><strong>Una imagen</strong>: suelta un archivo de imagen en el lienzo, pégalo (<kbd>Ctrl</kbd> <kbd>V</kbd>) o elige <span class="ui">Imagen</span> en el menú <span class="ui">Tarjeta nueva</span>. Una imagen soltada sobre una tarjeta se convierte en su imagen. Las imágenes se copian en la carpeta del proyecto y conservan sus proporciones.</li>
+  <li><strong>Un enlace</strong>: pega una dirección web en el lienzo. Nace una tarjeta Enlace, con el título, el autor, la fecha y la imagen de la página. Una dirección pegada en una tarjeta vacía convierte esa misma tarjeta en un Enlace.</li>
+  <li><strong>Un PDF</strong>: suéltalo o elige <span class="ui">Documento</span>. La tarjeta Documento muestra una vista previa de la primera página, el número de páginas y el autor; <span class="ui">Leer el documento</span> lo abre en el lector de la app.</li>
+  <li><strong>Un texto pegado</strong> se convierte en una Idea; un archivo <code>.md</code> o <code>.txt</code> soltado se convierte en una tarjeta (una nota de Obsidian conserva su título y su tipo).</li>
+</ul>
+<p>Pegado sobre una tarjeta (haz clic en su borde y luego <kbd>Ctrl</kbd> <kbd>V</kbd>), el texto va a esa tarjeta, al final: a sus notas, o al texto de la escena en una tarjeta Escena. No se crea ninguna tarjeta.</p>
+<h4>Copiar, pegar y duplicar tarjetas</h4>
+<p>Selecciona una o varias tarjetas y luego <kbd>Ctrl</kbd> <kbd>C</kbd> y <kbd>Ctrl</kbd> <kbd>V</kbd>: las copias llegan donde está el puntero, con su ficha, sus imágenes, el texto de las escenas y los hilos entre ellas. <kbd>Ctrl</kbd> <kbd>D</kbd>, o <span class="ui">Duplicar la tarjeta</span> en el menú ⋯, pone una copia justo al lado. En otra app, pegar da el título y el texto de las tarjetas.</p>
+<p>Una tarjeta que cambia de tipo no pierde nada: una Escena convertida en Idea conserva su sinopsis y su texto en sus notas, y un texto largo en una tarjeta que se convierte en Escena pasa a ser el texto de la escena (una línea corta se convierte en su sinopsis).</p>
+<h4>Fotos libres</h4>
+<p><span class="ui">Imagen</span> abre la ventana <span class="ui">Fotos libres</span>: busca una palabra («faro, tormenta, bosque de noche…») y elige una foto. Tres fuentes: <strong>Openverse</strong>, sin clave, que reúne imágenes con licencia libre (Flickr, Wikimedia, museos); <strong>Pixabay</strong> y <strong>Unsplash</strong>, que piden una clave gratuita, guardada en tu dispositivo. El autor, la página y la licencia de la foto quedan anotados en la ficha de la tarjeta. <span class="ui">Elegir una imagen del dispositivo…</span> toma un archivo de tu computadora.</p>
+<figure class="medium"><img src="images/es/photos.jpg"><figcaption>La ventana de las fotos libres.</figcaption></figure>
+
+<h3>Los marcos</h3>
+<p>Un marco agrupa tarjetas sin imponerles nada: «La familia», «Acto I», «Investigación». Selecciona tarjetas y pulsa <kbd>C</kbd> (o el botón <span class="ui">Marco</span>): el marco las rodea. Ponle nombre en su cabecera. Mover el marco (por su cabecera, o con una pulsación larga en un sitio vacío de su interior, con el dedo o el ratón) mueve las tarjetas que contiene; arrastra sus bordes para cambiar su tamaño. Eliminar un marco no elimina sus tarjetas.</p>
+<p>Sin tarjetas seleccionadas, <kbd>C</kbd> pone un marco vacío en un espacio libre cerca del centro de la vista. Una tarjeta nueva nunca cae a caballo sobre un marco: creada en un marco (doble clic, clic derecho), se queda en él, junto a sus tarjetas; creada en otra parte, va a un espacio vacío.</p>
+<p>El <strong>candado</strong> de la cabecera bloquea el marco: ni él ni sus tarjetas se mueven ya, ni siquiera con <span class="ui">Organizar</span>. Las tarjetas siguen siendo editables, enlazables y eliminables.</p>
+<p>Los marcos tienen una <strong>jerarquía</strong>: un marco colocado dentro de otro tiene un título más pequeño y un contorno de puntos. Un marco dentro de un marco de primer nivel (un capítulo en una casilla, una casilla en un marco «Acto I» que tú has dibujado) baja un nivel, sin nada que configurar. Las casillas de una plantilla de estructura tienen el título más grande, un contorno de color y su posición junto al nombre («Casilla 3 de 15»). Al alejarte, los títulos crecen y pasan por encima de las tarjetas: de lejos, el lienzo se lee como un índice. El título de un capítulo se coloca entonces bajo el de su casilla en lugar de taparlo. De cerca o de lejos, los títulos de los marcos quedan delante: los hilos y sus etiquetas pasan por debajo.</p>
+<figure class="medium"><img src="images/es/cadre.jpg"><figcaption>Un marco «La familia» alrededor de los personajes y los lugares.</figcaption></figure>
+
+<h3>Seleccionar varias tarjetas</h3>
+<p>Con el ratón: <kbd>Mayús</kbd> + arrastrar rodea tarjetas; <kbd>Ctrl</kbd> + clic añade una tarjeta a la selección; <kbd>Ctrl</kbd> <kbd>A</kbd> lo selecciona todo, <kbd>Esc</kbd> deselecciona. Con el dedo: el botón <span class="ui">Selección</span> hace que arrastrar rodee las tarjetas en lugar de mover la vista. Una barra en la parte superior propone entonces <span class="ui">Enmarcar</span>, <span class="ui">Papelera</span> y <span class="ui">Deseleccionar</span>; las tarjetas elegidas se mueven juntas.</p>
+<figure><img src="images/es/selection.jpg"><figcaption>Seis tarjetas seleccionadas y la barra de selección.</figcaption></figure>
+
+<h3>Organizar el lienzo</h3>
+<p>Cuando todo se desborda, <span class="ui">Organizar</span> pone cada tarjeta en un marco: personajes, lugares, tramas, temas, preguntas, imágenes, enlaces, ideas sueltas, y las escenas por casilla de la plantilla y por capítulo, unidas en el orden del relato por hilos «luego». El conjunto forma un bloque compacto, con la forma de la pantalla: cuantas más tarjetas hay, más largas son las filas de escenas, y los marcos se alinean en ese ancho en lugar de estirarse en una larga franja. Un capítulo repartido en varias casillas lleva su título en la primera y «(continuación)» en las demás. Los marcos bloqueados se quedan en su sitio. Un solo deshacer (<kbd>Ctrl</kbd> <kbd>Z</kbd>) lo devuelve todo a su lugar.</p>
+<p>En una <strong>serie</strong>, las escenas se ordenan por temporada y por episodio: un gran marco por temporada, un marco por episodio dentro («Ep. 3 · Tormenta»), con sus escenas dentro. Estos marcos aparecen solos en cuanto creas temporadas y episodios en la escaleta, incluso antes de la primera escena (si el lienzo aún no tiene ningún marco tuyo), y luego siguen cada cambio. Las escenas escritas antes del primer episodio van a <span class="ui">Fuera de episodio</span>; las tarjetas Escena todavía no escritas en el guion, a <span class="ui">Por colocar</span>. Suelta una escena en el marco de otro episodio: pasa allí con todo su texto, donde la has puesto, y el lienzo se ordena de nuevo. Sin arrastrar, <span class="ui">Colocar en</span> en la escaleta hace lo mismo.</p>
+<p>Cada casilla de la plantilla tiene su marco, incluso vacío («Aún no hay nada aquí»): los huecos de la estructura saltan a la vista. Suelta una escena en el marco de una casilla para colocarla en esa casilla, en el sitio donde la sueltes (sujeta la tarjeta por su cabecera); el Esquema, la escaleta y el Manuscrito siguen enseguida. En un guion, las casillas son las de la plantilla elegida en la escaleta.</p>
+<p>A partir de ahí, el lienzo sigue solo al relato: mover una escena o un capítulo en el Esquema, el Manuscrito o la lista de escenas del Guion la mueve también en el lienzo, sin volver a <span class="ui">Organizar</span>. Un lienzo organizado se organiza de nuevo; si no, las escenas solo intercambian sus sitios y nada más se mueve.</p>
+<figure><img src="images/es/organiser.jpg"><figcaption>El lienzo después de «Organizar».</figcaption></figure>
+
+<h3>Filtrar y buscar</h3>
+<p><span class="ui">Filtrar</span> oculta tipos de tarjetas (no se elimina nada): desmarca los tipos que ya no quieres ver. Un aviso «Filtro activo» te lo recuerda arriba (en un teléfono, el embudo del botón se rellena en su lugar); <span class="ui">Mostrar todo</span> lo hace volver todo, y <span class="ui">Ocultar todo</span> desmarca todos los tipos a la vez (útil para quedarte con uno o dos).</p>
+<p>La lupa (<kbd>Ctrl</kbd> <kbd>F</kbd>) busca en los títulos y el texto de las tarjetas, sin distinguir mayúsculas ni acentos, y también en el texto de las escenas («en el texto»). Elige un resultado: el lienzo se centra en la tarjeta y se acerca (al 100 %, nunca más lejos) y la destaca (las demás se atenúan; <kbd>Esc</kbd> o un clic en el fondo lo devuelve todo), o la escena se abre en el Manuscrito.</p>
+<div class="pair">
+  <figure><img src="images/es/filtre.jpg"><figcaption>El filtro por tipo.</figcaption></figure>
+  <figure><img src="images/es/recherche.jpg"><figcaption>La búsqueda, en las tarjetas y en el texto.</figcaption></figure>
+</div>
+<figure class="medium"><img src="images/es/mise-en-avant.jpg"><figcaption>El resultado elegido, destacado en el lienzo.</figcaption></figure>
+
+<h3>Deshacer, eliminar, la papelera</h3>
+<p><span class="ui">Deshacer</span> y <span class="ui">Rehacer</span> (abajo, o <kbd>Ctrl</kbd> <kbd>Z</kbd> y <kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>Z</kbd>) deshacen y rehacen los cambios del lienzo, del esquema y de la papelera. Dentro de un texto, estos atajos deshacen lo escrito.</p>
+<p>Eliminar una tarjeta (<span class="ui">Mover a la papelera</span>, en rojo al final de su menú <span class="ui">⋯</span>, o <kbd>Supr</kbd>) la lleva a la <strong>papelera</strong>, con su sitio y sus hilos. Un mensaje propone enseguida <span class="ui">Deshacer</span>. La papelera se abre desde los <span class="ui">Ajustes</span>, pestaña <span class="ui">Este proyecto</span> (<span class="ui">Papelera (n)</span>), o en un Mac desde <span class="ui">Archivo</span> › <span class="ui">Papelera…</span>: <span class="ui">Recuperar</span> devuelve la tarjeta, <span class="ui">Eliminar</span> la borra para siempre. El texto de una escena nunca se pierde con su tarjeta.</p>
+<div class="pair">
+  <figure><img src="images/es/corbeille-message.jpg"><figcaption>El mensaje después de una eliminación.</figcaption></figure>
+  <figure><img src="images/es/corbeille.jpg"><figcaption>La papelera.</figcaption></figure>
+</div>
+
+<h3>Pendientes</h3>
+<p>El botón <span class="ui">Pendientes</span> (<kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>L</kbd>) reúne todo lo que espera: las casillas sin marcar de tus tarjetas, los pasajes marcados <span class="ui">Por revisar</span> en el manuscrito y las preguntas <span class="ui">Por explorar</span> (preguntas guardadas en la ficha de un personaje y tarjetas Pregunta). Una tarea se queda donde la pusiste: marcarla en el panel la marca en su tarjeta.</p>
+<figure class="medium"><img src="images/es/a-faire.jpg"><figcaption>El panel «Pendientes».</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="biblia"><span class="num">Capítulo 6</span>La Biblia</h2>
+
+<p class="lead">La Biblia reúne las fichas de tu mundo. Se construye sola: cada tarjeta con tipo del lienzo tiene en ella su ficha, ordenada por tipo. No se copia nada: editar una ficha edita la tarjeta.</p>
+
+<h3>El índice</h3>
+<p>A la izquierda, el <strong>índice</strong> ordena las secciones en cinco partes numeradas, en el orden de un dosier: <span class="ui">1 · Presentación</span> (el proyecto, los temas), <span class="ui">2 · Personajes</span>, <span class="ui">3 · Universo</span> (los lugares), <span class="ui">4 · Estructura</span> (tramas y escenas) y, aparte, <span class="ui">5 · Para ti</span> (preguntas por explorar, imágenes, enlaces, documentos, ideas sueltas): lo que es solo para ti, nunca impreso en un dosier que envías. Cada sección muestra su número de fichas; un clic te lleva a ella. El botón <span class="ui">+</span> de cada sección crea allí una ficha (y por tanto una tarjeta en el lienzo). Cada ficha se pliega con su flecha, arriba a la derecha, para mostrar solo su título; <span class="ui">Contraer todo</span> y <span class="ui">Desplegar todo</span> hacen lo mismo con toda la sección. El dispositivo lo recuerda de una sesión a otra, y una ficha abierta desde el lienzo se despliega sola. <span class="ui">Elegir y ordenar las secciones</span> permite ocultar secciones y cambiar su orden dentro de su parte, con las flechas; este ajuste se aplica también a la exportación de la Biblia en Word y en Markdown.</p>
+<figure class="small"><img src="images/es/bible-rubriques.jpg"><figcaption>Elegir y ordenar las secciones.</figcaption></figure>
+
+<h3>La portada del proyecto</h3>
+<p>La Biblia se abre en la portada: la tarjeta de identidad de tu libro, útil para presentarlo a una editorial, un agente o una productora.</p>
+<ul>
+  <li>la <strong>sobrecubierta</strong>: título, <strong>tagline</strong> (una línea que da ganas de saber más) y <strong>etiquetas</strong> para el género, el público, el formato, el punto de vista, el tiempo verbal, el tono, el estado (primer borrador, reescritura…), los créditos y la obra en la que se basa el proyecto (<span class="ui">Basado en</span>). Se proponen sugerencias, o texto libre con <span class="ui">Otro</span>;</li>
+  <li>la <strong>logline</strong> (quién quiere qué, qué se lo impide, qué está en juego), el <strong>resumen</strong>, los <strong>títulos comparables</strong> («Dune» se encuentra con «El nombre de la rosa») y la <strong>nota de intenciones</strong>;</li>
+  <li>la <strong>extensión</strong>, calculada a partir del manuscrito (palabras escritas y objetivo), y los <strong>temas</strong>, que son tus tarjetas Tema.</li>
+</ul>
+<p><span class="ui">Hazme preguntas</span>, arriba a la derecha de la portada, hace una pregunta a la vez por cada campo vacío («¿Quién quiere qué, qué se lo impide y qué está en juego?» para la logline). Tu respuesta va tal cual al campo, con <span class="ui">Añadir</span>; <span class="ui">Otra</span> pasa a la pregunta siguiente. Como el asistente de personaje, nunca responde por ti.</p>
+<p>En un <strong>guion</strong>, la portada sigue a la etiqueta <span class="ui">Formato</span>: mientras no se elige, no adivina nada y te invita a elegirlo. Para una <strong>serie</strong>, tiene además una parte que se pliega, <span class="ui">Escribir la serie</span>, para todo lo que ayuda a una productora a creer en ella y a un guionista a sumarse: <span class="ui">Por qué ahora</span>, <span class="ui">Por qué yo</span>, <span class="ui">La promesa</span> (lo que el público vuelve a buscar, episodio tras episodio), <span class="ui">Lo que no es</span>, <span class="ui">El universo</span>, <span class="ui">Antes del piloto</span> (lo que pasó antes del primer episodio), <span class="ui">Lo que los mantiene unidos</span> (por qué tus personajes no pueden marcharse), <span class="ui">La mecánica</span> (el conflicto central que genera los episodios), <span class="ui">Un episodio tipo</span>, <span class="ui">La pregunta de la temporada</span>, <span class="ui">Dónde termina la temporada</span>, <span class="ui">Las temporadas siguientes</span>, <span class="ui">Qué hacer</span>, <span class="ui">Qué evitar</span>, <span class="ui">Ideas para seguir</span> y <span class="ui">Otros soportes</span> (pódcast, novela gráfica, juego: solo se imprime en un documento que envías). Dos etiquetas más bajo el título: <span class="ui">Forma</span> (episódica, serializada, híbrida) y <span class="ui">Piloto</span> (piloto de premisa o piloto tipo).</p>
+<p>Para una <strong>miniserie</strong>, las mismas secciones, sin las temporadas siguientes: la pregunta y el final abarcan toda la miniserie.</p>
+<p>Para una <strong>película</strong> (largometraje, cortometraje, telefilme), la parte se llama <span class="ui">Escribir la película</span>: <span class="ui">Por qué ahora</span>, <span class="ui">Por qué yo</span>, <span class="ui">Lo que no es</span>, <span class="ui">Nota de dirección</span> (cómo la ves: imagen, sonido, ritmo), <span class="ui">Viabilidad</span>, <span class="ui">Qué hacer</span>, <span class="ui">Qué evitar</span> e <span class="ui">Ideas que conservar</span>. El <span class="ui">Tratamiento</span> (toda la película contada en 5 a 10 páginas) es opcional: <span class="ui">Añadir un tratamiento</span> lo muestra. La viabilidad llega ya rellenada a partir del guion (escenas, páginas, localizaciones, interior y exterior, día y noche, papeles con diálogo, localizaciones principales): cámbiala y complétala (época, efectos, escenas de acción); <span class="ui">Volver a tomar las cifras del guion</span> la recalcula. Una película no tiene episodios ni etiquetas <span class="ui">Forma</span> o <span class="ui">Piloto</span>. Una sección ya rellenada que no corresponde al formato elegido pasa a <span class="ui">Otras secciones</span>: no se pierde nada.</p>
+<p>Los <strong>episodios</strong> viven en la <a href="#escaleta">escaleta</a>, temporada a temporada; la portada dice cuántos hay y te lleva allí (<span class="ui">Ver los episodios</span>, <span class="ui">Episodio nuevo</span>). En la Biblia, la sección <span class="ui">Episodios</span> (Estructura) los lista con su temporada: cambia un título allí mismo, escribe la sinopsis, o <span class="ui">Escribir el episodio</span> para abrirlo en la vista Guion. <span class="ui">+ Temporada nueva</span> y <span class="ui">+ Episodio nuevo en esta temporada</span> también están ahí. La exportación de la biblia de la serie lee esos episodios: su lista, sus tramas y personajes (los de las escenas del episodio, por los hilos y las réplicas) y el cuadro de las tramas.</p>
+<p>Bajo la nota de intenciones, una indicación discreta da su extensión: una página tiene unas 450 palabras.</p>
+<figure><img src="images/es/bible-couverture.jpg"><figcaption>La portada del proyecto, en cabeza de la Biblia.</figcaption></figure>
+
+<h3>La ficha de un personaje</h3>
+<p>Cada personaje tiene una ficha que va al grano:</p>
+<ul>
+  <li>su <strong>retrato</strong> (la imagen de la tarjeta, en un círculo), su papel y, en una línea, cuántas veces se le nombra en el manuscrito, en cuántas escenas, a partir de cuál;</li>
+  <li>bajo su nombre, su <strong>frase gancho</strong>: quién es, en una frase. El dosier también la usa;</li>
+  <li>el botón <span class="ui">Principal</span> (una estrella) lo marca como personaje principal: pasa a la cabeza de la sección y, en un dosier que envías, conserva su ficha completa; los demás se agrupan en «Y también»;</li>
+  <li>su <strong>motor</strong>: lo que quiere (<span class="ui">Quiere</span>), lo que necesita (<span class="ui">Necesita</span>) y su <span class="ui">Herida, conflicto interior</span>. Si su papel dice «antagonista», el motor se convierte en <span class="ui">Motivación</span>, <span class="ui">Fuerza</span>, <span class="ui">Debilidad</span>;</li>
+  <li>su <strong>tipo de arco</strong>, dibujado: <span class="ui">Positivo</span> (crece), <span class="ui">Trágico</span> (cae), <span class="ui">Plano</span> (no cambia, pero cambia el mundo), y luego su arco en dos tiempos: <span class="ui">Al principio</span> y <span class="ui">Al final</span>;</li>
+  <li>tu <strong>texto</strong> libre (el texto de la tarjeta), editable allí mismo;</li>
+  <li>la <strong>ficha</strong> plegada: género, edad, profesión, apodos, origen, aspecto, carácter, voz, miedo, secreto, relaciones… Todo es opcional. Los campos vacíos esperan bajo <span class="ui">Añadir si sirve</span>: un toque abre uno. Ahí encontrarás también los tres niveles de lo que está en juego (<span class="ui">Lo que está en juego fuera</span>, <span class="ui">Lo que está en juego con los demás</span>, <span class="ui">Lo que está en juego dentro</span>) y <span class="ui">Cómo escribirlo</span>, útiles para una biblia de serie, y luego más para profundizar: <span class="ui">Paradoja</span>, <span class="ui">Dilema</span>, su creencia limitante, lo que valora, su <span class="ui">Punto ciego</span>, su estrategia y lo que le cuesta;</li>
+  <li>la <strong>galería</strong> de fotos de referencia (<span class="ui">Añadir fotos</span>) y las tarjetas <span class="ui">Vinculada a</span>, con la etiqueta de cada hilo.</li>
+</ul>
+<figure><img src="images/es/bible-personnage.jpg"><figcaption>La ficha de la Abuela: retrato, motor, arco, texto, ficha, galería y vínculos.</figcaption></figure>
+
+<h3>El asistente de personaje</h3>
+<p><span class="ui">Preguntar sobre …</span> abre el asistente, que te ayuda a profundizar en un personaje haciéndote preguntas, una a una. Nunca responde por ti.</p>
+<ul>
+  <li>Las preguntas se ordenan por <strong>tema</strong>: <span class="ui">Lo esencial</span>, <span class="ui">Pasado</span>, <span class="ui">Cuerpo</span>, <span class="ui">Voz</span>, <span class="ui">Día a día</span>, <span class="ui">Emociones</span>, <span class="ui">Ira</span>, <span class="ui">Relaciones</span>, <span class="ui">Esperanzas</span>, <span class="ui">Forma de pensar</span>, <span class="ui">Zonas oscuras</span>. Cada tema muestra cuántas preguntas tienen respuesta.</li>
+  <li>Escribe tu respuesta, aunque sea en tres palabras, y luego <span class="ui">Añadir a la ficha</span>. Si la pregunta corresponde a un campo de la ficha, la respuesta va a ese campo; si no, se guarda en <span class="ui">Respuestas a las preguntas</span>, bajo la ficha.</li>
+  <li><span class="ui">Todavía no lo sé</span> guarda la pregunta para más tarde, en la pestaña <span class="ui">Por explorar</span> (y en «Pendientes»). <span class="ui">Otra pregunta</span> pasa a la siguiente.</li>
+  <li>Con una IA conectada, <span class="ui">A medida</span> pide una pregunta escrita a partir de la ficha, y <span class="ui">Síntesis por la IA</span> pone en orden lo que has escrito (ver el capítulo sobre la IA).</li>
+</ul>
+<figure><img src="images/es/bible-assistant.jpg"><figcaption>El asistente hace una pregunta de «Lo esencial».</figcaption></figure>
+
+<h3>El mapa de relaciones</h3>
+<p>En la sección Personajes, la pestaña <span class="ui">Relaciones</span> dibuja a los personajes y los hilos que los unen en el lienzo, con sus etiquetas, y luego la lista de las relaciones. Tira de un hilo entre dos personajes y ponle nombre («hermana de», «traiciona a»): aparece aquí. Toca un retrato para abrir su ficha.</p>
+<p>Un hilo se engrosa con el número de escenas que comparten los dos personajes, y la lista lo dice con todas las letras («3 escenas juntos»). Un hilo de puntos une a dos personajes que nunca comparten escena: una relación que el relato todavía no muestra.</p>
+<figure class="medium"><img src="images/es/bible-relations.jpg"><figcaption>Las relaciones entre los personajes del cuento.</figcaption></figure>
+
+<h3>Las cifras bajo cada ficha</h3>
+<p>Bajo el nombre de cada personaje, una línea discreta da sus escenas (y, en un guion, sus réplicas y su parte del tiempo de palabra); bajo el nombre de cada lugar, sus escenas (y para una localización, sus páginas, interior o exterior, día o noche). Todo se lee en tu texto. El detalle, la ordenación y la exportación en CSV están en la ventana <span class="ui">Estadísticas</span>, que se abre desde el Manuscrito o el Guion (ver «Las estadísticas del proyecto»).</p>
+
+<h3>Las demás fichas</h3>
+<p>Cada tipo tiene su ficha, plegada bajo el texto:</p>
+<ul>
+  <li><strong>Lugar</strong>: época, ambiente (sonidos, olores, luz), lo que ocurre allí, por qué importa. Se muestra el número de escenas que transcurren en él.</li>
+  <li><strong>Trama</strong>: naturaleza, pregunta dramática, lo que está en juego, detonante, obstáculos, giro, resolución.</li>
+  <li><strong>Grupo, Objeto, Acontecimiento, Regla, Secreto</strong>: ver «Los tipos de tarjeta».</li>
+  <li><strong>Escena</strong>: su sinopsis, su estado y el principio de su texto (un clic lo abre para escribir) y luego, si sirve, su objetivo, su obstáculo, su giro y lo que ha cambiado al final.</li>
+  <li><strong>Pregunta</strong>: su <span class="ui">Estado</span> (abierta, decidida, abandonada) y lo que se ha decidido. Una pregunta resuelta pasa al final de la sección, en gris.</li>
+  <li><strong>Enlace, Imagen, Documento</strong>: dirección, autor, publicación, fecha de consulta, lo que te quedas de ella, su fiabilidad. <span class="ui">Completar desde la página</span> trae el título y el autor de la página web.</li>
+</ul>
+<p>Todas las fichas, salvo la de una escena, tienen una casilla <span class="ui">Certeza</span>: <span class="ui">Establecido</span>, <span class="ui">Provisional</span> o <span class="ui">Por explorar</span>. Te dice sobre qué puedes construir; nunca aparece en un documento que envías.</p>
+<figure><img src="images/es/bible-secret.jpg"><figcaption>Un secreto, su verdad, cómo estalla y su certeza.</figcaption></figure>
+<p>Las preguntas <span class="ui">Por explorar</span> y las ideas sueltas también tienen sus secciones. <span class="ui">Ver en el lienzo</span>, al pie de cada ficha, muestra su tarjeta destacada: las demás se atenúan hasta que haces clic en el fondo o pulsas <kbd>Esc</kbd>.</p>
+<figure><img src="images/es/bible-lieux.jpg"><figcaption>La sección de los lugares.</figcaption></figure>
+
+<h2 id="esquema"><span class="num">Capítulo 7</span>El Esquema</h2>
+
+<p class="lead">El Esquema da forma al relato: el orden de las escenas, su lugar en una estructura, sus capítulos. Solo contiene escenas: las del lienzo, de la Biblia o del Manuscrito, siempre las mismas.</p>
+
+<h3>Las plantillas</h3>
+<p>El menú <span class="ui">Plantilla</span> propone una estructura, con una frase que la explica:</p>
+<ul>
+  <li><span class="ui">Libre</span>: una sola lista, en el orden en que colocas las escenas;</li>
+  <li><span class="ui">Tres actos</span>: planteamiento, detonante, confrontación, punto medio, crisis, clímax, resolución;</li>
+  <li><span class="ui">Save the Cat</span>: los quince momentos de Blake Snyder, de la imagen de apertura a la imagen final;</li>
+  <li><span class="ui">Viaje del héroe</span>: las doce etapas de Christopher Vogler, a partir de Joseph Campbell;</li>
+  <li><span class="ui">Círculo de Dan Harmon</span>: ocho pasos en círculo, de la comodidad al cambio;</li>
+  <li><span class="ui">Pirámide en cinco actos</span>: la pirámide de Gustav Freytag, de la exposición al desenlace;</li>
+  <li><span class="ui">Seis etapas (Hauge)</span>: seis etapas y cinco puntos de giro en torno al objetivo visible del héroe;</li>
+  <li><span class="ui">Siete puntos</span>: la estructura de Dan Wells, construida a partir del final;</li>
+  <li><span class="ui">Kishōtenketsu</span>: cuatro movimientos sin conflicto obligatorio (introducción, desarrollo, giro, conciliación);</li>
+  <li><span class="ui">Romántica</span>: el encuentro, el enamoramiento, la ruptura, el regreso;</li>
+  <li><span class="ui">Novela policíaca</span>: el crimen, la investigación, la pista falsa, la revelación, el enfrentamiento, la resolución.</li>
+</ul>
+<p>Cada casilla tiene un nombre, una ayuda y un lugar habitual en el relato, que muestra la cinta del relato (ver el Manuscrito). Cambiar de plantilla no pierde ninguna colocación: cada plantilla conserva la suya. Cada casilla se abre con su posición («Casilla 3 de 15»), un título grande y su número de escenas; los capítulos vienen debajo, más pequeños, como en el lienzo.</p>
+<figure><img src="images/es/plan-gabarit.jpg"><figcaption>La plantilla Save the Cat, sus casillas y sus ayudas.</figcaption></figure>
+<p>El <span class="ui">Círculo de Dan Harmon</span> también se dibuja en círculo: el mundo conocido arriba, lo desconocido abajo, y el número de escenas de cada paso. Un paso vacío aparece con trazo discontinuo; toca un paso para ir a su casilla.</p>
+<figure class="medium"><img src="images/es/plan-cercle.jpg"><figcaption>El círculo de Dan Harmon y sus pasos todavía vacíos.</figcaption></figure>
+
+<h3>Mis plantillas</h3>
+<p>En el menú <span class="ui">Plantilla</span>, <span class="ui">Crear una plantilla…</span> abre la lista de casillas, rellenada con las de la plantilla actual: renómbralas, escribe lo que va en ellas, cambia su orden, quita algunas, añade otras. Las escenas siguen a su casilla, aunque se renombre. <span class="ui">Conservar en mis plantillas</span> la propone luego en todos tus proyectos, novela o guion; <span class="ui">Editar las casillas…</span> la vuelve a abrir más tarde. Una casilla quitada envía sus escenas a «Por colocar» (en un guion, a la casilla anterior).</p>
+<figure class="medium"><img src="images/es/gabarit-editeur.jpg"><figcaption>Una plantilla propia, nacida de los tres actos.</figcaption></figure>
+<p>Para compartir una plantilla (con un coautor, entre dos dispositivos, o a partir de una estructura encontrada en otra parte): <span class="ui">Exportar esta plantilla…</span>, en el mismo menú, la guarda en un archivo Markdown (el nombre de la plantilla como título, cada casilla como un subtítulo, su ayuda debajo), legible en cualquier editor de texto; para una plantilla guardada, <span class="ui">Gestionar mis plantillas…</span> (mismo menú) abre su lista: el botón <span class="ui">⋯</span> de cada una propone <span class="ui">Exportar…</span> y, en rojo, <span class="ui">Quitar de mis plantillas</span> (<span class="ui">Deshacer</span> la recupera mientras se muestra el mensaje). Quitar una plantilla no cambia ningún proyecto que ya la use. <span class="ui">Importar una plantilla…</span> lee un archivo así, pero también una simple lista («- Casilla: ayuda», una casilla por línea) o un archivo JSON, y abre el editor ya rellenado: comprueba las casillas y luego <span class="ui">Usar en este proyecto</span>. No entra nada en el proyecto antes de ese clic.</p>
+
+<h3>Colocar las escenas</h3>
+<p>En la presentación <span class="ui">Lista</span>, cada escena muestra su título, su sinopsis y luego, en una línea, su capítulo, su casilla (<span class="ui">Colocar en</span>) y su estado. Para moverla:</p>
+<ul>
+  <li>arrástrala a otra casilla o a otro sitio;</li>
+  <li>o usa sus flechas (con el ratón, aparecen al pasar por encima de la escena), o el menú <span class="ui">Colocar en</span>.</li>
+</ul>
+<p>Las escenas todavía no colocadas esperan en <span class="ui">Por colocar</span>, en el orden del lienzo. <span class="ui">Escena nueva…</span> al final de cada casilla crea una escena allí mismo (y su tarjeta en el lienzo). El lápiz (✎) abre la escena en el Manuscrito; el botón <span class="ui">⋯</span> propone <span class="ui">Ver en el lienzo</span> y, en rojo, <span class="ui">Mover a la papelera</span>.</p>
+<figure><img src="images/es/plan-liste.jpg"><figcaption>El esquema en tres actos, como lista, con los capítulos.</figcaption></figure>
+
+<h3>Los capítulos</h3>
+<p>Los capítulos dividen el relato. El menú <span class="ui">Capítulo</span> de una escena propone <span class="ui">Capítulo nuevo a partir de aquí</span>; cada capítulo puede tener un título (opcional). Los capítulos se numeran solos, según su lugar. Eliminar un capítulo devuelve sus escenas al capítulo anterior: no se elimina ninguna escena. En el Manuscrito, también puedes empezar un capítulo desde el teclado (ver más abajo).</p>
+
+<h3>Lista, fichas, cronología</h3>
+<p>Tres presentaciones del mismo esquema:</p>
+<ul>
+  <li><span class="ui">Lista</span>, para leer y reordenar;</li>
+  <li><span class="ui">Fichas</span>, como tarjetas extendidas sobre una mesa;</li>
+  <li><span class="ui">Cronología</span>: una columna por escena, una fila por trama, tema, personaje y lugar. Un punto lleno indica un hilo entre la tarjeta y la escena; un punto hueco, que la escena la nombra en su texto. Toca una celda para tirar o quitar el hilo. La columna de las tarjetas se queda fija a la izquierda mientras las escenas se desplazan por debajo.</li>
+</ul>
+<div class="pair">
+  <figure><img src="images/es/plan-fiches.jpg"><figcaption>Las fichas.</figcaption></figure>
+  <figure><img src="images/es/plan-chronologie.jpg"><figcaption>La cronología por trama.</figcaption></figure>
+</div>
+<p><span class="ui">Organizar el lienzo</span> ordena también el lienzo a partir del esquema: una casilla de la plantilla y luego un capítulo por marco.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="manuscrito"><span class="num">Capítulo 8</span>El Manuscrito</h2>
+
+<p class="lead">El Manuscrito es donde escribes: todo el libro, escena tras escena en el orden del esquema, en páginas maquetadas como las de un libro. Las escenas se suceden sin corte, y lo que escribes va a la escena donde está el cursor.</p>
+<figure><img src="images/es/manuscrit.jpg"><figcaption>La vista Manuscrito: las escenas a la izquierda, la página en el centro, las estadísticas y la escena en curso a la derecha.</figcaption></figure>
+
+<h3>La cinta del relato</h3>
+<p>Una vez elegida una plantilla, una banda fina en la parte superior de la barra (y bajo la barra del Guion) muestra la estructura de tu texto tal como es: cada casilla ocupa el sitio que ocupan de verdad sus escenas, en palabras (en páginas en un guion). Una marca fina indica dónde suele empezar cada casilla en esa estructura: la diferencia se ve sin que se imponga nada. Toca una escena en la cinta para ir a ella; la línea de debajo dice en qué casilla estás y en qué punto del relato. Mientras hay poco escrito, cada escena cuenta como una parte igual.</p>
+<ul>
+  <li><span class="ui">Ver las tramas</span> añade una fila por tarjeta Trama: llena para las escenas unidas por un hilo, clara para las escenas que la mencionan.</li>
+  <li><span class="ui">Ver la curva</span> aparece en cuanto dos escenas han rellenado <span class="ui">Para el héroe, la escena termina</span> (mejor, peor, igual) en su ficha: la curva sube y baja con la suerte del héroe, escena a escena.</li>
+</ul>
+<figure><img src="images/es/ruban.jpg"><figcaption>La cinta del relato y la fila de las tramas.</figcaption></figure>
+
+<h3>La columna de las escenas</h3>
+<p>A la izquierda, todas las escenas del libro, por capítulo, con su número de palabras. Un clic abre una escena. Para moverla, arrástrala (sobre la mitad superior de otra escena para ponerla antes, sobre la mitad inferior para ponerla después), o usa sus flechas o <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. Toma el capítulo y la casilla de su nueva vecina. Un capítulo entero también se mueve, arrastrando su título o con sus flechas.</p>
+<figure class="small"><img src="images/es/manuscrit-colonne.jpg"><figcaption>La columna de las escenas.</figcaption></figure>
+
+<h3>La página</h3>
+<p>Encima de la página, una barra discreta: las flechas de las escenas, el título de la escena, su tipo de página, su estado, <span class="ui">Modo concentración</span>, <span class="ui">Escuchar</span>, el contador de palabras y un botón <span class="ui">⋯</span> para lo demás: <span class="ui">Reemplazar</span>, <span class="ui">Ir a…</span>, <span class="ui">Revisar</span>, <span class="ui">Estadísticas</span> y, en rojo, <span class="ui">Mover a la papelera</span>. El número y el título del capítulo están en el margen superior; la primera letra de un capítulo se convierte en letra capitular cuando no estás escribiendo en ese párrafo. La sinopsis de la escena aparece como marca de agua en una escena todavía vacía, como una nota de esquema.</p>
+<p><strong>Zoom de la página.</strong> <kbd>Ctrl</kbd> <kbd>+</kbd> y <kbd>Ctrl</kbd> <kbd>−</kbd> amplían o reducen toda la página, sin cambiar su maquetación ni sus saltos de página; <kbd>Ctrl</kbd> <kbd>0</kbd> vuelve al tamaño normal. El ajuste también está en los <span class="ui">Ajustes</span> (<span class="ui">Zoom de la página</span>) y, en Mac, en el menú <span class="ui">Visualización</span>. Se aplica también a la hoja del Guion. Ampliada más allá de la ventana, la página se desplaza de lado.</p>
+
+<h3>Dividir una escena, empezar un capítulo</h3>
+<p>Puedes dividir el relato sin dejar el teclado:</p>
+<ul>
+  <li><kbd>Intro</kbd> dos veces (en una línea vacía) divide la escena: nace una escena nueva, el resto del texto pasa a ella y su tarjeta aparece en el lienzo justo debajo de la anterior;</li>
+  <li><kbd>Intro</kbd> tres veces empieza un capítulo nuevo;</li>
+  <li><kbd>Retroceso</kbd> en la escena recién nacida, todavía vacía, deshace la división.</li>
+</ul>
+<p>Un mensaje <span class="ui">Deshacer</span> aparece durante diez segundos después de cada división.</p>
+
+<h3>Las páginas del libro</h3>
+<p>Un libro publicado también tiene páginas fuera del relato. El menú <span class="ui">Añadir una página…</span>, bajo la columna de las escenas, las crea: <span class="ui">Portada</span>, <span class="ui">Créditos</span>, <span class="ui">Dedicatoria</span>, <span class="ui">Epígrafe</span>, <span class="ui">Prólogo</span>, <span class="ui">Epílogo</span>, <span class="ui">Agradecimientos</span>, <span class="ui">Sobre el autor</span>. Se colocan solas al principio o al final del libro y cada una se maqueta a su manera (una dedicatoria centrada en cursiva, una página de créditos en letra pequeña…). El menú del tipo de página, en la barra, convierte una escena en página del libro y a la inversa.</p>
+
+<h3>El estado de una escena</h3>
+<p>Cada escena tiene un estado, en el orden en que avanza: <span class="ui">Por escribir</span> (punto vacío: aún no hay nada escrito), <span class="ui">Borrador</span>, <span class="ui">Por revisar</span>, <span class="ui">Revisada</span> o <span class="ui">Terminada</span>. Lo eliges allí donde ves la escena (la barra del Manuscrito, la tarjeta, la Biblia, el Esquema), y un punto de color lo recuerda en las listas. Las estadísticas cuentan las escenas terminadas.</p>
+
+<h3>El punto de vista</h3>
+<p>Cuando varios personajes cuentan la historia, la etiqueta <span class="ui">Punto de vista</span>, junto al estado, dice quién narra la escena. Escribe un nombre para buscar entre tus personajes, o para crear uno (<span class="ui">Crear «nombre»</span>). El narrador aparece en la tarjeta, en el Esquema y en color en la cinta del relato. En la lista de escenas, <span class="ui">Sus escenas en punto de vista</span> conserva solo las escenas de un narrador (las demás se pliegan en una sola línea), y el lienzo se puede filtrar del mismo modo. La ficha de un personaje en la Biblia dice cuántas escenas narra.</p>
+
+<h3>Las versiones de una escena</h3>
+<p>Antes de reescribir una escena, guarda el texto de hoy: en el menú <span class="ui">⋯</span> de la barra, <span class="ui">Conservar esta versión…</span> (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>S</kbd>). Dale un nombre si quieres («Antes de cortar el sueño»). <span class="ui">Versiones de la escena…</span> abre la lista: elige una versión para leerla, o <span class="ui">Comparar con</span> el texto actual u otra versión (las palabras quitadas, tachadas en rojo; las añadidas, subrayadas en verde). <span class="ui">Volver a esta versión</span> vuelve a poner su texto en la escena; el texto anterior se guarda antes como versión, así que nada se pierde. El menú <span class="ui">⋯</span> de la versión la copia, la renombra o la elimina (un mensaje permite deshacer). Cada versión es un archivo de la carpeta <code>versions/</code> del proyecto, legible fuera de la app.</p>
+
+<h3>Las notas al pie</h3>
+<p>Para añadir una nota (una fuente, una precisión), pon el cursor donde va la llamada y pulsa <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>F</kbd>, o selecciona una palabra y toca <span class="ui">Nota</span> en la barra que aparece. Un pequeño número aparece en el texto y debajo se abre una ventana para escribir la nota; <kbd>Intro</kbd> te devuelve al texto. Un clic en el número vuelve a abrir la nota, y <span class="ui">Eliminar la nota</span> la quita. Los números se suceden solos a lo largo del libro. Al exportar, la nota se convierte en una verdadera nota al pie en Word, en una nota que se abre con un toque en el EPUB, y en una nota al final del capítulo en el PDF y el libro en rústica. En el archivo de la escena se escribe como en Markdown: <code>[^1]</code> en el texto, <code>[^1]: texto</code> al final.</p>
+
+<h3>Los comentarios</h3>
+<p>Para anotar una observación sobre un pasaje sin tocar el texto, selecciónalo y toca <span class="ui">Comentar</span> en la barra que aparece (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>M</kbd>). El pasaje se tiñe y se abre la pestaña <span class="ui">Comentarios</span> de la columna derecha, lista para tu texto. Un clic en el pasaje trae de vuelta su comentario; un clic en la cita del comentario trae de vuelta el pasaje. <span class="ui">Resolver</span> lo archiva en <span class="ui">Resueltos</span> (el pasaje deja de estar teñido), <span class="ui">Reabrir</span> lo recupera, y el menú <span class="ui">⋯</span> lo elimina (un mensaje permite deshacer). Los comentarios abiertos también aparecen en <span class="ui">Pendientes</span>. En un guion, un comentario abarca una acción o una réplica entera: pon el cursor en ella y luego <span class="ui">Comentar este elemento</span> en el menú <span class="ui">⋯</span>. Los comentarios viven en la carpeta <code>commentaires/</code> del proyecto, legibles fuera de la app, y nunca aparecen en una exportación.</p>
+
+<h3>Estadísticas y objetivos</h3>
+<p>La columna derecha empieza por la escena: <span class="ui">Citados en el texto</span> lista los personajes y lugares que nombra (un clic muestra su tarjeta); luego vienen su <span class="ui">Sinopsis</span>, editable allí mismo, y el <span class="ui">Congelador</span>. Abajo del todo, <span class="ui">Estadísticas</span> está plegado en una línea (palabras del libro, palabras de hoy); tócalo para abrirlo, y se queda abierto hasta que lo cierres. Dentro están las <strong>estadísticas</strong> del libro: palabras, páginas (estimadas en 250 palabras por página, como una novela impresa), tiempo de lectura, escenas escritas, capítulos, palabras por escena y, para la escena en curso, su número de palabras y su lugar en el libro. Fija un <span class="ui">Objetivo del día</span> y un <span class="ui">Objetivo del libro</span> en palabras: se muestran el avance del día, el número de días seguidos y el avance del libro.</p>
+<figure class="small"><img src="images/es/manuscrit-stats.jpg"><figcaption>Primero la escena: citados en el texto, sinopsis, Congelador; las estadísticas plegadas abajo.</figcaption></figure>
+<figure class="small"><img src="images/es/manuscrit-chiffres.jpg"><figcaption>Estadísticas y objetivos, desplegados.</figcaption></figure>
+
+<h3>Crear una tarjeta mientras escribes: /Nombre</h3>
+<p>Para crear un personaje o un lugar sin salir de tu frase, escribe <kbd>/</kbd> seguido del nombre, en cualquier parte del texto (después de un espacio, un paréntesis o unas comillas): «/Faro de los Buenos Deseos» admite nombres de varias palabras. El menú propone <span class="ui">Personaje</span> o <span class="ui">Lugar</span>; la tarjeta se crea en segundo plano, el nombre sigue siendo texto normal (no queda ningún enlace en el manuscrito) y sigues escribiendo. Rellenarás la tarjeta más tarde en la Biblia.</p>
+<p>Otra manera: selecciona un nombre que ya hayas escrito y escribe <kbd>/</kbd>, o toca el botón <span class="ui">Personaje</span> o <span class="ui">Lugar</span> de la pequeña barra que aparece sobre la selección.</p>
+
+<h3>El Congelador</h3>
+<p>Un pasaje del que dudas no tiene por qué borrarse. Mata a tus <em>darlings</em> sin perderlos: selecciónalo y pulsa <kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>K</kbd> (o, en una pantalla táctil, toca el botón del Congelador en la barra de la selección): sale del texto y va al <span class="ui">Congelador</span> de la columna derecha, con la escena de la que viene. <span class="ui">Devolver a su sitio</span> lo vuelve a poner exactamente donde estaba; si el texto ha cambiado entretanto, va al lugar más cercano, y al final de la escena en curso si la escena de origen ya no existe. El Congelador se guarda en el proyecto. Un pasaje tiene que estar dentro de una sola escena.</p>
+
+<h3>Los paneles</h3>
+<p>La columna de las escenas y la columna derecha se pliegan: un tirador en el borde de la página las abre y las cierra, y MondoWrite recuerda tu elección. En una pantalla estrecha (iPad en vertical, iPhone) se convierten en cajones sobre la página, cerrados por defecto en un teléfono.</p>
+
+<h3>El corrector ortográfico</h3>
+<p>El corrector ortográfico del sistema se ajusta en los Ajustes, <span class="ui">Corrector ortográfico</span>: <span class="ui">Salvo manuscrito y guion</span> (por defecto: el texto de tus escenas no se subraya mientras escribes), <span class="ui">En todas partes</span> o <span class="ui">En ninguna parte</span>. En Mac, iPad e iPhone, el sistema subraya las palabras a medida que las escribes o vuelves a ellas: un texto ya escrito no siempre se revisa entero en cuanto se abre. Desmarcar <span class="ui">Sugerencias y corrección automática del teclado</span> impide que el teclado del iPad, del iPhone o del Mac te sugiera palabras y corrija tu texto por ti.</p>
+
+<h3>El modo concentración</h3>
+<p>El <span class="ui">Modo concentración</span> (<kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>F</kbd>) deja solo tu texto, en una columna en el centro de la pantalla, alineado a la izquierda y sin división de palabras, como en iA Writer. En cuanto escribes, la barra superior y el puntero se desvanecen; mueve el ratón (o toca la pantalla) para que vuelvan. Abajo, un pequeño contador vuelve en cada pausa: las palabras de la escena y las escritas durante la sesión.</p>
+<p>En la barra, <span class="ui">Resaltar</span> pasa por los modos (todo el texto, la frase, la línea, el párrafo), también con <kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>E</kbd>; <span class="ui">Máquina de escribir</span> mantiene la línea en curso en el centro de la pantalla. En los <span class="ui">Ajustes</span>, eliges el ancho de la columna (estrecha, media, ancha) y, en una computadora, el paso a pantalla completa. <kbd>Esc</kbd> sale de él. El Guion tiene el mismo modo concentración, conservando su formato estándar.</p>
+<figure><img src="images/es/mode-focus.jpg"><figcaption>El modo concentración.</figcaption></figure>
+
+<h3>La tipografía al escribir</h3>
+<p>A medida que escribes, MondoWrite pone la tipografía correcta: comillas latinas « », comillas inglesas “ ” en el segundo nivel, puntos suspensivos …, raya a partir de dos guiones, y en francés las « » con sus espacios de no separación. El ajuste <span class="ui">Tipografía al escribir</span> decide: seguir el idioma de la interfaz, uno de una veintena de idiomas (alemán „ “, francés « » con espacios, sueco ” ”…) o ninguno. Práctico cuando escribes en otro idioma que el de la interfaz.</p>
+
+<h3>Buscar y reemplazar</h3>
+<p><span class="ui">Reemplazar</span> (<kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>H</kbd>) busca en todo el texto o en la escena en curso, con o sin las tarjetas. <span class="ui">Distinguir mayúsculas</span> y <span class="ui">Palabra completa</span> afinan la búsqueda; el número de apariciones se muestra a medida que escribes. La palabra sustituida conserva sus mayúsculas. <span class="ui">Deshacer</span> lo devuelve todo a su sitio. Las menciones @ nunca se tocan: ya siguen a su tarjeta. Cada aparición se lista con la frase que la rodea: desmarca las que deban quedarse como están.</p>
+<p><span class="ui">Renombrar en todas partes…</span> (menú ⋯ de una tarjeta) solo sustituye el nombre tal como lo escribiste, o en mayúsculas: un personaje llamado Rosa nunca cambia «la rosa del jardín». Si el nombre también es una palabra corriente en tu texto (Luz, Paz, Rosa…), MondoWrite te lo dice y desmarca las apariciones a principio de frase, donde la palabra y el nombre se confunden: léelas antes de renombrar.</p>
+<figure class="small"><img src="images/es/remplacer.jpg"><figcaption>Buscar y reemplazar.</figcaption></figure>
+
+<h3>Ir a una página, una escena, un capítulo</h3>
+<p><span class="ui">Ir a…</span> (<kbd>Ctrl</kbd> <kbd>G</kbd>, en el menú <span class="ui">⋯</span> del Manuscrito y del Guion, y desde cualquier vista) abre una pequeña ventana: escribe un número para ir a esa página, o a la escena con ese número en un guion (al capítulo con ese número en una novela), o una palabra del título de una escena, de un capítulo o de una sinopsis. Los pasajes «por revisar» del manuscrito y las notas <code>[[…]]</code> del guion también están ahí. <kbd>Intro</kbd> te lleva al primer lugar encontrado; las flechas eligen otro.</p>
+
+<h3>Escuchar tu texto</h3>
+<p><span class="ui">Escuchar</span> lee el texto en voz alta desde donde estás, con las voces instaladas en el dispositivo (nada sale a internet): en un guion, el narrador lee los encabezados, la acción y las transiciones, y cada personaje dice sus réplicas con su propia voz; en una novela, el narrador lo lee todo, hasta el final del libro. El pasaje que se lee se resalta y la página lo sigue. <span class="ui">Pausa</span>, <span class="ui">Reanudar</span> y <span class="ui">Detener</span> sustituyen al botón durante la lectura; escribir en el texto también la detiene.</p>
+<p>La flecha junto a <span class="ui">Escuchar</span> abre la elección de las voces: la del narrador, la de cada personaje (si no, se le asigna una, siempre la misma), la velocidad y, en un guion, si se leen las acotaciones. Estas elecciones se quedan en el dispositivo, ya que las voces cambian de un dispositivo a otro.</p>
+
+<h3>Revisar el texto</h3>
+<p><span class="ui">Revisar</span> (en el menú <span class="ui">⋯</span> de la barra, con el número de puntos encontrados) abre la pestaña del mismo nombre en la columna derecha, junto a <span class="ui">En esta escena</span>. Señala lo que merece una mirada, sin corregir nunca nada: un nombre escrito casi como el de una ficha («Inès» por «Inés»), dos espacios seguidos, un espacio antes de una coma o de un punto. Toca un punto para ir al pasaje, seleccionado en el texto. <span class="ui">Renombrar en todas partes…</span> abre «Buscar y reemplazar» con el nombre correcto; <span class="ui">Ignorar</span> quita el punto de la lista hasta que se cierre la app.</p>
+<p>También hace preguntas sobre la historia, nunca errores: el personaje marcado como principal no es el que se ve en más escenas («¿A quién seguimos de verdad?»); un personaje principal no ha rellenado su casilla «Quiere»; una serie todavía no tiene episodios; un secreto no tiene prevista ninguna revelación, o estalla sin ninguna pista sembrada antes; un objeto se nombra en una sola escena (sembrado sin recogerse, o recogido sin sembrarse); una casilla de la plantilla empieza a más de diez puntos de su lugar habitual (a partir de seis escenas, según la cinta del relato: la pregunta lleva a su primera escena). Toca la pregunta para abrir la ficha; <span class="ui">Es a propósito</span> la deja de lado.</p>
+
+<h3>Las estadísticas del proyecto</h3>
+<p><span class="ui">Estadísticas</span> (en el menú <span class="ui">⋯</span> de las barras del Manuscrito y del Guion, y en el menú <span class="ui">Visualización</span> del Mac) abre una ventana que cuenta, en tu texto, lo que no ves mientras escribes. Allí no se escribe ni se guarda nada.</p>
+<ul>
+  <li><span class="ui">Personajes</span>: para cada uno, sus escenas, réplicas y palabras dichas (guion), su parte del tiempo de palabra (o su <span class="ui">Presencia</span> en una novela, las escenas donde el texto lo nombra) y sus apariciones, de la primera a la última escena. Toca el título de una columna para ordenar, un nombre para abrir su ficha. Debajo, <span class="ui">Por género</span> agrupa los valores del campo «Género» de las fichas tal como los escribiste.</li>
+  <li><span class="ui">Lugares</span> (<span class="ui">Localizaciones</span> en un guion): para cada lugar, sus escenas, su parte del relato, sus apariciones y los personajes que se cruzan en él. En una novela, una escena transcurre en un lugar cuando un hilo la une a ese lugar en el lienzo, o cuando su texto lo nombra.</li>
+  <li><span class="ui">Quién se cruza con quién</span>: un cuadro de las escenas que comparte cada pareja de personajes (hablan en ellas o se les nombra). Toca una celda para listar sus escenas comunes y abrir una. Al lado, el dúo más presente y los personajes que nunca se cruzan: nada grave en sí, es una pregunta que hacerse.</li>
+</ul>
+<p>Cada pestaña tiene su <span class="ui">Exportar en CSV…</span>, para una hoja de cálculo.</p>
+<figure><img src="images/es/stats-personnages.jpg"><figcaption>La ventana Estadísticas, pestaña Personajes, sobre el cuento.</figcaption></figure>
+
+<h3>Escribir desde la tarjeta</h3>
+<p>Una tarjeta Escena lleva su texto. En el lienzo, muestra su sinopsis, el principio de su escena y su número de palabras. Ampliada, se convierte en una página donde escribes la escena, la misma que en el Manuscrito; <span class="ui">Abrir en el Manuscrito</span> te lleva allí.</p>
+<figure><img src="images/es/carte-agrandie-scene.jpg"><figcaption>La escena «El encuentro en el bosque» escrita en su tarjeta ampliada.</figcaption></figure>
+
+<h3>Los textos sin tarjeta</h3>
+<p>Eliminar una tarjeta Escena nunca elimina su texto. Si una escena ha perdido su tarjeta, aparece en <span class="ui">Textos sin tarjeta</span>, al final de la columna: <span class="ui">Volver a crear la tarjeta</span> la devuelve al libro.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="guion"><span class="num">Capítulo 9</span>El Guion</h2>
+
+<p class="lead">En un proyecto de guion, el Manuscrito se convierte en la vista <span class="ui">Guion</span>: un editor en formato de cine estándar, que guarda el texto en Fountain, un formato abierto que leen Highland, Fade In, WriterSolo, Slugline o Trelby. La <span class="ui">Escaleta</span> lista las escenas en el orden del guion.</p>
+
+<h3>Pasar a guion</h3>
+<p>Crea un proyecto con <span class="ui">Un guion</span>, importa un archivo Fountain o Final Draft, o cambia un proyecto existente en <span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span> › <span class="ui">Tipo de proyecto</span>. El vocabulario sigue: los Lugares se llaman Localizaciones, el título de una tarjeta Escena es su encabezado («INT. FARO - NOCHE»), y la extensión se cuenta en páginas y minutos (una página equivale más o menos a un minuto), que se muestran en la vista Guion.</p>
+
+<h3>El editor</h3>
+<figure><img src="images/es/scenario.jpg"><figcaption>La vista Guion: las escenas a la izquierda, la página en el centro, «En esta escena» a la derecha.</figcaption></figure>
+<p>El guion está hecho de <strong>elementos</strong>: <span class="ui">Encabezado de escena</span>, <span class="ui">Acción</span>, <span class="ui">Personaje</span>, <span class="ui">Acotación</span>, <span class="ui">Diálogo</span>, <span class="ui">Transición</span>. La barra encima de la página muestra el elemento en curso y permite cambiarlo con un clic. Desde el teclado:</p>
+<ul>
+  <li><kbd>Tab</kbd> cambia el tipo de elemento (<kbd>Mayús</kbd> <kbd>Tab</kbd> en el otro sentido);</li>
+  <li><kbd>Intro</kbd> pasa al elemento lógico siguiente: personaje y luego diálogo, diálogo y luego acción…;</li>
+  <li><kbd>Esc</kbd> sale de la página y pasa a la barra de elementos.</li>
+</ul>
+<p>En el iPhone, la barra está plegada en la parte superior de la página: solo muestra el tipo del elemento en curso. Tócala para abrir el panel (los seis elementos, luego <span class="ui">Modo concentración</span>, <span class="ui">Escuchar</span> y el menú <span class="ui">⋯</span>: <span class="ui">Congelador</span>, <span class="ui">Reemplazar</span>, <span class="ui">Ir a…</span>, <span class="ui">Revisar</span>); se cierra en cuanto eliges un elemento. La ventana <span class="ui">Estadísticas</span>, demasiado ancha para un teléfono, no se propone allí: ábrela en el iPad o en una computadora.</p>
+<p>La app reconoce lo que escribes: una línea que empieza por «int.» o «ext.» se convierte en encabezado, un paréntesis bajo un personaje en acotación. El elemento que escribes pasa a mayúsculas cuando hace falta. La página se corta en páginas reales (Carta o A4), con el número de página y la duración abajo.</p>
+
+<h3>El autocompletado</h3>
+<p>Mientras escribes un encabezado o un nombre de personaje, MondoWrite propone las localizaciones y los personajes de la Biblia, los momentos del día (DÍA, NOCHE…), las extensiones (V.O., OFF, CONT.). Elige con las flechas e <kbd>Intro</kbd>. Un nombre nuevo propone crear su ficha o su localización.</p>
+<figure><img src="images/es/scenario-completion.jpg"><figcaption>El autocompletado propone la localización «Bosque» de la Biblia.</figcaption></figure>
+<p>Una escena o un personaje escritos en el guion reciben su tarjeta en el lienzo (con la tarjeta de la localización y el hilo «transcurre en»), sin copiar nada.</p>
+
+<h3>La columna de las escenas y «En esta escena»</h3>
+<p>A la izquierda, la lista de las escenas con su sinopsis y su página; un clic te lleva a ella. Se reordenan arrastrando su asa (⋮⋮ a la izquierda de cada escena), con sus flechas o <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd>. <span class="ui">+ Sinopsis</span> añade una sinopsis a la escena (una línea Fountain <code>= …</code>, ignorada al imprimir). A la derecha, <span class="ui">En esta escena</span> muestra la tarjeta de la escena, su localización (con el número de escenas que transcurren en ella) y los personajes que hablan, con su número de réplicas. Las dos columnas se pliegan con los tiradores de los bordes de la página, como en el Manuscrito (y se convierten en cajones en una pantalla estrecha).</p>
+
+<h3>Portada y opciones</h3>
+<p>Al principio de la página, la portada se rellena allí mismo: título, crédito («Escrito por»), autor, fuente, contacto, fecha de la versión. El nombre de tu perfil se pone ahí en cada guion nuevo.</p>
+<p>La numeración de las escenas y el subrayado de los encabezados (en pantalla, en el PDF y en la exportación a Final Draft), así como el tamaño de página (Carta o A4), se ajustan en <span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span>. En la barra, <span class="ui">Modo concentración</span>, <span class="ui">Escuchar</span> y el menú <span class="ui">⋯</span> (<span class="ui">Congelador</span>, <span class="ui">Reemplazar</span>, <span class="ui">Ir a…</span>, <span class="ui">Revisar</span>, <span class="ui">Estadísticas</span>) funcionan como en el Manuscrito.</p>
+<figure><img src="images/es/scenario-page-titre.jpg"><figcaption>La portada del guion.</figcaption></figure>
+
+<h3>Estadísticas, Congelador y modo concentración</h3>
+<p>En la columna derecha, después de la escena y del <span class="ui">Congelador</span>, <span class="ui">Estadísticas</span> (plegado) da las cifras del guion: palabras, páginas (medidas sobre la maquetación del guion), duración, escenas escritas y los objetivos del día y del proyecto. Las palabras escritas en el guion cuentan para el avance del día y los días seguidos, como en el Manuscrito. El <span class="ui">Congelador</span>: selecciona un pasaje y pulsa <kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>K</kbd> para apartarlo; <span class="ui">Devolver a su sitio</span> lo trae de vuelta.</p>
+<p>El <span class="ui">Modo concentración</span> deja solo el texto, sin saltos de página, y funciona como en el Manuscrito: barra y puntero ocultos mientras escribes, resaltado con <kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>E</kbd>, máquina de escribir, contador en cada pausa (página, duración y palabras de la sesión). <kbd>Esc</kbd> sale de él.</p>
+
+<h3>Revisar el guion</h3>
+<p>Como en el Manuscrito, <span class="ui">Revisar</span> abre una pestaña de cosas que mirar: nombres de personajes casi idénticos («CAPERUSITA» junto a «CAPERUCITA», con el número de réplicas de cada uno), un personaje que habla sin tarjeta (<span class="ui">Crear la tarjeta</span>; una errata en un nombre conocido se lista entre los nombres casi idénticos, con <span class="ui">Renombrar en todas partes…</span>), una acción de más de 4 líneas, un encabezado sin INT./EXT. o sin momento, un personaje sin réplica, espacios de más, y las preguntas sobre la historia (personaje principal, casilla «Quiere», serie sin episodios, con <span class="ui">Episodio nuevo</span>, secretos, objetos, y la extensión del piloto: más o menos una página por minuto, según el formato elegido en la portada, por ejemplo de 27 a 35 páginas para episodios de 30 minutos). Toca un punto para ir al elemento; nada cambia sin ti.</p>
+<figure><img src="images/es/scenario-verifier.jpg"><figcaption>La pestaña «Revisar» del guion.</figcaption></figure>
+
+<h3>Filtrar por personaje</h3>
+<p>Arriba de la lista de escenas, elige un <span class="ui">Personaje</span>: <span class="ui">Sus escenas</span> conserva solo las escenas en las que habla o se le nombra en la acción; <span class="ui">Sus réplicas</span> atenúa además todo lo que no dice. El texto atenuado sigue siendo editable, y la hoja se vuelve continua mientras el filtro está activo. El aviso de la barra, o <span class="ui">Todos</span>, devuelve todo el guion. Desde su ficha en la Biblia, <span class="ui">Ver sus réplicas en el guion</span> pone directamente este filtro.</p>
+<figure><img src="images/es/scenario-filtre.jpg"><figcaption>Las réplicas del Lobo; el resto, atenuado.</figcaption></figure>
+
+<h3>Las estadísticas del guion</h3>
+<p><span class="ui">Estadísticas</span>, en el menú <span class="ui">⋯</span> de la barra, abre la misma ventana que en una novela (ver «Las estadísticas del proyecto»), leída en el guion. La pestaña <span class="ui">Localizaciones</span> es un desglose para el rodaje: las páginas de cada localización (una página equivale más o menos a un minuto), sus escenas de interior o exterior, de día o de noche, y los personajes que se cruzan en ella. Ves de un vistazo lo que costará caro (las noches en exterior) o una localización usada una sola vez. Una localización escrita sin tarjeta tiene su propia fila.</p>
+<p>En una <strong>serie</strong>, <span class="ui">Contar</span>, arriba de la ventana, limita las cifras a una temporada o a un episodio; <span class="ui">Ir a</span> (<kbd>Ctrl</kbd> <kbd>G</kbd>) propone también cada temporada y cada episodio, con el nombre de su temporada, y lo abre en la vista Guion. <span class="ui">Revisar</span> compara la extensión de cada episodio escrito con el formato de la portada (para episodios de 52 minutos, de 47 a 60 páginas) y señala a un personaje principal ausente de tres episodios seguidos o más.</p>
+<figure><img src="images/es/stats-decors.jpg"><figcaption>Las localizaciones del cuento en forma de guion.</figcaption></figure>
+<p>En <span class="ui">Quién se cruza con quién</span>, una celda tocada propone también <span class="ui">Ver estas escenas en el guion</span>: el filtro conserva entonces solo las escenas donde se cruzan los dos personajes.</p>
+<figure><img src="images/es/stats-croisements.jpg"><figcaption>El Lobo y Caperucita Roja comparten dos escenas.</figcaption></figure>
+<p>La pestaña <span class="ui">Int./Ext. y Día/Noche</span> cuenta en todo el guion. Una escena «MÁS TARDE», «CONTINUO» o «MISMO MOMENTO», o sin momento, retoma el día o la noche de la escena anterior: se cuenta como «retomada», sin tocar el texto. Una escena INT./EXT. cuenta a los dos lados.</p>
+<figure class="medium"><img src="images/es/stats-int-ext.jpg"><figcaption>Interior o exterior, día o noche, en todo el guion.</figcaption></figure>
+
+<h3 id="escaleta">La escaleta de un guion</h3>
+<p>La escaleta lista las escenas en el orden del guion, con su sinopsis, sus personajes, su extensión y su estado. Arrastra una escena o usa sus flechas para cambiar el orden del propio guion. En cada escena, ↗ muestra su tarjeta en el lienzo y ✎ la abre en el Guion.</p>
+<p>El menú <span class="ui">Plantilla</span> propone: ninguna, tres actos, Save the Cat, ocho secuencias (la película en ocho secuencias de unos quince minutos), episodio de serie (teaser, cuatro actos, tag) y las estructuras del Esquema (viaje del héroe, círculo de Dan Harmon, pirámide en cinco actos, seis etapas, siete puntos, kishōtenketsu, romántica, novela policíaca), además de tus propias plantillas (ver el Esquema). Las casillas de la plantilla son secciones del archivo Fountain, que los demás programas ven como secciones normales. En la vista Guion, el cursor espera bajo la primera casilla hasta que la sigue una escena, y lo que escribes bajo una casilla empieza un encabezado de escena; coloca las escenas con <span class="ui">Colocar en</span>, las flechas o arrastrando. Cada casilla muestra su posición («Casilla 3 de 15»), un título grande, su ayuda y su extensión; tus propias secciones se quedan más pequeñas, bajo las casillas.</p>
+<p>Para una <strong>serie</strong>, <span class="ui">+ Episodio nuevo</span> (arriba de la escaleta, en cualquier guion que no sea una película) crea el primer episodio bajo una <span class="ui">Temporada 1</span>: lo que ya has escrito se convierte en su guion. La escaleta muestra entonces la serie como un árbol, temporada › episodio › escenas. Toca un título para cambiarlo allí mismo, <span class="ui">+ Sinopsis</span> bajo un episodio para decir en dos o tres frases lo que pasa en él, la flecha para plegar una temporada o un episodio. Cada uno muestra sus páginas. Su menú ⋯ propone <span class="ui">Escribir el episodio</span>, <span class="ui">Subir</span>, <span class="ui">Bajar</span> (un episodio pasa de una temporada a la siguiente) y <span class="ui">Quitar</span>: solo se va el título, el texto se une a lo que lo precede. <span class="ui">+ Temporada nueva</span> añade una al final; <span class="ui">Episodio nuevo en esta temporada</span> está en el menú de una temporada. Pasa una escena a otro episodio con <span class="ui">Colocar en</span> o las flechas. En la vista Guion, el selector de arriba de la lista de escenas abre <span class="ui">Todo el guion</span> o un solo episodio; sus flechas van al anterior o al siguiente. En <span class="ui">Todo el guion</span>, la lista de escenas sigue las temporadas y los episodios (un título te lleva allí con un clic) y el texto nombra cada parte: Temporada, Episodio 2, Casilla. La cinta de las casillas solo se muestra con un episodio abierto. Una escena escrita en un episodio se une enseguida a su marco en el lienzo. Todo se queda en <code>scenario.fountain</code>, donde temporadas y episodios son secciones normales para los demás programas. Cada episodio tiene su propia plantilla: <span class="ui">Plantilla del episodio</span>, bajo su sinopsis, pone sus casillas solo en el texto de ese episodio (<span class="ui">Episodio de serie</span> en cabeza de la lista), tus propias plantillas incluidas (<span class="ui">Mis plantillas</span>: crear una, reutilizar una guardada, editar la del episodio); <span class="ui">Colocar en</span> las nombra con su episodio, y <span class="ui">Organizar</span> las dibuja dentro del marco del episodio.</p>
+<div class="pair">
+  <figure><img src="images/es/sequencier.jpg"><figcaption>La escaleta de un guion, como lista.</figcaption></figure>
+  <figure><img src="images/es/sequencier-fiches.jpg"><figcaption>Como fichas, con la plantilla en tres actos.</figcaption></figure>
+</div>
+
+<h3>Una escena en su tarjeta</h3>
+<p>Ampliada, una tarjeta Escena de un guion muestra su encabezado, su sinopsis y un editor limitado al texto de esa escena, con la misma barra de elementos.</p>
+<figure class="medium"><img src="images/es/carte-agrandie-scenario.jpg"><figcaption>La escena «EXT. BOSQUE - DÍA» escrita en su tarjeta.</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="ia"><span class="num">Capítulo 10</span>La IA, opcional</h2>
+
+<p class="lead">MondoWrite funciona por completo sin IA. Si conectas una, hace preguntas y propuestas; nunca escribe tu texto, y nada cambia sin tu decisión.</p>
+
+<h3>Conectar un servicio</h3>
+<p>En <span class="ui">Ajustes</span> › <span class="ui">IA (opcional)</span>, elige un <span class="ui">Servicio</span>:</p>
+<ul>
+  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: servicios en línea. Pega tu <span class="ui">Clave de API</span>; se queda en tu dispositivo, nunca en el proyecto. Tus tarjetas solo se envían al servicio cuando lanzas una acción de IA.</li>
+  <li><strong>Ollama, LM Studio</strong>: modelos que funcionan en tu computadora. Mientras la dirección del servidor sea la de esta computadora, tus textos nunca salen de ella; cualquier otra dirección se señala en los Ajustes. Indica la dirección del servidor (la que viene por defecto suele funcionar; una dirección que termina en <code>/v1</code> también). Si LM Studio pide un token («Require Authentication» en los ajustes de su servidor), crea uno en LM Studio y pégalo en <span class="ui">Token de API (opcional)</span>.</li>
+  <li><strong>Apple Intelligence (en el dispositivo)</strong>: en un Mac o un iPhone con Apple Intelligence (macOS 26, iOS 26 y posteriores), el modelo de Apple, gratuito, sin clave ni configuración, y nada sale del dispositivo. Solo aparece cuando está disponible; si Apple Intelligence está desactivado, los Ajustes lo dicen, con <span class="ui">Volver a comprobar</span>. Este modelo es pequeño: sirve para las acciones cortas (Ordenar las ideas, preguntas del asistente, Preguntar al personaje, Libreta, modo Taller); las lecturas de todo el relato (coherencia, voces, lector beta, lo que dice el texto) aparecen en gris con el motivo, y la búsqueda por el sentido y la descripción de fotos no se proponen.</li>
+</ul>
+<p><span class="ui">Probar y listar los modelos</span> comprueba la conexión y propone la lista de los modelos disponibles. El botón <span class="ui">IA</span> aparece entonces en la barra superior. Si no se ha podido cargar la lista, un mensaje lo dice: vuelve a pulsar el botón para reintentar.</p>
+<div class="pair">
+  <figure><img src="images/es/reglages-ia.jpg"><figcaption>Conectar LM Studio en los Ajustes.</figcaption></figure>
+  <figure><img src="images/es/ia-menu.jpg"><figcaption>El menú IA.</figcaption></figure>
+</div>
+
+<h3>Lo que puede hacer la IA</h3>
+<ul>
+  <li><span class="ui">Ordenar las ideas</span>: propone un tipo para cada una de tus ideas sueltas («esta es un personaje», «esta un lugar»), con su motivo. Aplica o ignora cada propuesta, o <span class="ui">Aplicar todo</span>; todo se puede deshacer en el lienzo. Por encima de 80 ideas, la IA mira las 80 primeras y lo dice: vuelve a lanzarla cuando estén ordenadas.</li>
+  <li><span class="ui">Comprobar la coherencia</span>: señala posibles contradicciones entre tus tarjetas, en forma de preguntas. Una pregunta puede convertirse en tarjeta Pregunta.</li>
+  <li><strong>Preguntas a medida</strong>: en el asistente de un personaje, <span class="ui">A medida</span> pide una pregunta escrita a partir de su ficha. Respondes tú.</li>
+  <li><strong>Síntesis</strong>: <span class="ui">Síntesis por la IA</span> pone en orden lo que has escrito sobre un personaje (ficha, notas, respuestas), sin inventar nada; solo entra en la ficha cuando haces clic.</li>
+  <li><strong>Preguntar al personaje</strong>: en el asistente de un personaje, la pestaña <span class="ui">Preguntar</span> da la vuelta a la entrevista. Tú haces las preguntas y el personaje responde en primera persona, solo a partir de lo que has escrito (su ficha, sus respuestas, sus hilos, las escenas donde aparece). Sobre lo que tus textos no dicen, responde que no lo sabe; un nombre que no existe en tu proyecto se señala. La conversación no se guarda: <span class="ui">Guardar</span> archiva una respuesta con las respuestas de la ficha.</li>
+  <li><strong>De las notas a las tarjetas</strong>: <span class="ui">IA</span> › <span class="ui">De las notas a las tarjetas…</span> (en el iPhone, <span class="ui">Dividir con la IA</span> en la Libreta, para una nota larga). Pega notas, una lluvia de ideas o un dictado, hasta 8.000 caracteres: la IA propone tarjetas, cada una con un tipo, un título y un pasaje de tu texto, e hilos entre ellas. Tu texto nunca se reescribe: un pasaje que no se encuentra tal cual se descarta. Marca lo que conservas, cambia un tipo o un título y luego <span class="ui">Crear las tarjetas</span>; todo se deshace de una vez.</li>
+  <li><strong>Describir una foto</strong>: amplía una foto de la galería y luego <span class="ui">Describir con la IA</span>. Para un lugar, la IA anota lo que muestra la foto; para un personaje, propone la edad aparente y el aspecto, que aceptas campo por campo. Nunca intenta identificar a una persona. El modelo tiene que saber leer imágenes.</li>
+</ul>
+<figure class="medium"><img src="images/es/ia-interroger.jpg"><figcaption>La pestaña «Preguntar»: el personaje responde a partir de lo que has escrito.</figcaption></figure>
+<p>Mientras trabaja, un botón <span class="ui">Cancelar</span> la detiene (menú IA, galería, asistente de personaje). La IA siempre nombra las tarjetas por su título. Cuando algo falla, un mensaje dice qué: servicio inalcanzable, clave rechazada, modelo desconocido, límite alcanzado, respuesta que tarda demasiado.</p>
+
+<h3>Releer, ordenar y buscar con la IA</h3>
+<p>Estas herramientas siguen la regla de siempre: la IA pregunta o propone, siempre con el pasaje de tu texto en el que se apoya, y no entra nada en el proyecto sin tu clic.</p>
+<ul>
+  <li><strong>Relectura por la IA</strong> (botón <span class="ui">IA</span>): <span class="ui">Coherencia escena a escena</span> lee todo el relato en orden (edades, estaciones, quién sabe qué y cuándo), <span class="ui">Cronología</span> detecta las marcas de tiempo y señala un orden imposible, <span class="ui">Voces de los personajes</span> dice cuándo dos personajes suenan igual, <span class="ui">Lector beta</span> dice dónde se pierde el interés y qué esperaba. Las preguntas llegan a la pestaña <span class="ui">Revisar</span> del Manuscrito o del Guion, en <span class="ui">Preguntas de la IA</span>: cada una lleva a su escena, y <span class="ui">Conservar como pregunta</span> la convierte en una tarjeta Pregunta vinculada.</li>
+  <li><strong>Ordenar los hilos</strong> (botón <span class="ui">IA</span>): la IA propone los hilos que faltan entre tus tarjetas, con una etiqueta y el pasaje que lo dice. <span class="ui">Tirar de este hilo</span> o <span class="ui">Tirar de todos los hilos</span>; una propuesta cuyo pasaje no está en tu texto se descarta.</li>
+  <li><strong>Una pregunta para una casilla vacía</strong>: en el Esquema, una casilla de plantilla sin escena tiene un botón <span class="ui">Una pregunta</span>. <span class="ui">Guardar</span> la archiva como tarjeta Pregunta.</li>
+  <li><strong>Lo que dice el texto</strong>: en la ficha de un personaje o de un lugar en la Biblia, la IA lee tu texto y propone rellenar los campos vacíos, cada uno con su cita. <span class="ui">Añadir a la ficha</span>, campo por campo. Práctico después de importar una novela terminada, una vez creadas las fichas.</li>
+  <li><strong>Desglose</strong> (guion): en la ficha de una escena, <span class="ui">Desglosar esta escena</span>; en las Estadísticas, pestaña <span class="ui">Desglose</span>, <span class="ui">Desglosar todo el guion</span>. La IA lee las acciones y propone accesorios, vestuario, figurantes, vehículos y efectos que marcar; la lista por categoría muestra las escenas de cada uno.</li>
+  <li><strong>Búsqueda por el sentido</strong>: en la búsqueda (Ctrl o Cmd + F), <span class="ui">Por el sentido</span> encuentra un pasaje incluso sin la palabra que has escrito («¿dónde hablé de la carta?»). Solo con Ollama o LM Studio y un modelo de embeddings elegido en <span class="ui">Modelo de la búsqueda por el sentido</span> (nomic-embed-text, por ejemplo): tu texto nunca sale de tu computadora, y el índice solo se guarda durante la sesión.</li>
+</ul>
+<figure class="small"><img src="images/es/ia-relecture.jpg"><figcaption>Las preguntas de la relectura en la pestaña «Revisar», cada una con la escena en la que se apoya.</figcaption></figure>
+
+<h3>El modo Taller</h3>
+<p>Por defecto, la IA de MondoWrite pregunta y propone; no escribe por ti. El modo Taller, que se activa proyecto por proyecto en <span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span> › <span class="ui">Modo Taller</span>, le permite proponer texto. Una etiqueta <span class="ui">Taller</span> en la barra superior te lo recuerda.</p>
+<ul>
+  <li><span class="ui">Tres variantes</span> (el botón ✦ de la barra de formato, o la barra del Guion): tres reformulaciones de una frase o una réplica seleccionada; <span class="ui">Tomar</span> sustituye la selección.</li>
+  <li><span class="ui">Proponer una sinopsis</span>: un resumen de una o dos frases sacado del texto de la escena, en el campo de la sinopsis.</li>
+  <li><span class="ui">Tres direcciones</span> (barras del Manuscrito y del Guion): tres pistas de una línea para lo que sigue; <span class="ui">Convertir en tarjeta</span> crea una tarjeta Idea vinculada a la escena.</li>
+  <li><span class="ui">Proponer un borrador</span> en la portada, y <span class="ui">Proponer una ficha</span> para un personaje secundario: propuestas campo por campo, para añadir, sustituir o ignorar.</li>
+  <li><span class="ui">Generar una imagen</span> (ventana Fotos y galería de una ficha, con OpenAI u OpenRouter): un retrato, un decorado o un ambiente a partir de una descripción rellenada con la ficha, que editas antes de enviarla. Nunca se envían los nombres propios de tu proyecto, y la instrucción pide una persona ficticia, sin texto ni logotipo. Te quedas con una imagen o con ninguna; la que conservas lleva el crédito «Imagen generada» con el servicio y el modelo, y recibe una línea del diario. Elige el modelo en <span class="ui">Modelo de imagen (opcional)</span>.</li>
+</ul>
+<figure class="medium"><img src="images/es/atelier-directions.jpg"><figcaption>«Tres direcciones» en modo Taller: cada pista puede convertirse en tarjeta.</figcaption></figure>
+<p>Todo lo que aceptas recibe un subrayado de puntos, se lista en <span class="ui">Pendientes</span> (<span class="ui">Pasajes de la IA</span>) y se cuenta en las Estadísticas (<span class="ui">Texto tocado por la IA</span>). Cuando has retocado un pasaje, <span class="ui">Ya lo he hecho mío</span> quita la marca. Cada propuesta aceptada añade también una línea al archivo <code>ia-journal.md</code> del proyecto (fecha, acción, tarjeta o escena, servicio y modelo, número de palabras): te ayuda a responder a Amazon KDP, que pide declarar el texto generado por IA. Una versión de MondoWrite anterior a la 1.8.0 conserva el texto pero pierde la marca si vuelve a guardar el proyecto.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="exportar"><span class="num">Capítulo 11</span>Exportar y publicar</h2>
+
+<p class="lead">El botón <span class="ui">Exportar</span> fabrica tus archivos dentro de la app, sin herramienta externa. Elige el formato: el archivo se guarda donde decidas.</p>
+<figure class="small"><img src="images/es/exporter.jpg"><figcaption>El menú Exportar de una novela.</figcaption></figure>
+
+<h3>El manuscrito</h3>
+<ul>
+  <li><span class="ui">PDF, formato manuscrito</span>: el formato que esperan agentes y editoriales (llamado «Shunn»): Courier 12, doble espacio, sangrías, tus datos de contacto arriba a la izquierda de la portada, el número de palabras redondeado a la derecha, el título en el centro y «por» tu nombre. Cada página lleva la cabecera «Nombre / TÍTULO / página», cada capítulo empieza en una página nueva y un «#» separa dos escenas. El PDF tiene un marcador por capítulo.</li>
+  <li><span class="ui">Word (.docx)</span>, para retocar o enviar;</li>
+  <li><span class="ui">EPUB (lector electrónico)</span>, con su índice;</li>
+  <li><span class="ui">Markdown</span>, un único archivo de texto.</li>
+</ul>
+<p>Las escenas de un mismo capítulo forman un solo capítulo, separadas por «* * *». Las páginas del libro (dedicatoria, prólogo…) están en su lugar.</p>
+
+<h3>El libro en rústica (KDP)</h3>
+<p><span class="ui">Libro en rústica (KDP)…</span> prepara tu libro para la impresión bajo demanda (Amazon KDP): un PDF del interior listo para imprimir y una plantilla de cubierta a su medida.</p>
+<figure class="medium"><img src="images/es/livre-broche.jpg"><figcaption>La ventana «Libro en rústica».</figcaption></figure>
+<h4>Los ajustes</h4>
+<ul>
+  <li><span class="ui">Formato</span>: 5 × 8, 5,25 × 8, 5,5 × 8,5 o 6 × 9 pulgadas. El cuerpo de letra y los márgenes siguen al formato.</li>
+  <li><span class="ui">Papel</span>: blanco, crema o prensa. Define el grosor del lomo.</li>
+  <li><span class="ui">ISBN</span> (opcional), impreso en la página de créditos.</li>
+  <li><span class="ui">Índice</span>, <span class="ui">Letra capitular al principio de los capítulos</span>, el aviso de «obra de ficción», <span class="ui">Unas palabras al lector al final del libro</span> («Gracias por leer», con tu <span class="ui">Sitio web</span> y tu <span class="ui">Boletín</span>), y la lista <span class="ui">Del mismo autor</span>.</li>
+</ul>
+<p>Los ajustes se guardan con el proyecto. En cuanto se abre la ventana, y con cada cambio, el libro se maqueta: la ventana muestra el número de páginas y el ancho del lomo, y avisa si KDP rechazaría el libro (menos de 24 páginas, o demasiadas páginas para ese papel).</p>
+<h4>Lo que contiene el interior</h4>
+<ul>
+  <li>Una verdadera maquetación de libro: márgenes en espejo, con un margen de encuadernación (el margen del lado del lomo) que crece con el número de páginas, como exige KDP;</li>
+  <li>la portadilla, la página de créditos en su reverso (la tuya si has escrito la página «Créditos»; si no, una página por defecto: copyright, todos los derechos reservados, aviso de ficción, ISBN), la dedicatoria y el epígrafe en páginas impares, el índice con los números de página;</li>
+  <li>cada capítulo en una página impar, la página 1 al principio del relato, titulillos (tu nombre en las páginas pares, el título en las impares) y números de página en las esquinas exteriores;</li>
+  <li>texto justificado, con división de palabras según el idioma (francés o inglés), sin líneas sueltas al principio ni al final de página, en Crimson Text con su cursiva;</li>
+  <li>las páginas finales: palabras al lector, agradecimientos, sobre el autor, «Del mismo autor»; un número de páginas par; un marcador por capítulo.</li>
+</ul>
+<h4>La plantilla de cubierta</h4>
+<p><span class="ui">Guardar la plantilla de cubierta (PDF)</span> da una página al tamaño exacto de tu cubierta completa (contracubierta, lomo, cubierta), sangrado incluido: el lomo calculado según el número de páginas y el papel, las zonas de seguridad en las que mantener el texto, la zona del código de barras que añade KDP y las medidas escritas encima. Úsala como capa guía en tu programa de diseño y ocúltala antes de exportar tu cubierta. Por debajo de 79 páginas, KDP no acepta texto en el lomo.</p>
+<div class="tip" data-label="Consejo"><p>Rellena las páginas «Portada», «Créditos», «Dedicatoria» o «Agradecimientos» en el Manuscrito para que sustituyan a las que fabrica MondoWrite. Comprueba siempre el previsualizador de KDP antes de publicar.</p></div>
+
+<h3>El guion</h3>
+<ul>
+  <li><span class="ui">PDF…</span>: el formato estándar (Courier 12, márgenes estándar, más o menos una página por minuto, diálogos cortados limpiamente entre páginas con «(SIGUE)» y «(CONT.)», diálogos simultáneos lado a lado), en una ventana de ajustes descrita más abajo;</li>
+  <li><span class="ui">Fountain</span>, el archivo de texto del guion;</li>
+  <li><span class="ui">Final Draft (FDX)</span>, para las producciones que lo usan.</li>
+</ul>
+<figure class="small"><img src="images/es/exporter-scenario.jpg"><figcaption>El menú Exportar de un guion.</figcaption></figure>
+<h4>Los ajustes del PDF</h4>
+<p>La ventana <span class="ui">Exportar el guion en PDF</span> muestra la primera página tal como saldrá, actualizada con cada elección:</p>
+<p>En una serie, <span class="ui">Lo que se exporta</span> elige todo el guion, una temporada o un episodio (por defecto, el episodio abierto en la vista Guion). Como es costumbre, la primera página del texto no lleva número; las siguientes, sí. El PDF da a cada episodio su propia portada (el título del proyecto, la temporada cuando hay varias, luego el episodio) y páginas numeradas desde 1, también para toda la serie o una temporada. Las exportaciones a Fountain y Final Draft siguen la misma elección, en un solo texto.</p>
+<ul>
+  <li><span class="ui">Contenido</span>: <span class="ui">Todo el guion</span>, o <span class="ui">El texto de un personaje</span>. Para un actor: solo sus escenas, sus réplicas resaltadas, y las escenas conservan su número del guion completo (para hablar de la «escena 12» con el equipo).</li>
+  <li><span class="ui">Imprimir también</span>: la portada, las sinopsis de las escenas, las secciones y casillas de la plantilla, tus notas <code>[[…]]</code>, en gris. Todo desmarcado (salvo la portada), es el formato estándar, el que se envía.</li>
+  <li><span class="ui">(SIGUE) y (CONT.)</span>: cuando una réplica pasa a la página siguiente (marcado por defecto), y cuando un personaje vuelve a hablar después de una acción en la misma escena («HUGO (CONT.)»). Los dos ajustes se aplican también a la página en pantalla, y están también en <span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span>. En pantalla, el nombre de un personaje nunca se queda solo al pie de una página: pasa a la siguiente con su réplica.</li>
+  <li><span class="ui">En cada página</span>: un <span class="ui">Encabezado</span> arriba a la izquierda, donde <code>{date}</code>, <code>{title}</code> y <code>{author}</code> se rellenan al exportar («Versión 3 · {date}»), y una <span class="ui">Marca de agua</span> en diagonal («Confidencial»). El número de página se queda arriba a la derecha.</li>
+</ul>
+<p>Estas elecciones se guardan en el proyecto: la próxima vez, la ventana se abre tal como la dejaste.</p>
+<figure><img src="images/es/scenario-export-pdf.jpg"><figcaption>El texto del Lobo, para el actor, con encabezado y marca de agua.</figcaption></figure>
+
+<h3>La Biblia</h3>
+<p><span class="ui">Biblia…</span> abre la ventana <span class="ui">Exportar la Biblia</span>. Bastan tres preguntas, y la vista previa, a la derecha, muestra el PDF real, página a página, rehecho con cada cambio.</p>
+<ul>
+  <li><span class="ui">¿Para quién?</span> <span class="ui">Para mí</span> da la <strong>biblia de trabajo</strong>: todo, incluida la parte «Para ti». <span class="ui">Una editorial</span> (novela) da un <strong>dosier de presentación</strong>, <span class="ui">Una productora</span> (guion) una <strong>biblia de serie</strong>: sin tus notas de trabajo, con la ficha de cada personaje principal (las fichas se suceden, sin página en blanco entre ellas).</li>
+  <li><span class="ui">Partes</span>: marca las partes que imprimir y ordénalas con las flechas. Una parte vacía no se imprime; «Para ti» va siempre al final.</li>
+  <li><span class="ui">Aspecto</span>: <span class="ui">Sobrio</span>, <span class="ui">Editorial</span> o <span class="ui">Noche</span>, un color entre cuatro, una <span class="ui">Imagen de portada</span> tomada de tu proyecto, y las <span class="ui">Fotos de los lugares en miniatura</span>.</li>
+</ul>
+<p>Para otra persona, el documento sigue siendo corto: encima de la vista previa, el número de páginas va seguido de una indicación, «La mayoría de las comisiones esperan de 15 a 20 páginas», nunca de un bloqueo. <span class="ui">Por qué este destinatario</span> añade una frase al final de la nota de intenciones («Por qué esta cadena»): guarda un ajuste por destinatario. Tu trayectoria y tus obras (perfil de autor) forman una página «Sobre el autor» al final, precedida de «Por qué yo» para una serie. La voz de los personajes y las notas de escritura se quedan en la biblia de trabajo.</p>
+<p>Una biblia de serie recibe además el universo y lo que pasó antes del piloto, lo que mantiene unidos a los personajes, la mecánica, la pregunta de la temporada y dónde termina, los episodios (una lista corta: número, título, hito, sinopsis, personaje central, agrupados por temporada), las temporadas siguientes, las reglas de escritura y, para otra persona, los otros soportes. Los grupos, objetos, acontecimientos y reglas del mundo siguen a los lugares en la parte Universo; los secretos siguen a las tramas en la Estructura. Dos opciones, desmarcadas para una productora: <span class="ui">Cuadro de las tramas</span> (qué tramas en qué episodios, o en qué partes del piloto si no hay episodios) y <span class="ui">Página «De un vistazo»</span> (las frases gancho de los personajes y los episodios en los que aparece cada uno). <span class="ui">Adjuntar las primeras páginas del piloto</span> añade al final las diez primeras páginas del guion, en formato estándar. Para una editorial, <span class="ui">Adjuntar las primeras páginas del manuscrito</span> hace lo mismo con tu novela, en formato manuscrito. El aspecto propuesto por defecto es Sobrio para una productora, Editorial para una editorial.</p>
+<p>Tus elecciones se guardan con el proyecto. <span class="ui">Ajuste</span> las guarda con un nombre («Para mi editora», «Sala de guionistas») para volver a encontrarlas. El archivo lleva la fecha del día («Dosier de presentación - Título - 2026-10-26»): cada envío conserva su versión. <span class="ui">Word</span> y <span class="ui">Markdown</span> conservan las partes elegidas y su orden, no el aspecto.</p>
+<figure><img src="images/es/bible-export.jpg"><figcaption>La ventana «Exportar la Biblia»: un dosier de presentación con el aspecto Editorial.</figcaption></figure>
+
+<h3>El lienzo</h3>
+<p>El <strong>lienzo</strong> se exporta como imagen PNG de toda la pizarra, en PDF normal (A4, para enviar) o en gran formato (A1, para imprimir y colgar en la pared), o como texto de las tarjetas (Word, Markdown), una parte por marco.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="archivos"><span class="num">Capítulo 12</span>Tus archivos</h2>
+
+<p class="lead">Un proyecto de MondoWrite es una carpeta normal, llena de archivos de texto que puedes abrir, copiar, respaldar o versionar a tu gusto.</p>
+
+<h3>La carpeta de un proyecto</h3>
+<table>
+  <tr><th>Archivo o carpeta</th><th>Contenido</th></tr>
+  <tr><td><code>cosmos.json</code></td><td>El título, el tipo, la posición de las tarjetas, los hilos, los marcos, el esquema, los objetivos, la portada del proyecto, los ajustes del libro en rústica.</td></tr>
+  <tr><td><code>cartes/</code></td><td>Una tarjeta por archivo Markdown, con una pequeña cabecera (tipo, título, imagen, ficha).</td></tr>
+  <tr><td><code>manuscrit/</code></td><td>El texto de cada escena de una novela, en Markdown.</td></tr>
+  <tr><td><code>scenario.fountain</code></td><td>El texto del guion, en Fountain.</td></tr>
+  <tr><td><code>medias/</code></td><td>Las imágenes y los PDF de las tarjetas.</td></tr>
+  <tr><td><code>corbeille/</code></td><td>Las tarjetas eliminadas, a la espera de recuperarse o borrarse.</td></tr>
+  <tr><td><code>markdown/</code></td><td>Copias legibles del manuscrito, de la biblia y del lienzo, con una versión por día.</td></tr>
+</table>
+<p>Una mención de una tarjeta se escribe como un enlace Markdown normal: <code>[@El Lobo](cosmos:…)</code>. Todo sigue siendo legible en cualquier editor de texto (los nombres de las carpetas están en francés, y «cosmos» viene del antiguo nombre de la app).</p>
+
+<h3>Copias en Markdown y versiones</h3>
+<p>Después de cada guardado, la app de escritorio escribe en <code>markdown/</code> el manuscrito, la biblia y el lienzo en Markdown, con enlaces entre las fichas. Cada día se guarda una copia con fecha en <code>markdown/versions/</code>: treinta días, y después una por mes. Estas copias nunca se vuelven a leer: escribe siempre en la app. El ajuste <span class="ui">Copias en Markdown en la carpeta del proyecto</span> (<span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span>) las desactiva.</p>
+
+<h3>Sincronizar entre dispositivos</h3>
+<p>Un proyecto sigue siendo una carpeta normal: un servicio de sincronización la copia de un dispositivo a otro, y MondoWrite vuelve a cargar los cambios. Elige según tus dispositivos:</p>
+<table>
+  <thead><tr><th>Tus dispositivos</th><th>Método recomendado</th></tr></thead>
+  <tbody>
+    <tr><td>iPhone, iPad y Mac</td><td>iCloud Drive, activado por defecto: nada que configurar.</td></tr>
+    <tr><td>Con una PC con Windows o Linux</td><td>Una carpeta de Dropbox elegida en cada dispositivo.</td></tr>
+    <tr><td>Un traspaso puntual</td><td>Un archivo .zip.</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li><strong>iCloud Drive (iPhone, iPad, Mac).</strong> Los proyectos se guardan en la carpeta MondoWrite de iCloud Drive (subcarpeta <code>projets</code>). La casilla <span class="ui">Ajustes</span> › <span class="ui">Sincronizar los proyectos con iCloud Drive</span> está marcada por defecto en el iPhone y el iPad, y en el Mac en cuanto iCloud Drive contiene esa carpeta. Los proyectos creados en un dispositivo aparecen solos en la página de los proyectos de los demás, sin buscarlos. Cada dispositivo tiene que haber iniciado sesión en la misma cuenta de iCloud, con iCloud Drive activado. Sin iCloud Drive, los proyectos se quedan en el dispositivo y los Ajustes lo dicen. Si más tarde se desactiva iCloud Drive, la página de los proyectos avisa de que los proyectos de iCloud ya no aparecen: no se pierden y vuelven cuando se reactiva. En el Mac, si los proyectos tardan en llegar, <span class="ui">Encontrar la carpeta…</span> abre la carpeta MondoWrite de iCloud: elige allí <code>projets</code>. iCloud a veces crea un duplicado «projets 2» cuando dos dispositivos crean esa carpeta a la vez: la página de los proyectos lo dice, y <span class="ui">Volver a ponerlos con los demás</span> traslada sus proyectos a <code>projets</code>.</li>
+  <li><strong>Una carpeta en la nube (iPhone, iPad, PC, Mac).</strong> En la página de los proyectos, <span class="ui">Elegir una carpeta en la nube…</span> memoriza una carpeta sincronizada. Los proyectos nuevos se crean en una subcarpeta con su título, y los proyectos que contiene aparecen en la lista. Elige la misma carpeta en cada dispositivo. En el iPhone y el iPad, el selector es la app Archivos. Solo aparecen en la lista las carpetas que contienen un proyecto. <span class="ui">Dejar de sincronizar</span> (computadora) o <span class="ui">Volver a los proyectos de iCloud</span> (iPhone, iPad) deja esa carpeta: no se elimina nada.</li>
+  <li><strong>Un archivo .zip.</strong> <span class="ui">Exportar</span> › <span class="ui">Proyecto completo (.zip)</span> se lo lleva todo (texto, ajustes, imágenes y PDF). <span class="ui">Importar…</span> lo pone en una carpeta vacía y nunca sobrescribe un proyecto.</li>
+</ul>
+<div class="note" data-label="OneDrive"><p>OneDrive no sirve para sincronizar con un iPhone o un iPad: iOS no deja que una app elija una carpeta de OneDrive (aparece en gris en el selector). En una computadora, una carpeta de OneDrive funciona como carpeta en la nube, pero solo entre computadoras. Para unir una PC y un iPhone, usa Dropbox.</p></div>
+<p>En el iPhone y el iPad, la app vuelve a cargar el proyecto abierto cada 20 segundos y cuando vuelves a él. En una computadora, ve los cambios en cuanto llegan a la carpeta.</p>
+<div class="note" data-label="Evita"><p>No escribas en dos dispositivos a la vez: la sincronización a veces tarda unos segundos. Si el mismo archivo ha cambiado en los dos lados, la app conserva las dos versiones y te deja elegir.</p></div>
+<p>Para eliminar un proyecto de todos tus dispositivos: en el iPhone y el iPad, <span class="ui">Eliminar el proyecto…</span> en el menú <span class="ui">⋯</span> de la página de los proyectos; en una computadora, mueve su carpeta a la papelera (en el Finder: iCloud Drive › MondoWrite › projets).</p>
+
+<h3>Editar fuera de MondoWrite</h3>
+<p>Puedes editar un archivo del proyecto con otro programa, o desde otra computadora a través de una carpeta sincronizada. La app se da cuenta y retoma la versión nueva. Si el mismo archivo ha cambiado en los dos lados, no se sobrescribe ninguno: se conserva la versión del disco, la tuya se guarda al lado («… (MondoWrite).md») y un aviso te deja elegir: <span class="ui">Esta</span> o <span class="ui">La otra</span> (<span class="ui">La de iCloud</span> para un proyecto de iCloud).</p>
+
+<h3>Si falla el guardado</h3>
+<p>Un mensaje bajo la barra superior dice por qué (disco lleno, permisos insuficientes, carpeta no encontrada) y propone: <span class="ui">Reintentar</span>; <span class="ui">Indicar la carpeta del proyecto…</span> si se ha movido o renombrado; <span class="ui">Exportar una copia…</span> (todo el proyecto en un archivo .zip, para no perder nada); o <span class="ui">Volver a los proyectos sin guardar</span>.</p>
+<div class="tip" data-label="Copias de seguridad"><p>Guarda tus proyectos en una carpeta sincronizada (iCloud Drive, Dropbox, OneDrive) o haz copias de seguridad con regularidad. Como son archivos de texto, ocupan muy poco espacio.</p></div>
+
+<!-- ===================================================================================== -->
+<h2 id="ajustes"><span class="num">Capítulo 13</span>Ajustes y apariencia</h2>
+
+<p>El botón <span class="ui">Ajustes</span> (los controles deslizantes, arriba a la derecha) abre cuatro pestañas: <span class="ui">Este proyecto</span> (cuando hay un proyecto abierto), <span class="ui">General</span>, <span class="ui">Escritura</span> e <span class="ui">IA</span>.</p>
+<figure><img src="images/es/reglages.jpg"><figcaption>Los Ajustes.</figcaption></figure>
+<table>
+  <tr><th>Ajuste</th><th>Efecto</th></tr>
+  <tr><td><span class="ui">Este proyecto</span></td><td>Tipo de proyecto (novela o guion); para un guion, el tamaño de página y las opciones de numeración; las copias en Markdown; la <span class="ui">Papelera</span>.</td></tr>
+  <tr><td><span class="ui">Idioma</span></td><td>Español, francés, inglés y los idiomas traducidos por la comunidad. La primera vez, el idioma del sistema. <span class="ui">Traducir MondoWrite a tu idioma</span> abre la guía de los traductores.</td></tr>
+  <tr><td><span class="ui">Apariencia</span></td><td>Como el sistema, clara u oscura.</td></tr>
+  <tr><td><span class="ui">Tipografía al escribir</span></td><td>Seguir el idioma de la interfaz, un idioma a tu elección, o ninguno.</td></tr>
+  <tr><td><span class="ui">Corrector ortográfico</span></td><td>Salvo manuscrito y guion (a petición), en todas partes o en ninguna parte.</td></tr>
+  <tr><td><span class="ui">Sugerencias y corrección automática del teclado</span></td><td>Palabras propuestas y corregidas por el teclado del sistema, o ninguna.</td></tr>
+  <tr><td><span class="ui">Nombre de autor</span></td><td>Se lee en tu perfil; <span class="ui">Editar mi perfil…</span> abre la ventana <span class="ui">Tú, el autor</span>.</td></tr>
+  <tr><td><span class="ui">Fotos libres</span></td><td>Las claves de Pixabay y Unsplash (Openverse no necesita ninguna).</td></tr>
+  <tr><td><span class="ui">IA</span></td><td>El servicio, la clave o la dirección, el modelo.</td></tr>
+  <tr><td><span class="ui">Actualizaciones</span></td><td>La comprobación al iniciar y el botón de comprobación (app de escritorio).</td></tr>
+</table>
+<p>Al final: <span class="ui">Visita guiada</span>, <span class="ui">Guía del usuario</span> (esta guía, abierta en tu navegador), <span class="ui">Atajos de teclado</span> y <span class="ui">Acerca de MondoWrite</span>. La guía también se abre en cualquier parte con <kbd>F1</kbd>, directamente en el capítulo de la vista en la que estás, y, en un Mac, desde el menú <span class="ui">Ayuda</span> de la barra de menús, que sigue el idioma de la app. En un Mac, cada orden de la interfaz tiene también allí su lugar: <span class="ui">Formato</span> (negrita, cursiva, tachado, «por revisar»), <span class="ui">Visualización</span> (paneles, modo concentración, resaltado) y <span class="ui">Lienzo</span> (tarjeta nueva, marco nuevo, organizar, hilos). Windows y Linux no tienen barra de menús: todo se queda en la interfaz y en el teclado. El idioma, la apariencia, las claves y el perfil son ajustes del dispositivo; el tipo de proyecto y los ajustes del libro en rústica se guardan en el proyecto.</p>
+
+<h3>El modo oscuro</h3>
+<p>Toda la app existe en oscuro, hasta la página del manuscrito. Elige <span class="ui">Oscura</span>, o <span class="ui">Como el sistema</span> para seguir a tu computadora.</p>
+<div class="pair">
+  <figure><img src="images/es/sombre-canevas.jpg"><figcaption>El lienzo en modo oscuro.</figcaption></figure>
+  <figure><img src="images/es/sombre-manuscrit.jpg"><figcaption>El manuscrito en modo oscuro.</figcaption></figure>
+</div>
+
+<h3>Con el dedo</h3>
+<p>En una pantalla táctil, todo funciona con el dedo: una pulsación larga en una tarjeta la levanta (queda seleccionada, con una sombra) para que puedas moverla, una pulsación larga dentro de un marco no bloqueado levanta el marco con sus tarjetas, tocar la etiqueta de una tarjeta cambia su tipo, el botón <span class="ui">Selección</span> permite rodear tarjetas, y cada acción de arrastrar y soltar tiene también un botón.</p>
+
+<h3 id="libreta">En el iPhone: la Libreta</h3>
+<p>En un teléfono, MondoWrite se convierte en una libreta: tres pestañas abajo, <span class="ui">Manuscrito</span> (o <span class="ui">Guion</span>), <span class="ui">Biblia</span> y <span class="ui">Libreta</span>. El lienzo, el Esquema, las exportaciones y el orden de las secciones de la Biblia se quedan en el iPad y en la computadora, donde tienen sitio. Decide el ancho de la pantalla: un iPhone plegable abierto, o una ventana más ancha, lo recupera todo.</p>
+<p>En la <span class="ui">Libreta</span>, elige el tipo de nota (<span class="ui">Idea</span>, <span class="ui">Pregunta</span>, <span class="ui">Personaje</span>, <span class="ui">Lugar</span>, <span class="ui">Objeto</span>, <span class="ui">Tema</span>), escríbela y luego <span class="ui">Guardar</span>. La primera línea se convierte en el título, el resto en el texto; una dirección web sola da una tarjeta Enlace. La nota es enseguida una tarjeta del proyecto: está en la Biblia y en el lienzo de tus otros dispositivos.</p>
+<p>Tus notas esperan en <span class="ui">Por ordenar</span>, bajo el campo: toca una nota para abrir su ficha, la marca de verificación para darla por ordenada, y el botón <span class="ui">⋯</span> para añadirle una imagen o moverla a la papelera. En el iPad o en la computadora, el botón <span class="ui">Por ordenar · N</span> del lienzo las lista, cada una con un contorno de puntos en el lienzo; tocar una nota de la lista la destaca. En cuanto la mueves en el lienzo o la unes a otra tarjeta, sale de la lista.</p>
+<figure class="small"><img src="images/es/iphone-carnet.jpg"><figcaption>La Libreta en el iPhone: una nota que se está escribiendo, otras dos por ordenar.</figcaption></figure>
+
+<!-- ===================================================================================== -->
+<h2 id="atajos"><span class="num">Capítulo 14</span>Atajos de teclado</h2>
+<p>La lista completa se abre en cualquier momento con <kbd>Ctrl</kbd> <kbd>/</kbd>. En un Mac, <kbd>Ctrl</kbd> se convierte en <kbd>⌘</kbd> y <kbd>Alt</kbd> en <kbd>⌥</kbd>.</p>
+
+<h3>En todas partes</h3>
+<table>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>/</kbd></td><td>La lista de los atajos</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>1</kbd> … <kbd>4</kbd></td><td>Lienzo, Esquema, Biblia, Manuscrito</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>F</kbd></td><td>Buscar una tarjeta o un pasaje</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></td><td>Zoom de la página (Manuscrito, Guion): ampliar, reducir, tamaño normal</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>H</kbd></td><td>Buscar y reemplazar en el texto</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>G</kbd></td><td>Ir a una página, una escena, un capítulo</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>L</kbd></td><td>Pendientes</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>S</kbd></td><td>Guardar</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Z</kbd> · <kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>Z</kbd></td><td>Deshacer · Rehacer</td></tr>
+</table>
+<h3>Lienzo</h3>
+<table>
+  <tr><td class="keys"><kbd>N</kbd></td><td>Tarjeta nueva</td></tr>
+  <tr><td class="keys"><kbd>C</kbd></td><td>Marco nuevo (alrededor de la selección)</td></tr>
+  <tr><td class="keys"><kbd>/</kbd></td><td>Cambiar el tipo (al principio de una línea, o en un título vacío)</td></tr>
+  <tr><td class="keys"><kbd>@</kbd> o <kbd>[[</kbd></td><td>Mencionar otra tarjeta</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Intro</kbd></td><td>Ampliar la tarjeta seleccionada</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Ensanchar o estrechar la tarjeta</td></tr>
+  <tr><td class="keys"><kbd>Mayús</kbd> + arrastrar</td><td>Rodear varias tarjetas</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> + clic</td><td>Añadir una tarjeta a la selección</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>A</kbd> · <kbd>Esc</kbd></td><td>Seleccionar todo · Deseleccionar todo</td></tr>
+  <tr><td class="keys"><kbd>Supr</kbd></td><td>Mover la selección a la papelera</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>C</kbd> · <kbd>Ctrl</kbd> <kbd>V</kbd></td><td>Copiar las tarjetas seleccionadas · Pegar tarjetas, un enlace, una imagen o un texto (en la tarjeta que tiene el foco)</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>D</kbd></td><td>Duplicar las tarjetas seleccionadas</td></tr>
+</table>
+<h3>Texto (tarjetas, Biblia, manuscrito)</h3>
+<table>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>B</kbd> · <kbd>Ctrl</kbd> <kbd>I</kbd></td><td>Negrita · Cursiva</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>D</kbd></td><td>Tachado</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>1</kbd> … <kbd>3</kbd></td><td>Título, subtítulo</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>8</kbd> · <kbd>7</kbd></td><td>Lista con viñetas · Lista numerada</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>9</kbd></td><td>Casilla</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>B</kbd></td><td>Cita</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>X</kbd></td><td>Marcar «por revisar»</td></tr>
+  <tr><td class="keys"><kbd>**</kbd> <kbd>*</kbd> <kbd>#</kbd> <kbd>-</kbd> <kbd>[ ]</kbd></td><td>Markdown al escribir y al pegar</td></tr>
+</table>
+<h3>Manuscrito</h3>
+<table>
+  <tr><td class="keys"><kbd>Intro</kbd> <kbd>Intro</kbd></td><td>Dividir la escena (en una línea vacía)</td></tr>
+  <tr><td class="keys"><kbd>Intro</kbd> <kbd>Intro</kbd> <kbd>Intro</kbd></td><td>Capítulo nuevo</td></tr>
+  <tr><td class="keys"><kbd>/</kbd> + nombre</td><td>Crear una tarjeta de personaje o de lugar (o selecciona un nombre y luego <kbd>/</kbd>)</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>K</kbd></td><td>Enviar el pasaje seleccionado al Congelador</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>F</kbd> · <kbd>Esc</kbd></td><td>Modo concentración · Salir de él</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>E</kbd></td><td>Modo concentración: cambiar el resaltado</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Mover la escena (columna de las escenas)</td></tr>
+</table>
+<h3>Guion</h3>
+<table>
+  <tr><td class="keys"><kbd>Tab</kbd> · <kbd>Mayús</kbd> <kbd>Tab</kbd></td><td>Cambiar de elemento</td></tr>
+  <tr><td class="keys"><kbd>Intro</kbd></td><td>Elemento siguiente</td></tr>
+  <tr><td class="keys"><kbd>Esc</kbd></td><td>Barra de elementos (o salir del modo concentración)</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>K</kbd></td><td>Enviar el pasaje seleccionado al Congelador</td></tr>
+  <tr><td class="keys"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Mover la escena (columna de las escenas)</td></tr>
+</table>
+
+<!-- ===================================================================================== -->
+<h2 id="preguntas-frecuentes"><span class="num">Capítulo 15</span>Preguntas frecuentes</h2>
+
+<h4>¿Dónde se guardan mis textos?</h4>
+<p>En la carpeta que elegiste al crear el proyecto. La ruta no se muestra en la app: encuéntrala con <span class="ui">Abrir una carpeta…</span>, o busca en tu computadora el archivo <code>cosmos.json</code>.</p>
+<h4>¿Cómo trabajo en dos computadoras?</h4>
+<p>Elige la misma carpeta en la nube (Dropbox, iCloud Drive u OneDrive) en las dos computadoras con <span class="ui">Elegir una carpeta en la nube…</span>: sus proyectos aparecen en los dos lados. Entre dos Mac, iCloud lo hace solo. Ver «Sincronizar entre dispositivos». Evita escribir en las dos a la vez: si un archivo cambia en los dos lados, la app conserva las dos versiones y te deja elegir.</p>
+<h4>He eliminado una tarjeta por error.</h4>
+<p><kbd>Ctrl</kbd> <kbd>Z</kbd>, o el botón <span class="ui">Deshacer</span> del mensaje, o <span class="ui">Ajustes</span> › <span class="ui">Papelera</span> › <span class="ui">Recuperar</span>. El texto de una escena nunca se borra con su tarjeta.</p>
+<h4>¿Cómo convierto una novela en guion?</h4>
+<p><span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span> › <span class="ui">Tipo de proyecto</span>. Las tarjetas, la Biblia y los archivos no cambian. La primera vez, las escenas se convierten en encabezados del guion y su sinopsis las acompaña; el texto en prosa se queda en el manuscrito, disponible si vuelves a la novela.</p>
+<h4>Mi PDF de libro en rústica tiene muy pocas páginas.</h4>
+<p>KDP exige al menos 24 páginas. Un formato más pequeño (5 × 8) o un índice y unas páginas finales añaden algunas páginas; si no, el texto es simplemente demasiado corto para un libro en rústica.</p>
+<h4>La IA no responde.</h4>
+<p>Para Ollama o LM Studio, comprueba que el programa está abierto y que hay un modelo cargado, y luego <span class="ui">Probar y listar los modelos</span>. Para un servicio en línea, comprueba la clave de API y tu saldo. El mensaje de error dice qué es lo que bloquea. En LM Studio, carga el modelo con un «Context Length» de al menos 16.384 para las relecturas y la coherencia: con 4.096 u 8.192, MondoWrite envía paquetes más pequeños, y una petición que no cabe se rechaza con un mensaje que lo dice. Con un modelo que razona (GPT-5, o3…), MondoWrite le pide que razone poco; si sigue sin devolver nada, elige uno más ligero (GPT-5 mini).</p>
+<h4>No se puede describir mi foto.</h4>
+<p>El modelo elegido tiene que saber leer imágenes (por ejemplo gemma3, qwen2.5vl o llava con Ollama).</p>
+<h4>He encontrado un error.</h4>
+<p><span class="ui">Ajustes</span> › <span class="ui">Acerca de MondoWrite</span> › <span class="ui">Informar de un error</span> (en un Mac, también en el menú <span class="ui">Ayuda</span>). Se abre una página de GitHub con un mensaje ya rellenado: tu versión, tu sistema, tu idioma, el tipo de proyecto y los últimos errores que ha detectado la app. Describe lo que ha pasado y cómo reproducirlo, y luego envíalo (hace falta una cuenta gratuita de GitHub). No se envía nada sin ti, y ni tu texto ni tus claves están en el mensaje.</p>
+<h4>¿MondoWrite es gratuito?</h4>
+<p>Sí. MondoWrite es software libre (licencia GNU AGPL 3.0 o posterior): puedes usarlo, estudiarlo, modificarlo y compartirlo. El código fuente está en <a href="https://github.com/sebastienpiconnier/MondoWrite">github.com/sebastienpiconnier/MondoWrite</a>. Se inspira, entre otros, en NEO, el programa de escritura de Hugh Howey.</p>
+
+<figure class="medium"><img src="images/es/a-propos.jpg"><figcaption>Acerca de MondoWrite.</figcaption></figure>
+
+</body>
+</html>

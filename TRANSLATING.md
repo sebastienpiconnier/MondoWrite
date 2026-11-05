@@ -88,7 +88,7 @@ L'apostrophe est toujours `’` (U+2019). Les espaces insécables du français s
 
 ## Ce qui reste en français et en anglais
 
-Le guide de l'utilisateur (`docs/guide/`) et les consignes envoyées à l'IA restent pour l'instant en français et en anglais ; l'IA répond quand même dans la langue de l'auteur. Les fichiers d'un projet ne se traduisent jamais (`cartes/`, `cosmos.json`, valeurs de `type:`) : un projet s'ouvre dans toutes les langues.
+Le guide de l'utilisateur (`docs/guide/`) existe en français, en anglais et en espagnol ; une autre langue de la communauté ouvre le guide anglais. Les consignes envoyées à l'IA restent en français et en anglais ; l'IA répond quand même dans la langue de l'auteur. Les fichiers d'un projet ne se traduisent jamais (`cartes/`, `cosmos.json`, valeurs de `type:`) : un projet s'ouvre dans toutes les langues.
 
 ## Licence et signature
 
@@ -152,7 +152,7 @@ The apostrophe is always `’` (U+2019).
 
 ### What stays in French and English
 
-The user guide (`docs/guide/`) and the instructions sent to the AI stay in French and English for now; the AI still answers in the writer's language. Project files are never translated (`cartes/`, `cosmos.json`, `type:` values): a project opens in every language.
+The user guide (`docs/guide/`) exists in French, English and Spanish; any other community language opens the English guide. The instructions sent to the AI stay in French and English; the AI still answers in the writer's language. Project files are never translated (`cartes/`, `cosmos.json`, `type:` values): a project opens in every language.
 
 ### License and sign-off
 

@@ -1,8 +1,8 @@
 # Guide de l’utilisateur
 
-Le guide complet de MondoWrite, en français et en anglais, illustré de captures d’écran : `guide.fr.html` et `guide.en.html` (le texte), `guide.css` (la mise en page A4), `images/fr/` et `images/en/` (les captures), `exemples/` (le court scénario importé pour les captures du chapitre Scénario).
+Le guide complet de MondoWrite, en français, en anglais et en espagnol, illustré de captures d’écran : `guide.fr.html`, `guide.en.html` et `guide.es.html` (le texte), `guide.css` (la mise en page A4), `images/fr/`, `images/en/` et `images/es/` (les captures), `exemples/` (le court scénario importé pour les captures du chapitre Scénario, un par langue).
 
-Le guide est publié par la CI (workflow `.github/workflows/guide.yml`, à chaque changement de `docs/guide/` sur `main`) sur GitHub Pages : https://sebastienpiconnier.github.io/MondoWrite/ (`fr/`, `en/`, et les deux PDF à la racine). C'est l'aide en ligne de l'app : F1 l'ouvre au chapitre de la vue en cours (`src/help.ts`, `GUIDE_SECTIONS` : ne pas changer l'identifiant d'un chapitre sans mettre ce tableau à jour, un test le vérifie). Le site n'est pas versionné. Les PDF le restent, à cette place et sous ce nom : MondoWrite 1.0.0 les ouvre sur GitHub (branche `main`) ; les refaire et les committer avec chaque changement du guide.
+Le guide est publié par la CI (workflow `.github/workflows/guide.yml`, à chaque changement de `docs/guide/` sur `main`) sur GitHub Pages : https://sebastienpiconnier.github.io/MondoWrite/ (`fr/`, `en/`, `es/`, et les trois PDF à la racine). C'est l'aide en ligne de l'app : F1 l'ouvre au chapitre de la vue en cours (`src/help.ts`, `GUIDE_SECTIONS` : ne pas changer l'identifiant d'un chapitre sans mettre ce tableau à jour, un test le vérifie). Le site n'est pas versionné. Les PDF le restent, à cette place et sous ce nom : MondoWrite 1.0.0 les ouvre sur GitHub (branche `main`) ; les refaire et les committer avec chaque changement du guide.
 
 Pour Pages, une seule fois : dans le dépôt, Settings > Pages > Source : « GitHub Actions ».
 
@@ -34,10 +34,11 @@ npm run guide:shots
 npm run guide
 ```
 
-`scripts/guide/shots.mjs` ouvre l’app comme un auteur : profil « Charles Perrault », projet d’exemple, puis le scénario de `exemples/`. Chaque capture porte le nom utilisé dans le guide ; un libellé d’interface changé fait échouer l’étape concernée (message « ÉCHEC »), à corriger dans le script. `node scripts/guide/shots.mjs fr nom1,nom2` ne réécrit que ces captures.
+`scripts/guide/shots.mjs` ouvre l’app comme un auteur : profil « Charles Perrault », projet d’exemple, puis le scénario de `exemples/`. Chaque capture porte le nom utilisé dans le guide ; un libellé d’interface changé fait échouer l’étape concernée (message « ÉCHEC »), à corriger dans le script. `node scripts/guide/shots.mjs fr nom1,nom2` (ou `en`, `es`) ne réécrit que ces captures. Dans le script, chaque texte de l’interface ou du projet d’exemple est donné dans les trois langues : `T(fr, en, es)`.
 
 ## Écrire
 
-- Une fonction nouvelle ou changée se décrit dans les deux langues, avec les libellés exacts de l’interface (`src/i18n/fr.ts`, `en.ts`) écrits en `<span class="ui">…</span>`.
+- Une fonction nouvelle ou changée se décrit dans les trois langues, avec les libellés exacts de l’interface (`src/i18n/fr.ts`, `en.ts`, `es.ts`) écrits en `<span class="ui">…</span>`. Les ancres des chapitres visés par F1 sont dans `GUIDE_SECTIONS` (`src/help.ts`), une par langue.
+- Espagnol : espagnol neutre, tutoiement, « » sans espaces, ¿ ¡ ; les mêmes termes que l’interface (tarjeta, lienzo, Biblia, esquema, escaleta, guion, Congelador).
 - Pas de tiret cadratin. En français, le script pose lui-même les espaces insécables des guillemets et avant `: ; ? !`.
 - Une image : `<figure><img src="images/fr/nom.jpg"><figcaption>…</figcaption></figure>` ; `class="small"` ou `"medium"` pour une capture étroite, `<div class="pair">` pour deux côte à côte.
