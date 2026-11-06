@@ -50,8 +50,11 @@ export function panelAfterSwipe(dir: Swipe, panels: SidePanels): { side: "left" 
   return null;
 }
 
-/** Ce qui garde ses gestes : champs, menus, la barre d'éléments, et ce qui défile de côté. */
-const OWN_TOUCH = "input, textarea, select, [role='menu'], [role='dialog'], .sp-bar, .ms-meta, .ribbon";
+/** Ce qui garde ses gestes : listes déroulantes, menus, la barre d'éléments et le ruban. Un champ de texte ne garde le
+ *  geste que s'il a le focus (on y sélectionne du texte) : la Bible en est couverte (couverture, titres, fiches), et un
+ *  glisser qui partait d'un champ y était perdu. */
+const OWN_TOUCH = "select, [role='menu'], [role='dialog'], .sp-bar, .ms-meta, .ribbon";
+const FIELD = "input, textarea, [contenteditable='true']";
 
 export interface GestureHandlers {
   onPinch?: (kind: Pinch) => void;
@@ -63,28 +66,49 @@ export function attachTouchGestures(root: HTMLElement, get: () => GestureHandler
   let start: { x: number; y: number; t: number; target: EventTarget | null } | null = null;
   let startDist = 0;
   let pinchDone = false;
-  let multi = false;
 
   const dist = (e: TouchEvent) => Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+
+  // Le glisser se décide pendant le geste, dès qu'il a assez avancé : iOS ne livre pas toujours la fin du toucher
+  // (touchcancel quand la page commence à défiler).
+  const trySwipe = (x: number, y: number) => {
+    const s = start;
+    if (!s || !get().onSwipe) return;
+    const dx = x - s.x;
+    const dy = y - s.y;
+    const dir = swipeDir(dx, dy, Date.now() - s.t);
+    if (!dir) return;
+    start = null;
+    const el = s.target instanceof Element ? s.target : s.target instanceof Node ? s.target.parentElement : null;
+    if (el?.closest(OWN_TOUCH)) return;
+    const field = el?.closest(FIELD);
+    if (field && field.contains(document.activeElement)) return;
+    // Une sélection de texte en cours, ou un contenu qui défile de côté (page agrandie) : le geste est à eux.
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && root.contains(sel.anchorNode)) return;
+    if (scrollableUnder(s.target, root, -dx, 0)) return;
+    get().onSwipe?.(dir);
+  };
 
   const onStart = (e: TouchEvent) => {
     if (e.touches.length === 1) {
       const t = e.touches[0];
       start = { x: t.clientX, y: t.clientY, t: Date.now(), target: e.target };
-      multi = false;
-      pinchDone = false;
-    } else if (e.touches.length === 2) {
-      multi = true;
-      start = null;
-      startDist = dist(e);
       pinchDone = false;
     } else {
-      multi = true;
       start = null;
+      if (e.touches.length === 2) {
+        startDist = dist(e);
+        pinchDone = false;
+      }
     }
   };
 
   const onMove = (e: TouchEvent) => {
+    if (e.touches.length === 1) {
+      trySwipe(e.touches[0].clientX, e.touches[0].clientY);
+      return;
+    }
     if (e.touches.length !== 2 || pinchDone || !get().onPinch) return;
     // Deux doigts : ni zoom de la page ni défilement pendant le geste.
     if (e.cancelable) e.preventDefault();
@@ -96,31 +120,22 @@ export function attachTouchGestures(root: HTMLElement, get: () => GestureHandler
   };
 
   const onEnd = (e: TouchEvent) => {
-    if (e.touches.length > 0) return;
-    const s = start;
-    start = null;
-    if (!s || multi || !get().onSwipe) return;
     const t = e.changedTouches[0];
-    if (!t) return;
-    const dx = t.clientX - s.x;
-    const dy = t.clientY - s.y;
-    const dir = swipeDir(dx, dy, Date.now() - s.t);
-    if (!dir) return;
-    const el = s.target instanceof Element ? s.target : s.target instanceof Node ? s.target.parentElement : null;
-    if (el?.closest(OWN_TOUCH)) return;
-    // Une sélection de texte en cours, ou un contenu qui défile de côté (page agrandie) : le geste est à eux.
-    const sel = window.getSelection();
-    if (sel && !sel.isCollapsed && root.contains(sel.anchorNode)) return;
-    if (scrollableUnder(s.target, root, -dx, 0)) return;
-    get().onSwipe?.(dir);
+    if (t && e.touches.length === 0) trySwipe(t.clientX, t.clientY);
+    if (e.touches.length === 0) start = null;
+  };
+  const onCancel = () => {
+    start = null;
   };
 
   root.addEventListener("touchstart", onStart, { passive: true });
   root.addEventListener("touchmove", onMove, { passive: false });
   root.addEventListener("touchend", onEnd, { passive: true });
+  root.addEventListener("touchcancel", onCancel, { passive: true });
   return () => {
     root.removeEventListener("touchstart", onStart);
     root.removeEventListener("touchmove", onMove);
     root.removeEventListener("touchend", onEnd);
+    root.removeEventListener("touchcancel", onCancel);
   };
 }
