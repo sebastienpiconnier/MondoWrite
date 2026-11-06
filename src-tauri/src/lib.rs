@@ -1,6 +1,9 @@
 /// Apple Foundation Models : modèle d'Apple Intelligence sur l'appareil (commandes fm_*, pont Swift sur Apple).
 mod apple_fm;
 
+/// Clés de l'auteur dans le trousseau du système (commandes secret_*, #30).
+mod secrets;
+
 /// Conteneur iCloud de l'app (déclaré dans les droits iOS, et dans ceux du Mac quand la Release est signée avec un
 /// profil qui porte iCloud : voir docs/icloud-mac.md).
 #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -311,7 +314,10 @@ pub fn run() {
       allow_scriv,
       apple_fm::fm_availability,
       apple_fm::fm_complete,
-      apple_fm::fm_cancel
+      apple_fm::fm_cancel,
+      secrets::secret_get,
+      secrets::secret_set,
+      secrets::secret_delete
     ])
     // Lecture/écriture du dossier projet (cosmos.json + cartes/*.md)
     .plugin(tauri_plugin_fs::init())

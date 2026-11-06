@@ -676,7 +676,7 @@
 <h3>Conectar un servicio</h3>
 <p>En <span class="ui">Ajustes</span> › <span class="ui">IA (opcional)</span>, elige un <span class="ui">Servicio</span>:</p>
 <ul>
-  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: servicios en línea. Pega tu <span class="ui">Clave de API</span>; se queda en tu dispositivo, nunca en el proyecto. Tus tarjetas solo se envían al servicio cuando lanzas una acción de IA.</li>
+  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: servicios en línea. Pega tu <span class="ui">Clave de API</span>; se queda en tu dispositivo, guardada en el llavero del sistema (Llavero en Mac, iPhone y iPad, Administrador de credenciales en Windows, Secret Service en Linux) cuando lo hay, y nunca en el proyecto. Tus tarjetas solo se envían al servicio cuando lanzas una acción de IA.</li>
   <li><strong>Ollama, LM Studio</strong>: modelos que funcionan en tu computadora. Mientras la dirección del servidor sea la de esta computadora, tus textos nunca salen de ella; cualquier otra dirección se señala en los Ajustes. Indica la dirección del servidor (la que viene por defecto suele funcionar; una dirección que termina en <code>/v1</code> también). Si LM Studio pide un token («Require Authentication» en los ajustes de su servidor), crea uno en LM Studio y pégalo en <span class="ui">Token de API (opcional)</span>.</li>
   <li><strong>Apple Intelligence (en el dispositivo)</strong>: en un Mac o un iPhone con Apple Intelligence (macOS 26, iOS 26 y posteriores), el modelo de Apple, gratuito, sin clave ni configuración, y nada sale del dispositivo. Solo aparece cuando está disponible; si Apple Intelligence está desactivado, los Ajustes lo dicen, con <span class="ui">Volver a comprobar</span>. Este modelo es pequeño: sirve para las acciones cortas (Ordenar las ideas, preguntas del asistente, Preguntar al personaje, Libreta, modo Taller); las lecturas de todo el relato (coherencia, voces, lector beta, lo que dice el texto) aparecen en gris con el motivo, y la búsqueda por el sentido y la descripción de fotos no se proponen.</li>
 </ul>
@@ -839,9 +839,13 @@
 <h3>Editar fuera de MondoWrite</h3>
 <p>Puedes editar un archivo del proyecto con otro programa, o desde otra computadora a través de una carpeta sincronizada. La app se da cuenta y retoma la versión nueva. Si el mismo archivo ha cambiado en los dos lados, no se sobrescribe ninguno: se conserva la versión del disco, la tuya se guarda al lado («… (MondoWrite).md») y un aviso te deja elegir: <span class="ui">Esta</span> o <span class="ui">La otra</span> (<span class="ui">La de iCloud</span> para un proyecto de iCloud).</p>
 
+<h3>Las copias de seguridad automáticas</h3>
+<p>En la app (ordenador, iPhone, iPad), MondoWrite guarda una copia de cada proyecto <strong>aparte</strong>, en su propia carpeta del dispositivo, nunca en la del proyecto: si esa carpeta se daña, se borra o se sincroniza mal, las copias siguen ahí. Se hace una copia después de un guardado, como mucho cada 30 minutos mientras escribes; MondoWrite guarda las 5 últimas y luego la última de cada día durante 30 días. Contiene los textos, la papelera y las versiones de las escenas; las imágenes se guardan una sola vez, al lado.</p>
+<p><span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span> › <span class="ui">Copias de seguridad…</span> muestra las copias del proyecto abierto, con su fecha, y <span class="ui">Hacer una copia ahora</span>. La página de proyectos también tiene un botón <span class="ui">Copias de seguridad…</span>, que muestra las de todos los proyectos, incluso de uno cuya carpeta ha desaparecido (en Mac: <span class="ui">Archivo</span> › <span class="ui">Copias de seguridad…</span>). <span class="ui">Abrir esta copia</span> la abre como un <strong>proyecto nuevo</strong>, con la fecha de la copia tras el título: el proyecto actual no cambia. Así recuperas un lienzo, una biblia o un plan de antes; para el texto de una sola escena, bastan sus versiones.</p>
+
 <h3>Si falla el guardado</h3>
 <p>Un mensaje bajo la barra superior dice por qué (disco lleno, permisos insuficientes, carpeta no encontrada) y propone: <span class="ui">Reintentar</span>; <span class="ui">Indicar la carpeta del proyecto…</span> si se ha movido o renombrado; <span class="ui">Exportar una copia…</span> (todo el proyecto en un archivo .zip, para no perder nada); o <span class="ui">Volver a los proyectos sin guardar</span>.</p>
-<div class="tip" data-label="Copias de seguridad"><p>Guarda tus proyectos en una carpeta sincronizada (iCloud Drive, Dropbox, OneDrive) o haz copias de seguridad con regularidad. Como son archivos de texto, ocupan muy poco espacio.</p></div>
+<div class="tip" data-label="Copias de seguridad"><p>Las copias automáticas se quedan en el dispositivo: guarda también tus proyectos en una carpeta sincronizada (iCloud Drive, Dropbox, OneDrive) o cópialos en otro sitio de vez en cuando. Como son archivos de texto, ocupan muy poco espacio.</p></div>
 
 <!-- ===================================================================================== -->
 <h2 id="ajustes"><span class="num">Capítulo 13</span>Ajustes y apariencia</h2>
@@ -850,7 +854,7 @@
 <figure><img src="images/es/reglages.jpg"><figcaption>Los Ajustes.</figcaption></figure>
 <table>
   <tr><th>Ajuste</th><th>Efecto</th></tr>
-  <tr><td><span class="ui">Este proyecto</span></td><td>Tipo de proyecto (novela o guion); para un guion, el tamaño de página y las opciones de numeración; las copias en Markdown; la <span class="ui">Papelera</span>.</td></tr>
+  <tr><td><span class="ui">Este proyecto</span></td><td>Tipo de proyecto (novela o guion); para un guion, el tamaño de página y las opciones de numeración; las copias en Markdown; la <span class="ui">Papelera</span>; las <span class="ui">Copias de seguridad…</span>.</td></tr>
   <tr><td><span class="ui">Idioma</span></td><td>Español, francés, inglés y los idiomas traducidos por la comunidad. La primera vez, el idioma del sistema. <span class="ui">Traducir MondoWrite a tu idioma</span> abre la guía de los traductores.</td></tr>
   <tr><td><span class="ui">Apariencia</span></td><td>Como el sistema, clara u oscura.</td></tr>
   <tr><td><span class="ui">Tipografía al escribir</span></td><td>Seguir el idioma de la interfaz, un idioma a tu elección, o ninguno.</td></tr>

@@ -676,7 +676,7 @@
 <h3>Plug in a service</h3>
 <p>In <span class="ui">Settings</span> › <span class="ui">AI (optional)</span>, choose a <span class="ui">Service</span>:</p>
 <ul>
-  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: online services. Paste your <span class="ui">API key</span>; it stays on your device, never in the project. Your cards are only sent to the service when you run an AI action.</li>
+  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: online services. Paste your <span class="ui">API key</span>; it stays on your device, kept in the system keychain (Keychain on Mac, iPhone and iPad, Credential Manager on Windows, Secret Service on Linux) when there is one, and never in the project. Your cards are only sent to the service when you run an AI action.</li>
   <li><strong>Ollama, LM Studio</strong>: models running on your computer. As long as the server address is this computer’s, your texts never leave it; any other address is flagged in Settings. Give the server address (the default one usually works; an address ending in <code>/v1</code> works too). If LM Studio asks for a token (“Require Authentication” in its server settings), create one in LM Studio and paste it into <span class="ui">API token (optional)</span>.</li>
   <li><strong>Apple Intelligence (on device)</strong>: on a Mac or iPhone with Apple Intelligence (macOS 26, iOS 26 and later), Apple’s model, free, with no key or setup, and nothing leaves the device. It only shows when it’s available; if Apple Intelligence is turned off, Settings say so, with <span class="ui">Check again</span>. This model is small: it suits short actions (Tidy up ideas, assistant questions, Ask the character, Notebook, Workshop mode); readings of the whole story (continuity, voices, beta reader, what the text says) are greyed out with the reason, and search by meaning and photo descriptions aren’t offered.</li>
 </ul>
@@ -839,9 +839,13 @@
 <h3>Editing outside MondoWrite</h3>
 <p>You can edit a project file with other software, or from another computer through a synced folder. The app notices and picks up the new version. If the same file changed on both sides, neither is overwritten: the version on disk is kept, yours is saved next to it (“… (MondoWrite).md”), and a banner lets you choose: <span class="ui">Keep mine</span> or <span class="ui">Keep the disk version</span>.</p>
 
+<h3>Automatic backups</h3>
+<p>In the app (computer, iPhone, iPad), MondoWrite keeps a copy of each project <strong>apart</strong>, in its own folder on the device, never in the project’s folder: if that folder is damaged, deleted or badly synced, the backups remain. A copy is made after a save, at most every 30 minutes while you write; MondoWrite keeps the last 5, then the last one of each day for 30 days. It holds the texts, the trash and the scene versions; images are kept only once, next to them.</p>
+<p><span class="ui">Settings</span> › <span class="ui">This project</span> › <span class="ui">Backups…</span> shows the open project’s backups, dated, with <span class="ui">Back up now</span>. The projects page also has a <span class="ui">Backups…</span> button, which shows those of every project, even one whose folder has gone (on Mac: <span class="ui">File</span> › <span class="ui">Backups…</span>). <span class="ui">Open this backup</span> opens it as a <strong>new project</strong>, its title followed by the backup’s date: the current project does not change. That is how you get back an earlier canvas, bible or outline; for the text of a single scene, its versions are enough.</p>
+
 <h3>If saving fails</h3>
 <p>A message under the top bar says why (disk full, insufficient rights, folder not found) and offers: <span class="ui">Try again</span>; <span class="ui">Locate the project folder…</span> if it was moved or renamed; <span class="ui">Export a copy…</span> (the whole project in a .zip file, so nothing is lost); or <span class="ui">Back to projects without saving</span>.</p>
-<div class="tip" data-label="Backups"><p>Keep your projects in a synced folder (iCloud Drive, Dropbox, OneDrive) or back them up regularly. Since they are text files, they take up very little space.</p></div>
+<div class="tip" data-label="Backups"><p>Automatic backups stay on the device: also keep your projects in a synced folder (iCloud Drive, Dropbox, OneDrive) or copy them elsewhere from time to time. Since they are text files, they take up very little space.</p></div>
 
 <!-- ===================================================================================== -->
 <h2 id="settings"><span class="num">Chapter 13</span>Settings and appearance</h2>
@@ -850,7 +854,7 @@
 <figure><img src="images/en/reglages.jpg"><figcaption>Settings.</figcaption></figure>
 <table>
   <tr><th>Setting</th><th>Effect</th></tr>
-  <tr><td><span class="ui">This project</span></td><td>Project type (novel or screenplay); for a screenplay, the page size and numbering options; Markdown copies; the <span class="ui">Trash</span>.</td></tr>
+  <tr><td><span class="ui">This project</span></td><td>Project type (novel or screenplay); for a screenplay, the page size and numbering options; Markdown copies; the <span class="ui">Trash</span>; <span class="ui">Backups…</span>.</td></tr>
   <tr><td><span class="ui">Language</span></td><td>English, French, and the languages translated by the community. The first time, the system’s language. <span class="ui">Translate MondoWrite into your language</span> opens the translators’ guide.</td></tr>
   <tr><td><span class="ui">Appearance</span></td><td>Match system, light or dark.</td></tr>
   <tr><td><span class="ui">Typography as you type</span></td><td>Follow the interface language, a language of your choice, or none.</td></tr>

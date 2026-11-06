@@ -66,6 +66,8 @@ async function buildMenu() {
       await MenuItem.new({ id: "export", text: m.exportMenu, enabled: inProject, action: () => sendCommand("export") }),
       await sep(),
       await MenuItem.new({ id: "trash", text: m.trash, enabled: inProject, action: () => useCosmos.getState().setDialog("trash") }),
+      // Sauvegardes hors du projet (#14, #15) : celles du projet ouvert, ou de tous les projets depuis l'accueil.
+      await MenuItem.new({ id: "backups", text: m.backups, enabled: !!storage.backups, action: () => useCosmos.getState().openBackups(inProject ? (storage.backups?.key() ?? null) : null) }),
       await sep(),
       await PredefinedMenuItem.new({ item: "CloseWindow", text: m.closeWindow }),
     ],

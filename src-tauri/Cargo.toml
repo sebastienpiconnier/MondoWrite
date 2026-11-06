@@ -50,5 +50,20 @@ objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "
 objc2-uniform-type-identifiers = { version = "0.3", default-features = false, features = ["std", "UTType"] }
 
 
+# Clés de l'auteur dans le trousseau du système (#30, src/secrets.rs). Android : pas de trousseau, les clés restent
+# dans les réglages de l'appareil. Linux : Secret Service par D-Bus en Rust pur (zbus, MIT), sans libdbus (sa licence,
+# AFL ou GPL, n'est pas dans la liste de CONTRIBUTING.md). Les appels passent par spawn_blocking (secrets.rs).
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies.keyring]
+version = "3"
+features = ["apple-native"]
+
+[target.'cfg(target_os = "windows")'.dependencies.keyring]
+version = "3"
+features = ["windows-native"]
+
+[target.'cfg(target_os = "linux")'.dependencies.keyring]
+version = "3"
+features = ["async-secret-service", "tokio", "crypto-rust"]
+
 [patch.crates-io]
 num_threads = { path = "vendor/num_threads" }

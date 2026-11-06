@@ -260,15 +260,23 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 /* Flèche « déplier / replier » (1.13.1) : un chevron dessiné en trait d'encre, bien visible dans les deux thèmes
    (les triangles ▸ ▾ du texte, petits et en gris, disparaissaient en sombre). Fermé, il regarde à droite ; ouvert,
    vers le bas. Sert aux <summary> des blocs repliables et aux boutons qui replient une fiche (.disclosure). */
-.disclosure, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left) > summary::before {
+.disclosure, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project) > summary::before {
   content: ""; display: inline-block; flex: none; box-sizing: border-box; width: 0.5rem; height: 0.5rem;
   margin: 0 0.4rem 0 0.15rem; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
   transform: rotate(-45deg); transition: transform 0.15s;
 }
-.disclosure.is-open, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left)[open] > summary::before { transform: rotate(45deg) translate(-1px, -1px); }
-:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left) > summary { list-style: none; }
-:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left) > summary::-webkit-details-marker { display: none; }
+.disclosure.is-open, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project)[open] > summary::before { transform: rotate(45deg) translate(-1px, -1px); }
+:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project) > summary { list-style: none; }
+:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project) > summary::-webkit-details-marker { display: none; }
 .home-hidden { width: 100%; }
+/* Fenêtre « Sauvegardes » (#14, #15, BackupsDialog) */
+.backups h3 { margin: 18px 0 6px; font-size: 1rem; }
+.backups-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.backups-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.backups-row:last-child { border-bottom: none; }
+.backups-date { flex: 1 1 14rem; }
+.backups-project summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; }
+.backups-count { color: var(--muted); font-size: 0.875rem; }
 .home-hidden summary { cursor: pointer; padding: 12px 0; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; color: var(--muted); font-size: 0.875rem; }
 .home-hidden .home-list { margin-top: 6px; }
 .home-list li.is-hidden .home-project { opacity: 0.75; }

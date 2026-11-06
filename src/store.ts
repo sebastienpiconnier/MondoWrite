@@ -2,6 +2,7 @@
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
 import { cleanQuote, isCommentId, removeCommentFromElements, removeCommentMark, type Comments, type SceneComment } from "./comments";
+import { backupDate, backupDue, backupName, backupsToRemove, mediaNamesOf, sortBackups } from "./backups";
 import { localIso, parseVersionPath, readVersionFile, versionFile, versionName, versionPath } from "./versions";
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
 import { isPhone } from "./components/usePhone";
@@ -21,7 +22,7 @@ import { restoreCard, trashCard, type TrashedCard } from "./trash";
 import { create } from "zustand";
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type Edge, type EdgeChange, type NodeChange } from "@xyflow/react";
 import { type CardData, type CardLayout, type CardType, type Frame, type Project, type ProjectKind } from "./types";
-import { MEDIA_DIR, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
+import { MEDIA_DIR, META_FILE, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy, isProjectFilePath, deserialize, serialize, storage, type FileMap, type ProjectEntry } from "./storage";
 import { hideProject, showProject, splitHidden } from "./storage/recents";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
@@ -249,8 +250,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -590,7 +591,20 @@ export interface CosmosState {
   /** Dernier recours : tout le projet (textes et réglages) dans un .zip, là où l'auteur le choisit. */
   exportProjectCopy: () => Promise<boolean>;
   /** Tout le projet (textes, réglages, images et PDF) dans un .zip, à ouvrir sur un autre ordinateur par « Importer un projet ». */
-  projectZip: () => Promise<{ name: string; extension: string; mime: string; data: Uint8Array } | null>;
+  projectZip: (options?: { media?: boolean }) => Promise<{ name: string; extension: string; mime: string; data: Uint8Array } | null>;
+  /**
+   * Sauvegarde hors du projet (#14, backups.ts) : tout de suite (« Sauvegarder maintenant ») ou, après un
+   * enregistrement réussi, au plus toutes les 30 minutes. Rend vrai si une sauvegarde a été écrite.
+   */
+  backupNow: () => Promise<boolean>;
+  /**
+   * Ouvre une sauvegarde comme un NOUVEAU projet (#15), jamais par-dessus celui d'où elle vient ; le projet ouvert est
+   * d'abord enregistré et fermé. Rend faux si rien n'a été ouvert.
+   */
+  openBackup: (key: string, name: string) => Promise<boolean>;
+  /** Fenêtre « Sauvegardes » : clé du projet montré (null : tous les projets de l'appareil). État d'affichage. */
+  backupsFor: string | null;
+  openBackups: (key: string | null) => void;
   /** L'auteur choisit : sa version (elle remplace celle du disque) ou celle du disque (reprise dans l'app). */
   resolveConflict: (path: string, keep: "mine" | "disk") => Promise<void>;
   /**
@@ -1258,6 +1272,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
           status: get().status === "enregistrement" ? (unwritten ? "modifie" : "enregistre") : get().status,
         });
         storage.remember({ title: get().title, kind: get().kind });
+        // Sauvegarde hors du projet (#14) : au plus toutes les 30 minutes, sans jamais retarder l'enregistrement.
+        if (storage.backups) void writeBackup(false);
         // Copies Markdown (markdown/) : après l'enregistrement, sans jamais le retarder ni le faire échouer.
         if (storage.copies) {
           const snapshot = get();
@@ -1274,6 +1290,42 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ status: "erreur", saveError: classifySaveError(err) });
       }
   };
+  /** Dernière sauvegarde connue de chaque projet (clé : `backupKey`), relue dans son dossier la première fois. */
+  const lastBackup = new Map<string, Date | null>();
+  let backingUp = false;
+  const writeBackup = async (force: boolean): Promise<boolean> => {
+    const backups = storage.backups;
+    const key = backups?.key();
+    if (!backups || !key || get().screen !== "project" || backingUp) return false;
+    backingUp = true;
+    try {
+      const now = new Date();
+      if (!lastBackup.has(key)) {
+        const names = (await backups.list()).find((b) => b.key === key)?.names ?? [];
+        const latest = sortBackups(names)[0];
+        lastBackup.set(key, latest ? backupDate(latest) : null);
+      }
+      if (!force && !backupDue(lastBackup.get(key) ?? null, now)) return false;
+      // Sans les images : elles sont copiées une seule fois à côté des sauvegardes (BackupStore.write).
+      const file = await get().projectZip({ media: false });
+      // Un autre projet a été ouvert entre-temps : cette copie n'est pas la sienne.
+      if (!file || backups.key() !== key || get().screen !== "project") return false;
+      const medias = mediaNamesOf([...get().nodes.map((n) => n.data as CardData), ...get().trash]);
+      await backups.write(key, backupName(now), file.data, { title: get().title, kind: get().kind }, medias);
+      lastBackup.set(key, now);
+      const names = (await backups.list()).find((b) => b.key === key)?.names ?? [];
+      const old = backupsToRemove(names, now);
+      if (old.length > 0) await backups.remove(key, old);
+      return true;
+    } catch (err) {
+      // Une sauvegarde manquée ne gêne jamais l'écriture : on réessaiera au prochain enregistrement.
+      console.error(err);
+      return false;
+    } finally {
+      backingUp = false;
+    }
+  };
+
   const refreshProjects = async () => {
     const { shown, hidden } = splitHidden(await storage.list().catch(() => []));
     set({ projects: shown, hiddenProjects: hidden });
@@ -1284,8 +1336,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
    * s'ouvre. Jamais par-dessus un projet existant ; seuls les fichiers d'un projet, aux noms sûrs, sont repris.
    */
   const importZipData = async (zipped: Uint8Array) => {
-    const { unzipSync, strFromU8 } = await import("fflate");
-    const entries = Object.entries(unzipSync(zipped)).filter(([path]) => !path.endsWith("/") && !path.split("/").some((part) => part.startsWith(".") || part === "__MACOSX"));
+    const { unzipSync } = await import("fflate");
+    await importEntries(Object.entries(unzipSync(zipped)));
+  };
+  /** Fichiers d'un projet (chemin, octets) devenus un nouveau projet : le cœur de `importZipData`, aussi pour une sauvegarde. */
+  const importEntries = async (all: [string, Uint8Array][]) => {
+    const { strFromU8 } = await import("fflate");
+    const entries = all.filter(([path]) => !path.endsWith("/") && !path.split("/").some((part) => part.startsWith(".") || part === "__MACOSX"));
     // Un dossier zippé depuis le Finder ou l'Explorateur contient un dossier racine : on l'enlève.
     const roots = new Set(entries.map(([path]) => path.split("/")[0]));
     const prefix = roots.size === 1 && entries.every(([path]) => path.includes("/")) ? `${[...roots][0]}/` : "";
@@ -3311,14 +3368,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ lastFiles: existing ? known : {}, status: "modifie" });
       await get().save();
     },
-    projectZip: async () => {
+    projectZip: async (options) => {
       const { zip } = await import("./export/zip");
       const entries: { path: string; data: string | Uint8Array }[] = Object.entries(currentFiles()).map(([path, data]) => ({ path, data }));
-      // Images, galeries et PDF des cartes : les fichiers de medias/ voyagent avec le projet.
+      // Images, galeries et PDF des cartes : les fichiers de medias/ voyagent avec le projet (pas dans une sauvegarde).
       const names = new Set<string>();
-      for (const node of get().nodes) {
-        const d = node.data as { image?: string; fichier?: string; images?: string[] };
-        for (const name of [d.image, d.fichier, ...(d.images ?? [])]) if (name) names.add(name);
+      if (options?.media !== false) {
+        for (const node of get().nodes) {
+          const d = node.data as { image?: string; fichier?: string; images?: string[] };
+          for (const name of [d.image, d.fichier, ...(d.images ?? [])]) if (name) names.add(name);
+        }
       }
       for (const name of names) {
         const bytes = await storage.readMedia(name).catch(() => null);
@@ -3335,6 +3394,52 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
       return { name: `${fileName(get().title, "mondowrite")}.zip`, extension: "zip", mime: "application/zip", data: zip(entries) };
     },
+    backupNow: () => writeBackup(true),
+    backupsFor: null,
+    openBackups: (key) => set({ backupsFor: key, dialog: "backups" }),
+    openBackup: async (key, name) => {
+      const backups = storage.backups;
+      if (!backups) return false;
+      const t = getT();
+      let entries: [string, Uint8Array][];
+      try {
+        const { unzipSync, strFromU8, strToU8 } = await import("fflate");
+        entries = Object.entries(unzipSync(await backups.read(key, name)));
+        const files: FileMap = {};
+        for (const [path, data] of entries) if (isProjectFilePath(path)) files[path] = strFromU8(data);
+        const project = deserialize(files);
+        if (!project) return false;
+        // Le projet retrouvé porte le jour de sa sauvegarde dans son titre : il ne se confond pas avec l'actuel.
+        const when = backupDate(name);
+        const date = when ? new Intl.DateTimeFormat(useSettings.getState().lang, { dateStyle: "long", timeStyle: "short" }).format(when) : name;
+        const meta = { ...project.meta, title: fmt(t.backups.restoredTitle, { title: project.meta.title || t.backups.untitled, date }) };
+        entries = entries.map(([path, data]) => [path, path === META_FILE ? strToU8(JSON.stringify(meta, null, 2)) : data]);
+        // Images gardées à côté des sauvegardes : seulement celles que ce projet cite.
+        for (const media of mediaNamesOf([...project.cards, ...(project.trash ?? [])])) {
+          const data = await backups.readMedia(key, media).catch(() => null);
+          if (data) entries.push([`${MEDIA_DIR}/${media}`, data]);
+        }
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+      // Le projet ouvert est enregistré et fermé d'abord ; s'il ne s'enregistre pas, on ne va pas plus loin.
+      if (get().screen === "project") {
+        await get().closeProject();
+        if (get().screen === "project") return false;
+      }
+      set({ dialog: null, importNotice: null, homeNotice: false, openFailed: false });
+      try {
+        await importEntries(entries);
+      } catch (err) {
+        console.error(err);
+        storage.forget();
+        set({ openFailed: true });
+        return false;
+      }
+      return get().screen === "project";
+    },
+
     exportProjectCopy: async () => {
       try {
         const file = await get().projectZip();
