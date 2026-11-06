@@ -25,7 +25,6 @@ import { forgetMediaUrls } from "./components/useMediaUrl";
 import { ConflictNotice } from "./components/ConflictNotice";
 import { RetroInvite } from "./components/StructureTools";
 import { ScrivenerReportNotice } from "./components/ScrivenerImport";
-import { Carnet } from "./components/Carnet";
 import { shownView, usePhone } from "./components/usePhone";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
@@ -263,7 +262,6 @@ export function App() {
         <RetroInvite />
         <main className="app-main">
           {view === "toile" && <Toile />}
-          {view === "carnet" && <Carnet />}
           {view === "bible" && <Bible />}
           {view === "plan" && (kind === "scenario" ? <Sequencier /> : <Plan />)}
           {/* Même vue, deux ateliers : prose pour un roman (à venir), format cinéma pour un scénario. */}

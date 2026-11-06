@@ -15,11 +15,13 @@ function subscribe(onChange: () => void) {
 
 export const isPhone = () => query()?.matches ?? false;
 
-/** Vrai sur un écran de téléphone : le Carnet remplace le canevas et le Plan. */
+/** Vrai sur un écran de téléphone : les quatre vues en onglets en bas de l'écran. */
 export const usePhone = () => useSyncExternalStore(subscribe, isPhone, () => false);
 
-/** Vue affichée : sur téléphone, le canevas et le Plan cèdent la place au Carnet ; ailleurs, le Carnet est le canevas. */
-export function shownView<V extends string>(view: V, phone: boolean): V | "carnet" | "toile" {
-  if (phone) return view === "toile" || view === "plan" ? "carnet" : view;
+/**
+ * Vue affichée. L'ancienne vue Carnet (téléphone, avant novembre 2026) est le canevas : une position « Reprendre »
+ * qui la cite y mène. `phone` est gardé pour les appelants, le téléphone a désormais les mêmes vues.
+ */
+export function shownView<V extends string>(view: V, _phone: boolean): V | "toile" {
   return view === "carnet" ? "toile" : view;
 }

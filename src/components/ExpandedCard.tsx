@@ -2,6 +2,7 @@
 // texte et sa fiche, avec la place d'écrire. C'est la même carte que sur le canevas (même état du store,
 // rien n'est recopié) : ce qu'on écrit ici y est aussitôt. Échap ou un clic à côté ferme.
 
+import { useEffect, useRef } from "react";
 import { useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
@@ -27,6 +28,15 @@ export function ExpandedCard({ card }: { card: CardData }) {
   useCosmos((s) => (novelScene ? Math.min(20, Math.floor((s.manuscript[card.id]?.length ?? 0) / 40)) : 0));
   const imageUrl = useMediaUrl(card.image);
   const key = useKeyHint();
+  // Carte toute neuve (téléphone : elle s'ouvre en grand dès sa création) : on écrit tout de suite son titre. Après
+  // l'ouverture de la fenêtre native, qui donne sinon le focus à son premier bouton (la croix).
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (card.title || card.html) return;
+    const frame = requestAnimationFrame(() => titleRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card.id]);
 
   return (
     <div className="expanded-card" style={{ ["--type" as string]: typeColor(card.type) }}>
@@ -64,9 +74,17 @@ export function ExpandedCard({ card }: { card: CardData }) {
         value={card.title}
         placeholder={types[card.type].titlePlaceholder}
         aria-label={t.card.titleAria}
+        ref={titleRef}
         onChange={(e) => updateCard(card.id, { title: e.target.value.replace(/\n/g, " ") })}
         onKeyDown={(e) => {
-          if (e.key === "Enter") e.preventDefault();
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          // Entrée passe au texte de la carte (touche « retour » du clavier du téléphone), comme sur le canevas.
+          if (e.nativeEvent.isComposing) return;
+          const body = e.currentTarget
+            .closest(".expanded-card")
+            ?.querySelector<HTMLElement>(".expanded-body .ProseMirror, .expanded-body [tabindex='0'], .expanded-draft .ProseMirror");
+          body?.focus();
         }}
       />
       {imageUrl && <img className="expanded-image" src={imageUrl} alt="" />}

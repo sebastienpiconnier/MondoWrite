@@ -154,14 +154,14 @@
 
 <p>For each path, the table shows the views that matter right away (●) and those that will help later (○).</p>
 <table class="paths">
-  <tr><th>Path</th><th>Canvas</th><th>Bible</th><th>Outline</th><th>Manuscript or Screenplay</th><th>Notebook (iPhone)</th></tr>
-  <tr><td>The architect</td><td>●</td><td>●</td><td>●</td><td>○</td><td></td></tr>
-  <tr><td>The gardener</td><td>○</td><td>○</td><td>○</td><td>●</td><td></td></tr>
-  <tr><td>The project in development</td><td>○</td><td>●</td><td></td><td></td><td></td></tr>
-  <tr><td>The series writer</td><td>●</td><td>●</td><td>○</td><td>●</td><td></td></tr>
-  <tr><td>The rewrite</td><td>○</td><td>○</td><td>●</td><td>●</td><td></td></tr>
-  <tr><td>The research-heavy novel</td><td>●</td><td>●</td><td>○</td><td>○</td><td></td></tr>
-  <tr><td>The writer on the move</td><td>○</td><td>○</td><td></td><td>●</td><td>●</td></tr>
+  <tr><th>Path</th><th>Canvas</th><th>Bible</th><th>Outline</th><th>Manuscript or Screenplay</th></tr>
+  <tr><td>The architect</td><td>●</td><td>●</td><td>●</td><td>○</td></tr>
+  <tr><td>The gardener</td><td>○</td><td>○</td><td>○</td><td>●</td></tr>
+  <tr><td>The project in development</td><td>○</td><td>●</td><td></td><td></td></tr>
+  <tr><td>The series writer</td><td>●</td><td>●</td><td>○</td><td>●</td></tr>
+  <tr><td>The rewrite</td><td>○</td><td>○</td><td>●</td><td>●</td></tr>
+  <tr><td>The research-heavy novel</td><td>●</td><td>●</td><td>○</td><td>○</td></tr>
+  <tr><td>The writer on the move</td><td>●</td><td>○</td><td></td><td>●</td></tr>
 </table>
 
 <h3>The architect: plan everything before writing</h3>
@@ -174,7 +174,7 @@
   <li>Write in the <a href="#manuscript">Manuscript</a>, scene after scene, in the Outline’s order.</li>
   <li>Proofread with <span class="ui">Check</span>, then <a href="#export">export</a>.</li>
 </ol>
-<div class="tip" data-label="Leave aside"><p>At first: the Notebook, exporting the Bible.</p></div>
+<div class="tip" data-label="Leave aside"><p>At first: exporting the Bible.</p></div>
 
 <h3>The gardener: write first, structure later</h3>
 <p>For those who discover their story by writing it.</p>
@@ -230,8 +230,8 @@
 <h3>The writer on the move: iPhone, iPad, computer</h3>
 <ol>
   <li>Sync your projects through iCloud Drive (see <a href="#files">Your files</a>).</li>
-  <li>On the iPhone, the <span class="ui">Notebook</span> captures an idea on the go; the Manuscript lets you write a few lines.</li>
-  <li>On the iPad or the computer, <span class="ui">To sort · N</span>, on the canvas, lists what you captured: place each note and it leaves the list.</li>
+  <li>On the iPhone, the canvas <span class="ui">+</span> captures an idea on the go: the card opens full screen, you write, you close it; the Manuscript lets you write a few lines.</li>
+  <li>On the iPad or the computer, you find these cards on the canvas and arrange them at leisure.</li>
   <li><span class="ui">Focus mode</span> quiets everything around the page while you write.</li>
 </ol>
 
@@ -685,7 +685,7 @@
 <ul>
   <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong>: online services. Paste your <span class="ui">API key</span>; it stays on your device, kept in the system keychain (Keychain on Mac, iPhone and iPad, Credential Manager on Windows, Secret Service on Linux) when there is one, and never in the project. Your cards are only sent to the service when you run an AI action.</li>
   <li><strong>Ollama, LM Studio</strong>: models running on your computer. As long as the server address is this computer’s, your texts never leave it; any other address is flagged in Settings. Give the server address (the default one usually works; an address ending in <code>/v1</code> works too). If LM Studio asks for a token (“Require Authentication” in its server settings), create one in LM Studio and paste it into <span class="ui">API token (optional)</span>.</li>
-  <li><strong>Apple Intelligence (on device)</strong>: on a Mac or iPhone with Apple Intelligence (macOS 26, iOS 26 and later), Apple’s model, free, with no key or setup, and nothing leaves the device. It only shows when it’s available; if Apple Intelligence is turned off, Settings say so, with <span class="ui">Check again</span>. This model is small: it suits short actions (Tidy up ideas, assistant questions, Ask the character, Notebook, Workshop mode); readings of the whole story (continuity, voices, beta reader, what the text says) are greyed out with the reason, and search by meaning and photo descriptions aren’t offered.</li>
+  <li><strong>Apple Intelligence (on device)</strong>: on a Mac or iPhone with Apple Intelligence (macOS 26, iOS 26 and later), Apple’s model, free, with no key or setup, and nothing leaves the device. It only shows when it’s available; if Apple Intelligence is turned off, Settings say so, with <span class="ui">Check again</span>. This model is small: it suits short actions (Tidy up ideas, assistant questions, Ask the character, Workshop mode); readings of the whole story (continuity, voices, beta reader, what the text says) are greyed out with the reason, and search by meaning and photo descriptions aren’t offered.</li>
 </ul>
 <p><span class="ui">Test and list models</span> checks the connection and offers the list of available models. The <span class="ui">AI</span> button then appears in the top bar. If the list could not be loaded, a message says so: press the button again to retry.</p>
 <div class="pair">
@@ -700,7 +700,7 @@
   <li><strong>Tailored questions</strong>: in a character’s assistant, <span class="ui">Tailored</span> asks for a question written from their entry. You answer.</li>
   <li><strong>Summary</strong>: <span class="ui">AI summary</span> puts in order what you wrote about a character (sheet, notes, answers), inventing nothing; it only goes into the entry when you click.</li>
   <li><strong>Ask the character</strong>: in a character’s assistant, the <span class="ui">Ask them</span> tab turns the interview around. You ask the questions, the character answers in the first person, only from what you wrote (their sheet, answers, wires, the scenes they appear in). On what your texts don’t say, they answer that they don’t know; a name that doesn’t exist in your project is flagged. The conversation isn’t saved: <span class="ui">Keep</span> files an answer with the sheet’s answers.</li>
-  <li><strong>From notes to cards</strong>: <span class="ui">AI</span> › <span class="ui">From notes to cards…</span> (on iPhone, <span class="ui">Split with AI</span> in the Notebook, for a long note). Paste notes, a brainstorm or a dictation, up to 8,000 characters: the AI suggests cards, each with a type, a title and a passage of your text, and wires between them. Your text is never rewritten: a passage not found as such is left out. Tick what you keep, change a type or a title, then <span class="ui">Create the cards</span>; it all undoes in one go.</li>
+  <li><strong>From notes to cards</strong>: <span class="ui">AI</span> › <span class="ui">From notes to cards…</span>. Paste notes, a brainstorm or a dictation, up to 8,000 characters: the AI suggests cards, each with a type, a title and a passage of your text, and wires between them. Your text is never rewritten: a passage not found as such is left out. Tick what you keep, change a type or a title, then <span class="ui">Create the cards</span>; it all undoes in one go.</li>
   <li><strong>Describe a photo</strong>: enlarge a photo in the gallery, then <span class="ui">Describe with AI</span>. For a place, the AI notes what the photo shows; for a character, it suggests the apparent age and appearance, which you accept field by field. It never tries to identify a person. The model must be able to read images.</li>
 </ul>
 <figure class="medium"><img src="images/en/ia-interroger.jpg"><figcaption>The “Ask them” tab: the character answers from what you wrote.</figcaption></figure>
@@ -884,11 +884,12 @@
 <h3>With a finger</h3>
 <p>On a touch screen, everything works with a finger: a long press on a card lifts it (it is selected, with a drop shadow) so you can move it, a long press inside an unlocked frame lifts the frame with its cards, tapping a card’s label changes its type, the <span class="ui">Select</span> button lets you draw around cards, and every drag-and-drop action also has a button.</p>
 
-<h3 id="notebook">On iPhone: the Notebook</h3>
-<p>On a phone, MondoWrite becomes a notebook: three tabs at the bottom, <span class="ui">Manuscript</span> (or <span class="ui">Screenplay</span>), <span class="ui">Bible</span> and <span class="ui">Notebook</span>. The canvas, the Outline, the exports and ordering the Bible’s sections stay on the iPad and the computer, where they have room. The screen width decides: an unfolded foldable iPhone, or a wider window, gets everything back.</p>
-<p>In the <span class="ui">Notebook</span>, choose the kind of note (<span class="ui">Idea</span>, <span class="ui">Question</span>, <span class="ui">Character</span>, <span class="ui">Place</span>, <span class="ui">Object</span>, <span class="ui">Theme</span>), write it, then <span class="ui">Keep</span>. The first line becomes the title, the rest the text; a web address alone makes a Link card. The note is a card of the project right away: it is in the Bible, and on the canvas of your other devices.</p>
-<p>Your notes wait in <span class="ui">To sort</span>, below the field: touch a note to open its entry, the check mark to mark it sorted, and the <span class="ui">⋯</span> button to attach an image or move it to the trash. On the iPad or the computer, the canvas’s <span class="ui">To sort · N</span> button lists them, each with a dotted outline on the canvas; touching a note in the list spotlights it. As soon as you move it on the canvas or link it to another card, it leaves the list.</p>
-<figure class="small"><img src="images/en/iphone-carnet.jpg"><figcaption>The Notebook on iPhone: a note being written, two others to sort.</figcaption></figure>
+<h3 id="iphone">On iPhone</h3>
+<p>On a phone, the four views are tabs at the bottom of the screen, within thumb’s reach: <span class="ui">Canvas</span>, <span class="ui">Plan</span>, <span class="ui">Manuscript</span> and <span class="ui">Bible</span> (<span class="ui">Outline</span> and <span class="ui">Screenplay</span> for a screenplay). The exports and ordering the Bible’s sections stay on the iPad and the computer, where they have room. The screen width decides: an unfolded foldable iPhone, or a wider window, gets the iPad layout back.</p>
+<p>On the canvas, two fingers move and zoom. The <span class="ui">+</span> opens the list of types: pick one, and the new card opens right away full screen, its title ready for what you type; the keyboard’s return key moves to the text. Close it with the cross: the card is in place on the canvas, in the Bible, and on your other devices. A card already there opens full screen with its <span class="ui">Expand card</span> button.</p>
+<figure class="small"><img src="images/en/iphone-canevas.jpg"><figcaption>The canvas on iPhone, with its four tabs.</figcaption></figure>
+<figure class="small"><img src="images/en/iphone-carte.jpg"><figcaption>A brand new card, opened full screen to fill it in.</figcaption></figure>
+<p>Notes taken with the Notebook of an earlier version remain cards “to sort”: <span class="ui">To sort · N</span>, on the canvas, lists them, with a dotted outline around each; as soon as you move one or link it to another card, it leaves the list.</p>
 
 <!-- ===================================================================================== -->
 <h2 id="shortcuts"><span class="num">Chapter 14</span>Keyboard shortcuts</h2>

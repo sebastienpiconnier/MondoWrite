@@ -1113,6 +1113,28 @@ const scenarios = [
     },
   },
   {
+    name: "iPhone (390 × 844) : quatre onglets, une carte créée s'ouvre en grand",
+    context: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
+    async run(h) {
+      const { page } = h;
+      await h.create("Téléphone");
+      for (const name of ["Canevas", "Plan", "Manuscrit", "Bible"]) assert(await page.locator(".views").getByRole("button", { name, exact: true }).isVisible(), `onglet ${name} absent`);
+      const before = await h.cards().count();
+      await page.locator(".add-card-main").tap();
+      await page.getByRole("menuitem", { name: "Personnage" }).tap();
+      const title = page.locator("dialog[open] .expanded-title");
+      await title.waitFor();
+      await until(() => title.evaluate((el) => el === document.activeElement), "le titre de la carte agrandie n'a pas le focus");
+      await page.keyboard.type("Le bûcheron");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Il coupe du bois.");
+      await page.locator("dialog[open] .expanded-close").tap();
+      // Une seule carte de plus (pas de seconde carte née d'un double-clic fantôme).
+      await until(async () => (await h.cards().count()) === before + 1, "pas exactement une carte de plus");
+      await h.saved((f) => Object.values(f).some((v) => v.includes("Le bûcheron") && v.includes("Il coupe du bois.")), "la carte n'est pas enregistrée avec son titre et son texte");
+    },
+  },
+  {
     name: "tactile (iPad 834 × 1194) : exemple ouvert, « Nouvelle carte » crée une carte",
     context: { viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
     async run(h) {

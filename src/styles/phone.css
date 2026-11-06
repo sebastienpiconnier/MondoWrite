@@ -4,9 +4,8 @@
 @media (max-width: 720px) {
   /* Fenêtre Statistiques : trop de colonnes pour un téléphone, son bouton n'y est pas. */
   .stats-button { display: none !important; }
-  /* Carnet : le téléphone sert à écrire, consulter et capturer. Les exports et le rangement des rubriques de la
-     Bible restent sur iPad et ordinateur, comme le canevas (« Voir sur le canevas » ouvrirait la Bible elle-même). */
-  .topbar .export-menu, .toc-tools, .bible-see-canvas { display: none !important; }
+  /* Les exports et le rangement des rubriques de la Bible restent sur iPad et ordinateur. */
+  .topbar .export-menu, .toc-tools { display: none !important; }
   /* Haut : le nom, le titre du projet et « ⋯ ». */
   .topbar { position: relative; display: flex; align-items: center; gap: 8px; padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
   .topbar > .brand { flex: 1; min-width: 0; }
@@ -49,6 +48,14 @@
   .history-buttons .icon-button svg { flex: none; }
   .react-flow__attribution { display: none; }
   .react-flow__controls { display: none; } /* le pincement zoome */
+  /* Carte agrandie (et toute carte qu'on vient de créer, qui s'ouvre ainsi) : l'écran entier, sous l'encoche, au-dessus
+     du clavier ; le texte a toute la place pour écrire au doigt. */
+  .app-dialog.is-card {
+    width: 100vw; max-width: 100vw; height: 100vh; height: calc(100dvh - var(--keyboard-h, 0px)); max-height: none; margin: 0; border-radius: 0;
+    padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  .app-dialog.is-card .expanded-title { font-size: 1.5rem; }
+  .app-dialog.is-card .expanded-body { min-height: 40vh; font-size: 1.0625rem; }
   /* Types de carte : une feuille pleine largeur au-dessus de la barre d'outils, deux colonnes. */
   .add-card-menu { position: fixed; left: 8px; right: 8px; bottom: calc(60px + env(safe-area-inset-bottom) + 76px); max-width: none; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 10px; border-radius: 18px; }
   .add-card-hint { display: none; }

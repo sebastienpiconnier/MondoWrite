@@ -1,7 +1,7 @@
-// Fenêtre « Du vrac aux cartes » (dialogue `vrac`, 1.8.0) : ouverte par le menu IA de la barre du haut, ou par le
-// Carnet du téléphone pour une note longue. L'auteur colle un texte, l'IA propose des cartes et des fils (ai/vrac.ts) ;
-// la liste se coche, se décoche, chaque type et chaque titre se changent, et « Créer les cartes » pose le tout en une
-// seule étape d'annulation. Rien n'est créé sans ce clic. Sur téléphone, les cartes vont dans « À ranger ».
+// Fenêtre « Du vrac aux cartes » (dialogue `vrac`, 1.8.0) : ouverte par le menu IA de la barre du haut. L'auteur
+// colle un texte, l'IA propose des cartes et des fils (ai/vrac.ts) ; la liste se coche, se décoche, chaque type et
+// chaque titre se changent, et « Créer les cartes » pose le tout en une seule étape d'annulation. Rien n'est créé
+// sans ce clic. `vracDraft.inbox` (cartes « À ranger ») ne sert plus depuis que le canevas est sur le téléphone.
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useCosmos } from "../store";
@@ -15,7 +15,6 @@ import type { CardNames } from "../ai/tasks";
 import { formOf } from "../pitch";
 import { typeColor, type CardType } from "../types";
 import { canvasCenter } from "../canvasCenter";
-import { usePhone } from "./usePhone";
 
 /** Délai laissé à un service en ligne : la réponse recopie le texte, elle est longue à écrire. */
 const VRAC_TIMEOUT_MS = 240_000;
@@ -36,7 +35,6 @@ export function VracDialog() {
   const aiSettings = useSettings((s) => s.ai);
   const config = useMemo(() => aiConfig(aiSettings), [aiSettings]);
   const lang = useSettings((s) => s.lang);
-  const phone = usePhone();
   const allowed = useMemo(() => vracTypes(kind, formOf(kind, pitch) === "film"), [kind, pitch]);
 
   const [text, setText] = useState(draft?.text ?? "");
@@ -58,7 +56,7 @@ export function VracDialog() {
   // Texte le plus long : VRAC_MAX, moins pour un petit modèle (Apple sur l'appareil, ai/limits.ts).
   const vracMax = config ? vracLimit(config.provider, VRAC_MAX) : VRAC_MAX;
   const tooLong = text.length > vracMax;
-  const inbox = phone || !!draft?.inbox;
+  const inbox = !!draft?.inbox;
 
   const run = async () => {
     if (busy || !isReady(config) || !text.trim() || tooLong) return;
@@ -102,10 +100,10 @@ export function VracDialog() {
     const store = useCosmos.getState();
     store.createVracCards(chosen, shownWires.filter((w) => w.checked), { at: inbox ? undefined : canvasCenter(), inbox });
     store.setDialog(null);
-    // Fait : le Carnet, qui attendait, vide sa note (voir Carnet.tsx). Fermer sans créer garde le brouillon.
+    // Fait : le brouillon est vidé. Fermer sans créer le garde.
     useCosmos.setState({ vracDraft: null });
-    // Sur ordinateur et iPad, on montre les cartes là où elles sont nées.
-    if (!phone && store.view !== "toile") store.setView("toile");
+    // On montre les cartes là où elles sont nées (le téléphone a aussi son canevas).
+    if (store.view !== "toile") store.setView("toile");
   };
 
   return (

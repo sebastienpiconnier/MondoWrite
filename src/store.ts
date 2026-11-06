@@ -8,7 +8,7 @@ import { backupDate, backupDue, backupName, backupsToRemove, mediaNamesOf, sortB
 import { localIso, parseVersionPath, readVersionFile, versionFile, versionName, versionPath } from "./versions";
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
 import { isPhone } from "./components/usePhone";
-import { capturedCard, fileCards } from "./inbox";
+import { fileCards } from "./inbox";
 import { isTouch } from "./platform";
 import { vracCardHeight, vracGrid, type VracCard, type VracLink } from "./ai/vrac";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
@@ -554,8 +554,6 @@ export interface CosmosState {
   addCard: (pos: { x: number; y: number }, type?: CardType, height?: number) => string;
   /** Carte créée depuis une autre vue (Bible, scénario) : posée sur la première place libre, sans prendre le focus. */
   addTitledCard: (type: CardType, title: string) => string;
-  /** Carnet : une capture (première ligne = titre) devient une carte à ranger. Rend son identifiant, ou null si vide. */
-  captureCard: (type: CardType, text: string) => string | null;
   /** Ces cartes sont rangées : elles quittent « À ranger ». */
   fileInbox: (ids: string[]) => void;
 
@@ -2658,8 +2656,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
     redo: () => restore("future"),
     revealCard: (id) => {
       if (!get().nodes.some((n) => n.id === id)) return;
-      // Téléphone (Carnet) : pas de canevas, la carte s'ouvre dans la Bible.
-      if (isPhone()) return get().openInBible(id);
       // Carte masquée par le filtre du canevas : le filtre est retiré, sinon la vue se centrerait sur du vide.
       const hidden = hiddenCards(get().nodes.map((n) => n.data), get().edges, get().filter).has(id);
       // La carte est mise en avant (les autres s'estompent) jusqu'au prochain clic sur le fond ou Échap.
@@ -2721,7 +2717,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         (scene.startsWith(SCENE_AT)
           ? st.kind === "scenario" && Number(scene.slice(SCENE_AT.length)) < elements.length
           : st.nodes.some((n) => n.id === scene && n.data.type === "scene"));
-      // Sur téléphone, le canevas et le Plan n'existent pas : le Carnet (shownView) en tient lieu.
+      // Sur téléphone, toutes les vues existent ; l'ancienne vue Carnet est le canevas (shownView).
       if (spot.view === "manuscrit" && known) st.openInManuscript(scene!, undefined, { el: spot.el, offset: spot.offset ?? 0 });
       else if (spot.view !== "toile") st.setView(spot.view);
     },
@@ -3093,16 +3089,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // À l'endroit demandé s'il est libre, sinon juste à côté : deux cartes ne se chevauchent pas.
       const spot = placeCard(pos, occupied(), { width: CARD_SIZE.width, height });
       const node = { ...toNode(card, spot.x, spot.y), selected: true };
-      set({ nodes: [...get().nodes.map((n) => ({ ...n, selected: false })), node], pendingFocusId: card.id });
-      touch();
-      return card.id;
-    },
-    captureCard: (type, text) => {
-      const card = capturedCard(newId(), type, text);
-      if (!card) return null;
-      record();
-      const spot = firstFreeCell(occupied());
-      set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
+      // Téléphone : la carte s'ouvre aussitôt en grand pour qu'on la remplisse (sur le canevas, elle serait minuscule
+      // et le clavier la cacherait) ; ailleurs, son titre prend le focus sur le canevas.
+      const phone = isPhone();
+      set({
+        nodes: [...get().nodes.map((n) => ({ ...n, selected: false })), node],
+        pendingFocusId: phone ? null : card.id,
+        ...(phone ? { expandedId: card.id, dialog: "card" as const, cardMenu: null } : {}),
+      });
       touch();
       return card.id;
     },

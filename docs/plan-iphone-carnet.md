@@ -1,6 +1,6 @@
 # Plan : l'iPhone en Carnet (branche `iphone-carnet`)
 
-> **Statut : Terminé.**
+> **Statut : Remplacé (novembre 2026).** À la demande d'utilisateurs, le téléphone retrouve ses quatre vues (Canevas, Plan, Manuscrit, Bible) et une carte créée s'ouvre en grand pour qu'on la remplisse ; le Carnet est retiré. Restent de lui le format `inbox: true` et « À ranger · N » du canevas, pour les notes déjà prises. Voir « iPhone : les quatre vues » dans `CLAUDE.md`.
 
 Demande du 27 octobre 2026 : sur iPhone, simplifier. Le téléphone sert à **écrire**, **consulter** et **capturer** ; ce qu'on capture arrive dans une boîte de réception, rangée plus tard sur le canevas depuis l'iPad ou l'ordinateur.
 

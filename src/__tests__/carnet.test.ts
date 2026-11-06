@@ -1,25 +1,14 @@
 // @vitest-environment happy-dom
-// Carnet de l'iPhone : captures, boîte « À ranger », vue affichée selon la largeur.
+// Cartes « À ranger » (venues de l'ancien Carnet de l'iPhone) et vue affichée selon la largeur.
 
 import { describe, expect, it } from "vitest";
-import { capturedCard, fileCards, inboxCards } from "../inbox";
+import { fileCards, inboxCards } from "../inbox";
 import { cardToFile, fileToCard } from "../storage/markdown";
 import { shownView } from "../components/usePhone";
 import { useCosmos } from "../store";
 import type { CardData } from "../types";
 
-describe("captures du Carnet", () => {
-  it("première ligne = titre, la suite = texte ; vide = rien", () => {
-    expect(capturedCard("a", "question", "  Qui a volé la clé ?\n\nPeut-être Yann.\n")).toEqual({ id: "a", type: "question", title: "Qui a volé la clé ?", html: "<p>Peut-être Yann.</p>", inbox: true });
-    expect(capturedCard("b", "idee", "   \n  ")).toBeNull();
-    expect(capturedCard("c", "personnage", "Inès <b>")).toMatchObject({ title: "Inès <b>", html: "" });
-    expect(capturedCard("d", "idee", "Une note\n<script>x</script>")?.html).toBe("<p>&lt;script&gt;x&lt;/script&gt;</p>");
-  });
-
-  it("une adresse seule fait un Lien", () => {
-    expect(capturedCard("e", "idee", "https://example.org/phare")).toEqual({ id: "e", type: "lien", title: "", html: "", fiche: { url: "https://example.org/phare" }, inbox: true });
-  });
-
+describe("cartes à ranger", () => {
   it("« À ranger » : les plus récentes d'abord, et rangées une à une", () => {
     const cards: CardData[] = [
       { id: "1", type: "idee", title: "a", html: "", inbox: true },
@@ -44,9 +33,10 @@ describe("captures du Carnet", () => {
 });
 
 describe("vue affichée", () => {
-  it("téléphone : le Carnet à la place du canevas et du Plan ; ailleurs, le Carnet est le canevas", () => {
-    expect(shownView("toile", true)).toBe("carnet");
-    expect(shownView("plan", true)).toBe("carnet");
+  it("téléphone : les mêmes vues qu'ailleurs ; l'ancienne vue Carnet est le canevas partout", () => {
+    expect(shownView("toile", true)).toBe("toile");
+    expect(shownView("plan", true)).toBe("plan");
+    expect(shownView("carnet", true)).toBe("toile");
     expect(shownView("bible", true)).toBe("bible");
     expect(shownView("manuscrit", true)).toBe("manuscrit");
     expect(shownView("carnet", false)).toBe("toile");
@@ -55,11 +45,16 @@ describe("vue affichée", () => {
 });
 
 describe("store", () => {
-  it("capturer, puis ranger en reliant, en déplaçant ou à la main", () => {
-    const s = useCosmos.getState();
-    const a = s.captureCard("idee", "Le phare clignote")!;
-    const b = s.captureCard("personnage", "Inès")!;
-    const c = s.captureCard("objet", "La clé")!;
+  it("ranger en reliant, en déplaçant ou à la main", () => {
+    // Une carte à ranger, comme les écrivait le Carnet (ou une version d'avant) : `inbox: true` dans son fichier.
+    const capture = (type: CardData["type"], title: string) => {
+      const id = useCosmos.getState().addTitledCard(type, title);
+      useCosmos.setState({ nodes: useCosmos.getState().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, inbox: true } } : n)) });
+      return id;
+    };
+    const a = capture("idee", "Le phare clignote");
+    const b = capture("personnage", "Inès");
+    const c = capture("objet", "La clé");
     const inbox = () => useCosmos.getState().nodes.filter((n) => n.data.inbox).map((n) => n.id);
     expect(inbox()).toEqual(expect.arrayContaining([a, b, c]));
     useCosmos.getState().linkCards(a, b, "");
@@ -70,10 +65,29 @@ describe("store", () => {
     expect(inbox()).toContain(c);
     useCosmos.getState().onNodesChange([{ type: "position", id: c, position: { x: node.position.x + 80, y: node.position.y }, dragging: false }]);
     expect(inbox()).not.toContain(c);
-    const d = useCosmos.getState().captureCard("question", "Pourquoi ?")!;
+    const d = capture("question", "Pourquoi ?");
     useCosmos.getState().fileInbox([d]);
     expect(inbox()).not.toContain(d);
     useCosmos.getState().undo();
     expect(inbox()).toContain(d);
+  });
+});
+
+describe("canevas du téléphone", () => {
+  it("une carte créée s'ouvre en grand sur téléphone, prend le focus du canevas ailleurs", () => {
+    const real = window.matchMedia;
+    const media = (matches: boolean) => () => ({ matches, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
+    try {
+      window.matchMedia = media(true);
+      const id = useCosmos.getState().addCard({ x: 5000, y: 0 }, "personnage");
+      expect(useCosmos.getState()).toMatchObject({ expandedId: id, dialog: "card", pendingFocusId: null });
+      useCosmos.getState().setDialog(null);
+      window.matchMedia = media(false);
+      const other = useCosmos.getState().addCard({ x: 6000, y: 0 });
+      expect(useCosmos.getState().pendingFocusId).toBe(other);
+      expect(useCosmos.getState().dialog).toBeNull();
+    } finally {
+      window.matchMedia = real;
+    }
   });
 });

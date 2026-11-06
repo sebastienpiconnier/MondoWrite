@@ -734,21 +734,22 @@ await view(T("Manuscrit", "Manuscript", "Manuscrito"));
 await shot("sombre-manuscrit");
 await page.close();
 
-// iPhone : le Carnet, deux notes à ranger.
+// iPhone : le canevas en onglet, et une carte toute neuve ouverte en grand pour la remplir.
 await open({ viewport: { width: 390, height: 844 }, scale: 2, mobile: true, touch: true });
 await startExample();
 await closeTour();
-await step("carnet", async () => {
-  await page.getByRole("radio", { name: T("Question", "Question", "Pregunta") }).tap();
-  await page.getByLabel(T(/Ta note/, /Your note/, /Tu nota/)).fill(T("Pourquoi le Loup ne mange-t-il pas l’enfant dans le bois ?\nÀ cause des bûcherons, mais pas seulement.", "Why doesn’t the Wolf eat the child in the woods?\nBecause of the woodcutters, but not only.", "¿Por qué el Lobo no se come a la niña en el bosque?\nPor los leñadores, pero no solo por eso."));
-  await page.getByRole("button", { name: T("Garder", "Keep", "Guardar"), exact: true }).tap();
-  await page.getByRole("radio", { name: T("Objet", "Object", "Objeto") }).tap();
-  await page.getByLabel(T(/Ta note/, /Your note/, /Tu nota/)).fill(T("Le petit pot de beurre", "The little pot of butter", "El tarrito de mantequilla"));
-  await page.getByRole("button", { name: T("Garder", "Keep", "Guardar"), exact: true }).tap();
-  await page.getByRole("radio", { name: T("Idée", "Idea", "Idea") }).tap();
-  await page.getByLabel(T(/Ta note/, /Your note/, /Tu nota/)).fill(T("Et si le Loup racontait", "What if the Wolf told it", "Y si lo contara el Lobo"));
-  await page.locator(".carnet-field").blur();
-  await shot("iphone-carnet");
+await step("iphone", async () => {
+  await wait(800);
+  await shot("iphone-canevas");
+  await page.locator(".add-card-main").tap();
+  await wait(300);
+  await page.getByRole("menuitem", { name: T("Personnage", "Character", "Personaje") }).tap();
+  await wait(500);
+  await page.keyboard.type(T("Le bûcheron", "The woodcutter", "El leñador"));
+  await page.keyboard.press("Enter");
+  await page.keyboard.type(T("Il coupe du bois avec son frère. Il a vu passer le Loup ce matin.", "He chops wood with his brother. He saw the Wolf go by this morning.", "Corta leña con su hermano. Ha visto pasar al Lobo esta mañana."));
+  await wait(400);
+  await shot("iphone-carte");
 });
 await page.close();
 

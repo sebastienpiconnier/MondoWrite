@@ -244,6 +244,7 @@ export function Toile() {
   }, [focusId, getInternalNode, getViewport, setCenter, setView]);
 
   const createAt = (clientX: number, clientY: number) => {
+    lastCreated.current = Date.now();
     const pos = screenToFlowPosition({ x: clientX, y: clientY });
     addCard({ x: pos.x - 20, y: pos.y - 20 }); // la carte prend le focus elle-même
   };
@@ -275,8 +276,12 @@ export function Toile() {
   const isPane = (target: EventTarget | null) =>
     target instanceof HTMLElement && target.classList.contains("react-flow__pane");
 
+  // Dernière carte créée (heure) : au doigt, toucher « + » puis un type du menu fait deux tapes de suite, que le
+  // navigateur peut rendre en double-clic sur le fond (le menu a disparu entre-temps) : une seconde carte naissait.
+  const lastCreated = useRef(0);
   const onDoubleClick = (e: ReactMouseEvent) => {
-    if (isPane(e.target)) createAt(e.clientX, e.clientY);
+    if (!isPane(e.target) || useCosmos.getState().dialog || Date.now() - lastCreated.current < 700) return;
+    createAt(e.clientX, e.clientY);
   };
 
   // Bouton « + » et touche N : nouvelle carte au centre de l'écran (le store la décale si la place est prise).
@@ -311,6 +316,7 @@ export function Toile() {
     else if (type === "document") void store.pickDocument(undefined, centerAt());
     else {
       const at = centerAt();
+      lastCreated.current = Date.now();
       if (at) store.addCard(at, type); // la carte prend le focus de son titre
     }
   };
