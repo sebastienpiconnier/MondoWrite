@@ -110,7 +110,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-MondoWrite is under active development (version 1.16.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
+MondoWrite is under active development (version 1.17.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
 
 ## Features
 
@@ -240,7 +240,7 @@ MondoWrite works entirely without AI, and offers none until you pick one. Three 
 
 - **Locally**, with Ollama or LM Studio: the model runs on your computer, your texts never leave it.
 - **Apple Intelligence, on device**: on a Mac or iPhone that has it (macOS 26, iOS 26), Apple’s own model, free, no key, nothing leaves the device. It is small: it handles the short actions, while readings of the whole story are left to the other models.
-- **With your own key**, for Claude, OpenAI or OpenRouter: nothing is sent until you start an action, and only what it needs (your ideas to sort them, the whole story for a review), under that provider’s terms. The key stays on your device, never in the project.
+- **With your own key**, for Claude, OpenAI or OpenRouter: nothing is sent until you start an action, and only what it needs (your ideas to sort them, the whole story for a review), under that provider’s terms. The key stays on your device, kept in the system keychain (Keychain on Mac, iPhone and iPad, Credential Manager on Windows, Secret Service on Linux), never in the project.
 
 #### When it asks
 
@@ -272,6 +272,7 @@ The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs
 
 - **Several projects:** a home screen to choose the one to work on, or to create one.
 - **Autosave** to Markdown files, or `Cmd+S` / `Ctrl+S`.
+- **Backups outside the project**: in the app, a copy of each project is kept apart on the device (at most every 30 minutes, the last 5 then one a day for 30 days). “Backups…” (Settings › This project, projects page) reopens it as a new project, even if the original folder is gone.
 - **English, French and Spanish** (community translation), each with its own typography.
 - **Typography as you type** (manuscript, cards, Bible): curly quotes “ ”, apostrophe ’, ellipsis …, a dash from two hyphens; in French, « » with non-breaking spaces and a thin space before ; ! ?. Follows the interface language, or pick one of about twenty languages in Settings (German „ “, Spanish « » without spaces, Swedish ” ”…), or turn it off.
 - **Light, dark or system appearance.**

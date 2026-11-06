@@ -110,7 +110,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-MondoWrite est en cours de développement (version 1.16.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
+MondoWrite est en cours de développement (version 1.17.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
 
 ## Fonctionnalités
 
@@ -241,7 +241,7 @@ MondoWrite fonctionne entièrement sans IA, et n'en propose aucune tant que vous
 
 - **En local**, avec Ollama ou LM Studio : le modèle tourne sur votre ordinateur, vos textes n'en sortent pas.
 - **Apple Intelligence, sur l'appareil** : sur un Mac ou un iPhone qui l'a (macOS 26, iOS 26), le modèle d'Apple, gratuit, sans clé, rien ne quitte l'appareil. Il est petit : il sert aux actions courtes, les lectures de tout le récit restent réservées aux autres modèles.
-- **Avec votre propre clé**, chez Claude, OpenAI ou OpenRouter : rien ne part tant que vous ne lancez pas une action, et seulement ce dont elle a besoin (vos idées pour les ranger, tout le récit pour une relecture), selon les conditions de ce fournisseur. La clé reste sur votre appareil, jamais dans le projet.
+- **Avec votre propre clé**, chez Claude, OpenAI ou OpenRouter : rien ne part tant que vous ne lancez pas une action, et seulement ce dont elle a besoin (vos idées pour les ranger, tout le récit pour une relecture), selon les conditions de ce fournisseur. La clé reste sur votre appareil, rangée dans le trousseau du système (Trousseau d'accès sur Mac, iPhone et iPad, gestionnaire d'identifiants sous Windows, Secret Service sous Linux), jamais dans le projet.
 
 #### Quand elle questionne
 
@@ -273,6 +273,7 @@ Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md]
 
 - **Plusieurs projets :** un écran d'accueil pour choisir celui sur lequel travailler, ou en créer un.
 - **Sauvegarde automatique** dans des fichiers Markdown, ou Cmd+S / Ctrl+S.
+- **Sauvegardes hors du projet** : dans l'app, une copie de chaque projet est gardée à part sur l'appareil (au plus toutes les 30 minutes, les 5 dernières puis une par jour pendant 30 jours). « Sauvegardes… » (Réglages › Ce projet, page des projets) la rouvre comme un nouveau projet, même si le dossier d'origine a disparu.
 - **Français, anglais et espagnol** (traduit par la communauté), avec la typographie propre à chaque langue.
 - **Typographie à la frappe** (manuscrit, cartes, Bible) : guillemets « » avec leurs espaces insécables, espace fine avant ; ! ?, apostrophe ’, points de suspension …, tiret à partir de deux traits d'union. Selon la langue de l'interface, ou celle d'une vingtaine de langues au choix („ “ de l'allemand, « » sans espaces de l'espagnol, ” ” du suédois…), ou désactivée, dans les Réglages.
 - **Mode clair, sombre** ou comme le système.
