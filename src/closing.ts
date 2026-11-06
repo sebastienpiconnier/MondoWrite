@@ -5,6 +5,8 @@
 import { useCosmos } from "./store";
 import { releaseLock } from "./projectLock";
 import { isMobileOS, isTauri } from "./platform";
+import { captureSpot } from "./resume";
+import { storage } from "./storage";
 
 let flushing: Promise<void> | null = null;
 /** Au-delà, la fenêtre se ferme quand même : un disque qui ne répond plus ne doit pas la retenir pour toujours. */
@@ -20,6 +22,8 @@ export async function flushProject(release = true): Promise<void> {
     flushing = (async () => {
       try {
         const s = useCosmos.getState();
+        // Où l'on en est (#27) : relevé même quand rien n'est à enregistrer (le curseur a pu bouger).
+        if (s.screen === "project") captureSpot(storage.current?.(), s.view);
         if (s.screen === "project" && s.status !== "enregistre") await s.save();
       } catch (err) {
         console.error(err);

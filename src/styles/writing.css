@@ -888,6 +888,11 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .goto-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .goto-detail { grid-column: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; color: var(--ink-2); }
 .goto-page { grid-column: 3; grid-row: 1; font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
+/* Palette de commandes (CommandPalette, Cmd/Ctrl + K) : la même fenêtre que « Aller à », le groupe du menu à gauche,
+   le raccourci à droite. Le nom du groupe passe à la ligne plutôt que de déborder (langues plus longues). */
+.palette .goto-item { grid-template-columns: minmax(6em, max-content) minmax(0, 1fr) auto; }
+.palette .goto-kind { overflow-wrap: anywhere; }
+.palette-keys { font-family: var(--font-ui); }
 
 /* Lecture à voix haute (ReaderBar) : boutons dans la barre, panneau des voix, bloc lu surligné. */
 .reader { position: relative; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }

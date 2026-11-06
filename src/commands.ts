@@ -4,6 +4,7 @@
 // raccourci clavier arrivaient tous les deux, la fenêtre resterait ouverte.
 
 import { useEffect, useRef } from "react";
+import { isAppleKeyboard } from "./platform";
 
 export type AppCommand = "settings" | "search" | "export" | "review" | "new-card" | "new-frame" | "toggle-scenes" | "toggle-side" | "merge-next";
 
@@ -32,5 +33,8 @@ export function useCommand(command: AppCommand, handler: () => void) {
  */
 export function replayShortcut(key: string, code: string, shift = false, alt = false) {
   const target = (document.activeElement as HTMLElement | null) ?? document.body;
-  target.dispatchEvent(new KeyboardEvent("keydown", { key, code, metaKey: true, shiftKey: shift, altKey: alt, bubbles: true, cancelable: true }));
+  // Cmd sur un clavier d'Apple, Ctrl ailleurs (palette de commandes sous Windows et Linux) : les éditeurs de texte
+  // lisent « Mod » selon le système, Cmd n'y vaudrait rien.
+  const apple = isAppleKeyboard();
+  target.dispatchEvent(new KeyboardEvent("keydown", { key, code, metaKey: apple, ctrlKey: !apple, shiftKey: shift, altKey: alt, bubbles: true, cancelable: true }));
 }

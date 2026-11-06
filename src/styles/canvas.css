@@ -344,6 +344,9 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .search-panel { width: min(360px, calc(100vw - 32px)); }
 .search-input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.9375rem; }
 .search-input::placeholder { color: var(--placeholder); }
+/* Lien vers la palette de commandes, au pied de la recherche (son chemin à la souris et au doigt). */
+.search-commands { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 0.8125rem; color: var(--ink-2); }
+.search-commands .link-button { min-height: 44px; }
 .search-results { list-style: none; margin: 0; padding: 0; max-height: min(50vh, 420px); overflow: auto; display: flex; flex-direction: column; gap: 2px; }
 .search-result { width: 100%; min-height: 44px; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; }
 .search-result.is-active { background: var(--accent-soft); }

@@ -229,6 +229,20 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 @media (any-hover: hover) { .home-project:hover { border-color: var(--line-2); background: var(--ground); } }
 .home-project-title { font-weight: 600; font-size: 1.0625rem; color: var(--ink); overflow-wrap: anywhere; }
 .home-project-meta { font-size: 0.8125rem; color: var(--ink-2); overflow-wrap: anywhere; }
+/* « Reprendre là où j'en étais » (#27) : au-dessus de la liste, le trait d'accent d'une information. */
+.home-resume { width: 100%; min-height: 64px; display: flex; flex-direction: column; justify-content: center; gap: 3px; margin: 0 0 12px; padding: 10px 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; background: var(--accent-soft); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+@media (any-hover: hover) { .home-resume:hover { border-color: var(--line-2); border-left-color: var(--accent-ink); } }
+.home-resume:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.home-resume-title { font-weight: 600; font-size: 1rem; color: var(--accent-ink); }
+.home-resume-where { font-size: 0.875rem; color: var(--ink); overflow-wrap: anywhere; }
+/* Recherche, tri et filtre de la liste (#27), dès que la liste grandit. Les libellés peuvent s'allonger : on passe à la ligne. */
+.home-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; }
+.home-tool { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--ink-2); }
+.home-tool select, .home-tool input { min-height: 44px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 0.9375rem var(--font-ui); }
+.home-tool input::placeholder { color: var(--placeholder); }
+.home-tool-search { flex: 1 1 12rem; }
+.home-tool-search input { width: 100%; }
+.home-tool-count { font-size: 0.8125rem; color: var(--ink-2); }
 .home-list .icon-button { flex-shrink: 0; width: 44px; height: 44px; font-size: 1.125rem; }
 .home-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
 .home-form > label, .home-kinds legend { font-size: 0.8125rem; font-weight: 600; }

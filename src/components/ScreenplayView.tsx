@@ -49,6 +49,7 @@ import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
+import { setCaretSource } from "../resume";
 import { resolveEpisode, seriesOf } from "../screenplay/series";
 import { useEpisodeLabel } from "./EpisodePicker";
 import { EpisodePicker } from "./EpisodePicker";
@@ -841,8 +842,54 @@ export function ScreenplayView() {
     // Une section d'épisode (« Aller à » un épisode) est juste avant le texte de l'épisode ouvert : son début.
     const at0 = target.startsWith(SCENE_AT) && at < 0 && elements.length > 0 ? 0 : at;
     const index = at0 >= 0 ? (at0 < elements.length ? at0 : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
-    if (index >= 0) requestAnimationFrame(() => goToRef.current(index));
+    if (index < 0) return;
+    // « Reprendre là où j'en étais » (#27) : l'élément du curseur dans la scène, puis sa place dans l'élément.
+    const caret = state.manuscriptCaret;
+    if (!caret) {
+      requestAnimationFrame(() => goToRef.current(index));
+      return;
+    }
+    const placeCaret = () => {
+      if (editor.isDestroyed) return;
+      const doc = editor.state.doc;
+      const i = Math.min(index + (caret.el ?? 0), doc.childCount - 1);
+      if (i < 0) return;
+      const node = doc.child(i);
+      if (!node.isTextblock) return;
+      editor.commands.setTextSelection(posOf(doc, i) + 1 + Math.min(caret.offset, node.content.size));
+    };
+    requestAnimationFrame(() => {
+      goToRef.current(Math.min(index + (caret.el ?? 0), Math.max(0, editor.state.doc.childCount - 1)));
+      placeCaret();
+      // Comme goTo : le focus différé de WebKit peut remettre l'ancienne position.
+      requestAnimationFrame(() => requestAnimationFrame(placeCaret));
+    });
   }, [target]);
+
+  // Où est le curseur (#27), lu au moment où l'on relève la position : la scène (sa carte, sinon le rang de son
+  // en-tête dans tout le scénario), l'élément depuis l'en-tête et la place dans l'élément.
+  useEffect(() => {
+    setCaretSource(() => {
+      if (editor.isDestroyed) return null;
+      const { $from } = editor.state.selection;
+      const doc = editor.state.doc;
+      const index = Math.min($from.index(0), doc.childCount - 1);
+      if (index < 0) return null;
+      let head = index;
+      while (head > 0 && doc.child(head).type.name !== "sceneHeading") head--;
+      const heading = doc.child(head);
+      const isHeading = heading.type.name === "sceneHeading";
+      const start = isHeading ? head : index;
+      const card = isHeading ? String(heading.attrs.cardId ?? "") : "";
+      return {
+        scene: card || `${SCENE_AT}${scriptOffset(useCosmos.getState()) + start}`,
+        el: index - start,
+        offset: $from.depth > 0 ? $from.parentOffset : 0,
+        label: isHeading ? heading.textContent.trim() || undefined : undefined,
+      };
+    });
+    return () => setCaretSource(null);
+  }, [editor]);
 
   /** Page de titre : le champ part dans le store, et l'éditeur n'est pas rechargé pour autant. */
   const setTitleField = (field: TitleField, value: string) => {

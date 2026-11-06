@@ -1562,6 +1562,50 @@ const scenarios = [
       assert(Math.abs(before - 1.6) < 0.01 && Math.abs(after - 2.4) < 0.01, `interligne ${before} puis ${after}`);
     },
   },
+  {
+    name: "lot 3 (1.19.0) : palette de commandes, reprendre là où j'en étais",
+    async run(h) {
+      const { page } = h;
+      await h.create("Palette");
+      // Ctrl + K : la palette ; « nouvelle carte » puis Entrée crée une carte sur le canevas.
+      await page.keyboard.press("Control+k");
+      const input = page.getByRole("searchbox", { name: "Commande à lancer" });
+      await input.waitFor();
+      await input.fill("nouvelle carte");
+      await input.press("Enter");
+      await until(async () => (await page.locator(".card").count()) === 1, "la palette n'a pas créé de carte");
+      // Seules les commandes possibles ici : pas de mode focus sur le canevas.
+      await page.keyboard.press("Escape");
+      await page.locator(".react-flow__pane").click({ position: { x: 20, y: 20 } });
+      await page.keyboard.press("Control+k");
+      await input.fill("mode focus");
+      await until(() => page.getByText("Aucune commande ne correspond.").isVisible(), "le mode focus est proposé sur le canevas");
+      await input.fill("manuscrit");
+      await input.press("Enter");
+      await page.getByPlaceholder("Titre de la première scène…").waitFor();
+      await page.getByPlaceholder("Titre de la première scène…").fill("La tempête");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Première phrase. Deuxième phrase.");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("Deuxième phrase.")), "le texte n'est pas enregistré");
+      // Retour aux projets, puis « Reprendre là où j'en étais » : le Manuscrit, la scène, le curseur au bout du texte.
+      await page.getByRole("button", { name: "Projets" }).first().click();
+      const resume = page.getByRole("button", { name: /Reprendre là où j’en étais/ });
+      await resume.waitFor();
+      assert((await resume.textContent()).includes("La tempête"), "la scène n'est pas nommée sur l'accueil");
+      await resume.click();
+      await page.locator(".ms-page").waitFor();
+      await until(
+        () => page.evaluate(() => {
+          const sel = window.getSelection();
+          return !!sel && document.activeElement?.closest(".ProseMirror") != null && (sel.anchorNode?.textContent ?? "").includes("Deuxième") && sel.anchorOffset > 20;
+        }),
+        "le curseur n'est pas revenu à sa place",
+      );
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 import { openGuide } from "./help";
 import { useEffect } from "react";
 import { sendCommand } from "./commands";
+import { openPalette } from "./commandList";
+import { captureSpot } from "./resume";
 import { nextZoom, useSettings } from "./settings";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useCosmos, type CosmosState } from "./store";
@@ -58,6 +60,15 @@ export function App() {
   useEffect(() => {
     start();
   }, [start]);
+
+  // « Reprendre là où j'en étais » (#27) : la vue (et la scène de la vue qu'on quitte) relevées à chaque changement.
+  useEffect(
+    () =>
+      useCosmos.subscribe((s, prev) => {
+        if (s.screen === "project" && prev.screen === "project" && s.view !== prev.view) captureSpot(storage.current?.(), s.view);
+      }),
+    [],
+  );
 
   // De retour à l'accueil : les images lues appartenaient au projet qu'on quitte.
   useEffect(() => {
@@ -135,6 +146,13 @@ export function App() {
       if (key === "," && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         sendCommand("settings");
+        return;
+      }
+      // Cmd/Ctrl + K : la palette de commandes (#26), partout (accueil compris) ; une seconde fois la referme.
+      if (key === "k" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        if (useCosmos.getState().dialog === "commands") useCosmos.getState().setDialog(null);
+        else openPalette();
         return;
       }
       if (useCosmos.getState().screen !== "project") return;

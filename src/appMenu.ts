@@ -10,33 +10,31 @@
 // « aller à », sans effet si le raccourci clavier arrive aussi.
 
 import { getT } from "./i18n";
-import { isAppleKeyboard, isMobileOS, isTauri, openExternal } from "./platform";
+import { isAppleKeyboard, isMobileOS, isTauri } from "./platform";
 import { useSettings } from "./settings";
 import { useCosmos } from "./store";
-import { openGuide } from "./help";
-import { openBugReport } from "./reportBug";
-import { REPO } from "./updates";
-import { replayShortcut, sendCommand } from "./commands";
-import { storage } from "./storage";
 import { vocab } from "./vocab";
-import { quitApp } from "./closing";
-import { nextHighlight } from "./focusText";
+import { commandById, commandContext, isEnabled } from "./commandList";
 
+// Les commandes de l'app viennent de commandList.ts (#26), comme celles de la palette (Cmd/Ctrl + K) : ici
+// seulement leur place dans les menus, les séparateurs et les éléments propres au système.
 async function buildMenu() {
   const { Menu, Submenu, PredefinedMenuItem, MenuItem } = await import("@tauri-apps/api/menu");
   const t = getT();
   const m = t.appMenu;
-  const { screen, kind, view: currentView } = useCosmos.getState();
-  const inProject = screen === "project";
-  const atHome = !inProject;
-  const views = vocab(t, kind).views;
+  const ctx = commandContext();
+  const views = vocab(t, ctx.kind).views;
   const sep = () => PredefinedMenuItem.new({ item: "Separator" });
+  const item = (id: string) => {
+    const c = commandById(id);
+    return MenuItem.new({ id, text: c.label(t, views), accelerator: c.accelerator, enabled: isEnabled(c, ctx), action: () => c.run() });
+  };
   const app = await Submenu.new({
     text: "MondoWrite",
     items: [
-      await MenuItem.new({ id: "about", text: m.about, action: () => useCosmos.getState().setDialog("about") }),
+      await item("about"),
       await sep(),
-      await MenuItem.new({ id: "settings", text: m.settings, accelerator: "CmdOrCtrl+,", action: () => sendCommand("settings") }),
+      await item("settings"),
       await sep(),
       await PredefinedMenuItem.new({ item: "Services", text: m.services }),
       await sep(),
@@ -44,30 +42,21 @@ async function buildMenu() {
       await PredefinedMenuItem.new({ item: "HideOthers", text: m.hideOthers }),
       await PredefinedMenuItem.new({ item: "ShowAll", text: m.showAll }),
       await sep(),
-      // Pas l'élément « Quitter » du système : il fermait l'app sans laisser enregistrer la dernière frappe.
-      await MenuItem.new({ id: "quit", text: m.quit, accelerator: "CmdOrCtrl+Q", action: () => void quitApp() }),
+      await item("quit"),
     ],
   });
   const file = await Submenu.new({
     text: m.file,
     items: [
-      // « Projets » enregistre le projet ouvert puis revient à l'accueil (comme le bouton de la barre du haut).
-      await MenuItem.new({ id: "projects", text: m.projects, enabled: inProject, action: () => void useCosmos.getState().closeProject() }),
-      await MenuItem.new({
-        id: "open-folder",
-        text: m.openFolder,
-        accelerator: "CmdOrCtrl+O",
-        enabled: atHome && storage.canPickFolder,
-        action: () => void useCosmos.getState().openFolder(),
-      }),
-      await MenuItem.new({ id: "import", text: m.importFile, enabled: atHome, action: () => void useCosmos.getState().importFile() }),
+      await item("projects"),
+      await item("open-folder"),
+      await item("import"),
       await sep(),
-      await MenuItem.new({ id: "save", text: m.save, accelerator: "CmdOrCtrl+S", enabled: inProject, action: () => replayShortcut("s", "KeyS") }),
-      await MenuItem.new({ id: "export", text: m.exportMenu, enabled: inProject, action: () => sendCommand("export") }),
+      await item("save"),
+      await item("export"),
       await sep(),
-      await MenuItem.new({ id: "trash", text: m.trash, enabled: inProject, action: () => useCosmos.getState().setDialog("trash") }),
-      // Sauvegardes hors du projet (#14, #15) : celles du projet ouvert, ou de tous les projets depuis l'accueil.
-      await MenuItem.new({ id: "backups", text: m.backups, enabled: !!storage.backups, action: () => useCosmos.getState().openBackups(inProject ? (storage.backups?.key() ?? null) : null) }),
+      await item("trash"),
+      await item("backups"),
       await sep(),
       await PredefinedMenuItem.new({ item: "CloseWindow", text: m.closeWindow }),
     ],
@@ -82,89 +71,48 @@ async function buildMenu() {
       await PredefinedMenuItem.new({ item: "Copy", text: m.copy }),
       await PredefinedMenuItem.new({ item: "Paste", text: m.paste }),
       await PredefinedMenuItem.new({ item: "SelectAll", text: m.selectAll }),
-      // Cartes choisies sur le canevas (Copier et Coller, éléments du système, copient aussi les cartes).
-      await MenuItem.new({ id: "duplicate", text: m.duplicate, accelerator: "CmdOrCtrl+D", enabled: inProject && currentView === "toile", action: () => replayShortcut("d", "KeyD") }),
+      await item("duplicate"),
       await sep(),
-      await MenuItem.new({ id: "find", text: m.find, accelerator: "CmdOrCtrl+F", enabled: inProject, action: () => replayShortcut("f", "KeyF") }),
-      await MenuItem.new({
-        id: "replace",
-        text: m.replace,
-        accelerator: "CmdOrCtrl+Shift+H",
-        enabled: inProject,
-        action: () => replayShortcut("H", "KeyH", true),
-      }),
-      // Aller à une page, une scène, un chapitre (fenêtre « Aller à »).
-      await MenuItem.new({ id: "goto", text: m.goto, accelerator: "CmdOrCtrl+G", enabled: inProject, action: () => useCosmos.getState().setDialog("goto") }),
-      // Versions de la scène en cours (Manuscrit ou Scénario) : la vue sait quelle scène, d'où le raccourci rejoué.
-      await MenuItem.new({ id: "keep-version", text: m.keepVersion, accelerator: "CmdOrCtrl+Alt+S", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("s", "KeyS", false, true) }),
-      // Commenter le passage sélectionné (texte d'une scène du roman) : le raccourci rejoué dans le texte.
-      await MenuItem.new({ id: "comment", text: m.comment, accelerator: "CmdOrCtrl+Alt+M", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("m", "KeyM", false, true) }),
-      // Onglet « Vérifier » du Manuscrit ou du Scénario.
-      // Fusionner la scène en cours avec la suivante (#23) : la vue sait quelle scène.
-      await MenuItem.new({ id: "merge-next", text: m.mergeNext, enabled: inProject && currentView === "manuscrit", action: () => sendCommand("merge-next") }),
-      await MenuItem.new({ id: "review", text: m.review, enabled: inProject && currentView === "manuscrit", action: () => sendCommand("review") }),
+      await item("find"),
+      await item("replace"),
+      await item("goto"),
+      await item("keep-version"),
+      await item("comment"),
+      await item("merge-next"),
+      await item("review"),
     ],
   });
-  const goTo = (view: "toile" | "plan" | "bible" | "manuscrit") => () => useCosmos.getState().setView(view);
-  const writing = inProject && currentView === "manuscrit";
-  const onCanvas = inProject && currentView === "toile";
   const view = await Submenu.new({
     text: m.view,
     items: [
-      await MenuItem.new({ id: "view-toile", text: views.toile, accelerator: "CmdOrCtrl+1", enabled: inProject, action: goTo("toile") }),
-      await MenuItem.new({ id: "view-plan", text: views.plan, accelerator: "CmdOrCtrl+2", enabled: inProject, action: goTo("plan") }),
-      await MenuItem.new({ id: "view-bible", text: views.bible, accelerator: "CmdOrCtrl+3", enabled: inProject, action: goTo("bible") }),
-      await MenuItem.new({ id: "view-manuscrit", text: views.manuscrit, accelerator: "CmdOrCtrl+4", enabled: inProject, action: goTo("manuscrit") }),
+      await item("commands"),
       await sep(),
-      // Volets du Manuscrit et du Scénario, mode focus (1.11.1 : toute commande de l'interface est aussi dans un menu).
-      await MenuItem.new({ id: "toggle-scenes", text: m.toggleScenes, enabled: writing, action: () => sendCommand("toggle-scenes") }),
-      await MenuItem.new({ id: "toggle-side", text: m.toggleSide, enabled: writing, action: () => sendCommand("toggle-side") }),
-      await MenuItem.new({ id: "focus", text: m.focus, accelerator: "CmdOrCtrl+Shift+F", enabled: writing, action: () => replayShortcut("F", "KeyF", true) }),
-      await MenuItem.new({
-        id: "highlight",
-        text: m.highlight,
-        accelerator: "CmdOrCtrl+Shift+E",
-        enabled: writing,
-        action: () => {
-          const s = useSettings.getState();
-          s.setWriting({ ...s.writing, highlight: nextHighlight(s.writing.highlight) });
-        },
-      }),
+      await item("view-toile"),
+      await item("view-plan"),
+      await item("view-bible"),
+      await item("view-manuscrit"),
       await sep(),
-      // Fenêtre Statistiques : personnages, lieux, qui croise qui (tout le projet, depuis n'importe quelle vue).
-      await MenuItem.new({ id: "stats", text: m.stats, enabled: inProject, action: () => useCosmos.getState().setDialog("stats") }),
+      await item("toggle-scenes"),
+      await item("toggle-side"),
+      await item("focus"),
+      await item("highlight"),
       await sep(),
-      // Zoom de la page du manuscrit ou du scénario : seulement dans cette vue (raccourcis rejoués).
-      await MenuItem.new({ id: "zoom-in", text: m.zoomIn, accelerator: "CmdOrCtrl+=", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("=", "Equal") }),
-      await MenuItem.new({ id: "zoom-out", text: m.zoomOut, accelerator: "CmdOrCtrl+-", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("-", "Minus") }),
-      await MenuItem.new({ id: "zoom-reset", text: m.actualSize, accelerator: "CmdOrCtrl+0", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("0", "Digit0") }),
+      await item("stats"),
+      await sep(),
+      await item("zoom-in"),
+      await item("zoom-out"),
+      await item("zoom-reset"),
       await sep(),
       await PredefinedMenuItem.new({ item: "Fullscreen", text: m.fullscreen }),
     ],
   });
-  // Canevas : les boutons de la rangée du bas (1.11.1). N et C restent des touches seules, sans raccourci de menu
-  // (un raccourci sans modificateur prendrait la lettre tapée dans une carte).
   const canvas = await Submenu.new({
     text: m.canvas,
-    items: [
-      await MenuItem.new({ id: "new-card", text: m.newCard, enabled: onCanvas, action: () => sendCommand("new-card") }),
-      await MenuItem.new({ id: "new-frame", text: m.newFrame, enabled: onCanvas, action: () => sendCommand("new-frame") }),
-      await sep(),
-      await MenuItem.new({ id: "organize", text: m.organize, enabled: onCanvas, action: () => useCosmos.getState().organizeCanvas() }),
-      await MenuItem.new({ id: "wires", text: m.wires, enabled: onCanvas, action: () => useCosmos.getState().setHideWires(!useCosmos.getState().hideWires) }),
-    ],
+    items: [await item("new-card"), await item("new-frame"), await sep(), await item("organize"), await item("wires")],
   });
-  // Format : les raccourcis des éditeurs de texte, rejoués dans le texte qui a le focus (cartes, Bible, manuscrit).
   const format = await Submenu.new({
     text: m.format,
-    items: [
-      await MenuItem.new({ id: "bold", text: m.bold, accelerator: "CmdOrCtrl+B", enabled: inProject, action: () => replayShortcut("b", "KeyB") }),
-      await MenuItem.new({ id: "italic", text: m.italic, accelerator: "CmdOrCtrl+I", enabled: inProject, action: () => replayShortcut("i", "KeyI") }),
-      await MenuItem.new({ id: "strike", text: m.strike, accelerator: "CmdOrCtrl+Shift+D", enabled: inProject, action: () => replayShortcut("D", "KeyD", true) }),
-      await MenuItem.new({ id: "revisit", text: m.revisit, accelerator: "CmdOrCtrl+Shift+X", enabled: inProject, action: () => replayShortcut("X", "KeyX", true) }),
-      // Note de bas de page au curseur (texte d'une scène du roman), raccourci rejoué dans le texte.
-      await MenuItem.new({ id: "footnote", text: m.footnote, accelerator: "CmdOrCtrl+Alt+F", enabled: inProject, action: () => replayShortcut("f", "KeyF", false, true) }),
-    ],
+    items: [await item("bold"), await item("italic"), await item("strike"), await item("revisit"), await item("footnote")],
   });
   const win = await Submenu.new({
     text: m.window,
@@ -177,22 +125,7 @@ async function buildMenu() {
   });
   const help = await Submenu.new({
     text: m.help,
-    items: [
-      await MenuItem.new({ id: "guide", text: m.guide, action: () => void openGuide() }),
-      await MenuItem.new({ id: "shortcuts", text: m.shortcuts, accelerator: "CmdOrCtrl+/", action: () => useCosmos.getState().setDialog("shortcuts") }),
-      await MenuItem.new({
-        id: "tour",
-        text: m.tour,
-        action: () => {
-          const { screen, setTour, tryExample } = useCosmos.getState();
-          if (screen === "project") setTour(0);
-          else void tryExample();
-        },
-      }),
-      await sep(),
-      await MenuItem.new({ id: "bug", text: m.reportBug, action: () => openBugReport() }),
-      await MenuItem.new({ id: "source", text: m.source, action: () => void openExternal(`https://github.com/${REPO}`) }),
-    ],
+    items: [await item("guide"), await item("shortcuts"), await item("tour"), await sep(), await item("bug"), await item("source")],
   });
   const menu = await Menu.new({ items: [app, file, edit, format, view, canvas, win, help] });
   await menu.setAsAppMenu();

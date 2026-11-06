@@ -22,6 +22,7 @@ import { DirectionsSuggest, novelSceneText } from "./Atelier";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { usePhone } from "./usePhone";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { setCaretSource } from "../resume";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { EdgeHandle } from "./EdgeHandle";
@@ -271,14 +272,32 @@ export function Manuscript() {
   // Arrivée depuis « À faire » : la bonne scène.
   useEffect(() => {
     if (!target) return;
-    const needle = useCosmos.getState().manuscriptNeedle;
+    const { manuscriptNeedle: needle, manuscriptCaret: caret } = useCosmos.getState();
     useCosmos.getState().clearManuscriptTarget();
     setChosen(target);
+    // « Reprendre là où j'en étais » (#27) : le curseur à sa place (au redessin si le livre n'est pas encore là).
+    if (caret) {
+      window.requestAnimationFrame(() => bookApi.current?.focusScene(target, Math.max(caret.offset, 2)));
+      return;
+    }
     // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée, et au passage cherché s'il y en a un.
     window.requestAnimationFrame(() => {
       if (!needle || !bookApi.current?.selectText(target, needle)) bookApi.current?.scrollToScene(target);
     });
   }, [target]);
+
+  // Où est le curseur (#27) : lu au moment où l'on relève la position (changement de vue, enregistrement, retour
+  // aux projets). La scène choisie dans le volet l'emporte ; le curseur ne compte que s'il est dans cette scène.
+  useEffect(() => {
+    setCaretSource(() => {
+      const id = currentRef.current;
+      if (!id) return null;
+      const caret = bookApi.current?.caret();
+      const label = useCosmos.getState().nodes.find((n) => n.id === id)?.data.title.trim() || undefined;
+      return { scene: id, offset: caret && caret.id === id ? caret.offset : undefined, label };
+    });
+    return () => setCaretSource(null);
+  }, []);
 
   // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée.
   useEffect(() => {

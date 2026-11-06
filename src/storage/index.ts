@@ -62,6 +62,8 @@ export interface Storage {
   list(): Promise<ProjectEntry[]>;
   /** Choisit le projet sur lequel portent readAll, write et location. */
   select(id: string): void;
+  /** Identifiant du projet sélectionné (celui de la liste de l'accueil), ou null. */
+  current?(): string | null;
   /**
    * Prépare l'emplacement d'un nouveau projet et le sélectionne : dialogue de dossier sur ordinateur,
    * nouvel emplacement privé ailleurs. Renvoie false si l'auteur annule.

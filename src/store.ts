@@ -3,6 +3,7 @@
 
 import { cleanQuote, isCommentId, removeCommentFromElements, removeCommentMark, type Comments, type SceneComment } from "./comments";
 import { joinSynopses, mergeComments, mergeEdges, mergeScreenplayScenes, nextInStory } from "./sceneMerge";
+import { captureSpot, forgetSpot, readSpot } from "./resume";
 import { backupDate, backupDue, backupName, backupsToRemove, mediaNamesOf, sortBackups } from "./backups";
 import { localIso, parseVersionPath, readVersionFile, versionFile, versionName, versionPath } from "./versions";
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
@@ -272,8 +273,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -308,11 +309,13 @@ export interface CosmosState {
   cardMenu: string | null;
   setCardMenu: (id: string | null) => void;
   /** Ouvre une scène dans le manuscrit (ou le scénario) : identifiant de sa carte, ou `SCENE_AT` + rang de son en-tête. */
-  openInManuscript: (id: string, needle?: string) => void;
+  openInManuscript: (id: string, needle?: string, caret?: { el?: number; offset: number }) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
   manuscriptTarget: string | null;
   /** Passage à sélectionner dans cette scène (recherche par le sens) ; null : le haut de la scène. */
   manuscriptNeedle: string | null;
+  /** Place du curseur dans cette scène (« Reprendre là où j'en étais », #27) : élément et caractère. */
+  manuscriptCaret: { el?: number; offset: number } | null;
   clearManuscriptTarget: () => void;
   /** Coche ou décoche la n-ième case d'une carte ou d'une scène du manuscrit. */
   toggleTodo: (id: string, where: "card" | "manuscript", index: number) => void;
@@ -497,6 +500,8 @@ export interface CosmosState {
   /** Reprend la main : relit le projet sur le disque et pose le verrou (les changements faits en lecture seule sont perdus). */
   takeOver: () => Promise<void>;
   openProject: (id: string) => Promise<void>;
+  /** « Reprendre là où j'en étais » (#27) : ouvre le projet, puis la vue, la scène et le curseur gardés sur l'appareil. */
+  resumeProject: (id: string) => Promise<void>;
   createProject: (options: { title: string; kind: ProjectKind }) => Promise<void>;
   /** Un fichier Fountain existant devient un nouveau projet scénario, avec ses cartes. */
   /** Accueil : un manuscrit (.docx, .md, .txt) ou un scénario (.fountain, .fdx) devient un nouveau projet. */
@@ -1295,6 +1300,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
           status: get().status === "enregistrement" ? (unwritten ? "modifie" : "enregistre") : get().status,
         });
         storage.remember({ title: get().title, kind: get().kind });
+        // Où l'on en est (#27), pour « Reprendre là où j'en étais » : relevé à chaque enregistrement réussi.
+        captureSpot(storage.current?.(), get().view);
         // Sauvegarde hors du projet (#14) : au plus toutes les 30 minutes, sans jamais retarder l'enregistrement.
         if (storage.backups) void writeBackup(false);
         // Copies Markdown (markdown/) : après l'enregistrement, sans jamais le retarder ni le faire échouer.
@@ -2042,15 +2049,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     focusFrame: null,
     clearFocusFrame: () => set({ focusFrame: null }),
-    openInManuscript: (id, needle) => {
+    openInManuscript: (id, needle, caret) => {
       // Série : la scène est dans un autre épisode, on ouvre d'abord celui-ci.
       const full = get().screenplay;
       const episode = id.startsWith(SCENE_AT) ? episodeAt(full, Number(id.slice(SCENE_AT.length))) : episodeOfCard(full, id);
-      set({ view: "manuscrit", manuscriptTarget: id, manuscriptNeedle: needle || null, ...(episode ? { currentEpisode: episode } : {}) });
+      set({ view: "manuscrit", manuscriptTarget: id, manuscriptNeedle: needle || null, manuscriptCaret: caret ?? null, ...(episode ? { currentEpisode: episode } : {}) });
     },
     manuscriptTarget: null,
     manuscriptNeedle: null,
-    clearManuscriptTarget: () => set({ manuscriptTarget: null, manuscriptNeedle: null }),
+    manuscriptCaret: null,
+    clearManuscriptTarget: () => set({ manuscriptTarget: null, manuscriptNeedle: null, manuscriptCaret: null }),
     toggleTodo: (id, where, index) => {
       if (where === "manuscript") {
         const html = get().manuscript[id];
@@ -2700,6 +2708,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
     },
 
+    resumeProject: async (id) => {
+      const spot = readSpot(id);
+      await get().openProject(id);
+      if (!spot || get().screen !== "project" || storage.current?.() !== id) return;
+      const st = get();
+      // La scène gardée existe-t-elle encore (supprimée, ou texte changé sur un autre appareil) ?
+      const scene = spot.scene;
+      const elements = st.screenplay?.elements ?? [];
+      const known =
+        !!scene &&
+        (scene.startsWith(SCENE_AT)
+          ? st.kind === "scenario" && Number(scene.slice(SCENE_AT.length)) < elements.length
+          : st.nodes.some((n) => n.id === scene && n.data.type === "scene"));
+      // Sur téléphone, le canevas et le Plan n'existent pas : le Carnet (shownView) en tient lieu.
+      if (spot.view === "manuscrit" && known) st.openInManuscript(scene!, undefined, { el: spot.el, offset: spot.offset ?? 0 });
+      else if (spot.view !== "toile") st.setView(spot.view);
+    },
+
     createProject: async ({ title, kind }) => {
       if (!(await storage.create(title))) return;
       // L'emplacement choisi contient déjà un projet : on l'ouvre, on ne l'écrase pas.
@@ -2849,6 +2875,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     setTour: (tour) => set({ tour }),
 
     closeProject: async (force = false) => {
+      // Où l'on en est (#27) : relevé avant de quitter, la vue d'écriture est encore là pour dire son curseur.
+      captureSpot(storage.current?.(), get().view);
       if (!force) {
         // On retente aussi après un échec : la cause a pu disparaître (disque rebranché).
         if (get().status !== "enregistre") await get().save();
@@ -2886,6 +2914,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       try {
         await storage.deleteProject?.(id);
         showProject(id);
+        forgetSpot(id);
       } catch (err) {
         console.error(err);
         ok = false;
