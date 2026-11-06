@@ -110,7 +110,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-MondoWrite est en cours de développement (version 1.17.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
+MondoWrite est en cours de développement (version 1.18.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
 
 ## Fonctionnalités
 
@@ -191,7 +191,9 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 - **Statistiques et objectifs**, repliés en bas de la même colonne : mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
 - **Aller à** (Ctrl/Cmd+G) : une page, une scène, un chapitre, un passage à reprendre ou une note.
 - **Écouter :** le texte lu à voix haute par les voix de l'appareil, une voix par personnage et un narrateur, le passage lu surligné.
-- **Vérifier et Statistiques :** à côté du texte, l'onglet « Vérifier » pose des questions (un personnage principal sans « Veut », un secret jamais révélé, une case loin de sa place), et la fenêtre Statistiques compte la présence des personnages et des lieux.
+- **Vérifier et Statistiques :** à côté du texte, l'onglet « Vérifier » pose des questions (un personnage principal sans « Veut », un secret jamais révélé, une case loin de sa place, un mot répété à quelques lignes d'écart, les mots que vous employez le plus), et la fenêtre Statistiques compte la présence des personnages et des lieux.
+- **Fusionner deux scènes :** « Fusionner avec la scène suivante » (menu ⋯ du Manuscrit, du Scénario, du Plan et du séquencier) réunit texte, synopsis, fils et commentaires en une seule scène ; « Annuler » les sépare de nouveau.
+- **Votre page :** police (IBM Plex, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) et interligne de la page d'écriture au choix (Réglages › Écriture), sans toucher aux exports.
 - **Vos fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte : elle va à la corbeille et en revient avec lui.
 
 ### Romans et scénarios

@@ -110,7 +110,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-MondoWrite is under active development (version 1.17.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
+MondoWrite is under active development (version 1.18.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
 
 ## Features
 
@@ -190,7 +190,9 @@ Then every entry, generated from your cards, on a single page and grouped by sec
 - **Statistics and goals**, folded at the bottom of the same column: words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
 - **Go to** (Ctrl/Cmd+G): a page, a scene, a chapter, a passage to revisit or a note.
 - **Listen:** the text read aloud by the device’s voices, one voice per character and a narrator, the passage being read highlighted.
-- **Check and Statistics:** beside the text, the “Check” tab asks questions (a main character with no “Wants”, a secret never revealed, a beat far from its place), and the Statistics window counts how present characters and places are.
+- **Check and Statistics:** beside the text, the “Check” tab asks questions (a main character with no “Wants”, a secret never revealed, a beat far from its place, a word repeated a few lines apart, the words you use most), and the Statistics window counts how present characters and places are.
+- **Merge two scenes:** “Merge with next scene” (⋯ menu of the Manuscript, the Screenplay, the Outline and the step outline) joins text, synopsis, threads and comments into one scene; “Undo” splits them again.
+- **Your page:** choose the font (IBM Plex, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) and line spacing of the writing page (Settings › Writing), without changing the exports.
 - **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text: it goes to the trash and comes back with it.
 
 ### Novels and screenplays
