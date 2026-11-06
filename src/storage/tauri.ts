@@ -10,7 +10,8 @@ import { appDataDir, dirname, documentDir, homeDir, join } from "@tauri-apps/api
 import { invoke } from "@tauri-apps/api/core";
 import type { Storage } from "./index";
 import { COPIES_DIR, JOURNAL_FILE, MEDIA_DIR, META_FILE, SCREENPLAY_FILE, TEXT_DIRS, VERSIONS_DIR, TEMP_SUFFIX, isConflictCopy, isTempFile, tempPath, type FileMap } from "./paths";
-import { IMAGE_EXTENSIONS, mimeOf } from "../media";
+import { IMAGE_EXTENSIONS, isDocumentName, isMediaName, mimeOf } from "../media";
+import { BACKUPS_DIR, BACKUP_INFO_FILE, BACKUP_MEDIA_DIR, backupInfoFile, backupKey, isBackupKey, isBackupName, readBackupInfo } from "../backups";
 import { isAppleKeyboard, isMobileOS } from "../platform";
 import type { ScrivenerSource } from "../import/scrivener";
 import { getT } from "../i18n";
@@ -454,6 +455,16 @@ const folderSlug = (title: string) => {
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * Dossier des sauvegardes d'un projet (#14), dans le dossier privé de l'app (jamais dans celui du projet, qui peut
+ * être synchronisé, déplacé ou effacé). La clé est vérifiée : jamais de chemin venu d'ailleurs.
+ */
+async function backupFolder(key: string): Promise<string> {
+  if (!isBackupKey(key)) throw new Error("Sauvegarde refusée");
+  return join(await appDataDir(), BACKUPS_DIR, key);
+}
+const isBackupMedia = (name: string) => isMediaName(name) || isDocumentName(name);
+
 export const tauriStorage: Storage = {
   locks: {
     async read() {
@@ -512,6 +523,63 @@ export const tauriStorage: Storage = {
       for (const day of days.filter((d) => DAY.test(d))) {
         const path = await copyPath(`${VERSIONS_DIR}/${day}`);
         if (path && (await exists(path))) await remove(path, { recursive: true });
+      }
+    },
+  },
+
+  backups: {
+    key: () => (current ? backupKey(current) : null),
+    async list() {
+      const root = await join(await appDataDir(), BACKUPS_DIR);
+      if (!(await exists(root))) return [];
+      const out: { key: string; info: ReturnType<typeof readBackupInfo>; names: string[] }[] = [];
+      for (const entry of await readDir(root)) {
+        if (!entry.isDirectory || !isBackupKey(entry.name)) continue;
+        const folder = await join(root, entry.name);
+        const files = await readDir(folder);
+        const names = files.filter((f) => f.isFile && isBackupName(f.name)).map((f) => f.name);
+        if (names.length === 0) continue;
+        const infoPath = await join(folder, BACKUP_INFO_FILE);
+        const info = (await exists(infoPath)) ? readBackupInfo(await readTextFile(infoPath).catch(() => null)) : null;
+        out.push({ key: entry.name, info, names });
+      }
+      return out;
+    },
+    async write(key, name, zip, info, medias) {
+      if (!isBackupName(name)) throw new Error("Sauvegarde refusée");
+      const folder = await backupFolder(key);
+      await mkdir(folder, { recursive: true });
+      await writeSafely(await join(folder, name), (target) => writeFile(target, zip));
+      await writeSafely(await join(folder, BACKUP_INFO_FILE), (target) => writeTextFile(target, backupInfoFile(info)));
+      // Images : copiées une fois pour toutes (l'app ne supprime jamais un fichier de medias/).
+      const kept = await join(folder, BACKUP_MEDIA_DIR);
+      const dir = await projectFolder();
+      if (!dir) return;
+      let made = false;
+      for (const media of medias.filter(isBackupMedia)) {
+        const target = await join(kept, media);
+        if (await exists(target)) continue;
+        const source = await join(dir, MEDIA_DIR, media);
+        if (!(await exists(source))) continue;
+        if (!made) await mkdir(kept, { recursive: true });
+        made = true;
+        await writeSafely(target, async (path) => writeFile(path, await readFile(source)));
+      }
+    },
+    async read(key, name) {
+      if (!isBackupName(name)) throw new Error("Sauvegarde refusée");
+      return readFile(await join(await backupFolder(key), name));
+    },
+    async readMedia(key, name) {
+      if (!isBackupMedia(name)) return null;
+      const path = await join(await backupFolder(key), BACKUP_MEDIA_DIR, name);
+      return (await exists(path)) ? readFile(path) : null;
+    },
+    async remove(key, names) {
+      const folder = await backupFolder(key);
+      for (const name of names.filter(isBackupName)) {
+        const path = await join(folder, name);
+        if (await exists(path)) await remove(path);
       }
     },
   },

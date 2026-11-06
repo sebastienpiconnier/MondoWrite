@@ -256,6 +256,12 @@ export function Home() {
             <button type="button" className="ghost-button" disabled={busy} title={h.importHint} onClick={() => run(importFile)}>
               {h.importFountain}
             </button>
+            {/* Sauvegardes hors des projets (#15) : aussi celles d'un projet dont le dossier a disparu. */}
+            {storage.backups && (
+              <button type="button" className="ghost-button" disabled={busy} title={t.backups.homeHint} onClick={() => useCosmos.getState().openBackups(null)}>
+                {t.backups.homeButton}
+              </button>
+            )}
           </div>
         </section>
 

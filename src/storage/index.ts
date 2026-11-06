@@ -22,6 +22,7 @@ import { serialize as serializeScreenplay } from "../screenplay/serialize";
 import { isTauri } from "../platform";
 import type { ProjectKind } from "../types";
 import type { ProjectEntry } from "./recents";
+import type { BackupInfo } from "../backups";
 
 export * from "./paths";
 export type { ProjectEntry } from "./recents";
@@ -131,6 +132,11 @@ export interface Storage {
   /** Copies Markdown du dossier projet (markdown/) : absent dans le navigateur, où il n'y a pas de dossier à lire. */
   copies?: CopyStore;
   /**
+   * Sauvegardes automatiques hors du projet (#14, backups.ts), dans le dossier privé de l'app : app de bureau et
+   * mobile seulement (le navigateur n'a pas de dossier à part où les mettre).
+   */
+  backups?: BackupStore;
+  /**
    * Fichiers du projet présents seulement comme repères iCloud (« .nom.md.icloud » : pas encore téléchargés, ou
    * retirés de l'appareil par « Optimiser le stockage »), vus à la dernière lecture. Ils existent : ce n'est pas une
    * suppression, et l'app ne les écrit ni ne les efface tant qu'ils ne sont pas arrivés (absent hors iCloud).
@@ -157,6 +163,23 @@ export interface CopyStore {
   versions(): Promise<string[]>;
   /** Supprime des versions entières. */
   removeVersions(days: string[]): Promise<void>;
+}
+
+/** Sauvegardes d'un projet, rangées sous sa clé (`backupKey`). Noms, clés et images sont vérifiés par le stockage. */
+export interface BackupStore {
+  /** Clé du projet sélectionné, ou null. */
+  key(): string | null;
+  /** Tous les projets sauvegardés de l'appareil, même ceux dont le dossier a disparu. */
+  list(): Promise<{ key: string; info: BackupInfo | null; names: string[] }[]>;
+  /**
+   * Écrit une sauvegarde du projet sélectionné et sa fiche, puis copie dans le dossier des sauvegardes les images de
+   * `medias` qui n'y sont pas encore (lues dans le projet ; celles qui manquent sont passées).
+   */
+  write(key: string, name: string, zip: Uint8Array, info: BackupInfo, medias: string[]): Promise<void>;
+  read(key: string, name: string): Promise<Uint8Array>;
+  /** Une image gardée pour ce projet, ou null. */
+  readMedia(key: string, name: string): Promise<Uint8Array | null>;
+  remove(key: string, names: string[]): Promise<void>;
 }
 
 /** Fichier produit par un export. */

@@ -676,7 +676,7 @@
 <h3>Brancher un service</h3>
 <p>Dans <span class="ui">Réglages</span> › <span class="ui">IA (facultative)</span>, choisis un <span class="ui">Service</span> :</p>
 <ul>
-  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong> : des services en ligne. Colle ta <span class="ui">Clé d’API</span> ; elle reste sur ton appareil, jamais dans le projet. Tes cartes ne partent vers le service que lorsque tu lances une action IA.</li>
+  <li><strong>Claude (Anthropic), OpenAI, OpenRouter</strong> : des services en ligne. Colle ta <span class="ui">Clé d’API</span> ; elle reste sur ton appareil, rangée dans le trousseau du système (Trousseau d’accès sur Mac, iPhone et iPad, gestionnaire d’identifiants sous Windows, Secret Service sous Linux) quand il y en a un, et jamais dans le projet. Tes cartes ne partent vers le service que lorsque tu lances une action IA.</li>
   <li><strong>Ollama, LM Studio</strong> : des modèles qui tournent sur ton ordinateur. Tant que l’adresse du serveur est celle de cet ordinateur, tes textes n’en sortent pas ; une autre adresse est signalée dans les Réglages. Indique l’adresse du serveur (celle par défaut convient le plus souvent ; une adresse qui finit par <code>/v1</code> marche aussi). Si LM Studio demande un jeton (« Require Authentication » dans ses réglages de serveur), crée-le dans LM Studio et colle-le dans <span class="ui">Jeton d’API (facultatif)</span>.</li>
   <li><strong>Apple Intelligence (sur l’appareil)</strong> : sur un Mac ou un iPhone qui a Apple Intelligence (macOS 26, iOS 26 et après), le modèle d’Apple, gratuit, sans clé ni réglage, et rien ne quitte l’appareil. Il n’apparaît que s’il est disponible ; si Apple Intelligence est désactivée, les Réglages le disent, avec <span class="ui">Vérifier de nouveau</span>. Ce modèle est petit : il convient aux actions courtes (Ranger les idées, questions de l’assistant, Interroger le personnage, Carnet, mode Atelier) ; les lectures de tout le récit (cohérence, voix, lecteur bêta, ce que le texte en dit) sont grisées avec la raison, et la recherche par le sens et la description de photos ne sont pas proposées.</li>
 </ul>
@@ -839,9 +839,13 @@
 <h3>Modifier hors de MondoWrite</h3>
 <p>Tu peux modifier un fichier du projet avec un autre logiciel, ou depuis un autre ordinateur par un dossier synchronisé. L’app le remarque et reprend la nouvelle version. Si le même fichier a changé des deux côtés, aucun n’est écrasé : la version du disque est gardée, la tienne est enregistrée à côté (« … (MondoWrite).md »), et un bandeau te laisse choisir : <span class="ui">Garder ma version</span> ou <span class="ui">Garder celle du disque</span>.</p>
 
+<h3>Les sauvegardes automatiques</h3>
+<p>Dans l’app (ordinateur, iPhone, iPad), MondoWrite garde une copie de chaque projet <strong>à part</strong>, dans son propre dossier sur l’appareil, jamais dans celui du projet : si le dossier est abîmé, effacé ou mal synchronisé, les sauvegardes restent. Une copie est faite après un enregistrement, au plus toutes les 30 minutes pendant que tu écris ; MondoWrite garde les 5 dernières, puis la dernière de chaque jour pendant 30 jours. Elle contient les textes, la corbeille et les versions des scènes ; les images sont gardées une seule fois à côté.</p>
+<p><span class="ui">Réglages</span> › <span class="ui">Ce projet</span> › <span class="ui">Sauvegardes…</span> montre les sauvegardes du projet ouvert, datées, avec <span class="ui">Sauvegarder maintenant</span>. La page des projets a aussi un bouton <span class="ui">Sauvegardes…</span>, qui montre celles de tous les projets, même d’un projet dont le dossier a disparu (sur Mac : <span class="ui">Fichier</span> › <span class="ui">Sauvegardes…</span>). <span class="ui">Ouvrir cette sauvegarde</span> l’ouvre comme un <strong>nouveau projet</strong>, au titre suivi de la date de la sauvegarde : le projet actuel ne change pas. C’est le moyen de retrouver un canevas, une bible ou un plan d’avant ; pour le texte d’une seule scène, ses versions suffisent.</p>
+
 <h3>Si l’enregistrement échoue</h3>
 <p>Un message sous la barre du haut dit pourquoi (disque plein, droits insuffisants, dossier introuvable) et propose : <span class="ui">Réessayer</span> ; <span class="ui">Indiquer le dossier du projet…</span> s’il a été déplacé ou renommé ; <span class="ui">Exporter une copie…</span> (tout le projet dans un fichier .zip, pour ne rien perdre) ; ou <span class="ui">Revenir aux projets sans enregistrer</span>.</p>
-<div class="tip" data-label="Sauvegardes"><p>Place tes projets dans un dossier synchronisé (iCloud Drive, Dropbox, OneDrive) ou sauvegarde-les régulièrement. Comme ce sont des fichiers texte, ils prennent très peu de place.</p></div>
+<div class="tip" data-label="Sauvegardes"><p>Les sauvegardes automatiques restent sur l’appareil : place aussi tes projets dans un dossier synchronisé (iCloud Drive, Dropbox, OneDrive) ou copie-les ailleurs de temps en temps. Comme ce sont des fichiers texte, ils prennent très peu de place.</p></div>
 
 <!-- ===================================================================================== -->
 <h2 id="reglages"><span class="num">Chapitre 13</span>Réglages et apparence</h2>
@@ -850,7 +854,7 @@
 <figure><img src="images/fr/reglages.jpg"><figcaption>Les réglages.</figcaption></figure>
 <table>
   <tr><th>Réglage</th><th>Effet</th></tr>
-  <tr><td><span class="ui">Ce projet</span></td><td>Type de projet (roman ou scénario) ; pour un scénario, le format de page et les options de numérotation ; les copies Markdown ; la <span class="ui">Corbeille</span>.</td></tr>
+  <tr><td><span class="ui">Ce projet</span></td><td>Type de projet (roman ou scénario) ; pour un scénario, le format de page et les options de numérotation ; les copies Markdown ; la <span class="ui">Corbeille</span> ; les <span class="ui">Sauvegardes…</span>.</td></tr>
   <tr><td><span class="ui">Langue</span></td><td>Français, anglais, et les langues traduites par la communauté. À la première ouverture, la langue du système. <span class="ui">Traduire MondoWrite dans ta langue</span> ouvre le guide des traducteurs.</td></tr>
   <tr><td><span class="ui">Apparence</span></td><td>Comme le système, claire ou sombre.</td></tr>
   <tr><td><span class="ui">Typographie à la frappe</span></td><td>Selon la langue de l’interface, une langue au choix, ou aucune.</td></tr>

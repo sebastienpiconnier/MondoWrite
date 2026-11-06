@@ -21,6 +21,7 @@ import "./styles/writing.css";
 import "./styles/phone.css";
 import { App } from "./App";
 import { initSettings } from "./settings";
+import { initKeychain } from "./secrets";
 import { isAppleKeyboard, isMobileOS, isTauri } from "./platform";
 import { initAppMenu } from "./appMenu";
 import { watchKeyboard } from "./keyboard";
@@ -44,6 +45,8 @@ if (isTauri() && !isMobileOS()) {
 }
 // Langue et thème appliqués avant le premier rendu (pas de flash clair en mode sombre).
 initSettings();
+// App : les clés d'IA et de photos passent dans le trousseau du système quand il y en a un (#30).
+if (isTauri()) void initKeychain();
 // Mac : barre des menus dans la langue de l'app, avec le menu Aide.
 initAppMenu();
 // Écran tactile : la hauteur du clavier virtuel (--keyboard-h) laisse le texte défiler au-dessus.

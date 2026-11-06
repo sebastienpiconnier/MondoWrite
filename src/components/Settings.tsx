@@ -341,6 +341,12 @@ export function Settings({ project = true }: { project?: boolean }) {
           <button type="button" className="ghost-button settings-trash" onClick={() => { setOpen(false); useCosmos.getState().setDialog("trash"); }}>
             {fmt(t.trash.open, { n: trashCount })}
           </button>
+          {/* Sauvegardes hors du projet (#14, #15) : app seulement (le navigateur n'a pas de dossier à part). */}
+          {storage.backups && (
+            <button type="button" className="ghost-button settings-trash" onClick={() => { setOpen(false); useCosmos.getState().openBackups(storage.backups?.key() ?? null); }}>
+              {t.backups.settingsButton}
+            </button>
+          )}
             </section>
           )}
 

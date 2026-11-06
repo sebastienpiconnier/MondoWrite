@@ -278,6 +278,19 @@ export const shownPalette = (palette: Palette, moreContrast: boolean): Palette =
 
 const contrastQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-contrast: more)") : undefined);
 
+/**
+ * Clés gardées dans le trousseau du système (#30, secrets.ts) : vrai seulement une fois qu'elles y sont écrites
+ * et relues. Alors `cosmos:reglages` ne les porte plus ; faux (trousseau absent, écriture refusée), elles y restent.
+ */
+let keysElsewhere = false;
+let persist: (() => void) | null = null;
+export const keysInKeychain = () => keysElsewhere;
+export function setKeysInKeychain(on: boolean) {
+  if (keysElsewhere === on) return;
+  keysElsewhere = on;
+  persist?.();
+}
+
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
   const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }: SettingsState) => {
@@ -292,13 +305,15 @@ export function initSettings() {
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;
     try {
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }));
+      const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }
   };
   apply(useSettings.getState());
   useSettings.subscribe(apply);
+  persist = () => apply(useSettings.getState());
 
   // App Tauri : la barre de titre native suit aussi le choix (null = suivre le système).
   if (isTauri()) {
