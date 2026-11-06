@@ -192,7 +192,7 @@ Then every entry, generated from your cards, on a single page and grouped by sec
 - **Listen:** the text read aloud by the device’s voices, one voice per character and a narrator, the passage being read highlighted.
 - **Check and Statistics:** beside the text, the “Check” tab asks questions (a main character with no “Wants”, a secret never revealed, a beat far from its place, a word repeated a few lines apart, the words you use most), and the Statistics window counts how present characters and places are.
 - **Merge two scenes:** “Merge with next scene” (⋯ menu of the Manuscript, the Screenplay, the Outline and the step outline) joins text, synopsis, threads and comments into one scene; “Undo” splits them again.
-- **Your page:** choose the font (IBM Plex, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) and line spacing of the writing page (Settings › Writing), without changing the exports.
+- **Your page:** choose the font (IBM Plex Serif, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) and line spacing of the writing page (Settings › Writing), without changing the exports.
 - **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text: it goes to the trash and comes back with it.
 
 ### Novels and screenplays

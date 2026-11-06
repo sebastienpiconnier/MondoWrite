@@ -193,7 +193,7 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 - **Écouter :** le texte lu à voix haute par les voix de l'appareil, une voix par personnage et un narrateur, le passage lu surligné.
 - **Vérifier et Statistiques :** à côté du texte, l'onglet « Vérifier » pose des questions (un personnage principal sans « Veut », un secret jamais révélé, une case loin de sa place, un mot répété à quelques lignes d'écart, les mots que vous employez le plus), et la fenêtre Statistiques compte la présence des personnages et des lieux.
 - **Fusionner deux scènes :** « Fusionner avec la scène suivante » (menu ⋯ du Manuscrit, du Scénario, du Plan et du séquencier) réunit texte, synopsis, fils et commentaires en une seule scène ; « Annuler » les sépare de nouveau.
-- **Votre page :** police (IBM Plex, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) et interligne de la page d'écriture au choix (Réglages › Écriture), sans toucher aux exports.
+- **Votre page :** police (IBM Plex Serif, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) et interligne de la page d'écriture au choix (Réglages › Écriture), sans toucher aux exports.
 - **Vos fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte : elle va à la corbeille et en revient avec lui.
 
 ### Romans et scénarios
