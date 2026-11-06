@@ -15,18 +15,18 @@ Règles :
 - on ne cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité
   (import Scrivener, fichiers Final Draft, Fountain) ou pour du code repris (licence, `THIRD-PARTY-NOTICES.md`).
 
-Dernière mise à jour : 6 novembre 2026 (lot 1).
+Dernière mise à jour : 6 novembre 2026 (lot 3).
 
 ## Ordre / Order
 
 Les issues sont rangées en lots (jalons GitHub), du plus facile au plus dur, par thème. Les lots 1 (écriture :
-#23, #24, #21) et 2 (sécurité : #14, #15, #30) sont faits. / Issues are grouped in batches (GitHub milestones),
-easiest first, by theme. Batches 1 (writing: #23, #24, #21) and 2 (safety: #14, #15, #30) are done.
+#23, #24, #21), 2 (sécurité : #14, #15, #30) et 3 (ergonomie : #27, #26) sont faits. / Issues are grouped in
+batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #24, #21), 2 (safety: #14, #15,
+#30) and 3 (usability: #27, #26) are done.
 
-1. Lot 3 · Ergonomie / Usability : #27 page des projets, #26 palette de commandes
-2. Lot 4 · Outils d'écriture / Writing tools : #20 objectifs, #16 synonymes, #17 noms de personnages
-3. Lot 5 · Révisions / Revisions : #18 révisions de scénario, puis #22 mode révision du roman
-4. Lot 6 · Import et narration / Import and narration : #25 point de vue (à confirmer), #28 finitions de
+1. Lot 4 · Outils d'écriture / Writing tools : #20 objectifs, #16 synonymes, #17 noms de personnages
+2. Lot 5 · Révisions / Revisions : #18 révisions de scénario, puis #22 mode révision du roman
+3. Lot 6 · Import et narration / Import and narration : #25 point de vue (à confirmer), #28 finitions de
    l'import Scrivener
-5. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
-6. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
+4. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
+5. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)

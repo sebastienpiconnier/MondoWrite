@@ -480,6 +480,15 @@ await step("réglages", async () => {
   await wait(400);
   await shot("raccourcis", { el: "dialog[open]" });
   await closeDialog();
+  // Palette de commandes (#26) : Ctrl + K, puis un mot (une fois la fenêtre précédente bien fermée).
+  await wait(500);
+  await page.keyboard.press("Control+k");
+  await page.locator("dialog[open] .palette").waitFor();
+  await wait(300);
+  await page.keyboard.type("export");
+  await wait(300);
+  await shot("palette", { el: "dialog[open]" });
+  await closeDialog();
   await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
   await page.getByRole("button", { name: T("À propos de MondoWrite", "About MondoWrite", "Acerca de MondoWrite") }).click();
   await wait(400);

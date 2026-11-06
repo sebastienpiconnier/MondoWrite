@@ -12,6 +12,8 @@ import { useVocab } from "../vocab";
 import { plainText, searchCards } from "../search";
 import { sceneBody, sceneText } from "../screenplay/sceneText";
 import { excerptOf } from "../ai/semantic";
+import { openPalette } from "../commandList";
+import { useKeyHint } from "./MoreMenu";
 import { fmt } from "../i18n";
 import { goToHit, useCanSearchBySense, useSemanticSearch } from "./SemanticSearch";
 
@@ -20,6 +22,7 @@ let lastMode: "words" | "sense" = "words";
 
 export function Search() {
   const { t, types } = useVocab();
+  const key = useKeyHint();
   const s = t.search;
   const lang = useSettings((st) => st.lang);
   const nodes = useCosmos((st) => st.nodes);
@@ -255,6 +258,20 @@ export function Search() {
           {mode === "sense" && sense.status.step === "indexing" && (
             <progress className="search-progress" max={sense.status.total} value={sense.status.done} aria-hidden="true" />
           )}
+          {/* Palette de commandes (#26) : son chemin à la souris et au doigt, Cmd/Ctrl + K au clavier. */}
+          <p className="search-commands">
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => {
+                setOpen(false);
+                openPalette();
+              }}
+            >
+              {t.palette.open}
+            </button>{" "}
+            <kbd>{key("Mod", "K")}</kbd>
+          </p>
         </div>
       )}
     </div>

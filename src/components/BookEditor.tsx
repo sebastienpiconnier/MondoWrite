@@ -51,6 +51,8 @@ export interface BookApi {
   selectText: (id: string, needle: string) => boolean;
   /** L'éditeur du livre (lecture à voix haute). */
   editor: () => Editor | null;
+  /** Scène du curseur et sa place depuis le début de la scène (« Reprendre là où j'en étais », #27). */
+  caret: () => { id: string; offset: number } | null;
   /** Marque la sélection comme passage commenté (une scène à la fois) : le nouveau commentaire, ou la raison du refus. */
   commentSelection: () => { id: string; scene: string; quote: string } | { error: "empty" | "scene" };
   /** Sélectionne le passage d'un commentaire et le fait défiler ; faux si sa marque n'est plus dans le texte. */
@@ -381,6 +383,13 @@ export function BookEditor({
   useEffect(() => {
     api.current = {
       editor: () => (editorRef.current && !editorRef.current.isDestroyed ? editorRef.current : null),
+      caret: () => {
+        const ed = editorRef.current;
+        if (!ed || ed.isDestroyed) return null;
+        const head = ed.state.selection.head;
+        const g = sceneAt(sceneGroups(ed.state.doc), head);
+        return g ? { id: g.id, offset: Math.max(0, head - g.markerPos) } : null;
+      },
       scrollToScene: (id) => {
         lastGo.current = Date.now();
         editorRef.current?.view.dom.querySelector(`[data-scene-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "start" });

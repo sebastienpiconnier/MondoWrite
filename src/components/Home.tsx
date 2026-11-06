@@ -16,6 +16,9 @@ import { ExamplesPanel } from "./ExamplesPanel";
 import { greeting } from "../greeting";
 import { hasProfile } from "../profile";
 import { MoreMenu } from "./MoreMenu";
+import { LIST_TOOLS_MIN, PROJECT_SORTS, hasBothKinds, listProjects, readListPrefs, writeListPrefs, type KindFilter, type ListPrefs, type ProjectSort } from "../projectList";
+import { readSpot } from "../resume";
+import { vocab } from "../vocab";
 
 export function Home() {
   const t = useT();
@@ -50,7 +53,14 @@ export function Home() {
   const [asking, setAsking] = useState<string | null>(null);
   /** Projet dont la suppression a échoué : un message sous sa ligne. */
   const [failed, setFailed] = useState<string | null>(null);
-  const ids = { title: useId(), recent: useId(), fresh: useId() };
+  const ids = { title: useId(), recent: useId(), fresh: useId(), search: useId(), sort: useId(), kind: useId() };
+  // Recherche, tri et filtre (#27) quand la liste grandit : tri et filtre gardés sur l'appareil, pas la recherche.
+  const [query, setQuery] = useState("");
+  const [prefs, setPrefsState] = useState<ListPrefs>(() => readListPrefs());
+  const setPrefs = (next: ListPrefs) => {
+    setPrefsState(next);
+    writeListPrefs(next);
+  };
   const date = new Intl.DateTimeFormat(lang, { dateStyle: "medium" });
 
   /** Une seule action à la fois : pas de double ouverture pendant qu'un dialogue du système est affiché. */
@@ -70,6 +80,21 @@ export function Home() {
   };
 
   const nameOf = (p: ProjectEntry) => p.title || p.name || h.untitled;
+  const tools = projects.length >= LIST_TOOLS_MIN;
+  const bothKinds = hasBothKinds(projects);
+  // Filtre sur un type absent de la liste (le dernier scénario masqué) : on ne le garde pas en silence.
+  const shownPrefs: ListPrefs = tools ? { ...prefs, kind: bothKinds ? prefs.kind : "all" } : { sort: "recent", kind: "all" };
+  const shown = useMemo(() => listProjects(projects, tools ? query : "", shownPrefs, lang, nameOf), [projects, query, shownPrefs.sort, shownPrefs.kind, tools, lang, h.untitled]);
+  const filtered = shown.length !== projects.length;
+  // « Reprendre là où j'en étais » (#27) : le dernier projet ouvert, s'il a une position gardée sur l'appareil.
+  const last = useMemo(() => projects.reduce<ProjectEntry | null>((best, p) => (p.openedAt > (best?.openedAt ?? 0) ? p : best), null), [projects]);
+  const spot = last ? readSpot(last.id) : null;
+  const resumeLine = (() => {
+    if (!last || !spot) return "";
+    const views = vocab(t, last.kind ?? "roman").views;
+    const view = views[spot.view];
+    return spot.view === "manuscrit" && spot.label ? fmt(h.resumeScene, { title: nameOf(last), view, scene: spot.label }) : fmt(h.resumeWhere, { title: nameOf(last), view });
+  })();
   const kindHints: Record<ProjectKind, string> = { roman: h.novelHint, scenario: h.screenplayHint };
   const kindNames: Record<ProjectKind, string> = { roman: h.novel, scenario: h.screenplay };
 
@@ -223,11 +248,66 @@ export function Home() {
 
         <section className="home-panel" aria-labelledby={ids.recent}>
           <h2 id={ids.recent}>{h.title}</h2>
+          {last && spot && (
+            <button type="button" className="home-resume" disabled={busy} title={fmt(h.resumeHint, { title: nameOf(last) })} onClick={() => run(() => useCosmos.getState().resumeProject(last.id))}>
+              <span className="home-resume-title">{h.resume}</span>
+              <span className="home-resume-where">{resumeLine}</span>
+            </button>
+          )}
+          {tools && (
+            <div className="home-tools" role="group" aria-label={h.listSearch}>
+              <label className="home-tool home-tool-search">
+                <span className="sr-only">{h.listSearch}</span>
+                <input id={ids.search} type="search" value={query} placeholder={h.listSearchPlaceholder} autoComplete="off" spellCheck={false} onChange={(e) => setQuery(e.target.value)} />
+              </label>
+              <label className="home-tool">
+                <span>{h.listSort}</span>
+                <select id={ids.sort} value={shownPrefs.sort} onChange={(e) => setPrefs({ ...prefs, sort: e.target.value as ProjectSort })}>
+                  {PROJECT_SORTS.map((k) => (
+                    <option key={k} value={k}>
+                      {h.listSorts[k]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {bothKinds && (
+                <label className="home-tool">
+                  <span>{h.listKind}</span>
+                  <select id={ids.kind} value={shownPrefs.kind} onChange={(e) => setPrefs({ ...prefs, kind: e.target.value as KindFilter })}>
+                    {(["all", ...PROJECT_KINDS] as KindFilter[]).map((k) => (
+                      <option key={k} value={k}>
+                        {h.listKinds[k]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {filtered && (
+                <span className="home-tool-count" role="status">
+                  {fmt(h.listCount, { n: shown.length, total: projects.length })}
+                </span>
+              )}
+            </div>
+          )}
           {projects.length === 0 ? (
             <p className="sp-empty">{h.empty}</p>
+          ) : shown.length === 0 ? (
+            <p className="sp-empty">
+              {h.listNone}{" "}
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  setQuery("");
+                  setPrefs({ ...prefs, kind: "all" });
+                }}
+              >
+                {h.listClear}
+              </button>
+            </p>
           ) : (
             <ul className="home-list">
-              {projects.map((p) => projectRow(p))}
+              {shown.map((p) => projectRow(p))}
             </ul>
           )}
           {hiddenProjects.length > 0 && (

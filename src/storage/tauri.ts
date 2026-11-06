@@ -826,6 +826,9 @@ export const tauriStorage: Storage = {
   select(id) {
     current = id;
   },
+  current() {
+    return current || null;
+  },
   async create(name, options) {
     if (!mobile) {
       await adoptMacIcloud();

@@ -59,6 +59,9 @@ export const browserStorage: Storage = {
   select(id) {
     current = id;
   },
+  current() {
+    return current || null;
+  },
   async create() {
     current = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     return true;
