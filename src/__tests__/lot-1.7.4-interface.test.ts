@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // Lot 1.7.4, interface : fenêtre des raccourcis ouverte en haut, typographie de fr.ts, police du Carnet,
-// état d'enregistrement sur téléphone, cibles tactiles, barre du haut sans abonnement au store entier, F1 au Carnet.
+// état d'enregistrement sur téléphone, cibles tactiles, barre du haut sans abonnement au store entier, F1 sur téléphone.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
@@ -91,15 +91,14 @@ describe("barre du haut", () => {
 describe("aide (F1)", () => {
   afterEach(() => useCosmos.setState({ screen: "home", view: "toile", dialog: null }));
 
-  it("le Carnet mène à son chapitre", () => {
-    useCosmos.setState({ screen: "project", view: "carnet", dialog: null });
-    expect(currentSection(true)).toBe("carnet");
-    // Sur téléphone, le canevas et le Plan affichent le Carnet.
-    useCosmos.setState({ view: "toile" });
-    expect(currentSection(true)).toBe("carnet");
-    expect(currentSection(false)).toBe("canvas");
-    expect(guideUrl("fr", "carnet")).toMatch(/#carnet$/);
-    expect(guideUrl("en", "carnet")).toMatch(/#notebook$/);
+  it("sur téléphone, chaque vue mène à son chapitre, comme ailleurs", () => {
+    useCosmos.setState({ screen: "project", view: "plan", dialog: null });
+    expect(currentSection(true)).toBe("plan");
+    expect(currentSection(false)).toBe("plan");
+    // L'ancienne vue Carnet (position « Reprendre » d'avant) est le canevas.
+    useCosmos.setState({ view: "carnet" });
+    expect(currentSection(true)).toBe("canvas");
+    expect(guideUrl("fr", "canvas")).toMatch(/#canevas$/);
   });
 });
 

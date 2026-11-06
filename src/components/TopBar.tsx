@@ -13,8 +13,8 @@ import { useSettings } from "../settings";
 import { shownView, usePhone } from "./usePhone";
 
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
-/** Téléphone (Carnet) : écrire, consulter, capturer. Le canevas et le Plan restent sur iPad et ordinateur. */
-const PHONE_VIEWS: View[] = ["manuscrit", "bible", "carnet"];
+/** Téléphone : les mêmes quatre vues, en onglets avec une icône (Plan et Manuscrit prennent leur nom de scénario). */
+const PHONE_VIEWS: View[] = ["toile", "plan", "manuscrit", "bible"];
 
 /** Icônes de la barre d'onglets du téléphone (1.11.2) : une barre d'onglets d'iPhone montre une icône et son nom. */
 const tabIcon = (d: string) => (
@@ -23,12 +23,14 @@ const tabIcon = (d: string) => (
   </svg>
 );
 const PHONE_ICONS: Partial<Record<View, React.ReactNode>> = {
-  // Une page et sa plume.
+  // Une liste ordonnée : le Plan (ou le séquencier).
+  plan: tabIcon("M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"),
+  // Une page et son texte.
   manuscrit: tabIcon("M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4"),
   // Un livre ouvert.
   bible: tabIcon("M12 6.5C10.5 5 8 4.5 4 4.5v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-14c-4 0-6.5.5-8 2zM12 6.5v14"),
-  // Un carnet à spirale.
-  carnet: tabIcon("M7 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7zM4 7h3M4 12h3M4 17h3M11 8h5M11 12h5"),
+  // Trois cartes posées en vrac, reliées.
+  toile: tabIcon("M3 4h7v6H3zM14 3h7v6h-7zM8 15h8v6H8zM10 7h4M7 10l3 5M17 9l-3 6"),
 };
 
 export function TopBar() {

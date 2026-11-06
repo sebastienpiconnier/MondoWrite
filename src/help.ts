@@ -14,8 +14,6 @@ export const GUIDE_SECTIONS = {
   start: { fr: "premiers-pas", en: "first-steps", es: "primeros-pasos" },
   paths: { fr: "parcours", en: "paths", es: "recorridos" },
   canvas: { fr: "canevas", en: "canvas", es: "lienzo" },
-  // Carnet de l'iPhone : une partie (h3) du chapitre Réglages, à son ancre propre.
-  carnet: { fr: "carnet", en: "notebook", es: "libreta" },
   bible: { fr: "bible", en: "bible", es: "biblia" },
   plan: { fr: "plan", en: "outline", es: "esquema" },
   manuscript: { fr: "manuscrit", en: "manuscript", es: "manuscrito" },
@@ -39,7 +37,7 @@ export function guideUrl(lang: string, section?: GuideSection): string {
 /** Chapitre qui parle de ce qu'on a sous les yeux (accueil, vue du projet, fenêtre ouverte). */
 export function currentSection(phone = isPhone()): GuideSection {
   const { screen, view: stored, kind, dialog } = useCosmos.getState();
-  // La vue affichée, pas celle du store : sur téléphone, le canevas et le Plan sont le Carnet.
+  // La vue affichée, pas celle du store : l'ancienne vue Carnet est le canevas.
   const view = shownView(stored, phone);
   if (screen !== "project") return "start";
   if (dialog === "shortcuts") return "shortcuts";
@@ -47,8 +45,6 @@ export function currentSection(phone = isPhone()): GuideSection {
   switch (view) {
     case "bible":
       return "bible";
-    case "carnet":
-      return "carnet";
     case "plan":
       return kind === "scenario" ? "screenplay" : "plan";
     case "manuscrit":

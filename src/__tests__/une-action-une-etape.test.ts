@@ -66,7 +66,6 @@ interface Case {
 const CASES: Case[] = [
   { name: "addCard", run: () => state().addCard({ x: 3000, y: 0 }) },
   { name: "addTitledCard", run: () => state().addTitledCard("lieu", "Le port") },
-  { name: "captureCard", run: () => state().captureCard("idee", "Une note\nprise au vol") },
   { name: "updateCard titre", run: ({ ines }) => state().updateCard(ines, { title: "Inès Morvan" }) },
   { name: "updateCard titre inchangé", run: ({ ines }) => state().updateCard(ines, { title: "Inès" }), steps: 0 },
   { name: "updateCard type", run: ({ yann }) => state().updateCard(yann, { type: "lieu" }) },
