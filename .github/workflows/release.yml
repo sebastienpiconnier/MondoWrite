@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       id: ${{ steps.release.outputs.id }}
+      skip: ${{ steps.release.outputs.skip }}
     steps:
       - uses: actions/checkout@v4
       # L'étiquette doit être la version de l'app, la même aux six endroits : sinon latest.json annonce une version
@@ -59,6 +60,13 @@ jobs:
           Updates: MondoWrite tells you when a new version is out (Settings, “Updates”) and installs it in one click. Your projects remain folders of Markdown files, readable outside the app.
           BODY
           id=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=30" --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id" | head -n 1)
+          # Release déjà publiée (publier le brouillon crée l'étiquette, donc ce même workflow) : on n'y touche plus.
+          # 1.20.0 : cette seconde fabrication avait remplacé installeurs et .sig sans refaire latest.json (une
+          # tâche annulée), et la mise à jour dans l'app refusait la signature.
+          if [ -n "$id" ] && [ "$(gh api "repos/$GITHUB_REPOSITORY/releases/$id" --jq .draft)" = "false" ]; then
+            echo "Release $RELEASE_TAG déjà publiée : rien n'est refait."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
           if [ -z "$id" ]; then
             id=$(gh api "repos/$GITHUB_REPOSITORY/releases" -f tag_name="$RELEASE_TAG" -f target_commitish="$GITHUB_SHA" \
               -f name="MondoWrite $RELEASE_TAG" -F body=@"$RUNNER_TEMP/body.md" -F draft=true -F prerelease=false --jq .id)
@@ -67,6 +75,7 @@ jobs:
 
   build:
     needs: release
+    if: needs.release.outputs.skip != 'true'
     strategy:
       fail-fast: false
       matrix:
