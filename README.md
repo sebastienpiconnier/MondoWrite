@@ -110,7 +110,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-MondoWrite est en cours de développement (version 1.18.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
+MondoWrite est en cours de développement (version 1.19.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
 
 ## Fonctionnalités
 
@@ -123,6 +123,8 @@ MondoWrite est en cours de développement (version 1.18.0). **Guide de l’utili
 - **Mise en forme et Markdown :** sélectionnez un mot, une barre propose gras, italique, barré, titre, listes, case à cocher, citation. Le Markdown marche à la frappe (`**gras**`, `*italique*`, `# titre`, `- liste`, `[ ] tâche`) et au collage, dans les cartes, la Bible et le manuscrit, et les fichiers restent en Markdown.
 - **À faire :** les cases non cochées, les passages « à reprendre », les questions gardées pour plus tard et les questions ouvertes, rassemblés dans un seul panneau, chacun relié à sa carte ou à sa scène.
 - **Raccourcis clavier** pour tout ce qui compte ; Ctrl/Cmd+/ en donne la liste.
+- **Palette de commandes** (Ctrl/Cmd+K) : tapez le nom d'une action (« organiser », « exporter », « mode focus ») et Entrée la lance. Seules les commandes possibles là où vous êtes sont proposées ; les mêmes que la barre des menus du Mac, utiles surtout sous Windows et Linux.
+- **Reprendre là où vous en étiez** : la page des projets rouvre le dernier projet à la bonne vue, à la bonne scène et à la place du curseur (gardé sur l'appareil, jamais dans le projet). Dès six projets, la liste gagne une recherche, un tri et un filtre roman / scénario.
 - **Fils étiquetés :** tirez un fil d'une carte à une autre et nommez le lien (« y travaille », « soupçonne », « se passe à »). Le fil part toujours du bord le plus proche. Clic sur le fil (ou appui au doigt) pour le renommer ou le **délier** ; dans la Bible, un fil a aussi sa fiche (leur histoire, ce qui se joue, comment ça évolue), au pied de laquelle on peut le délier.
 - **Mentions :** tapez `@` (ou `[[`, comme dans Obsidian) dans une carte pour en citer une autre. Le fil se tire tout seul, la mention suit si vous renommez la carte, et vous pouvez créer la carte citée sans quitter votre phrase.
 - **Images :** déposez une image sur une carte ou sur le canevas, ou passez par le menu ⋯ de la carte. Elle garde ses proportions (un fond flou tiré d'elle comble les côtés), est copiée dans le dossier `medias/` du projet et apparaît aussi dans la Bible.

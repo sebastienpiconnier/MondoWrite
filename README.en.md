@@ -110,7 +110,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-MondoWrite is under active development (version 1.18.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
+MondoWrite is under active development (version 1.19.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
 
 ## Features
 
@@ -123,6 +123,8 @@ MondoWrite is under active development (version 1.18.0). **Illustrated user guid
 - **Formatting and Markdown:** select a word, a bar offers bold, italic, strikethrough, heading, lists, checkbox, quote. Markdown works as you type (`**bold**`, `*italic*`, `# heading`, `- list`, `[ ] task`) and when you paste, in cards, the Bible and the manuscript, and files stay in Markdown.
 - **To do:** unticked boxes, passages “to revisit”, questions kept for later and open questions, gathered in one panel, each linked to its card or scene.
 - **Keyboard shortcuts** for everything that matters; Ctrl/Cmd+/ lists them.
+- **Command palette** (Ctrl/Cmd+K): type the name of an action (“organise”, “export”, “focus mode”) and Enter runs it. Only the commands possible where you are are offered; the same as the Mac menu bar, most useful on Windows and Linux.
+- **Pick up where you left off**: the projects page reopens the last project in the right view, at the right scene and cursor position (kept on the device, never in the project). From six projects on, the list gains search, sorting and a novel / screenplay filter.
 - **Labeled threads:** drag a thread from one card to another and name the link (“works at”, “suspects”, “takes place at”). The thread always leaves from the nearest edge. Click the thread (or tap it) to rename it or **unlink** the cards; in the Bible, a thread also has its own sheet (their history, what is at stake, how it changes), at the foot of which you can unlink it.
 - **Mentions:** type `@` (or `[[`, as in Obsidian) in a card to mention another one. The thread is drawn for you, the mention follows when you rename the card, and you can create the mentioned card without leaving your sentence.
 - **Images:** drop an image on a card or on the canvas, or go through the card’s ⋯ menu. It keeps its proportions (a blurred backdrop drawn from it fills the sides), is copied into the project’s `medias/` folder and also shows in the Bible.
