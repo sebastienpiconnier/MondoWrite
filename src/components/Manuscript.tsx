@@ -9,6 +9,8 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { useTouchGestures } from "./useTouchGestures";
+import { panelAfterSwipe } from "../touchGestures";
 import { useStoryFindings } from "./useStoryFindings";
 import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
@@ -124,6 +126,16 @@ export function Manuscript() {
   const key = useKeyHint();
   const phone = usePhone();
   const setFocusMode = useCosmos((s) => s.setFocusMode);
+  // Au doigt (iPhone, iPad) : écarter deux doigts entre en mode focus, les pincer en sort ; glisser un doigt de côté
+  // ouvre ou ferme les volets.
+  useTouchGestures(rootRef, {
+    onPinch: (kind) => setFocusMode(kind === "spread"),
+    onSwipe: (dir) => {
+      if (useCosmos.getState().focusMode) return;
+      const move = panelAfterSwipe(dir, { left: panels.scenes, right: panels.side });
+      if (move) togglePanel(move.side === "left" ? "scenes" : "side");
+    },
+  });
   const writing = useSettings((s) => s.writing);
   const target = useCosmos((s) => s.manuscriptTarget);
   const revealCard = useCosmos((s) => s.revealCard);

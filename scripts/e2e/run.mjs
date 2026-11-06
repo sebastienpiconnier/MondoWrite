@@ -1135,6 +1135,51 @@ const scenarios = [
     },
   },
   {
+    name: "iPhone : gestes du Manuscrit et de la Bible (écarter = mode focus, pincer = sortir, glisser = volets)",
+    context: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await page.locator(".views").getByRole("button", { name: "Manuscrit", exact: true }).tap();
+      const ms = page.locator(".manuscript");
+      await ms.waitFor();
+      const cdp = await page.context().newCDPSession(page);
+      const touch = (type, pts) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: pts.map(([x, y], id) => ({ x, y, id })) });
+      const swipe = async (from, to, y = 560) => {
+        await touch("touchStart", [[from, y]]);
+        const step = (to - from) / 5;
+        for (let i = 1; i <= 5; i++) await touch("touchMove", [[from + step * i, y]]);
+        await touch("touchEnd", []);
+      };
+      const pinch = async (spread) => {
+        const [a, b] = spread ? [20, 120] : [120, 20];
+        await touch("touchStart", [[195 - a, 500 - a], [195 + a, 500 + a]]);
+        for (let i = 1; i <= 5; i++) {
+          const d = a + ((b - a) * i) / 5;
+          await touch("touchMove", [[195 - d, 500 - d], [195 + d, 500 + d]]);
+        }
+        await touch("touchEnd", []);
+      };
+      const has = async (loc, c) => ((await loc.getAttribute("class")) ?? "").split(" ").includes(c);
+      assert(await has(ms, "hide-scenes"), "le volet des scènes est ouvert au départ sur téléphone");
+      await swipe(100, 280);
+      await until(async () => !(await has(ms, "hide-scenes")), "glisser vers la droite n'ouvre pas le volet des scènes");
+      await swipe(300, 120);
+      await until(() => has(ms, "hide-scenes"), "glisser vers la gauche ne referme pas le volet des scènes");
+      await pinch(true);
+      await until(() => has(ms, "is-focus"), "écarter deux doigts n'entre pas en mode focus");
+      await pinch(false);
+      await until(async () => !(await has(ms, "is-focus")), "pincer ne sort pas du mode focus");
+      await page.locator(".views").getByRole("button", { name: "Bible", exact: true }).tap();
+      const frame = page.locator(".bible-frame");
+      await frame.waitFor();
+      await swipe(100, 280);
+      await until(async () => !(await has(frame, "hide-toc")), "glisser vers la droite n'ouvre pas le sommaire de la Bible");
+      await swipe(320, 140);
+      await until(() => has(frame, "hide-toc"), "glisser vers la gauche ne referme pas le sommaire de la Bible");
+    },
+  },
+  {
     name: "tactile (iPad 834 × 1194) : exemple ouvert, « Nouvelle carte » crée une carte",
     context: { viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
     async run(h) {

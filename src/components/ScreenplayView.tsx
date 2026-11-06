@@ -2,6 +2,8 @@
 // « Dans cette scène ». Le texte vit dans scenario.fountain (store.screenplay) : l'éditeur en est
 // une lecture, reconvertie en modèle un court instant après chaque modification.
 
+import { useTouchGestures } from "./useTouchGestures";
+import { panelAfterSwipe } from "../touchGestures";
 import { useStoryFindings } from "./useStoryFindings";
 import { useStableEditor } from "./useStableEditor";
 import { usePageSpell } from "./usePageSpell";
@@ -414,6 +416,16 @@ export function ScreenplayView() {
 
   // Écran tactile : la barre d'éléments se pose juste au-dessus du clavier virtuel.
   const rootRef = useRef<HTMLDivElement>(null);
+  // Au doigt (iPhone, iPad) : écarter deux doigts entre en mode focus, les pincer en sort ; glisser un doigt de côté
+  // ouvre ou ferme les volets.
+  useTouchGestures(rootRef, {
+    onPinch: (kind) => setFocusMode(kind === "spread"),
+    onSwipe: (dir) => {
+      if (useCosmos.getState().focusMode) return;
+      const move = panelAfterSwipe(dir, { left: panels.scenes, right: panels.side });
+      if (move) togglePanel(move.side === "left" ? "scenes" : "side");
+    },
+  });
   const chrome = useFocusChrome(focusMode, rootRef);
   const key = useKeyHint();
   const phone = usePhone();

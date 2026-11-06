@@ -2,7 +2,9 @@
 // Reprendre, Arrêter et le choix des voix (narrateur, personnages, vitesse). Les voix sont celles de l'appareil ;
 // leur choix est un réglage de l'appareil (settings.reading), jamais du projet.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { portalRoot } from "./portalRoot";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { foldName } from "../review/names";
@@ -27,6 +29,28 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+
+  // Le panneau est posé hors de la barre (une barre qui défile de côté, ou une colonne, le coupait ; sur téléphone il
+  // sortait de l'écran par la gauche) : sous le bouton, aligné sur son bord droit, toujours dans la fenêtre.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const panel = panelRef.current;
+      const btn = toggleRef.current;
+      if (!panel || !btn) return;
+      const b = btn.getBoundingClientRect();
+      const w = panel.offsetWidth;
+      const h = panel.offsetHeight;
+      const left = Math.max(8, Math.min(b.right - w, window.innerWidth - w - 8));
+      const below = b.bottom + 6;
+      const top = below + h > window.innerHeight - 8 && b.top - 6 - h > 8 ? b.top - 6 - h : below;
+      panel.style.left = `${Math.round(left)}px`;
+      panel.style.top = `${Math.round(top)}px`;
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [open]);
 
   // Quitter la vue arrête la lecture.
   useEffect(() => () => stopReading(), []);
@@ -68,7 +92,8 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
       <button ref={toggleRef} type="button" className={`${buttonClass} reader-voices`} aria-expanded={open} aria-haspopup="dialog" aria-label={r.voices} title={r.voicesHint} onClick={() => setOpen((v) => !v)}>
         <span aria-hidden="true">▾</span>
       </button>
-      {open && (
+      {open &&
+        createPortal(
         <div
           ref={panelRef}
           className="reader-panel"
@@ -83,8 +108,9 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
           }}
         >
           <VoiceChoices speakers={speakers} screenplay={screenplay} />
-        </div>
-      )}
+        </div>,
+          portalRoot(toggleRef.current),
+        )}
     </span>
   );
 }

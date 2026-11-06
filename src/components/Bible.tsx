@@ -4,6 +4,8 @@
 // Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
+import { useTouchGestures } from "./useTouchGestures";
+import { panelAfterSwipe } from "../touchGestures";
 import { formOf } from "../pitch";
 import { autosize } from "./autosize";
 import { BibleLinks } from "./BibleLinks";
@@ -240,6 +242,12 @@ export function Bible() {
 
   // Une rubrique du sommaire : on défile jusqu'à elle (toutes sont sur la même page).
   const rootRef = useRef<HTMLDivElement>(null);
+  // Au doigt : glisser vers la droite tire le sommaire, vers la gauche le repousse.
+  useTouchGestures(rootRef, {
+    onSwipe: (dir) => {
+      if (panelAfterSwipe(dir, { left: tocOpen })) toggleToc();
+    },
+  });
   // Téléphone : le sommaire est un tiroir, il se referme dès qu'on a choisi une rubrique.
   const closeTocOnPhone = () => {
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches) setTocOpen(false);

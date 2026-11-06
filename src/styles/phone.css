@@ -61,12 +61,30 @@
   .add-card-hint { display: none; }
   .add-card-item { min-height: 52px; border: 1px solid var(--line); }
 
-  /* Manuscrit : la barre reste en haut, mais sur une seule rangée qui défile. */
-  .ms-meta { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding: 4px 6px; margin-top: 0; scrollbar-width: none; }
-  .ms-meta::-webkit-scrollbar { display: none; }
+  /* Manuscrit : la barre reste en haut et passe à la ligne, comme celle du Scénario (une rangée qui défilait de côté
+     cachait Mode focus, Écouter et ⋯ hors de l'écran) : ruban, flèches et titre, puis le reste. */
+  .ms-meta { flex-wrap: wrap; width: 100%; padding: 4px 6px; margin-top: 0; }
   .ms-meta > * { flex: none; }
-  .ms-meta .ms-title { flex: 0 0 170px; min-width: 120px; }
+  .ms-meta .ms-title { flex: 1 1 140px; min-width: 0; }
+  .ms-meta .ms-kind { display: none; }
   .ms-meta .ms-panel-toggle, .ms-meta .ghost-button { min-height: 44px; }
+
+  /* Réglages : les quatre onglets sur une ligne, à parts égales (« IA » passait seul sur une seconde ligne). */
+  .settings-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); justify-self: stretch; }
+  .settings-tabs button { padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Séquencier en liste : la fiche de la scène sur toute la largeur, puis « Ranger dans », la longueur et une rangée
+     de boutons (flèches à gauche, ✎ et ⋯ à droite), comme les fiches (le texte était serré dans une colonne étroite). */
+  .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) {
+    display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "body body body" "to to to" "moves len go";
+    align-items: center; gap: 8px; padding: 12px;
+  }
+  .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-body { grid-area: body; }
+  .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .plan-to { grid-area: to; }
+  .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .plan-to select { max-width: none; }
+  .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-length { grid-area: len; justify-self: center; display: flex; gap: 8px; }
+  .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-moves { grid-area: moves; }
+  .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-go { grid-area: go; }
 
   /* Plan : pas de chronologie sur téléphone (le tableau déborde de l'écran). */
   .plan-timeline-tab, .sq-modes { display: none; }
