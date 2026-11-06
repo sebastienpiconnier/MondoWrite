@@ -94,6 +94,8 @@
   .manuscript .ms-page { width: 100%; margin-top: 0; box-shadow: none; font-size: calc(19px * var(--page-zoom, 1)); line-height: 1.55; }
   .manuscript .ms-page .ms-editor, .manuscript .ms-page .ms-editor:focus-visible { min-height: 0; padding: 0.5em 1.1em 0; }
   .manuscript.is-focus .ms-page .ms-editor, .manuscript.is-focus .ms-page .ms-editor:focus-visible { padding: 0 1.1em; }
+  /* Mode focus : même taille de texte que hors du mode focus ; la largeur de colonne (réglage) ne vaut pas sur téléphone. */
+  .manuscript.is-focus .ms-page { width: 100%; font-size: calc(19px * var(--page-zoom, 1)); line-height: 1.55; }
   .manuscript .ms-page .ms-editor p { text-align: left; }
   .manuscript .ms-page .sp-pagebreak { display: none; }
 

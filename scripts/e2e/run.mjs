@@ -1173,7 +1173,11 @@ const scenarios = [
       await page.locator(".views").getByRole("button", { name: "Bible", exact: true }).tap();
       const frame = page.locator(".bible-frame");
       await frame.waitFor();
-      await swipe(100, 280);
+      // Le glisser part d'un champ de la couverture (sans focus) : la Bible en est couverte.
+      const field = page.locator(".bible textarea:visible").first();
+      const box = await field.boundingBox();
+      assert(box, "pas de champ visible dans la Bible");
+      await swipe(60, 300, Math.round(box.y + box.height / 2));
       await until(async () => !(await has(frame, "hide-toc")), "glisser vers la droite n'ouvre pas le sommaire de la Bible");
       await swipe(320, 140);
       await until(() => has(frame, "hide-toc"), "glisser vers la gauche ne referme pas le sommaire de la Bible");

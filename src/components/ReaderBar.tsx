@@ -90,7 +90,9 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
       )}
       {/* Bouton partagé avec « Écouter », comme « Nouvelle carte » : la flèche ouvre le choix des voix. */}
       <button ref={toggleRef} type="button" className={`${buttonClass} reader-voices`} aria-expanded={open} aria-haspopup="dialog" aria-label={r.voices} title={r.voicesHint} onClick={() => setOpen((v) => !v)}>
-        <span aria-hidden="true">▾</span>
+        <svg className="reader-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+          <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
       {open &&
         createPortal(

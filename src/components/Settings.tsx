@@ -446,14 +446,19 @@ export function Settings({ project = true }: { project?: boolean }) {
             <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
             {t.settings.focusTypewriter}
           </label>
-          <label htmlFor={ids.focusCol}>{t.settings.focusColumn}</label>
-          <select id={ids.focusCol} value={writing.column} onChange={(e) => setWriting({ ...writing, column: e.target.value as typeof writing.column })}>
-            {FOCUS_COLUMNS.map((c) => (
-              <option key={c} value={c}>
-                {t.focus.columns[c]}
-              </option>
-            ))}
-          </select>
+          {/* Sur téléphone, le texte prend toute la largeur : la largeur de colonne n'y change rien. */}
+          {!phone && (
+            <>
+              <label htmlFor={ids.focusCol}>{t.settings.focusColumn}</label>
+              <select id={ids.focusCol} value={writing.column} onChange={(e) => setWriting({ ...writing, column: e.target.value as typeof writing.column })}>
+                {FOCUS_COLUMNS.map((c) => (
+                  <option key={c} value={c}>
+                    {t.focus.columns[c]}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           {canFullscreen() && (
             <label className="settings-check" htmlFor={ids.focusFs}>
               <input id={ids.focusFs} type="checkbox" checked={writing.fullscreen} onChange={(e) => setWriting({ ...writing, fullscreen: e.target.checked })} />

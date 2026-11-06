@@ -873,6 +873,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Lecture à voix haute (ReaderBar) : boutons dans la barre, panneau des voix, bloc lu surligné. */
 .reader { position: relative; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .reader .reader-voices { min-width: 0; padding-inline: 10px; }
+.reader .reader-voices { display: inline-flex; align-items: center; justify-content: center; }
+.reader-chevron { display: block; width: 1.125em; height: 1.125em; }
 @media (pointer: coarse) { .reader .reader-voices { min-width: 44px; } }
 .reader-panel { position: fixed; z-index: 1000; top: 0; left: 0; width: min(340px, calc(100vw - 16px)); max-height: min(70vh, 520px); max-height: min(70dvh, 520px); overflow: auto; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; gap: 10px; text-align: left; font: 0.875rem var(--font-ui); }
 .reader-title { margin: 0; font-size: 1rem; }
