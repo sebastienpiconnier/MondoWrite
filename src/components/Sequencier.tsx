@@ -507,6 +507,7 @@ export function Sequencier() {
                     label={fmt(t.app.moreActionsFor, { title })}
                     items={[
                       !!block.cardId && { label: t.bible.seeOnCanvas, title: fmt(sq.show, { title }), onSelect: () => revealCard(block.cardId!) },
+                      !!block.cardId && !!useCosmos.getState().nextMergeable(block.cardId) && { label: t.merge.menuShort, onSelect: () => useCosmos.getState().mergeWithNext(block.cardId!) },
                       { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().trashScreenplayScene(block.start) },
                     ]}
                   />

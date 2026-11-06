@@ -84,7 +84,8 @@
   background: var(--page); color: var(--page-ink); box-shadow: var(--shadow-card);
   /* La page suit la largeur de la fenêtre : tout est en em, seule la taille du texte change, la page garde
      ses proportions. Bornée pour rester lisible (petit écran) et confortable (grand écran). */
-  font: 17px/1.6 var(--font-text); font-size: calc(clamp(12px, calc((100cqw - 8px) / var(--ms-width)), 23px) * var(--page-zoom, 1));
+  /* Police et interligne choisis dans les Réglages (#24) ; les coupures de page mesurent la hauteur réelle. */
+  font: 17px/var(--page-leading, 1.6) var(--page-font, var(--font-text)); font-size: calc(clamp(12px, calc((100cqw - 8px) / var(--ms-width)), 23px) * var(--page-zoom, 1));
 }
 /* Marge haute (--ms-top, en lignes) comprise dans la hauteur : une page fait toujours une page, même quand
    son texte descend plus bas (page de titre, dédicace, mentions légales…). */
@@ -756,6 +757,11 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 @media (any-hover: hover) { .review-go:hover { text-decoration: underline; } }
 .review-go:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 .review-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Mots les plus employés (#21) : chaque mot mène à « Rechercher et remplacer » (tous ses emplois). */
+.review-words { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; padding: 0; list-style: none; }
+.review-word { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.8125rem; cursor: pointer; }
+@media (any-hover: hover) { .review-word:hover { border-color: var(--accent); } }
+@media (pointer: coarse) { .review-word { min-height: 44px; } }
 .review-actions button { min-height: 32px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 0.8125rem; cursor: pointer; }
 .review-primary { border: 0; background: var(--accent); color: var(--surface); }
 .review-ignore { border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); }

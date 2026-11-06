@@ -1521,6 +1521,47 @@ const scenarios = [
       await h.saved((f) => Object.values(f).some((v) => typeof v === "string" && v.includes("type: scene") && v.includes('"statut":"fini"')), "le statut choisi dans la carte agrandie n'est pas enregistré");
     },
   },
+  {
+    name: "lot 1 (1.18.0) : fusionner une scène avec la suivante, annuler ; police et interligne de la page",
+    async run(h) {
+      const { page } = h;
+      await h.create("Fusion");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Arrivée");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Début de la scène.");
+      // Entrée sur une ligne vide coupe la scène : la suite part dans une nouvelle scène.
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Suite de la scène.");
+      await h.saved((f) => Object.keys(f).filter((k) => k.startsWith("manuscrit/")).length === 2, "la coupure n'a pas fait deux scènes");
+      // Revenir dans la première scène, puis ⋯ › « Fusionner avec la scène suivante ».
+      await editor.getByText("Début de la scène.").click();
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Fusionner avec la scène suivante" }).click();
+      const notice = page.locator(".trash-notice");
+      await until(() => notice.isVisible(), "pas de message après la fusion");
+      await h.saved((f) => {
+        const texts = Object.entries(f).filter(([k]) => k.startsWith("manuscrit/")).map(([, v]) => v);
+        return texts.length === 1 && texts[0].includes("Début de la scène.") && texts[0].includes("Suite de la scène.");
+      }, "les deux textes ne sont pas réunis dans une seule scène");
+      await notice.getByRole("button", { name: "Annuler" }).click();
+      await h.saved((f) => Object.keys(f).filter((k) => k.startsWith("manuscrit/")).length === 2, "Annuler n'a pas remis les deux scènes");
+      // Réglages › Écriture : police et interligne de la page, appliqués à l'écran.
+      const before = await page.locator(".ms-page").evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize));
+      await page.getByRole("button", { name: "Réglages" }).first().click();
+      await page.getByRole("tab", { name: "Écriture" }).click();
+      await page.getByLabel("Police de la page (manuscrit)").selectOption("literata");
+      await page.getByLabel("Interligne de la page (manuscrit)").selectOption("double");
+      await page.keyboard.press("Escape");
+      await until(async () => (await page.locator(".ms-page").evaluate((el) => getComputedStyle(el).fontFamily)).includes("Literata"), "la police de la page n'a pas changé");
+      const after = await page.locator(".ms-page").evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize));
+      assert(Math.abs(before - 1.6) < 0.01 && Math.abs(after - 2.4) < 0.01, `interligne ${before} puis ${after}`);
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------

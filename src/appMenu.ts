@@ -100,6 +100,8 @@ async function buildMenu() {
       // Commenter le passage sélectionné (texte d'une scène du roman) : le raccourci rejoué dans le texte.
       await MenuItem.new({ id: "comment", text: m.comment, accelerator: "CmdOrCtrl+Alt+M", enabled: inProject && currentView === "manuscrit", action: () => replayShortcut("m", "KeyM", false, true) }),
       // Onglet « Vérifier » du Manuscrit ou du Scénario.
+      // Fusionner la scène en cours avec la suivante (#23) : la vue sait quelle scène.
+      await MenuItem.new({ id: "merge-next", text: m.mergeNext, enabled: inProject && currentView === "manuscrit", action: () => sendCommand("merge-next") }),
       await MenuItem.new({ id: "review", text: m.review, enabled: inProject && currentView === "manuscrit", action: () => sendCommand("review") }),
     ],
   });

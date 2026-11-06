@@ -2,6 +2,7 @@
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
 import { cleanQuote, isCommentId, removeCommentFromElements, removeCommentMark, type Comments, type SceneComment } from "./comments";
+import { joinSynopses, mergeComments, mergeEdges, mergeScreenplayScenes, nextInStory } from "./sceneMerge";
 import { backupDate, backupDue, backupName, backupsToRemove, mediaNamesOf, sortBackups } from "./backups";
 import { localIso, parseVersionPath, readVersionFile, versionFile, versionName, versionPath } from "./versions";
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
@@ -93,6 +94,15 @@ export interface CommentFocus {
   reveal?: boolean;
 }
 
+/** Ce qu'il faut pour défaire une fusion de scènes : l'étape d'historique, et ce qui n'y est pas (manuscrit, commentaires). */
+export interface MergeUndo {
+  from: string;
+  into: string;
+  step: unknown;
+  manuscript: { from: string; into: string };
+  comments: { from: SceneComment[] | undefined; into: SceneComment[] | undefined };
+}
+
 export interface CosmosState {
   title: string;
   kind: ProjectKind;
@@ -132,7 +142,19 @@ export interface CosmosState {
   /** Coupe le récit : un nouveau chapitre commence à cette scène. Rend son identifiant. */
   startChapterAt: (sceneId: string) => string | null;
   /** Défait une coupure de scène : le texte de `fromId` revient à la fin de `intoId`, et sa carte part. */
-  joinScenes: (fromId: string, intoId: string) => void;
+  /**
+   * Fusionne la scène `fromId` dans `intoId` (#23) : texte (manuscrit d'un roman, corps Fountain d'un scénario),
+   * synopsis, fils et commentaires ; la carte de `fromId` part à la corbeille, sans message. Une étape d'historique.
+   * Rend de quoi l'annuler (`undoMerge`), ou null si la fusion n'est pas possible (scénario : `fromId` doit suivre
+   * immédiatement `intoId`, sans section entre elles).
+   */
+  joinScenes: (fromId: string, intoId: string) => MergeUndo | null;
+  /** Scène qui peut rejoindre `id` : la suivante du récit (même chapitre d'un roman, aucune section entre elles d'un scénario). */
+  nextMergeable: (id: string) => string | null;
+  /** « Fusionner avec la scène suivante » (#23) : `joinScenes` et le message « … réunies · Annuler ». Rend la scène fondue, ou null. */
+  mergeWithNext: (id: string) => string | null;
+  /** Défait une fusion : l'étape d'historique si c'est encore la dernière (sinon la carte revient de la corbeille), puis les textes et les commentaires d'avant. */
+  undoMerge: (undo: MergeUndo) => void;
   /** Range une scène dans un chapitre, ou l'en sort (null). */
   setSceneChapter: (sceneId: string, chapterId: string | null) => void;
   renamePlanChapter: (id: string, title: string) => void;
@@ -332,7 +354,8 @@ export interface CosmosState {
   /** Corbeille : cartes supprimées, restaurables (corbeille/<id>.md). */
   trash: TrashedCard[];
   /** Cartes qui viennent de partir à la corbeille (message « Annuler · Voir la corbeille »). */
-  trashNotice: { count: number; title: string; at: number } | null;
+  /** Message après une suppression ; `merged` : après une fusion de scènes (#23), « Annuler » passe par `undoMerge`. */
+  trashNotice: { count: number; title: string; at: number; merged?: { into: string; undo: MergeUndo } } | null;
   clearTrashNotice: () => void;
   /** Chapitre dont l'auteur demande la suppression : une fenêtre demande confirmation (rien n'est changé avant). */
   confirmChapter: string | null;
@@ -2322,16 +2345,83 @@ export const useCosmos = create<CosmosState>((set, get) => {
       return card.id;
     },
     joinScenes: (fromId, intoId) => {
-      const { nodes, manuscript } = get();
-      if (!nodes.some((n) => n.id === fromId) || !nodes.some((n) => n.id === intoId)) return;
-      const moved = manuscript[fromId] ?? "";
-      const next = { ...manuscript };
-      delete next[fromId];
-      if (!isBlank(moved)) next[intoId] = isBlank(manuscript[intoId]) ? moved : `${manuscript[intoId]}${moved}`;
-      set({ manuscript: next });
-      get().deleteCard(fromId);
-      // Une fusion n'est pas une suppression : pas de message « à la corbeille » (la fiche y reste, au cas où).
+      const { nodes, manuscript, comments, kind, screenplay } = get();
+      const from = nodes.find((n) => n.id === fromId);
+      const into = nodes.find((n) => n.id === intoId);
+      if (!from || !into || fromId === intoId || from.data.type !== "scene" || into.data.type !== "scene") return null;
+      // Scénario : le texte vit dans le Fountain ; la scène doit suivre l'autre (sinon la fusion la déplacerait).
+      const merged = kind === "scenario" && screenplay ? mergeScreenplayScenes(screenplay.elements, fromId, intoId) : null;
+      if (kind === "scenario" && screenplay && !merged) return null;
+      const undo: Omit<MergeUndo, "step"> = {
+        from: fromId,
+        into: intoId,
+        manuscript: { from: manuscript[fromId] ?? "", into: manuscript[intoId] ?? "" },
+        comments: { from: comments[fromId], into: comments[intoId] },
+      };
+      record();
+      if (merged && screenplay) set({ screenplay: { ...screenplay, elements: merged } });
+      else {
+        // Roman : le texte de la seconde scène suit celui de la première, son synopsis aussi.
+        const moved = manuscript[fromId] ?? "";
+        const next = { ...manuscript };
+        delete next[fromId];
+        if (!isBlank(moved)) next[intoId] = isBlank(manuscript[intoId]) ? moved : `${manuscript[intoId]}${moved}`;
+        set({ manuscript: next });
+        const synopsis = joinSynopses(into.data.fiche?.synopsis ?? "", from.data.fiche?.synopsis ?? "");
+        if (synopsis !== (into.data.fiche?.synopsis ?? "")) get().setFiche(intoId, "synopsis", synopsis);
+      }
+      // Fils et commentaires rejoignent la scène qui reste ; la carte part à la corbeille (on peut la remettre).
+      set({ edges: mergeEdges(get().edges, fromId, intoId), comments: mergeComments(get().comments, fromId, intoId) });
+      set(toTrash([fromId], get()));
+      // Une fusion n'est pas une suppression : pas de message « à la corbeille » ici (`mergeWithNext` a le sien).
       set({ trashNotice: null });
+      touch();
+      return { ...undo, step: null };
+    },
+    nextMergeable: (id) => {
+      const { kind, screenplay, nodes, plan } = get();
+      if (kind === "scenario") {
+        const els = screenplay?.elements ?? [];
+        const i = headingOf(els, id);
+        if (i < 0) return null;
+        const next = els[sceneEnd(els, i)];
+        const card = next?.type === "sceneHeading" && next.cardId ? nodes.find((n) => n.id === next.cardId) : undefined;
+        return card && card.data.type === "scene" ? card.id : null;
+      }
+      const scenes = planScenes(nodes);
+      const chapter = chapterOf(plan, id)?.id;
+      return nextInStory(planOrder(plan, scenes), id, (next) => chapterOf(plan, next)?.id === chapter);
+    },
+    mergeWithNext: (id) => {
+      const next = get().nextMergeable(id);
+      if (!next) return null;
+      const titles = { into: get().nodes.find((n) => n.id === id)?.data.title.trim() ?? "", from: get().nodes.find((n) => n.id === next)?.data.title.trim() ?? "" };
+      const undo = get().joinScenes(next, id);
+      if (!undo) return null;
+      // L'étape d'historique n'est empilée qu'à la fin de l'action (transaction) : on la note juste après.
+      queueMicrotask(() => (undo.step = get().past.at(-1) ?? null));
+      set({ trashNotice: { count: 1, title: titles.from, at: Date.now(), merged: { into: titles.into, undo } } });
+      return next;
+    },
+    undoMerge: (undo) => {
+      const store = get();
+      // La dernière étape est encore la fusion : on l'annule. Sinon (autre geste depuis, ou déjà annulée), seule la
+      // fiche revient de la corbeille, si elle y est encore.
+      if (undo.step && store.past.at(-1) === undo.step) store.undo();
+      else if (store.trash.some((c) => c.id === undo.from)) store.restoreFromTrash(undo.from);
+      else if (!store.nodes.some((n) => n.id === undo.from)) return;
+      // Le manuscrit et les commentaires ne sont pas dans l'historique : on les remet nous-mêmes.
+      if (get().kind !== "scenario") {
+        get().setManuscriptText(undo.into, undo.manuscript.into);
+        get().setManuscriptText(undo.from, undo.manuscript.from);
+      }
+      const comments = { ...get().comments };
+      for (const [id, list] of [[undo.from, undo.comments.from], [undo.into, undo.comments.into]] as const) {
+        if (list) comments[id] = list;
+        else delete comments[id];
+      }
+      set({ comments, trashNotice: null });
+      touch();
     },
     startChapterAt: (sceneId) => {
       const id = newId();

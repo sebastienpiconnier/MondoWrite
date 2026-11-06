@@ -259,6 +259,7 @@ export function Plan() {
           label={fmt(t.app.moreActionsFor, { title })}
           items={[
             { label: t.bible.seeOnCanvas, title: fmt(p.show, { title }), onSelect: () => revealCard(id) },
+            !!useCosmos.getState().nextMergeable(id) && { label: t.merge.menuShort, onSelect: () => useCosmos.getState().mergeWithNext(id) },
             { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().deleteCard(id) },
           ]}
         />

@@ -16,7 +16,7 @@ import { REPO } from "../updates";
 
 /** Guide des traducteurs sur GitHub. */
 const TRANSLATE_URL = `https://github.com/${REPO}/blob/main/TRANSLATING.md`;
-import { useSettings, PAGE_ZOOMS, PALETTES, type Palette, type ThemePref, type WheelMode } from "../settings";
+import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type Palette, type ThemePref, type WheelMode } from "../settings";
 import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS } from "../focusText";
 import { canFullscreen } from "./FocusBar";
 import { useCosmos } from "../store";
@@ -127,7 +127,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), atelierHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), atelierHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -469,6 +469,26 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          {/* Police et interligne de la page du Manuscrit (#24) : à l'écran seulement. */}
+          <label htmlFor={ids.pageFont}>{t.settings.pageFont}</label>
+          <select id={ids.pageFont} value={writing.pageFont} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, pageFont: e.target.value as PageFont })}>
+            {PAGE_FONTS.map((f) => (
+              <option key={f} value={f}>
+                {t.settings.pageFonts[f]}
+              </option>
+            ))}
+          </select>
+          <label htmlFor={ids.lineSpacing}>{t.settings.lineSpacing}</label>
+          <select id={ids.lineSpacing} value={writing.lineSpacing} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, lineSpacing: e.target.value as LineSpacing })}>
+            {LINE_SPACINGS.map((l) => (
+              <option key={l} value={l}>
+                {t.settings.lineSpacings[l]}
+              </option>
+            ))}
+          </select>
+          <p className="settings-hint" id={ids.pageLookHint}>
+            {t.settings.pageLookHint}
+          </p>
           {icloudOk === false && storage.icloud && (
             <p className="settings-hint" id={ids.icloudHint}>
               {storage.canPickFolder ? t.settings.icloudOffMac : t.settings.icloudOff}

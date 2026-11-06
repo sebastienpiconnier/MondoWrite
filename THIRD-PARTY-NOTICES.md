@@ -135,6 +135,9 @@ All these fonts are released under the SIL Open Font License 1.1. They are bundl
 | Crimson Text | Copyright 2010 The Crimson Text Project Authors (https://github.com/googlefonts/Crimson) | [src/assets/fonts/OFL-CrimsonText.txt](src/assets/fonts/OFL-CrimsonText.txt) |
 | IBM Plex Sans | Copyright 2019 IBM Corp. All rights reserved. | SIL OFL 1.1, via `@fontsource/ibm-plex-sans` |
 | IBM Plex Serif | Copyright 2020 IBM Corp. All rights reserved. | SIL OFL 1.1, via `@fontsource/ibm-plex-serif` |
+| Literata (police de la page au choix / page font option) | Copyright 2017 The Literata Project Authors (https://github.com/googlefonts/literata) | SIL OFL 1.1, via `@fontsource/literata` |
+| EB Garamond (police de la page au choix / page font option) | Copyright 2017 The EB Garamond Project Authors (https://github.com/octaviopardo/EBGaramond12) | SIL OFL 1.1, via `@fontsource/eb-garamond` |
+| Atkinson Hyperlegible (police de la page au choix / page font option) | Copyright 2020 Braille Institute of America, Inc. | SIL OFL 1.1, via `@fontsource/atkinson-hyperlegible` |
 | Playfair Display | Copyright 2017 The Playfair Display Project Authors (https://github.com/clauseggers/Playfair-Display), with Reserved Font Name "Playfair Display" | SIL OFL 1.1, via `@fontsource/playfair-display` |
 | Space Grotesk | Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk) | SIL OFL 1.1, via `@fontsource/space-grotesk` |
 
