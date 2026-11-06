@@ -11,9 +11,10 @@ import { foldName, similarNames } from "./names";
 import { isPrincipal } from "../character";
 import { formOf, isSeriesForm, type Pitch } from "../pitch";
 import { cardNames, type CharacterRow } from "./report";
+import { REPEAT_MAX, frequentWords, nearRepeats, properNouns } from "./words";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
-export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
+export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepeat" | "frequentWords" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
 export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent";
@@ -26,6 +27,8 @@ export const RULE_ORDER: RuleKey[] = [
   "headingFormat",
   "emptyElement",
   "extraSpaces",
+  "nearRepeat",
+  "frequentWords",
   "principalNotMost",
   "noGoal",
   "noEpisodes",
@@ -165,7 +168,7 @@ export function excerpt(text: string, at: number, length: number, around = 30): 
  * Points à regarder dans le manuscrit d'un roman, scène par scène (dans l'ordre du livre) : un nom écrit
  * presque comme celui d'une carte Personnage ou Lieu (« Inés » pour « Inès »), espaces en trop.
  */
-export function checkManuscript(manuscript: Record<string, string>, order: string[], cards: CardData[]): Finding[] {
+export function checkManuscript(manuscript: Record<string, string>, order: string[], cards: CardData[], lang = "fr"): Finding[] {
   const out: Finding[] = [];
   // Mots des noms des cartes (« Inès Morvan » → « Inès », « Morvan »), tels qu'écrits.
   const nameWords = new Set<string>();
@@ -196,6 +199,25 @@ export function checkManuscript(manuscript: Record<string, string>, order: strin
       out.push({ key: `extraSpaces:${id}:${at}`, rule: "extraSpaces", at: -1, scene: n + 1, sceneId: id, text: excerpt(text, at, m[0].length), needle });
     }
   });
+  // Fréquence des mots et répétitions proches (#21) : hors mots outils et noms propres (cartes, mots à capitale).
+  const texts = order.map((id) => (manuscript[id] ? rawText(manuscript[id]) : ""));
+  const names = properNouns(texts, cards.map((c) => c.title), lang);
+  let repeats = 0;
+  order.forEach((id, n) => {
+    const text = texts[n];
+    if (!text || repeats >= REPEAT_MAX) return;
+    for (const r of nearRepeats(text, lang, names)) {
+      if (repeats++ >= REPEAT_MAX) break;
+      // Passage à retrouver : des deux occurrences, dans le même paragraphe.
+      const needle = text.slice(r.first, r.second + r.word.length);
+      out.push({ key: `nearRepeat:${id}:${r.first}:${r.word}`, rule: "nearRepeat", at: -1, scene: n + 1, sceneId: id, text: excerpt(text, r.first, needle.length, 12), needle, names: [r.word], counts: [r.gap] });
+    }
+  });
+  const frequent = frequentWords(texts, lang, names);
+  if (frequent.words.length > 0) {
+    // Un seul point : la liste des mots, chacun mène à « Rechercher » (toutes ses occurrences, avec leur contexte).
+    out.push({ key: `frequentWords:${frequent.words.map((w) => w.word).join(",")}`, rule: "frequentWords", at: -1, scene: 0, sceneId: null, text: "", names: frequent.words.map((w) => w.word), counts: [...frequent.words.map((w) => w.count), frequent.total] });
+  }
   return sortFindings(out);
 }
 

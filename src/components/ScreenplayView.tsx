@@ -499,6 +499,14 @@ export function ScreenplayView() {
     emit();
     if (scene?.cardId) useCosmos.getState().openVersions(scene.cardId, keep);
   };
+  // « Fusionner avec la scène suivante » (#23) : ce qui attend dans l'éditeur part d'abord dans le store.
+  const mergeNext = () => {
+    emit();
+    if (scene?.cardId) useCosmos.getState().mergeWithNext(scene.cardId);
+  };
+  const mergeNextRef = useRef(mergeNext);
+  mergeNextRef.current = mergeNext;
+  useCommand("merge-next", () => mergeNextRef.current());
   const openVersionsRef = useRef(openVersions);
   openVersionsRef.current = openVersions;
   useEffect(() => {
@@ -1148,6 +1156,8 @@ export function ScreenplayView() {
             items={[
               { label: t.book.chutier.title, title: t.format.chutier, hint: key("Mod", "Shift", "K"), onSelect: sendToChutier },
               { label: t.comments.element, hint: key("Mod", "Alt", "M"), onSelect: commentElement },
+              // Fusionner (#23) : la scène suivante (sans section entre elles) rejoint celle-ci.
+              !!scene?.cardId && !!useCosmos.getState().nextMergeable(scene.cardId) && { label: t.merge.menu, onSelect: mergeNext },
               { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), disabled: !scene?.cardId, onSelect: () => openVersions(true) },
               { label: t.versions.listMenu, disabled: !scene?.cardId, onSelect: () => openVersions(false) },
               { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: openReplace },

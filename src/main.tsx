@@ -11,6 +11,16 @@ import "@fontsource/playfair-display/400-italic.css"; // logotype « Write »
 import "@fontsource/playfair-display/400.css"; // slogan sous le logotype
 import "@fontsource/courier-prime/400.css"; // en-têtes de scène (scénario)
 import "@fontsource/courier-prime/700.css";
+// Polices de la page du Manuscrit au choix (#24, OFL) : les fichiers ne sont lus que si la police est choisie.
+import "@fontsource/literata/400.css";
+import "@fontsource/literata/400-italic.css";
+import "@fontsource/literata/700.css";
+import "@fontsource/eb-garamond/400.css";
+import "@fontsource/eb-garamond/400-italic.css";
+import "@fontsource/eb-garamond/700.css";
+import "@fontsource/atkinson-hyperlegible/400.css";
+import "@fontsource/atkinson-hyperlegible/400-italic.css";
+import "@fontsource/atkinson-hyperlegible/700.css";
 import "@xyflow/react/dist/style.css";
 import "./styles.css";
 import "./styles/palettes.css";

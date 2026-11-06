@@ -62,6 +62,10 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
         return f.text.trim() ? fmt(t.items.emptyCharacter, { where: w, text: f.text }) : fmt(t.items.emptyHeading, { where: w });
       case "extraSpaces":
         return fmt(t.items.extraSpaces, { where: w, text: f.text });
+      case "nearRepeat":
+        return fmt(f.counts![0] === 0 ? t.items.nearRepeatNext : t.items.nearRepeat, { where: w, word: f.names![0], n: f.counts![0], text: f.text });
+      case "frequentWords":
+        return fmt(t.items.frequentWords, { total: new Intl.NumberFormat(lang).format(f.counts![f.counts!.length - 1]) });
       case "principalNotMost":
         return fmt(t.items.principalNotMost, { name: f.names![0], other: f.names![1], a: f.counts![0], b: f.counts![1] });
       case "noGoal":
@@ -85,7 +89,10 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
     }
   };
   // Une question sur l'histoire mène à la fiche (ou à la Bible), pas à un passage du texte.
+  // Un mot employé souvent : « Rechercher et remplacer » montre chacun de ses emplois, avec son contexte.
+  const findWord = (word: string) => useCosmos.getState().openReplace({ find: word, sceneId: null, renameId: null });
   const go = (f: Finding) => {
+    if (f.rule === "frequentWords") return findWord(f.names![0]);
     if (!STORY_RULES.includes(f.rule)) return onGo(f);
     const s = useCosmos.getState();
     // Une case loin de sa place : on va à sa première scène, dans le texte.
@@ -119,6 +126,17 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
                 <button type="button" className="review-go" title={STORY_RULES.includes(f.rule) ? t.openSheet : t.goTo} onClick={() => go(f)}>
                   {label(f)}
                 </button>
+                {f.rule === "frequentWords" && (
+                  <ul className="review-words">
+                    {f.names!.map((word, i) => (
+                      <li key={word}>
+                        <button type="button" className="review-word" title={fmt(t.items.frequentWordFind, { word })} onClick={() => findWord(word)}>
+                          {fmt(t.items.frequentWord, { word, n: f.counts![i] })}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="review-actions">
                   {f.rule === "similarNames" && (
                     <button

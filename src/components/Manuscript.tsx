@@ -185,13 +185,15 @@ export function Manuscript() {
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<SideTab>("scene");
   const storyFindings = useStoryFindings();
-  const findings = useMemo(() => [...checkManuscript(manuscript, order, cards), ...storyFindings], [manuscript, order, cards, storyFindings]);
+  const findings = useMemo(() => [...checkManuscript(manuscript, order, cards, lang), ...storyFindings], [manuscript, order, cards, lang, storyFindings]);
   const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
   const openReview = () => {
     setSideTab("review");
     if (!panels.side) togglePanel("side");
   };
   useCommand("review", openReview);
+  const mergeNextRef = useRef<() => void>(() => {});
+  useCommand("merge-next", () => mergeNextRef.current());
 
   // Commentaires ancrés (1.13.0) : l'onglet du volet, le surlignage des passages ouverts, le passage choisi.
   const comments = useCosmos((s) => s.comments);
@@ -373,6 +375,16 @@ export function Manuscript() {
     setSaid(text);
     setNotice(where === "exact" ? null : { text });
   };
+  // « Fusionner avec la scène suivante » (#23, menu ⋯ et Édition du Mac) : le message « Annuler » est celui du store.
+  const mergeNext = () => {
+    if (!current || isPageKind(card?.page)) return;
+    if (useCosmos.getState().mergeWithNext(current)) {
+      setChosen(current);
+      bookApi.current?.focusScene(current, -1);
+      setSaid(b.joined);
+    }
+  };
+  mergeNextRef.current = mergeNext;
   handlers.current = {
     onSceneBreak: (id, rest) => {
       const next = splitScene(id, rest);
@@ -440,26 +452,20 @@ export function Manuscript() {
       // Une scène qui ouvre un chapitre ne se fond pas dans la précédente (sauf vide : c'est l'annulation d'une coupure).
       const opens = chapterOf(plan, from)?.id !== chapterOf(plan, into)?.id;
       if (opens && plainText(useCosmos.getState().manuscript[from] ?? "") !== "") return false;
-      const before = { from: useCosmos.getState().manuscript[from] ?? "", into: useCosmos.getState().manuscript[into] ?? "" };
-      useCosmos.getState().joinScenes(from, into);
+      const undo = useCosmos.getState().joinScenes(from, into);
+      if (!undo) return false;
       // L'étape d'historique de la fusion : « Annuler » ne défait qu'elle, jamais un geste fait depuis.
-      const step = useCosmos.getState().past.at(-1);
+      undo.step = useCosmos.getState().past.at(-1) ?? null;
       setFresh(null);
       setChosen(into);
       bookApi.current?.focusScene(into, offset, true);
       setSaid(b.joined);
-      // Annuler : la fiche revient de la corbeille et chaque scène retrouve son texte d'avant.
+      // Annuler : la fiche revient de la corbeille et chaque scène retrouve son texte et ses commentaires d'avant.
       setNotice({
         text: b.joined,
         undo: () => {
-          const store = useCosmos.getState();
-          // Toujours la dernière étape : on l'annule. Sinon (autre geste depuis, ou déjà annulée), seule la
-          // fiche revient de la corbeille, si elle y est encore.
-          if (step && store.past.at(-1) === step) store.undo();
-          else if (store.trash.some((c) => c.id === from)) store.restoreFromTrash(from);
-          else if (!store.nodes.some((n) => n.id === from)) return setNotice(null);
-          store.setManuscriptText(into, before.into);
-          store.setManuscriptText(from, before.from);
+          if (!useCosmos.getState().nodes.some((n) => n.id === from) && !useCosmos.getState().trash.some((c) => c.id === from)) return setNotice(null);
+          useCosmos.getState().undoMerge(undo);
           setChosen(from);
           bookApi.current?.focusScene(from, 0);
           setSaid(b.joinUndone);
@@ -806,6 +812,8 @@ export function Manuscript() {
             <MoreMenu
               items={[
                 !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
+                // Fusionner (#23) : la scène suivante du même chapitre rejoint celle-ci ; sa carte part à la corbeille.
+                !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
                 { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), onSelect: () => useCosmos.getState().openVersions(current, true) },
                 { label: t.versions.listMenu, onSelect: () => useCosmos.getState().openVersions(current) },
                 { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },

@@ -82,7 +82,29 @@ export interface WritingSettings {
   column: FocusColumn;
   /** Mode focus : passer la fenêtre en plein écran (ordinateur). */
   fullscreen: boolean;
+  /** Police de la page du Manuscrit à l'écran (#24) ; les exports gardent la leur. */
+  pageFont: PageFont;
+  /** Interligne de la page du Manuscrit à l'écran (#24) ; les coupures de page suivent, les exports non. */
+  lineSpacing: LineSpacing;
 }
+
+/** Polices de la page (#24), toutes embarquées sous licence OFL (l'app marche hors ligne). Clés jamais traduites. */
+export const PAGE_FONTS = ["plex", "literata", "garamond", "atkinson", "courier"] as const;
+export type PageFont = (typeof PAGE_FONTS)[number];
+/** Pile CSS de chaque police, avec un repli du système. */
+export const PAGE_FONT_STACKS: Record<PageFont, string> = {
+  plex: 'var(--font-text)',
+  literata: '"Literata", Georgia, serif',
+  garamond: '"EB Garamond", Garamond, Georgia, serif',
+  atkinson: '"Atkinson Hyperlegible", system-ui, sans-serif',
+  courier: 'var(--font-script)',
+};
+/** Interlignes de la page (#24) : celui d'origine (1,6), simple, 1,5 et double (multiples d'une ligne de 1,2). */
+export const LINE_SPACINGS = ["normal", "single", "oneHalf", "double"] as const;
+export type LineSpacing = (typeof LINE_SPACINGS)[number];
+export const LINE_HEIGHTS: Record<LineSpacing, number> = { normal: 1.6, single: 1.2, oneHalf: 1.8, double: 2.4 };
+const isPageFont = (v: unknown): v is PageFont => typeof v === "string" && (PAGE_FONTS as readonly string[]).includes(v);
+const isLineSpacing = (v: unknown): v is LineSpacing => typeof v === "string" && (LINE_SPACINGS as readonly string[]).includes(v);
 
 /** Crans du zoom de la page (Cmd/Ctrl + et -, menu Présentation, Réglages). */
 export const PAGE_ZOOMS = [0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2] as const;
@@ -108,8 +130,12 @@ function readWriting(raw: unknown): WritingSettings {
     suggestions: w.suggestions !== false,
     column: isFocusColumn(w.column) ? w.column : "medium",
     fullscreen: w.fullscreen === true,
+    pageFont: isPageFont(w.pageFont) ? w.pageFont : "plex",
+    lineSpacing: isLineSpacing(w.lineSpacing) ? w.lineSpacing : "normal",
   };
 }
+/** Pour les tests : la lecture prudente des réglages d'écriture. */
+export const readWritingForTest = (raw: unknown) => readWriting(raw);
 const darkQuery = () => (typeof window !== "undefined" ? window.matchMedia?.("(prefers-color-scheme: dark)") : undefined);
 
 interface SettingsState {
@@ -301,6 +327,9 @@ export function initSettings() {
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     // Zoom de la page (manuscrit, scénario) : une variable CSS ; agrandie, la page peut défiler de côté.
     root.style.setProperty("--page-zoom", String(writing.zoom));
+    // Police et interligne de la page du Manuscrit (#24) : deux variables CSS, lues seulement par .ms-page.
+    root.style.setProperty("--page-font", PAGE_FONT_STACKS[writing.pageFont]);
+    root.style.setProperty("--page-leading", String(LINE_HEIGHTS[writing.lineSpacing]));
     applyWritingAids(writing.spellcheck, writing.suggestions);
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;

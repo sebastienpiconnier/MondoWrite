@@ -83,7 +83,8 @@ export function TrashNotice() {
     return () => window.clearTimeout(timer);
   }, [notice, clear, held]);
   if (!notice) return null;
-  const text = notice.count > 1 ? fmt(t.trash.movedMany, { n: notice.count }) : notice.title ? fmt(t.trash.moved, { title: notice.title }) : t.trash.movedUntitled;
+  const merged = notice.merged;
+  const text = merged ? (notice.title && merged.into ? fmt(t.merge.done, { from: notice.title, into: merged.into }) : t.merge.doneUntitled) : notice.count > 1 ? fmt(t.trash.movedMany, { n: notice.count }) : notice.title ? fmt(t.trash.moved, { title: notice.title }) : t.trash.movedUntitled;
   return (
     <div
       className="trash-notice"
@@ -101,7 +102,8 @@ export function TrashNotice() {
         type="button"
         className="ghost-button"
         onClick={() => {
-          useCosmos.getState().undo();
+          if (merged) useCosmos.getState().undoMerge(merged.undo);
+          else useCosmos.getState().undo();
           clear();
         }}
       >

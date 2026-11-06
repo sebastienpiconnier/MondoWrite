@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from "react";
 
-export type AppCommand = "settings" | "search" | "export" | "review" | "new-card" | "new-frame" | "toggle-scenes" | "toggle-side";
+export type AppCommand = "settings" | "search" | "export" | "review" | "new-card" | "new-frame" | "toggle-scenes" | "toggle-side" | "merge-next";
 
 const EVENT = "mondowrite:command";
 
