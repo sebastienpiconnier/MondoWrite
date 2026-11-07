@@ -29,6 +29,7 @@ import { readFiche, readQuestions } from "../character";
 import { isPageKind } from "../book";
 import { isIaId, readIaFields } from "../atelier";
 import { isCommentId } from "../comments";
+import { isRevNumber } from "../novelRevisions";
 import { cleanNote, putFootnotes, readFootnotes, takeFootnotes } from "../footnotes";
 import { iaImagesOf, readIaImages } from "../ai/imageGen";
 
@@ -61,6 +62,12 @@ turndown.addRule("ia", {
 turndown.addRule("comment", {
   filter: (node) => node.nodeName === "SPAN" && isCommentId((node as HTMLElement).getAttribute("data-comment")),
   replacement: (content, node) => (content ? `<span data-comment="${(node as HTMLElement).getAttribute("data-comment")}">${content}</span>` : ""),
+});
+
+// Passage tapé pendant une passe de révision (#22) : même chose, `<span data-rev="n">…</span>`.
+turndown.addRule("rev", {
+  filter: (node) => node.nodeName === "SPAN" && isRevNumber((node as HTMLElement).getAttribute("data-rev")),
+  replacement: (content, node) => (content ? `<span data-rev="${(node as HTMLElement).getAttribute("data-rev")}">${content}</span>` : ""),
 });
 
 export function htmlToMarkdown(html: string): string {
@@ -139,6 +146,11 @@ export function sanitizeHtml(html: string): string {
       // Passage commenté : de même, seulement l'identifiant du commentaire.
       if (child.tagName === "SPAN" && isCommentId(child.getAttribute("data-comment"))) {
         for (const attr of Array.from(child.attributes)) if (attr.name !== "data-comment") child.removeAttribute(attr.name);
+        continue;
+      }
+      // Passage d'une passe de révision : seulement son numéro (1 à 99).
+      if (child.tagName === "SPAN" && isRevNumber(child.getAttribute("data-rev"))) {
+        for (const attr of Array.from(child.attributes)) if (attr.name !== "data-rev") child.removeAttribute(attr.name);
         continue;
       }
       if (!ALLOWED.has(child.tagName)) {

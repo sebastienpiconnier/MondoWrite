@@ -93,3 +93,11 @@ omissions, PDF des seules pages révisées.
   appliqué par `setScreenplay`). Le numéro d'une scène tapée dans l'éditeur n'apparaît à l'écran qu'au rechargement de
   la feuille, mais il est dans le fichier et dans le PDF. Déverrouiller laisse les numéros posés.
 - Série imprimée en livres (un PDF par épisode) : pas de pagination verrouillée.
+
+## Roman (#22, novembre 2026)
+
+Même mécanique pour un roman : le texte tapé ou collé pendant une passe ouverte prend la couleur de la passe.
+- [x] Marque `rev` (`<span data-rev="n">`) dans le texte des scènes, Markdown et nettoyage comme `data-ia`.
+- [x] Plugin de frappe (`components/revMark.ts`), passes et panneau partagés avec le scénario.
+- [x] Puce de la passe, entrées du menu ⋯ du Manuscrit, « Nouvelle version propre » sur tout le livre.
+- Limites : pas de marque pour le texte supprimé ni pour un remplacement global ; la carte Scène agrandie ne colore pas ; rien n'est exporté.

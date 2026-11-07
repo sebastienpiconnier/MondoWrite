@@ -19,6 +19,7 @@ import { useSettings } from "../settings";
 import { smartType, typographyMode } from "../typography";
 import { IaMark } from "./iaMark";
 import { CommentMark } from "./commentMark";
+import { RevMark, NovelRevisions } from "./revMark";
 import { Footnote } from "./footnote";
 import { openSynonyms } from "../synonymsState";
 
@@ -133,7 +134,7 @@ const ProseBulletList = BulletList.extend({
 export function richTextExtensions({ link = true, prose = false }: { link?: boolean; prose?: boolean } = {}) {
   return [
     StarterKit.configure({ heading: { levels: [1, 2, 3] }, strike: false, ...(link ? {} : { link: false }), ...(prose ? { bulletList: false } : {}) }),
-    ...(prose ? [ProseBulletList, CommentMark, Footnote] : []),
+    ...(prose ? [ProseBulletList, CommentMark, RevMark, NovelRevisions, Footnote] : []),
     StrikeD,
     TaskList,
     TaskItem.configure({ nested: true }),

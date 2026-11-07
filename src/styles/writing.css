@@ -1289,3 +1289,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .names-note {
   font-size: 0.85rem;
 }
+
+/* Révisions du roman (#22) : le texte tapé pendant une passe a le fond discret de sa couleur et un soulignement
+   plein, pour ne pas tenir à la couleur seule. Le mode focus les efface (rien ne distrait la frappe). */
+.ms-page .rev-mark { background: color-mix(in srgb, var(--rev, var(--line)) 16%, transparent); text-decoration: underline solid var(--rev, var(--line)); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.ms-page.is-dimmed .rev-mark, .manuscript.is-focus .ms-page .rev-mark { background: none; text-decoration: none; }

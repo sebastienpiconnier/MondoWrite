@@ -24,7 +24,6 @@ Les issues sont rangées en lots (jalons GitHub), du plus facile au plus dur, pa
 batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #24, #21), 2 (safety: #14, #15,
 #30), 3 (usability: #27, #26) are done; batch 4 (writing tools: #20, #16, #17) is done.
 
-1. Lot 5 · Révisions / Revisions : #22 mode révision du roman (#18 révisions de scénario est fait)
 2. Lot 6 · Import et narration / Import and narration : #25 point de vue (à confirmer), #28 finitions de
    l'import Scrivener
 3. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
