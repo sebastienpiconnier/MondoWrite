@@ -15,16 +15,16 @@ Règles :
 - on ne cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité
   (import Scrivener, fichiers Final Draft, Fountain) ou pour du code repris (licence, `THIRD-PARTY-NOTICES.md`).
 
-Dernière mise à jour : 6 novembre 2026 (lot 3).
+Dernière mise à jour : 7 novembre 2026 (lot 4).
 
 ## Ordre / Order
 
 Les issues sont rangées en lots (jalons GitHub), du plus facile au plus dur, par thème. Les lots 1 (écriture :
-#23, #24, #21), 2 (sécurité : #14, #15, #30) et 3 (ergonomie : #27, #26) sont faits. / Issues are grouped in
+#23, #24, #21), 2 (sécurité : #14, #15, #30), 3 (ergonomie : #27, #26) sont faits ; le lot 4 (outils d'écriture) est fait pour #20, et en première livraison pour #16 et #17. / Issues are grouped in
 batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #24, #21), 2 (safety: #14, #15,
-#30) and 3 (usability: #27, #26) are done.
+#30), 3 (usability: #27, #26) are done; batch 4 (writing tools) is done for #20 and first-delivered for #16 and #17.
 
-1. Lot 4 · Outils d'écriture / Writing tools : #20 objectifs, #16 synonymes, #17 noms de personnages
+1. Lot 4 (reste) · Outils d'écriture / Writing tools (remaining) : #16 synonymes français, #17 registres de noms (fréquence, époque)
 2. Lot 5 · Révisions / Revisions : #18 révisions de scénario, puis #22 mode révision du roman
 3. Lot 6 · Import et narration / Import and narration : #25 point de vue (à confirmer), #28 finitions de
    l'import Scrivener

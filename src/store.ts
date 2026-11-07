@@ -273,8 +273,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -352,6 +352,10 @@ export interface CosmosState {
   bibleExport: BibleExportState;
   setBibleExport: (next: BibleExportState) => void;
   progress: Progress;
+  /** Total de mots avant la première modification de la séance (null : rien n'a encore été écrit), objectif de séance (#20). État d'affichage. */
+  sessionStart: number | null;
+  /** Repart d'une séance neuve : le compte revient à zéro. */
+  resetSession: () => void;
   /** Recrée la carte Scène d'un texte du manuscrit dont la carte a été supprimée. */
   restoreScene: (id: string) => void;
   /** Corbeille : cartes supprimées, restaurables (corbeille/<id>.md). */
@@ -1160,6 +1164,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       lastFiles: files,
       conflicts: [],
       saveError: null,
+      sessionStart: null,
       spotlightId: null,
       charFilter: null,
       wiresShown: [],
@@ -1432,6 +1437,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       lastFiles: {},
       conflicts: [],
       saveError: null,
+      sessionStart: null,
       spotlightId: null,
       charFilter: null,
       wiresShown: [],
@@ -2097,7 +2103,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const { progress } = get();
       const totalBefore = progress[day]?.end ?? Object.values(get().manuscript).reduce((sum, html) => sum + countWords(html), 0);
       const totalAfter = Math.max(0, totalBefore + countWords(next) - countWords(before));
-      set({ manuscript, progress: recordProgress(progress, day, totalBefore, totalAfter) });
+      set({ manuscript, progress: recordProgress(progress, day, totalBefore, totalAfter), sessionStart: get().sessionStart ?? totalBefore });
       touch();
     },
     goals: {},
@@ -2106,6 +2112,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     progress: {},
+    sessionStart: null,
+    resetSession: () => set({ sessionStart: null }),
     pitch: {},
     chutier: [],
     addPassage: (passage) => {
@@ -2608,7 +2616,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const { progress } = get();
       const totalAfter = screenplayWords(screenplay);
       const totalBefore = progress[day]?.end ?? (before ? screenplayWords(before) : totalAfter);
-      set({ screenplay, nodes: headedNodes(get().nodes, screenplay), progress: recordProgress(progress, day, totalBefore, totalAfter) });
+      set({ screenplay, nodes: headedNodes(get().nodes, screenplay), progress: recordProgress(progress, day, totalBefore, totalAfter), sessionStart: get().sessionStart ?? totalBefore });
       // Scènes déplacées (séquencier, liste des scènes) : le canevas suit l'ordre du fichier.
       // Série : une scène qui change d'épisode, un épisode déplacé ou renommé comptent aussi (titres des cadres).
       const order = (sp: Screenplay | null) =>

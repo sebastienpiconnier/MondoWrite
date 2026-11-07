@@ -355,6 +355,52 @@ const scenarios = [
     },
   },
   {
+    name: "synonymes : Ctrl+Alt+Y sur un mot du manuscrit anglais, un clic remplace le mot",
+    context: { locale: "en-US" },
+    async run(h) {
+      const { page } = h;
+      await h.create("Synonyms");
+      await h.view(4);
+      await page.getByPlaceholder("Title of the first scene…").fill("Walk");
+      await page.getByPlaceholder("Title of the first scene…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("She walked home");
+      // Le curseur se place dans « walked » (6 lettres depuis le début) ; on le vérifie avant de demander les
+      // synonymes, la machine chargée pouvant ralentir les touches.
+      await until(async () => {
+        await page.keyboard.press("Home");
+        for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowRight");
+        return (await page.evaluate(() => getSelection()?.anchorOffset)) === 6;
+      }, "le curseur n'est pas dans « walked »");
+      await h.wait(200); // ProseMirror lit la sélection du navigateur après coup
+      await page.keyboard.press("Control+Alt+y");
+      await until(() => page.locator(".synonyms-panel .synonyms-list button").count(), "la fenêtre des synonymes n'a rien proposé");
+      const first = await page.locator(".synonyms-panel .synonyms-list button").first().innerText();
+      await page.locator(".synonyms-panel .synonyms-list button").first().click();
+      await until(async () => !(await page.locator(".synonyms-panel").count()), "la fenêtre est restée ouverte");
+      await until(async () => (await editor.innerText()).includes(`She ${first} home`), `le mot n'a pas été remplacé par « ${first} » : ${await editor.innerText()}`);
+    },
+  },
+  {
+    name: "noms : « Proposer un nom… » du menu d'une carte Personnage renomme la carte",
+    async run(h) {
+      const { page } = h;
+      await h.create("Noms");
+      const id = await h.newCard("Qui");
+      await h.node(id).locator(".card-type").click();
+      await page.getByRole("option", { name: "Personnage", exact: true }).click();
+      await until(() => h.node(id).locator(".card.type-personnage").count(), "la carte n'est pas devenue Personnage");
+      await h.node(id).locator(".card-actions button").first().click();
+      await page.getByRole("menuitem", { name: "Proposer un nom…" }).click();
+      await until(() => page.locator(".names-panel .names-pick").count(), "aucun nom proposé");
+      const name = await page.locator(".names-panel .names-pick").first().innerText();
+      await page.locator(".names-panel .names-pick").first().click();
+      await until(async () => (await h.cardList()).some((c) => c.title === name), `la carte n'a pas pris le nom « ${name} »`);
+    },
+  },
+  {
     name: "point de vue (1.13.0) : narrateur créé depuis le Manuscrit, annulé, rétabli, vu dans la Bible et sur le canevas",
     async run(h) {
       const { page } = h;

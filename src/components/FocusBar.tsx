@@ -12,6 +12,7 @@ import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { isAppleKeyboard, isMobileOS, isTauri } from "../platform";
 import { nextHighlight, sessionDelta } from "../focusText";
+import { sessionWords } from "../stats";
 
 /** Pause après la dernière touche avant que le compteur revienne. */
 export const TYPING_PAUSE_MS = 2000;
@@ -147,11 +148,16 @@ export function FocusBar() {
 export function FocusCounter({ text, words, num }: { text: string; words: number; num: (n: number) => string }) {
   const t = useT();
   const start = useRef(words);
+  // Objectif de séance (#20) : le signal reste discret, dans le même compteur.
+  const goal = useCosmos((x) => x.goals.session);
+  const sessionStart = useCosmos((x) => x.sessionStart);
+  const reached = !!goal && sessionWords(sessionStart, words) >= goal;
   return (
     <p className="ms-focus-count" aria-hidden="true">
       {text}
       {" · "}
       {fmt(t.focus.session, { n: sessionDelta(start.current, words, num) })}
+      {reached ? ` · ✓ ${t.stats.sessionReached}` : ""}
     </p>
   );
 }

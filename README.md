@@ -110,7 +110,7 @@ Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont dispo
 
 **Mises à jour :** MondoWrite vous prévient quand une nouvelle version sort et l'installe d'un clic, après avoir enregistré votre projet (Réglages, « Mises à jour », ou « À propos de MondoWrite »).
 
-MondoWrite est en cours de développement (version 1.20.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
+MondoWrite est en cours de développement (version 1.21.0). **Guide de l’utilisateur illustré : [en ligne](https://sebastienpiconnier.github.io/MondoWrite/fr/) ou [en PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-fr.pdf) ([English](https://sebastienpiconnier.github.io/MondoWrite/en/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** Dans l’app, il s’ouvre avec F1, depuis les Réglages ou, sur Mac, le menu Aide. Ses sources sont dans [docs/guide](docs/guide).
 
 ## Fonctionnalités
 
@@ -190,7 +190,7 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 - **Le synopsis en filigrane :** une scène encore vide affiche son synopsis en gris, comme une note de plan, jusqu'à ce que vous écriviez. Au-dessus de la page, une barre discrète : le titre de la scène, le type de page, le mode focus et la corbeille.
 - **Mode focus :** la page seule à l'écran, en machine à écrire si vous le souhaitez (la ligne en cours reste à hauteur d'yeux), avec la phrase, la ligne ou le paragraphe en pleine encre et le reste estompé. Ctrl/Cmd+Maj+X marque un passage « à reprendre ».
 - **Dans cette scène :** à côté de la page, les personnages et les lieux cités dans le texte, le synopsis de la scène (modifiable sur place) et le Chutier.
-- **Statistiques et objectifs**, repliés en bas de la même colonne : mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO).
+- **Statistiques et objectifs**, repliés en bas de la même colonne : mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO), avec une échéance (le but du jour se calcule), un objectif de séance, par scène et par chapitre. **Synonymes** hors ligne (Ctrl/Cmd + Alt + Y, anglais pour l'instant) et **annuaire de noms** par pays pour les personnages.
 - **Aller à** (Ctrl/Cmd+G) : une page, une scène, un chapitre, un passage à reprendre ou une note.
 - **Écouter :** le texte lu à voix haute par les voix de l'appareil, une voix par personnage et un narrateur, le passage lu surligné.
 - **Vérifier et Statistiques :** à côté du texte, l'onglet « Vérifier » pose des questions (un personnage principal sans « Veut », un secret jamais révélé, une case loin de sa place, un mot répété à quelques lignes d'écart, les mots que vous employez le plus), et la fenêtre Statistiques compte la présence des personnages et des lieux.

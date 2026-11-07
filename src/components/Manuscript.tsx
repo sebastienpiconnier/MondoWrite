@@ -24,6 +24,7 @@ import { DirectionsSuggest, novelSceneText } from "./Atelier";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { usePhone } from "./usePhone";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSettled } from "./useSettled";
 import { setCaretSource } from "../resume";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -80,6 +81,9 @@ function readPanels(): Panels {
   const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
   return { scenes: !phone, side: !phone, meta: true };
 }
+
+/** Pause dans la frappe avant de refaire « Vérifier » sur tout le livre. */
+const REVIEW_PAUSE_MS = 700;
 
 export function Manuscript() {
   const t = useT();
@@ -198,8 +202,18 @@ export function Manuscript() {
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<SideTab>("scene");
   const storyFindings = useStoryFindings();
-  const findings = useMemo(() => [...checkManuscript(manuscript, order, cards, lang), ...storyFindings], [manuscript, order, cards, lang, storyFindings]);
-  const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
+  // « Vérifier » relit tout le livre (mots les plus employés, répétitions) : rien n'est calculé tant que l'onglet
+  // n'est pas ouvert, et ouvert, on attend une pause dans la frappe plutôt que de le refaire à chaque lettre
+  // (l'écriture était saccadée dans un long manuscrit).
+  const reviewOpen = sideTab === "review";
+  const settledManuscript = useSettled(manuscript, REVIEW_PAUSE_MS, reviewOpen);
+  const findings = useMemo(
+    () => [...(reviewOpen ? checkManuscript(settledManuscript, order, cards, lang) : []), ...storyFindings],
+    [reviewOpen, settledManuscript, order, cards, lang, storyFindings],
+  );
+  const findingsCount = useOpenFindings(findings) + useOpenAiQuestions();
+  // Le compteur n'a de sens que relevé : onglet fermé, le bouton n'en montre pas.
+  const openFindings = reviewOpen ? findingsCount : 0;
   const openReview = () => {
     setSideTab("review");
     if (!panels.side) togglePanel("side");
@@ -946,7 +960,7 @@ export function Manuscript() {
           </button>
         </section>
         <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
-        <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} />
+        <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} chapterWords={chapter ? order.reduce((sum, id) => sum + (chapterOf(plan, id)?.id === chapter.id ? (stats.perScene.get(id) ?? 0) : 0), 0) : undefined} />
         </>
         )}
       </aside>

@@ -25,6 +25,8 @@ import { ProfileDialog } from "./ProfileDialog";
 import { VracDialog } from "./VracDialog";
 import { VersionsDialog } from "./VersionsDialog";
 import { BackupsDialog } from "./BackupsDialog";
+import { SynonymsPanel } from "./SynonymsPanel";
+import { NamePicker } from "./NamePicker";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
@@ -70,7 +72,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "synonyms" || dialog === "names" ? " is-replace is-names" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -117,6 +119,8 @@ export function Dialogs() {
       {dialog === "backups" && <BackupsDialog />}
       {dialog === "goto" && <GoToPanel />}
       {dialog === "commands" && <CommandPalette />}
+      {dialog === "synonyms" && <SynonymsPanel />}
+      {dialog === "names" && <NamePicker />}
       {dialog === "scriptPdf" && <ScriptPdfPanel />}
       {dialog === "bibleExport" && <BibleExportDialog />}
       {dialog === "profile" && <ProfileDialog onDone={() => setDialog(null)} />}
