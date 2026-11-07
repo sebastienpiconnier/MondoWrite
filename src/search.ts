@@ -15,8 +15,24 @@ export interface SearchResult {
 
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+// Le même HTML est lu plusieurs fois par frappe (mots, progression, statistiques, relecture) : les derniers
+// résultats sont gardés. Un long texte coûte plusieurs millisecondes à épurer.
+const plainCache = new Map<string, string>();
+const PLAIN_CACHE_MAX = 64;
+const PLAIN_CACHE_MIN_LENGTH = 400;
+
 /** Texte lisible d'un corps de carte (HTML produit par l'éditeur, déjà nettoyé). */
 export function plainText(html: string): string {
+  if (html.length < PLAIN_CACHE_MIN_LENGTH) return computePlainText(html);
+  const known = plainCache.get(html);
+  if (known !== undefined) return known;
+  const text = computePlainText(html);
+  if (plainCache.size >= PLAIN_CACHE_MAX) plainCache.delete(plainCache.keys().next().value as string);
+  plainCache.set(html, text);
+  return text;
+}
+
+function computePlainText(html: string): string {
   return html
     .replace(/<\/(p|li|h[1-6]|blockquote)>|<br\s*\/?>/gi, " ")
     .replace(/<[^>]+>/g, "")

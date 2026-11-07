@@ -17,7 +17,17 @@ export function stopwordsFor(lang: string): Set<string> {
 }
 
 /** Mot replié pour comparer : minuscules, sans accents (les listes de mots outils sont écrites sans). */
-export const foldWord = (w: string, lang: string) => w.toLocaleLowerCase(lang).normalize("NFD").replace(/\p{M}+/gu, "");
+const foldCache = new Map<string, string>();
+export function foldWord(w: string, lang: string): string {
+  const key = `${lang}\u0000${w}`;
+  let folded = foldCache.get(key);
+  if (folded === undefined) {
+    folded = w.toLocaleLowerCase(lang).normalize("NFD").replace(/\p{M}+/gu, "");
+    if (foldCache.size > 50000) foldCache.clear();
+    foldCache.set(key, folded);
+  }
+  return folded;
+}
 
 /** Forme commune d'un mot pour compter : « mains » et « main », « regards » et « regard » vont ensemble. */
 export function stemWord(folded: string): string {

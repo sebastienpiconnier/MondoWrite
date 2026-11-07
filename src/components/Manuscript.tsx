@@ -24,6 +24,7 @@ import { DirectionsSuggest, novelSceneText } from "./Atelier";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { usePhone } from "./usePhone";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSettled } from "./useSettled";
 import { setCaretSource } from "../resume";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -80,6 +81,9 @@ function readPanels(): Panels {
   const phone = typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
   return { scenes: !phone, side: !phone, meta: true };
 }
+
+/** Pause dans la frappe avant de refaire « Vérifier » sur tout le livre. */
+const REVIEW_PAUSE_MS = 700;
 
 export function Manuscript() {
   const t = useT();
@@ -198,7 +202,10 @@ export function Manuscript() {
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<SideTab>("scene");
   const storyFindings = useStoryFindings();
-  const findings = useMemo(() => [...checkManuscript(manuscript, order, cards, lang), ...storyFindings], [manuscript, order, cards, lang, storyFindings]);
+  // « Vérifier » relit tout le livre (mots les plus employés, répétitions) : on attend une pause dans la frappe
+  // plutôt que de le refaire à chaque lettre, ce qui rendait l'écriture saccadée dans un long manuscrit.
+  const settledManuscript = useSettled(manuscript, REVIEW_PAUSE_MS);
+  const findings = useMemo(() => [...checkManuscript(settledManuscript, order, cards, lang), ...storyFindings], [settledManuscript, order, cards, lang, storyFindings]);
   const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
   const openReview = () => {
     setSideTab("review");
