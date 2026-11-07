@@ -11,6 +11,7 @@ MondoWrite is released under the [GNU AGPL v3.0 or later](LICENSE). It reuses or
 3. Polices / Fonts : SIL Open Font License 1.1
 4. Bibliothèques / Libraries : MIT, Apache-2.0, ISC
 5. Domaine public / Public domain
+6. Données de synonymes et de noms / Synonym and name data : licence WordNet, MIT
 
 ---
 
@@ -178,3 +179,116 @@ MondoWrite uses the following libraries, bundled in the app. Each license's full
 Le projet d'exemple reprend « Le Petit Chaperon rouge » de Charles Perrault (1697) et trois gravures de Gustave Doré, gravées sur bois par Pannemaker (édition Hetzel, 1862), tous du domaine public.
 
 The example project uses Charles Perrault's "Le Petit Chaperon rouge" (1697) and three engravings by Gustave Doré (Hetzel edition, 1862), all in the public domain.
+
+---
+
+## 6. Données de synonymes et de noms / Synonym and name data
+
+Ces fichiers de données sont fabriqués par `scripts/thesaurus/build.mjs` et `scripts/names/build.mjs` et livrés dans `src/assets/thesaurus/` et `src/assets/names/`. Seules les données sont reprises, aucune bibliothèque.
+
+These data files are built by `scripts/thesaurus/build.mjs` and `scripts/names/build.mjs` and shipped in `src/assets/thesaurus/` and `src/assets/names/`. Only data is reused, no library.
+
+- **Synonymes anglais / English synonyms** : WordNet 3.x, Copyright 2006 by Princeton University (via le paquet npm `wordnet-db`). Licence WordNet, permissive, reproduite ci-dessous / WordNet license, permissive, reproduced below.
+- **Prénoms et noms par pays / First and last names by country** : listes de données de Faker (`@faker-js/faker`), MIT, reproduite ci-dessous / Faker data lists, MIT license reproduced below.
+
+### WordNet
+
+```
+WordNet Release 3.0
+
+This software and database is being provided to you, the LICENSEE, by  
+Princeton University under the following license.  By obtaining, using  
+and/or copying this software and database, you agree that you have  
+read, understood, and will comply with these terms and conditions.:  
+  
+Permission to use, copy, modify and distribute this software and  
+database and its documentation for any purpose and without fee or  
+royalty is hereby granted, provided that you agree to comply with  
+the following copyright notice and statements, including the disclaimer,  
+and that the same appear on ALL copies of the software, database and  
+documentation, including modifications that you make for internal  
+use or for distribution.  
+  
+WordNet 3.0 Copyright 2006 by Princeton University.  All rights reserved.  
+  
+THIS SOFTWARE AND DATABASE IS PROVIDED "AS IS" AND PRINCETON  
+UNIVERSITY MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR  
+IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PRINCETON  
+UNIVERSITY MAKES NO REPRESENTATIONS OR WARRANTIES OF MERCHANT-  
+ABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE  
+OF THE LICENSED SOFTWARE, DATABASE OR DOCUMENTATION WILL NOT  
+INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR  
+OTHER RIGHTS.  
+  
+The name of Princeton University or Princeton may not be used in  
+advertising or publicity pertaining to distribution of the software  
+and/or database.  Title to copyright in this software, database and  
+any associated documentation shall at all times remain with  
+Princeton University and LICENSEE agrees to preserve same.
+```
+
+### Faker
+
+```
+Faker - Copyright (c) 2022-2025
+
+This software consists of voluntary contributions made by many individuals.
+For exact contribution history, see the revision history
+available at https://github.com/faker-js/faker
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+===
+
+From: https://github.com/faker-js/faker/commit/a9f98046c7d5eeaabe12fc587024c06d683800b8
+To: https://github.com/faker-js/faker/commit/29234378807c4141588861f69421bf20b5ac635e
+
+Based on faker.js, copyright Marak Squires and contributor, what follows below is the original license.
+
+===
+
+faker.js - Copyright (c) 2011-2020
+Marak Squires
+http://github.com/marak/faker.js/
+
+faker.js was inspired by and has used data definitions from:
+
+ * https://github.com/stympy/faker/ - Copyright (c) 2007-2010 Benjamin Curtis
+ * http://search.cpan.org/~jasonk/Data-Faker-0.07/ - Copyright 2004-2005 by Jason Kohles
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```

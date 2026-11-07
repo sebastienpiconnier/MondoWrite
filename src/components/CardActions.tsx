@@ -5,8 +5,9 @@
 import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useT } from "../i18n";
 import { useCosmos } from "../store";
+import { openNamesForCard } from "../namesState";
 
-export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage: boolean; title?: string }) {
+export function CardActions({ id, hasImage, title = "", isCharacter = false }: { id: string; hasImage: boolean; title?: string; isCharacter?: boolean }) {
   const all = useT();
   const t = all.card;
   const open = useCosmos((s) => s.cardMenu === id);
@@ -41,6 +42,8 @@ export function CardActions({ id, hasImage, title = "" }: { id: string; hasImage
       },
     ],
     [t.duplicateCard, () => useCosmos.getState().duplicateCards([id])],
+    // Un personnage : des noms tirés de listes par pays (#17).
+    ...(isCharacter ? [[all.names.menu, () => openNamesForCard(id)] as [string, () => void]] : []),
     // Un nom propre change : la carte et toutes ses occurrences dans le texte.
     ...(title.trim() ? [[all.replace.renameMenu, () => useCosmos.getState().openReplace({ find: title.trim(), renameId: id })] as [string, () => void]] : []),
     // En dernier, en rouge, après un filet (1.11.1) : la carte part à la corbeille (Annuler, ou la remettre).

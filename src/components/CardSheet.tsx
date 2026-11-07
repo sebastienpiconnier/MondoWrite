@@ -11,6 +11,7 @@ import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isCardRefField, isChoiceField, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
+import { openNamesForCard } from "../namesState";
 
 export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boolean }) {
   const all = useT();
@@ -102,6 +103,11 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
       {open && (
         <div id={`${id}-fields`}>
           <div className="sheet-fields">{shown.map(field)}</div>
+          {card.type === "personnage" && (
+            <button type="button" className="link-button sheet-more" onClick={() => openNamesForCard(card.id)}>
+              {all.names.menu}
+            </button>
+          )}
           {filled > 0 && empty > 0 && !more && (
             <div className="sheet-add" role="group" aria-label={t.addIfUseful}>
               <span className="eyebrow">{t.addIfUseful}</span>

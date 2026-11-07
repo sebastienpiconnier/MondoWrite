@@ -71,13 +71,15 @@ describe("personnage", () => {
 
   it("le nom en cours d'écriture ne se propose pas lui-même", () => {
     const elements = [...parse(source).elements, { type: "character" as const, text: "ZO" }];
-    expect(labels("character", "ZO", data({ elements, currentIndex: elements.length - 1 }))).toEqual(["Créer la fiche de Zo"]);
+    expect(labels("character", "ZO", data({ elements, currentIndex: elements.length - 1 }))).toEqual(["Créer la fiche de Zo", "Proposer un nom…"]);
   });
 
   it("personnage sans carte : propose de la créer, sans la présélectionner", () => {
     const result = suggest("character", "LÉA", data());
     expect(result.items).toEqual([
       { key: "create", label: "Créer la fiche de Léa", hint: "nouvelle carte", create: { type: "personnage", title: "Léa" } },
+      // Un nom nouveau : l'annuaire en propose, en dernier choix (#17).
+      { key: "names", label: "Proposer un nom…", hint: "personnage", names: true },
     ]);
     expect(result.active).toBe(-1);
     // INÈS a déjà sa carte (« Inès Morvan »).

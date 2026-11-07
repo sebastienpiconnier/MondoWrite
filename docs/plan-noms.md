@@ -1,5 +1,7 @@
 # Plan : annuaire de noms de personnages
 
+> **Statut : première livraison en 1.21.0 (lot 4) avec les listes de Faker (tous pays, sans époque ni fréquence), embarquées et chargées à la demande. Reste : les registres officiels par pays (INSEE, SSA, ONS…) pour la fréquence et l'époque, et le préremplissage de l'époque.**
+
 Demande de l'auteur du 3 novembre 2026 : proposer des prénoms et des noms par genre et par pays. Version visée :
 avec les synonymes (même principe de données embarquées ou téléchargées une fois).
 
@@ -45,15 +47,15 @@ simplement (« Époque non disponible pour ce pays »).
 
 - [ ] Recherche des sources (tableau ci-dessus complété), avec licence et copyright pour
       `THIRD-PARTY-NOTICES.md`
-- [ ] Script `scripts/names/build.mjs` : un fichier compact par pays (prénom, sexe, fréquence par décennie ;
+- [x] Script `scripts/names/build.mjs` : un fichier compact par pays (prénom, sexe, fréquence par décennie ;
       noms avec fréquence)
-- [ ] `src/names.ts` (pur) : tirage pondéré par la fréquence (ou « Rares » en option), filtres, exclusion des
+- [x] `src/names.ts` (pur) : tirage pondéré par la fréquence (ou « Rares » en option), filtres, exclusion des
       noms du projet ; tests avec une graine fixe
-- [ ] `NamePicker.tsx` : pays, genre, époque, liste, « D'autres », Entrée et flèches ; depuis la fiche d'un
+- [x] `NamePicker.tsx` : pays, genre, époque, liste, « D'autres », Entrée et flèches ; depuis la fiche d'un
       personnage, sa carte (menu ⋯) et la création d'un personnage dans le scénario (complétion : « Proposer un
       nom… » en dernier)
 - [ ] L'époque se préremplit avec l'âge de la fiche et l'époque du projet (couverture) quand elles sont là
-- [ ] Textes `t.names.*` (fr, en), guide
+- [x] Textes `t.names.*` (fr, en), guide
 
 ## Fichiers touchés
 

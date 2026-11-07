@@ -110,7 +110,7 @@ Installers for macOS (Apple Silicon and Intel), Windows and Linux are available 
 
 **Updates:** MondoWrite tells you when a new version is out and installs it in one click, after saving your project (Settings, “Updates”, or “About MondoWrite”).
 
-MondoWrite is under active development (version 1.20.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
+MondoWrite is under active development (version 1.21.0). **Illustrated user guide: [online](https://sebastienpiconnier.github.io/MondoWrite/en/) or [as a PDF](https://sebastienpiconnier.github.io/MondoWrite/MondoWrite-guide-en.pdf) ([français](https://sebastienpiconnier.github.io/MondoWrite/fr/), [español](https://sebastienpiconnier.github.io/MondoWrite/es/)).** In the app, it opens with F1, from Settings or, on a Mac, the Help menu. Its sources are in [docs/guide](docs/guide).
 
 ## Features
 
@@ -189,7 +189,7 @@ Then every entry, generated from your cards, on a single page and grouped by sec
 - **Scene status:** draft, to revise or done, a coloured dot on the card, in the Outline, the step outline and the scene list. The statistics count the scenes done.
 - **The synopsis as a watermark:** an empty scene shows its synopsis in grey, like an outline note, until you write.
 - **In this scene:** beside the page, the characters and places named in the text, the scene’s synopsis (editable in place) and the Graveyard.
-- **Statistics and goals**, folded at the bottom of the same column: words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO).
+- **Statistics and goals**, folded at the bottom of the same column: words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO), with a deadline (the daily target is computed), a session goal, and goals per scene and per chapter. Offline **synonyms** (Ctrl/Cmd + Alt + Y, English for now) and a **name directory** by country for characters.
 - **Go to** (Ctrl/Cmd+G): a page, a scene, a chapter, a passage to revisit or a note.
 - **Listen:** the text read aloud by the device’s voices, one voice per character and a narrator, the passage being read highlighted.
 - **Check and Statistics:** beside the text, the “Check” tab asks questions (a main character with no “Wants”, a secret never revealed, a beat far from its place, a word repeated a few lines apart, the words you use most), and the Statistics window counts how present characters and places are.

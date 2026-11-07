@@ -43,6 +43,7 @@ export const SHORTCUT_GROUPS = {
     ["task", ["Mod", "Shift", "9"]],
     ["quote", ["Mod", "Shift", "B"]],
     ["revisit", ["Mod", "Shift", "X"]],
+    ["synonyms", ["Mod", "Alt", "Y"]],
     ["markdown", ["**", "*", "#", "-", "[ ]"]],
   ],
   manuscript: [

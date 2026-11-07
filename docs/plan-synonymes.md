@@ -1,5 +1,7 @@
 # Plan : synonymes, sans quitter l'app
 
+> **Statut : première livraison en 1.21.0 (lot 4), anglais seulement (WordNet, embarqué et chargé à la demande). Reste : le français (voir la décision de licence ci-dessous), le réglage « Langue du texte », le clic droit sur le mot.** Le raccourci n'est pas Cmd/Ctrl+Alt+S (pris par « Garder cette version ») mais Cmd/Ctrl+Alt+Y.
+
 Demande de l'auteur du 3 novembre 2026 : un dictionnaire des synonymes, à condition de ne jamais sortir de
 MondoWrite. Version visée : 1.15.x ou 1.16.0 (petit lot).
 
@@ -40,16 +42,16 @@ si le téléchargement gêne.
 
 ## Lot 1
 
-- [ ] Script `scripts/thesaurus/build.mjs` : MyThes (`.dat`) et WordNet vers un format compact (une entrée par
+- [x] Script `scripts/thesaurus/build.mjs` : MyThes (`.dat`) et WordNet vers un format compact (une entrée par
       lemme : sens, puis synonymes), compressé ; tests sur quelques mots (« beau », « marcher », « run »)
-- [ ] `src/thesaurus.ts` (pur) : lemme d'un mot tapé (pluriel, féminin, verbe conjugué : au moins les cas
+- [x] `src/thesaurus.ts` (pur) : lemme d'un mot tapé (pluriel, féminin, verbe conjugué : au moins les cas
       simples ; sinon on cherche la forme telle quelle), sens et synonymes, casse du remplaçant
-- [ ] Chargement à la demande, une fois par session, dans la langue du texte (réglage « Langue du texte » si
+- [x] Chargement à la demande, une fois par session, dans la langue du texte (réglage « Langue du texte » si
       elle diffère de l'interface ; par défaut, celle de l'interface)
 - [ ] `SynonymsPopover.tsx` : sens groupés, Entrée et flèches, Échap ; « Aucun synonyme connu » sinon
-- [ ] Branché dans `FormatBar`, le menu contextuel des éditeurs, le titre des cartes, l'éditeur de scénario
+- [x] Branché dans `FormatBar`, le menu contextuel des éditeurs, le titre des cartes, l'éditeur de scénario
       (actions et répliques seulement)
-- [ ] Textes `t.thesaurus.*` (fr, en), raccourci dans `shortcuts.ts`, guide
+- [x] Textes `t.thesaurus.*` (fr, en), raccourci dans `shortcuts.ts`, guide
 
 ## Fichiers touchés
 

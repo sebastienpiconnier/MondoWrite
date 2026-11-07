@@ -51,6 +51,7 @@ import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
+import { openNames } from "../namesState";
 import { setCaretSource } from "../resume";
 import { resolveEpisode, seriesOf } from "../screenplay/series";
 import { useEpisodeLabel } from "./EpisodePicker";
@@ -967,6 +968,20 @@ export function ScreenplayView() {
       const sceneCard = element.node.attrs.cardId as string | null;
       if (item.create.type === "lieu" && sceneCard) linkCards(sceneCard, id, sp.linkSetIn);
       refreshMenu(editor);
+      return;
+    }
+    if (item.names) {
+      // Le nom choisi remplace le texte de l'élément en cours (relu au moment du choix : il a pu bouger).
+      openNames({
+        kind: "full",
+        onPick: (name) => {
+          const now = currentElement(editor.state);
+          if (!now) return;
+          const from = now.pos + 1;
+          editor.view.dispatch(editor.state.tr.insertText(name, from, from + now.node.content.size).scrollIntoView());
+          window.setTimeout(() => editor.view.focus(), 0);
+        },
+      });
       return;
     }
     if (item.text === undefined) return;

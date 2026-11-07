@@ -27,6 +27,8 @@ export interface SuggestData {
     /** Avec {name}. */
     createCharacter: string;
     createLocation: string;
+    /** Ouvre l'annuaire de noms (#17). */
+    proposeName: string;
   };
 }
 
@@ -38,6 +40,8 @@ export interface Suggestion {
   text?: string;
   /** Ou bien : créer une carte, sans toucher au texte. */
   create?: { type: "personnage" | "lieu"; title: string };
+  /** Ou bien : ouvrir l'annuaire de noms, le nom choisi remplace le texte de l'élément. */
+  names?: true;
 }
 
 export interface SuggestResult {
@@ -183,6 +187,11 @@ function suggestCharacter(text: string, data: SuggestData): SuggestResult {
       hint: data.labels.newCard,
       create: { type: "personnage", title },
     });
+  }
+
+  // Un nom nouveau (aucun personnage ne commence ainsi) : l'annuaire en propose, en dernier choix (Entrée garde son rôle habituel).
+  if (typed.length >= 2 && names.length === 0) {
+    items.push({ key: "names", label: data.labels.proposeName, hint: data.labels.character, names: true });
   }
 
   // Nom déjà complet, ou rien de tapé : Entrée passe au dialogue comme d'habitude.
