@@ -7,7 +7,7 @@ import type { Project } from "../types";
 import type { ScrivenerSource } from "./scrivener/mapping";
 import { importFountain, importScreenplayModel, type ImportOptions } from "../screenplay/import";
 import { parse } from "../screenplay/parse";
-import { parseFdx } from "../screenplay/fdxImport";
+import { parseFdx, parseFdxRevisions } from "../screenplay/fdxImport";
 import { bookToProject, chapterize, textParagraphs } from "./manuscript";
 
 export const IMPORT_EXTENSIONS = ["docx", "md", "markdown", "txt", "fountain", "spmd", "fdx", "pdf", "zip"];
@@ -47,7 +47,7 @@ export async function projectFromFile(file: { name: string; data: Uint8Array }, 
   if (ext === "fdx") {
     const screenplay = parseFdx(text());
     if (!screenplay) return null;
-    project = importScreenplayModel(screenplay, options);
+    project = importScreenplayModel(screenplay, { ...options, revisions: parseFdxRevisions(text()) });
   } else if (ext === "fountain" || ext === "spmd" || (ext === "txt" && looksLikeScreenplay(text()))) {
     project = importFountain(text(), options);
   } else if (ext === "pdf") {

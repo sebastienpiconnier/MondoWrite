@@ -1,7 +1,9 @@
 # Plan : révisions de scénario
 
-Demande de l'auteur du 3 novembre 2026. Version visée : à fixer (après les
-épisodes).
+> **Statut : fait (novembre 2026, lots 1 et 2).** Reste à confirmer sur un vrai Final Draft : la forme exacte du
+> bloc `<Revisions>` du FDX (écrite au mieux d'après le format, jamais ouverte dans le logiciel).
+
+Demande de l'auteur du 3 novembre 2026.
 
 Quand un scénario part en préparation, chaque nouvelle version circule sur des pages de couleur, les lignes
 changées sont marquées d'un astérisque dans la marge, et les pages sont **verrouillées** : une page ajoutée
@@ -43,24 +45,24 @@ numéros. C'est attendu des scénaristes professionnels.
 
 ## Lot 1 : passes et marques
 
-- [ ] `screenplay/revisions.ts` (pur) : lire et écrire la note, élément modifié par rapport à l'instantané pris à
+- [x] `screenplay/revisions.ts` (pur) : lire et écrire la note, élément modifié par rapport à l'instantané pris à
       l'ouverture de la passe (comparaison élément par élément avec `textDiff.ts`), effacement
-- [ ] Éditeur : attribut `rev` des nœuds (non repris par Entrée, comme `comments`), astérisque en marge par
+- [x] Éditeur : attribut `rev` des nœuds (non repris par Entrée, comme `comments`), astérisque en marge par
       décoration, fond de la couleur de la passe (jetons `--rev-<couleur>` dans les deux thèmes, contraste
       vérifié)
-- [ ] Barre du scénario, menu ⋯ : « Ouvrir une révision… » (couleur proposée, date, nom facultatif),
+- [x] Barre du scénario, menu ⋯ : « Ouvrir une révision… » (couleur proposée, date, nom facultatif),
       « Fermer la révision », « Effacer les marques »
-- [ ] PDF : astérisque en marge, en-tête de la passe sur les pages révisées, option « Seulement les pages
+- [x] PDF : astérisque en marge, en-tête de la passe sur les pages révisées, option « Seulement les pages
       révisées »
-- [ ] FDX : écrire et relire les révisions
+- [x] FDX : écrire et relire les révisions
 
 ## Lot 2 : pages verrouillées
 
-- [ ] `paginate.ts` et `typeset.ts` : pagination contrainte par les pages verrouillées (12A, 12B ; « 13-14 »),
+- [x] `paginate.ts` et `typeset.ts` : pagination contrainte par les pages verrouillées (12A, 12B ; « 13-14 »),
       même résultat à l'écran (`pages.ts`) et dans le PDF
-- [ ] Numéros de scène verrouillés aussi (une scène ajoutée entre 12 et 13 devient 12A), en s'appuyant sur les
+- [x] Numéros de scène verrouillés aussi (une scène ajoutée entre 12 et 13 devient 12A), en s'appuyant sur les
       numéros déjà gardés dans le fichier (`#12A#`)
-- [ ] « Déverrouiller » rend une pagination libre, après confirmation
+- [x] « Déverrouiller » rend une pagination libre, après confirmation
 
 ## Fichiers touchés
 
@@ -74,3 +76,20 @@ numéros. C'est attendu des scénaristes professionnels.
 Couverture à 90 % sur `src/screenplay/` comme le reste : marques à l'aller-retour Fountain et FDX, élément
 modifié puis remis à l'identique (marque retirée ou gardée : à décider, l'usage est de la garder), pages A,
 omissions, PDF des seules pages révisées.
+
+## Décisions et limites (novembre 2026)
+
+- Marque : note ` [[cosmos:rev:<n>]]` en fin d'élément (après `[[ia]]`, avant les commentaires), jamais sur un nom de
+  personnage. Posée par l'éditeur pendant la frappe (`editor/revisions.ts`) et par le store pour les changements
+  venus d'ailleurs (`markChanged`, alignement par plus longue sous-suite commune). Limites : un élément déplacé compte
+  comme modifié d'un seul côté ; changer le type d'un élément (Tab) ne le marque pas.
+- Pages verrouillées : à l'instant du verrouillage on garde, par page, son libellé et l'élément qui l'ouvre (rang et
+  extrait, `LockedPage`). Une page qui n'est que la suite d'un paragraphe ou d'une réplique coupée rejoint la page
+  verrouillée précédente (`more`) : on ne peut pas ancrer une page au milieu d'un élément. L'élément est retrouvé à son
+  extrait, le plus près possible de son rang (`resolveLock`) ; un élément disparu fait porter « 13-14 » à la page
+  précédente. Même calcul pour le PDF (`typeset`, option `lock`) et la feuille (`editor/pages.ts`, option `lock`).
+- Numéros de scène : au verrouillage, toutes les scènes sont numérotées de 1 à n (le réglage « numéroter » est
+  allumé) ; ensuite une scène sans numéro prend celui de la précédente suivi d'une lettre (`assignSceneNumbers`,
+  appliqué par `setScreenplay`). Le numéro d'une scène tapée dans l'éditeur n'apparaît à l'écran qu'au rechargement de
+  la feuille, mais il est dans le fichier et dans le PDF. Déverrouiller laisse les numéros posés.
+- Série imprimée en livres (un PDF par épisode) : pas de pagination verrouillée.

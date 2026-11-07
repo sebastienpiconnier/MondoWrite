@@ -30,6 +30,7 @@ import { readChutier, type Passage } from "./chutier";
 import { cleanPrint, printToMeta, type PrintOptions } from "./export/printOptions";
 import { bibleExportToMeta, cleanBibleExport, type BibleExportState } from "./bibleExport";
 import { cleanScriptPrint, scriptPrintToMeta, type ScriptPrint } from "./screenplay/export/scriptPrint";
+import { readRevisions, revisionsToMeta, type Revisions } from "./screenplay/revisions";
 import { writeTitleField } from "./screenplay/titlePage";
 import { headingTitles, initialScreenplay, type SceneCard } from "./screenplay/link";
 import { DICTIONARIES, fmt, getT } from "./i18n";
@@ -104,11 +105,11 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true, beat: typeof f.beat === "string" && (isBeat(f.beat) || isCustomBeat(f.beat)) ? f.beat : undefined, season: seriesRef(f.season), episode: seriesRef(f.episode) }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", comments: p.comments ?? {}, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", comments: p.comments ?? {}, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), revisions: readRevisions(p.meta.revisions), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "bibleExport", "wires", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "revisions", "bibleExport", "wires", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -355,6 +356,7 @@ export function toProject(
       ...(s.chutier.length > 0 ? { chutier: s.chutier } : {}),
       ...(printToMeta(s.print) ? { print: printToMeta(s.print) } : {}),
       ...(scriptPrintToMeta(s.scriptPdf) ? { scriptPdf: scriptPrintToMeta(s.scriptPdf) } : {}),
+      ...(revisionsToMeta(s.revisions) ? { revisions: revisionsToMeta(s.revisions) } : {}),
       ...(bibleExportToMeta(s.bibleExport) ? { bibleExport: bibleExportToMeta(s.bibleExport) } : {}),
       ...(wiresToMeta(s.edges) ? { wires: wiresToMeta(s.edges) } : {}),
     },
@@ -398,6 +400,7 @@ export interface ProjectSlice {
   chutier: Passage[];
   print: PrintOptions;
   scriptPdf: ScriptPrint;
+  revisions: Revisions;
   bibleExport: BibleExportState;
   metaKeep: Record<string, unknown>;
   trash: TrashedCard[];

@@ -225,3 +225,33 @@
    À l'encre du thème, sinon noir et invisible en sombre. */
 .sp-editor.ProseMirror-focused .ProseMirror-gapcursor { position: relative; height: 1em; margin: 1.3em 0 0; }
 .sp-editor .ProseMirror-gapcursor:after { top: 0; left: 0; width: 0; height: 1em; border-top: 0; border-left: 2px solid var(--ink); }
+
+/* Révisions (#18) : une ligne modifiée pendant une passe a le fond discret de sa couleur et un astérisque dans la marge
+   droite, à 6 caractères de la colonne de texte comme dans le PDF (l'élément est décalé de son retrait, d'où le calc). */
+.sp-page { --sp-cols: 60; }
+.sp-page[data-paper="a4"] { --sp-cols: 57; }
+.sp-page .sp-el[data-rev] { position: relative; background: color-mix(in srgb, var(--rev, var(--line)) 16%, transparent); }
+.sp-page .sp-el[data-rev]::before { content: "*"; position: absolute; top: 0; left: calc((var(--sp-cols) + 6) * 1ch); color: var(--page-ink); float: none; height: auto; }
+.sp-page .sp-parenthetical[data-rev]::before { left: calc((var(--sp-cols) + 6) * 1ch - 16ch); }
+.sp-page .sp-dialogue[data-rev]::before { left: calc((var(--sp-cols) + 6) * 1ch - 10ch); }
+.screenplay.is-focus .sp-page .sp-el[data-rev] { background: none; }
+.screenplay.is-focus .sp-page .sp-el[data-rev]::before { content: none; }
+/* Pastille de la passe ouverte, dans la barre du scénario. */
+.sp-rev-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 14px; font-size: 0.75rem; color: var(--ink); white-space: nowrap; }
+.sp-rev-chip::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--rev, var(--line)); }
+
+/* Fenêtre « Révisions ». */
+.rev-panel { display: flex; flex-direction: column; gap: 12px; }
+.rev-panel h2, .rev-panel h3, .rev-panel p { margin: 0; }
+.rev-panel h3 { font-size: 0.9375rem; }
+.rev-hint, .rev-count { color: var(--muted); font-size: 0.8125rem; }
+.rev-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.rev-list li { display: flex; align-items: center; gap: 8px; }
+.rev-list .rev-count { margin-left: auto; }
+.rev-swatch { flex: none; width: 14px; height: 14px; border-radius: 50%; }
+.rev-form { display: flex; flex-direction: column; gap: 8px; }
+.rev-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.875rem; }
+.rev-form select, .rev-form input { min-height: 44px; }
+.rev-panel button { min-height: 44px; }
+.rev-panel .ghost-button { border: 1px solid var(--line); padding: 0 14px; width: auto; align-self: flex-start; }
+.rev-panel .ghost-button.is-primary { border-color: transparent; background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }

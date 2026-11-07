@@ -4,6 +4,9 @@
 // L'aperçu dessine la première page avec la même composition que le PDF (typeset.ts, pur et léger) ; le PDF
 // lui-même et ses polices ne sont chargés qu'à l'enregistrement.
 
+import { revisionHeader } from "../revisionsText";
+import { usedRevisions } from "../screenplay/revisions";
+import { resolveLock } from "../screenplay/lockedPages";
 import { useMemo, useState, type CSSProperties } from "react";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
@@ -31,6 +34,8 @@ export function ScriptPdfPanel() {
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
   const options = useCosmos((s) => s.scriptPdf);
+  const revisions = useCosmos((s) => s.revisions);
+  const locked = revisions.locked;
   const setOptions = useCosmos((s) => s.setScriptPdf);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -50,6 +55,7 @@ export function ScriptPdfPanel() {
   const first = useMemo(
     () =>
       typeset(elements, layout, lang, strings, {
+        lock: resolveLock(locked, elements),
         numberScenes: sceneNumbers,
         underlineHeadings,
         synopsis: options.synopsis,
@@ -60,7 +66,7 @@ export function ScriptPdfPanel() {
         resumes: options.resumes,
       })[0] ?? null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [elements, layout, lang, sceneNumbers, underlineHeadings, options.synopsis, options.sections, options.notes, options.character, options.breaks, options.resumes],
+    [elements, layout, lang, sceneNumbers, underlineHeadings, options.synopsis, options.sections, options.notes, options.character, options.breaks, options.resumes, locked],
   );
 
   const set = (patch: Partial<ScriptPrint>) => {
@@ -81,6 +87,9 @@ export function ScriptPdfPanel() {
         numberScenes: sceneNumbers,
         underlineHeadings,
         print: { ...options, header },
+        // Révisions (#18) : en-tête de chaque passe sur ses pages, et seulement les pages de la dernière si demandé.
+        locked,
+        revisionPdf: { label: revisionHeader(t, lang, revisions), only: options.onlyRevised ? (usedRevisions(elements).pop() ?? null) : null },
         // Toute la série ou une saison : une page de titre par épisode.
         books: exportBooksOf(useCosmos.getState(), t),
       });
@@ -172,6 +181,17 @@ export function ScriptPdfPanel() {
           </label>
           <p className="spdf-hint">{k.continuedHint}</p>
         </fieldset>
+        {/* Révisions (#18) : seulement si le texte porte des marques. */}
+        {usedRevisions(elements).length > 0 && (
+          <fieldset>
+            <legend>{t.revisions.title}</legend>
+            <label className="spdf-choice">
+              <input type="checkbox" checked={options.onlyRevised} onChange={(e) => set({ onlyRevised: e.target.checked })} />
+              {k.onlyRevised}
+            </label>
+            <p className="spdf-hint">{k.onlyRevisedHint}</p>
+          </fieldset>
+        )}
         <fieldset>
           <legend>{k.onEachPage}</legend>
           <label className="spdf-field">

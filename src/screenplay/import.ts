@@ -8,6 +8,7 @@ import { titleCase } from "./editor/autocomplete";
 import { parse } from "./parse";
 import type { Screenplay } from "./model";
 import { characterName, headingParts } from "./scenes";
+import { EMPTY_REVISIONS, revisionsToMeta, withUsedSets, type Revisions } from "./revisions";
 
 export interface ImportOptions {
   /** Nom du fichier importé : sert de titre si la page de titre n'en donne pas. */
@@ -16,6 +17,8 @@ export interface ImportOptions {
   /** Étiquette du fil scène → décor (i18n). */
   linkLabel: string;
   newId: () => string;
+  /** Passes de révision lues avec le fichier (Final Draft) ; les marques du texte sans passe connue en reçoivent une. */
+  revisions?: Revisions;
 }
 
 const COLUMNS = 5;
@@ -78,8 +81,9 @@ export function importScreenplayModel(screenplay: Screenplay, options: ImportOpt
     row += Math.ceil(group.length / COLUMNS);
   }
 
+  const revisions = revisionsToMeta(withUsedSets(options.revisions ?? EMPTY_REVISIONS, elements));
   return {
-    meta: { version: 1, title, kind: "scenario", layout, links },
+    meta: { version: 1, title, kind: "scenario", layout, links, ...(revisions ? { revisions } : {}) },
     cards: [...characters.values(), ...locations.values(), ...scenes],
     screenplay: { ...screenplay, elements },
   };

@@ -8,6 +8,8 @@ import { Plugin, PluginKey, Selection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { hasContd } from "../export/typeset";
+import { pageLabels, resolveLock, type PageStart } from "../lockedPages";
+import type { LockedPage } from "../revisions";
 
 export interface PageItem {
   /** Hauteur de l'élément, en lignes. */
@@ -73,6 +75,8 @@ export interface PagesOptions {
   /** Réplique coupée par la page : « (À SUIVRE) » en bas, le nom et « (SUITE) » en haut (null : rien). */
   continued?: () => { more: string; contd: string } | null;
   /** Appelé après chaque découpage : le nombre de pages et la position (dans le document) de l'élément qui ouvre chacune des suivantes. */
+  /** Pages verrouillées (#18, lot 2) : chaque page commence à son élément, les libellés sont 12, 12A, « 13-14 ». */
+  lock?: () => LockedPage[] | null;
   onLayout?: (pages: number, breaks: number[]) => void;
 }
 
@@ -188,6 +192,9 @@ export const Pages = Extension.create<PagesOptions>({
             if (line > 0 && options.enabled(view.dom as HTMLElement)) {
               const items: PageItem[] = [];
               const positions: number[] = [];
+              const types: string[] = [];
+              const plan = options.lock && options.numberAt !== "bottom" ? resolveLock(options.lock(), doc.children.map((n) => ({ type: n.type.name, text: n.textContent }))) : null;
+              const forced = new Set(plan?.starts ?? []);
               const continued = options.continued?.() ?? null;
               // Pour chaque suite de réplique, le nom de celui qui parle (pour le répéter en haut de page).
               const cues = new Map<number, string>();
@@ -200,8 +207,14 @@ export const Pages = Extension.create<PagesOptions>({
                 // Une réplique ne se coupe qu'entre deux de ses éléments (dialogue, didascalie) : un paragraphe ne se coupe pas à l'écran.
                 const cont = !!continued && TIGHT.has(type) && TIGHT.has(previous) && cue !== "";
                 if (cont) cues.set(items.length, cue);
-                items.push({ height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1, ...itemOf(type, node), ...(cont ? { cont } : {}) });
+                items.push({
+                  height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1,
+                  ...itemOf(type, node),
+                  ...(forced.has(items.length) && items.length > 0 ? { before: true } : {}),
+                  ...(cont ? { cont } : {}),
+                });
                 positions.push(offset);
+                types.push(type);
                 // Le nom ne reste jamais seul en bas de page : il garde avec lui le premier élément de sa réplique entier.
                 if (TIGHT.has(type) && previous === "character") {
                   const name = items[items.length - 2];
@@ -214,6 +227,19 @@ export const Pages = Extension.create<PagesOptions>({
               const layout = layoutPages(items, lines, Number.isFinite(top) ? top - marginTop : 0);
               pages = layout.pages;
               breakAt = layout.breaks.map((b) => positions[b.index]);
+              // Libellés des pages verrouillées : l'élément qui ouvre chaque page, au sens de typeset (le nom, pour une réplique coupée).
+              let labels: string[] | null = null;
+              if (plan) {
+                const starts: PageStart[] = [{ start: 0 }];
+                for (const b of layout.breaks) {
+                  let at = b.index;
+                  const speech = TIGHT.has(types[at]);
+                  if (speech) while (at > 0 && types[at] !== "character") at--;
+                  starts.push({ start: at, ...(speech ? { cont: true } : {}) });
+                }
+                labels = pageLabels(plan, starts);
+                next += `L${labels.join(",")};`;
+              }
               const bottom = pageLines - marginTop - lines; // marge basse
               const atBottom = options.numberAt === "bottom";
               // Numéro centré en bas : au milieu de la marge basse de la page qu'on quitte.
@@ -226,7 +252,7 @@ export const Pages = Extension.create<PagesOptions>({
                 const speech = who && continued ? { more: continued.more, cue: hasContd(who, continued.contd) ? who : `${who} ${continued.contd}`, cueTop: base } : undefined;
                 const height = base + (speech ? 1 : 0);
                 decorations.push(
-                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, label(atBottom ? b.page - 1 + first : b.page + first), atBottom ? bottomTop(b.rest) : b.rest + bottom + GAP + 2.5, atBottom, speech), {
+                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, labels ? `${labels[b.page - 1]}.` : label(atBottom ? b.page - 1 + first : b.page + first), atBottom ? bottomTop(b.rest) : b.rest + bottom + GAP + 2.5, atBottom, speech), {
                     side: -1,
                     key: `page-${b.page + first}-${height.toFixed(2)}-${speech ? `${speech.more}|${speech.cue}` : ""}`,
                   }),

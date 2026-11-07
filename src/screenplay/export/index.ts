@@ -1,10 +1,12 @@
 // Les trois exports du scénario. Le PDF et le FDX sont chargés à la demande (import dynamique) :
 // leurs bibliothèques et les polices ne pèsent pas sur le démarrage de l'app.
 
+import type { LockedPage } from "../revisions";
 import type { Screenplay } from "../model";
 import { LAYOUTS, type Paper } from "../layout";
 import { serialize } from "../serialize";
 import type { TypesetStrings } from "./typeset";
+import type { Revisions } from "../revisions";
 
 export type ExportFormat = "pdf" | "fountain" | "fdx";
 export const EXPORT_FORMATS: ExportFormat[] = ["pdf", "fountain", "fdx"];
@@ -32,6 +34,10 @@ export interface ExportOptions {
   /** PDF seulement : choix de la fenêtre « Exporter le scénario en PDF » (en-tête déjà rempli). */
   /** PDF seulement : épisodes d'une série, imprimés l'un après l'autre avec chacun sa page de titre (`seriesBooks`). */
   books?: Screenplay[] | null;
+  /** Révisions (#18) : passes écrites dans le FDX ; pour le PDF, `label` donne l'en-tête d'une passe et `only` les pages d'une passe. */
+  revisions?: Revisions;
+  revisionPdf?: { label: (pass: number) => string; only?: number | null };
+  locked?: LockedPage[] | null;
   print?: { titlePage: boolean; synopsis: boolean; sections: boolean; notes: boolean; character: string; header: string; watermark: string };
 }
 
@@ -64,7 +70,7 @@ export async function exportScreenplay(
     data = encode(options.source ?? serialize(screenplay));
   } else if (format === "fdx") {
     const { buildFdx } = await import("./fdx");
-    data = encode(buildFdx(screenplay, options.locale, options.numberScenes, options.underlineHeadings));
+    data = encode(buildFdx(screenplay, options.locale, options.numberScenes, options.underlineHeadings, options.revisions));
   } else {
     const { buildPdf } = await import("./pdf");
     data = await buildPdf(screenplay, {
@@ -75,6 +81,8 @@ export async function exportScreenplay(
       underlineHeadings: options.underlineHeadings,
       ...(options.print ?? {}),
       ...(options.books ? { books: options.books } : {}),
+      ...(options.revisionPdf ? { revision: options.revisionPdf } : {}),
+      ...(options.locked ? { locked: options.locked } : {}),
     });
   }
   return { name: `${fileName(options.title, "scenario")}.${format}`, extension: format, mime: MIME[format], data };

@@ -21,9 +21,11 @@ export interface ScriptPrint {
   breaks: boolean;
   /** Le même personnage reprend après une action, dans la même scène : (SUITE) après son nom. Aussi à l'écran. */
   resumes: boolean;
+  /** Révisions (#18) : seulement les pages qui portent une ligne de la dernière passe. */
+  onlyRevised: boolean;
 }
 
-export const DEFAULT_SCRIPT_PRINT: ScriptPrint = { character: "", titlePage: true, synopsis: false, sections: false, notes: false, header: "", watermark: "", breaks: true, resumes: false };
+export const DEFAULT_SCRIPT_PRINT: ScriptPrint = { character: "", titlePage: true, synopsis: false, sections: false, notes: false, header: "", watermark: "", breaks: true, resumes: false, onlyRevised: false };
 
 const line = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 const flag = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
@@ -42,6 +44,7 @@ export function cleanScriptPrint(raw: unknown): ScriptPrint {
     watermark: line(p.watermark, 60),
     breaks: flag(p.breaks, d.breaks),
     resumes: flag(p.resumes, d.resumes),
+    onlyRevised: flag(p.onlyRevised, d.onlyRevised),
   };
 }
 

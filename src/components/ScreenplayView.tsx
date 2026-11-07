@@ -60,6 +60,8 @@ import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";
 import { FocusBar, FocusCounter, useFocusChrome } from "./FocusBar";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
+import { colorFor, currentSet, setOf } from "../screenplay/revisions";
+import { revisionName, revisionVar } from "../revisionsText";
 import { usePhone } from "./usePhone";
 import { useVocab } from "../vocab";
 import { isTouch } from "../platform";
@@ -138,6 +140,7 @@ export function ScreenplayView() {
   const paper = useCosmos((s) => s.paper);
   const sceneNumbers = useCosmos((s) => s.sceneNumbers);
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
+  const revisions = useCosmos((s) => s.revisions);
   const focusMode = useCosmos((s) => s.focusMode);
   const setFocusMode = useCosmos((s) => s.setFocusMode);
   const writing = useSettings((s) => s.writing);
@@ -298,9 +301,12 @@ export function ScreenplayView() {
           // Filtre par personnage : des scènes sont cachées, la feuille passe en continu (les pages mentiraient).
           enabled: (dom) => !useCosmos.getState().focusMode && !useCosmos.getState().charFilter && (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
           // Réplique coupée par la page : (À SUIVRE) et (SUITE), comme dans le PDF (réglage du projet).
+          lock: () => useCosmos.getState().revisions.locked,
           continued: () => (useCosmos.getState().scriptPdf.breaks ? { more: getT().screenplay.more, contd: getT().screenplay.contd } : null),
         },
         continued: { resumes: () => useCosmos.getState().scriptPdf.resumes, contd: () => getT().screenplay.contd },
+        // Passe de révision ouverte : ce qui est tapé reçoit sa marque (#18).
+        revision: () => useCosmos.getState().revisions.current,
         // Mode focus : Échap le quitte, comme dans le manuscrit. Sinon il rend la main à la barre d'éléments.
         onEscape: () => {
           if (useCosmos.getState().focusMode) return setFocusMode(false);
@@ -1018,6 +1024,16 @@ export function ScreenplayView() {
     Object.entries(sp.preserved).map(([kind, label]) => [`--sp-label-${kind}`, JSON.stringify(label)]),
   ) as CSSProperties;
 
+  // Couleur de chaque passe marquée dans le texte (#18) : une règle par numéro, lue par le fond et la pastille.
+  const revisionRules = [...new Set([...revisions.sets.map((r) => r.n), ...(screenplay?.elements ?? []).flatMap((e) => (e.rev === undefined ? [] : [e.rev]))])]
+    .map((n) => `.screenplay [data-rev="${n}"]{--rev:${revisionVar(setOf(revisions, n)?.color ?? colorFor(n))}}`)
+    .join("");
+  const openPass = currentSet(revisions);
+  // Pages verrouillées ou déverrouillées : la feuille se recoupe tout de suite (pas de frappe pour le déclencher).
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) editor.view.dispatch(editor.state.tr.setMeta("addToHistory", false));
+  }, [editor, revisions.locked]);
+
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
@@ -1231,6 +1247,18 @@ export function ScreenplayView() {
           </button>
           <ReaderBar buttonClass="sp-option" screenplay speakers={readerSpeakers} onStart={startListening} />
           {/* Le reste (1.11.1) : une seule rangée sous les éléments. Numéros de scène et soulignement : dans les Réglages. */}
+          {openPass && (
+            <button
+              type="button"
+              className="sp-rev-chip"
+              style={{ "--rev": revisionVar(openPass.color) } as CSSProperties}
+              aria-label={fmt(t.revisions.chipAria, { name: revisionName(t, revisions, openPass.n) })}
+              title={revisionName(t, revisions, openPass.n)}
+              onClick={() => useCosmos.getState().setDialog("revisions")}
+            >
+              {fmt(t.revisions.chip, { color: t.revisions.colors[openPass.color] })}
+            </button>
+          )}
           <MoreMenu
             className="sp-option"
             items={[
@@ -1238,6 +1266,8 @@ export function ScreenplayView() {
               { label: t.comments.element, hint: key("Mod", "Alt", "M"), onSelect: commentElement },
               // Fusionner (#23) : la scène suivante (sans section entre elles) rejoint celle-ci.
               !!scene?.cardId && !!useCosmos.getState().nextMergeable(scene.cardId) && { label: t.merge.menu, onSelect: mergeNext },
+              { label: t.revisions.menu, onSelect: () => useCosmos.getState().setDialog("revisions") },
+              !!openPass && { label: t.revisions.close, onSelect: () => useCosmos.getState().closeRevision() },
               { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), disabled: !scene?.cardId, onSelect: () => openVersions(true) },
               { label: t.versions.listMenu, disabled: !scene?.cardId, onSelect: () => openVersions(false) },
               { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: openReplace },
@@ -1287,6 +1317,7 @@ export function ScreenplayView() {
             lang={lang}
             ref={pageRef}
           >
+            {revisionRules && <style>{revisionRules}</style>}
             <EditorContent editor={editor} />
             {veil && (
               <>

@@ -42,11 +42,21 @@ export interface PdfOptions {
   breaks?: boolean;
   resumes?: boolean;
   /**
+   * Révisions (#18) : `label` donne l'en-tête d'une passe (« Révision bleue – 03/11/2026 »), imprimé sur les pages qu'elle
+   * touche ; `only` : seulement les pages qui portent une ligne de cette passe (numéros de page inchangés).
+   */
+  revision?: { label: (pass: number) => string; only?: number | null };
+  /**
    * Série : les épisodes à imprimer l'un après l'autre (`seriesBooks`), chacun avec sa page de titre, ses pages
    * numérotées depuis 1 et ses numéros de scène. Absent : le scénario tel quel.
    */
   books?: Screenplay[];
+  /** Pages verrouillées (#18, lot 2) : pagination contrainte, libellés 12, 12A, « 13-14 ». Ignoré pour une série imprimée en livres. */
+  locked?: LockedPage[] | null;
 }
+
+import { resolveLock } from "../lockedPages";
+import type { LockedPage } from "../revisions";
 
 const GRAY = rgb(0.38, 0.38, 0.38);
 const MARKER = rgb(1, 0.93, 0.55); // surligneur jaune pâle : se lit aussi en noir et blanc
@@ -66,7 +76,7 @@ export async function buildPdf(
 
   const watermark = options.watermark?.trim().replace(/\u202f/g, "\u00a0") ?? "";
   const header = options.header?.trim() ?? "";
-  const draw = (lines: TypesetLine[], number?: number) => {
+  const draw = (lines: TypesetLine[], number?: number, pass?: number, pageLabel?: string) => {
     const page = pdf.addPage([width, height]);
     // Courier Prime n'a pas l'espace fine insécable (textes d'interface en français) : une insécable ordinaire.
     const text = (value: string, x: number, y: number, font: PDFFont, gray = false) => page.drawText(value.replace(/\u202f/g, "\u00a0"), { x, y, size: SIZE, font, ...(gray ? { color: GRAY } : {}) });
@@ -98,12 +108,25 @@ export async function buildPdf(
       text(line.text, x, y, line.bold ? bold : regular, line.gray);
       if (line.underline) page.drawLine({ start: { x, y: y - 2 }, end: { x: x + line.text.length * CHAR, y: y - 2 }, thickness: 0.6 });
     }
+    // Révision : un astérisque dans la marge droite, une fois par ligne de la page.
+    const starred = new Set<number>();
+    for (const line of lines) {
+      if (line.rev === undefined || starred.has(line.row)) continue;
+      starred.add(line.row);
+      text("*", left + (layout.columns.action + 6) * CHAR, at(line).y, regular);
+    }
     if (number === undefined) return;
     // Usage du scénario : la première page n'a pas de numéro, les suivantes oui (dans une série, chaque épisode
     // repart de 1).
-    const label = number > 1 ? `${number}.` : "";
+    const label = number > 1 ? `${pageLabel ?? number}.` : "";
     const headY = height - 0.5 * POINT - ASCENT;
     if (label) text(label, width - layout.margin.right * POINT - label.length * CHAR, headY, regular);
+    // En-tête de la passe la plus récente de la page, à gauche du numéro de page.
+    if (pass !== undefined && options.revision) {
+      const name = options.revision.label(pass);
+      const x = width - layout.margin.right * POINT - (label.length + (label ? 2 : 0) + name.length) * CHAR;
+      if (x > left + header.length * CHAR + 2 * CHAR) text(name, x, headY, regular);
+    }
     if (header) {
       const room = Math.floor((width - left - layout.margin.right * POINT) / CHAR) - label.length - 2;
       text(header.length > room ? `${header.slice(0, Math.max(0, room - 1))}…` : header, left, headY, regular);
@@ -113,8 +136,9 @@ export async function buildPdf(
   let drawn = 0;
   for (const book of options.books?.length ? options.books : [screenplay]) {
     const titleLines = options.titlePage === false ? [] : typesetTitlePage(book.titlePage, layout);
-    if (titleLines.length > 0) draw(titleLines);
+    if (titleLines.length > 0 && !(options.revision?.only != null)) draw(titleLines);
     const pages = typeset(book.elements, layout, locale, strings, {
+      lock: options.books?.length ? null : resolveLock(options.locked, book.elements),
       numberScenes,
       underlineHeadings,
       synopsis: options.synopsis,
@@ -124,9 +148,11 @@ export async function buildPdf(
       breaks: options.breaks,
       resumes: options.resumes,
     });
-    for (const page of pages) draw(page.lines, page.number);
-    drawn += titleLines.length > 0 ? 1 : 0;
-    drawn += pages.length;
+    const only = options.revision?.only ?? null;
+    const shown = only === null ? pages : pages.filter((p) => p.lines.some((l) => l.rev === only));
+    for (const page of shown) draw(page.lines, page.number, page.rev, page.label);
+    drawn += titleLines.length > 0 && only === null ? 1 : 0;
+    drawn += shown.length;
   }
   // Un PDF sans page n'est pas valide : scénario vide, une feuille blanche.
   if (drawn === 0) pdf.addPage([width, height]);

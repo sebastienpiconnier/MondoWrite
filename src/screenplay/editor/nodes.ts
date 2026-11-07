@@ -41,7 +41,20 @@ const commentList = () => ({
   },
 });
 
-function element(name: EditableType, attributes: Record<string, ReturnType<typeof text> | ReturnType<typeof flag> | ReturnType<typeof iaFlag> | ReturnType<typeof commentList>>) {
+/** Révision (#18) : numéro de la passe qui a touché l'élément, jamais repris par l'élément qui naît d'un Entrée. */
+const revNumber = () => ({
+  default: null as number | null,
+  keepOnSplit: false,
+  parseHTML: (el: HTMLElement) => {
+    const n = Number(el.getAttribute("data-rev"));
+    return Number.isInteger(n) && n >= 1 ? n : null;
+  },
+  renderHTML: (attrs: Record<string, unknown>) => (typeof attrs.rev === "number" ? { "data-rev": String(attrs.rev) } : {}),
+});
+
+type Attribute = ReturnType<typeof text> | ReturnType<typeof flag> | ReturnType<typeof iaFlag> | ReturnType<typeof commentList> | ReturnType<typeof revNumber>;
+
+function element(name: EditableType, attributes: Record<string, Attribute>) {
   return Node.create({
     name,
     group: "block",
@@ -65,7 +78,7 @@ export const Doc = Node.create({ name: "doc", topNode: true, content: "block+" }
 
 // L'action est déclarée en premier : c'est le type par défaut d'un document vide.
 // « ia » (mode Atelier) : texte proposé par l'IA et accepté, note [[ia]] dans le fichier, souligné en pointillé.
-export const Action = element("action", { forced: flag("forced"), ia: iaFlag(), comments: commentList() });
+export const Action = element("action", { forced: flag("forced"), ia: iaFlag(), comments: commentList(), rev: revNumber() });
 // « known » : l'élément est déjà connu du projet (lu dans le fichier, ou sa carte a été créée).
 // Un en-tête ou un personnage écrit à l'instant ne l'est pas encore : sa carte est à créer.
 export const SceneHeading = element("sceneHeading", {
@@ -73,11 +86,12 @@ export const SceneHeading = element("sceneHeading", {
   sceneNumber: text("number"),
   forced: flag("forced"),
   known: flag("known"),
+  rev: revNumber(),
 });
 export const Character = element("character", { dual: flag("dual"), forced: flag("forced"), known: flag("known") });
-export const Parenthetical = element("parenthetical", { ia: iaFlag() });
-export const Dialogue = element("dialogue", { ia: iaFlag(), comments: commentList() });
-export const Transition = element("transition", { forced: flag("forced") });
+export const Parenthetical = element("parenthetical", { ia: iaFlag(), rev: revNumber() });
+export const Dialogue = element("dialogue", { ia: iaFlag(), comments: commentList(), rev: revNumber() });
+export const Transition = element("transition", { forced: flag("forced"), rev: revNumber() });
 
 // Le libellé de chaque sorte (« Note », « Section »…) est posé en CSS : il suit la langue sans redessiner.
 export const Preserved = Node.create({

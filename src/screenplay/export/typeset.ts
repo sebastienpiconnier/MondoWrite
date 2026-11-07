@@ -8,6 +8,7 @@ import { wrap } from "../paginate";
 import { characterName } from "../scenes";
 import { scenesWith } from "../../review/filter";
 import { foldName } from "../../review/names";
+import { pageLabels, type LockPlan } from "../lockedPages";
 
 export interface TypesetLine {
   /** Ligne dans la page, à partir de 0. */
@@ -22,12 +23,22 @@ export interface TypesetLine {
   gray?: boolean;
   /** Réplique du personnage choisi (texte d'un comédien) : surlignée. */
   highlight?: boolean;
+  /** Révision (#18) : numéro de la passe qui a touché la ligne, un astérisque dans la marge droite. */
+  rev?: number;
 }
 
 export interface TypesetPage {
   /** Numéro de page, à partir de 1 (la page de titre n'est pas numérotée). */
   number: number;
   lines: TypesetLine[];
+  /** Révision : passe la plus récente qui touche la page (pour son en-tête), absent si aucune ligne n'est marquée. */
+  rev?: number;
+  /** Élément qui ouvre la page (rang dans le scénario), pour verrouiller les pages (#18, lot 2). */
+  start: number;
+  /** La page reprend un élément coupé (réplique, paragraphe) : elle ne peut pas être verrouillée à part. */
+  cont?: boolean;
+  /** Pages verrouillées : libellé affiché à la place du numéro (12, 12A, « 13-14 »). */
+  label?: string;
 }
 
 export interface TypesetStrings {
@@ -68,6 +79,8 @@ export interface TypesetOptions {
   breaks?: boolean;
   /** (SUITE) après le nom quand le même personnage reprend la parole après une action, dans la même scène. */
   resumes?: boolean;
+  /** Pages verrouillées (#18, lot 2) : chacune commence à son élément, le surplus prend une lettre. */
+  lock?: LockPlan | null;
 }
 
 /** Le nom porte déjà une suite (« (SUITE) », « (CONT'D) », « (CONT.) ») : on n'en ajoute pas. */
@@ -116,15 +129,23 @@ export function typeset(
   const who = options.character?.trim() ? foldName(options.character) : null;
   const kept = who ? new Set(scenesWith(elements, options.character!)) : null;
   let inKept = !kept;
+  /** Passe de révision de l'élément en cours de composition : ses lignes portent un astérisque. */
+  let curRev: number | undefined;
   const isHim = (cue: string) => who !== null && foldName(characterName(cue)) === who;
 
-  const page = () => (pages[index] ??= { number: index + 1, lines: [] });
-  const newPage = () => {
+  const lockStarts = new Set(options.lock?.starts ?? []);
+  let pendingBreak = false; // une page verrouillée commence à l'élément suivant qui s'imprime
+  let nextCont = false;
+  let curStart = 0;
+  const page = () => (pages[index] ??= { number: index + 1, lines: [], start: curStart, ...(nextCont ? { cont: true } : {}) });
+  const newPage = (cont = false) => {
     index++;
     used = 0;
+    nextCont = cont;
   };
   const put = (text: string, column: number, bold = false, underline = false, extra: Partial<TypesetLine> = {}) => {
     const line: TypesetLine = { row: used, column, text, ...extra };
+    if (curRev !== undefined && extra.rev === undefined && text !== "") line.rev = curRev;
     if (bold) line.bold = true;
     if (underline) line.underline = true;
     page().lines.push(line);
@@ -140,7 +161,7 @@ export function typeset(
   const flow = (lines: string[], column: (line: string) => number, bold = false, extra: Partial<TypesetLine> = {}) => {
     open(1);
     for (const line of lines) {
-      if (used === perPage) newPage();
+      if (used === perPage) newPage(true);
       put(line, column(line), bold, false, extra);
     }
   };
@@ -155,6 +176,8 @@ export function typeset(
       if (used > 0) newPage();
       continue;
     }
+    curStart = i;
+    if (i > 0 && lockStarts.has(i)) pendingBreak = true;
     if (el.type === "sceneHeading") {
       scene++;
       if (kept) inKept = kept.has(i);
@@ -163,6 +186,11 @@ export function typeset(
     if (!inKept) continue;
     const text = printable(el.text, notes);
     if (text === "") continue;
+    curRev = el.rev;
+    if (pendingBreak) {
+      pendingBreak = false;
+      if (used > 0) newPage();
+    }
 
     switch (el.type) {
       case "sceneHeading": {
@@ -254,14 +282,14 @@ export function typeset(
   ) {
     const cueText = printable(cueEl.text, notes);
     const cue = wrap(upper(cueText), cueWidth);
-    const body: { text: string; column: number }[] = [];
+    const body: { text: string; column: number; rev?: number }[] = [];
     let taken = 0;
     while (i + 1 < elements.length && SPEECH.has(elements[i + 1].type)) {
       const next = elements[++i];
       taken++;
       const kind = next.type as "parenthetical" | "dialogue";
       for (const line of wrap(printable(next.text, notes), columns[kind])) {
-        if (line !== "" || kind === "dialogue") body.push({ text: line, column: indent[kind] });
+        if (line !== "" || kind === "dialogue") body.push({ text: line, column: indent[kind], ...(next.rev !== undefined && line !== "" ? { rev: next.rev } : {}) });
       }
     }
     return { cue, body, taken, lit: isHim(cueEl.text) };
@@ -278,8 +306,8 @@ export function typeset(
     const top = used;
     const place = (r: typeof left, cueColumn: number) => {
       const extra: Partial<TypesetLine> = r.lit ? { highlight: true } : {};
-      [...r.cue.map((text) => ({ text, column: cueColumn })), ...r.body].forEach((line, k) => {
-        page().lines.push({ row: top + k, column: line.column, text: line.text, ...extra });
+      [...r.cue.map((text): { text: string; column: number; rev?: number } => ({ text, column: cueColumn })), ...r.body].forEach((line, k) => {
+        page().lines.push({ row: top + k, column: line.column, text: line.text, ...extra, ...(line.rev !== undefined ? { rev: line.rev } : {}) });
       });
     };
     place(left, Math.max(0, Math.floor(half / 2) - 4));
@@ -289,7 +317,7 @@ export function typeset(
   }
 
   /** Pose une réplique ; si elle dépasse la page, la coupe avec (À SUIVRE) et reprend le nom (SUITE). */
-  function speech(cue: string[], body: { text: string; column: number }[], lit = false) {
+  function speech(cue: string[], body: { text: string; column: number; rev?: number }[], lit = false) {
     let name = cue;
     let rest = body;
     const mark: Partial<TypesetLine> = lit ? { highlight: true } : {};
@@ -299,7 +327,7 @@ export function typeset(
       if (name.length + rest.length <= room) {
         used += gap;
         for (const line of name) put(line, layout.indent.character, false, false, mark);
-        for (const line of rest) put(line.text, line.column, false, false, mark);
+        for (const line of rest) put(line.text, line.column, false, false, line.rev !== undefined ? { ...mark, rev: line.rev } : mark);
         return;
       }
       // Pas la place pour le nom, une ligne et (À SUIVRE) : toute la réplique passe à la page suivante.
@@ -310,16 +338,26 @@ export function typeset(
       used += gap;
       for (const line of name) put(line, layout.indent.character, false, false, mark);
       const fits = Math.max(1, perPage - used - 1);
-      for (const line of rest.slice(0, fits)) put(line.text, line.column, false, false, mark);
+      for (const line of rest.slice(0, fits)) put(line.text, line.column, false, false, line.rev !== undefined ? { ...mark, rev: line.rev } : mark);
       if (breaks) put(strings.more, layout.indent.character);
       rest = rest.slice(fits);
+      nextCont = true;
       // Le nom revient en haut de la page suivante, avec (SUITE) s'il ne l'a pas déjà.
       const base = cue.join(" ");
       name = breaks && !hasContd(base, strings.contd) ? wrap(`${base} ${strings.contd}`, layout.columns.character) : cue;
-      newPage();
+      newPage(true);
     }
   }
 
+  if (options.lock) {
+    const labels = pageLabels(options.lock, pages.map((p) => ({ start: p.start, cont: p.cont })));
+    pages.forEach((p, k) => (p.label = labels[k]));
+  }
+  // Révision : chaque page sait quelle est la passe la plus récente qui la touche.
+  for (const p of pages) {
+    const rev = p.lines.reduce((m, l) => Math.max(m, l.rev ?? 0), 0);
+    if (rev > 0) p.rev = rev;
+  }
   return pages;
 }
 

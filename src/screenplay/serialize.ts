@@ -4,6 +4,7 @@
 import type { Screenplay, ScreenplayElement } from "./model";
 import { IA_NOTE, IA_TYPES } from "../atelier";
 import { COMMENT_TYPES, commentNote, isCommentId } from "../comments";
+import { REV_TYPES, revNote } from "./revisions";
 import {
   isNaturalCharacter,
   isNaturalHeading,
@@ -46,6 +47,7 @@ export function serialize(screenplay: Screenplay): string {
     body +=
       (i === 0 && forceFirst ? `!${el.text}` : line(el, elements[i + 1])) +
       (el.ia && IA_TYPES.has(el.type) ? ` ${IA_NOTE}` : "") +
+      (el.rev !== undefined && REV_TYPES.has(el.type) ? ` ${revNote(el.rev)}` : "") +
       (COMMENT_TYPES.has(el.type) ? (el.comments ?? []).filter(isCommentId).map((id) => ` ${commentNote(id)}`).join("") : "");
   });
   if (body !== "") blocks.push(body);
@@ -82,7 +84,8 @@ function line(el: ScreenplayElement, next: ScreenplayElement | undefined): strin
         .map((l) => (l.trim() === "" ? "  " : l))
         .join("\n");
     case "transition":
-      return el.forced || !isNaturalTransition(el.text) ? `> ${el.text}` : el.text;
+      // Une marque de révision après « TO: » ferait relire la ligne comme de l'action : forcée.
+      return el.forced || el.rev !== undefined || !isNaturalTransition(el.text) ? `> ${el.text}` : el.text;
     case "centered":
       return `> ${el.text} <`;
     case "pageBreak":

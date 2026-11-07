@@ -3,6 +3,10 @@
 
 import type { Screenplay, ScreenplayElement } from "../model";
 import { printable } from "./typeset";
+import { EMPTY_REVISIONS, colorFor as colorOf, usedRevisions, type RevColor, type Revisions } from "../revisions";
+
+/** Noms de couleur de Final Draft, dans l'ordre de nos passes (jeu de couleurs standard des pages de révision). */
+export const FDX_COLORS: Record<RevColor, string> = { bleu: "Blue", rose: "Pink", jaune: "Yellow", vert: "Green", or: "Goldenrod", chamois: "Buff", saumon: "Salmon", cerise: "Cherry" };
 
 const TYPES: Partial<Record<ScreenplayElement["type"], string>> = {
   sceneHeading: "Scene Heading",
@@ -20,7 +24,7 @@ const SPEECH = new Set(["parenthetical", "dialogue"]);
 const escape = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = false, underlineHeadings = false): string {
+export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = false, underlineHeadings = false, revisions: Revisions = EMPTY_REVISIONS): string {
   const paragraphs: string[] = [];
   const els = screenplay.elements;
   let scene = 0;
@@ -35,7 +39,9 @@ export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = 
       ` Type="${type}"`,
     ].join("");
     const style = el.type === "sceneHeading" && underlineHeadings ? ' Style="Underline"' : "";
-    return `${pad}<Paragraph${attributes}>\n${pad}  <Text${style}>${escape(text)}</Text>\n${pad}</Paragraph>`;
+    // Révision : Final Draft marque le texte (RevisionID) ; la passe n est son numéro (0 : version d'origine).
+    const rev = el.rev !== undefined ? ` RevisionID="${el.rev}"` : "";
+    return `${pad}<Paragraph${attributes}>\n${pad}  <Text${rev}${style}>${escape(text)}</Text>\n${pad}</Paragraph>`;
   };
   /** Fin de la réplique qui commence au nom `start` (didascalies et dialogue compris). */
   const speechEnd = (start: number) => {
@@ -70,12 +76,29 @@ export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = 
     .flatMap((text) => text.split("\n"))
     .map((line) => `      <Paragraph Alignment="Center" Type="General">\n        <Text>${escape(line)}</Text>\n      </Paragraph>`);
 
+  // Passes de révision : celles du projet, plus toute passe dont une marque reste dans le texte.
+  const passes = [...new Set([...revisions.sets.map((r) => r.n), ...usedRevisions(els)])].sort((a, b) => a - b);
+  const revisionBlock =
+    passes.length > 0
+      ? [
+          `  <Revisions ActiveSet="${revisions.current ?? 0}" Location="Top">`,
+          ...passes.map((n) => {
+            const set = revisions.sets.find((r) => r.n === n);
+            const color = FDX_COLORS[set?.color ?? colorOf(n)];
+            const name = set?.label || `${color} Revision`;
+            return `    <Revision ID="${n}" Color="${color}" Mark="*" Name="${escape(name)}"${set?.date ? ` Date="${set.date}"` : ""} />`;
+          }),
+          "  </Revisions>",
+        ]
+      : [];
+
   return [
     '<?xml version="1.0" encoding="UTF-8" standalone="no" ?>',
     '<FinalDraft DocumentType="Script" Template="No" Version="1">',
     "  <Content>",
     ...paragraphs,
     "  </Content>",
+    ...revisionBlock,
     ...(title.length > 0 ? ["  <TitlePage>", "    <Content>", ...title, "    </Content>", "  </TitlePage>"] : []),
     "</FinalDraft>",
     "",

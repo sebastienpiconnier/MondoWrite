@@ -4,6 +4,10 @@
 // La page de titre est lue ligne à ligne : titre, mention (« Written by »), auteur, puis le contact.
 
 import type { Screenplay, ScreenplayElement } from "./model";
+import { REV_TYPES, colorFor, type RevColor, type RevisionSet, type Revisions } from "./revisions";
+
+/** Couleurs de Final Draft → nos couleurs (les autres noms reprennent la couleur de leur rang). */
+const COLORS: Record<string, RevColor> = { blue: "bleu", pink: "rose", yellow: "jaune", green: "vert", goldenrod: "or", gold: "or", buff: "chamois", salmon: "saumon", cherry: "cerise" };
 
 const TYPES: Record<string, ScreenplayElement["type"]> = {
   "scene heading": "sceneHeading",
@@ -45,6 +49,9 @@ export function parseFdx(source: string): Screenplay | null {
     if (!text) return;
     const type = TYPES[(p.getAttribute("Type") ?? "").toLowerCase()] ?? "action";
     const el: ScreenplayElement = { type, text };
+    // Texte révisé : Final Draft note la passe sur le <Text> (RevisionID, 0 ou absent : version d'origine).
+    const rev = Math.max(0, ...[...p.children].filter((c) => c.tagName === "Text").map((c) => Number(c.getAttribute("RevisionID")) || 0));
+    if (rev >= 1 && rev <= 999 && REV_TYPES.has(type)) el.rev = rev;
     if (type === "sceneHeading" && p.getAttribute("Number")) el.sceneNumber = p.getAttribute("Number")!;
     // Dialogue simultané : le second personnage du bloc porte la marque.
     if (type === "character" && dual) el.dual = true;
@@ -82,4 +89,34 @@ export function parseFdx(source: string): Screenplay | null {
     }
   }
   return { titlePage, elements };
+}
+
+/** Passes de révision d'un fichier FDX (bloc <Revisions>) : couleur, nom, passe ouverte. Vide si le fichier n'en a pas. */
+export function parseFdxRevisions(source: string): Revisions {
+  const empty: Revisions = { sets: [], current: null, locked: null };
+  let doc: Document;
+  try {
+    doc = new DOMParser().parseFromString(source.replace(/^﻿/, ""), "application/xml");
+  } catch {
+    return empty;
+  }
+  const block = [...(doc.documentElement?.children ?? [])].find((c) => c.tagName === "Revisions");
+  if (!block) return empty;
+  const sets: RevisionSet[] = [];
+  for (const r of block.children) {
+    const n = Number(r.getAttribute("ID"));
+    if (r.tagName !== "Revision" || !Number.isInteger(n) || n < 1 || n > 999 || sets.some((s) => s.n === n)) continue;
+    const date = r.getAttribute("Date") ?? "";
+    const name = (r.getAttribute("Name") ?? "").trim();
+    sets.push({
+      n,
+      color: COLORS[(r.getAttribute("Color") ?? "").trim().toLowerCase()] ?? colorFor(n),
+      date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : "",
+      // Le nom par défaut de Final Draft (« Blue Revision ») n'est pas un nom choisi.
+      label: /^[A-Za-z]+ Revision$/.test(name) ? "" : name.slice(0, 80),
+    });
+  }
+  sets.sort((a, b) => a.n - b.n);
+  const active = Number(block.getAttribute("ActiveSet"));
+  return { sets, current: sets.some((s) => s.n === active) ? active : null, locked: null };
 }

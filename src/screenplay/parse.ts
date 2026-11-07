@@ -3,6 +3,7 @@
 
 import type { Screenplay, ScreenplayElement } from "./model";
 import { COMMENT_TYPES, readCommentNotes } from "../comments";
+import { REV_TYPES, readRevNote } from "./revisions";
 import {
   LINK_RE,
   SCENE_NUMBER_RE,
@@ -31,7 +32,7 @@ export function parse(source: string): Screenplay {
   const title = parseTitlePage(lines, start);
   return {
     titlePage: title?.titlePage ?? {},
-    elements: parseBody(lines, title?.next ?? start).map(readComments).map(readIa),
+    elements: parseBody(lines, title?.next ?? start).map(readComments).map(readRev).map(readIa),
   };
 }
 
@@ -40,6 +41,13 @@ function readComments(el: ScreenplayElement): ScreenplayElement {
   if (!COMMENT_TYPES.has(el.type)) return el;
   const read = readCommentNotes(el.text);
   return read.ids.length > 0 ? { ...el, text: read.text, comments: read.ids } : el;
+}
+
+/** Note de révision en fin d'élément (entre [[ia]] et les commentaires) : retirée du texte, gardée en `rev`. */
+function readRev(el: ScreenplayElement): ScreenplayElement {
+  if (!REV_TYPES.has(el.type) || el.rev !== undefined) return el;
+  const read = readRevNote(el.text);
+  return read.rev !== undefined ? { ...el, text: read.text, rev: read.rev } : el;
 }
 
 /** Note [[ia]] en fin d'élément : retirée du texte, gardée en `ia`. */
@@ -209,6 +217,12 @@ function parseBody(lines: string[], start: number): ScreenplayElement[] {
 
 function heading(raw: string, forced: boolean): ScreenplayElement {
   const el: ScreenplayElement = { type: "sceneHeading", text: raw };
+  // La marque de révision ferme la ligne, après le lien et le numéro de scène.
+  const rev = readRevNote(el.text);
+  if (rev.rev !== undefined) {
+    el.rev = rev.rev;
+    el.text = rev.text;
+  }
   const link = LINK_RE.exec(el.text);
   if (link) {
     el.cardId = link[1];
@@ -266,7 +280,7 @@ function readDialogueBlock(lines: string[], start: number, out: ScreenplayElemen
     }
     const s = line.trim();
     // Une didascalie proposée par l'IA finit par la note [[ia]] (mode Atelier).
-    const bare = readIaNote(s).text;
+    const bare = readIaNote(readRevNote(s).text).text;
     if (bare.startsWith("(") && bare.endsWith(")")) {
       out.push({ type: "parenthetical", text: s });
       dialogue = null;

@@ -36,6 +36,8 @@ export interface ScreenplayElement {
   ia?: boolean;
   /** Commentaires ancrés sur l'élément (action, réplique) : notes [[cosmos:comment:<id>]] en fin d'élément. */
   comments?: string[];
+  /** Révision (#18) : numéro de la passe qui a modifié ou ajouté l'élément, note [[cosmos:rev:<n>]] en fin d'élément. */
+  rev?: number;
 }
 
 export interface Screenplay {

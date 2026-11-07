@@ -50,6 +50,15 @@
   --revisit: #ffe58a; /* « à reprendre » */
   --ia-mark: #8a3a9e; /* mode Atelier : soulignement des passages de l'IA, et repère « Atelier » (texte, 4,5:1) */
   --page-ink-dim: #6f7584; /* texte hors focus (mode focus), estompé mais lisible : 4,5:1 au moins */
+  /* Pages de révision d'un scénario (#18) : couleur de chaque passe, pour la pastille et le fond discret des lignes marquées. */
+  --rev-bleu: #3b78d8;
+  --rev-rose: #d9548f;
+  --rev-jaune: #d9a900;
+  --rev-vert: #3a9a4c;
+  --rev-or: #b8860b;
+  --rev-chamois: #b08d57;
+  --rev-saumon: #e0715a;
+  --rev-cerise: #c4264a;
   --type-question: #6b7085;
   /* Narrateurs (point de vue d'une scène, ruban du récit) : huit couleurs reprises des types, donc de chaque
      palette et des deux thèmes (contraste vérifié par palettes-contrast.test.ts). Pas de couleur propre. */
@@ -115,6 +124,14 @@
   --page: #1d2030;
   --page-ink: #e7e9f1;
 
+  --rev-bleu: #6ea0f0;
+  --rev-rose: #f08ab8;
+  --rev-jaune: #f0cc3c;
+  --rev-vert: #6cc47c;
+  --rev-or: #e0b040;
+  --rev-chamois: #d4b583;
+  --rev-saumon: #f29a85;
+  --rev-cerise: #ee6a88;
   --type-idee: #a3a8bc;
   --type-personnage: #9a9df5;
   --type-lieu: #4cc2b0;

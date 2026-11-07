@@ -56,6 +56,8 @@ import type { Passage } from "./chutier";
 import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
 import { DEFAULT_BIBLE_EXPORT, type BibleExportState } from "./bibleExport";
 import { DEFAULT_SCRIPT_PRINT, type ScriptPrint } from "./screenplay/export/scriptPrint";
+import { assignSceneNumbers } from "./screenplay/lockedPages";
+import { EMPTY_REVISIONS, clearScreenplayMarks, closeRevision as closeRevisionPass, markChanged, openRevision as openRevisionPass, type LockedPage, type RevColor, type Revisions } from "./screenplay/revisions";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
 import type { Photo } from "./imageSources";
@@ -273,8 +275,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -348,6 +350,18 @@ export interface CosmosState {
   /** Réglages de l'export PDF du scénario (`scriptPdf` de cosmos.json), hors historique comme `print`. */
   scriptPdf: ScriptPrint;
   setScriptPdf: (patch: Partial<ScriptPrint>) => void;
+  /** Révisions du scénario (`revisions` de cosmos.json, #18), hors historique comme `scriptPdf`. */
+  revisions: Revisions;
+  /** Ouvre une passe : tout élément modifié ou ajouté ensuite porte sa marque. */
+  openRevision: (opts: { date: string; label?: string; color?: RevColor }) => void;
+  /** Ferme la passe ouverte : les marques posées restent, aucune nouvelle. */
+  closeRevision: () => void;
+  /** « Nouvelle version propre » : retire toutes les marques du texte (les passes restent), une étape d'annulation. */
+  clearRevisionMarks: () => void;
+  /** Verrouille les pages (#18, lot 2) : numérote les scènes (1, 2, 3…) et fige l'élément qui ouvre chaque page. */
+  lockPages: (pages: LockedPage[]) => void;
+  /** Déverrouille : les pages se recalculent, les numéros de scène déjà posés restent. */
+  unlockPages: () => void;
   /** Réglages de l'export de la Bible (`bibleExport` de cosmos.json), hors historique comme `print`. */
   bibleExport: BibleExportState;
   setBibleExport: (next: BibleExportState) => void;
@@ -2148,6 +2162,38 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ scriptPdf: next });
       touch();
     },
+    revisions: EMPTY_REVISIONS,
+    openRevision: (opts) => {
+      set({ revisions: openRevisionPass(get().revisions, opts) });
+      touch();
+    },
+    closeRevision: () => {
+      const next = closeRevisionPass(get().revisions);
+      if (next === get().revisions) return;
+      set({ revisions: next });
+      touch();
+    },
+    clearRevisionMarks: () => {
+      const sp = get().screenplay;
+      if (!sp) return;
+      const cleared = clearScreenplayMarks(sp);
+      if (cleared === sp) return;
+      // L'éditeur garde son texte et ses marques tant qu'il n'est pas rechargé : setScreenplay le fait via `synced`.
+      get().setScreenplay(cleared, true);
+    },
+    lockPages: (pages) => {
+      const sp = get().screenplay;
+      if (!sp || pages.length === 0) return;
+      set({ revisions: { ...get().revisions, locked: pages }, sceneNumbers: true });
+      const numbered = assignSceneNumbers(sp.elements, true);
+      if (numbered !== sp.elements) get().setScreenplay({ ...sp, elements: numbered }, true);
+      touch();
+    },
+    unlockPages: () => {
+      if (!get().revisions.locked) return;
+      set({ revisions: { ...get().revisions, locked: null } });
+      touch();
+    },
     bibleExport: DEFAULT_BIBLE_EXPORT,
     setBibleExport: (next) => {
       if (JSON.stringify(next) === JSON.stringify(get().bibleExport)) return;
@@ -2611,6 +2657,18 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (undoable) record();
       else forgetHistory();
       const before = get().screenplay;
+      // Passe de révision ouverte : une modification venue d'ailleurs que de l'éditeur (séquencier, liste des
+      // scènes, carte agrandie) marque aussi ce qu'elle change. L'éditeur marque lui-même pendant la frappe.
+      const pass = get().revisions.current;
+      if (undoable && pass !== null && before) {
+        const elements = markChanged(before.elements, screenplay.elements, pass);
+        if (elements !== screenplay.elements) screenplay = { ...screenplay, elements };
+      }
+      // Pages verrouillées : une scène nouvelle prend le numéro de la précédente suivi d'une lettre (12A).
+      if (get().revisions.locked) {
+        const elements = assignSceneNumbers(screenplay.elements);
+        if (elements !== screenplay.elements) screenplay = { ...screenplay, elements };
+      }
       // Mots écrits aujourd'hui : comme pour le manuscrit, le total du jour suit la différence de mots du scénario.
       const day = dayKey(new Date());
       const { progress } = get();

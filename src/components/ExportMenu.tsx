@@ -119,6 +119,8 @@ export function ExportMenu() {
       source: full === savedScreenplay && screenplay === full ? lastFiles[SCREENPLAY_FILE] : undefined,
       // Toute la série ou une saison en PDF : une page de titre par épisode.
       books: format === "pdf" ? exportBooksOf(state, all) : null,
+      // Final Draft garde les passes de révision (#18).
+      revisions: state.revisions,
     });
   };
 

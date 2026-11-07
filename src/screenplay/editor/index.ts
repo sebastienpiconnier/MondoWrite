@@ -10,6 +10,7 @@ import { Autodetect } from "./autodetect";
 import { ScreenplayKeymap } from "./keymap";
 import { Pages, type PagesOptions } from "./pages";
 import { Continued, type ContinuedOptions } from "./continued";
+import { Revisions } from "./revisions";
 import { ReadingMark } from "../../components/readingMark";
 import { Synonyms } from "../../components/editorKit";
 import {
@@ -40,6 +41,8 @@ export interface ScreenplayEditorOptions {
   focus?: { mode: () => FocusHighlight; typewriter: () => boolean };
   /** (SUITE) quand un personnage reprend après une action (réglage du projet, relu à chaque mise à jour). */
   continued?: ContinuedOptions;
+  /** Passe de révision ouverte (#18) : numéro, ou null. Relu à chaque transaction. */
+  revision?: () => number | null;
 }
 
 export function screenplayExtensions(options: ScreenplayEditorOptions): Extensions {
@@ -85,6 +88,7 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     ...(options.pages ? [Pages.configure(options.pages)] : []),
     ...(options.focus ? [FocusWriting.configure(options.focus)] : []),
     ...(options.continued ? [Continued.configure(options.continued)] : []),
+    ...(options.revision ? [Revisions.configure({ current: options.revision })] : []),
     CharacterFilterExtension,
     ReadingMark,
   ];
