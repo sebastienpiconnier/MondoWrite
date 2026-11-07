@@ -7,7 +7,7 @@ import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { useNames } from "../namesState";
-import { NAME_COUNTRIES, countryForLang, dataFileFor, loadNames, pickNames, seeded, type Gender, type NameKind, type NameList } from "../names";
+import { NAME_COUNTRIES, countryForLang, dataFileFor, loadNames, loadRegister, pickNames, registerEras, seeded, type Gender, type NameKind, type NameList, type NameRegister } from "../names";
 
 const COUNT = 8;
 const COUNTRIES = NAME_COUNTRIES.filter((c) => dataFileFor(c));
@@ -31,10 +31,15 @@ export function NamePicker() {
   const [kind, setKind] = useState<NameKind>(target?.kind ?? "full");
   const [round, setRound] = useState(() => Math.floor(Math.random() * 1e9));
   const [list, setList] = useState<NameList | null>(null);
+  const [register, setRegister] = useState<NameRegister | null>(null);
+  const [era, setEra] = useState<number | null>(null);
 
   useEffect(() => {
     let live = true;
     setList(null);
+    setRegister(null);
+    setEra(null);
+    loadRegister(country).then((r) => live && setRegister(r));
     loadNames(country)
       .then((l) => live && setList(l))
       .catch(() => live && setList({ f: [], m: [], x: [], l: [] }));
@@ -44,7 +49,7 @@ export function NamePicker() {
   }, [country]);
 
   const taken = useMemo(() => titles.filter((n) => n.data.type === "personnage").map((n) => n.data.title), [titles]);
-  const names = useMemo(() => (list ? pickNames({ list, gender, kind, count: COUNT, taken, rand: seeded(round) }) : []), [list, gender, kind, taken, round]);
+  const names = useMemo(() => (list ? pickNames({ list, gender, kind, count: COUNT, taken, rand: seeded(round), register, era }) : []), [list, gender, kind, taken, round, register, era]);
   const more = useCallback(() => setRound((r) => r + 1), []);
 
   if (!target) return null;
@@ -85,6 +90,19 @@ export function NamePicker() {
       </label>
       {segment<NameKind>(t.kind, kind, [["full", t.kindFull], ["first", t.kindFirst], ["last", t.kindLast]], setKind)}
       {kind !== "last" && segment<Gender>(t.gender, gender, [["any", t.genderAny], ["f", t.genderF], ["m", t.genderM]], setGender)}
+      {register && kind !== "last" && (
+        <label className="names-field">
+          <span className="eyebrow">{t.era}</span>
+          <select value={era ?? ""} onChange={(e) => (setEra(e.target.value === "" ? null : Number(e.target.value)), more())}>
+            <option value="">{t.eraAny}</option>
+            {registerEras(register).map((y) => (
+              <option key={y} value={y}>
+                {fmt(t.eraDecade, { from: y, to: y + register.step - 1 })}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="names-results" role="group" aria-label={t.results}>
         {!list ? null : names.length === 0 ? (
           <p className="muted">{t.none}</p>
@@ -101,7 +119,7 @@ export function NamePicker() {
           {t.more}
         </button>
       </div>
-      <p className="muted names-note">{t.noEra} {t.skipped}</p>
+      <p className="muted names-note">{register ? (register.l?.length ? t.byRegister : t.byRegisterFirst) : t.noEra} {t.skipped}</p>
     </div>
   );
 }

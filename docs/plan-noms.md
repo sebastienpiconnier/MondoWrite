@@ -1,6 +1,6 @@
 # Plan : annuaire de noms de personnages
 
-> **Statut : première livraison en 1.21.0 (lot 4) avec les listes de Faker (tous pays, sans époque ni fréquence), embarquées et chargées à la demande. Reste : les registres officiels par pays (INSEE, SSA, ONS…) pour la fréquence et l'époque, et le préremplissage de l'époque.**
+> **Statut : première livraison en 1.21.0 (lot 4) avec les listes de Faker (tous pays, sans époque ni fréquence), embarquées et chargées à la demande. Novembre 2026 : tirage pondéré et choix de la décennie prêts (`NameRegister`, `scripts/names/build-insee.mjs`), registre FR à fabriquer en local d'après `nat2023.csv`. Reste : noms de famille INSEE, SSA et Census (US), ONS (GB), et le préremplissage de l'époque.**
 
 Demande de l'auteur du 3 novembre 2026 : proposer des prénoms et des noms par genre et par pays. Version visée :
 avec les synonymes (même principe de données embarquées ou téléchargées une fois).
@@ -45,6 +45,8 @@ simplement (« Époque non disponible pour ce pays »).
 
 ## Lot 1
 
+- [x] Script `scripts/names/build-insee.mjs` (prénoms INSEE) ; format `registers/<PAYS>.json` `{from, step, f, m, l?}`
+- [ ] Lancer le script sur `nat2023.csv` et committer `registers/FR.json` ; fichier des noms 1891-2000
 - [ ] Recherche des sources (tableau ci-dessus complété), avec licence et copyright pour
       `THIRD-PARTY-NOTICES.md`
 - [x] Script `scripts/names/build.mjs` : un fichier compact par pays (prénom, sexe, fréquence par décennie ;

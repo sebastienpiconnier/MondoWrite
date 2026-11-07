@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { wordBounds, candidates, lookup, matchCase, loadThesaurus, hasThesaurus, readManifest, readData } from "../thesaurus";
-import { pickNames, seeded, countryForLang, dataFileFor, loadNames, firstNames, NAME_COUNTRIES } from "../names";
+import { pickNames, seeded, countryForLang, dataFileFor, loadNames, firstNames, NAME_COUNTRIES, eraForAge, registerEras, loadRegister, type NameRegister } from "../names";
 
 describe("synonymes (#16)", () => {
   it("trouve le mot sous le curseur, collé à ses bords", () => {
@@ -88,5 +88,45 @@ describe("annuaire de noms (#17)", () => {
       expect(firstNames(l, "any").length).toBeGreaterThan(30);
     }
     await expect(loadNames("VN")).rejects.toThrow();
+  });
+});
+
+describe("registre officiel des prénoms (#17)", () => {
+  const list = { f: ["Zoé"], m: ["Zack"], x: [], l: ["Durand", "Roux"] };
+  // 1950-1959, 1960-1969, 1970-1979
+  const reg: NameRegister = {
+    from: 1950,
+    step: 10,
+    f: [["Marie", [900, 100, 0]], ["Camille", [0, 0, 400]]],
+    m: [["Jean", [800, 200, 0]], ["Camille", [0, 0, 300]]],
+  };
+  it("ne propose que les prénoms donnés dans la décennie choisie", () => {
+    const out = pickNames({ list, gender: "any", kind: "first", count: 10, taken: [], rand: seeded(1), register: reg, era: 1970 });
+    expect(out.sort()).toEqual(["Camille"]);
+    const f = pickNames({ list, gender: "f", kind: "first", count: 10, taken: [], rand: seeded(1), register: reg, era: 1950 });
+    expect(f).toEqual(["Marie"]);
+  });
+  it("tire au prorata des naissances", () => {
+    const heavy: NameRegister = { ...reg, f: [["Rare", [1, 0, 0]], ["Courant", [999, 0, 0]]], m: [] };
+    let first = 0;
+    for (let i = 1; i <= 200; i++) if (pickNames({ list, gender: "f", kind: "first", count: 1, taken: [], rand: seeded(i), register: heavy })[0] === "Courant") first++;
+    expect(first).toBeGreaterThan(180);
+  });
+  it("additionne un prénom donné aux deux sexes, et garde les noms de famille de la liste sans registre de noms", () => {
+    const out = pickNames({ list, gender: "any", kind: "full", count: 1, taken: [], rand: seeded(5), register: reg, era: 1970 });
+    expect(out[0]).toMatch(/^Camille (Durand|Roux)$/);
+  });
+  it("écarte les prénoms déjà portés dans le projet", () => {
+    const out = pickNames({ list, gender: "f", kind: "first", count: 10, taken: ["Marie Dupont"], rand: seeded(2), register: reg });
+    expect(out).toEqual(["Camille"]);
+  });
+  it("donne les décennies du registre et celle d'un âge", () => {
+    expect(registerEras(reg)).toEqual([1950, 1960, 1970]);
+    expect(eraForAge("34 ans", 2026, reg)).toBeNull();
+    expect(eraForAge("52 ans", 2026, reg)).toBe(1970);
+    expect(eraForAge("quarante", 2026, reg)).toBeNull();
+  });
+  it("n'a pas de registre pour un pays sans fichier", async () => {
+    expect(await loadRegister("VN")).toBeNull();
   });
 });

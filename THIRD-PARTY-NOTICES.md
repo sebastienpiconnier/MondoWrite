@@ -191,6 +191,10 @@ These data files are built by `scripts/thesaurus/build.mjs` and `scripts/names/b
 - **Synonymes français / French synonyms** : « Dictionnaire des synonymes français myThes » (`thes_fr`), version 2.3, par Frédéric Labbé, repris par Dicollecte / Grammalecte (https://grammalecte.net/), **LGPL 2.1 ou ultérieure**. Ce fichier n'est **pas dans l'installeur** : `scripts/thesaurus/build.mjs` le convertit en `fr.json`, publié à part sur https://mondowrite.app/thesaurus/ avec le texte de sa licence (`LICENSE-thes_fr.txt`) ; l'app le télécharge une fois, le vérifie (SHA-256) et le garde sur l'appareil. Il reste un fichier de données séparé et remplaçable, jamais mêlé au code. / The French thesaurus (`thes_fr`, myThes dictionary by Frédéric Labbé, maintained by Dicollecte / Grammalecte) is under the **LGPL 2.1 or later**. It is **not bundled** with the app: it is converted by `scripts/thesaurus/build.mjs`, published separately on mondowrite.app with its license text, downloaded once, verified (SHA-256) and kept on the device. It stays a separate, replaceable data file, never mixed into the code. Texte de la LGPL 2.1 : https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
 - **Prénoms et noms par pays / First and last names by country** : listes de données de Faker (`@faker-js/faker`), MIT, reproduite ci-dessous / Faker data lists, MIT license reproduced below.
 
+### Prénoms français (INSEE) / French first names (INSEE)
+
+Registre `src/assets/names/registers/FR.json`, fabriqué par `scripts/names/build-insee.mjs` d'après le « Fichier des prénoms » de l'INSEE (naissances par sexe, prénom et année). Source : INSEE, https://www.insee.fr/fr/statistiques/2540004 ; réutilisation libre avec mention de la source (Licence Ouverte Etalab 2.0). Seuls les prénoms donnés au moins 300 fois depuis 1900 sont repris, regroupés par décennie. / Register built from the INSEE first-name file; free reuse with attribution (Licence Ouverte Etalab 2.0). Only names given at least 300 times since 1900 are kept, grouped by decade.
+
 ### Faker
 
 ```

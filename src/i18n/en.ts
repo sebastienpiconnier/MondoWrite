@@ -2773,6 +2773,11 @@ export const en: Messages = {
     none: "No name available with these choices.",
     noEra: "These lists have no period: the draw only takes the country and gender into account.",
     results: "Suggested names",
+    era: "Born in the",
+    eraAny: "Any period",
+    eraDecade: "{from} to {to}",
+    byRegister: "Names come from the country’s official register: the most common ones come up more often.",
+    byRegisterFirst: "First names come from the country’s official register (the most common come up more often); last names come from a list without frequencies.",
     skipped: "First and last names already used by a card in the project are not suggested.",
   },
   stats: {

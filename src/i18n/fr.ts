@@ -2821,6 +2821,11 @@ export const fr = {
     none: "Aucun nom disponible avec ces choix.",
     noEra: "Ces listes n’ont pas d’époque : le tirage ne tient compte que du pays et du genre.",
     results: "Noms proposés",
+    era: "Né dans les années",
+    eraAny: "Toutes les époques",
+    eraDecade: "{from} à {to}",
+    byRegister: "Les noms viennent du registre officiel du pays : les plus donnés sortent plus souvent.",
+    byRegisterFirst: "Les prénoms viennent du registre officiel du pays (les plus donnés sortent plus souvent) ; les noms de famille viennent d’une liste sans fréquence.",
     skipped: "Les prénoms et noms déjà portés par une carte du projet ne sont pas proposés.",
   },
   stats: {
