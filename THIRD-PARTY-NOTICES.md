@@ -193,7 +193,7 @@ These data files are built by `scripts/thesaurus/build.mjs` and `scripts/names/b
 
 ### Prénoms français (INSEE) / French first names (INSEE)
 
-Registre `src/assets/names/registers/FR.json`, fabriqué par `scripts/names/build-insee.mjs` d'après le « Fichier des prénoms » de l'INSEE (naissances par sexe, prénom et année). Source : INSEE, https://www.insee.fr/fr/statistiques/2540004 ; réutilisation libre avec mention de la source (Licence Ouverte Etalab 2.0). Seuls les prénoms donnés au moins 300 fois depuis 1900 sont repris, regroupés par décennie. / Register built from the INSEE first-name file; free reuse with attribution (Licence Ouverte Etalab 2.0). Only names given at least 300 times since 1900 are kept, grouped by decade.
+Registre `src/assets/names/registers/FR.json`, fabriqué par `scripts/names/build-insee.mjs` d'après le « Fichier des prénoms » de l'INSEE (naissances par sexe, prénom et année). Source : INSEE, https://www.insee.fr/fr/statistiques/2540004 ; réutilisation libre avec mention de la source (Licence Ouverte Etalab 2.0). Seuls les prénoms donnés au moins 300 fois depuis 1900 sont repris, regroupés par décennie. Noms de famille : « Fichier des noms de famille 1891-2000 », https://www.insee.fr/fr/statistiques/3536630, mêmes conditions, noms d'au moins 2 000 porteurs. / Register built from the INSEE first-name file; free reuse with attribution (Licence Ouverte Etalab 2.0). Only names given at least 300 times since 1900 are kept, grouped by decade.
 
 ### Faker
 
