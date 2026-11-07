@@ -1,6 +1,6 @@
 # Plan : annuaire de noms de personnages
 
-> **Statut : première livraison en 1.21.0 (lot 4) avec les listes de Faker (tous pays, sans époque ni fréquence), embarquées et chargées à la demande. Reste : les registres officiels par pays (INSEE, SSA, ONS…) pour la fréquence et l'époque, et le préremplissage de l'époque.**
+> **Statut : première livraison en 1.21.0 (lot 4) avec les listes de Faker (tous pays, sans époque ni fréquence), embarquées et chargées à la demande. Novembre 2026 : tirage pondéré et choix de la décennie prêts (`NameRegister`, `scripts/names/build-insee.mjs`), registre FR fabriqué d'après `nat2021` et le fichier des noms 1891-2000 (INSEE), prénoms et noms. ONS (GB) mis de côté : le détail des prénoms n'existe que depuis 1996 (avant, seulement les 100 premiers par décennie, sans effectifs) et il n'y a pas de fichier de noms de famille britannique libre ; le Royaume-Uni garde les listes de Faker. Reste : le guide.**
 
 Demande de l'auteur du 3 novembre 2026 : proposer des prénoms et des noms par genre et par pays. Version visée :
 avec les synonymes (même principe de données embarquées ou téléchargées une fois).
@@ -45,6 +45,8 @@ simplement (« Époque non disponible pour ce pays »).
 
 ## Lot 1
 
+- [x] Script `scripts/names/build-insee.mjs` (prénoms INSEE) ; format `registers/<PAYS>.json` `{from, step, f, m, l?}`
+- [ ] Lancer le script sur `nat2023.csv` et committer `registers/FR.json` ; fichier des noms 1891-2000
 - [ ] Recherche des sources (tableau ci-dessus complété), avec licence et copyright pour
       `THIRD-PARTY-NOTICES.md`
 - [x] Script `scripts/names/build.mjs` : un fichier compact par pays (prénom, sexe, fréquence par décennie ;
@@ -54,7 +56,7 @@ simplement (« Époque non disponible pour ce pays »).
 - [x] `NamePicker.tsx` : pays, genre, époque, liste, « D'autres », Entrée et flèches ; depuis la fiche d'un
       personnage, sa carte (menu ⋯) et la création d'un personnage dans le scénario (complétion : « Proposer un
       nom… » en dernier)
-- [ ] L'époque se préremplit avec l'âge de la fiche et l'époque du projet (couverture) quand elles sont là
+- [x] L'époque se préremplit avec l'âge de la fiche (année du jour). Pas d'époque du projet : la couverture n'a pas de champ structuré pour cela (« temps » est le temps du récit), un roman historique choisit la décennie à la main
 - [x] Textes `t.names.*` (fr, en), guide
 
 ## Fichiers touchés

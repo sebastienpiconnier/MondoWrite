@@ -1,7 +1,9 @@
 // Annuaire de noms de personnages (#17), hors ligne. Fonctions pures : tirage avec graine, filtres de genre,
 // exclusion des noms déjà portés dans le projet. Les listes (src/assets/names/<pays>.json, fabriquées par
 // scripts/names/build.mjs d'après les fichiers de données de Faker, MIT) sont chargées à la demande.
-// Les listes n'ont ni fréquence ni époque : le tirage est uniforme, et aucun nom n'est associé à un caractère.
+// Les listes de Faker n'ont ni fréquence ni époque : le tirage est uniforme. Un pays qui a un registre officiel
+// (src/assets/names/registers/<pays>.json, fabriqué par scripts/names/build-insee.mjs) tire au prorata des
+// naissances, et peut se limiter à une décennie. Aucun nom n'est jamais associé à un caractère ni à une origine.
 
 export interface NameList {
   /** Prénoms féminins, masculins, sans genre, et noms de famille. */
@@ -37,6 +39,47 @@ export function countryForLang(lang: string): Country {
   if (region && (NAME_COUNTRIES as readonly string[]).includes(region) && dataFileFor(region)) return region as Country;
   const byLang: Record<string, Country> = { fr: "FR", en: "US", es: "ES", it: "IT", de: "DE", nl: "NL", pt: "PT", pl: "PL", sv: "SE", da: "DK", nb: "NO", fi: "FI", cs: "CZ", hu: "HU", ro: "RO", tr: "TR", ru: "RU", uk: "UA", ja: "JP", ko: "KR", zh: "CN", he: "IL", fa: "IR", id: "ID" };
   return byLang[base] ?? "US";
+}
+
+/** Registre officiel d'un pays : pour chaque nom, le nombre de naissances par tranche de `step` ans depuis `from`. */
+export interface NameRegister {
+  from: number;
+  step: number;
+  f: [string, number[]][];
+  m: [string, number[]][];
+  /** Noms de famille, quand le registre en a. */
+  l?: [string, number[]][];
+}
+
+const registers = import.meta.glob("./assets/names/registers/*.json", { import: "default" }) as Record<string, () => Promise<NameRegister>>;
+const loadedRegisters = new Map<string, Promise<NameRegister | null>>();
+
+/** Charge le registre d'un pays, ou null s'il n'en a pas (alors seules les listes sans époque servent). */
+export function loadRegister(country: string): Promise<NameRegister | null> {
+  const load = registers[`./assets/names/registers/${country}.json`];
+  if (!load) return Promise.resolve(null);
+  let p = loadedRegisters.get(country);
+  if (!p) {
+    p = load().catch(() => null);
+    loadedRegisters.set(country, p);
+  }
+  return p;
+}
+
+/** Décennies (ou tranches) que couvre un registre, de la plus ancienne à la plus récente. */
+export function registerEras(reg: NameRegister): number[] {
+  const n = Math.max(...[...reg.f, ...reg.m, ...(reg.l ?? [])].map(([, c]) => c.length), 0);
+  return Array.from({ length: n }, (_, i) => reg.from + i * reg.step);
+}
+
+/** Décennie de naissance (début de tranche) pour un âge à une année donnée, ou null s'il ne s'en tire rien. */
+export function eraForAge(age: string | undefined, year: number, reg: NameRegister): number | null {
+  const m = age?.match(/\d{1,3}/);
+  if (!m) return null;
+  const born = year - Number(m[0]);
+  const eras = registerEras(reg);
+  if (!eras.length || born < eras[0] || born >= eras[eras.length - 1] + reg.step) return null;
+  return eras[Math.floor((born - reg.from) / reg.step)];
 }
 
 const loaded = new Map<string, Promise<NameList>>();
@@ -86,6 +129,10 @@ export interface PickRequest {
   /** Titres des cartes du projet : un prénom ou un nom déjà porté n'est pas proposé. */
   taken: string[];
   rand: () => number;
+  /** Registre du pays (facultatif) : tirage au prorata des naissances. */
+  register?: NameRegister | null;
+  /** Début de la décennie voulue (facultatif, avec un registre) ; sinon toutes les époques. */
+  era?: number | null;
 }
 
 /** Mots d'un titre, repliés : « Inès Morvan » → ["ines", "morvan"]. */
@@ -98,15 +145,46 @@ function draw(pool: string[], count: number, rand: () => number): string[] {
   return out;
 }
 
+/** Naissances d'un nom dans une tranche (null : toutes). */
+function births(counts: number[], reg: NameRegister, era: number | null | undefined): number {
+  if (era == null) return counts.reduce((a, b) => a + b, 0);
+  return counts[Math.floor((era - reg.from) / reg.step)] ?? 0;
+}
+
+/** Noms d'un registre avec leur poids, un nom présent des deux côtés (unisexe) comptant pour la somme. */
+function weighted(rows: [string, number[]][][], reg: NameRegister, era: number | null | undefined): [string, number][] {
+  const sum = new Map<string, number>();
+  for (const part of rows) for (const [name, counts] of part) sum.set(name, (sum.get(name) ?? 0) + births(counts, reg, era));
+  return [...sum].filter(([, w]) => w > 0);
+}
+
+function drawWeighted(pool: [string, number][], count: number, rand: () => number): string[] {
+  const left = [...pool];
+  let total = left.reduce((a, [, w]) => a + w, 0);
+  const out: string[] = [];
+  while (out.length < count && left.length) {
+    let r = rand() * total;
+    let i = 0;
+    while (i < left.length - 1 && r >= left[i][1]) r -= left[i++][1];
+    out.push(left[i][0]);
+    total -= left[i][1];
+    left.splice(i, 1);
+  }
+  return out;
+}
+
 /** Tire `count` noms. Aucun doublon, aucun prénom ni nom déjà porté par une carte du projet. */
-export function pickNames({ list, gender, kind, count, taken, rand }: PickRequest): string[] {
+export function pickNames({ list, gender, kind, count, taken, rand, register, era }: PickRequest): string[] {
   const used = new Set(taken.flatMap(tokens));
   const free = (names: string[]) => names.filter((n) => !tokens(n).some((t) => used.has(t)));
-  const firsts = free(firstNames(list, gender));
-  const lasts = free(list.l);
-  if (kind === "first") return draw(firsts, count, rand);
-  if (kind === "last") return draw(lasts, count, rand);
-  const f = draw(firsts, count, rand);
-  const l = draw(lasts, count, rand);
+  const freeW = (names: [string, number][]) => names.filter(([n]) => !tokens(n).some((t) => used.has(t)));
+  const firstW = register && (register.f.length || register.m.length) ? freeW(weighted(gender === "f" ? [register.f] : gender === "m" ? [register.m] : [register.f, register.m], register, era)) : null;
+  const lastW = register?.l?.length ? freeW(weighted([register.l], register, era)) : null;
+  const pickFirst = (n: number) => (firstW ? drawWeighted(firstW, n, rand) : draw(free(firstNames(list, gender)), n, rand));
+  const pickLast = (n: number) => (lastW ? drawWeighted(lastW, n, rand) : draw(free(list.l), n, rand));
+  if (kind === "first") return pickFirst(count);
+  if (kind === "last") return pickLast(count);
+  const f = pickFirst(count);
+  const l = pickLast(count);
   return f.slice(0, Math.min(f.length, l.length)).map((first, i) => `${first} ${l[i]}`);
 }

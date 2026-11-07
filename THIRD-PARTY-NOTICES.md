@@ -11,7 +11,7 @@ MondoWrite is released under the [GNU AGPL v3.0 or later](LICENSE). It reuses or
 3. Polices / Fonts : SIL Open Font License 1.1
 4. Bibliothèques / Libraries : MIT, Apache-2.0, ISC
 5. Domaine public / Public domain
-6. Données de noms / Name data : MIT
+6. Données de synonymes et de noms / Synonym and name data : LGPL 2.1 ou ultérieure (synonymes, téléchargés, hors installeur), MIT (noms)
 
 ---
 
@@ -182,13 +182,22 @@ The example project uses Charles Perrault's "Le Petit Chaperon rouge" (1697) and
 
 ---
 
-## 6. Données de noms / Name data
+## 6. Données de synonymes et de noms / Synonym and name data
 
-Ces fichiers de données sont fabriqués par `scripts/names/build.mjs` et livrés dans `src/assets/names/`. Seules les données sont reprises, aucune bibliothèque.
+Ces fichiers de données sont fabriqués par `scripts/thesaurus/build.mjs` et `scripts/names/build.mjs` et livrés dans `src/assets/thesaurus/` et `src/assets/names/`. Seules les données sont reprises, aucune bibliothèque.
 
-These data files are built by `scripts/names/build.mjs` and shipped in `src/assets/names/`. Only data is reused, no library.
+These data files are built by `scripts/thesaurus/build.mjs` and `scripts/names/build.mjs` and shipped in `src/assets/thesaurus/` and `src/assets/names/`. Only data is reused, no library.
 
+- **Synonymes français / French synonyms** : « Dictionnaire des synonymes français myThes » (`thes_fr`), version 2.3, par Frédéric Labbé, repris par Dicollecte / Grammalecte (https://grammalecte.net/), **LGPL 2.1 ou ultérieure**. Ce fichier n'est **pas dans l'installeur** : `scripts/thesaurus/build.mjs` le convertit en `fr.json`, publié à part sur https://mondowrite.app/thesaurus/ avec le texte de sa licence (`LICENSE-thes_fr.txt`) ; l'app le télécharge une fois, le vérifie (SHA-256) et le garde sur l'appareil. Il reste un fichier de données séparé et remplaçable, jamais mêlé au code. / The French thesaurus (`thes_fr`, myThes dictionary by Frédéric Labbé, maintained by Dicollecte / Grammalecte) is under the **LGPL 2.1 or later**. It is **not bundled** with the app: it is converted by `scripts/thesaurus/build.mjs`, published separately on mondowrite.app with its license text, downloaded once, verified (SHA-256) and kept on the device. It stays a separate, replaceable data file, never mixed into the code. Texte de la LGPL 2.1 : https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
 - **Prénoms et noms par pays / First and last names by country** : listes de données de Faker (`@faker-js/faker`), MIT, reproduite ci-dessous / Faker data lists, MIT license reproduced below.
+
+### Prénoms français (INSEE) / French first names (INSEE)
+
+Registre `src/assets/names/registers/FR.json`, fabriqué par `scripts/names/build-insee.mjs` d'après le « Fichier des prénoms » de l'INSEE (naissances par sexe, prénom et année). Source : INSEE, https://www.insee.fr/fr/statistiques/2540004 ; réutilisation libre avec mention de la source (Licence Ouverte Etalab 2.0). Seuls les prénoms donnés au moins 300 fois depuis 1900 sont repris, regroupés par décennie. Noms de famille : « Fichier des noms de famille 1891-2000 », https://www.insee.fr/fr/statistiques/3536630, mêmes conditions, noms d'au moins 2 000 porteurs. / Register built from the INSEE first-name file; free reuse with attribution (Licence Ouverte Etalab 2.0). Only names given at least 300 times since 1900 are kept, grouped by decade.
+
+### Prénoms et noms américains (SSA, Census) / US names (SSA, Census)
+
+Registre `src/assets/names/registers/US.json`, fabriqué par `scripts/names/build-us.mjs`. Prénoms : Social Security Administration, « Popular Baby Names » (https://www.ssa.gov/oact/babynames/), 1900-2025, prénoms donnés au moins 2 000 fois. Noms de famille : US Census Bureau, « Frequently Occurring Surnames from the 2010 Census » (https://www.census.gov/topics/population/genealogy/data/2010_surnames.html), noms d'au moins 20 000 porteurs, sans les colonnes d'origine. Données du gouvernement fédéral américain, domaine public. / US federal government data, public domain.
 
 ### Faker
 

@@ -2372,6 +2372,7 @@ export const fr = {
       help: "Cette liste",
       commands: "Palette de commandes",
       keepVersion: "Garder une version de la scène",
+      synonyms: "Synonymes du mot",
       comment: "Commenter le passage sélectionné",
       footnote: "Insérer une note de bas de page",
       guide: "Guide de l’utilisateur (aide en ligne)",
@@ -2443,6 +2444,7 @@ export const fr = {
     find: "Rechercher…",
     replace: "Rechercher et remplacer…",
     keepVersion: "Garder une version de la scène…",
+    synonyms: "Synonymes du mot…",
     comment: "Commenter la sélection…",
     footnote: "Note de bas de page",
     goto: "Aller à…",
@@ -2787,6 +2789,20 @@ export const fr = {
   },
 
   // Statistiques et objectifs du manuscrit.
+  thesaurus: {
+    title: "Synonymes",
+    button: "Synonymes",
+    forWord: "Synonymes de « {word} »",
+    noWord: "Place le curseur dans un mot, ou sélectionne-le, puis demande les synonymes.",
+    none: "Aucun synonyme connu pour « {word} ».",
+    noDictionary: "Pas encore de dictionnaire de synonymes pour cette langue ({lang}).",
+    loadFailed: "Le dictionnaire se télécharge une fois, la première fois (connexion nécessaire), puis il marche hors ligne. Il n’a pas pu être chargé.",
+    loading: "Chargement…",
+    sense: "Sens {n}",
+    replaceBy: "Remplacer par {word}",
+    hint: "Flèches pour choisir, Entrée pour remplacer, Échap pour fermer.",
+    senseList: "Synonymes",
+  },
   names: {
     title: "Proposer un nom",
     menu: "Proposer un nom…",
@@ -2805,6 +2821,11 @@ export const fr = {
     none: "Aucun nom disponible avec ces choix.",
     noEra: "Ces listes n’ont pas d’époque : le tirage ne tient compte que du pays et du genre.",
     results: "Noms proposés",
+    era: "Né dans les années",
+    eraAny: "Toutes les époques",
+    eraDecade: "{from} à {to}",
+    byRegister: "Les noms viennent du registre officiel du pays : les plus donnés sortent plus souvent.",
+    byRegisterFirst: "Les prénoms viennent du registre officiel du pays (les plus donnés sortent plus souvent) ; les noms de famille viennent d’une liste sans fréquence.",
     skipped: "Les prénoms et noms déjà portés par une carte du projet ne sont pas proposés.",
   },
   stats: {

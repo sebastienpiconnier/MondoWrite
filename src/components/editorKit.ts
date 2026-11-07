@@ -20,6 +20,7 @@ import { smartType, typographyMode } from "../typography";
 import { IaMark } from "./iaMark";
 import { CommentMark } from "./commentMark";
 import { Footnote } from "./footnote";
+import { openSynonyms } from "../synonymsState";
 
 /** Texte brut collé en Markdown : converti en texte mis en forme. Le HTML collé garde son chemin habituel. */
 export const MarkdownPaste = Extension.create({
@@ -98,6 +99,23 @@ const StrikeD = Strike.extend({
 });
 
 /**
+ * Synonymes du mot sous le curseur (#16) : Cmd/Ctrl+Alt+Y. `allow` limite les blocs où le raccourci répond
+ * (l'éditeur de scénario : action et dialogue seulement).
+ */
+export const Synonyms = Extension.create<{ allow?: (nodeType: string) => boolean }>({
+  name: "cosmosSynonyms",
+  addKeyboardShortcuts() {
+    return {
+      "Mod-Alt-y": () => {
+        const { allow } = this.options;
+        if (allow && !allow(this.editor.state.selection.$from.parent.type.name)) return false;
+        return openSynonyms(this.editor);
+      },
+    };
+  },
+});
+
+/**
  * Liste à puces du texte d'une scène : « * » ou « + » suivis d'une espace ouvrent une liste, jamais « - » ni
  * « – » ni « — », qui ouvrent une réplique (« - Tu viens ? »). Cmd/Ctrl+Maj+8 reste là.
  */
@@ -124,5 +142,6 @@ export function richTextExtensions({ link = true, prose = false }: { link?: bool
     IaMark,
     MarkdownPaste,
     Typography,
+    Synonyms,
   ];
 }

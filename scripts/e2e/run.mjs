@@ -14,6 +14,7 @@
 
 import { chromium } from "playwright-core";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
@@ -352,6 +353,40 @@ const scenarios = [
       const cards = await h.cardList();
       assert(!cards.some((c) => c.type === "idee"), `une carte Idée a été créée : ${JSON.stringify(cards)}`);
       assert(cards.length === 1 && cards[0].type === "scene", `une seule carte Scène attendue : ${JSON.stringify(cards)}`);
+    },
+  },
+  {
+    name: "synonymes : Ctrl+Alt+Y sur un mot du manuscrit, le dictionnaire se télécharge, un clic remplace le mot",
+    async run(h) {
+      const { page } = h;
+      // Le site de MondoWrite est simulé (le réseau extérieur est coupé) : liste, puis dictionnaire vérifié par SHA-256.
+      const body = JSON.stringify({ marcher: [["avancer", "cheminer"]] });
+      const manifest = JSON.stringify({ thesaurus: [{ lang: "fr", file: "fr.json", size: Buffer.byteLength(body), sha256: createHash("sha256").update(body).digest("hex") }] });
+      const cors = { "access-control-allow-origin": "*" };
+      await page.route("https://mondowrite.app/thesaurus/thesaurus.json", (r) => r.fulfill({ status: 200, contentType: "application/json", headers: cors, body: manifest }));
+      await page.route("https://mondowrite.app/thesaurus/fr.json", (r) => r.fulfill({ status: 200, contentType: "application/json", headers: cors, body }));
+      await h.create("Synonymes");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Marche");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Elle marchait vite");
+      // Le curseur se place dans « marchait » (8 lettres depuis « Elle ») ; on le vérifie avant de demander les
+      // synonymes, la machine chargée pouvant ralentir les touches.
+      await until(async () => {
+        await page.keyboard.press("Home");
+        for (let i = 0; i < 8; i++) await page.keyboard.press("ArrowRight");
+        return (await page.evaluate(() => getSelection()?.anchorOffset)) === 8;
+      }, "le curseur n'est pas dans « marchait »");
+      await h.wait(200); // ProseMirror lit la sélection du navigateur après coup
+      await page.keyboard.press("Control+Alt+y");
+      await until(() => page.locator(".synonyms-panel .synonyms-list button").count(), "la fenêtre des synonymes n'a rien proposé");
+      const first = await page.locator(".synonyms-panel .synonyms-list button").first().innerText();
+      await page.locator(".synonyms-panel .synonyms-list button").first().click();
+      await until(async () => !(await page.locator(".synonyms-panel").count()), "la fenêtre est restée ouverte");
+      await until(async () => (await editor.innerText()).includes(`Elle ${first} vite`), `le mot n'a pas été remplacé par « ${first} » : ${await editor.innerText()}`);
     },
   },
   {

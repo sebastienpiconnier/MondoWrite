@@ -1246,19 +1246,28 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .sq-section.is-beat.in-episode { margin-top: 14px; margin-left: 24px; padding-top: 8px; border-top-width: 2px; font-size: 1.125rem; }
 .sq-list.is-cards .sq-section.is-beat.in-episode { margin-left: 0; }
 
-/* Annuaire de noms (#17) : fenêtres sobres, tout en jetons. */
+/* Synonymes (#16) et annuaire de noms (#17) : fenêtres sobres, tout en jetons. */
+.synonyms-panel,
 .names-panel {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   min-width: min(28rem, 100%);
 }
+.synonyms-sense {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+.synonyms-words,
 .names-segment,
 .names-results {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+.synonyms-words .chip,
 .names-segment .chip,
 .names-pick {
   min-height: 44px;
@@ -1276,6 +1285,7 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .names-field select {
   min-height: 44px;
 }
+.synonyms-hint,
 .names-note {
   font-size: 0.85rem;
 }
