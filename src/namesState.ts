@@ -8,6 +8,8 @@ import type { NameKind } from "./names";
 export interface NamesTarget {
   /** Ce qu'on cherche au départ. */
   kind: NameKind;
+  /** Âge de la fiche du personnage (texte libre), pour préremplir l'époque. */
+  age?: string;
   /** Reçoit le nom choisi. */
   onPick: (name: string) => void;
 }
@@ -21,5 +23,6 @@ export function openNames(target: NamesTarget) {
 
 /** Pour une carte : le nom choisi devient son titre (les mentions suivent, par updateCard). */
 export function openNamesForCard(cardId: string) {
-  openNames({ kind: "full", onPick: (name) => useCosmos.getState().updateCard(cardId, { title: name }) });
+  const age = useCosmos.getState().nodes.find((n) => n.id === cardId)?.data.fiche?.age;
+  openNames({ kind: "full", age, onPick: (name) => useCosmos.getState().updateCard(cardId, { title: name }) });
 }

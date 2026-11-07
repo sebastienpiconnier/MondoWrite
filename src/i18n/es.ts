@@ -3344,6 +3344,11 @@ export const es = {
     none: "No hay ningún nombre disponible con estas opciones.",
     noEra: "Estas listas no tienen época: el sorteo solo tiene en cuenta el país y el género.",
     results: "Nombres propuestos",
+    era: "Nacido en los años",
+    eraAny: "Cualquier época",
+    eraDecade: "{from} a {to}",
+    byRegister: "Los nombres vienen del registro oficial del país: los más comunes salen con más frecuencia.",
+    byRegisterFirst: "Los nombres vienen del registro oficial del país (los más comunes salen con más frecuencia); los apellidos, de una lista sin frecuencias.",
     skipped: "No se proponen los nombres y apellidos que ya lleva una tarjeta del proyecto.",
   },
   stats: {

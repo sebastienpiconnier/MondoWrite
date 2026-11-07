@@ -7,7 +7,7 @@ import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { useNames } from "../namesState";
-import { NAME_COUNTRIES, countryForLang, dataFileFor, loadNames, loadRegister, pickNames, registerEras, seeded, type Gender, type NameKind, type NameList, type NameRegister } from "../names";
+import { NAME_COUNTRIES, countryForLang, dataFileFor, loadNames, eraForAge, loadRegister, pickNames, registerEras, seeded, type Gender, type NameKind, type NameList, type NameRegister } from "../names";
 
 const COUNT = 8;
 const COUNTRIES = NAME_COUNTRIES.filter((c) => dataFileFor(c));
@@ -39,7 +39,12 @@ export function NamePicker() {
     setList(null);
     setRegister(null);
     setEra(null);
-    loadRegister(country).then((r) => live && setRegister(r));
+    loadRegister(country).then((r) => {
+      if (!live) return;
+      setRegister(r);
+      // L'âge de la fiche (à la date d'aujourd'hui) propose la décennie de naissance ; l'auteur peut la changer.
+      if (r && target?.age) setEra(eraForAge(target.age, new Date().getFullYear(), r));
+    });
     loadNames(country)
       .then((l) => live && setList(l))
       .catch(() => live && setList({ f: [], m: [], x: [], l: [] }));
