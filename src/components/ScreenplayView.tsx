@@ -615,8 +615,14 @@ export function ScreenplayView() {
     if (focusMode) setToolsOpen(false);
   }, [focusMode]);
   const storyFindings = useStoryFindings();
-  const findings = useMemo(() => [...checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang), ...storyFindings], [elements, paper, nodes, lang, storyFindings]);
-  const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
+  // Comme au Manuscrit : « Vérifier » ne calcule que l'onglet ouvert, et le compteur n'est donné qu'alors.
+  const reviewOpen = sideTab === "review";
+  const findings = useMemo(
+    () => [...(reviewOpen ? checkScreenplay(elements, LAYOUTS[paper], nodes.map((n) => n.data), lang) : []), ...storyFindings],
+    [reviewOpen, elements, paper, nodes, lang, storyFindings],
+  );
+  const counted = useOpenFindings(findings) + useOpenAiQuestions();
+  const openFindings = reviewOpen ? counted : 0;
   const openReview = () => {
     setSideTab("review");
     if (!panels.side) togglePanel("side");

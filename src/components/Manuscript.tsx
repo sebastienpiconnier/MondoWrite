@@ -202,11 +202,18 @@ export function Manuscript() {
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<SideTab>("scene");
   const storyFindings = useStoryFindings();
-  // « Vérifier » relit tout le livre (mots les plus employés, répétitions) : on attend une pause dans la frappe
-  // plutôt que de le refaire à chaque lettre, ce qui rendait l'écriture saccadée dans un long manuscrit.
-  const settledManuscript = useSettled(manuscript, REVIEW_PAUSE_MS);
-  const findings = useMemo(() => [...checkManuscript(settledManuscript, order, cards, lang), ...storyFindings], [settledManuscript, order, cards, lang, storyFindings]);
-  const openFindings = useOpenFindings(findings) + useOpenAiQuestions();
+  // « Vérifier » relit tout le livre (mots les plus employés, répétitions) : rien n'est calculé tant que l'onglet
+  // n'est pas ouvert, et ouvert, on attend une pause dans la frappe plutôt que de le refaire à chaque lettre
+  // (l'écriture était saccadée dans un long manuscrit).
+  const reviewOpen = sideTab === "review";
+  const settledManuscript = useSettled(manuscript, REVIEW_PAUSE_MS, reviewOpen);
+  const findings = useMemo(
+    () => [...(reviewOpen ? checkManuscript(settledManuscript, order, cards, lang) : []), ...storyFindings],
+    [reviewOpen, settledManuscript, order, cards, lang, storyFindings],
+  );
+  const findingsCount = useOpenFindings(findings) + useOpenAiQuestions();
+  // Le compteur n'a de sens que relevé : onglet fermé, le bouton n'en montre pas.
+  const openFindings = reviewOpen ? findingsCount : 0;
   const openReview = () => {
     setSideTab("review");
     if (!panels.side) togglePanel("side");

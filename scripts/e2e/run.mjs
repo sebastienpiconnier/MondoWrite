@@ -367,9 +367,14 @@ const scenarios = [
       await editor.waitFor();
       await editor.click();
       await page.keyboard.type("She walked home");
-      await h.wait(300);
-      await page.keyboard.press("Home");
-      for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowRight");
+      // Le curseur se place dans « walked » (6 lettres depuis le début) ; on le vérifie avant de demander les
+      // synonymes, la machine chargée pouvant ralentir les touches.
+      await until(async () => {
+        await page.keyboard.press("Home");
+        for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowRight");
+        return (await page.evaluate(() => getSelection()?.anchorOffset)) === 6;
+      }, "le curseur n'est pas dans « walked »");
+      await h.wait(200); // ProseMirror lit la sélection du navigateur après coup
       await page.keyboard.press("Control+Alt+y");
       await until(() => page.locator(".synonyms-panel .synonyms-list button").count(), "la fenêtre des synonymes n'a rien proposé");
       const first = await page.locator(".synonyms-panel .synonyms-list button").first().innerText();

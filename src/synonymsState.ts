@@ -19,6 +19,9 @@ export const useSynonyms = create<{ target: SynonymsTarget | null }>(() => ({ ta
 
 /** Ouvre la fenêtre pour le mot du curseur. Rend vrai : le raccourci est pris même sans mot (la fenêtre l'explique). */
 export function openSynonyms(editor: Editor): boolean {
+  // ProseMirror lit la sélection du navigateur après coup : on la relit tout de suite, sinon un raccourci tapé
+  // juste après une flèche travaillait sur l'ancienne place du curseur.
+  (editor.view as unknown as { domObserver?: { flush?: () => void } }).domObserver?.flush?.();
   const { state } = editor;
   const { from, to, empty, $from } = state.selection;
   let range: { from: number; to: number } | null = null;
