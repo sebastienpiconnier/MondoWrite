@@ -1,6 +1,6 @@
 # Plan : synonymes, sans quitter l'app
 
-> **Statut : retiré avant publication (novembre 2026). Une première version anglaise (WordNet) avait été écrite en 1.21.0 puis retirée à la demande de l'auteur ; à reprendre avec un dictionnaire français (voir la décision de licence ci-dessous). Le raccourci visé reste Cmd/Ctrl+Alt+Y (Cmd/Ctrl+Alt+S est pris par « Garder cette version »).**
+> **Statut : décision de l'auteur du 7 novembre 2026 : option 2 (thésaurus français `thes_fr` téléchargé à la demande depuis mondowrite.app/thesaurus/, licence LGPL tenue à l'écart de l'installeur). Code en place (branche `synonymes-fr`) ; reste à publier les fichiers sur le site (`node scripts/thesaurus/build.mjs thes_fr.dat`, puis mettre `dist-thesaurus/` en ligne). L'anglais (WordNet) est abandonné. Le raccourci est Cmd/Ctrl+Alt+Y (Cmd/Ctrl+Alt+S est pris par « Garder cette version »).**
 
 Demande de l'auteur du 3 novembre 2026 : un dictionnaire des synonymes, à condition de ne jamais sortir de
 MondoWrite. Version visée : 1.15.x ou 1.16.0 (petit lot).

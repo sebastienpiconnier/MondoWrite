@@ -1,5 +1,57 @@
 import { describe, it, expect } from "vitest";
+import { wordBounds, candidates, lookup, matchCase, loadThesaurus, hasThesaurus, readManifest, readData } from "../thesaurus";
 import { pickNames, seeded, countryForLang, dataFileFor, loadNames, firstNames, NAME_COUNTRIES } from "../names";
+
+describe("synonymes (#16)", () => {
+  it("trouve le mot sous le curseur, collé à ses bords", () => {
+    expect(wordBounds("Elle marche vite", 7)).toEqual({ from: 5, to: 11 });
+    expect(wordBounds("Elle marche vite", 5)).toEqual({ from: 5, to: 11 });
+    expect(wordBounds("Elle marche vite", 11)).toEqual({ from: 5, to: 11 });
+    expect(wordBounds("l'été, oui", 2)).toEqual({ from: 0, to: 5 });
+    expect(wordBounds("a — b", 2)).toBeNull();
+  });
+  it("propose les formes de base françaises", () => {
+    expect(candidates("belles", "fr")).toContain("bel");
+    expect(candidates("chevaux", "fr")).toContain("cheval");
+    expect(candidates("marchaient", "fr")).toContain("marcher");
+    expect(candidates("marchée", "fr")).toContain("marcher");
+    expect(candidates("finissent", "fr")).toContain("finir");
+    expect(candidates("l'amie", "fr")[0]).toBe("amie");
+    expect(candidates("Marche", "fr")[0]).toBe("marche");
+  });
+  it("garde la casse du mot remplacé", () => {
+    expect(matchCase("Marche", "avance")).toBe("Avance");
+    expect(matchCase("MARCHE", "avance")).toBe("AVANCE");
+    expect(matchCase("marche", "avance")).toBe("avance");
+    expect(matchCase("I", "me")).toBe("Me");
+  });
+  it("cherche par forme de base", () => {
+    const data = { marcher: [["avancer", "cheminer"]] };
+    expect(lookup(data, "Marchaient", "fr")?.lemma).toBe("marcher");
+    expect(lookup(data, "courir", "fr")).toBeNull();
+  });
+  it("lit la liste du site : seules les entrées sûres sont gardées", () => {
+    const sha = "a".repeat(64);
+    const good = { lang: "fr", file: "fr.json", size: 100, sha256: sha };
+    expect(readManifest({ thesaurus: [good] })).toEqual([{ lang: "fr", url: "https://mondowrite.app/thesaurus/fr.json", size: 100, sha256: sha }]);
+    expect(readManifest({ thesaurus: [{ ...good, file: "https://evil.example/fr.json" }] })).toEqual([]);
+    expect(readManifest({ thesaurus: [{ ...good, file: "http://mondowrite.app/fr.json" }] })).toEqual([]);
+    expect(readManifest({ thesaurus: [{ ...good, sha256: "zz" }] })).toEqual([]);
+    expect(readManifest({ thesaurus: [{ ...good, size: 999_999_999 }] })).toEqual([]);
+    expect(readManifest(null)).toEqual([]);
+  });
+  it("ne garde des données téléchargées que des mots et des listes de mots", () => {
+    const data = readData({ beau: [["joli", 3, "charmant"], "x", []], mauvais: "texte", vide: [[]] });
+    expect(data.beau).toEqual([["joli", "charmant"]]);
+    expect(data.mauvais).toBeUndefined();
+    expect(data.vide).toBeUndefined();
+  });
+  it("refuse une langue sans dictionnaire", async () => {
+    expect(hasThesaurus("fr-CA")).toBe(true);
+    expect(hasThesaurus("en")).toBe(false);
+    await expect(loadThesaurus("en")).rejects.toThrow();
+  });
+});
 
 describe("annuaire de noms (#17)", () => {
   const list = { f: ["Anna", "Béa", "Chloé"], m: ["Hugo", "Ivan"], x: ["Camille"], l: ["Durand", "Morvan", "Petit", "Roux"] };
