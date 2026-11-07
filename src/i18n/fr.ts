@@ -2372,7 +2372,6 @@ export const fr = {
       help: "Cette liste",
       commands: "Palette de commandes",
       keepVersion: "Garder une version de la scène",
-      synonyms: "Synonymes du mot",
       comment: "Commenter le passage sélectionné",
       footnote: "Insérer une note de bas de page",
       guide: "Guide de l’utilisateur (aide en ligne)",
@@ -2444,7 +2443,6 @@ export const fr = {
     find: "Rechercher…",
     replace: "Rechercher et remplacer…",
     keepVersion: "Garder une version de la scène…",
-    synonyms: "Synonymes du mot…",
     comment: "Commenter la sélection…",
     footnote: "Note de bas de page",
     goto: "Aller à…",
@@ -2789,20 +2787,6 @@ export const fr = {
   },
 
   // Statistiques et objectifs du manuscrit.
-  thesaurus: {
-    title: "Synonymes",
-    button: "Synonymes",
-    forWord: "Synonymes de « {word} »",
-    noWord: "Place le curseur dans un mot, ou sélectionne-le, puis demande les synonymes.",
-    none: "Aucun synonyme connu pour « {word} ».",
-    noDictionary: "Pas encore de dictionnaire de synonymes pour cette langue ({lang}).",
-    loadFailed: "Le dictionnaire n’a pas pu être chargé.",
-    loading: "Chargement…",
-    sense: "Sens {n}",
-    replaceBy: "Remplacer par {word}",
-    hint: "Flèches pour choisir, Entrée pour remplacer, Échap pour fermer.",
-    senseList: "Synonymes",
-  },
   names: {
     title: "Proposer un nom",
     menu: "Proposer un nom…",

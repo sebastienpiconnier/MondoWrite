@@ -11,7 +11,6 @@ import { ScreenplayKeymap } from "./keymap";
 import { Pages, type PagesOptions } from "./pages";
 import { Continued, type ContinuedOptions } from "./continued";
 import { ReadingMark } from "../../components/readingMark";
-import { Synonyms } from "../../components/editorKit";
 import {
   Action,
   Character,
@@ -79,8 +78,6 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
       placeholder: ({ node }) => (isEditableType(node.type.name) ? options.placeholder(node.type.name) : ""),
     }),
     ScreenplayKeymap.configure({ onEscape: options.onEscape }),
-    // Synonymes (#16) : dans les actions et les répliques, pas dans les noms ni les en-têtes.
-    Synonyms.configure({ allow: (type) => type === "action" || type === "dialogue" }),
     Autodetect.configure({ locale: options.locale }),
     ...(options.pages ? [Pages.configure(options.pages)] : []),
     ...(options.focus ? [FocusWriting.configure(options.focus)] : []),

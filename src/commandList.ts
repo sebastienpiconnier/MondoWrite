@@ -104,8 +104,6 @@ export const COMMANDS: AppCommandItem[] = [
   // Versions de la scène en cours (Manuscrit ou Scénario) : la vue sait quelle scène, d'où le raccourci rejoué.
   { id: "keep-version", group: "edit", label: (t) => t.appMenu.keepVersion, accelerator: "CmdOrCtrl+Alt+S", enabled: writing, run: () => replayShortcut("s", "KeyS", false, true) },
   // Commenter le passage sélectionné (texte d'une scène du roman) : le raccourci rejoué dans le texte.
-  // Synonymes du mot sous le curseur (#16) : l'éditeur qui a le focus répond au raccourci.
-  { id: "synonyms", group: "edit", label: (t) => t.appMenu.synonyms, accelerator: "CmdOrCtrl+Alt+Y", enabled: writing, run: () => replayShortcut("y", "KeyY", false, true) },
   { id: "comment", group: "edit", label: (t) => t.appMenu.comment, accelerator: "CmdOrCtrl+Alt+M", enabled: writing, run: () => replayShortcut("m", "KeyM", false, true) },
   // Fusionner la scène en cours avec la suivante (#23) : la vue sait quelle scène.
   { id: "merge-next", group: "edit", label: (t) => t.appMenu.mergeNext, enabled: writing, run: () => sendCommand("merge-next") },

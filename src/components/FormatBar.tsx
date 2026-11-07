@@ -8,7 +8,6 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { useT } from "../i18n";
 import { useAtelierFormat } from "./Atelier";
-import { openSynonyms } from "../synonymsState";
 
 interface Action {
   key: string;
@@ -106,8 +105,6 @@ export function useFormatActions(editor: Editor, { revisit = true, onChutier, on
           },
         ]
       : []),
-    // Synonymes du mot (#16) : le chemin au doigt et à la souris du raccourci Cmd/Ctrl+Alt+Y.
-    { key: "synonyms", label: all.thesaurus.title, glyph: <span className="format-text">{all.thesaurus.button}</span>, active: false, run: () => void openSynonyms(editor) },
     ...(onComment
       ? [
           {

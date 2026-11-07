@@ -1,6 +1,6 @@
 # Plan : synonymes, sans quitter l'app
 
-> **Statut : première livraison en 1.21.0 (lot 4), anglais seulement (WordNet, embarqué et chargé à la demande). Reste : le français (voir la décision de licence ci-dessous), le réglage « Langue du texte », le clic droit sur le mot.** Le raccourci n'est pas Cmd/Ctrl+Alt+S (pris par « Garder cette version ») mais Cmd/Ctrl+Alt+Y.
+> **Statut : retiré avant publication (novembre 2026). Une première version anglaise (WordNet) avait été écrite en 1.21.0 puis retirée à la demande de l'auteur ; à reprendre avec un dictionnaire français (voir la décision de licence ci-dessous). Le raccourci visé reste Cmd/Ctrl+Alt+Y (Cmd/Ctrl+Alt+S est pris par « Garder cette version »).**
 
 Demande de l'auteur du 3 novembre 2026 : un dictionnaire des synonymes, à condition de ne jamais sortir de
 MondoWrite. Version visée : 1.15.x ou 1.16.0 (petit lot).
