@@ -1,6 +1,6 @@
 # Plan : annuaire de noms de personnages
 
-> **Statut : première livraison en 1.21.0 (lot 4) avec les listes de Faker (tous pays, sans époque ni fréquence), embarquées et chargées à la demande. Novembre 2026 : tirage pondéré et choix de la décennie prêts (`NameRegister`, `scripts/names/build-insee.mjs`), registre FR fabriqué d'après `nat2021` et le fichier des noms 1891-2000 (INSEE), prénoms et noms. Reste : SSA et Census (US), ONS (GB), et le préremplissage de l'époque.**
+> **Statut : première livraison en 1.21.0 (lot 4) avec les listes de Faker (tous pays, sans époque ni fréquence), embarquées et chargées à la demande. Novembre 2026 : tirage pondéré et choix de la décennie prêts (`NameRegister`, `scripts/names/build-insee.mjs`), registre FR fabriqué d'après `nat2021` et le fichier des noms 1891-2000 (INSEE), prénoms et noms. Reste : ONS (GB), et le préremplissage de l'époque.**
 
 Demande de l'auteur du 3 novembre 2026 : proposer des prénoms et des noms par genre et par pays. Version visée :
 avec les synonymes (même principe de données embarquées ou téléchargées une fois).
