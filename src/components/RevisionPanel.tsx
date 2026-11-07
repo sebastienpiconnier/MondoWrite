@@ -10,7 +10,6 @@ import { REV_COLORS, colorFor, currentSet, isRevColor, nextNumber, type RevColor
 import { LAYOUTS } from "../screenplay/layout";
 import { typeset } from "../screenplay/export/typeset";
 import { buildLock } from "../screenplay/lockedPages";
-import { bookRevCounts } from "../novelRevisions";
 import { revisionDateText, revisionName, revisionVar } from "../revisionsText";
 
 const today = () => {
@@ -31,19 +30,16 @@ export function RevisionPanel() {
   const [notice, setNotice] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const paper = useCosmos((s) => s.paper);
-  const novel = useCosmos((s) => s.kind) !== "scenario";
-  const manuscript = useCosmos((s) => s.manuscript);
 
   const counts = useMemo(() => {
-    // Roman : passages marqués dans le texte des scènes ; scénario : lignes marquées.
-    if (novel) return bookRevCounts(manuscript);
+    // Lignes marquées de chaque passe.
     const out = new Map<number, number>();
     for (const el of screenplay?.elements ?? []) if (el.rev !== undefined) out.set(el.rev, (out.get(el.rev) ?? 0) + 1);
     return out;
-  }, [novel, manuscript, screenplay]);
+  }, [screenplay]);
   const total = [...counts.values()].reduce((a, b) => a + b, 0);
   const open = currentSet(revisions);
-  const countText = (n: number) => (novel ? (n === 1 ? k.markedPassage : fmt(k.markedPassages, { n })) : n === 1 ? k.markedOne : fmt(k.marked, { n }));
+  const countText = (n: number) => (n === 1 ? k.markedOne : fmt(k.marked, { n }));
 
   // Verrouiller : la pagination d'aujourd'hui, comme le PDF la compose (réglages d'impression du projet).
   const lockNow = () => {
@@ -63,8 +59,8 @@ export function RevisionPanel() {
 
   return (
     <div className="rev-panel">
-      <h2 id="app-dialog-title">{novel ? k.titleNovel : k.title}</h2>
-      <p className="rev-intro">{novel ? k.introNovel : k.intro}</p>
+      <h2 id="app-dialog-title">{k.title}</h2>
+      <p className="rev-intro">{k.intro}</p>
 
       <p className="rev-status" role="status">
         {open ? fmt(k.current, { name: revisionName(t, revisions, open.n) }) : k.none}
@@ -127,7 +123,6 @@ export function RevisionPanel() {
         </button>
       </form>
 
-      {!novel && (
       <section aria-label={k.lockTitle}>
         <h3>{k.lockTitle}</h3>
         <p className="rev-hint">{k.lockIntro}</p>
@@ -166,7 +161,6 @@ export function RevisionPanel() {
           </p>
         )}
       </section>
-      )}
 
       <section>
         <button
@@ -180,7 +174,7 @@ export function RevisionPanel() {
         >
           {k.clear}
         </button>{" "}
-        <span className="rev-hint">{novel ? k.clearHintNovel : k.clearHint}</span>
+        <span className="rev-hint">{k.clearHint}</span>
         {notice && (
           <p role="status" className="rev-hint">
             {notice}

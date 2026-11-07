@@ -57,7 +57,6 @@ import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
 import { DEFAULT_BIBLE_EXPORT, type BibleExportState } from "./bibleExport";
 import { DEFAULT_SCRIPT_PRINT, type ScriptPrint } from "./screenplay/export/scriptPrint";
 import { assignSceneNumbers } from "./screenplay/lockedPages";
-import { clearBookRevMarks } from "./novelRevisions";
 import { EMPTY_REVISIONS, clearScreenplayMarks, closeRevision as closeRevisionPass, markChanged, openRevision as openRevisionPass, type LockedPage, type RevColor, type Revisions } from "./screenplay/revisions";
 import { hostOf, today } from "./research";
 import { fetchImage, readPage } from "./web";
@@ -2175,12 +2174,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     clearRevisionMarks: () => {
-      if (get().kind !== "scenario") {
-        // Roman (#22) : les marques sont dans le texte des scènes, hors historique comme tout le manuscrit.
-        const cleared = clearBookRevMarks(get().manuscript);
-        for (const [id, html] of Object.entries(cleared)) get().setManuscriptText(id, html);
-        return;
-      }
       const sp = get().screenplay;
       if (!sp) return;
       const cleared = clearScreenplayMarks(sp);

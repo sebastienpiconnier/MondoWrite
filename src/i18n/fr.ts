@@ -2166,6 +2166,8 @@ export const fr = {
     previewEmpty: "Rien à imprimer avec ces choix.",
     nameCharacter: "{title} - {character}",
     onlyRevised: "Seulement les pages révisées de la dernière passe",
+    pageColors: "Pages en couleur",
+    pageColorsHint: "Chaque page révisée est imprimée sur le papier de sa dernière passe (bleu, rose, jaune…), comme les pages envoyées à l’équipe. Les pages sans révision restent blanches.",
     onlyRevisedHint: "Pour envoyer à l’équipe les pages qui ont changé. Les numéros de page restent ceux du scénario entier.",
   },
   // Révisions du scénario (#18) : passes, pages de couleur, astérisque dans la marge.
@@ -2196,14 +2198,6 @@ export const fr = {
     chip: "Révision {color}",
     chipAria: "Révision ouverte : {name}. Les lignes modifiées sont marquées.",
     asterisk: "Ligne modifiée par une révision",
-    // Roman (#22)
-    titleNovel: "Révisions du roman",
-    introNovel: "Une passe de révision colore, de sa couleur, le texte tapé ou collé tant qu’elle est ouverte. Le texte, lui, ne change pas. Rien de cela n’est exporté.",
-    markedPassages: "{n} passages marqués",
-    markedPassage: "1 passage marqué",
-    clearHintNovel: "Retire toutes les marques du livre, sans toucher au texte. On ne peut pas annuler.",
-    chipAriaNovel: "Révision ouverte : {name}. Le texte tapé est coloré.",
-    mark: "Passage tapé pendant une révision",
     lockTitle: "Pages verrouillées",
     lockIntro: "Une fois les pages envoyées à l’équipe, on les verrouille : chaque page garde son numéro et commence au même endroit. Ce qui déborde prend une lettre (12, 12A, 12B), et une page supprimée se fond dans la précédente (« 13-14 »). Les scènes gardent leur numéro, les nouvelles prennent celui de la précédente suivi d’une lettre.",
     lockNone: "Les pages ne sont pas verrouillées.",

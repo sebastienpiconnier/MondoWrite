@@ -1894,6 +1894,8 @@ export const en: Messages = {
     previewEmpty: "Nothing to print with these choices.",
     nameCharacter: "{title} - {character}",
     onlyRevised: "Only the revised pages of the latest pass",
+    pageColors: "Coloured pages",
+    pageColorsHint: "Each revised page is printed on the paper of its latest pass (blue, pink, yellow…), like the pages sent to the team. Pages with no revision stay white.",
     onlyRevisedHint: "To send the team the pages that changed. Page numbers stay those of the whole screenplay.",
   },
   // Screenplay revisions (#18): passes, coloured pages, asterisk in the margin.
@@ -1934,14 +1936,6 @@ export const en: Messages = {
     chip: "{color} revision",
     chipAria: "Revision open: {name}. Changed lines are marked.",
     asterisk: "Line changed by a revision",
-    // Novels (#22)
-    titleNovel: "Novel revisions",
-    introNovel: "A revision pass colours the text you type or paste while it is open. The text itself does not change. None of this is exported.",
-    markedPassages: "{n} passages marked",
-    markedPassage: "1 passage marked",
-    clearHintNovel: "Removes every mark from the book, without touching the text. This cannot be undone.",
-    chipAriaNovel: "Revision open: {name}. Typed text is coloured.",
-    mark: "Text typed during a revision",
   },
   projectStats: {
     part: "Count",

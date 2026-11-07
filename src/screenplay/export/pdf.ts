@@ -45,7 +45,7 @@ export interface PdfOptions {
    * Révisions (#18) : `label` donne l'en-tête d'une passe (« Révision bleue – 03/11/2026 »), imprimé sur les pages qu'elle
    * touche ; `only` : seulement les pages qui portent une ligne de cette passe (numéros de page inchangés).
    */
-  revision?: { label: (pass: number) => string; only?: number | null };
+  revision?: { label: (pass: number) => string; only?: number | null; /** Papier de couleur : teinte (RVB 0 à 1) de la page d'une passe. */ paper?: (pass: number) => readonly [number, number, number] | null };
   /**
    * Série : les épisodes à imprimer l'un après l'autre (`seriesBooks`), chacun avec sa page de titre, ses pages
    * numérotées depuis 1 et ses numéros de scène. Absent : le scénario tel quel.
@@ -78,6 +78,9 @@ export async function buildPdf(
   const header = options.header?.trim() ?? "";
   const draw = (lines: TypesetLine[], number?: number, pass?: number, pageLabel?: string) => {
     const page = pdf.addPage([width, height]);
+    // Papier de couleur : toute la page, sous le texte, comme sur le papier de la passe (la page de titre reste blanche).
+    const tint = pass !== undefined ? options.revision?.paper?.(pass) : null;
+    if (tint) page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(tint[0], tint[1], tint[2]) });
     // Courier Prime n'a pas l'espace fine insécable (textes d'interface en français) : une insécable ordinaire.
     const text = (value: string, x: number, y: number, font: PDFFont, gray = false) => page.drawText(value.replace(/\u202f/g, "\u00a0"), { x, y, size: SIZE, font, ...(gray ? { color: GRAY } : {}) });
     if (watermark) {

@@ -3,7 +3,7 @@
 // simultané côte à côte, en-tête et filigrane, réglages gardés dans cosmos.json.
 
 import { describe, expect, it } from "vitest";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFRawStream, PDFArray, decodePDFRawStream } from "pdf-lib";
 import type { ScreenplayElement } from "../model";
 import { LAYOUTS } from "../layout";
 import { buildPdf } from "../export/pdf";
@@ -81,5 +81,43 @@ describe("options de l'export PDF", () => {
     );
     const pdf = await PDFDocument.load(bytes);
     expect(pdf.getPageCount()).toBe(1);
+  });
+});
+
+describe("pages en couleur (révisions)", () => {
+  const revised: ScreenplayElement[] = [el("sceneHeading", "INT. PHARE - NUIT"), el("action", "La lampe tourne.", { rev: 1 })];
+  const base = { layout: a4, locale: "fr", strings, numberScenes: false, underlineHeadings: false } as const;
+  /** Texte des flux de contenu de toutes les pages (décompressés). */
+  const content = async (bytes: Uint8Array) => {
+    const doc = await PDFDocument.load(bytes);
+    let out = "";
+    for (const page of doc.getPages()) {
+      const c = page.node.Contents();
+      const refs = c instanceof PDFArray ? c.asArray() : c ? [c] : [];
+      for (const ref of refs) {
+        const stream = doc.context.lookup(ref);
+        if (stream instanceof PDFRawStream) out += new TextDecoder("latin1").decode(decodePDFRawStream(stream).decode());
+      }
+    }
+    return out;
+  };
+  const hasTint = async (paper?: (n: number) => readonly [number, number, number] | null) => {
+    const bytes = await buildPdf({ titlePage: {}, elements: revised }, { ...base, revision: { label: () => "Révision bleue", paper } });
+    return (await content(bytes)).includes("0.75 0.85 0.95 rg");
+  };
+
+  it("teinte la page révisée de la couleur de sa passe", async () => {
+    expect(await hasTint(() => [0.75, 0.85, 0.95])).toBe(true);
+  });
+
+  it("ne teinte rien sans l'option, ni une page sans révision", async () => {
+    expect(await hasTint(undefined)).toBe(false);
+    const bytes = await buildPdf({ titlePage: {}, elements: [el("action", "Rien ne change.")] }, { ...base, revision: { label: () => "", paper: () => [0.75, 0.85, 0.95] } });
+    expect((await content(bytes)).includes("0.75 0.85 0.95 rg")).toBe(false);
+  });
+
+  it("l'option est gardée dans cosmos.json seulement quand elle est cochée", () => {
+    expect(scriptPrintToMeta(DEFAULT_SCRIPT_PRINT)).toBeUndefined();
+    expect(scriptPrintToMeta({ ...DEFAULT_SCRIPT_PRINT, pageColors: true })?.pageColors).toBe(true);
   });
 });

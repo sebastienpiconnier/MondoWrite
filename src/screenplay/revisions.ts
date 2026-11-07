@@ -13,6 +13,21 @@ export const REV_COLORS = ["bleu", "rose", "jaune", "vert", "or", "chamois", "sa
 export type RevColor = (typeof REV_COLORS)[number];
 export const isRevColor = (v: unknown): v is RevColor => typeof v === "string" && (REV_COLORS as readonly string[]).includes(v);
 
+/**
+ * Couleur du papier de chaque passe, en RVB de 0 à 1, pour les pages colorées du PDF : des teintes pâles, qui
+ * gardent le texte noir lisible (pas les couleurs vives de l'écran). Même ordre que `REV_COLORS`.
+ */
+export const PAPER_TINTS: Record<RevColor, readonly [number, number, number]> = {
+  bleu: [0.75, 0.85, 0.95],
+  rose: [0.97, 0.78, 0.84],
+  jaune: [1, 0.96, 0.66],
+  vert: [0.78, 0.91, 0.75],
+  or: [0.95, 0.82, 0.48],
+  chamois: [0.9, 0.82, 0.66],
+  saumon: [0.97, 0.73, 0.63],
+  cerise: [0.9, 0.56, 0.63],
+};
+
 /** Éléments qui peuvent porter une marque de révision (le nom d'un personnage ne la porte pas). */
 export const REV_TYPES: ReadonlySet<string> = new Set(["sceneHeading", "action", "parenthetical", "dialogue", "transition"]);
 

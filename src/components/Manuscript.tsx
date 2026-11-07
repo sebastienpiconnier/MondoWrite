@@ -23,7 +23,7 @@ import { SynopsisField } from "./SynopsisField";
 import { DirectionsSuggest, novelSceneText } from "./Atelier";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { usePhone } from "./usePhone";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSettled } from "./useSettled";
 import { setCaretSource } from "../resume";
 import { useCosmos } from "../store";
@@ -35,9 +35,6 @@ import { ReviewPanel, SideTabs, useOpenFindings, type SideTab } from "./ReviewPa
 import { CommentsPanel } from "./CommentsPanel";
 import type { Editor } from "@tiptap/react";
 import { commentStyle } from "./commentMark";
-import { revStyle, bookRevCounts } from "../novelRevisions";
-import { colorFor, currentSet, setOf } from "../screenplay/revisions";
-import { revisionName, revisionVar } from "../revisionsText";
 import { commentIdsIn, openCount } from "../comments";
 import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
 import type { SceneRef } from "../ai/review";
@@ -236,13 +233,6 @@ export function Manuscript() {
   const currentHtml = useCosmos((s) => (current ? s.manuscript[current] : undefined));
   const commentAnchors = useMemo(() => commentIdsIn(currentHtml), [currentHtml]);
   const highlight = useMemo(() => commentStyle(openIds, commentFocus?.id ?? null), [openIds, commentFocus]);
-  // Révisions (#22) : la couleur de chaque passe, lue par le fond des passages marqués.
-  const revisions = useCosmos((s) => s.revisions);
-  const openPass = currentSet(revisions);
-  const revisionRules = useMemo(
-    () => revStyle([...revisions.sets.map((r) => r.n), ...bookRevCounts(manuscript).keys()], (n) => revisionVar(setOf(revisions, n)?.color ?? colorFor(n))),
-    [revisions, manuscript],
-  );
   const goToComment = (id: string) => {
     if (!bookApi.current?.selectComment(id)) return;
     const owner = Object.entries(useCosmos.getState().comments).find(([, list]) => list.some((c) => c.id === id))?.[0];
@@ -863,26 +853,12 @@ export function Manuscript() {
             >
               {words(counted)} · {b.counter[countScope]}
             </button>
-            {openPass && (
-              <button
-                type="button"
-                className="sp-rev-chip"
-                style={{ "--rev": revisionVar(openPass.color) } as CSSProperties}
-                aria-label={fmt(t.revisions.chipAriaNovel, { name: revisionName(t, revisions, openPass.n) })}
-                title={revisionName(t, revisions, openPass.n)}
-                onClick={() => useCosmos.getState().setDialog("revisions")}
-              >
-                {fmt(t.revisions.chip, { color: t.revisions.colors[openPass.color] })}
-              </button>
-            )}
             {/* Le reste (1.11.1) : une seule rangée pour la barre, la corbeille en dernier et en rouge. */}
             <MoreMenu
               items={[
                 !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
                 // Fusionner (#23) : la scène suivante du même chapitre rejoint celle-ci ; sa carte part à la corbeille.
                 !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
-                { label: t.revisions.menu, onSelect: () => useCosmos.getState().setDialog("revisions") },
-                !!openPass && { label: t.revisions.close, onSelect: () => useCosmos.getState().closeRevision() },
                 { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), onSelect: () => useCosmos.getState().openVersions(current, true) },
                 { label: t.versions.listMenu, onSelect: () => useCosmos.getState().openVersions(current) },
                 { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },
@@ -936,7 +912,7 @@ export function Manuscript() {
         </div>
       </div>
 
-      {(highlight || revisionRules) && <style>{highlight + revisionRules}</style>}
+      {highlight && <style>{highlight}</style>}
       <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : sideTab === "comments" ? t.comments.title : m.inScene}>
         <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} comments={openCount(comments[current])} />
         {sideTab === "comments" ? (

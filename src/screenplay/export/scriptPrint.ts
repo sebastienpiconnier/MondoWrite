@@ -23,9 +23,11 @@ export interface ScriptPrint {
   resumes: boolean;
   /** Révisions (#18) : seulement les pages qui portent une ligne de la dernière passe. */
   onlyRevised: boolean;
+  /** Révisions : chaque page révisée est imprimée sur le papier de la couleur de sa dernière passe. */
+  pageColors: boolean;
 }
 
-export const DEFAULT_SCRIPT_PRINT: ScriptPrint = { character: "", titlePage: true, synopsis: false, sections: false, notes: false, header: "", watermark: "", breaks: true, resumes: false, onlyRevised: false };
+export const DEFAULT_SCRIPT_PRINT: ScriptPrint = { character: "", titlePage: true, synopsis: false, sections: false, notes: false, header: "", watermark: "", breaks: true, resumes: false, onlyRevised: false, pageColors: false };
 
 const line = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 const flag = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
@@ -45,6 +47,7 @@ export function cleanScriptPrint(raw: unknown): ScriptPrint {
     breaks: flag(p.breaks, d.breaks),
     resumes: flag(p.resumes, d.resumes),
     onlyRevised: flag(p.onlyRevised, d.onlyRevised),
+    pageColors: flag(p.pageColors, d.pageColors),
   };
 }
 

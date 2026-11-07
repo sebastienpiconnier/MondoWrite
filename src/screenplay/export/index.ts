@@ -36,7 +36,7 @@ export interface ExportOptions {
   books?: Screenplay[] | null;
   /** Révisions (#18) : passes écrites dans le FDX ; pour le PDF, `label` donne l'en-tête d'une passe et `only` les pages d'une passe. */
   revisions?: Revisions;
-  revisionPdf?: { label: (pass: number) => string; only?: number | null };
+  revisionPdf?: { label: (pass: number) => string; only?: number | null; paper?: (pass: number) => readonly [number, number, number] | null };
   locked?: LockedPage[] | null;
   print?: { titlePage: boolean; synopsis: boolean; sections: boolean; notes: boolean; character: string; header: string; watermark: string };
 }

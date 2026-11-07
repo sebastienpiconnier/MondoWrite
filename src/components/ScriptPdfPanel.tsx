@@ -5,7 +5,7 @@
 // lui-même et ses polices ne sont chargés qu'à l'enregistrement.
 
 import { revisionHeader } from "../revisionsText";
-import { usedRevisions } from "../screenplay/revisions";
+import { PAPER_TINTS, colorFor, setOf, usedRevisions } from "../screenplay/revisions";
 import { resolveLock } from "../screenplay/lockedPages";
 import { useMemo, useState, type CSSProperties } from "react";
 import { fmt, useT } from "../i18n";
@@ -89,7 +89,11 @@ export function ScriptPdfPanel() {
         print: { ...options, header },
         // Révisions (#18) : en-tête de chaque passe sur ses pages, et seulement les pages de la dernière si demandé.
         locked,
-        revisionPdf: { label: revisionHeader(t, lang, revisions), only: options.onlyRevised ? (usedRevisions(elements).pop() ?? null) : null },
+        revisionPdf: {
+          label: revisionHeader(t, lang, revisions),
+          only: options.onlyRevised ? (usedRevisions(elements).pop() ?? null) : null,
+          paper: options.pageColors ? (pass: number) => PAPER_TINTS[setOf(revisions, pass)?.color ?? colorFor(pass)] : undefined,
+        },
         // Toute la série ou une saison : une page de titre par épisode.
         books: exportBooksOf(useCosmos.getState(), t),
       });
@@ -190,6 +194,11 @@ export function ScriptPdfPanel() {
               {k.onlyRevised}
             </label>
             <p className="spdf-hint">{k.onlyRevisedHint}</p>
+            <label className="spdf-choice">
+              <input type="checkbox" checked={options.pageColors} onChange={(e) => set({ pageColors: e.target.checked })} />
+              {k.pageColors}
+            </label>
+            <p className="spdf-hint">{k.pageColorsHint}</p>
           </fieldset>
         )}
         <fieldset>
