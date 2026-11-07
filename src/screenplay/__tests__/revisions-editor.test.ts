@@ -87,3 +87,19 @@ describe("marquage à la frappe", () => {
     expect(revs()).toEqual([undefined, 2]);
   });
 });
+
+describe("suppression", () => {
+  it("retirer du texte marque la ligne dont il part, comme Final Draft", () => {
+    pass = 2;
+    open([
+      { type: "sceneHeading", text: "INT. PHARE - NUIT" },
+      { type: "action", text: "La lampe tourne vite." },
+    ]);
+    let pos = 0;
+    editor.state.doc.forEach((node, offset, i) => {
+      if (i === 1) pos = offset + node.nodeSize - 1;
+    });
+    editor.view.dispatch(editor.state.tr.delete(pos - 6, pos));
+    expect(revs()).toEqual([undefined, 2]);
+  });
+});

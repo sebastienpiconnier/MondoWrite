@@ -660,6 +660,31 @@
 <p>Arriba de la lista de escenas, elige un <span class="ui">Personaje</span>: <span class="ui">Sus escenas</span> conserva solo las escenas en las que habla o se le nombra en la acción; <span class="ui">Sus réplicas</span> atenúa además todo lo que no dice. El texto atenuado sigue siendo editable, y la hoja se vuelve continua mientras el filtro está activo. El aviso de la barra, o <span class="ui">Todos</span>, devuelve todo el guion. Desde su ficha en la Biblia, <span class="ui">Ver sus réplicas en el guion</span> pone directamente este filtro.</p>
 <figure><img src="images/es/scenario-filtre.jpg"><figcaption>Las réplicas del Lobo; el resto, atenuado.</figcaption></figure>
 
+<h3>Las revisiones</h3>
+<p>Cuando un guion circula, cada versión debe reconocerse de un vistazo: las líneas cambiadas llevan un asterisco en el margen derecho, y cada versión tiene su color. Es el uso de todos los programas de guion, y MondoWrite lo sigue. Nada es obligatorio: sin revisión abierta, el texto nunca se marca.</p>
+<ul>
+  <li><span class="ui">Abrir una pasada</span>: menú <span class="ui">⋯</span> de la vista Guion, <span class="ui">Revisiones…</span>. Elige un color (en el orden habitual: azul, rosa, amarilla, verde, dorada, beige, salmón, cereza, y se vuelve a empezar), una fecha y, si quieres, un nombre («Guion de rodaje»), y después <span class="ui">Abrir la revisión</span>. Aparece en la barra una pastilla del color de la pasada.</li>
+  <li><span class="ui">Escribir</span>: mientras la pasada está abierta, cada línea que escribes, pegas o modificas recibe el color de la pasada como fondo discreto y un asterisco en el margen. Quitar palabras de una línea también la marca, como en Final Draft. Los nombres de personaje nunca se marcan. Una línea ya marcada por una pasada anterior toma la marca de la más reciente.</li>
+  <li><span class="ui">Cerrar la revisión</span> deja de marcar; las marcas ya puestas se quedan.</li>
+  <li><span class="ui">Nueva versión limpia</span> quita todas las marcas sin tocar el texto (se puede deshacer). Úsala cuando la versión ya ha salido, antes de abrir la pasada siguiente.</li>
+</ul>
+<h4>Bloquear las páginas</h4>
+<p>En cuanto las páginas han salido al equipo, <span class="ui">Bloquear las páginas</span> congela la paginación de ese momento y numera las escenas. Cada página conserva su número y empieza en el mismo sitio: lo que sobra toma una letra (12, 12A, 12B), una página suprimida deja «13-14» en la anterior, y una escena añadida entre la 12 y la 13 pasa a ser la 12A. <span class="ui">Desbloquear…</span> pide confirmación; los números de escena ya puestos se quedan.</p>
+<h4>Una forma de trabajar</h4>
+<ol>
+  <li>Escribe con libertad, sin revisión ni bloqueo, mientras el guion es solo tuyo.</li>
+  <li>Cuando sale al equipo, bloquea las páginas. Es la versión blanca.</li>
+  <li>Abre la revisión azul y corrige. Exporta el PDF con <span class="ui">Solo las páginas revisadas de la última pasada</span>: el equipo imprime únicamente las páginas que han cambiado.</li>
+  <li>En la versión siguiente, <span class="ui">Cerrar la revisión</span>, <span class="ui">Nueva versión limpia</span> si quieres empezar de cero, y abre la revisión rosa, y así sucesivamente.</li>
+</ol>
+<h4>Qué ocurre con las marcas</h4>
+<ul>
+  <li><strong>PDF</strong>: un asterisco en el margen de cada línea de la pasada, y «Revisión azul» con la fecha en el encabezado de la página. El PDF no tiñe las páginas: el color se elige con el papel, al imprimir.</li>
+  <li><strong>Final Draft (FDX)</strong>: las revisiones se escriben en el archivo. Aún no lo hemos comprobado en el propio Final Draft; cuéntanos qué ves allí.</li>
+  <li><strong>Fountain</strong>: la marca es una nota <code>[[cosmos:rev:2]]</code> al final de la línea, que los demás programas ignoran.</li>
+</ul>
+<p>En una novela, la misma ventana (<span class="ui">Revisiones…</span> en el menú ⋯ del Manuscrito) colorea el texto escrito durante una pasada, sin asterisco ni bloqueo, y nada de eso se exporta (véase «Las versiones de una escena», más arriba).</p>
+
 <h3>Las estadísticas del guion</h3>
 <p><span class="ui">Estadísticas</span>, en el menú <span class="ui">⋯</span> de la barra, abre la misma ventana que en una novela (ver «Las estadísticas del proyecto»), leída en el guion. La pestaña <span class="ui">Localizaciones</span> es un desglose para el rodaje: las páginas de cada localización (una página equivale más o menos a un minuto), sus escenas de interior o exterior, de día o de noche, y los personajes que se cruzan en ella. Ves de un vistazo lo que costará caro (las noches en exterior) o una localización usada una sola vez. Una localización escrita sin tarjeta tiene su propia fila.</p>
 <p>En una <strong>serie</strong>, <span class="ui">Contar</span>, arriba de la ventana, limita las cifras a una temporada o a un episodio; <span class="ui">Ir a</span> (<kbd>Ctrl</kbd> <kbd>G</kbd>) propone también cada temporada y cada episodio, con el nombre de su temporada, y lo abre en la vista Guion. <span class="ui">Revisar</span> compara la extensión de cada episodio escrito con el formato de la portada (para episodios de 52 minutos, de 47 a 60 páginas) y señala a un personaje principal ausente de tres episodios seguidos o más.</p>

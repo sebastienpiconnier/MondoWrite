@@ -660,6 +660,31 @@
 <p>At the top of the scene list, choose a <span class="ui">Character</span>: <span class="ui">Their scenes</span> keeps only the scenes where they speak or are named in the action; <span class="ui">Their lines</span> also fades everything they don’t say. The faded text stays editable, and the sheet becomes continuous while the filter is on. The banner in the bar, or <span class="ui">All</span>, brings back the whole screenplay. From their entry in the Bible, <span class="ui">See their lines in the screenplay</span> sets this filter directly.</p>
 <figure><img src="images/en/scenario-filtre.jpg"><figcaption>The Wolf’s lines, the rest faded.</figcaption></figure>
 
+<h3>Revisions</h3>
+<p>When a screenplay circulates, each version has to be recognisable at a glance: changed lines carry an asterisk in the right margin, and each version has its own colour. That is the convention in every screenwriting program, and MondoWrite follows it. Nothing is mandatory: with no revision open, the text is never marked.</p>
+<ul>
+  <li><span class="ui">Open a pass</span>: the <span class="ui">⋯</span> menu of the Screenplay view, <span class="ui">Revisions…</span>. Pick a colour (in the usual order: blue, pink, yellow, green, goldenrod, buff, salmon, cherry, then it starts over), a date and, if you like, a name (“Shooting draft”), then <span class="ui">Open the revision</span>. A chip in the pass’s colour appears in the bar.</li>
+  <li><span class="ui">Write</span>: while the pass is open, every line you type, paste or change gets the pass’s colour as a light background and an asterisk in the margin. Removing words from a line marks it too, as in Final Draft. Character names are never marked. A line already marked by an older pass takes the mark of the newest.</li>
+  <li><span class="ui">Close the revision</span> stops marking; marks already placed stay.</li>
+  <li><span class="ui">Clean new draft</span> removes every mark without touching the text (you can undo it). Use it once the version is out, before opening the next pass.</li>
+</ul>
+<h4>Locking pages</h4>
+<p>As soon as pages have gone out to the team, <span class="ui">Lock pages</span> freezes today’s pagination and numbers the scenes. Each page keeps its number and starts at the same place: overflow takes a letter (12, 12A, 12B), a deleted page leaves “13-14” on the previous one, and a scene added between 12 and 13 becomes 12A. <span class="ui">Unlock…</span> asks for confirmation; scene numbers already set stay.</p>
+<h4>A way to work</h4>
+<ol>
+  <li>Write freely, with no revision and no lock, while the screenplay is yours alone.</li>
+  <li>When it goes to the team, lock the pages. This is the white draft.</li>
+  <li>Open the blue revision and make your changes. Export the PDF with <span class="ui">Only the revised pages of the latest pass</span>: the team prints only the pages that changed.</li>
+  <li>For the next version, <span class="ui">Close the revision</span>, <span class="ui">Clean new draft</span> if you want to start from zero, then open the pink revision, and so on.</li>
+</ol>
+<h4>What becomes of the marks</h4>
+<ul>
+  <li><strong>PDF</strong>: an asterisk in the margin of every line of the pass, and “Blue revision” followed by the date in the page header. The PDF does not tint the pages: you choose the colour with the paper, at print time.</li>
+  <li><strong>Final Draft (FDX)</strong>: the revisions are written into the file. We have not yet checked this in Final Draft itself; tell us what you see there.</li>
+  <li><strong>Fountain</strong>: the mark is a <code>[[cosmos:rev:2]]</code> note at the end of the line, which other programs ignore.</li>
+</ul>
+<p>In a novel, the same window (<span class="ui">Revisions…</span> in the Manuscript’s ⋯ menu) colours the text typed during a pass, with no asterisk and no lock, and none of it is exported (see “Versions of a scene”, above).</p>
+
 <h3>Screenplay statistics</h3>
 <p><span class="ui">Statistics</span>, in the bar’s <span class="ui">⋯</span> menu, opens the same window as in a novel (see “Project statistics”), read from the screenplay. The <span class="ui">Locations</span> tab is a shooting breakdown: the pages of each location (one page is about one minute), its interior or exterior scenes, day or night, and the characters met there. You see at a glance what will be expensive (exterior nights) or a location used only once. A location written without a card gets its own row.</p>
 <p>In a <strong>series</strong>, <span class="ui">Count</span>, at the top of the window, limits the figures to one season or one episode; <span class="ui">Go to</span> (<kbd>Ctrl</kbd> <kbd>G</kbd>) also offers each season and each episode, with its season’s name, and opens it in the Screenplay view. <span class="ui">Check</span> compares the length of each written episode with the cover’s format (for 52-minute episodes, 47 to 60 pages) and points out a main character missing from three or more episodes in a row.</p>

@@ -661,6 +661,31 @@
 <p>En haut de la liste des scènes, choisis un <span class="ui">Personnage</span> : <span class="ui">Ses scènes</span> ne garde que les scènes où il parle ou est nommé dans l’action ; <span class="ui">Ses répliques</span> estompe en plus tout ce qu’il ne dit pas. Le texte estompé reste modifiable, et la feuille passe en continu le temps du filtre. Le bandeau dans la barre, ou <span class="ui">Tous</span>, rend tout le scénario. Depuis sa fiche dans la Bible, <span class="ui">Voir ses répliques dans le scénario</span> pose ce filtre directement.</p>
 <figure><img src="images/fr/scenario-filtre.jpg"><figcaption>Les répliques du Loup, le reste estompé.</figcaption></figure>
 
+<h3>Les révisions</h3>
+<p>Quand un scénario circule, chaque version doit se repérer d’un coup d’œil : les lignes changées portent un astérisque dans la marge de droite, et chaque version a sa couleur. C’est l’usage de tous les logiciels de scénario, et MondoWrite le suit. Rien n’est obligatoire : sans révision ouverte, le texte n’est jamais marqué.</p>
+<ul>
+  <li><span class="ui">Ouvrir une passe</span> : menu <span class="ui">⋯</span> de la vue Scénario, <span class="ui">Révisions…</span>. Choisis une couleur (dans l’ordre d’usage : bleue, rose, jaune, verte, or, chamois, saumon, cerise, puis on recommence), une date, et si tu veux un nom (« Version tournage »), puis <span class="ui">Ouvrir la révision</span>. Une pastille de la couleur de la passe apparaît dans la barre.</li>
+  <li><span class="ui">Écrire</span> : tant que la passe est ouverte, toute ligne que tu tapes, colles ou modifies reçoit la couleur de la passe en fond discret et un astérisque en marge. Retirer des mots d’une ligne la marque aussi, comme dans Final Draft. Les noms de personnage ne sont jamais marqués. Une ligne déjà marquée par une passe plus ancienne prend la marque de la plus récente.</li>
+  <li><span class="ui">Fermer la révision</span> arrête de marquer ; les marques déjà posées restent.</li>
+  <li><span class="ui">Nouvelle version propre</span> retire toutes les marques sans toucher au texte (on peut annuler). On l’emploie une fois la version diffusée, avant d’ouvrir la passe suivante.</li>
+</ul>
+<h4>Verrouiller les pages</h4>
+<p>Dès que les pages sont parties à l’équipe, <span class="ui">Verrouiller les pages</span> fige la pagination du moment et numérote les scènes. Chaque page garde son numéro et commence au même endroit : ce qui déborde prend une lettre (12, 12A, 12B), une page supprimée laisse « 13-14 » sur la précédente, une scène ajoutée entre la 12 et la 13 devient 12A. <span class="ui">Déverrouiller…</span> demande confirmation ; les numéros de scène posés restent.</p>
+<h4>Une façon de travailler</h4>
+<ol>
+  <li>Écris librement, sans révision ni verrou, tant que le scénario est à toi seul.</li>
+  <li>Quand il part à l’équipe, verrouille les pages. C’est la version blanche.</li>
+  <li>Ouvre la révision bleue et corrige. Exporte le PDF avec <span class="ui">Seulement les pages révisées de la dernière passe</span> : l’équipe n’imprime que les pages qui ont changé.</li>
+  <li>À la version suivante, <span class="ui">Fermer la révision</span>, <span class="ui">Nouvelle version propre</span> si tu veux repartir de zéro, puis ouvre la révision rose, et ainsi de suite.</li>
+</ol>
+<h4>Ce que deviennent les marques</h4>
+<ul>
+  <li><strong>PDF</strong> : un astérisque en marge de chaque ligne de la passe, et « Révision bleue » suivi de la date en en-tête de page. Le PDF ne teinte pas les pages : la couleur se choisit au papier, à l’impression.</li>
+  <li><strong>Final Draft (FDX)</strong> : les révisions sont écrites dans le fichier. Nous ne l’avons pas encore vérifié dans Final Draft même ; dis-nous ce que tu y vois.</li>
+  <li><strong>Fountain</strong> : la marque est une note <code>[[cosmos:rev:2]]</code> en fin de ligne, que les autres logiciels ignorent.</li>
+</ul>
+<p>Dans un roman, la même fenêtre (<span class="ui">Révisions…</span> du menu ⋯ du Manuscrit) colore le texte tapé pendant une passe, sans astérisque ni verrou, et rien n’en est exporté (voir « Les versions d’une scène », plus haut).</p>
+
 <h3>Les statistiques du scénario</h3>
 <p><span class="ui">Statistiques</span>, dans le menu <span class="ui">⋯</span> de la barre, ouvre la même fenêtre que dans un roman (voir « Les statistiques du projet »), lue dans le scénario. L’onglet <span class="ui">Décors</span> est le dépouillement d’un tournage : les pages de chaque décor (une page vaut environ une minute), ses scènes en intérieur ou en extérieur, de jour ou de nuit, et les personnages qu’on y croise. On y voit d’un coup d’œil ce qui coûtera cher (des nuits en extérieur) ou un décor qui ne sert qu’une fois. Un décor écrit sans carte a sa propre ligne.</p>
 <p>Dans une <strong>série</strong>, <span class="ui">Compter</span>, en tête de la fenêtre, limite les chiffres à une saison ou à un épisode ; <span class="ui">Aller à</span> (<kbd>Ctrl</kbd> <kbd>G</kbd>) propose aussi chaque saison et chaque épisode, avec le nom de sa saison, et l’ouvre dans la vue Scénario. <span class="ui">Vérifier</span> compare la longueur de chaque épisode écrit au format de la couverture (pour des épisodes de 52 minutes, de 47 à 60 pages) et signale un personnage principal absent de trois épisodes de suite ou plus.</p>
