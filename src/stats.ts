@@ -3,7 +3,7 @@
 // objectif pour le livre, et le compte des mots écrits chaque jour.
 //
 // Dans cosmos.json (facultatifs) :
-//   "goals": { "daily": 500, "total": 80000 }
+//   "goals": { "daily": 500, "total": 80000, "deadline": "2027-03-01", "session": 300, "scene": 1500, "chapter": 4000 }
 //   "progress": { "2026-10-08": { "start": 12000, "end": 12650 } }   (total du manuscrit au début et à la fin du jour)
 
 import { countWords, isBlank, type Manuscript } from "./manuscript";
@@ -20,19 +20,46 @@ export interface Goals {
   daily?: number;
   /** Mots pour le livre entier. */
   total?: number;
+  /** Échéance (AAAA-MM-JJ) : avec l'objectif du livre, l'objectif du jour se calcule tout seul. */
+  deadline?: string;
+  /** Mots à écrire pendant une séance (depuis l'ouverture du projet ou la dernière remise à zéro). */
+  session?: number;
+  /** Mots visés pour une scène. */
+  scene?: number;
+  /** Mots visés pour un chapitre. */
+  chapter?: number;
 }
 
 export type Progress = Record<string, { start: number; end: number }>;
 
 const positive = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? Math.round(v) : undefined);
 
-export function readGoals(raw: unknown): Goals {
-  if (!raw || typeof raw !== "object") return {};
-  const { daily, total } = raw as Record<string, unknown>;
-  return { ...(positive(daily) ? { daily: positive(daily) } : {}), ...(positive(total) ? { total: positive(total) } : {}) };
+export const isDay = (key: string) => /^\d{4}-\d{2}-\d{2}$/.test(key);
+
+/** Une date AAAA-MM-JJ qui existe vraiment (pas le 31 février). */
+export function validDay(key: unknown): key is string {
+  if (typeof key !== "string" || !isDay(key)) return false;
+  const [y, m, d] = key.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
 }
 
-export const isDay = (key: string) => /^\d{4}-\d{2}-\d{2}$/.test(key);
+const NUMERIC_GOALS = ["daily", "total", "session", "scene", "chapter"] as const;
+
+export function readGoals(raw: unknown): Goals {
+  if (!raw || typeof raw !== "object") return {};
+  const r = raw as Record<string, unknown>;
+  const out: Goals = {};
+  for (const key of NUMERIC_GOALS) {
+    const v = positive(r[key]);
+    if (v) out[key] = v;
+  }
+  if (validDay(r.deadline)) out.deadline = r.deadline;
+  return out;
+}
+
+/** Aucun objectif posé : rien à écrire dans cosmos.json. */
+export const hasGoals = (g: Goals) => Object.keys(g).length > 0;
 
 export function readProgress(raw: unknown): Progress {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -111,3 +138,60 @@ export const pagesFor = (words: number) => (words > 0 ? Math.max(1, Math.ceil(wo
 
 /** Première page d'une scène : celle où se termine le texte qui la précède. */
 export const firstPageOf = (wordsBefore: number) => 1 + Math.floor(wordsBefore / WORDS_PER_PAGE);
+
+/** Jours qui restent jusqu'à l'échéance, aujourd'hui compris ; 0 si elle est passée. */
+export function daysLeft(deadline: string, today: Date): number {
+  if (!validDay(deadline)) return 0;
+  const [y, m, d] = deadline.split("-").map(Number);
+  const end = Date.UTC(y, m - 1, d);
+  const now = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.max(0, Math.round((end - now) / 86_400_000) + 1);
+}
+
+export interface DailyTarget {
+  /** Mots à écrire aujourd'hui, ou rien si aucun objectif n'est posé. */
+  words?: number;
+  /** Calculé d'après l'échéance (sinon c'est l'objectif du jour que l'auteur a tapé). */
+  fromDeadline: boolean;
+  /** Jours restants, aujourd'hui compris (avec une échéance). */
+  days?: number;
+  /** L'échéance est passée. */
+  late?: boolean;
+}
+
+/**
+ * Objectif du jour. Avec une échéance et un objectif du livre, il se calcule : ce qui reste à écrire au début de la
+ * journée, réparti sur les jours qui restent (aujourd'hui compris). Il ne bouge pas pendant la journée, sinon il
+ * reculerait à chaque mot écrit. Sans objectif du livre, l'échéance ne sert à rien : l'objectif du jour tapé reste.
+ */
+export function dailyTarget(goals: Goals, bookWordsAtDayStart: number, today: Date): DailyTarget {
+  if (goals.deadline && goals.total) {
+    const days = daysLeft(goals.deadline, today);
+    const remaining = Math.max(0, goals.total - bookWordsAtDayStart);
+    if (days === 0) return { words: remaining, fromDeadline: true, days, late: remaining > 0 };
+    return { words: Math.ceil(remaining / days), fromDeadline: true, days };
+  }
+  return { words: goals.daily, fromDeadline: false };
+}
+
+/** Mots du livre au début d'un jour (le point de départ fixé par le premier changement du jour, sinon le total actuel). */
+export const bookStartOfDay = (progress: Progress, day: string, bookWords: number) => progress[day]?.start ?? bookWords;
+
+/** Mots écrits pendant la séance (jamais négatif) : `start` est le total avant la première modification. */
+export const sessionWords = (start: number | null, now: number) => (start === null ? 0 : Math.max(0, now - start));
+
+/** Une cible atteinte ou non, et sa part (0 à 100). */
+export function reach(value: number, goal: number | undefined): { pct: number; reached: boolean } | null {
+  if (!goal) return null;
+  return { pct: Math.min(100, Math.round((value / goal) * 100)), reached: value >= goal };
+}
+
+/** Mots de chaque chapitre (somme des scènes), dans l'ordre donné par `chapterOf`. */
+export function chapterWords(order: string[], perScene: Map<string, number>, chapterOf: (id: string) => string | undefined): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const id of order) {
+    const chapter = chapterOf(id);
+    if (chapter) out.set(chapter, (out.get(chapter) ?? 0) + (perScene.get(id) ?? 0));
+  }
+  return out;
+}

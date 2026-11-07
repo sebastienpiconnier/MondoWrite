@@ -21,7 +21,7 @@ import { adoptEpisodeCards } from "./screenplay/series";
 import { trashCard } from "./trash";
 import { dayKey } from "./stats";
 import { type Manuscript } from "./manuscript";
-import { readGoals, readProgress, type Goals, type Progress } from "./stats";
+import { hasGoals, readGoals, readProgress, type Goals, type Progress } from "./stats";
 import { addQuestion, legacyParkedCards } from "./character";
 import { isBeat, isCustomBeat, isEmptyPlan, prunePlan, readPlan, type Plan } from "./plan";
 import { storyScenes } from "./book";
@@ -349,7 +349,7 @@ export function toProject(
           }
         : {}),
       ...(isEmptyPlan(plan) ? {} : { plan }),
-      ...(s.goals.daily || s.goals.total ? { goals: s.goals } : {}),
+      ...(hasGoals(s.goals) ? { goals: s.goals } : {}),
       ...(Object.keys(s.progress).length > 0 ? { progress: s.progress } : {}),
       ...(isEmptyPitch(s.pitch) ? {} : { pitch: s.pitch }),
       ...(s.chutier.length > 0 ? { chutier: s.chutier } : {}),

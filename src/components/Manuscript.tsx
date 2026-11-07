@@ -946,7 +946,7 @@ export function Manuscript() {
           </button>
         </section>
         <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
-        <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} />
+        <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} chapterWords={chapter ? order.reduce((sum, id) => sum + (chapterOf(plan, id)?.id === chapter.id ? (stats.perScene.get(id) ?? 0) : 0), 0) : undefined} />
         </>
         )}
       </aside>
