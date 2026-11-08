@@ -591,7 +591,7 @@ export function BookEditor({
         />
       )}
       {editor && <FootnotePopover editor={editor} />}
-      {editor && <FormatBar editor={editor} atelier={cards.find((c) => c.id === current)?.title ?? ""} revisit onChutier={() => handlers.current?.onChutier()} onComment={() => handlers.current?.onComment()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
+      {editor && <FormatBar editor={editor} atelier={cards.find((c) => c.id === current)?.title ?? ""} onChutier={() => handlers.current?.onChutier()} onComment={() => handlers.current?.onComment()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
       {veil && (
         <>
           <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />

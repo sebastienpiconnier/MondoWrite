@@ -120,7 +120,7 @@ export function DraftEditor({ card, autofocus = false }: { card: CardData; autof
     <div className="draft-body">
       <EditorContent editor={editor} />
       {editor && <FootnotePopover editor={editor} />}
-      {editor && <FormatBar editor={editor} atelier={card.title} revisit />}
+      {editor && <FormatBar editor={editor} atelier={card.title} />}
     </div>
   );
 }
