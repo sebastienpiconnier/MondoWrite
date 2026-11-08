@@ -10,7 +10,7 @@ import { parse } from "../parse";
 import { exportScreenplay, fileName } from "../export";
 import { buildFdx } from "../export/fdx";
 import { buildPdf } from "../export/pdf";
-import { hasContd, printable, resumedCues, typeset, typesetTitlePage } from "../export/typeset";
+import { hasContd, printable, resumedCues, speechBreak, typeset, typesetTitlePage } from "../export/typeset";
 import courtFr from "./fixtures/court-fr.fountain?raw";
 import torture from "./fixtures/torture.fountain?raw";
 
@@ -99,6 +99,71 @@ describe("composition en pages", () => {
     expect(first[first.length - 1]).toEqual({ row: 54, column: 22, text: "(À SUIVRE)" });
     expect(pages[1].lines[0]).toEqual({ row: 0, column: 22, text: "HUGO (SUITE)" });
     expect(pages[1].lines.map((l) => l.text).slice(1)).toEqual(["Ligne 5.", "Ligne 6.", "Ligne 7.", "Ligne 8.", "Ligne 9.", "Ligne 10."]);
+  });
+
+  describe("coupe d'une réplique à la fin d'une phrase (#45)", () => {
+    const texts = (p: { lines: { text: string }[] }) => p.lines.map((l) => l.text);
+    const dialogue = (text: string): ScreenplayElement[] => [
+      { type: "character", text: "Hugo" },
+      { type: "dialogue", text },
+    ];
+
+    it("coupe après la dernière ligne qui finit une phrase, pas au milieu de la suivante", () => {
+      // Lignes de 35 caractères au plus ; la deuxième finit une phrase, pas la troisième ni la quatrième.
+      const text = "Un deux trois quatre cinq six sept huit neuf dix onze douze treize. Quatorze quinze seize dix-sept dix-huit dix-neuf vingt vingt-et-un vingt-deux vingt-trois vingt-quatre vingt-cinq vingt-six vingt-sept fin.";
+      // 48 lignes, vide, HUGO : quatre lignes de place avant (À SUIVRE).
+      const pages = typeset([block(48), ...dialogue(text)], letter, "fr", strings);
+      expect(pages).toHaveLength(2);
+      const first = texts(pages[0]);
+      expect(first.at(-1)).toBe("(À SUIVRE)");
+      expect(first.at(-2)).toBe("huit neuf dix onze douze treize.");
+      expect(texts(pages[1]).slice(0, 2)).toEqual(["HUGO (SUITE)", "Quatorze quinze seize dix-sept"]);
+    });
+
+    it("sans fin de phrase possible, la réplique entière passe à la page suivante", () => {
+      const text = Array.from({ length: 6 }, (_, i) => `mot${i} encore et encore sans point`).join(" ");
+      const pages = typeset([block(48), ...dialogue(text)], letter, "fr", strings);
+      expect(texts(pages[0])).not.toContain("(À SUIVRE)");
+      expect(texts(pages[1])[0]).toBe("HUGO");
+      expect(pages[1].lines.every((l) => l.text !== "(À SUIVRE)")).toBe(true);
+    });
+
+    it("deux lignes au moins de chaque côté", () => {
+      // Trois lignes ; il ne reste de la place que pour une avant (À SUIVRE).
+      const speech = dialogue(["Un.", "Deux.", "Trois."].join("\n"));
+      const pages = typeset([block(51), ...speech], letter, "fr", strings);
+      expect(texts(pages[0])).not.toContain("(À SUIVRE)");
+      expect(texts(pages[1])).toEqual(["HUGO", "Un.", "Deux.", "Trois."]);
+    });
+
+    it("jamais juste après une didascalie", () => {
+      const speech: ScreenplayElement[] = [
+        { type: "character", text: "Hugo" },
+        { type: "dialogue", text: "Un.\nDeux." },
+        { type: "parenthetical", text: "(bas)" },
+        { type: "dialogue", text: "Trois.\nQuatre.\nCinq.\nSix." },
+      ];
+      // 49 lignes, vide, HUGO : trois lignes de place avant (À SUIVRE), la troisième est la didascalie.
+      const pages = typeset([block(49), ...speech], letter, "fr", strings);
+      const first = texts(pages[0]);
+      expect(first.at(-1)).toBe("(À SUIVRE)");
+      expect(first.at(-2)).toBe("Deux.");
+      expect(texts(pages[1]).slice(0, 2)).toEqual(["HUGO (SUITE)", "(bas)"]);
+    });
+
+    it("une réplique plus longue qu'une page se coupe quand même", () => {
+      const pages = typeset(dialogue(Array.from({ length: 70 }, () => "sans point").join("\n")), letter, "fr", strings);
+      expect(pages.length).toBeGreaterThan(1);
+      expect(texts(pages[0]).at(-1)).toBe("(À SUIVRE)");
+    });
+
+    it("speechBreak : la plus grande coupe permise", () => {
+      const d = (text: string, end = false) => ({ text, column: 10, kind: "dialogue" as const, ...(end ? { end } : {}) });
+      expect(speechBreak([d("Un."), d("deux"), d("Trois."), d("quatre"), d("cinq", true)], 4)).toBe(3);
+      expect(speechBreak([d("un"), d("deux"), d("trois"), d("quatre"), d("cinq", true)], 4)).toBeNull();
+      expect(speechBreak([d("Un « oui ! »"), d("deux"), d("trois", true)], 3)).toBeNull();
+      expect(speechBreak([d("Un."), d("Deux « oui ! »"), d("trois"), d("quatre", true)], 3)).toBe(2);
+    });
   });
 
   it("(À SUIVRE) et (SUITE) décochés : la réplique coupée garde son nom en haut, sans mention", () => {
