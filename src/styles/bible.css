@@ -147,6 +147,7 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 .retro-bible { margin-top: 12px; }
 .retro-bible .ai-message, .breakdown-sheet .ai-message, .breakdown-stats .ai-message { margin-top: 6px; }
 .breakdown-sheet > div > .gallery-hint { margin: 2px 14px 4px; }
+.breakdown-sheet > div > .breakdown-length { margin: 2px 14px 0; font: 600 0.875rem var(--font-ui); color: var(--ink); }
 .breakdown-sheet > div > .assistant-bar, .breakdown-sheet > div > .ai-message, .breakdown-sheet .breakdown-proposals { margin: 0 14px 14px; width: auto; }
 .breakdown-proposals { width: 100%; }
 .breakdown-group { width: 100%; }
