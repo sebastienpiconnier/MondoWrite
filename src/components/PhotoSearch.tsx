@@ -16,6 +16,7 @@ const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
 export function PhotoSearch() {
   const t = useT().photos;
   const tg = useT().imageGen;
+  const kind = useCosmos((s) => s.kind);
   const source = useSettings((s) => s.photos.source);
   const keys = useSettings((s) => s.photos.keys);
   const key = source === "openverse" ? "" : keys[source];
@@ -98,6 +99,7 @@ export function PhotoSearch() {
         onClick={() => {
           useCosmos.getState().setDialog(null);
           if (target.kind === "card") void useCosmos.getState().pickCardImage(target.id);
+          else if (target.kind === "cover") void useCosmos.getState().pickCoverVisual();
           else if (target.kind === "canvas") void useCosmos.getState().pickImageCard(target.at);
           else void useCosmos.getState().addGalleryImages(target.id);
         }}
@@ -123,7 +125,7 @@ export function PhotoSearch() {
     return (
       <div className="photos">
         <div className="photos-head">
-          <h2 id="app-dialog-title">{g === "card" ? tg.titleCard : g === "gallery" ? tg.titleGallery : tg.title}</h2>
+          <h2 id="app-dialog-title">{g === "card" ? tg.titleCard : g === "gallery" ? tg.titleGallery : g === "cover" ? (kind === "scenario" ? tg.titlePoster : tg.titleCover) : tg.title}</h2>
         </div>
         <ImageGenPanel onBack={() => setGenerating(false)} />
       </div>
@@ -133,7 +135,7 @@ export function PhotoSearch() {
   return (
     <div className="photos">
       <div className="photos-head">
-        <h2 id="app-dialog-title">{target?.kind === "card" ? t.titleCard : target?.kind === "gallery" ? t.titleGallery : t.title}</h2>
+        <h2 id="app-dialog-title">{target?.kind === "card" ? t.titleCard : target?.kind === "gallery" ? t.titleGallery : target?.kind === "cover" ? (kind === "scenario" ? t.titlePoster : t.titleCover) : t.title}</h2>
         {fromDevice}
       </div>
       {sources}

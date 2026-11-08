@@ -1663,6 +1663,32 @@ const scenarios = [
     },
   },
   {
+    name: "Bible (#52) : une couverture importée sous le titre du projet, enregistrée dans pitch.visuel, retirée par son menu",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare");
+      await h.view(3);
+      const add = page.getByRole("button", { name: "Ajouter une couverture" });
+      await until(() => add.isVisible(), "pas de bouton « Ajouter une couverture » sous le titre");
+      await add.click();
+      const device = page.getByRole("button", { name: "Choisir une image sur l’appareil…" });
+      await device.waitFor();
+      const chooser = page.waitForEvent("filechooser");
+      await device.click();
+      const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+      await (await chooser).setFiles({ name: "couverture.png", mimeType: "image/png", buffer: png });
+      await until(() => page.getByRole("img", { name: "Couverture du livre" }).isVisible(), "la couverture ne s'affiche pas sous le titre");
+      await h.saved((f) => /^[A-Za-z0-9_-]+\.png$/.test(JSON.parse(f["cosmos.json"] ?? "{}").pitch?.visuel ?? ""), "pitch.visuel n'est pas enregistré");
+      await h.reloadAndOpen();
+      await h.view(3);
+      await until(() => page.getByRole("img", { name: "Couverture du livre" }).isVisible(), "après rechargement, la couverture a disparu");
+      await page.getByRole("button", { name: "Actions sur l’image" }).click();
+      await page.getByRole("menuitem", { name: "Retirer l’image" }).click();
+      await until(() => add.isVisible(), "l'image retirée, le bouton ne revient pas");
+      await h.saved((f) => !JSON.parse(f["cosmos.json"] ?? "{}").pitch?.visuel, "pitch.visuel est resté après le retrait");
+    },
+  },
+  {
     name: "Plan : un gabarit importé d'un fichier Markdown se pose, puis s'exporte",
     async run(h) {
       const { page } = h;

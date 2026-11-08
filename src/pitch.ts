@@ -7,6 +7,8 @@
 // texte de l'auteur, dans sa langue (une pastille choisie dans les suggestions garde le libellé choisi).
 // Le volume n'est pas saisi ici : il vient de l'objectif d'écriture. Les thèmes sont les cartes Thème.
 
+import { isMediaName } from "./media";
+
 /**
  * Textes de la couverture, dans l'ordre d'affichage. Les derniers (Bible v2) ne servent qu'à un scénario :
  * la sous-partie « Écrire la série » (`SERIES_TEXTS`).
@@ -139,7 +141,18 @@ export type PitchField = PitchText | PitchChip;
  * `ia` (mode Atelier) : clés des champs dont le texte a été proposé par l'IA et accepté, séparées par des
  * virgules (« logline,resume »). Un texte, pour que les versions d'avant le gardent comme clé inconnue.
  */
-export type Pitch = Partial<Record<PitchField, string>> & { ia?: string };
+export type Pitch = Partial<Record<PitchField, string>> & {
+  ia?: string;
+  /** Couverture du livre ou affiche du film (#52) : nom d'un fichier de `medias/`, vérifié par `isMediaName`. */
+  visuel?: string;
+  /** Image générée par l'IA (mode Atelier) : service et modèle, comme `iaImages` d'une carte. */
+  visuelIa?: string;
+  /** Crédit d'une photo libre (auteur, source, licence), une ligne. */
+  visuelCredit?: string;
+};
+
+/** Clés de l'image de la couverture : ni des champs de texte, ni des clés d'une version future. */
+const VISUAL_KEYS = ["visuel", "visuelIa", "visuelCredit"] as const;
 
 const FIELDS: readonly PitchField[] = [...PITCH_TEXTS, ...PITCH_CHIPS];
 const MAX_TEXT = 6000;
@@ -167,12 +180,39 @@ export function readPitch(raw: unknown): Pitch {
   const ia = pitchIaKeys({ ...out, ia: (raw as Record<string, unknown>).ia as string | undefined });
   let future = 0;
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (key === "ia" || (FIELDS as readonly string[]).includes(key) || !FUTURE_KEY.test(key) || typeof value !== "string" || !value.trim()) continue;
+    if (key === "ia" || (VISUAL_KEYS as readonly string[]).includes(key) || (FIELDS as readonly string[]).includes(key) || !FUTURE_KEY.test(key) || typeof value !== "string" || !value.trim()) continue;
     if (future++ >= MAX_FUTURE) break;
     (out as Record<string, string>)[key] = value.slice(0, MAX_TEXT);
   }
   if (ia.length > 0) out.ia = ia.join(",");
+  // Image de la couverture (#52) : un nom de fichier sûr, sinon rien (ni son crédit, ni sa marque d'IA).
+  const visual = (raw as Record<string, unknown>).visuel;
+  if (typeof visual === "string" && isMediaName(visual)) {
+    out.visuel = visual;
+    for (const key of ["visuelIa", "visuelCredit"] as const) {
+      const value = (raw as Record<string, unknown>)[key];
+      if (typeof value === "string" && value.trim()) out[key] = oneLine(value).slice(0, 300);
+    }
+  }
   return out;
+}
+
+const oneLine = (text: string) => text.replace(/\s+/g, " ").trim();
+
+/**
+ * Couverture après le choix d'une image (#52) : son nom, et la marque de l'IA ou le crédit d'une photo s'il y en
+ * a. `null` retire l'image (le fichier reste dans `medias/`). Même objet si rien ne change.
+ */
+export function setPitchVisual(pitch: Pitch, name: string | null, extra: { ia?: string; credit?: string } = {}): Pitch {
+  const out: Pitch = { ...pitch };
+  for (const key of VISUAL_KEYS) delete out[key];
+  if (name && isMediaName(name)) {
+    out.visuel = name;
+    if (extra.ia?.trim()) out.visuelIa = oneLine(extra.ia).slice(0, 300);
+    if (extra.credit?.trim()) out.visuelCredit = oneLine(extra.credit).slice(0, 300);
+  }
+  const same = VISUAL_KEYS.every((key) => pitch[key] === out[key]);
+  return same ? pitch : out;
 }
 
 /** Champs de la couverture proposés par l'IA et acceptés (mode Atelier), encore remplis. */

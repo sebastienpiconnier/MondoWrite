@@ -111,7 +111,7 @@ export function demoProject(): Project {
           { id: newId(), title: d.chapterHouse, scenes: [id.toctoc, id.porte, id.dents] },
         ],
       },
-      pitch: { ...d.pitch },
+      pitch: { ...d.pitch, visuel: DEMO_IMAGES.foret },
     },
     cards,
     manuscript: {

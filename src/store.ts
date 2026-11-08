@@ -51,7 +51,7 @@ import { EMPTY_PLAN, beatText, templateBeats, withKeys, isCustomBeat, type Custo
 import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
-import { setPitchField, setPitchFieldIa, withoutPitchIa, type Pitch, type PitchField, type PitchText } from "./pitch";
+import { readPitch, setPitchField, setPitchFieldIa, setPitchVisual, withoutPitchIa, type Pitch, type PitchField, type PitchText } from "./pitch";
 import { appendJournal, iaAfterPatch, journalLine, unmarkIa, withIaField, withoutIaField, type AiMode, type AtelierAction } from "./atelier";
 import type { Passage } from "./chutier";
 import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
@@ -232,8 +232,8 @@ export interface CosmosState {
   /** Carte Lien encore sans adresse : une adresse tapée dans son titre devient son lien. Rend vrai si c'est fait. */
   linkFromTitle: (id: string) => boolean;
   /** Où va la photo choisie dans la recherche de photos : une nouvelle carte Image, la galerie d'une fiche, ou l'image d'une carte. */
-  photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string } | null;
-  openPhotos: (target: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string }) => void;
+  photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string } | { kind: "cover" } | null;
+  openPhotos: (target: NonNullable<CosmosState["photoTarget"]>) => void;
   /** Télécharge la photo choisie et la pose (carte Image créditée, ou galerie). Rend faux si le téléchargement échoue. */
   addPhoto: (photo: Photo) => Promise<boolean>;
   /** Carte Document ouverte dans la liseuse (fenêtre « document »). */
@@ -345,6 +345,13 @@ export interface CosmosState {
   /** Place des cartes dont le fichier n'est pas encore arrivé d'iCloud (projectState, `awaitingLayout`). */
   awaitingLayout: CardLayout[];
   setPitch: (key: PitchField, value: string) => void;
+  /**
+   * Couverture du livre ou affiche du film (#52), hors historique comme la couverture : nom d'un fichier de
+   * `medias/`, ou `null` pour la retirer (le fichier reste). `ia` marque une image générée, `credit` une photo libre.
+   */
+  setCoverVisual: (name: string | null, extra?: { ia?: string; credit?: string }) => void;
+  /** Image de la couverture choisie sur l'appareil, ou déposée (`file`). */
+  pickCoverVisual: (file?: { name: string; data: Uint8Array }) => Promise<boolean>;
   /** Réglages du livre broché (fenêtre « Livre broché »), hors historique comme la couverture. */
   print: PrintOptions;
   setPrint: (patch: Partial<PrintOptions>) => void;
@@ -1363,7 +1370,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const file = await get().projectZip({ media: false });
       // Un autre projet a été ouvert entre-temps : cette copie n'est pas la sienne.
       if (!file || backups.key() !== key || get().screen !== "project") return false;
-      const medias = mediaNamesOf([...get().nodes.map((n) => n.data as CardData), ...get().trash]);
+      const medias = mediaNamesOf([...get().nodes.map((n) => n.data as CardData), ...get().trash, { image: get().pitch.visuel }]);
       await backups.write(key, backupName(now), file.data, { title: get().title, kind: get().kind }, medias);
       lastBackup.set(key, now);
       const names = (await backups.list()).find((b) => b.key === key)?.names ?? [];
@@ -1834,6 +1841,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!file) return false;
       if (photo.source === "unsplash") void import("./imageSources").then((m) => m.trackChoice(photo, useSettings.getState().photos.keys.unsplash));
       if (target.kind === "gallery") return (await get().addGalleryImages(target.id, [file])) > 0;
+      if (target.kind === "cover") {
+        const name = await storeImage(file);
+        if (!name) return false;
+        const by = photo.author ? fmt(getT().photos.photoBy, { name: photo.author }) : "";
+        get().setCoverVisual(name, { credit: [by, photo.credit].filter(Boolean).join(", ") });
+        return true;
+      }
       if (target.kind === "card") {
         if (!(await get().setCardImage(target.id, file))) return false;
         // Une carte Image sans référence reçoit le crédit de la photo (auteur, page, source et licence).
@@ -2152,6 +2166,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (next === get().pitch) return;
       set({ pitch: next });
       touch();
+    },
+    setCoverVisual: (name, extra) => {
+      const next = setPitchVisual(get().pitch, name, extra);
+      if (next === get().pitch) return;
+      set({ pitch: next });
+      touch();
+    },
+    pickCoverVisual: async (given) => {
+      const file =
+        given ??
+        (await storage.pickImage(getT().card.imageFiles).catch((err) => {
+          console.error(err);
+          return null;
+        }));
+      if (!file || !imageExtension(file.name)) return false;
+      const name = await storeImage(file);
+      if (!name) return false;
+      get().setCoverVisual(name);
+      return true;
     },
     print: DEFAULT_PRINT,
     setPrint: (patch) => {
@@ -3626,7 +3659,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const meta = { ...project.meta, title: fmt(t.backups.restoredTitle, { title: project.meta.title || t.backups.untitled, date }) };
         entries = entries.map(([path, data]) => [path, path === META_FILE ? strToU8(JSON.stringify(meta, null, 2)) : data]);
         // Images gardées à côté des sauvegardes : seulement celles que ce projet cite.
-        for (const media of mediaNamesOf([...project.cards, ...(project.trash ?? [])])) {
+        for (const media of mediaNamesOf([...project.cards, ...(project.trash ?? []), { image: readPitch(project.meta.pitch).visuel }])) {
           const data = await backups.readMedia(key, media).catch(() => null);
           if (data) entries.push([`${MEDIA_DIR}/${media}`, data]);
         }
@@ -3935,6 +3968,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const mark = iaImageSource(source.provider, source.model);
       const credit = fmt(t.imageGen.credit, { source: readIaImageSource(mark, t.ai.providers) });
       const extra = { model: source.model, detail: source.detail };
+      // Couverture ou affiche du projet (#52) : marquée comme image de l'IA, et journalisée.
+      if (target.kind === "cover") {
+        get().setCoverVisual(name, { ia: mark });
+        get().logAtelier("image", get().title || t.home.untitled, 0, extra);
+        return true;
+      }
       if (target.kind === "canvas") {
         const title = (source.title ?? "").replace(/\s+/g, " ").trim().slice(0, 80) || t.imageGen.cardTitle;
         const id = transaction("", () => {
