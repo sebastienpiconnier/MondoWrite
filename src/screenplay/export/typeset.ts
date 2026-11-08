@@ -231,7 +231,8 @@ export function typeset(
           page().lines.push({ row: used, column: -(number.length + 2), text: number, bold: true });
           page().lines.push({ row: used, column: width + 2, text: number, bold: true });
         }
-        for (const line of lines) put(line, 0, true, !!options.underlineHeadings);
+        // Scène omise (#46) : « OMIS » et ses numéros, jamais souligné.
+        for (const line of lines) put(line, 0, true, !!options.underlineHeadings && el.omitted === undefined);
         break;
       }
       case "action":

@@ -465,8 +465,14 @@ export function ScreenplayView() {
   // encore vide y paraît aussi, on y va d'un clic). Dans un épisode ouvert, ses seules scènes.
   const episodeLabel = useEpisodeLabel();
   const sceneRows = useMemo(() => {
-    type Row = { kind: "season"; id: string; at: number; title: string } | { kind: "episode"; id: string; at: number; title: string } | { kind: "scene"; at: number; k: number };
+    type Row =
+      | { kind: "season"; id: string; at: number; title: string }
+      | { kind: "episode"; id: string; at: number; title: string }
+      | { kind: "omitted"; id: string; at: number; title: string; number: number }
+      | { kind: "scene"; at: number; k: number };
     const rows: Row[] = scenes.map((sc, k) => ({ kind: "scene", at: sc.index, k }));
+    // Scènes omises (#46) : « OMIS » à sa place, en grisé, avec son rang.
+    for (const o of listScenes(elements, true)) if (o.omitted) rows.push({ kind: "omitted", id: String(o.index), at: o.index, title: o.text, number: o.number });
     const seasons = seriesOf(elements);
     const named = seasons.filter((x) => x.id !== null).length;
     seasons.forEach((season, i) => {
@@ -488,12 +494,15 @@ export function ScreenplayView() {
     () => (season ? cardsWithoutScene(season, sceneCards) : []),
     [season, sceneCards],
   );
-  const scene = sceneAt(scenes, current.index);
+  // Le curseur sur « OMIS » (#46), ou sous lui, n'est dans aucune scène : pas celle d'avant, qu'on omettrait par erreur.
+  const allScenes = useMemo(() => listScenes(elements, true), [elements]);
+  const at = sceneAt(allScenes, current.index);
+  const scene = at?.omitted ? null : at;
   // Statistiques du volet de droite : mots, pages (mise en page cinéma), scènes écrites.
   const stats = useMemo<ManuscriptStats>(() => {
     const words = screenplayWords(screenplay);
     const pages = pagination?.pages ?? 0;
-    const body = scenes.map((s, k) => (screenplay ? wordsOfScene(screenplay, s.index + 1, scenes[k + 1]?.index) : 0));
+    const body = scenes.map((s) => (screenplay ? wordsOfScene(screenplay, s.index + 1, s.end) : 0));
     const written = body.filter((n) => n > 0).length;
     return {
       words,
@@ -505,8 +514,7 @@ export function ScreenplayView() {
       perScene: new Map(),
     };
   }, [screenplay, scenes, pagination]);
-  const nextScene = scene ? scenes[scenes.indexOf(scene) + 1] : undefined;
-  const sceneWordCount = screenplay && scene ? wordsOfScene(screenplay, scene.index, nextScene?.index) : 0;
+  const sceneWordCount = screenplay && scene ? wordsOfScene(screenplay, scene.index, scene.end) : 0;
   // Statut des scènes (pastille dans la liste) : lu dans la fiche de leur carte.
   const statusCards = useMemo(() => new Map(nodes.filter((n) => n.data.type === "scene").map((n) => [n.id, n.data])), [nodes]);
   // Rechercher et remplacer (Cmd/Ctrl + Maj + H) : la scène en cours est proposée ; la frappe en attente part d'abord.
@@ -529,6 +537,17 @@ export function ScreenplayView() {
   const mergeNextRef = useRef(mergeNext);
   mergeNextRef.current = mergeNext;
   useCommand("merge-next", () => mergeNextRef.current());
+  // « Omettre la scène » (#46) : pages verrouillées seulement ; ce qui attend dans l'éditeur part d'abord.
+  const locked = useCosmos((s) => !!s.revisions.locked);
+  const omitCurrent = () => {
+    if (!scene || !useCosmos.getState().revisions.locked) return;
+    emit();
+    const state = useCosmos.getState();
+    state.omitScreenplayScene(scriptOffset(state) + scene.index);
+  };
+  const omitRef = useRef(omitCurrent);
+  omitRef.current = omitCurrent;
+  useCommand("omit-scene", () => omitRef.current());
   const openVersionsRef = useRef(openVersions);
   openVersionsRef.current = openVersions;
   useEffect(() => {
@@ -647,7 +666,7 @@ export function ScreenplayView() {
     setSideTab("comments");
     if (!panels.side) togglePanel("side");
   };
-  const sceneEnd = scene ? (scenes[scenes.indexOf(scene) + 1]?.index ?? elements.length) : 0;
+  const sceneEnd = scene ? scene.end : 0;
   const commentAnchors = useMemo(() => (scene ? commentIdsInElements(elements.slice(scene.index + 1, sceneEnd)) : []), [elements, scene, sceneEnd]);
   const openCommentIds = useMemo(() => Object.values(comments).flatMap((list) => list.filter((c) => !c.resolved).map((c) => c.id)), [comments]);
   const commentHighlight = useMemo(() => commentStyle(openCommentIds, commentFocus?.id ?? null), [openCommentIds, commentFocus]);
@@ -1086,7 +1105,15 @@ export function ScreenplayView() {
           </div>
         )}
         <ol className="sp-scene-list">
-          {sceneRows.map((row) => row.kind !== "scene" ? (
+          {sceneRows.map((row) => row.kind === "omitted" ? (keptScenes ? null : (
+            <li key={`omitted:${row.id}`} className="sp-scene-omitted">
+              <button type="button" aria-label={fmt(sp.omittedAria, { n: elements[row.at]?.sceneNumber ?? String(row.number) })} onClick={() => goTo(row.at)}>
+                <span className="is-slugline ms-name">
+                  {row.number}. {row.title}
+                </span>
+              </button>
+            </li>
+          )) : row.kind !== "scene" ? (
             <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
               <button type="button" onClick={() => goTo(row.at)}>
                 {row.title}
@@ -1281,6 +1308,8 @@ export function ScreenplayView() {
               { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
               { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
               !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
+              // Pages verrouillées (#46) : la scène laisse « OMIS » à sa place ; en rouge, en dernier (elle part à la corbeille).
+              locked && !!scene && { label: sp.omitScene, title: sp.omitSceneHint, danger: true, onSelect: omitCurrent },
             ]}
           />
           {/* Mode Atelier : variantes de l'élément en cours, « Je l'ai repris », trois directions pour la scène. */}

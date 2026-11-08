@@ -38,7 +38,7 @@ export function buildFdx(screenplay: Screenplay, locale: string, numberScenes = 
       el.type === "sceneHeading" && (el.sceneNumber || numberScenes) ? ` Number="${escape(el.sceneNumber ?? String(scene))}"` : "",
       ` Type="${type}"`,
     ].join("");
-    const style = el.type === "sceneHeading" && underlineHeadings ? ' Style="Underline"' : "";
+    const style = el.type === "sceneHeading" && underlineHeadings && el.omitted === undefined ? ' Style="Underline"' : "";
     // Révision : Final Draft marque le texte (RevisionID) ; la passe n est son numéro (0 : version d'origine).
     const rev = el.rev !== undefined ? ` RevisionID="${el.rev}"` : "";
     return `${pad}<Paragraph${attributes}>\n${pad}  <Text${rev}${style}>${escape(text)}</Text>\n${pad}</Paragraph>`;

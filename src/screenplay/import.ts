@@ -51,7 +51,8 @@ export function importScreenplayModel(screenplay: Screenplay, options: ImportOpt
       }
       return el;
     }
-    if (el.type !== "sceneHeading") return el;
+    // Scène omise (#46) : « OMIS » garde sa place, sans carte ni décor.
+    if (el.type !== "sceneHeading" || el.omitted !== undefined) return el;
 
     // Le synopsis Fountain qui suit l'en-tête (« = … ») reste dans le scénario : c'est celui de la carte.
     const card: CardData = { id: options.newId(), type: "scene", title: el.text, html: "" };

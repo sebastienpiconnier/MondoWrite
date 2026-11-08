@@ -924,6 +924,45 @@ const scenarios = [
     },
   },
   {
+    name: "scène omise : pages verrouillées, « OMIS » garde sa place et son numéro, la scène revient de la corbeille (#46)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [heading, action] of [["int. phare - nuit", "La lanterne tourne."], ["ext. côte - jour", "Yann attend sur la jetée."], ["int. cuisine - nuit", "Le café brûle."]]) {
+        await page.keyboard.type(heading);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(action);
+        await page.keyboard.press("Enter");
+      }
+      await h.wait(600);
+      const more = page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" });
+      // Sans pages verrouillées, pas d'« Omettre ».
+      await more.click();
+      assert((await page.getByRole("menuitem", { name: "Omettre la scène" }).count()) === 0, "« Omettre la scène » est proposé sans pages verrouillées");
+      await page.getByRole("menuitem", { name: "Révisions…" }).click();
+      await page.getByRole("button", { name: "Verrouiller les pages" }).click();
+      await page.keyboard.press("Escape");
+      await h.wait(300);
+      // La deuxième scène : on y va par la liste des scènes, puis on l'omet.
+      await page.locator(".sp-scene-list button").filter({ hasText: "EXT. CÔTE - JOUR" }).click();
+      await h.wait(300);
+      await more.click();
+      await page.getByRole("menuitem", { name: "Omettre la scène" }).click();
+      await until(() => page.locator(".sp-scene-omitted").filter({ hasText: "2. OMIS" }).count(), "la liste des scènes ne montre pas « 2. OMIS »");
+      await h.saved((f) => /\.OMIS \[\[cosmos:omitted:[A-Za-z0-9_-]+\]\] #2#/.test(f["scenario.fountain"] ?? "") && !(f["scenario.fountain"] ?? "").includes("Yann attend"), "le fichier n'a pas l'en-tête omis numéroté");
+      await h.saved((f) => Object.keys(f).some((k) => k.startsWith("corbeille/") && f[k].includes("Yann attend")), "la scène n'est pas partie à la corbeille avec sa carte");
+      // Le séquencier la garde à sa place, en grisé.
+      await h.view(2);
+      await until(() => page.locator(".sq-scene.is-omitted").filter({ hasText: "2. OMIS" }).count(), "le séquencier ne montre pas la scène omise");
+      // Remise depuis la corbeille : le texte reprend la place de « OMIS », avec son numéro.
+      await page.locator(".trash-notice").getByRole("button", { name: "Voir la corbeille" }).click();
+      await page.getByRole("button", { name: /^Remettre/ }).first().click();
+      await h.saved((f) => /EXT\. CÔTE - JOUR \[\[cosmos:[A-Za-z0-9_-]+\]\] #2#\n\nYann attend sur la jetée\.\n\nINT\. CUISINE/.test(f["scenario.fountain"] ?? "") && !(f["scenario.fountain"] ?? "").includes("OMIS"), "la scène remise n'a pas repris sa place");
+    },
+  },
+  {
     name: "série en deux saisons : la scène de la saison 2 dans son cadre, liste groupée par saison et épisode, titres des cadres entiers",
     async run(h) {
       const { page } = h;

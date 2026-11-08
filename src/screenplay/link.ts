@@ -73,7 +73,8 @@ export function scenesWithoutCard(
   const known = new Set(sceneCardIds);
   const free: { index: number; text: string }[] = [];
   screenplay.elements.forEach((el, index) => {
-    if (el.type === "sceneHeading" && !(el.cardId && known.has(el.cardId))) free.push({ index, text: el.text });
+    // Une scène omise (#46) n'a plus de carte, exprès.
+    if (el.type === "sceneHeading" && el.omitted === undefined && !(el.cardId && known.has(el.cardId))) free.push({ index, text: el.text });
   });
   return free;
 }

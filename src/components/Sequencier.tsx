@@ -61,6 +61,7 @@ export function Sequencier() {
   const [folded, setFolded] = useState<Set<string>>(() => new Set());
 
   const list = useMemo(() => (screenplay ? blocks(screenplay.elements) : []), [screenplay]);
+  const locked = useCosmos((s) => !!s.revisions.locked);
   const characterCards = useMemo(() => nodes.filter((n) => n.data.type === "personnage"), [nodes]);
   // Scène en cours de glissement : la ref sert au dépôt (lu tout de suite), l'état à l'affichage.
   const draggedRef = useRef<number | null>(null);
@@ -384,6 +385,19 @@ export function Sequencier() {
               );
             }
 
+            // Scène omise (#46) : « OMIS », sa place et son numéro, rien d'autre (son texte est à la corbeille).
+            if (block.omitted) {
+              return (
+                <li key={`omitted-${block.start}`} className={`sq-scene is-omitted${dropClass}`} {...drop}>
+                  <div className="sq-body">
+                    <div className="is-slugline sq-title" aria-label={fmt(sp.omittedAria, { n: screenplay.elements[block.start]?.sceneNumber ?? String(block.number) })}>
+                      {block.number}. {block.text}
+                    </div>
+                  </div>
+                </li>
+              );
+            }
+
             const title = block.text || sp.untitledScene;
             const card = block.cardId ? nodes.find((n) => n.id === block.cardId)?.data : undefined;
             const synopsis = sceneSynopsis(screenplay.elements, block.start);
@@ -513,6 +527,8 @@ export function Sequencier() {
                     items={[
                       !!block.cardId && { label: t.bible.seeOnCanvas, title: fmt(sq.show, { title }), onSelect: () => revealCard(block.cardId!) },
                       !!block.cardId && !!useCosmos.getState().nextMergeable(block.cardId) && { label: t.merge.menuShort, onSelect: () => useCosmos.getState().mergeWithNext(block.cardId!) },
+                      // Pages verrouillées (#46) : « OMIS » garde la place et le numéro.
+                      locked && { label: sp.omitScene, title: sp.omitSceneHint, danger: true, onSelect: () => useCosmos.getState().omitScreenplayScene(block.start) },
                       { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().trashScreenplayScene(block.start) },
                     ]}
                   />

@@ -26,6 +26,8 @@ export interface ScreenplayElement {
   cardId?: string;
   /** sceneHeading : numéro de scène (#12A# en fin d'en-tête). */
   sceneNumber?: string;
+  /** sceneHeading : scène omise (#46), « OMIS » à sa place ; identifiant de sa carte, note [[cosmos:omitted:id]]. */
+  omitted?: string;
   /** character : dialogue double (^). */
   dual?: boolean;
   /** section : niveau (nombre de #), 1 par défaut. */

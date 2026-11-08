@@ -4,6 +4,9 @@
 /** Note de lien vers une carte, posée sur un en-tête de scène. */
 export const LINK_RE = /\s*\[\[cosmos:([A-Za-z0-9_-]+)\]\]/;
 
+/** Note d'un en-tête de scène omise (#46), posée à la place du lien vers la carte. */
+export const OMITTED_RE = /\s*\[\[cosmos:omitted:([A-Za-z0-9_-]+)\]\]/;
+
 /** Numéro de scène en fin d'en-tête : #12#, #12A#, #I-1-A#. */
 export const SCENE_NUMBER_RE = /\s*#([A-Za-z0-9.-]+)#\s*$/;
 

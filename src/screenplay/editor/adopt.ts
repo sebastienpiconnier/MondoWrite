@@ -31,7 +31,7 @@ export function adoptNew(editor: Editor, host: AdoptHost): PMNode | null {
   doc.forEach((node, offset, index) => {
     const type = node.type.name;
     const text = node.textContent.trim();
-    if ((type !== "sceneHeading" && type !== "character") || node.attrs.known || text === "") return;
+    if ((type !== "sceneHeading" && type !== "character") || node.attrs.known || node.attrs.omitted || text === "") return;
     const next = index + 1 < doc.childCount ? doc.child(index + 1).type.name : null;
     if (type === "sceneHeading" && next) {
       // Un en-tête encore seul en fin de texte est peut-être en cours de frappe : on attend la suite.

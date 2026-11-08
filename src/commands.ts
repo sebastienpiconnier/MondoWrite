@@ -6,7 +6,7 @@
 import { useEffect, useRef } from "react";
 import { isAppleKeyboard } from "./platform";
 
-export type AppCommand = "settings" | "search" | "export" | "review" | "new-card" | "new-frame" | "toggle-scenes" | "toggle-side" | "merge-next";
+export type AppCommand = "settings" | "search" | "export" | "review" | "new-card" | "new-frame" | "toggle-scenes" | "toggle-side" | "merge-next" | "omit-scene";
 
 const EVENT = "mondowrite:command";
 

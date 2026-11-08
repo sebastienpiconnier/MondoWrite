@@ -15,6 +15,8 @@ export interface Block {
   number?: number;
   /** Section : son niveau (# = 1, ## = 2…). */
   depth?: number;
+  /** Scène omise (#46) : « OMIS » garde sa place et son numéro. */
+  omitted?: boolean;
 }
 
 /** Blocs dans l'ordre du fichier. Ce qui précède le premier bloc (action d'ouverture) n'en fait pas partie. */
@@ -26,7 +28,7 @@ export function blocks(elements: ScreenplayElement[]): Block[] {
     if (list.length > 0) list[list.length - 1].end = index;
     list.push(
       el.type === "sceneHeading"
-        ? { kind: "scene", start: index, end: elements.length, text: el.text, cardId: el.cardId, number: ++scenes }
+        ? { kind: "scene", start: index, end: elements.length, text: el.text, cardId: el.cardId, number: ++scenes, ...(el.omitted !== undefined ? { omitted: true } : {}) }
         : { kind: "section", start: index, end: elements.length, text: el.text, depth: el.depth ?? 1 },
     );
   });
