@@ -1236,46 +1236,22 @@ const scenarios = [
     },
   },
   {
-    name: "iPhone : barre de mise en forme collée au clavier, pas de bulle sur la sélection, tous les boutons atteignables",
+    name: "iPhone : pas de barre de mise en forme sur la sélection (le menu d'iOS reste seul), le Markdown tapé met en forme",
     context: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
     async run(h) {
       const { page } = h;
-      await h.create("Clavier");
+      await h.create("Sans barre");
       await page.locator(".views").getByRole("button", { name: "Plan", exact: true }).tap();
       await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
       await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
       await page.locator(".views").getByRole("button", { name: "Manuscrit", exact: true }).tap();
       const editor = page.locator(".ms-page .ProseMirror");
       await editor.tap();
-      await page.keyboard.type("Le réveil sonne et Ethan rêve encore");
-      const dock = page.locator(".format-dock");
-      await until(() => dock.isVisible(), "la barre de mise en forme n'est pas sur le clavier quand on écrit");
-      assert((await page.locator(".format-bar:not(.format-dock)").count()) === 0, "une bulle de mise en forme est affichée sur téléphone");
-      assert((await dock.getByRole("button", { name: /^Commenter le passage/ }).count()) === 0, "Commenter est proposé sans sélection");
-      for (let i = 0; i < "encore".length; i++) await page.keyboard.press("Shift+ArrowLeft");
-      await until(() => dock.getByRole("button", { name: /^Commenter le passage/ }).isVisible(), "Commenter n'arrive pas dans la barre avec une sélection");
-      assert((await dock.getByRole("button", { name: /^À reprendre/ }).count()) === 0, "« à reprendre » double Commenter dans la barre du clavier");
-      // La flèche de droite fait défiler la rangée (et celle de gauche paraît).
-      await dock.getByRole("button", { name: "Autres boutons de mise en forme" }).tap();
-      await until(() => dock.getByRole("button", { name: "Revenir aux premiers boutons" }).isVisible(), "la flèche ne fait pas défiler la rangée");
-      await until(() => editor.evaluate((el) => el.contains(document.activeElement)), "la flèche retire le focus du texte");
-      assert((await page.locator(".format-bar:not(.format-dock)").count()) === 0, "une bulle paraît sur la sélection");
-      // La rangée défile de côté : son dernier bouton entre dans l'écran.
-      const last = await dock.locator("[role=toolbar]").evaluate((bar) => {
-        bar.scrollLeft = bar.scrollWidth;
-        const r = bar.lastElementChild.getBoundingClientRect();
-        return { left: r.left, right: r.right, width: window.innerWidth };
-      });
-      assert(last.left >= 0 && last.right <= last.width + 1, `le dernier bouton reste hors de l'écran : ${JSON.stringify(last)}`);
-      const fades = () => dock.evaluate((el) => el.classList.contains("has-more"));
-      await until(async () => !(await fades()), "le bord de la rangée reste estompé une fois au bout");
-      await dock.locator("[role=toolbar]").evaluate((bar) => (bar.scrollLeft = 0));
-      await until(fades, "rien ne dit que la rangée défile (bord droit non estompé)");
-      await dock.getByRole("button", { name: /^Gras/ }).tap();
-      await h.saved((f) => Object.keys(f).some((k) => k.startsWith("manuscrit/") && f[k].includes("**encore**")), "Gras depuis la barre du clavier n'a pas mis le mot en gras");
-      await until(() => editor.evaluate((el) => el.contains(document.activeElement)), "toucher un bouton de la barre retire le focus du texte (le clavier se fermerait)");
-      await page.evaluate(() => document.activeElement?.blur());
-      await until(async () => (await dock.count()) === 0, "la barre reste affichée une fois le texte quitté");
+      await page.keyboard.type("Ethan rêve **encore** ");
+      for (let i = 0; i < 6; i++) await page.keyboard.press("Shift+ArrowLeft");
+      await h.wait(400);
+      assert((await page.locator(".format-bar").count()) === 0, "une barre de mise en forme paraît sur téléphone");
+      await h.saved((f) => Object.keys(f).some((k) => k.startsWith("manuscrit/") && f[k].includes("**encore**")), "le Markdown tapé n'a pas mis le mot en gras");
     },
   },
   {

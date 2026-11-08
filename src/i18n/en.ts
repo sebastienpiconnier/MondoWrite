@@ -2607,8 +2607,6 @@ export const en: Messages = {
     italicGlyph: "I",
     strikeGlyph: "S",
     headingGlyph: "H",
-    scrollMore: "More formatting buttons",
-    scrollBack: "Back to the first buttons",
   },
 
   gallery: {

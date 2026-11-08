@@ -145,37 +145,3 @@
   .screenplay.is-focus .sp-bar.is-open .sp-bar-toggle { justify-content: flex-start; }
   .sp-bar-hint { display: none; }
 }
-
-/* Téléphone tactile : la barre de mise en forme est collée au clavier (FormatDock.tsx), plus en bulle au-dessus de la
-   sélection, où le menu du système (Couper, Copier, Coller…) se pose aussi. Une rangée qui défile de côté : tous les
-   boutons restent atteignables, rien ne sort de l'écran. */
-:root { --format-dock-h: 53px; }
-@media (max-width: 720px) {
-  .format-bar.format-dock {
-    position: fixed; z-index: 80; left: 0; right: 0; bottom: var(--keyboard-h, 0px);
-    display: flex; flex-direction: column; gap: 6px;
-    padding: 4px max(4px, env(safe-area-inset-right)) max(4px, calc(env(safe-area-inset-bottom) - var(--keyboard-h, 0px))) max(4px, env(safe-area-inset-left));
-    border-top: 1px solid var(--line); background: var(--surface);
-  }
-  .format-dock [role="toolbar"] {
-    display: flex; flex-wrap: nowrap; gap: 2px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
-    overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  }
-  .format-dock [role="toolbar"]::-webkit-scrollbar { display: none; }
-  /* Des boutons cachés d'un côté : une flèche de ce côté, sur un fondu de la barre (elle fait défiler au toucher). */
-  .format-dock-row { position: relative; }
-  .format-dock-arrow {
-    position: absolute; top: 0; bottom: 0; z-index: 1; display: grid; place-items: center; width: 44px; padding: 0; border: 0;
-    color: var(--ink); cursor: pointer;
-  }
-  .format-dock-arrow.is-more { right: 0; padding-left: 12px; background: linear-gradient(to right, transparent, var(--surface) 12px); }
-  .format-dock-arrow.is-back { left: 0; padding-right: 12px; background: linear-gradient(to left, transparent, var(--surface) 12px); }
-  .format-dock-arrow.is-back svg { transform: scaleX(-1); }
-  .format-dock [role="toolbar"] button { flex: none; min-width: 44px; height: 44px; }
-  /* Variantes de l'Atelier : au-dessus des boutons, la place qu'il reste au-dessus du clavier. */
-  .format-dock .atelier-variants { max-height: 40dvh; overflow-y: auto; margin: 0; padding: 4px 4px 0; }
-  /* Le texte garde la hauteur de la barre en marge, pour défiler au-dessus d'elle comme au-dessus du clavier. */
-  html[data-format-dock] .app-dialog.is-card { height: calc(100dvh - var(--keyboard-h, 0px) - var(--format-dock-h)); }
-  html[data-format-dock] .bible { padding-bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px) + var(--format-dock-h)); }
-  html[data-format-dock] .app.has-tabbar ~ .trash-notice { bottom: calc(8px + var(--keyboard-h, 0px) + var(--format-dock-h)); }
-}
