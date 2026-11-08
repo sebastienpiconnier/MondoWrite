@@ -1642,6 +1642,10 @@ export const fr = {
     pageOf: "Page {page} sur {pages}",
     pageShort: "p. {n}",
     lengthShort: "{n} p.",
+    // Longueur d'une scène en huitièmes de page (« 1 2/8 »), lue en toutes lettres.
+    eighthsOne: "1 huitième de page",
+    eighthsMany: "{n} huitièmes de page",
+    sceneLength: "Longueur : {n} p.",
     pagesOne: "{n} page",
     pagesMany: "{n} pages",
     minutes: "≈ {n} min",
@@ -2015,6 +2019,7 @@ export const fr = {
     volumeWords: "{n} mots écrits",
     volumeGoal: "{n} mots sur {goal}",
     volumeNoGoal: "Objectif à fixer dans le Manuscrit",
+    volumePageOne: "1 page · environ {minutes} min",
     volumePages: "{pages} pages · environ {minutes} min",
     themes: "Thèmes",
     themesEmpty: "Pas encore de carte Thème.",

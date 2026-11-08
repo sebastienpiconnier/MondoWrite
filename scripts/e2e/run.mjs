@@ -907,6 +907,23 @@ const scenarios = [
     },
   },
   {
+    name: "longueur des scènes en huitièmes de page : liste des scènes et séquencier (#44)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("int. phare - nuit");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne.");
+      await h.wait(600);
+      await until(() => page.locator(".sp-scene-list .sp-towrite").filter({ hasText: "1/8" }).count(), "la liste des scènes ne donne pas la longueur en huitièmes");
+      await h.view(2);
+      await until(() => page.locator(".sq-length").filter({ hasText: "1/8 p." }).count(), "le séquencier ne donne pas la longueur en huitièmes");
+      assert(await page.locator(".sq-length .sr-only").filter({ hasText: "1 huitième de page" }).count(), "la longueur n'est pas lue en toutes lettres");
+    },
+  },
+  {
     name: "série en deux saisons : la scène de la saison 2 dans son cadre, liste groupée par saison et épisode, titres des cadres entiers",
     async run(h) {
       const { page } = h;

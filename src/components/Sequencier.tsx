@@ -21,6 +21,8 @@ import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { blocks, moveBlock } from "../screenplay/sequence";
 import { pagesBetween } from "../screenplay/paginate";
+import { eighthsOf } from "../screenplay/eighths";
+import { SceneLength } from "./SceneLength";
 import { sceneCharacters, sceneSynopsis, setSceneSynopsis, synopsisIsIa } from "../screenplay/scenes";
 import { screenplaySceneText } from "./Atelier";
 import { matchesCharacter } from "../screenplay/editor/autocomplete";
@@ -488,7 +490,10 @@ export function Sequencier() {
                   </label>
                 )}
                 <div className="sq-length">
-                  <div>{fmt(sp.lengthShort, { n: number.format(pages) })}</div>
+                  {/* Huitièmes de page, l'unité des scénaristes (#44) ; les sections gardent leurs décimales. */}
+                  <div>
+                    <SceneLength eighths={eighthsOf(pages)} />
+                  </div>
                   {/* Sous la demi-page, une durée arrondie à la minute ne voudrait rien dire. */}
                   {pages >= 0.5 && <div>{fmt(sp.minutes, { n: minutesFor(pages) })}</div>}
                 </div>
