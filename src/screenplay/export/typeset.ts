@@ -83,6 +83,35 @@ export interface TypesetOptions {
   lock?: LockPlan | null;
 }
 
+/** Une ligne de réplique : texte, colonne, élément d'où elle vient, dernière ligne de cet élément. */
+export interface BodyLine {
+  text: string;
+  column: number;
+  rev?: number;
+  kind?: "parenthetical" | "dialogue";
+  end?: boolean;
+}
+
+/** Fin de phrase : point, point d'interrogation ou d'exclamation, points de suspension, même suivis d'un guillemet ou d'une parenthèse. */
+const SENTENCE_END = /[.?!…][\s\u00a0\u202f]*["»”’')\]]*$/;
+
+/** Lignes de réplique à garder de chaque côté d'une coupe de page. */
+export const MIN_SPEECH_LINES = 2;
+
+/**
+ * Où couper une réplique trop longue (#45) : le plus grand nombre de lignes `k`, au plus `room`, tel que la
+ * ligne `k - 1` termine une phrase ou un élément de dialogue (jamais une didascalie), avec au moins
+ * `MIN_SPEECH_LINES` lignes avant et après. `null` si aucune coupe ne convient. Fonction pure.
+ */
+export function speechBreak(body: BodyLine[], room: number): number | null {
+  for (let k = Math.min(room, body.length - MIN_SPEECH_LINES); k >= MIN_SPEECH_LINES; k--) {
+    const line = body[k - 1];
+    if (line.kind === "parenthetical" || line.text.trim() === "") continue;
+    if (line.end || SENTENCE_END.test(line.text)) return k;
+  }
+  return null;
+}
+
 /** Le nom porte déjà une suite (« (SUITE) », « (CONT'D) », « (CONT.) ») : on n'en ajoute pas. */
 export const hasContd = (cue: string, contd: string) =>
   cue.toLocaleUpperCase().includes(contd.toLocaleUpperCase()) || /\((CONT['’.]?D?|SUITE)\.?\)/i.test(cue);
@@ -282,15 +311,18 @@ export function typeset(
   ) {
     const cueText = printable(cueEl.text, notes);
     const cue = wrap(upper(cueText), cueWidth);
-    const body: { text: string; column: number; rev?: number }[] = [];
+    const body: BodyLine[] = [];
     let taken = 0;
     while (i + 1 < elements.length && SPEECH.has(elements[i + 1].type)) {
       const next = elements[++i];
       taken++;
       const kind = next.type as "parenthetical" | "dialogue";
-      for (const line of wrap(printable(next.text, notes), columns[kind])) {
-        if (line !== "" || kind === "dialogue") body.push({ text: line, column: indent[kind], ...(next.rev !== undefined && line !== "" ? { rev: next.rev } : {}) });
-      }
+      const lines = wrap(printable(next.text, notes), columns[kind]);
+      lines.forEach((line, k) => {
+        if (line !== "" || kind === "dialogue") {
+          body.push({ text: line, column: indent[kind], kind, ...(k === lines.length - 1 ? { end: true } : {}), ...(next.rev !== undefined && line !== "" ? { rev: next.rev } : {}) });
+        }
+      });
     }
     return { cue, body, taken, lit: isHim(cueEl.text) };
   }
@@ -317,7 +349,7 @@ export function typeset(
   }
 
   /** Pose une réplique ; si elle dépasse la page, la coupe avec (À SUIVRE) et reprend le nom (SUITE). */
-  function speech(cue: string[], body: { text: string; column: number; rev?: number }[], lit = false) {
+  function speech(cue: string[], body: BodyLine[], lit = false) {
     let name = cue;
     let rest = body;
     const mark: Partial<TypesetLine> = lit ? { highlight: true } : {};
@@ -335,9 +367,17 @@ export function typeset(
         newPage();
         continue;
       }
+      // Coupe à la fin d'une phrase, deux lignes au moins de chaque côté (#45) ; sinon la réplique entière
+      // passe à la page suivante si elle y tient, et seulement à défaut on coupe à la ligne.
+      const room2 = Math.max(1, room - name.length - 1);
+      const cut = speechBreak(rest, room2);
+      if (cut === null && used > 0 && name.length + rest.length <= perPage) {
+        newPage();
+        continue;
+      }
       used += gap;
       for (const line of name) put(line, layout.indent.character, false, false, mark);
-      const fits = Math.max(1, perPage - used - 1);
+      const fits = cut ?? Math.max(1, perPage - used - 1);
       for (const line of rest.slice(0, fits)) put(line.text, line.column, false, false, line.rev !== undefined ? { ...mark, rev: line.rev } : mark);
       if (breaks) put(strings.more, layout.indent.character);
       rest = rest.slice(fits);
