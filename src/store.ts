@@ -14,6 +14,7 @@ import { vracCardHeight, vracGrid, type VracCard, type VracLink } from "./ai/vra
 import { setWireField, wireFicheOf, type WireField } from "./wires";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, sceneBody, sceneEnd, setSceneBody } from "./screenplay/sceneText";
+import { isOmitted, omitScene, omittedIndex } from "./screenplay/omit";
 import { serialize as serializeFountain } from "./screenplay/serialize";
 import { parse as parseFountain } from "./screenplay/parse";
 import type { CharacterFilter } from "./review/filter";
@@ -386,6 +387,11 @@ export interface CosmosState {
   restoreFromTrash: (id: string) => void;
   /** Séquencier : met à la corbeille la scène du scénario qui commence à l'élément `start` (avec sa carte). */
   trashScreenplayScene: (start: number) => void;
+  /**
+   * Pages verrouillées (#46) : la scène qui commence à l'élément `start` (rang dans tout le scénario) laisse
+   * « OMIS » à sa place, avec son numéro ; son texte et sa carte partent à la corbeille. Une étape.
+   */
+  omitScreenplayScene: (start: number) => void;
   /** Supprime définitivement une carte de la corbeille (ou toutes, sans identifiant). */
   purgeTrash: (id?: string) => void;
   /** Renomme le projet (et la page de titre du scénario, si elle portait l'ancien titre). */
@@ -2214,9 +2220,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record();
       const { nodes, edges, frames } = get();
       const full = get().screenplay;
-      // Série : la scène revient à la fin de l'épisode ouvert.
-      const out = restoreCard(entry, new Set(nodes.map((n) => n.id)), full ? episodeScript(full, get().currentEpisode) : null);
-      const screenplay = full && out.screenplay ? withEpisodeScript(full, get().currentEpisode, out.screenplay) : out.screenplay;
+      // Scène omise (#46) : son texte reprend la place de « OMIS », dans quelque épisode qu'elle soit.
+      const omitted = !!full && !!entry.trashed.scene && omittedIndex(full, id) !== -1;
+      // Série : sinon la scène revient à la fin de l'épisode ouvert.
+      const out = restoreCard(entry, new Set(nodes.map((n) => n.id)), full ? (omitted ? full : episodeScript(full, get().currentEpisode)) : null);
+      const screenplay = full && out.screenplay && !omitted ? withEpisodeScript(full, get().currentEpisode, out.screenplay) : out.screenplay;
       // Sa place d'avant si elle est libre, sinon la première place libre à côté.
       const width = entry.trashed.width ?? CARD_WIDTH;
       const spot = placeCard({ x: entry.trashed.x, y: entry.trashed.y }, occupied(nodes, frames), { width, height: CARD_SIZE.height });
@@ -2247,6 +2255,30 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const spot = firstFreeCell(occupied(nodes));
       const card: CardData = { id, type: "scene", title: heading.text, html: "" };
       set(toTrash([id], { nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: get().edges, screenplay: { ...screenplay, elements } }));
+      touch();
+    },
+    omitScreenplayScene: (start) => {
+      const { screenplay, nodes } = get();
+      const heading = screenplay?.elements[start];
+      if (!screenplay || !get().revisions.locked || heading?.type !== "sceneHeading" || isOmitted(heading)) return;
+      record();
+      // Scène sans carte : elle en reçoit une (comme toute scène écrite), qui part avec elle à la corbeille.
+      let from = { nodes, edges: get().edges, screenplay };
+      let id = heading.cardId && nodes.some((n) => n.id === heading.cardId) ? heading.cardId : "";
+      if (!id) {
+        id = newId();
+        const elements = screenplay.elements.slice();
+        elements[start] = { ...heading, cardId: id };
+        const spot = firstFreeCell(occupied(nodes));
+        const card: CardData = { id, type: "scene", title: heading.text, html: "" };
+        from = { nodes: [...nodes, toNode(card, spot.x, spot.y)], edges: from.edges, screenplay: { ...screenplay, elements } };
+      }
+      // La carte part à la corbeille avec sa scène (en Fountain, comme `trashScreenplayScene`) ; à sa place,
+      // l'en-tête omis garde son numéro. `toTrash` rend le scénario sans la scène : on prend celui de `omitScene`.
+      const { screenplay: _without, ...rest } = toTrash([id], from);
+      const omitted = omitScene(from.screenplay, start, id, getT().screenplay.omitted);
+      set(rest);
+      get().setScreenplay(omitted, true);
       touch();
     },
     purgeTrash: (id) => {

@@ -5,6 +5,7 @@ import type { Screenplay, ScreenplayElement } from "./model";
 import { IA_NOTE, IA_TYPES } from "../atelier";
 import { COMMENT_TYPES, commentNote, isCommentId } from "../comments";
 import { REV_TYPES, revNote } from "./revisions";
+import { omittedNote } from "./omit";
 import {
   isNaturalCharacter,
   isNaturalHeading,
@@ -59,7 +60,7 @@ function line(el: ScreenplayElement, next: ScreenplayElement | undefined): strin
   switch (el.type) {
     case "sceneHeading": {
       const dot = el.forced || !isNaturalHeading(el.text) ? "." : "";
-      const link = el.cardId ? ` [[cosmos:${el.cardId}]]` : "";
+      const link = el.omitted ? ` ${omittedNote(el.omitted)}` : el.cardId ? ` [[cosmos:${el.cardId}]]` : "";
       const number = el.sceneNumber ? ` #${el.sceneNumber}#` : "";
       return `${dot}${el.text}${link}${number}`;
     }

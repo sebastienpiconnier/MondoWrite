@@ -12,14 +12,30 @@ export interface Scene {
   end: number;
   text: string;
   cardId?: string;
+  /** Scène omise (#46) : seulement avec `withOmitted`. */
+  omitted?: boolean;
 }
 
-export function listScenes(elements: ScreenplayElement[]): Scene[] {
+/**
+ * Scènes du scénario dans l'ordre. Une scène omise (#46) garde sa place et son rang mais n'est rendue qu'avec
+ * `withOmitted` (liste des scènes) : statistiques, décors, vérifications et IA ne la voient pas.
+ */
+export function listScenes(elements: ScreenplayElement[], withOmitted = false): Scene[] {
   const scenes: Scene[] = [];
+  let rank = 0;
+  let last: Scene | null = null;
   elements.forEach((el, index) => {
     if (el.type !== "sceneHeading") return;
-    if (scenes.length > 0) scenes[scenes.length - 1].end = index;
-    scenes.push({ number: scenes.length + 1, index, end: elements.length, text: el.text, cardId: el.cardId });
+    if (last) last.end = index;
+    rank++;
+    if (el.omitted !== undefined) {
+      last = null;
+      if (!withOmitted) return;
+      scenes.push({ number: rank, index, end: index + 1, text: el.text, omitted: true });
+      return;
+    }
+    last = { number: rank, index, end: elements.length, text: el.text, cardId: el.cardId };
+    scenes.push(last);
   });
   return scenes;
 }

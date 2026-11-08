@@ -42,6 +42,7 @@
 .sp-scene-list .sp-scene-group.is-season button { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.9375rem; }
 .sp-scene-list .sp-scene-group.is-episode { margin-top: 6px; }
 .sp-scene-list .sp-scene-group.is-episode button { color: var(--accent-ink); font-size: 0.8125rem; }
+.sp-scene-list .sp-scene-omitted .ms-name { color: var(--muted); font-style: italic; }
 .sp-scene-moves { display: flex; gap: 4px; padding: 2px 0 2px 10px; }
 .sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 0.8125rem; }
 .sp-scene-moves .icon-button:disabled { opacity: 0.3; cursor: default; }
@@ -131,6 +132,8 @@
 .sp-page[data-numbers] .sp-sceneHeading { counter-increment: scene; position: relative; }
 .sp-page[data-numbers] .sp-sceneHeading::after { content: counter(scene); position: absolute; top: 0; right: 100%; margin-right: 2ch; white-space: nowrap; }
 .sp-page[data-numbers] .sp-sceneHeading[data-number]::after { content: attr(data-number); }
+/* Scène omise (#46) : « OMIS » garde la place et le numéro, en gris, jamais souligné. */
+.sp-page .sp-sceneHeading[data-omitted] { color: var(--muted); text-decoration: none; }
 .sp-el.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; }
 .sp-transition.is-empty::before { float: right; }
 

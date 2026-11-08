@@ -8,6 +8,7 @@ import { readWireFiche, type WireFiche } from "./wires";
 import type { Screenplay } from "./screenplay/model";
 import { parse } from "./screenplay/parse";
 import { serialize } from "./screenplay/serialize";
+import { unomitScene } from "./screenplay/omit";
 
 /** Fil d'une carte mise à la corbeille, vers une carte restée sur le canevas. */
 export interface TrashLink {
@@ -102,7 +103,7 @@ export function trashCard(
 
 /**
  * Sort une carte de la corbeille : la carte (sans `trashed`), ses fils vers des cartes encore là, et le
- * scénario avec sa scène remise à la fin (si elle n'y est pas déjà).
+ * scénario avec sa scène remise à la place de son en-tête omis, sinon à la fin (si elle n'y est pas déjà).
  */
 export function restoreCard(
   entry: TrashedCard,
@@ -114,7 +115,9 @@ export function restoreCard(
     .filter((l) => existing.has(l.other))
     .map((l) => ({ id: l.id, source: l.out ? card.id : l.other, target: l.out ? l.other : card.id, label: l.label, ...(l.fiche ? { fiche: l.fiche } : {}) }));
   let next = screenplay;
-  if (screenplay && trashed.scene && !sceneRange(screenplay, card.id)) {
+  // Scène omise (#46) : son texte reprend la place de son en-tête « OMIS ».
+  if (screenplay && trashed.scene && !sceneRange(screenplay, card.id)) next = unomitScene(screenplay, card.id, trashed.scene);
+  if (next === screenplay && screenplay && trashed.scene && !sceneRange(screenplay, card.id)) {
     const elements = parse(trashed.scene).elements;
     if (elements.length > 0) next = { ...screenplay, elements: [...screenplay.elements, ...elements] };
   }

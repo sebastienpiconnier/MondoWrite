@@ -80,6 +80,7 @@ async function buildMenu() {
       await item("synonyms"),
       await item("comment"),
       await item("merge-next"),
+      await item("omit-scene"),
       await item("review"),
     ],
   });
@@ -146,8 +147,9 @@ export function initAppMenu() {
   useSettings.subscribe((s, prev) => {
     if (s.lang !== prev.lang) void build();
   });
-  // Accueil ou projet ouvert (commandes grisées ou non), roman ou scénario (noms des vues), vue en cours (zoom).
+  // Accueil ou projet ouvert (commandes grisées ou non), roman ou scénario (noms des vues), vue en cours (zoom),
+  // pages verrouillées ou non (« Omettre la scène », #46).
   useCosmos.subscribe((s, prev) => {
-    if (s.screen !== prev.screen || s.kind !== prev.kind || s.view !== prev.view) void build();
+    if (s.screen !== prev.screen || s.kind !== prev.kind || s.view !== prev.view || !s.revisions.locked !== !prev.revisions.locked) void build();
   });
 }

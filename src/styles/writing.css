@@ -17,6 +17,7 @@
 .sq-moves button:disabled { opacity: 0.35; cursor: default; }
 .sq-body { flex: 1; min-width: 0; }
 .sq-title { font-size: 0.875rem; overflow-wrap: anywhere; }
+.sq-scene.is-omitted .sq-title { color: var(--muted); font-style: italic; }
 .sq-desc { margin: 2px 0 0; font-size: 0.8125rem; line-height: 1.45; color: var(--ink-2); }
 .sq-go { display: flex; gap: 4px; flex-shrink: 0; }
 .sq-go .icon-button { width: 32px; height: 32px; }

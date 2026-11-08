@@ -84,6 +84,8 @@ export const Action = element("action", { forced: flag("forced"), ia: iaFlag(), 
 export const SceneHeading = element("sceneHeading", {
   cardId: text("card"),
   sceneNumber: text("number"),
+  // Scène omise (#46) : jamais reprise par l'élément qui naît d'un Entrée.
+  omitted: { ...text("omitted"), keepOnSplit: false },
   forced: flag("forced"),
   known: flag("known"),
   rev: revNumber(),

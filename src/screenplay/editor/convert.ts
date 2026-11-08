@@ -23,6 +23,7 @@ function toNode(el: ScreenplayElement): JSONContent {
   if (el.type === "sceneHeading") {
     attrs.cardId = el.cardId ?? null;
     attrs.sceneNumber = el.sceneNumber ?? null;
+    attrs.omitted = el.omitted ?? null;
   }
   if (el.type === "character") attrs.dual = el.dual === true;
   // Ce qui vient du modèle est connu du projet : aucune carte à créer pour lui.
@@ -53,6 +54,7 @@ function fromNode(node: JSONContent): ScreenplayElement {
   if (type === "sceneHeading") {
     if (attrs.cardId) el.cardId = String(attrs.cardId);
     if (attrs.sceneNumber) el.sceneNumber = String(attrs.sceneNumber);
+    if (attrs.omitted) el.omitted = String(attrs.omitted);
   }
   if (type === "character" && attrs.dual) el.dual = true;
   if (attrs.forced) el.forced = true;

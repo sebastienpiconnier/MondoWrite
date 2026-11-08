@@ -6,6 +6,7 @@ import { COMMENT_TYPES, readCommentNotes } from "../comments";
 import { REV_TYPES, readRevNote } from "./revisions";
 import {
   LINK_RE,
+  OMITTED_RE,
   SCENE_NUMBER_RE,
   isBlank,
   isCentered,
@@ -222,6 +223,11 @@ function heading(raw: string, forced: boolean): ScreenplayElement {
   if (rev.rev !== undefined) {
     el.rev = rev.rev;
     el.text = rev.text;
+  }
+  const omitted = OMITTED_RE.exec(el.text);
+  if (omitted) {
+    el.omitted = omitted[1];
+    el.text = el.text.replace(OMITTED_RE, "");
   }
   const link = LINK_RE.exec(el.text);
   if (link) {
