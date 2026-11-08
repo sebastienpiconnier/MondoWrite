@@ -96,6 +96,12 @@ function findChromium() {
 
 class Failure extends Error {}
 
+/** Réglages (#57) : le bouton ouvre le menu de l'app, puis « Réglages… » ouvre la fenêtre des réglages. */
+async function openSettings(page) {
+  await page.getByRole("button", { name: "Réglages et aide", exact: true }).first().click();
+  await page.getByRole("menuitem", { name: /^Réglages…/ }).click();
+}
+
 /** Attend qu'une condition soit vraie (fonction asynchrone), sinon échoue avec le message donné. */
 async function until(check, message, timeout = 8000) {
   const end = Date.now() + timeout;
@@ -1431,7 +1437,7 @@ const scenarios = [
     async run(h) {
       const { page } = h;
       await h.home();
-      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await openSettings(page);
       // Réglages en onglets (1.11.1) : le service d'IA est dans l'onglet IA.
       await page.getByRole("tab", { name: "IA", exact: true }).click();
       const service = page.getByLabel("Service", { exact: true });
@@ -1470,7 +1476,7 @@ const scenarios = [
         return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text }] }) });
       });
       await h.create("Atelier");
-      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await openSettings(page);
       await page.getByLabel("Activer le mode Atelier pour ce projet").check();
       await page.keyboard.press("Escape");
       await until(() => page.locator(".atelier-badge").isVisible(), "le repère « Atelier » n'apparaît pas dans la barre du haut");
@@ -1513,7 +1519,7 @@ const scenarios = [
         return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text }] }) });
       });
       await h.create("Le Phare", "scenario");
-      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await openSettings(page);
       await page.getByLabel("Activer le mode Atelier pour ce projet").check();
       await page.keyboard.press("Escape");
       await h.view(4);
@@ -1553,7 +1559,7 @@ const scenarios = [
         return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ created: 1, data: [{ b64_json: PNG }, { b64_json: PNG }] }) });
       });
       await h.create("Images");
-      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await openSettings(page);
       await page.getByLabel("Activer le mode Atelier pour ce projet").check();
       await page.keyboard.press("Escape");
       const id = await h.newCard("Inès Morvan");
@@ -1581,7 +1587,7 @@ const scenarios = [
     async run(h) {
       const { page } = h;
       await page.addInitScript(() => {
-        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", sceneSynopses: true, ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
       });
       await page.route("https://api.anthropic.com/**", (route) => {
         const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
@@ -1589,7 +1595,7 @@ const scenarios = [
         return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text: "Inès veille seule pendant la tempête." }] }) });
       });
       await h.create("Le Phare", "scenario");
-      await page.getByRole("button", { name: "Réglages", exact: true }).click();
+      await openSettings(page);
       await page.getByLabel("Activer le mode Atelier pour ce projet").check();
       await page.keyboard.press("Escape");
       await h.view(4);
@@ -1863,7 +1869,7 @@ const scenarios = [
       await h.saved((f) => Object.keys(f).filter((k) => k.startsWith("manuscrit/")).length === 2, "Annuler n'a pas remis les deux scènes");
       // Réglages › Écriture : police et interligne de la page, appliqués à l'écran.
       const before = await page.locator(".ms-page").evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize));
-      await page.getByRole("button", { name: "Réglages" }).first().click();
+      await openSettings(page);
       await page.getByRole("tab", { name: "Écriture" }).click();
       await page.getByLabel("Police de la page (manuscrit)").selectOption("literata");
       await page.getByLabel("Interligne de la page (manuscrit)").selectOption("double");
@@ -1915,6 +1921,55 @@ const scenarios = [
         }),
         "le curseur n'est pas revenu à sa place",
       );
+    },
+  },
+  {
+    name: "lot 10 (ergonomie 2) : menu de l'app, une ligne au-dessus de la page, statut dans l'onglet Scène, « Ranger » d'une scène, aides apprises",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      // #57 : le bouton des Réglages ouvre le menu de l'app (Corbeille, Commandes, aide).
+      await page.getByRole("button", { name: "Réglages et aide", exact: true }).click();
+      await until(() => page.getByRole("menuitem", { name: /^Corbeille \(/ }).isVisible(), "la Corbeille n'est pas dans le menu de l'app");
+      await page.getByRole("menuitem", { name: /^Commandes…/ }).click();
+      await page.getByRole("searchbox", { name: "Commande à lancer" }).waitFor();
+      await page.keyboard.press("Escape");
+      // #56 : les mêmes vues, dans le même ordre, avec Cmd/Ctrl + 1 à 4.
+      const order = await page.locator(".topbar .views button").allTextContents();
+      assert(order.join("|") === "Canevas|Plan|Bible|Manuscrit", `ordre des vues : ${order.join(", ")}`);
+      // #54 : au-dessus de la page, ni statut ni point de vue ; ils sont dans l'onglet « Scène ».
+      await h.view(4);
+      await page.locator(".ms-meta").waitFor();
+      assert((await page.locator(".ms-meta .status-picker, .ms-meta select").count()) === 0, "statut, point de vue ou type de page encore au-dessus de la page");
+      await until(() => page.locator(".ms-scene-props select").isVisible(), "le type de page n'est pas dans l'onglet Scène");
+      await page.locator(".ms-meta .more-button").click();
+      await page.getByRole("menuitem", { name: /^Mode focus/ }).click();
+      await until(() => page.locator(".manuscript.is-focus").count(), "Mode focus du menu ⋯ sans effet");
+      await page.keyboard.press("Escape");
+      // #58 : titres seuls, synopsis sur demande.
+      assert((await page.locator(".ms-scenes .synopsis-show").count()) === 0, "des synopsis sont déjà dans le volet des scènes");
+      await page.getByLabel("Montrer les synopsis").check();
+      await until(async () => (await page.locator(".ms-scenes .synopsis-show").count()) > 0, "les synopsis ne viennent pas dans le volet");
+      // #55 : chapitre et case derrière « Ranger ».
+      await h.view(2);
+      assert((await page.locator(".plan-meta").count()) === 0, "chapitre et case encore visibles sans « Ranger »");
+      await page.getByRole("button", { name: /^Ranger : / }).first().click();
+      await until(async () => (await page.locator(".plan-meta select").count()) === 2, "« Ranger » n'ouvre pas chapitre et case");
+      // #59 : la consigne du canevas part une fois les trois gestes faits.
+      await h.view(1);
+      assert(await page.locator(".toile-hint").isVisible(), "la consigne du canevas n'est pas là au départ");
+      await h.newCard("Une idée");
+      await h.pane();
+      // Un seul geste sur trois : la consigne reste, le progrès est noté sur l'appareil.
+      await until(() => page.evaluate(() => (JSON.parse(localStorage.getItem("mondowrite.learn") ?? "{}").canvasHint ?? []).includes("card")), "la carte créée n'est pas notée");
+      assert(await page.locator(".toile-hint").isVisible(), "la consigne part avant les trois gestes");
+      // Apprise (réglage de l'appareil) : elle ne s'affiche plus.
+      await page.evaluate(() => {
+        const saved = JSON.parse(localStorage.getItem("cosmos:reglages") ?? "{}");
+        localStorage.setItem("cosmos:reglages", JSON.stringify({ ...saved, learned: ["canvasHint"] }));
+      });
+      await h.reloadAndOpen();
+      assert(!(await page.locator(".toile-hint").isVisible()), "la consigne apprise est encore affichée");
     },
   },
 ];

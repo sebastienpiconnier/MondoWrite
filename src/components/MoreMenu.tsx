@@ -20,6 +20,8 @@ export interface MoreItem {
   hint?: string;
   /** Infobulle. */
   title?: string;
+  /** Un filet avant cet élément : il commence un nouveau groupe (menu de l'app, #57). */
+  rule?: boolean;
 }
 
 const MENU_WIDTH = 240;
@@ -134,7 +136,7 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
                 tabIndex={-1}
                 disabled={item.disabled}
                 title={item.title}
-                className={`${item.danger ? "is-danger" : ""}${item.danger && k > 0 && !ordered[k - 1].danger ? " has-rule" : ""}`}
+                className={`${item.danger ? "is-danger" : ""}${(item.danger && k > 0 && !ordered[k - 1].danger) || (item.rule && k > 0) ? " has-rule" : ""}`}
                 onClick={() => {
                   setOpen(false);
                   item.onSelect();

@@ -1,5 +1,8 @@
 // Bouton « Réglages » : langue de l'interface et apparence (système, claire, sombre).
 // Listes déroulantes natives : accessibles au clavier, au lecteur d'écran et au doigt.
+// #57 : le bouton ouvre d'abord le menu de l'app (Réglages…, Corbeille, Sauvegardes, Commandes, aide, À propos),
+// le seul chemin vers ces fenêtres sur PC, iPad et iPhone, qui n'ont pas de barre des menus. Les onglets des
+// Réglages ne gardent que des réglages.
 
 import { SPELLCHECK_MODES, isSpellcheckMode } from "../writingAids";
 import { openGuide } from "../help";
@@ -12,6 +15,9 @@ import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent as Rea
 import { useCommand } from "../commands";
 import { DICTIONARIES, langCoverage, offeredLangs, isLang, useT } from "../i18n";
 import { openExternal } from "../platform";
+import { MoreMenu, useKeyHint } from "./MoreMenu";
+import { openPalette } from "../commandList";
+import { unlearnAll } from "../learn";
 import { REPO } from "../updates";
 
 /** Guide des traducteurs sur GitHub. */
@@ -41,6 +47,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const trashCount = useCosmos((s) => s.trash.length);
   const t = useT();
   const phone = usePhone();
+  const key = useKeyHint();
   const { lang, themePref, palette, setPalette, setLang, setThemePref, author, ai, setAi, photos, writing, setWriting } = useSettings();
   const [models, setModels] = useState<string[]>([]);
   // Modèle saisi à la main (absent de la liste du service).
@@ -126,7 +133,6 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), atelierHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
@@ -135,11 +141,12 @@ export function Settings({ project = true }: { project?: boolean }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false);
-        buttonRef.current?.focus();
+        rootRef.current?.querySelector<HTMLElement>(".settings-button")?.focus();
       }
     };
     const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      // Dehors, ou sur le bouton lui-même (il rouvre le menu de l'app) : le panneau se ferme.
+      if (!rootRef.current?.contains(e.target as Node) || (e.target instanceof Element && e.target.closest(".settings-button"))) setOpen(false);
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onDown);
@@ -205,21 +212,39 @@ export function Settings({ project = true }: { project?: boolean }) {
 
   return (
     <div className="settings" ref={rootRef}>
-      <button
-        ref={buttonRef}
-        type="button"
-        className="icon-button"
-        aria-label={t.settings.title}
-        aria-expanded={open}
-        aria-controls={ids.panel}
-        onClick={() => setOpen(!open)}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-          <circle cx="16" cy="7" r="2" />
-          <circle cx="10" cy="17" r="2" />
-        </svg>
-      </button>
+      <MoreMenu
+        className="settings-button"
+        label={t.settings.menu}
+        icon={
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+            <circle cx="16" cy="7" r="2" />
+            <circle cx="10" cy="17" r="2" />
+          </svg>
+        }
+        items={[
+          { label: t.settings.open, hint: key("Mod", ","), onSelect: () => setOpen(true) },
+          project && { label: fmt(t.trash.open, { n: trashCount }), rule: true, onSelect: () => useCosmos.getState().setDialog("trash") },
+          // Sauvegardes hors du projet (#14, #15) : app seulement ; celles du projet ouvert, ou de tous à l'accueil.
+          !!storage.backups && { label: t.backups.settingsButton, rule: !project, onSelect: () => useCosmos.getState().openBackups(project ? (storage.backups?.key() ?? null) : null) },
+          { label: `${t.palette.title}…`, title: t.palette.open, hint: key("Mod", "K"), onSelect: () => openPalette() },
+          // Visite guidée : dans un projet, elle s'ouvre sur place ; à l'accueil, avec le projet d'exemple. Pas sur téléphone.
+          !phone && {
+            label: t.tour.open,
+            rule: true,
+            onSelect: () => {
+              const { screen, setTour, tryExample } = useCosmos.getState();
+              // La visite fait aussi revenir les aides déjà apprises (#59) : consigne du canevas, touches du scénario.
+              unlearnAll();
+              if (screen === "project") setTour(0);
+              else void tryExample();
+            },
+          },
+          { label: `${t.help.guide} ↗`, title: t.help.guideHint, hint: "F1", rule: phone, onSelect: () => void openGuide(null) },
+          { label: t.shortcuts.open, onSelect: () => useCosmos.getState().setDialog("shortcuts") },
+          { label: t.about.open, onSelect: () => useCosmos.getState().setDialog("about") },
+        ]}
+      />
 
       {open && (
         <div className="settings-panel" id={ids.panel} role="group" aria-label={t.settings.title}>
@@ -337,15 +362,6 @@ export function Settings({ project = true }: { project?: boolean }) {
                 <p>{t.atelier.settingKdp}</p>
               </div>
             </>
-          )}
-          <button type="button" className="ghost-button settings-trash" onClick={() => { setOpen(false); useCosmos.getState().setDialog("trash"); }}>
-            {fmt(t.trash.open, { n: trashCount })}
-          </button>
-          {/* Sauvegardes hors du projet (#14, #15) : app seulement (le navigateur n'a pas de dossier à part). */}
-          {storage.backups && (
-            <button type="button" className="ghost-button settings-trash" onClick={() => { setOpen(false); useCosmos.getState().openBackups(storage.backups?.key() ?? null); }}>
-              {t.backups.settingsButton}
-            </button>
           )}
             </section>
           )}
@@ -682,33 +698,6 @@ export function Settings({ project = true }: { project?: boolean }) {
             </>
           )}
           </section>
-          <div className="settings-links">
-            {/* Visite guidée : dans un projet, elle s'ouvre sur place ; à l'accueil, avec le projet d'exemple.
-                Pas sur téléphone (canevas et Plan absents). */}
-            {!phone && (
-              <button
-                type="button"
-                className="link-button"
-                onClick={() => {
-                  setOpen(false);
-                  const { screen, setTour, tryExample } = useCosmos.getState();
-                  if (screen === "project") setTour(0);
-                  else void tryExample();
-                }}
-              >
-                {t.tour.open}
-              </button>
-            )}
-            <button type="button" className="link-button" title={t.help.guideHint} onClick={() => { setOpen(false); void openGuide(null); }}>
-              {t.help.guide} <span aria-hidden="true">↗</span>
-            </button>
-            <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setDialog("shortcuts"); }}>
-              {t.shortcuts.open}
-            </button>
-            <button type="button" className="link-button" onClick={() => { setOpen(false); useCosmos.getState().setDialog("about"); }}>
-              {t.about.open}
-            </button>
-          </div>
         </div>
       )}
     </div>

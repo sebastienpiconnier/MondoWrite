@@ -17,6 +17,7 @@ import { replayShortcut, sendCommand } from "./commands";
 import { storage } from "./storage";
 import { vocab } from "./vocab";
 import { quitApp } from "./closing";
+import { unlearnAll } from "./learn";
 import { nextHighlight } from "./focusText";
 import type { View } from "./projectState";
 import type { ProjectKind } from "./types";
@@ -167,6 +168,7 @@ export const COMMANDS: AppCommandItem[] = [
     label: (t) => t.appMenu.tour,
     run: () => {
       const { screen, setTour, tryExample } = s();
+      unlearnAll(); // la visite fait revenir les aides apprises (#59)
       if (screen === "project") setTour(0);
       else void tryExample();
     },

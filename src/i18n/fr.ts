@@ -285,6 +285,8 @@ export const fr = {
 
   settings: {
     title: "Réglages",
+    menu: "Réglages et aide",
+    open: "Réglages…",
     tabGeneral: "Général",
     tabAi: "IA",
     language: "Langue",
@@ -911,6 +913,7 @@ export const fr = {
     voices: "Voix…",
     voicesHint: "Choisir les voix du narrateur et des personnages",
     voicesTitle: "Voix de la lecture",
+    voicesMenu: "Voix de la lecture…",
     narrator: "Narrateur",
     auto: "Automatique",
     rate: "Vitesse",
@@ -1159,7 +1162,7 @@ export const fr = {
     removeSeason: "Retirer la saison (ses épisodes restent)",
     removeEpisode: "Retirer l’épisode (son texte reste)",
     removed: "« {title} » retiré : son texte rejoint ce qui le précède. Annuler : Ctrl ou Cmd + Z.",
-    hint: "Une série : nomme chaque saison et chaque épisode sur place, choisis le gabarit de chaque épisode, puis range les scènes avec « Ranger dans » ou les flèches.",
+    hint: "Une série : nomme chaque saison et chaque épisode sur place, choisis le gabarit de chaque épisode, puis range les scènes avec « Ranger » ou les flèches.",
     bibleEmpty: "Pas encore d’épisode. Le premier prend le scénario déjà écrit, sous une première saison.",
     openOutline: "Ouvrir le séquencier",
     templateOf: "Gabarit de l’épisode",
@@ -1261,6 +1264,7 @@ export const fr = {
     panelHide: "Replier le volet",
     panelShow: "Ouvrir le volet",
     scenesTitle: "Scènes",
+    showSynopses: "Montrer les synopsis",
     wordsOne: "{n} mot",
     wordsMany: "{n} mots",
     empty: "Pas encore de scène",
@@ -1373,7 +1377,7 @@ export const fr = {
     summaryMany: "{n} scènes",
     placedOf: "{placed} sur {n} rangées",
     empty: "Pas encore de scène. Écris-en une ci-dessous, ou crée une carte Scène sur le canevas.",
-    hint: "Glisse une scène dans une case, ou utilise les flèches et le menu « Ranger dans ».",
+    hint: "Glisse une scène dans une case, ou utilise ses flèches et son bouton « Ranger ».",
     unplaced: "À placer",
     unplacedHint: "Les scènes du canevas qui n’ont pas encore leur place dans le récit.",
     unplacedEmpty: "Toutes les scènes sont rangées.",
@@ -1387,6 +1391,8 @@ export const fr = {
     moveDown: "Descendre la scène « {title} »",
     moveTo: "Ranger la scène « {title} » dans…",
     moveToShort: "Ranger dans",
+    arrange: "Ranger",
+    arrangeHint: "Chapitre et case de la scène",
     moved: "Scène « {title} » : {beat}, position {n}.",
     removed: "Scène « {title} » remise dans « À placer ».",
     show: "Voir la carte « {title} » sur le canevas",
@@ -1709,7 +1715,7 @@ export const fr = {
       moveUp: "Monter la scène « {title} »",
       moveDown: "Descendre la scène « {title} »",
       moved: "Scène « {title} » déplacée en position {n}.",
-      templateHint: "Les cases du gabarit sont des sections du scénario. Toutes les scènes commencent dans la première : range-les avec le menu « Ranger dans », les flèches ou en les glissant.",
+      templateHint: "Les cases du gabarit sont des sections du scénario. Toutes les scènes commencent dans la première : range-les avec « Ranger », les flèches ou en les glissant.",
       noSection: "Avant les sections",
     },
   },
@@ -2344,6 +2350,7 @@ export const fr = {
   // Pages du livre dans le manuscrit (idée reprise de NEO).
   book: {
     pageKind: "Type de page",
+    sceneProps: "Type, statut et point de vue de la scène",
     scene: "Scène du récit",
     kinds: {
       titre: "Page de titre",

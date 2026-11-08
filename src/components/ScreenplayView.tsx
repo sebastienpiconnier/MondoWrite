@@ -35,12 +35,14 @@ import { COMMENT_TYPES, commentIdsInElements, openCount } from "../comments";
 import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
 import { elementFor, type SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
-import { ReaderBar } from "./ReaderBar";
+import { ReaderBar, useReaderItems } from "./ReaderBar";
+import { SynopsesToggle, useSceneSynopses } from "./SynopsesToggle";
 import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { screenplayUtterances, type ReadNode } from "../reading";
 import { PRESERVED } from "../screenplay/editor/nodes";
 import { startGap } from "../screenplay/editor/keymap";
+import { TAB_USES, noteUse } from "../learn";
 import { GapCursor } from "@tiptap/pm/gapcursor";
 import type { ResolvedPos } from "@tiptap/pm/model";
 import type { TitleField } from "../screenplay/titlePage";
@@ -60,7 +62,7 @@ import { useEpisodeLabel } from "./EpisodePicker";
 import { EpisodePicker } from "./EpisodePicker";
 import { useSettings } from "../settings";
 import { fmt, getT } from "../i18n";
-import { FocusBar, FocusCounter, useFocusChrome } from "./FocusBar";
+import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { colorFor, currentSet, setOf } from "../screenplay/revisions";
 import { revisionName, revisionVar } from "../revisionsText";
@@ -334,6 +336,8 @@ export function ScreenplayView() {
       attributes: { class: "sp-editor", role: "textbox", "aria-multiline": "true", "aria-label": getT().screenplay.editorAria, spellcheck: String(spell) },
       // Menu de complétion ouvert : flèches, Entrée et Échap sont pour lui (avant le clavier de l'éditeur).
       handleKeyDown: (_view, event) => {
+        // Touches du scénario (#59) : au cinquième changement d'élément par Tab, leur rappel quitte la barre.
+        if (event.key === "Tab" && !event.ctrlKey && !event.metaKey && !event.altKey) noteUse("screenplayKeys", TAB_USES);
         const open = menuRef.current;
         if (!open) return false;
         const count = open.items.length;
@@ -867,6 +871,9 @@ export function ScreenplayView() {
     const { lang: language, reading } = useSettings.getState();
     startReading(editor, screenplayUtterances(nodes, editor.state.selection.$from.index(0), language, reading.parentheticals));
   };
+  const readerItems = useReaderItems(startListening);
+  const synopses = useSceneSynopses();
+  const keysLearned = useSettings((s) => s.learned.includes("screenplayKeys"));
 
   // (À SUIVRE) / (SUITE) changés dans les réglages : la feuille se redessine (rien n'est écrit dans le texte).
   const continuedKey = useCosmos((s) => `${s.scriptPdf.breaks}|${s.scriptPdf.resumes}`);
@@ -1071,7 +1078,9 @@ export function ScreenplayView() {
       )}
       <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
         <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
-        <div className="eyebrow">{sp.scenesTitle}</div>
+        {/* Même en-tête que le volet du Manuscrit (#58). */}
+        <h2 className="sp-box-title">{sp.scenesTitle}</h2>
+        {scenes.length > 0 && <SynopsesToggle />}
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
         {(speakingList.length > 0 || charFilter) && (
           <div className="sp-filter">
@@ -1195,7 +1204,8 @@ export function ScreenplayView() {
                   })}
                 </span>
               )}
-              {/* Le synopsis s'écrit ici ; il apparaît dans le séquencier. Le toucher choisit aussi la scène. */}
+              {/* Le synopsis s'écrit ici, s'il est demandé (#58) ; il apparaît dans le séquencier. Le toucher choisit aussi la scène. */}
+              {synopses && (
               <div className="sp-scene-synopsis" onFocusCapture={() => showScene(s.index)} onPointerDownCapture={() => showScene(s.index)}>
               <SynopsisField
                 value={sceneSynopsis(elements, s.index)}
@@ -1205,6 +1215,7 @@ export function ScreenplayView() {
                 atelier={elements[s.index]?.cardId ? { sceneId: elements[s.index].cardId!, text: screenplaySceneText(scriptOffset(useCosmos.getState()) + s.index), accept: (text) => saveSynopsis(s.index, text, true) } : undefined}
               />
               </div>
+              )}
             </li>
           ))(scenes[row.k], row.k))}
         </ol>
@@ -1265,21 +1276,23 @@ export function ScreenplayView() {
               {sp.elements[type]}
             </button>
           ))}
-          <span className="sp-bar-hint">
-            <kbd>{sp.keyTab}</kbd> {sp.hintTab} · <kbd>{sp.keyEnter}</kbd> {sp.hintEnter} · <kbd>{sp.keyEscape}</kbd>{" "}
-            {sp.hintEscape}
-          </span>
-          <button
-            type="button"
-            className="sp-focus"
-            aria-pressed={focusMode}
-            title={sp.focusHint}
-            onPointerDown={(e) => e.preventDefault()}
-            onClick={() => setFocusMode(!focusMode)}
-          >
-            {focusMode ? sp.focusExit : sp.focus}
-          </button>
-          <ReaderBar buttonClass="sp-option" screenplay speakers={readerSpeakers} onStart={startListening} />
+          {/* Rappel des touches, jusqu'à ce qu'elles soient apprises (#59) : la barre tient alors sur une ligne. */}
+          {!keysLearned && (
+            <span className="sp-bar-hint">
+              <kbd>{sp.keyTab}</kbd> {sp.hintTab} · <kbd>{sp.keyEnter}</kbd> {sp.hintEnter} · <kbd>{sp.keyEscape}</kbd>{" "}
+              {sp.hintEscape}
+            </span>
+          )}
+          {/* #54 : le mode focus en icône, Écouter et les voix dans le menu ⋯ (la barre ne montre la lecture qu'en cours).
+              Sur téléphone, la barre reste en mode focus : on en sort par ce bouton, écrit en toutes lettres. */}
+          {focusMode ? (
+            <button type="button" className="sp-focus" aria-pressed onPointerDown={(e) => e.preventDefault()} onClick={() => setFocusMode(false)}>
+              {sp.focusExit}
+            </button>
+          ) : (
+            <FocusButton className="sp-focus" title={sp.focusHint} onClick={() => setFocusMode(true)} />
+          )}
+          <ReaderBar menu buttonClass="sp-option" screenplay speakers={readerSpeakers} onStart={startListening} />
           {/* Le reste (1.11.1) : une seule rangée sous les éléments. Numéros de scène et soulignement : dans les Réglages. */}
           {openPass && (
             <button
@@ -1296,6 +1309,8 @@ export function ScreenplayView() {
           <MoreMenu
             className="sp-option"
             items={[
+              !focusMode && { label: sp.focus, title: sp.focusHint, hint: key("Mod", "Shift", "F"), onSelect: () => setFocusMode(true) },
+              ...readerItems,
               { label: t.book.chutier.title, title: t.format.chutier, hint: key("Mod", "Shift", "K"), onSelect: sendToChutier },
               { label: t.comments.element, hint: key("Mod", "Alt", "M"), onSelect: commentElement },
               // Fusionner (#23) : la scène suivante (sans section entre elles) rejoint celle-ci.

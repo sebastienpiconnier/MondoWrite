@@ -1,6 +1,8 @@
 // Commandes de la lecture à voix haute, dans les barres du Scénario et du Manuscrit : « Écouter », puis Pause,
 // Reprendre, Arrêter et le choix des voix (narrateur, personnages, vitesse). Les voix sont celles de l'appareil ;
 // leur choix est un réglage de l'appareil (settings.reading), jamais du projet.
+// #54 : dans les barres d'écriture, « Écouter » et « Voix de la lecture… » sont dans le menu ⋯ (`useReaderItems`) ;
+// la barre ne montre Pause, Reprendre, Arrêter et la flèche des voix que pendant une lecture (`menu`).
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -10,6 +12,22 @@ import { useSettings } from "../settings";
 import { foldName } from "../review/names";
 import { voicesFor } from "../reading";
 import { canSpeak, pauseReading, previewVoice, resumeReading, stopReading, useReaderState, useSystemVoices } from "./useReader";
+import type { MoreItem } from "./MoreMenu";
+
+/** « Voix de la lecture… » du menu ⋯ : la barre de lecture posée dans la même barre ouvre son panneau. */
+const voiceRequests = new Set<() => void>();
+export function openReaderVoices() {
+  voiceRequests.forEach((open) => open());
+}
+
+/** Entrées du menu ⋯ d'une barre d'écriture : « Écouter » (sans lecture en cours) et le choix des voix. */
+export function useReaderItems(onStart: () => void): MoreItem[] {
+  const r = useT().reading;
+  const status = useReaderState((s) => s.status);
+  if (!canSpeak()) return [];
+  const voices: MoreItem = { label: r.voicesMenu, title: r.voicesHint, onSelect: openReaderVoices };
+  return status === "idle" ? [{ label: r.listen, title: r.listenHint, onSelect: onStart }, voices] : [voices];
+}
 
 interface Props {
   /** Commence la lecture (à partir de la scène ou du passage en cours). */
@@ -20,15 +38,29 @@ interface Props {
   buttonClass: string;
   /** Scénario : propose aussi de lire les didascalies. */
   screenplay?: boolean;
+  /** « Écouter » et les voix sont dans le menu ⋯ : rien n'est affiché tant qu'on ne lit pas (#54). */
+  menu?: boolean;
 }
 
-export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = false }: Props) {
+export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = false, menu = false }: Props) {
   const t = useT();
   const r = t.reading;
   const status = useReaderState((s) => s.status);
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  // Sans lecture en cours, en mode menu, le panneau des voix se pose sous ce repère (la place de la barre de lecture).
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const hidden = menu && status === "idle";
+
+  useEffect(() => {
+    if (!menu) return;
+    const request = () => setOpen(true);
+    voiceRequests.add(request);
+    return () => {
+      voiceRequests.delete(request);
+    };
+  }, [menu]);
 
   // Le panneau est posé hors de la barre (une barre qui défile de côté, ou une colonne, le coupait ; sur téléphone il
   // sortait de l'écran par la gauche) : sous le bouton, aligné sur son bord droit, toujours dans la fenêtre.
@@ -36,7 +68,7 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
     if (!open) return;
     const place = () => {
       const panel = panelRef.current;
-      const btn = toggleRef.current;
+      const btn = toggleRef.current ?? anchorRef.current;
       if (!panel || !btn) return;
       const b = btn.getBoundingClientRect();
       const w = panel.offsetWidth;
@@ -60,7 +92,7 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
     if (!open) return;
     const onDown = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (!panelRef.current?.contains(target) && !toggleRef.current?.contains(target)) setOpen(false);
+      if (!panelRef.current?.contains(target) && !toggleRef.current?.contains(target) && !(e.target instanceof Element && e.target.closest(".more-menu"))) setOpen(false);
     };
     window.addEventListener("pointerdown", onDown, true);
     return () => window.removeEventListener("pointerdown", onDown, true);
@@ -68,6 +100,13 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
 
   if (!canSpeak()) return null;
   const prevent = (e: React.PointerEvent) => e.preventDefault();
+
+  if (hidden)
+    return (
+      <span className="reader is-anchor" ref={anchorRef}>
+        {open && createPortal(panel(), portalRoot(anchorRef.current))}
+      </span>
+    );
 
   return (
     <span className="reader">
@@ -94,8 +133,12 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
           <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
-      {open &&
-        createPortal(
+      {open && createPortal(panel(), portalRoot(toggleRef.current))}
+    </span>
+  );
+
+  function panel() {
+    return (
         <div
           ref={panelRef}
           className="reader-panel"
@@ -105,16 +148,14 @@ export function ReaderBar({ onStart, speakers = [], buttonClass, screenplay = fa
             if (e.key === "Escape") {
               e.stopPropagation();
               setOpen(false);
-              toggleRef.current?.focus();
+              (toggleRef.current ?? anchorRef.current?.closest("[role=toolbar]")?.querySelector<HTMLElement>(".more-button"))?.focus();
             }
           }}
         >
           <VoiceChoices speakers={speakers} screenplay={screenplay} />
-        </div>,
-          portalRoot(toggleRef.current),
-        )}
-    </span>
-  );
+        </div>
+    );
+  }
 }
 
 function VoiceChoices({ speakers, screenplay }: { speakers: string[]; screenplay: boolean }) {

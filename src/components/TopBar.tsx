@@ -12,9 +12,9 @@ import { useTopbarFit } from "./useTopbarFit";
 import { useSettings } from "../settings";
 import { shownView, usePhone } from "./usePhone";
 
+/** Les quatre vues, dans le même ordre partout (#56) : barre du haut, onglets du téléphone, Cmd/Ctrl + 1 à 4. Sur
+ *  téléphone, elles sont en onglets avec une icône (Plan et Manuscrit prennent leur nom de scénario). */
 const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
-/** Téléphone : les mêmes quatre vues, en onglets avec une icône (Plan et Manuscrit prennent leur nom de scénario). */
-const PHONE_VIEWS: View[] = ["toile", "plan", "manuscrit", "bible"];
 
 /** Icônes de la barre d'onglets du téléphone (1.11.2) : une barre d'onglets d'iPhone montre une icône et son nom. */
 const tabIcon = (d: string) => (
@@ -96,7 +96,7 @@ export function TopBar() {
       </div>
 
       <nav className="views" aria-label={t.views.aria}>
-        {(phone ? PHONE_VIEWS : VIEWS).map((v) => (
+        {VIEWS.map((v) => (
           <button
             key={v}
             type="button"

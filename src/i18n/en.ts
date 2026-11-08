@@ -281,6 +281,8 @@ export const en: Messages = {
 
   settings: {
     title: "Settings",
+    menu: "Settings and help",
+    open: "Settings…",
     tabGeneral: "General",
     tabAi: "AI",
     language: "Language",
@@ -928,6 +930,7 @@ export const en: Messages = {
     voices: "Voices…",
     voicesHint: "Choose the voices of the narrator and the characters",
     voicesTitle: "Reading voices",
+    voicesMenu: "Reading voices…",
     narrator: "Narrator",
     auto: "Automatic",
     rate: "Speed",
@@ -1172,7 +1175,7 @@ export const en: Messages = {
     removeSeason: "Remove the season (its episodes stay)",
     removeEpisode: "Remove the episode (its text stays)",
     removed: "“{title}” removed: its text joins what comes before it. Undo: Ctrl or Cmd + Z.",
-    hint: "A series: name each season and episode in place, pick each episode’s template, then arrange the scenes with “Move to” or the arrows.",
+    hint: "A series: name each season and episode in place, pick each episode’s template, then arrange the scenes with “Arrange” or the arrows.",
     bibleEmpty: "No episode yet. The first one takes the screenplay written so far, under a first season.",
     openOutline: "Open the outline",
     templateOf: "Episode template",
@@ -1274,6 +1277,7 @@ export const en: Messages = {
     panelHide: "Collapse panel",
     panelShow: "Open panel",
     scenesTitle: "Scenes",
+    showSynopses: "Show synopses",
     wordsOne: "{n} word",
     wordsMany: "{n} words",
     empty: "No scene yet",
@@ -1384,7 +1388,7 @@ export const en: Messages = {
     summaryMany: "{n} scenes",
     placedOf: "{placed} of {n} placed",
     empty: "No scene yet. Write one below, or create a Scene card on the canvas.",
-    hint: "Drag a scene into a slot, or use the arrows and the “Move to” menu.",
+    hint: "Drag a scene into a slot, or use its arrows and its “Arrange” button.",
     unplaced: "To place",
     unplacedHint: "Scenes from the canvas that don’t have their place in the story yet.",
     unplacedEmpty: "Every scene has its place.",
@@ -1398,6 +1402,8 @@ export const en: Messages = {
     moveDown: "Move the scene “{title}” down",
     moveTo: "Move the scene “{title}” to…",
     moveToShort: "Move to",
+    arrange: "Arrange",
+    arrangeHint: "The scene’s chapter and slot",
     moved: "Scene “{title}”: {beat}, position {n}.",
     removed: "Scene “{title}” moved back to “To place”.",
     show: "Show the card “{title}” on the canvas",
@@ -1714,7 +1720,7 @@ export const en: Messages = {
       moveUp: "Move the scene “{title}” up",
       moveDown: "Move the scene “{title}” down",
       moved: "Scene “{title}” moved to position {n}.",
-      templateHint: "The template’s slots are sections of the screenplay. Every scene starts in the first one: place them with the “Move to” menu, the arrows, or by dragging.",
+      templateHint: "The template’s slots are sections of the screenplay. Every scene starts in the first one: place them with “Arrange”, the arrows, or by dragging.",
       noSection: "Before the sections",
     },
   },
@@ -2341,6 +2347,7 @@ export const en: Messages = {
 
   book: {
     pageKind: "Page type",
+    sceneProps: "Scene type, status and point of view",
     scene: "Story scene",
     kinds: {
       titre: "Title page",

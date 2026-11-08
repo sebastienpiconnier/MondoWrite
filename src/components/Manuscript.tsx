@@ -39,7 +39,8 @@ import { commentIdsIn, openCount } from "../comments";
 import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
 import type { SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
-import { ReaderBar } from "./ReaderBar";
+import { ReaderBar, useReaderItems } from "./ReaderBar";
+import { SynopsesToggle, useSceneSynopses } from "./SynopsesToggle";
 import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
@@ -49,7 +50,7 @@ import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } 
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
 import { countWords, detectCards, orphanTexts } from "../manuscript";
 import { Chutier } from "./Chutier";
-import { FocusBar, FocusCounter, useFocusChrome } from "./FocusBar";
+import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
 import { FOCUS_COLUMN_EM } from "../focusText";
 import type { Passage } from "../chutier";
 import { plainText } from "../search";
@@ -379,6 +380,9 @@ export function Manuscript() {
     const from = here && here.id === current ? ed.state.selection.$from.index(0) : (scene?.first ?? 0);
     startReading(ed, proseUtterances(nodes, from));
   };
+  // « Écouter » et « Voix de la lecture… » du menu ⋯ (#54), avant tout retour anticipé (c'est un hook).
+  const readerItems = useReaderItems(startListening);
+  const synopses = useSceneSynopses();
 
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
   const words = (n: number) => fmt(new Intl.PluralRules(lang).select(n) === "one" ? m.wordsOne : m.wordsMany, { n: num(n) });
@@ -582,6 +586,7 @@ export function Manuscript() {
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
+        <SynopsesToggle />
         {narrators.length > 0 && (
           <label className="ms-pov-filter">
             <span>{m.povFilter}</span>
@@ -769,6 +774,12 @@ export function Manuscript() {
                         })}
                       </span>
                     )}
+                    {/* Synopsis sous la scène, comme dans le Scénario (#58), seulement s'il est demandé. */}
+                    {synopses && c && !pageLabel(id) && (
+                      <div className="sp-scene-synopsis">
+                        <SynopsisField value={c.fiche?.synopsis ?? ""} scene={name} onSave={(text) => useCosmos.getState().setFiche(id, "synopsis", text)} ia={c.ia?.includes("synopsis")} />
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -817,23 +828,10 @@ export function Manuscript() {
               aria-label={m.sceneTitle}
               onChange={(e) => updateCard(current, { title: e.target.value })}
             />
-            <label className="ms-kind">
-              <span className="sr-only">{b.pageKind}</span>
-              <select value={pageKind ?? ""} onChange={(e) => setPageKind(e.target.value)} title={b.pageKind}>
-                <option value="">{b.scene}</option>
-                {PAGE_KINDS.map((k) => (
-                  <option key={k} value={k}>
-                    {b.kinds[k]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {!pageKind && <SceneStatusPicker card={card} />}
-            {!pageKind && <PovPicker card={card} />}
-            <button type="button" className="ghost-button ms-start-chapter" aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onClick={() => setFocusMode(true)}>
-              {t.focus.enter}
-            </button>
-            <ReaderBar buttonClass="ghost-button ms-start-chapter" onStart={startListening} />
+            {/* Une seule ligne au-dessus de la page (#54) : type de page, statut et point de vue sont dans l'onglet
+                « Scène » de la colonne de droite ; Écouter et les voix dans le menu ⋯. */}
+            <FocusButton className="icon-button" title={`${t.focus.enter} (${key("Mod", "Shift", "F")})`} onClick={() => setFocusMode(true)} />
+            <ReaderBar menu buttonClass="ghost-button ms-start-chapter" onStart={startListening} />
             {/* Mode Atelier : trois pistes pour la suite de la scène (rien n'est écrit dans le manuscrit). */}
             {!pageKind && <DirectionsSuggest sceneId={current} title={title} text={plainText(manuscript[current] ?? "")} synopsis={card.fiche?.synopsis} />}
             {/* Un clic change ce que le compteur compte : la scène, son chapitre, tout le livre. */}
@@ -856,6 +854,8 @@ export function Manuscript() {
             {/* Le reste (1.11.1) : une seule rangée pour la barre, la corbeille en dernier et en rouge. */}
             <MoreMenu
               items={[
+                { label: t.focus.enter, hint: key("Mod", "Shift", "F"), onSelect: () => setFocusMode(true) },
+                ...readerItems,
                 !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
                 // Fusionner (#23) : la scène suivante du même chapitre rejoint celle-ci ; sa carte part à la corbeille.
                 !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
@@ -927,6 +927,26 @@ export function Manuscript() {
           />
         ) : (
         <>
+        {/* La scène elle-même (#54) : type de page, statut, point de vue, sortis de la barre au-dessus de la page. */}
+        <section className="sp-box ms-scene-props" aria-label={b.sceneProps}>
+          <label className="ms-kind">
+            <span className="sr-only">{b.pageKind}</span>
+            <select value={pageKind ?? ""} onChange={(e) => setPageKind(e.target.value)} title={b.pageKind}>
+              <option value="">{b.scene}</option>
+              {PAGE_KINDS.map((k) => (
+                <option key={k} value={k}>
+                  {b.kinds[k]}
+                </option>
+              ))}
+            </select>
+          </label>
+          {!pageKind && (
+            <span className="scene-pills">
+              <SceneStatusPicker card={card} />
+              <PovPicker card={card} />
+            </span>
+          )}
+        </section>
         <section className="sp-box">
           <h2 className="sp-box-title">{m.cited}</h2>
           {detected.length === 0 ? (

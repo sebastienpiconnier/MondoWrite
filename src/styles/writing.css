@@ -6,6 +6,12 @@
 .sq-inner { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 .sq-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .sq-total { margin-left: auto !important; }
+/* #55 : seconde ligne de l'en-tête du Plan et du séquencier, le gabarit puis ce qu'il raconte. */
+.sq-template-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; flex-basis: 100%; }
+.sq-template-row .plan-about { flex: 1 1 260px; }
+/* « Ranger » d'une scène : chapitre et case s'ouvrent sous elle. */
+.plan-arrange { display: inline-flex; align-items: center; gap: 6px; width: auto; min-height: 32px; padding: 0 10px; border: 1px solid var(--line); font-size: 0.8125rem; white-space: nowrap; }
+@media (pointer: coarse) { .plan-arrange { min-height: 44px; } }
 .sq-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.75rem; }
 .sq-total { margin: 0; font-size: 0.875rem; color: var(--ink-2); }
 .sq-total strong { font-family: var(--font-display); font-size: 1.125rem; color: var(--ink); }
@@ -115,6 +121,9 @@
 .ms-stats > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-height: 32px; cursor: pointer; list-style: none; }
 .ms-stats > summary::-webkit-details-marker { display: none; }
 .ms-stats > summary .sp-box-title { margin: 0; }
+.ms-chutier-fold > summary { display: flex; align-items: center; gap: 6px; min-height: 32px; margin: 0; cursor: pointer; }
+@media (pointer: coarse) { .ms-chutier-fold > summary { min-height: 44px; } }
+.ms-chutier-fold .ms-chutier-count { font-weight: 400; color: var(--ink-2); }
 .ms-stats-glance { margin-left: auto; font-size: 0.8125rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .ms-stats[open] > summary { margin-bottom: 8px; }
 @media (pointer: coarse) { .ms-stats > summary { min-height: 44px; align-items: center; } }
@@ -138,6 +147,7 @@
 .ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: 100%; font-size: 0.8125rem; color: var(--ink-2); }
 .ms-meta .icon-button { width: 36px; height: 36px; }
 .ms-meta .icon-button:disabled { opacity: 0.35; cursor: default; }
+.ms-meta .focus-button { border: 1px solid var(--line); }
 .ms-editor, .ms-editor:focus-visible { min-height: 50vh; outline: none; font: 19px/1.7 var(--font-text); color: var(--ink); cursor: text; }
 .ms-editor p { margin: 0 0 0.9em; }
 .ms-editor h2, .ms-editor h3 { font-family: var(--font-display); font-weight: 600; margin: 1.2em 0 0.4em; }
@@ -146,6 +156,10 @@
 .ms-scenes .ms-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .ms-total { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
 .ms-drag-hint { margin: 2px 0 8px; font-size: 0.75rem; color: var(--muted); }
+/* #58 : « Montrer les synopsis », en tête du volet des scènes (Manuscrit et Scénario). */
+.ms-synopses { display: flex; align-items: center; gap: 8px; min-height: 36px; margin: 0 0 6px; font-size: 0.8125rem; color: var(--ink-2); cursor: pointer; }
+.ms-synopses input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+@media (pointer: coarse) { .ms-synopses { min-height: 44px; } }
 /* Poignée de glisser : six points, visibles au survol et sur la scène en cours. */
 .ms-grip { flex: none; align-self: center; width: 8px; height: 14px; margin-right: -2px; opacity: 0.35; cursor: grab; background: radial-gradient(circle, currentColor 1.1px, transparent 1.3px) 0 0 / 4px 5px; }
 .ms-scenes button.is-current .ms-grip { opacity: 0.7; }
@@ -263,15 +277,7 @@ span.tl-cell.is-pov { cursor: default; }
   .sq-list:not(.is-cards) .plan-scene .plan-detail { grid-column: 1 / -1; grid-row: 2; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; }
   .sq-list:not(.is-cards) .plan-detail .sq-desc { margin: 2px 0 0; }
 }
-/* Flèches de déplacement : à la souris, seulement sur la scène survolée ou qui a le focus (le glisser reste) ;
-   au doigt, toujours là. */
-@media (min-width: 700px) and (hover: hover) and (pointer: fine) {
-  .sq-list:not(.is-cards) .plan-scene .sq-moves { opacity: 0; transition: opacity 0.12s; }
-  .sq-list:not(.is-cards) .plan-scene:hover .sq-moves { opacity: 1; }
-}
-@media (min-width: 700px) and (pointer: fine) {
-  .sq-list:not(.is-cards) .plan-scene:focus-within .sq-moves { opacity: 1; }
-}
+/* Flèches de déplacement toujours visibles, comme dans le séquencier (#55). */
 @media (min-width: 700px) and (pointer: fine) { .sq-list:not(.is-cards) .plan-scene .sq-moves .icon-button { width: 32px; height: 32px; } }
 @media (pointer: coarse) { .plan-meta .plan-to select { min-height: 44px; } .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 44px; height: 44px; } }
 .plan-add { display: flex; gap: 8px; }
@@ -415,12 +421,16 @@ span.tl-cell.is-pov { cursor: default; }
 .ms-add-page { display: block; margin-top: 12px; }
 .ms-add-page select { width: 100%; min-height: 44px; }
 .ms-start-chapter { width: auto; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); font-size: 0.8125rem; }
+/* #54 : la scène elle-même (type de page, statut, point de vue) en tête de l'onglet « Scène » de la colonne de droite. */
+.ms-scene-props { gap: 8px; }
+.ms-scene-props .ms-kind { display: block; align-self: stretch; margin: 0; }
+.ms-scene-props .ms-kind select { width: 100%; }
+/* Lecture à voix haute sans lecture en cours : un simple repère pour le panneau des voix, sans place dans la barre. */
+.reader.is-anchor { display: inline-block; width: 0; height: 36px; margin: 0 -4px; overflow: visible; }
 .ms-hint { margin: 4px 0 0; text-align: center; font-size: 0.75rem; color: var(--ink-2); }
 .ms-page { position: relative; }
 
 /* ---------- Raccourcis clavier et À propos ---------- */
-.settings-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
-.settings-links .link-button { min-height: 36px; }
 .app-dialog { width: min(760px, calc(100vw - 32px)); max-height: 88vh; padding: 22px 26px; border: 0; border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); overflow: auto; }
 .app-dialog::backdrop { background: var(--backdrop); }
 .app-dialog h2 { margin: 0 0 12px; font: 700 22px var(--font-display); }
@@ -455,7 +465,6 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .trash-list .ghost-button { min-height: 44px; }
 .ghost-button.is-danger { color: var(--danger); }
 .trash-purge { margin-top: 12px; color: var(--danger); }
-.settings-trash { width: 100%; justify-content: center; margin-top: 8px; }
 /* Message après une suppression, en bas de l'écran, au-dessus de toutes les vues. */
 .trash-notice { position: fixed; z-index: 30; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 8px)); transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; max-width: calc(100vw - 32px); padding: 6px 52px 6px 16px; border-radius: 12px; background: var(--strong-bg); color: var(--strong-fg); box-shadow: var(--shadow-pop); font-size: 0.875rem; }
 .trash-notice .ghost-button { min-height: 44px; background: transparent; color: var(--strong-fg); border-color: var(--strong-fg); }

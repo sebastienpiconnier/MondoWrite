@@ -127,6 +127,15 @@ describe("readPage : lecture arrêtée à la taille maximale", () => {
   });
 });
 
+/** #57 : le bouton ouvre le menu de l'app, puis « Réglages… » ouvre la fenêtre des réglages. */
+async function openPanel(host: HTMLElement) {
+  const button = host.querySelector<HTMLButtonElement>(".settings-button")!;
+  await act(async () => button.click());
+  const item = [...document.querySelectorAll<HTMLButtonElement>("[role=menuitem]")].find((b) => b.textContent?.startsWith(fr.settings.open) || b.textContent?.startsWith(en.settings.open))!;
+  await act(async () => item.click());
+}
+const closePanel = () => act(async () => void document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
+
 describe("Réglages : clé collée pendant le chargement des modèles, nouvel essai après un échec", () => {
   afterEach(() => vi.unstubAllGlobals());
 
@@ -139,8 +148,7 @@ describe("Réglages : clé collée pendant le chargement des modèles, nouvel es
     document.body.append(host);
     const root = createRoot(host);
     await act(async () => root.render(createElement(Settings, { project: false })));
-    const open = host.querySelector<HTMLButtonElement>(`button[aria-label="${useSettings.getState().lang === "en" ? en.settings.title : fr.settings.title}"]`)!;
-    await act(async () => open.click());
+    await openPanel(host);
     const testButton = [...host.querySelectorAll("button")].find((b) => b.textContent === fr.ai.test || b.textContent === en.ai.test)!;
     await act(async () => testButton.click());
     // Pendant la requête, l'auteur colle une nouvelle clé.
@@ -163,15 +171,14 @@ describe("Réglages : clé collée pendant le chargement des modèles, nouvel es
     document.body.append(host);
     const root = createRoot(host);
     await act(async () => root.render(createElement(Settings, { project: false })));
-    const open = () => host.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
-    await act(async () => open().click());
+    await openPanel(host);
     await act(async () => new Promise((r) => setTimeout(r, 0)));
     const calls = fetchMock.mock.calls.length;
     expect(calls).toBeGreaterThan(0);
     const status = host.querySelector('[role="status"]')!.textContent ?? "";
     expect(status.startsWith(fr.ai.listFailed.split(" :")[0]) || status.startsWith(en.ai.listFailed.split(":")[0])).toBe(true);
-    await act(async () => open().click()); // fermer
-    await act(async () => open().click()); // rouvrir
+    await closePanel();
+    await openPanel(host);
     await act(async () => new Promise((r) => setTimeout(r, 0)));
     expect(fetchMock.mock.calls.length).toBeGreaterThan(calls);
     await act(async () => root.unmount());

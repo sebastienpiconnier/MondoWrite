@@ -162,3 +162,16 @@ export function FocusCounter({ text, words, num }: { text: string; words: number
   );
 }
 
+
+/** Bouton « Mode focus » des barres d'écriture (#54) : une icône seule (deux coins qui s'écartent), le nom et le
+ *  raccourci dans l'infobulle et pour le lecteur d'écran. Il reste dans la barre : c'est le geste d'écriture. */
+export function FocusButton({ className, title, onClick }: { className: string; title: string; onClick: () => void }) {
+  const t = useT();
+  return (
+    <button type="button" className={`${className} focus-button`} aria-label={t.focus.enter} title={title} aria-keyshortcuts="Control+Shift+F Meta+Shift+F" onPointerDown={(e) => e.preventDefault()} onClick={onClick}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      </svg>
+    </button>
+  );
+}
