@@ -162,7 +162,15 @@
     overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch;
   }
   .format-dock [role="toolbar"]::-webkit-scrollbar { display: none; }
-  .format-dock.has-more [role="toolbar"] { mask-image: linear-gradient(to right, black calc(100% - 36px), transparent); }
+  /* Des boutons cachés d'un côté : une flèche de ce côté, sur un fondu de la barre (elle fait défiler au toucher). */
+  .format-dock-row { position: relative; }
+  .format-dock-arrow {
+    position: absolute; top: 0; bottom: 0; z-index: 1; display: grid; place-items: center; width: 44px; padding: 0; border: 0;
+    color: var(--ink); cursor: pointer;
+  }
+  .format-dock-arrow.is-more { right: 0; padding-left: 12px; background: linear-gradient(to right, transparent, var(--surface) 12px); }
+  .format-dock-arrow.is-back { left: 0; padding-right: 12px; background: linear-gradient(to left, transparent, var(--surface) 12px); }
+  .format-dock-arrow.is-back svg { transform: scaleX(-1); }
   .format-dock [role="toolbar"] button { flex: none; min-width: 44px; height: 44px; }
   /* Variantes de l'Atelier : au-dessus des boutons, la place qu'il reste au-dessus du clavier. */
   .format-dock .atelier-variants { max-height: 40dvh; overflow-y: auto; margin: 0; padding: 4px 4px 0; }

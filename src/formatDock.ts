@@ -6,9 +6,20 @@
 /** Boutons qui n'agissent que sur une sélection : sans texte choisi, la barre du clavier ne les montre pas. */
 export const SELECTION_ONLY: ReadonlySet<string> = new Set(["comment", "chutier"]);
 
-/** Les boutons de la barre du clavier : tous, sauf ceux qui demandent une sélection quand il n'y en a pas. */
+/**
+ * Les boutons de la barre du clavier. Là où l'on peut commenter (texte d'une scène), « à reprendre » n'y est pas :
+ * sur un téléphone, les deux faisaient doublon (demande de l'auteur, novembre 2026) ; le raccourci et la bulle de
+ * l'ordinateur le gardent. Sans sélection, ni Commenter ni Chutier.
+ */
 export function dockActions<A extends { key: string }>(actions: A[], hasSelection: boolean): A[] {
-  return hasSelection ? actions : actions.filter((a) => !SELECTION_ONLY.has(a.key));
+  const canComment = actions.some((a) => a.key === "comment");
+  const kept = canComment ? actions.filter((a) => a.key !== "revisit") : actions;
+  return hasSelection ? kept : kept.filter((a) => !SELECTION_ONLY.has(a.key));
+}
+
+/** Bords de la rangée : des boutons cachés à gauche (`before`) ou à droite (`more`), à 2 px près. */
+export function rowEdges(scrollLeft: number, clientWidth: number, scrollWidth: number): { before: boolean; more: boolean } {
+  return { before: scrollLeft > 2, more: scrollLeft + clientWidth < scrollWidth - 2 };
 }
 
 /** Marge gardée entre le curseur et le haut de la barre, en pixels. */

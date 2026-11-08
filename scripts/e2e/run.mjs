@@ -1254,6 +1254,11 @@ const scenarios = [
       assert((await dock.getByRole("button", { name: /^Commenter le passage/ }).count()) === 0, "Commenter est proposé sans sélection");
       for (let i = 0; i < "encore".length; i++) await page.keyboard.press("Shift+ArrowLeft");
       await until(() => dock.getByRole("button", { name: /^Commenter le passage/ }).isVisible(), "Commenter n'arrive pas dans la barre avec une sélection");
+      assert((await dock.getByRole("button", { name: /^À reprendre/ }).count()) === 0, "« à reprendre » double Commenter dans la barre du clavier");
+      // La flèche de droite fait défiler la rangée (et celle de gauche paraît).
+      await dock.getByRole("button", { name: "Autres boutons de mise en forme" }).tap();
+      await until(() => dock.getByRole("button", { name: "Revenir aux premiers boutons" }).isVisible(), "la flèche ne fait pas défiler la rangée");
+      await until(() => editor.evaluate((el) => el.contains(document.activeElement)), "la flèche retire le focus du texte");
       assert((await page.locator(".format-bar:not(.format-dock)").count()) === 0, "une bulle paraît sur la sélection");
       // La rangée défile de côté : son dernier bouton entre dans l'écran.
       const last = await dock.locator("[role=toolbar]").evaluate((bar) => {

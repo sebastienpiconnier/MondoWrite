@@ -185,8 +185,7 @@ export function FormatBar({ editor, atelier = "", ...options }: { editor: Editor
   const docked = usePhone() && isTouch();
   if (docked)
     return (
-      <FormatDock editor={editor}>
-        {ia.panel}
+      <FormatDock editor={editor} panel={ia.panel}>
         <FormatButtons actions={dockActions([...actions, ...ia.actions], hasSelection)} />
       </FormatDock>
     );

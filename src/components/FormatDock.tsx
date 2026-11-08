@@ -6,7 +6,15 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/react";
-import { hiddenCaret } from "../formatDock";
+import { hiddenCaret, rowEdges } from "../formatDock";
+import { useT } from "../i18n";
+
+/** Chevron dessiné en trait d'encre (comme `.disclosure`), vers la droite ; retourné pour la gauche. */
+const CHEVRON = (
+  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 3.5 10.5 8 6 12.5" />
+  </svg>
+);
 
 /**
  * Où poser la barre : dans la fenêtre ouverte qui contient l'éditeur (une fenêtre native est au premier plan, une
@@ -42,9 +50,18 @@ function keepCaretAbove(editor: Editor, dock: HTMLElement | null) {
   else window.scrollBy({ top: delta });
 }
 
-export function FormatDock({ editor, children }: { editor: Editor; children: ReactNode }) {
+/** `panel` : ce qui s'ouvre au-dessus des boutons (variantes de l'Atelier) ; `children` : la rangée de boutons. */
+export function FormatDock({ editor, panel, children }: { editor: Editor; panel?: ReactNode; children: ReactNode }) {
+  const f = useT().format;
   const [host, setHost] = useState<HTMLElement | null>(() => (editor.isFocused ? hostOf(editor) : null));
+  const [edges, setEdges] = useState({ before: false, more: false });
   const dock = useRef<HTMLDivElement>(null);
+  const toolbar = () => dock.current?.querySelector<HTMLElement>("[role=toolbar]") ?? null;
+  // Une flèche fait défiler la rangée d'un écran presque entier ; le texte garde le focus (clavier ouvert).
+  const slide = (dir: 1 | -1) => {
+    const bar = toolbar();
+    bar?.scrollBy({ left: dir * Math.max(88, bar.clientWidth - 88), behavior: "smooth" });
+  };
 
   useEffect(() => {
     const onFocus = () => setHost(hostOf(editor));
@@ -62,10 +79,12 @@ export function FormatDock({ editor, children }: { editor: Editor; children: Rea
     // Les vues gardent la hauteur de la barre en marge du bas (phone.css), comme celle du clavier.
     const root = document.documentElement;
     root.dataset.formatDock = "open";
-    // D'autres boutons à droite, hors de l'écran : le bord de la rangée s'estompe, pour dire qu'elle défile.
-    const bar = dock.current?.querySelector<HTMLElement>("[role=toolbar]");
+    // Des boutons hors de l'écran : une flèche de ce côté-là, pour dire que la rangée défile (et y aller au doigt).
+    const bar = toolbar();
     const more = () => {
-      if (bar) dock.current?.classList.toggle("has-more", bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 2);
+      if (!bar) return;
+      const next = rowEdges(bar.scrollLeft, bar.clientWidth, bar.scrollWidth);
+      setEdges((e) => (e.before === next.before && e.more === next.more ? e : next));
     };
     let frame = 0;
     const keep = () => {
@@ -94,8 +113,21 @@ export function FormatDock({ editor, children }: { editor: Editor; children: Rea
 
   if (!host) return null;
   return createPortal(
-    <div ref={dock} className="format-bar format-dock nodrag nopan">
-      {children}
+    <div ref={dock} className={`format-bar format-dock nodrag nopan${edges.more ? " has-more" : ""}${edges.before ? " has-before" : ""}`}>
+      {panel}
+      <div className="format-dock-row">
+        {children}
+        {edges.before && (
+          <button type="button" className="format-dock-arrow is-back" aria-label={f.scrollBack} title={f.scrollBack} onPointerDown={(e) => e.preventDefault()} onClick={() => slide(-1)}>
+            {CHEVRON}
+          </button>
+        )}
+        {edges.more && (
+          <button type="button" className="format-dock-arrow is-more" aria-label={f.scrollMore} title={f.scrollMore} onPointerDown={(e) => e.preventDefault()} onClick={() => slide(1)}>
+            {CHEVRON}
+          </button>
+        )}
+      </div>
     </div>,
     host,
   );

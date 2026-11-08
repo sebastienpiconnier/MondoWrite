@@ -2643,6 +2643,8 @@ export const fr = {
     italicGlyph: "I",
     strikeGlyph: "S",
     headingGlyph: "T",
+    scrollMore: "Autres boutons de mise en forme",
+    scrollBack: "Revenir aux premiers boutons",
   },
 
   // Galerie de photos d'une fiche de la Bible.
