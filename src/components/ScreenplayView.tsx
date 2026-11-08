@@ -45,6 +45,8 @@ import { GapCursor } from "@tiptap/pm/gapcursor";
 import type { ResolvedPos } from "@tiptap/pm/model";
 import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
+import { eighthsBetween } from "../screenplay/eighths";
+import { SceneLength } from "./SceneLength";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
 import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { EditorContent, type Editor } from "@tiptap/react";
@@ -1144,7 +1146,12 @@ export function ScreenplayView() {
                 </span>
                 {statusCards.get(s.cardId ?? "") && <StatusDot card={statusCards.get(s.cardId!)!} />}
                 {pagination && pagination.startPage[s.index] !== undefined && (
-                  <span className="sp-towrite">{fmt(sp.pageShort, { n: pagination.startPage[s.index] })}</span>
+                  <span className="sp-towrite">
+                    {fmt(sp.pageShort, { n: pagination.startPage[s.index] })}
+                    {/* Longueur en huitièmes de page (#44). */}
+                    {eighthsBetween(pagination, s.index, s.end) > 0 && " · "}
+                    <SceneLength eighths={eighthsBetween(pagination, s.index, s.end)} template="{n}" />
+                  </span>
                 )}
               </button>
               {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}

@@ -277,6 +277,7 @@ src/
     CharacterAnswers.tsx  Réponses aux questions de l'assistant (`reponses`), repliées sous la fiche d'un personnage, modifiables
     SceneDraft.tsx      Texte d'une scène vu depuis sa carte : aperçu (canevas, Bible), éditeur du manuscrit dans la carte agrandie, synopsis en filigrane
     ScriptSceneEditor.tsx  Une scène du scénario écrite dans sa carte agrandie : éditeur au format standard limité au corps de la scène, synopsis Fountain
+    SceneLength.tsx     Longueur d'une scène en huitièmes (#44) : « 1 2/8 p. » à l'écran, en toutes lettres pour un lecteur d'écran ; `useSceneEighths` (scénario entier, par carte) pour le séquencier, la liste des scènes et le dépouillement
     SceneStatusPicker.tsx  Statut d'une scène (pastille, menu déroulant) et sa pastille seule pour les listes
     CommentsPanel.tsx   Onglet « Commentaires » de la colonne de droite (Manuscrit et Scénario) : citation qui mène au passage, texte modifiable, Résoudre, « Résolus · N », Supprimer (annulable)
     commentMark.ts      Marque TipTap `comment` du texte des scènes, `markComment` (sélection d'une seule scène), `commentRange`, `commentStyle` (surlignage des seuls commentaires ouverts)
@@ -324,6 +325,7 @@ src/
     scenes.ts           Lecture par scènes : liste, personnages qui parlent, décor
     layout.ts           Gabarit de page (Letter, A4) : source unique pour le compteur et le futur PDF
     paginate.ts         Estimation des pages par comptage de lignes
+    eighths.ts          Longueur d'une scène en huitièmes de page (#44) : `eighthsOf` (arrondi au huitième supérieur, au moins 1/8), `formatEighths` (« 3/8 », « 1 », « 1 2/8 »), `eighthsByCard`, lignes de paginate.ts (fonctions pures)
     sequence.ts         Blocs (scènes, sections) et déplacement d'une scène entière
     sceneText.ts        Corps d'une scène (après en-tête et synopsis, jusqu'à la scène ou la section suivante), aperçu en texte
     template.ts         Gabarits du séquencier : cases = sections Fountain marquées [[cosmos:beat:<clé>]]

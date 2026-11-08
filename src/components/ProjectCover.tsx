@@ -198,7 +198,7 @@ function Volume() {
     return (
       <div className="pitch-volume">
         <span className="pitch-key">{p.volume}</span>
-        <span>{fmt(p.volumePages, { pages: num(pages), minutes: num(minutesFor(pages)) })}</span>
+        <span>{fmt(pages === 1 ? p.volumePageOne : p.volumePages, { pages: num(pages), minutes: num(minutesFor(pages)) })}</span>
       </div>
     );
   }

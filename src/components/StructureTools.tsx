@@ -6,6 +6,7 @@
 // - RetroInvite : invitation après l'import d'un manuscrit.
 // Rien n'entre dans le projet sans un clic de l'auteur ; chaque acceptation est une étape d'historique.
 
+import { SceneLength, useSceneEighths } from "./SceneLength";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -356,6 +357,7 @@ export function BreakdownSheet({ card }: { card: CardData }) {
   const filled = BREAKDOWN_FIELDS.filter((f) => card.fiche?.[f]?.trim()).length;
   const [open, setOpen] = useState(filled > 0);
   const job = useBreakdownRun();
+  const eighths = useSceneEighths().get(card.id) ?? 0;
   return (
     <section className="sheet breakdown-sheet" aria-label={s.breakdownTitle}>
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
@@ -365,6 +367,12 @@ export function BreakdownSheet({ card }: { card: CardData }) {
       </button>
       {open && (
         <div id={`${id}-fields`}>
+          {/* Longueur de la scène en huitièmes de page (#44), l'unité du dépouillement. */}
+          {eighths > 0 && (
+            <p className="breakdown-length">
+              <SceneLength eighths={eighths} template={t.screenplay.sceneLength} />
+            </p>
+          )}
           <p className="gallery-hint">{s.breakdownHint}</p>
           <div className="sheet-fields">
             {BREAKDOWN_FIELDS.map((key) => (
@@ -406,6 +414,7 @@ export function BreakdownStats() {
   const nodes = useCosmos((st) => st.nodes);
   const screenplay = useCosmos((st) => st.screenplay);
   const job = useBreakdownRun();
+  const eighths = useSceneEighths();
   // Scènes dans l'ordre du scénario.
   const scenes = useMemo(() => {
     const order = (screenplay?.elements ?? []).flatMap((el) => (el.type === "sceneHeading" && el.cardId ? [el.cardId] : []));
@@ -454,13 +463,23 @@ export function BreakdownStats() {
                 {byCategory[field].map((row) => (
                   <li key={row.entry}>
                     <strong>{row.entry}</strong>
-                    <span className="muted"> · {row.scenes.length === 1 ? s.breakdownSceneOne : fmt(s.breakdownSceneCount, { n: row.scenes.length })} </span>
+                    <span className="muted"> · {row.scenes.length === 1 ? s.breakdownSceneOne : fmt(s.breakdownSceneCount, { n: row.scenes.length })}</span>
+                    {/* Pages où l'entrée paraît, en huitièmes : la somme de ses scènes. */}
+                    {row.scenes.length > 1 && row.scenes.some((id) => (eighths.get(id) ?? 0) > 0) && (
+                      <>
+                        <span className="muted"> · </span>
+                        <SceneLength className="muted" eighths={row.scenes.reduce((sum, id) => sum + (eighths.get(id) ?? 0), 0)} />
+                      </>
+                    )}
+                    <span className="muted"> </span>
                     {row.scenes.map((id, i) => (
                       <span key={id}>
                         {i > 0 && s.listSep}
                         <button type="button" className="link-button" aria-label={fmt(s.openScene, { title: titleOf(id) })} onClick={() => open(id)}>
                           {titleOf(id)}
                         </button>
+                        {(eighths.get(id) ?? 0) > 0 && " "}
+                        <SceneLength className="muted" eighths={eighths.get(id) ?? 0} template="({n})" />
                       </span>
                     ))}
                   </li>
