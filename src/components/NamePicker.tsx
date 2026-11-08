@@ -32,16 +32,20 @@ export function NamePicker() {
   const [round, setRound] = useState(() => Math.floor(Math.random() * 1e9));
   const [list, setList] = useState<NameList | null>(null);
   const [register, setRegister] = useState<NameRegister | null>(null);
+  // Registre lu (ou absent) : avant, les noms tirés sans lui changeaient sous le doigt à son arrivée.
+  const [registerRead, setRegisterRead] = useState(false);
   const [era, setEra] = useState<number | null>(null);
 
   useEffect(() => {
     let live = true;
     setList(null);
     setRegister(null);
+    setRegisterRead(false);
     setEra(null);
     loadRegister(country).then((r) => {
       if (!live) return;
       setRegister(r);
+      setRegisterRead(true);
       // L'âge de la fiche (à la date d'aujourd'hui) propose la décennie de naissance ; l'auteur peut la changer.
       if (r && target?.age) setEra(eraForAge(target.age, new Date().getFullYear(), r));
     });
@@ -54,7 +58,7 @@ export function NamePicker() {
   }, [country]);
 
   const taken = useMemo(() => titles.filter((n) => n.data.type === "personnage").map((n) => n.data.title), [titles]);
-  const names = useMemo(() => (list ? pickNames({ list, gender, kind, count: COUNT, taken, rand: seeded(round), register, era }) : []), [list, gender, kind, taken, round, register, era]);
+  const names = useMemo(() => (list && registerRead ? pickNames({ list, gender, kind, count: COUNT, taken, rand: seeded(round), register, era }) : []), [list, registerRead, gender, kind, taken, round, register, era]);
   const more = useCallback(() => setRound((r) => r + 1), []);
 
   if (!target) return null;

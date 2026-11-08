@@ -27,6 +27,14 @@ export const isPalette = (v: unknown): v is Palette => (PALETTES as readonly unk
 export type WheelMode = "pan" | "zoom";
 /** Présentation du séquencier : en liste ou en fiches. */
 export type SequencerMode = "outline" | "cards";
+/** Aides qui s'effacent une fois apprises (#59) : consigne du canevas, touches du scénario (voir learn.ts). */
+export const LEARNED_HINTS = ["canvasHint", "screenplayKeys"] as const;
+export type LearnedHint = (typeof LEARNED_HINTS)[number];
+/** Relit la liste des aides apprises : seules les clés connues, sans doublon. */
+export function readLearned(raw: unknown): LearnedHint[] {
+  if (!Array.isArray(raw)) return [];
+  return LEARNED_HINTS.filter((k) => raw.includes(k));
+}
 
 /**
  * IA facultative : service choisi, et pour chaque service sa clé, son modèle et son adresse.
@@ -151,6 +159,14 @@ interface SettingsState {
   /** Ruban du récit coloré par narrateur (point de vue des scènes), 1.13.0. */
   ribbonPov: boolean;
   setRibbonPov: (on: boolean) => void;
+  /** Synopsis sous chaque scène du volet des scènes (Manuscrit et Scénario, #58) ; non par défaut. */
+  sceneSynopses: boolean;
+  setSceneSynopses: (on: boolean) => void;
+  /** Aides déjà apprises (#59) : la consigne du canevas, les touches du scénario… ne s'affichent plus. */
+  learned: LearnedHint[];
+  learn: (hint: LearnedHint) => void;
+  /** Toutes les aides reviennent (menu Aide). */
+  unlearnAll: () => void;
   wheelMode: WheelMode;
   setWheelMode: (mode: WheelMode) => void;
   setSequencerMode: (mode: SequencerMode) => void;
@@ -236,7 +252,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; sceneSynopses?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -264,6 +280,11 @@ export const useSettings = create<SettingsState>((set) => ({
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   ribbonPov: saved.ribbonPov === true,
   setRibbonPov: (ribbonPov) => set({ ribbonPov }),
+  sceneSynopses: saved.sceneSynopses === true,
+  setSceneSynopses: (sceneSynopses) => set({ sceneSynopses }),
+  learned: readLearned(saved.learned),
+  learn: (hint) => set((s) => (s.learned.includes(hint) ? s : { learned: [...s.learned, hint] })),
+  unlearnAll: () => set({ learned: [] }),
   wheelMode: saved.wheelMode === "zoom" ? "zoom" : "pan",
   setWheelMode: (wheelMode) => set({ wheelMode }),
   profile: initialProfile,
@@ -319,7 +340,7 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -335,7 +356,7 @@ export function initSettings() {
     else delete root.dataset.pageZoomed;
     try {
       const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

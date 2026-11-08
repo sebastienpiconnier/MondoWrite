@@ -62,6 +62,7 @@
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 .sp-bar-hint { padding: 0 10px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .sp-focus { border: 1px solid var(--line) !important; }
+.sp-bar .focus-button { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; padding: 0 10px; }
 /* Options du scénario (numéros, soulignement) : à droite de la barre, avant le mode focus. */
 .sp-option { border: 1px solid var(--line) !important; }
 .sp-bar-hint + .sp-option { margin-left: auto; }

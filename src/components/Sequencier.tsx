@@ -16,7 +16,7 @@ import { useEpisodeLabel } from "./EpisodePicker";
 import { episodeAt, episodeScript, isSeries, seriesMark, withEpisodeTemplate, seriesOf, type Episode, type Season } from "../screenplay/series";
 import { isSeries as isSeriesPitch } from "../review/checks";
 import { formOf } from "../pitch";
-import { useSettings, type SequencerMode } from "../settings";
+import { useSettings } from "../settings";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { blocks, moveBlock } from "../screenplay/sequence";
@@ -32,11 +32,11 @@ import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
+import { ArrangeToggle, PlanHeader } from "./PlanHeader";
 import { useBeatText } from "./useBeatText";
 import { BeatQuestion } from "./StructureTools";
 import { StoryCircle } from "./StoryCircle";
 
-const MODES: SequencerMode[] = ["outline", "cards"];
 
 /** Téléphone : le plan se lit en liste seulement (les fiches n\u2019y tiennent pas). */
 const phoneSq = () => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
@@ -47,7 +47,6 @@ export function Sequencier() {
   const sq = sp.sequencer;
   const lang = useSettings((s) => s.lang);
   const mode = useSettings((s) => s.sequencerMode);
-  const setMode = useSettings((s) => s.setSequencerMode);
   // Toute la série : saisons, épisodes et scènes (screenplay/series.ts).
   const screenplay = useCosmos((s) => s.screenplay);
   const pitch = useCosmos((s) => s.pitch);
@@ -74,6 +73,8 @@ export function Sequencier() {
   const [announce, setAnnounce] = useState("");
   // Chronologie : même tableau que dans le Plan d'un roman (une colonne par scène, une ligne par intrigue, personnage ou lieu).
   const [timeline, setTimeline] = useState(false);
+  // La scène dont « Ranger » est ouvert (rang de son en-tête) : un affichage, une seule à la fois (#55).
+  const [arranging, setArranging] = useState<number | null>(null);
   // Après un déplacement au clavier, le focus suit la scène.
   const listRef = useRef<HTMLOListElement>(null);
   const refocus = useRef<{ index: number; way: "up" | "down" } | null>(null);
@@ -208,52 +209,47 @@ export function Sequencier() {
   return (
     <div className="sequencer">
       <div className={`sq-inner${cards || timeline ? " is-cards" : ""}`}>
-        <header className="sq-head">
-          <h1>{sq.title}</h1>
-          <div className="sq-modes" role="group" aria-label={sq.modeAria}>
-            {MODES.map((m) => (
-              <button
-                key={m}
-                type="button"
-                aria-pressed={!timeline && mode === m}
-                onClick={() => {
-                  setMode(m);
-                  setTimeline(false);
-                }}
-              >
-                {sq[m]}
+        {/* Même en-tête que le Plan d'un roman (#55) : seuls le vocabulaire et les actions changent. */}
+        <PlanHeader
+          title={sq.title}
+          timeline={timeline}
+          onTimeline={setTimeline}
+          modeAria={sq.modeAria}
+          actions={
+            <>
+              <button type="button" className="ghost-button plan-organize" title={t.organize.hint} onClick={() => useCosmos.getState().organizeCanvas()}>
+                {t.organize.button}
               </button>
-            ))}
-            <button type="button" className="plan-timeline-tab" aria-pressed={timeline} onClick={() => setTimeline(true)}>
-              {t.plan.timeline}
-            </button>
-          </div>
-          {offerSeries && (
-            <div className="sq-series-add">
-              <button type="button" className="ghost-button" onClick={() => useCosmos.getState().addSeriesEpisode()}>
-                + {ts.newEpisode}
-              </button>
-              {inSeries && (
-                <button type="button" className="ghost-button" onClick={() => useCosmos.getState().addSeriesSeason()}>
-                  + {ts.newSeason}
-                </button>
+              {offerSeries && (
+                <div className="sq-series-add">
+                  <button type="button" className="ghost-button" onClick={() => useCosmos.getState().addSeriesEpisode()}>
+                    + {ts.newEpisode}
+                  </button>
+                  {inSeries && (
+                    <button type="button" className="ghost-button" onClick={() => useCosmos.getState().addSeriesSeason()}>
+                      + {ts.newSeason}
+                    </button>
+                  )}
+                </div>
               )}
-            </div>
-          )}
-          {!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
-          {pagination.pages > 0 && (
-            <p className="sq-total">
-              <strong>{fmt(sp.minutes, { n: minutesFor(pagination.pages) })}</strong> ·{" "}
-              {plural(pagination.pages, sp.pagesOne, sp.pagesMany)}
-            </p>
-          )}
-        </header>
+            </>
+          }
+          total={
+            pagination.pages > 0 && (
+              <p className="sq-total">
+                <strong>{fmt(sp.minutes, { n: minutesFor(pagination.pages) })}</strong> ·{" "}
+                {plural(pagination.pages, sp.pagesOne, sp.pagesMany)}
+              </p>
+            )
+          }
+          template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
+          about={template && !inSeries ? t.plan.templateAbout[template] : undefined}
+        />
         {timeline ? (
           <Timeline order={sceneCards} />
         ) : (
           <>
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : inSeries ? <p className="sp-empty">{ts.hint}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
-        {template && !inSeries && <p className="plan-about">{t.plan.templateAbout[template]}</p>}
         {template && !inSeries && <p className="sp-empty">{sq.templateHint}</p>}
         {template === "cercleHarmon" && (
           <StoryCircle
@@ -489,7 +485,7 @@ export function Sequencier() {
                     </ul>
                   )}
                 </div>
-                {sections.length > 0 && (
+                {sections.length > 0 && arranging === block.start && (
                   <label className="plan-to">
                     <span className="sr-only">{fmt(t.plan.moveTo, { title })}</span>
                     <span aria-hidden="true">{t.plan.moveToShort}</span>
@@ -513,6 +509,7 @@ export function Sequencier() {
                 </div>
                 {/* Écrire la scène ; voir sa carte et la corbeille dans un menu (1.11.1). */}
                 <div className="sq-go">
+                  {sections.length > 0 && <ArrangeToggle open={arranging === block.start} title={title} onToggle={() => setArranging(arranging === block.start ? null : block.start)} />}
                   <button
                     type="button"
                     className="icon-button"

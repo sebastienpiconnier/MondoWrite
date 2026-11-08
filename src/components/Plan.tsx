@@ -12,13 +12,14 @@ import { SynopsisField } from "./SynopsisField";
 import { novelSceneText } from "./Atelier";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, planScenes } from "../store";
-import { useSettings, type SequencerMode } from "../settings";
+import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { NOVEL_TEMPLATES, arrange, chapterNumbers, chapterOf, groupByChapter, isPlanTemplate, type Chapter, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
 import { Timeline } from "./Timeline";
 import { StoryCircle } from "./StoryCircle";
 import { TemplatePicker } from "./TemplatePicker";
+import { ArrangeToggle, PlanHeader } from "./PlanHeader";
 import { useBeatText } from "./useBeatText";
 import { BeatQuestion } from "./StructureTools";
 
@@ -27,7 +28,6 @@ const UNPLACED = "";
 /** Valeurs du menu « Chapitre » : aucun, ou un nouveau qui commence à cette scène. */
 const NO_CHAPTER = "";
 const NEW_CHAPTER = "+";
-const MODES: SequencerMode[] = ["outline", "cards"];
 
 /** Téléphone : le plan se lit en liste seulement (les fiches n\u2019y tiennent pas). */
 const phoneSq = () => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
@@ -38,9 +38,7 @@ export function Plan() {
   const lang = useSettings((s) => s.lang);
   // Même réglage d'appareil que le séquencier : liste ou fiches.
   const mode = useSettings((s) => s.sequencerMode);
-  const setMode = useSettings((s) => s.setSequencerMode);
   const asCards = !phoneSq() && mode === "cards";
-  const sq = t.screenplay.sequencer;
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
   const setPlanTemplate = useCosmos((s) => s.setPlanTemplate);
@@ -73,6 +71,8 @@ export function Plan() {
   const [announce, setAnnounce] = useState("");
   // Chronologie par intrigue : une troisième lecture du plan, non mémorisée.
   const [timeline, setTimeline] = useState(false);
+  // La scène dont « Ranger » est ouvert (chapitre et case) : un affichage, une seule à la fois.
+  const [arranging, setArranging] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   // Après un déplacement au clavier, le focus suit la scène.
@@ -150,6 +150,8 @@ export function Plan() {
     const title = titleOf(id);
     const text = card.html ? plainText(card.html) : "";
     const at = order.indexOf(id);
+    // Chapitre (scène rangée) ou case du gabarit : de quoi la ranger, derrière le bouton « Ranger ».
+    const canArrange = beat !== null || !free;
     return (
       <li
         key={id}
@@ -206,8 +208,13 @@ export function Plan() {
               atelier={{ sceneId: id, text: novelSceneText(id) }}
             />
             {!card.fiche?.synopsis && text && <p className="sq-desc">{text.length > 160 ? `${text.slice(0, 160)}…` : text}</p>}
-            {/* Chapitre, case et statut ensemble sous le titre (1.11.2) : le titre garde toute la ligne. */}
-            <div className="plan-meta">
+            {/* Statut et point de vue toujours là ; chapitre et case derrière « Ranger » (#55), comme le séquencier. */}
+            <div className="scene-pills">
+              <SceneStatusPicker card={card} />
+              <PovPicker card={card} />
+            </div>
+            {canArrange && arranging === id && (
+            <div className="plan-meta" id={`arrange-${id}`}>
               {beat !== null && (
                 <label className="plan-to">
                   <span className="sr-only">{fmt(c.chooseFor, { title })}</span>
@@ -245,12 +252,12 @@ export function Plan() {
                   </select>
                 </label>
               )}
-              <SceneStatusPicker card={card} />
-              <PovPicker card={card} />
             </div>
+            )}
           </div>
         </div>
         <div className="plan-actions">
+        {canArrange && <ArrangeToggle open={arranging === id} title={title} onToggle={() => setArranging(arranging === id ? null : id)} />}
         <button type="button" className="icon-button" aria-label={fmt(p.openText, { title })} title={fmt(p.openText, { title })} onClick={() => useCosmos.getState().openInManuscript(id)}>
           <span aria-hidden="true">✎</span>
         </button>
@@ -271,43 +278,34 @@ export function Plan() {
   return (
     <div className="sequencer" ref={rootRef}>
       <div className={`sq-inner${asCards || timeline ? " is-cards" : ""}`}>
-        <header className="sq-head">
-          <h1>{p.title}</h1>
-          <TemplatePicker
-            value={plan.template}
-            options={NOVEL_TEMPLATES.includes(plan.template as (typeof NOVEL_TEMPLATES)[number]) || plan.template === "perso" ? NOVEL_TEMPLATES : ([...NOVEL_TEMPLATES, plan.template] as PlanTemplate[])}
-            custom={plan.custom}
-            onBuiltin={(key) => key && isPlanTemplate(key) && setPlanTemplate(key)}
-          />
-          <p className="plan-about">{p.templateAbout[plan.template]}</p>
-          <div className="sq-modes" role="group" aria-label={p.modeAria}>
-            {MODES.map((m) => (
-              <button
-                key={m}
-                type="button"
-                aria-pressed={!timeline && mode === m}
-                onClick={() => {
-                  setMode(m);
-                  setTimeline(false);
-                }}
-              >
-                {sq[m]}
-              </button>
-            ))}
-            <button type="button" className="plan-timeline-tab" aria-pressed={timeline} onClick={() => setTimeline(true)}>
-              {p.timeline}
+        <PlanHeader
+          title={p.title}
+          timeline={timeline}
+          onTimeline={setTimeline}
+          modeAria={p.modeAria}
+          actions={
+            <button type="button" className="ghost-button plan-organize" title={t.organize.hint} onClick={organizeCanvas}>
+              {t.organize.button}
             </button>
-          </div>
-          <button type="button" className="ghost-button plan-organize" title={t.organize.hint} onClick={organizeCanvas}>
-            {t.organize.button}
-          </button>
-          {sceneIds.length > 0 && (
-            <p className="sq-total">
-              <strong>{plural(sceneIds.length)}</strong>
-              {!free && <> · {fmt(p.placedOf, { placed, n: sceneIds.length })}</>}
-            </p>
-          )}
-        </header>
+          }
+          total={
+            sceneIds.length > 0 && (
+              <p className="sq-total">
+                <strong>{plural(sceneIds.length)}</strong>
+                {!free && <> · {fmt(p.placedOf, { placed, n: sceneIds.length })}</>}
+              </p>
+            )
+          }
+          template={
+            <TemplatePicker
+              value={plan.template}
+              options={NOVEL_TEMPLATES.includes(plan.template as (typeof NOVEL_TEMPLATES)[number]) || plan.template === "perso" ? NOVEL_TEMPLATES : ([...NOVEL_TEMPLATES, plan.template] as PlanTemplate[])}
+              custom={plan.custom}
+              onBuiltin={(key) => key && isPlanTemplate(key) && setPlanTemplate(key)}
+            />
+          }
+          about={p.templateAbout[plan.template]}
+        />
         {timeline ? (
           <Timeline order={[...order, ...arranged.unplaced]} />
         ) : (

@@ -97,6 +97,8 @@ const fit = async () => { await page.getByRole("button", { name: "Fit View" }).c
 const node = (text) => page.locator(".react-flow__node", { hasText: text }).first();
 // Menu « ⋯ » (1.11.1) : ouvrir celui de `scope`, puis choisir l'entrée.
 async function moreItem(scope, name) { await page.locator(`${scope} .more-button`).first().click(); await wait(250); await page.getByRole("menuitem", { name }).first().click(); }
+// Menu de l'app (#57) : le bouton des Réglages ouvre d'abord un menu (Réglages…, Corbeille, aide, À propos).
+async function appMenu(name) { await page.getByRole("button", { name: T("Réglages et aide", "Settings and help", "Ajustes y ayuda") }).click(); await wait(250); await page.getByRole("menuitem", { name }).first().click(); await wait(250); }
 // Onglet des Réglages (1.11.1).
 async function settingsTab(name) { await page.getByRole("tab", { name, exact: true }).click(); await wait(200); }
 async function cardButton(text, label) { const n = node(text); await n.hover(); await n.getByRole("button", { name: label }).click(); }
@@ -287,9 +289,7 @@ await step("corbeille", async () => {
   await page.getByRole("menuitem", { name: T("Mettre à la corbeille", "Move to trash", "Mover a la papelera") }).click();
   await wait(400);
   await shot("corbeille-message", { clip: { x: 0, y: 600, width: 1440, height: 300 } });
-  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
-  await settingsTab(T("Ce projet", "This project", "Este proyecto"));
-  await page.getByRole("button", { name: T(/Corbeille \(/, /Trash \(/, /Papelera \(/) }).click();
+  await appMenu(T(/Corbeille \(/, /Trash \(/, /Papelera \(/));
   await wait(500);
   await shot("corbeille", { el: "dialog[open]" });
   await closeDialog();
@@ -473,10 +473,12 @@ await step("export-bible", async () => {
   await closeDialog();
 });
 await step("réglages", async () => {
-  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
+  await appMenu(T("Réglages…", "Settings…", "Ajustes…"));
   await wait(400);
   await shot("reglages", { clip: await union([".settings-panel"], 20) });
-  await page.getByRole("button", { name: T("Raccourcis clavier", "Keyboard shortcuts", "Atajos de teclado") }).click();
+  await page.keyboard.press("Escape");
+  await wait(300);
+  await appMenu(T("Raccourcis clavier", "Keyboard shortcuts", "Atajos de teclado"));
   await wait(400);
   await shot("raccourcis", { el: "dialog[open]" });
   await closeDialog();
@@ -489,8 +491,7 @@ await step("réglages", async () => {
   await wait(300);
   await shot("palette", { el: "dialog[open]" });
   await closeDialog();
-  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
-  await page.getByRole("button", { name: T("À propos de MondoWrite", "About MondoWrite", "Acerca de MondoWrite") }).click();
+  await appMenu(T("À propos de MondoWrite", "About MondoWrite", "Acerca de MondoWrite"));
   await wait(400);
   await shot("a-propos", { el: "dialog[open]" });
   await closeDialog();
@@ -516,7 +517,7 @@ async function mockAi() {
 }
 await step("ia", async () => {
   await mockAi();
-  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
+  await appMenu(T("Réglages…", "Settings…", "Ajustes…"));
   await settingsTab(T("IA", "AI", "IA"));
   await page.locator('.settings-panel select:has(option[value="lmstudio"])').selectOption("lmstudio");
   await wait(1200);
@@ -585,7 +586,7 @@ await step("atelier", async () => {
     T("Un bûcheron entend le Loup frapper chez la Mère-grand.", "A woodcutter hears the Wolf knocking at the Grandmother’s door.", "Un leñador oye al Lobo llamar a la puerta de la Abuela."),
     T("La Mère-grand, méfiante, ne répond pas à la voix trop douce.", "The Grandmother, wary, does not answer the too-gentle voice.", "La Abuela, desconfiada, no contesta a esa voz tan dulce."),
   ]);
-  await page.getByRole("button", { name: T("Réglages", "Settings", "Ajustes") }).click();
+  await appMenu(T("Réglages…", "Settings…", "Ajustes…"));
   await settingsTab(T("Ce projet", "This project", "Este proyecto"));
   await page.getByLabel(T("Activer le mode Atelier pour ce projet", "Turn on Workshop mode for this project", "Activar el modo Taller para este proyecto")).check();
   await page.keyboard.press("Escape");

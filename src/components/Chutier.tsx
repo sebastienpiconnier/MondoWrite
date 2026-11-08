@@ -22,13 +22,23 @@ export function Chutier({ passages, cards, onPutBack }: { passages: Passage[]; c
     return Number.isNaN(d.getTime()) ? "" : new Intl.DateTimeFormat(lang, { day: "numeric", month: "short" }).format(d);
   };
 
+  // Vide (#59) : une ligne repliée, « Chutier (0) » ; l'explication s'ouvre au clic ou au toucher.
+  if (passages.length === 0)
+    return (
+      <details className="sp-box ms-chutier ms-chutier-fold">
+        <summary className="sp-box-title">
+          {c.title} <span className="ms-chutier-count">(0)</span>
+        </summary>
+        <p className="sp-empty">{isTouch() ? c.hintTouch : c.hint}</p>
+      </details>
+    );
+
   return (
     <section className="sp-box ms-chutier" aria-label={c.title}>
       <h2 className="sp-box-title">
         {c.title}
         {passages.length > 0 ? <span className="ms-chutier-count"> ({passages.length})</span> : null}
       </h2>
-      {passages.length === 0 ? <p className="sp-empty">{isTouch() ? c.hintTouch : c.hint}</p> : null}
       <ul className="ms-chutier-list">
         {[...passages].reverse().map((p) => {
           const scene = cards.find((x) => x.id === p.scene);

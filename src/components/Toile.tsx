@@ -32,6 +32,7 @@ import { NewCardMenu } from "./NewCardMenu";
 import type { CardData, CardType } from "../types";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
+import { CANVAS_STEPS, noteStep } from "../learn";
 import { isTouch } from "../platform";
 import { useLifted } from "../lifted";
 import { documentExtension, imageExtension } from "../media";
@@ -115,6 +116,21 @@ export function Toile() {
   // Cartes enfin mesurées (le canevas s'ouvre, ou une carte vient de naître) : une scène posée dans son cadre
   // d'après une hauteur estimée (écrite dans la vue Scénario, canevas fermé) et qui en dépasse fait ranger de nouveau.
   const measured = useNodesInitialized();
+  // Consigne du haut (#59) : elle part une fois les trois gestes faits (créer une carte, tirer un fil, changer un type).
+  const hintLearned = useSettings((s) => s.learned.includes("canvasHint"));
+  useEffect(() => {
+    if (hintLearned) return;
+    return useCosmos.subscribe((s, prev) => {
+      if (s.screen !== "project" || prev.screen !== "project") return;
+      if (s.nodes.length === prev.nodes.length + 1) noteStep("canvasHint", "card", CANVAS_STEPS);
+      if (s.edges.length === prev.edges.length + 1) noteStep("canvasHint", "wire", CANVAS_STEPS);
+      if (s.nodes !== prev.nodes && s.nodes.length === prev.nodes.length) {
+        // Même ordre des cartes : une carte dont le type a changé (pas un simple déplacement).
+        const changed = s.nodes.some((n, k) => n.data !== prev.nodes[k].data && n.id === prev.nodes[k].id && n.data.type !== prev.nodes[k].data.type);
+        if (changed) noteStep("canvasHint", "type", CANVAS_STEPS);
+      }
+    });
+  }, [hintLearned]);
   useEffect(() => {
     if (!measured) return;
     const frame = requestAnimationFrame(() => useCosmos.getState().refitStory());
@@ -900,7 +916,7 @@ export function Toile() {
         </div>
       )}
 
-      <div className="toile-hint" hidden={selectedCards + selectedFrames > 1 || !!spotlightId || filterActive(filter)}>
+      <div className="toile-hint" hidden={hintLearned || selectedCards + selectedFrames > 1 || !!spotlightId || filterActive(filter)}>
         {touch ? t.toile.hintTouch : t.toile.hintMouse} · {t.toile.hintLink} · <strong>/</strong> {t.toile.hintTransform}
       </div>
       </div>
