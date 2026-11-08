@@ -3,9 +3,9 @@
 // d'intention. Rien n'est obligatoire : une pastille vide est un simple « + Genre », un texte vide garde
 // son texte indicatif. Le volume vient de l'objectif d'écriture, les thèmes des cartes Thème.
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type DragEvent } from "react";
 import { useCosmos } from "../store";
-import { fmt } from "../i18n";
+import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { SERIES_CHIPS, chipsFor, chipSuggestions, formOf, isSeriesForm, otherTexts, pitchFields, pitchFilled, pitchIaKeys, writingTexts, type PitchChip, type PitchText } from "../pitch";
@@ -16,6 +16,77 @@ import { bookWords, countWords } from "../manuscript";
 import { typeColor } from "../types";
 import { allEpisodes } from "../screenplay/series";
 import { minutesFor, usePagination } from "./usePagination";
+import { useMediaUrl } from "./useMediaUrl";
+import { MoreMenu } from "./MoreMenu";
+import { ImageGenButton } from "./ImageGen";
+import { readIaImageSource } from "../ai/imageGen";
+
+/**
+ * Couverture du livre ou affiche du film (#52), sous le titre de la jaquette : `pitch.visuel`, un nom de medias/.
+ * Vide, un bouton ouvre la fenêtre Photos (fichier de l'appareil, photo libre, image générée en mode Atelier),
+ * et une image déposée ici est prise. Posée, son menu ⋯ la remplace ou la retire (le fichier reste dans medias/).
+ */
+function CoverVisual() {
+  const t = useT();
+  const kind = useCosmos((s) => s.kind);
+  const name = useCosmos((s) => s.pitch.visuel);
+  const ia = useCosmos((s) => s.pitch.visuelIa);
+  const credit = useCosmos((s) => s.pitch.visuelCredit);
+  const url = useMediaUrl(name);
+  const [over, setOver] = useState(false);
+  const p = t.pitch;
+  const poster = kind === "scenario";
+  const open = () => useCosmos.getState().openPhotos({ kind: "cover" });
+  const onDrop = (e: DragEvent) => {
+    const file = [...e.dataTransfer.files].find((f) => f.type.startsWith("image/"));
+    setOver(false);
+    if (!file) return;
+    e.preventDefault();
+    void file.arrayBuffer().then((buf) => useCosmos.getState().pickCoverVisual({ name: file.name, data: new Uint8Array(buf) }));
+  };
+  const dropProps = {
+    onDragOver: (e: DragEvent) => {
+      if (![...e.dataTransfer.types].includes("Files")) return;
+      e.preventDefault();
+      setOver(true);
+    },
+    onDragLeave: () => setOver(false),
+    onDrop,
+  };
+  if (!name) {
+    return (
+      <div className={`cover-visual is-empty${over ? " is-over" : ""}`} {...dropProps}>
+        <button type="button" className="ghost-button cover-visual-add" onClick={open}>
+          {poster ? p.visualAddPoster : p.visualAddCover}
+        </button>
+        <ImageGenButton target={{ kind: "cover" }} className="ghost-button cover-visual-add" />
+        <p className="cover-visual-hint">{p.visualHint}</p>
+      </div>
+    );
+  }
+  const source = ia ? readIaImageSource(ia, t.ai.providers) : "";
+  return (
+    <figure className={`cover-visual${over ? " is-over" : ""}`} {...dropProps}>
+      <div className="cover-visual-frame">
+        {url && <img src={url} alt={poster ? p.visualPosterAlt : p.visualCoverAlt} />}
+        {source && (
+          <span className="ia-image-badge" role="img" aria-label={fmt(t.imageGen.badgeAria, { source })} title={fmt(t.imageGen.badgeAria, { source })}>
+            {t.imageGen.badge}
+          </span>
+        )}
+        <MoreMenu
+          className="cover-visual-menu"
+          label={p.visualMenu}
+          items={[
+            { label: p.visualReplace, onSelect: open },
+            { label: p.visualRemove, onSelect: () => useCosmos.getState().setCoverVisual(null), danger: true },
+          ]}
+        />
+      </div>
+      {(source || credit) && <figcaption className="ia-image-credit">{source ? fmt(t.imageGen.credit, { source }) : credit}</figcaption>}
+    </figure>
+  );
+}
 
 /** Pastille : montre la valeur, ou « + Genre ». Toucher ouvre les suggestions et une saisie libre. */
 function Chip({ field }: { field: PitchChip }) {
@@ -291,6 +362,7 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
             }
           }}
         />
+        <CoverVisual />
         <label className="sr-only" htmlFor={tagId}>
           {p.fields.tagline}
         </label>

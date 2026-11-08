@@ -7,6 +7,9 @@ import { BIBLE_PARTS, isPrivatePart, type PartKey } from "./bibleParts";
 import { isMediaName } from "./media";
 import type { ProjectKind } from "./types";
 
+/** Réglage `cover` : pas d'image de couverture, même si le projet en a une (#52). */
+export const COVER_NONE = "none";
+
 /** « moi » : bible de travail (tout) ; « tiers » : dossier de présentation (roman) ou bible de série (scénario). */
 export type BibleAudience = "moi" | "tiers";
 export const BIBLE_THEMES = ["sobre", "editorial", "nuit"] as const;
@@ -21,7 +24,10 @@ export interface BibleExportOptions {
   theme: BibleTheme;
   /** Rang de la couleur d'accent dans le rendu (0 à ACCENT_COUNT - 1). */
   accent: number;
-  /** Image de couverture : nom d'un fichier de medias/, ou "" (aucune). */
+  /**
+   * Image de couverture : nom d'un fichier de medias/ ; "" pour celle de la couverture du projet (`pitch.visuel`,
+   * #52), s'il y en a une ; COVER_NONE pour aucune.
+   */
   cover: string;
   /** Photos des lieux en vignettes dans la partie Univers. */
   places: boolean;
@@ -92,7 +98,7 @@ export function cleanOptions(raw: unknown): BibleExportOptions {
     parts: Array.isArray(o.parts) ? cleanParts(o.parts) : d.parts,
     theme,
     accent,
-    cover: typeof o.cover === "string" && isMediaName(o.cover) ? o.cover : "",
+    cover: o.cover === COVER_NONE ? COVER_NONE : typeof o.cover === "string" && isMediaName(o.cover) ? o.cover : "",
     places: typeof o.places === "boolean" ? o.places : d.places,
     pilot: o.pilot === true,
     extract: o.extract === true,

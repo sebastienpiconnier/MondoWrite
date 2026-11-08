@@ -27,7 +27,7 @@ import { CHARACTER_FIELDS, CHARACTER_HEAD_FIELDS, ficheText, ficheValue, isCardR
 import { valueLabels } from "./projectDocs";
 import { wireFicheOf } from "../wires";
 import { PART_OF, partNumber, type PartKey } from "../bibleParts";
-import type { BibleExportOptions } from "../bibleExport";
+import { COVER_NONE, type BibleExportOptions } from "../bibleExport";
 import { isMediaName } from "../media";
 import { htmlToBlocks, runsText, type Block } from "./doc";
 
@@ -386,7 +386,7 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
     tagline: clean(s.pitch.tagline),
     meta,
     date: new Intl.DateTimeFormat(lang, { month: "long", year: "numeric" }).format(ctx.date),
-    cover: options.cover && isMediaName(options.cover) ? options.cover : null,
+    cover: coverOf(options.cover, s.pitch.visuel),
     sections,
   };
 
@@ -613,3 +613,10 @@ export function buildBiblePack(s: PackSource, options: BibleExportOptions, ctx: 
 /** Parties visibles par type de carte, pour les exports Word et Markdown (même choix que le PDF). */
 export const typesForParts = <T extends CardData["type"]>(types: readonly T[], parts: readonly PartKey[]): T[] =>
   parts.flatMap((part) => types.filter((type) => PART_OF[type] === part));
+
+/** Image de couverture du PDF : celle choisie, sinon celle de la couverture du projet, sauf « Aucune » (#52). */
+export function coverOf(choice: string, visual: string | undefined): string | null {
+  if (choice === COVER_NONE) return null;
+  if (choice && isMediaName(choice)) return choice;
+  return visual && isMediaName(visual) ? visual : null;
+}

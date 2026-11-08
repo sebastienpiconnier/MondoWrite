@@ -29,7 +29,16 @@ import {
   sniffImage,
   stripNames,
   subjectOf,
+  castDescription,
+  describeCover,
+  readChatImages,
+  referenceRequest,
+  sceneCast,
+  REFERENCE_MAX,
 } from "../ai/imageGen";
+import { coverOf } from "../export/biblePack";
+import { COVER_NONE, cleanOptions } from "../bibleExport";
+import { readPitch, setPitchVisual } from "../pitch";
 import type { CardData } from "../types";
 
 // PNG de 1 × 1 pixel.
@@ -137,10 +146,11 @@ describe("consigne : la description de l'auteur, jamais un nom propre", () => {
     expect(subjectOf("image")).toBe("mood");
   });
 
-  it("noms retirés : titres entiers (sans casse), prénoms et noms (avec leur majuscule), surnoms, nom de l'auteur", () => {
+  it("noms retirés : personnages (titres entiers, prénoms et noms avec leur majuscule, surnoms) et nom de l'auteur ; le titre d'un lieu reste (#52)", () => {
     const names = properNames([ines, yann, rose, phare], ["Sébastien Piconnier"]);
-    const out = stripNames("Inès Morvan, gardienne du phare de kerbel, remplace Yann Le Goff. Nénette porte une broche rose ; Rose l’attend. Écrit par Sébastien Piconnier.", names);
-    expect(out).not.toMatch(/Inès|Morvan|Yann|Goff|Kerbel|kerbel|Nénette|Rose|Sébastien|Piconnier/);
+    const out = stripNames("Inès Morvan, gardienne du Phare de Kerbel, remplace Yann Le Goff. Nénette porte une broche rose ; Rose l’attend. Écrit par Sébastien Piconnier.", names);
+    expect(out).not.toMatch(/Inès|Morvan|Yann|Goff|Nénette|Rose|Sébastien|Piconnier/);
+    expect(out).toContain("Phare de Kerbel");
     // Un mot ordinaire qui ressemble à un prénom reste (« rose » en minuscule), comme « Le » seul.
     expect(out).toContain("broche rose");
     expect(out).not.toMatch(/ {2}| ,| \./);
@@ -260,5 +270,94 @@ describe("« Garder » une image générée", () => {
   it("sans cible : rien", async () => {
     useCosmos.setState({ photoTarget: null });
     expect(await state().keepGeneratedImage({ mime: "image/png", data: png() }, source)).toBe(false);
+  });
+});
+
+describe("#52 : couverture, titres et personnages d'une scène", () => {
+  const scene: CardData = { id: "scene00001", type: "scene", title: "La tempête", html: "", fiche: { pov: "ines000001", synopsis: "La lanterne s’éteint." } };
+  const labelsAll = { ...labels, genre: "Genre", ton: "Ton", cible: "Public", format: "Format", themes: "Thèmes" };
+
+  it("le titre d'un lieu, d'un objet ou d'une scène entre dans la description ; jamais celui d'un personnage", () => {
+    expect(describeCard(phare, labels, " : ")).toMatch(/^Phare de Kerbel/);
+    expect(describeCard(ines, labels, " : ")).not.toContain("Inès");
+    const text = describeCard(scene, labels, " : ", { synopsis: "La lanterne s’éteint.", text: "Inès monte l’escalier." });
+    expect(text).toContain("La tempête");
+    expect(text).toContain("La lanterne s’éteint.");
+    expect(subjectOf("scene")).toBe("scene");
+  });
+
+  it("personnages d'une scène : narrateur, ceux qui parlent, ceux que le texte nomme, puis les fils ; jamais une autre carte", () => {
+    const yannCard = { ...yann, fiche: { apparence: "Barbe grise" } };
+    const roman = sceneCast(scene, [ines, yannCard, rose, phare], [{ source: scene.id, target: rose.id }], { html: "<p>Yann attend en bas.</p>" });
+    expect(roman.map((c) => c.id)).toEqual([ines.id, yann.id, rose.id]);
+    const script = sceneCast({ id: scene.id }, [ines, yannCard, phare], [], { elements: [{ type: "character", text: "YANN (V.O.)" }, { type: "dialogue", text: "Inès !" }] });
+    expect(script.map((c) => c.id)).toEqual([yann.id]);
+  });
+
+  it("description d'un personnage : ses champs visibles, sans nom", () => {
+    const text = castDescription(ines, labels, " : ");
+    expect(text).toContain("Âge : 34 ans");
+    expect(text).not.toMatch(/Inès|Bretonne/);
+  });
+
+  it("consigne : titre écrit seulement sur demande, personnages décrits et références numérotées, noms retirés", () => {
+    const names = properNames([ines, yann]);
+    const plain = imagePrompt("cover", "Un phare dans la nuit", names);
+    expect(plain).toMatch(/No text, letters/);
+    const titled = imagePrompt("cover", "Un phare", names, { title: "Le \"Phare\" des Absents" });
+    expect(titled).toContain("Write this title on the image");
+    expect(titled).toContain("Le 'Phare' des Absents");
+    const cast = imagePrompt("scene", "Inès monte", names, { cast: [{ description: "Femme, Inès Morvan", reference: true }, { description: "Barbe grise", reference: false }] });
+    expect(cast).toContain("Character 1 (reference image 1)");
+    expect(cast).toContain("Character 2: Barbe grise");
+    expect(cast).toMatch(/Keep each one's face/);
+    expect(cast).not.toMatch(/Inès|Morvan/);
+  });
+
+  it("couverture : tagline, logline, pastilles et thèmes", () => {
+    const text = describeCover({ tagline: "Ils reviennent", logline: "Une gardienne…", genre: "Fantastique", resume: "long" }, ["Le deuil"], labelsAll, " : ");
+    expect(text.split("\n")).toEqual(["Ils reviennent", "Une gardienne…", "Genre : Fantastique", "Thèmes : Le deuil"]);
+  });
+
+  it("références : OpenAI en multipart sur l'API d'édition, OpenRouter en chat avec les images en data URL", () => {
+    const refs = Array.from({ length: 9 }, () => ({ mime: "image/png" as const, data: png() }));
+    const o = referenceRequest(openai, "gpt-image-2", "p", 2, "scene", refs);
+    expect(o.url).toBe("https://api.openai.com/v1/images/edits");
+    expect(o.headers["content-type"]).toBeUndefined();
+    const form = o.body as FormData;
+    expect(form.getAll("image[]")).toHaveLength(REFERENCE_MAX);
+    expect(form.get("size")).toBe("1536x1024");
+    const r = referenceRequest(openrouter, "google/gemini-image", "p", 1, "cover", refs.slice(0, 2));
+    expect(r.url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    const body = JSON.parse(r.body as string);
+    expect(body.modalities).toEqual(["image", "text"]);
+    expect(body.image_config).toEqual({ aspect_ratio: "2:3" });
+    expect(body.messages[0].content[1].image_url.url).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it("réponse d'OpenRouter en chat : seulement des images lisibles, au plus `max`", () => {
+    const ok = { image_url: { url: `data:image/png;base64,${PNG}` } };
+    const json = { choices: [{ message: { images: [ok, { image_url: { url: "https://evil.example/a.png" } }, { image_url: { url: `data:image/svg+xml;base64,${btoa("<svg/>")}` } }, ok] } }] };
+    expect(readChatImages(json)).toHaveLength(2);
+    expect(readChatImages(json, 1)).toHaveLength(1);
+    expect(readChatImages(null)).toEqual([]);
+  });
+
+  it("pitch.visuel : un nom de medias/ seulement, marque et crédit sur une ligne, retiré proprement", () => {
+    expect(readPitch({ visuel: "../x.png", visuelIa: "a" })).toEqual({});
+    expect(readPitch({ visuel: "a1b2.png", visuelCredit: "Photo de X\nY" })).toEqual({ visuel: "a1b2.png", visuelCredit: "Photo de X Y" });
+    const p = setPitchVisual({ tagline: "t" }, "a1b2.png", { ia: "openai, gpt-image-2" });
+    expect(p).toEqual({ tagline: "t", visuel: "a1b2.png", visuelIa: "openai, gpt-image-2" });
+    expect(setPitchVisual(p, "a1b2.png", { ia: "openai, gpt-image-2" })).toBe(p);
+    expect(setPitchVisual(p, null)).toEqual({ tagline: "t" });
+  });
+
+  it("couverture du PDF de la Bible : celle du projet par défaut, « Aucune » la retire, un autre choix l'emporte", () => {
+    expect(coverOf("", "a1b2.png")).toBe("a1b2.png");
+    expect(coverOf(COVER_NONE, "a1b2.png")).toBeNull();
+    expect(coverOf("c3d4.jpg", "a1b2.png")).toBe("c3d4.jpg");
+    expect(coverOf("", undefined)).toBeNull();
+    expect(cleanOptions({ cover: COVER_NONE }).cover).toBe(COVER_NONE);
+    expect(cleanOptions({ cover: "../x" }).cover).toBe("");
   });
 });

@@ -13,11 +13,22 @@ import { aiConfig, useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { AiError, aiErrorText, isReady, type AiProvider } from "../ai/providers";
 import type { CardData } from "../types";
+import { storage } from "../storage";
+import type { ScreenplayElement } from "../screenplay/model";
+import { plainText } from "../search";
+import { imageForAi } from "../ai/image";
+import { listScenes, sceneSynopsis, synopsisEnd } from "../screenplay/scenes";
 import {
   DEFAULT_IMAGE_MODELS,
   IMAGE_MAX,
+  REFERENCE_MAX,
   canGenerateImages,
+  castDescription,
+  decodeBase64,
   describeCard,
+  describeCover,
+  sceneCast,
+  sniffImage,
   generateImages,
   iaImageCount,
   iaImagesOf,
@@ -28,6 +39,7 @@ import {
   stripNames,
   subjectOf,
   type GeneratedImage,
+  type ReferenceImage,
 } from "../ai/imageGen";
 
 /** L'Atelier est actif pour ce projet (IA prête), et le service génère-t-il des images ? */
@@ -71,17 +83,34 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
   const g = t.imageGen;
   const { ready, config, model } = useImageGen();
   const target = useCosmos((s) => s.photoTarget);
-  const card = useCosmos((s) => (target && target.kind !== "canvas" ? s.nodes.find((n) => n.id === target.id)?.data : undefined));
+  const card = useCosmos((s) => (target && "id" in target ? s.nodes.find((n) => n.id === target.id)?.data : undefined));
   const nodes = useCosmos((s) => s.nodes);
+  const cover = target?.kind === "cover";
   const profile = useSettings((s) => s.profile);
   // Noms propres connus : cartes du projet et nom de l'auteur (une personne réelle). Jamais envoyés.
   const names = useMemo(
     () => properNames(nodes.map((n) => n.data), [`${profile.firstName} ${profile.lastName}`, profile.penName].map((s) => s.trim()).filter(Boolean)),
     [nodes, profile],
   );
-  const subject = subjectOf(card?.type ?? "image");
-  const labels = useMemo<Record<string, string>>(() => ({ ...t.fiche.fields, ...t.character.fields }), [t]);
-  const [description, setDescription] = useState(() => (card ? stripNames(describeCard(card, labels, g.fieldSep), names) : ""));
+  const subject = cover ? "cover" : subjectOf(card?.type ?? "image");
+  const labels = useMemo<Record<string, string>>(() => ({ ...t.fiche.fields, ...t.character.fields, ...t.pitch.fields, themes: t.pitch.themes }), [t]);
+  // Scène illustrée (#52) : son synopsis et le début de son texte, et les personnages qu'on peut y montrer.
+  const scene = useMemo(() => (card?.type === "scene" ? sceneSource(card) : null), [card]);
+  const cast = useMemo(() => {
+    if (!card || card.type !== "scene" || !scene) return [];
+    const s = useCosmos.getState();
+    return sceneCast(card, nodes.map((n) => n.data), s.edges, scene);
+  }, [card, scene, nodes]);
+  const [picked, setPicked] = useState<string[]>(() => cast.filter((c) => c.image).slice(0, REFERENCE_MAX).map((c) => c.id));
+  const [writeTitle, setWriteTitle] = useState(false);
+  const [description, setDescription] = useState(() => {
+    if (cover) {
+      const s = useCosmos.getState();
+      const themes = s.nodes.filter((n) => n.data.type === "theme").map((n) => n.data.title);
+      return stripNames(describeCover(s.pitch, themes, labels, g.fieldSep), names);
+    }
+    return card ? stripNames(describeCard(card, labels, g.fieldSep, scene ?? undefined), names) : "";
+  });
   const [count, setCount] = useState(2);
   const [busy, setBusy] = useState<"" | "generate" | "keep">("");
   const [error, setError] = useState("");
@@ -115,7 +144,18 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
     setError("");
     clear();
     try {
-      const images = await generateImages(config, model, imagePrompt(subject, description, names), count, subject, controller.signal);
+      // Personnages cochés : leur description (jamais leur nom), et leur portrait réduit comme image de référence.
+      const chosen = cast.filter((c) => picked.includes(c.id));
+      const refs: ReferenceImage[] = [];
+      const members = [];
+      for (const c of chosen) {
+        const ref = c.image && refs.length < REFERENCE_MAX ? await referenceOf(c.image) : null;
+        if (ref) refs.push(ref);
+        members.push({ description: castDescription(c, labels, g.fieldSep), reference: !!ref });
+      }
+      const title = cover && writeTitle ? useCosmos.getState().title.trim() : "";
+      const prompt = imagePrompt(subject, description, names, { cast: members, title });
+      const images = await generateImages(config, model, prompt, count, subject, controller.signal, refs);
       const next = images.map((image) => {
         const url = URL.createObjectURL(new Blob([image.data as BlobPart], { type: image.mime }));
         urls.current.push(url);
@@ -172,6 +212,36 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
         <p className="settings-hint" id="image-gen-description-hint">
           {g.descriptionHint}
         </p>
+        {cover && (
+          <label className="spdf-choice image-gen-title">
+            <input type="checkbox" checked={writeTitle} onChange={(e) => setWriteTitle(e.target.checked)} />
+            <span>
+              {g.writeTitle}
+              <span className="settings-hint">{g.writeTitleHint}</span>
+            </span>
+          </label>
+        )}
+        {cast.length > 0 && (
+          <fieldset className="image-gen-cast">
+            <legend>{g.castLabel}</legend>
+            <p className="settings-hint">{fmt(g.castHint, { n: REFERENCE_MAX })}</p>
+            {cast.map((c) => (
+              <label key={c.id} className="spdf-choice">
+                <input
+                  type="checkbox"
+                  checked={picked.includes(c.id)}
+                  disabled={busy !== ""}
+                  onChange={(e) => setPicked((list) => (e.target.checked ? [...list, c.id] : list.filter((id) => id !== c.id)))}
+                />
+                <span>
+                  {c.title || t.bible.untitled}
+                  {!c.image && <span className="settings-hint">{g.noPortrait}</span>}
+                </span>
+              </label>
+            ))}
+            {config?.provider === "openrouter" && picked.some((id) => cast.find((c) => c.id === id)?.image) && <p className="settings-hint">{g.refsOpenRouter}</p>}
+          </fieldset>
+        )}
         <div className="image-gen-row">
           <div className="photos-sources image-gen-count" role="group" aria-label={g.countLabel}>
             {Array.from({ length: IMAGE_MAX }, (_, i) => i + 1).map((n) => (
@@ -232,6 +302,39 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
       </div>
     </div>
   );
+}
+
+/** Synopsis, texte et éléments d'une scène (roman : manuscrit ; scénario : corps de la scène dans le Fountain). */
+function sceneSource(card: CardData): { synopsis?: string; text?: string; html?: string; elements?: ScreenplayElement[] } {
+  const s = useCosmos.getState();
+  if (s.kind === "scenario" && s.screenplay) {
+    const elements = s.screenplay.elements;
+    const at = elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === card.id);
+    if (at === -1) return {};
+    const end = listScenes(elements).find((sc) => sc.index === at)?.end ?? elements.length;
+    const body = elements.slice(synopsisEnd(elements, at), end).filter((el) => el.type !== "section");
+    const text = body.filter((el) => el.type === "action" || el.type === "dialogue").map((el) => el.text).join(" ");
+    return { synopsis: sceneSynopsis(elements, at), text, elements: body };
+  }
+  const html = s.manuscript[card.id];
+  return { synopsis: card.fiche?.synopsis, text: html ? plainText(html) : "", html };
+}
+
+/** Portrait d'un personnage, réduit (1 024 px, JPEG) pour partir comme image de référence. */
+async function referenceOf(name: string): Promise<ReferenceImage | null> {
+  const bytes = await storage.readMedia(name).catch(() => null);
+  if (!bytes) return null;
+  const url = URL.createObjectURL(new Blob([bytes as BlobPart]));
+  try {
+    const small = await imageForAi(url);
+    const data = decodeBase64(small.data);
+    const mime = data && sniffImage(data);
+    return data && mime ? { mime, data } : null;
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 /** Réglages : modèle d'image du service (facultatif), ou la phrase qui dit que le service n'en génère pas. */

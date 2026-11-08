@@ -7,16 +7,24 @@
 // Claude ne génère pas d'images. Ollama ne le fait qu'en essai, sur macOS, sans API documentée ; LM Studio pas du
 // tout : pour ces services la fonction est absente (une phrase le dit).
 //
-// Garde-fous : la consigne ne porte jamais de nom propre du projet (titres des cartes, prénoms, surnoms), seulement
-// la description ; elle demande une personne fictive, sans ressemblance avec une personne réelle, et aucun texte ni
+// #52 (novembre 2026) : couverture ou affiche du projet (sujet `cover`, tirée de la couverture de la Bible), scène
+// illustrée (`scene`) avec ses personnages : leurs portraits partent comme images de référence (OpenAI : API
+// d'édition `/v1/images/edits` en multipart ; OpenRouter : chat avec `modalities`), pour garder les mêmes visages.
+//
+// Garde-fous : la consigne ne porte jamais de nom de personne du projet (personnages, prénoms, surnoms, auteur) ;
+// les titres des lieux, objets, groupes et scènes y entrent depuis #52 (sans risque de ressemblance) ; elle demande une personne fictive, sans ressemblance avec une personne réelle, et aucun texte ni
 // logo dans l'image. Nombre borné (1 à IMAGE_MAX). Les réponses ne sont jamais crues sur parole : seuls des octets
 // d'image reconnus à leur signature (PNG, JPEG, WebP), de taille raisonnable, ou une adresse https d'un hôte
 // attendu, sont gardés. Rien n'entre dans le projet sans le clic « Garder » (store, `keepGeneratedImage`).
 
 import type { CardData, CardType } from "../types";
+import type { Pitch } from "../pitch";
+import type { ScreenplayElement } from "../screenplay/model";
+import { characterName } from "../screenplay/scenes";
+import { detectCards, namesOf } from "../manuscript";
 import { plainText } from "../search";
 import { isMediaName } from "../media";
-import { base, headers, send, type AiConfig, type HttpRequest } from "./providers";
+import { base, headers, send, type AiConfig, type FormRequest, type HttpRequest } from "./providers";
 
 // ---------- Services ----------
 
@@ -37,8 +45,9 @@ export const IMAGE_TIMEOUT_MS = 180_000;
 
 // ---------- Ce que l'image doit montrer ----------
 
-export type ImageSubject = "portrait" | "place" | "object" | "mood";
-export const subjectOf = (type: CardType | undefined): ImageSubject => (type === "personnage" ? "portrait" : type === "lieu" ? "place" : type === "objet" ? "object" : "mood");
+export type ImageSubject = "portrait" | "place" | "object" | "mood" | "scene" | "cover";
+export const subjectOf = (type: CardType | undefined): ImageSubject =>
+  type === "personnage" ? "portrait" : type === "lieu" ? "place" : type === "objet" ? "object" : type === "scene" ? "scene" : "mood";
 
 /** Champs de la fiche lus pour chaque sujet (jamais l'origine, le rôle ni le caractère d'un personnage). */
 export const DESCRIBED_FIELDS: Record<ImageSubject, readonly string[]> = {
@@ -46,6 +55,8 @@ export const DESCRIBED_FIELDS: Record<ImageSubject, readonly string[]> = {
   place: ["epoque", "ambiance"],
   object: ["usage", "emplacement", "origine"],
   mood: ["retenir"],
+  scene: [],
+  cover: [],
 };
 
 /** Longueur de la description envoyée, bornée. */
@@ -56,14 +67,27 @@ const clip = (text: string, max: number) => (text.length <= max ? text : `${text
 const oneLine = (text: string) => text.replace(/\s+/g, " ").trim();
 
 /**
- * Description préremplie à partir de la carte, que l'auteur voit et peut retoucher avant l'envoi : les champs
- * utiles de la fiche (« Âge : 34 ans »), puis le début de ses notes. Une carte Image ou une ambiance donne aussi son
- * titre. Les noms propres sont retirés ensuite (`stripNames`), ici comme à l'envoi.
+ * Description préremplie à partir de la carte, que l'auteur voit et peut retoucher avant l'envoi : son titre
+ * (sauf un personnage, dont le nom ne part jamais), les champs utiles de la fiche (« Âge : 34 ans »), puis le
+ * début de ses notes, ou pour une scène son synopsis et le début de son texte (`sceneText`). Les noms de
+ * personnes sont retirés ensuite (`stripNames`), ici comme à l'envoi.
  */
-export function describeCard(card: Pick<CardData, "type" | "title" | "html" | "fiche">, labels: Record<string, string>, sep = ": "): string {
+export function describeCard(
+  card: Pick<CardData, "type" | "title" | "html" | "fiche">,
+  labels: Record<string, string>,
+  sep = ": ",
+  sceneText?: { synopsis?: string; text?: string },
+): string {
   const subject = subjectOf(card.type);
   const lines: string[] = [];
-  if (subject === "mood" && card.title.trim()) lines.push(oneLine(card.title));
+  if (subject !== "portrait" && card.title.trim()) lines.push(oneLine(card.title));
+  if (subject === "scene") {
+    const synopsis = oneLine(sceneText?.synopsis ?? card.fiche?.synopsis ?? "");
+    if (synopsis) lines.push(synopsis);
+    const text = oneLine(sceneText?.text ?? "");
+    if (text) lines.push(clip(text, NOTES_MAX));
+    return lines.join("\n");
+  }
   for (const key of DESCRIBED_FIELDS[subject]) {
     const value = oneLine(card.fiche?.[key] ?? "");
     if (value) lines.push(`${labels[key] ?? key}${sep}${value}`);
@@ -88,7 +112,7 @@ export interface ProperNames {
   words: string[];
 }
 
-/** Noms propres connus du projet : titres des personnages, lieux, groupes, objets et évènements, prénoms et surnoms. */
+/** Noms de personnes connus du projet : titres des personnages, prénoms, surnoms, et `extra` (l'auteur). */
 export function properNames(cards: Pick<CardData, "type" | "title" | "fiche">[], extra: string[] = []): ProperNames {
   const whole = new Set<string>();
   const words = new Set<string>();
@@ -98,11 +122,8 @@ export function properNames(cards: Pick<CardData, "type" | "title" | "fiche">[],
   };
   for (const card of cards) {
     const title = oneLine(card.title);
-    if (!title || !["personnage", "lieu", "groupe", "objet", "evenement"].includes(card.type)) continue;
-    if (card.type !== "personnage") {
-      whole.add(title);
-      continue;
-    }
+    // Depuis #52, les titres des lieux, groupes, objets et évènements restent : seuls les noms de personnes partent.
+    if (!title || card.type !== "personnage") continue;
     addPerson(title);
     for (const nick of (card.fiche?.surnoms ?? "").split(/[,;]/)) addPerson(nick);
   }
@@ -142,19 +163,95 @@ const SUBJECT_LINES: Record<ImageSubject, string> = {
   place: "A reference image of a fictional place for a novelist's notes: a wide view of the setting, its light and atmosphere, no people in the foreground.",
   object: "A reference image of an object for a novelist's notes: the object alone, clearly visible, on a simple background.",
   mood: "A mood image for a novelist's notes: the atmosphere, colours and light described below.",
+  scene: "An illustration of a scene from a work of fiction, for the author's notes: the moment described below, its setting, light and atmosphere.",
+  cover: "A book cover or film poster for a work of fiction, portrait format: one strong, evocative image that tells the genre and the mood described below.",
 };
+
+/** Personnage d'une scène illustrée : sa description (jamais son nom), et s'il a une image de référence. */
+export interface CastMember {
+  description: string;
+  reference: boolean;
+}
+
+export interface PromptOptions {
+  /** Couverture : titre à écrire sur l'image, tel quel (case « Écrire le titre sur l'image »). */
+  title?: string;
+  /** Scène : les personnages, dans l'ordre des images de référence jointes. */
+  cast?: CastMember[];
+}
 
 /**
  * Consigne d'image : sujet, règles, puis la description de l'auteur (dans sa langue), sans aucun nom propre du
  * projet. Les règles sont en anglais, la langue que les modèles d'image suivent le mieux.
  */
-export function imagePrompt(subject: ImageSubject, description: string, names: ProperNames): string {
+export function imagePrompt(subject: ImageSubject, description: string, names: ProperNames, options: PromptOptions = {}): string {
   const text = clip(stripNames(description, names), DESCRIPTION_MAX);
-  return [
-    SUBJECT_LINES[subject],
-    "Rules: every person shown is fictional and must not resemble any real person, celebrity or public figure. No text, letters, numbers, captions, signatures, watermarks or logos anywhere in the image.",
-    text ? `Description (written by the author, follow it faithfully, do not add names):\n${text}` : "No description: keep it simple and neutral.",
-  ].join("\n\n");
+  const title = oneLine(options.title ?? "").slice(0, 120);
+  const textRule = title
+    ? `Write this title on the image, legibly, exactly as given and nowhere else: "${title.replace(/"/g, "'")}". No other text, letters, numbers, captions, signatures, watermarks or logos.`
+    : "No text, letters, numbers, captions, signatures, watermarks or logos anywhere in the image.";
+  const parts = [SUBJECT_LINES[subject], `Rules: every person shown is fictional and must not resemble any real person, celebrity or public figure. ${textRule}`];
+  const cast = (options.cast ?? []).map((c) => ({ ...c, description: clip(stripNames(c.description, names), 300) }));
+  if (cast.length > 0) {
+    let ref = 0;
+    const lines = cast.map((c, i) => `Character ${i + 1}${c.reference ? ` (reference image ${++ref})` : ""}: ${c.description || "no description"}`);
+    parts.push(
+      `${ref > 0 ? "The attached reference images show some of the characters. Keep each one's face, hair, build and clothing exactly as in their reference image, so they are recognisable from one illustration to the next. Use the references only for these people, not for the setting or the composition.\n" : ""}Characters in the scene:\n${lines.join("\n")}`,
+    );
+  }
+  parts.push(text ? `Description (written by the author, follow it faithfully, do not add names):\n${text}` : "No description: keep it simple and neutral.");
+  return parts.join("\n\n");
+}
+
+/** Description d'un personnage pour une scène illustrée : les champs visibles de sa fiche, jamais son nom. */
+export function castDescription(card: Pick<CardData, "fiche">, labels: Record<string, string>, sep = ": "): string {
+  return DESCRIBED_FIELDS.portrait
+    .map((key) => [key, oneLine(card.fiche?.[key] ?? "")] as const)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${labels[key] ?? key}${sep}${value}`)
+    .join("; ");
+}
+
+/**
+ * Personnages d'une scène, dans l'ordre où on les propose : le narrateur, ceux qui parlent (scénario), ceux que le
+ * texte nomme, puis ceux qu'un fil relie à la scène. Seules des cartes Personnage existantes.
+ */
+export function sceneCast(
+  scene: Pick<CardData, "id" | "fiche">,
+  cards: CardData[],
+  links: readonly { source: string; target: string }[],
+  text: { html?: string; elements?: readonly Pick<ScreenplayElement, "type" | "text">[] },
+): CardData[] {
+  const people = cards.filter((c) => c.type === "personnage");
+  const out: CardData[] = [];
+  const add = (card: CardData | undefined) => {
+    if (card && !out.includes(card)) out.push(card);
+  };
+  add(people.find((c) => c.id === scene.fiche?.pov));
+  const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
+  for (const el of text.elements ?? []) {
+    if (el.type !== "character") continue;
+    const name = fold(characterName(el.text));
+    add(people.find((c) => namesOf(c).includes(name)));
+  }
+  const prose = text.html ?? (text.elements ?? []).filter((el) => el.type === "action").map((el) => `<p>${el.text.replace(/[<&]/g, " ")}</p>`).join("");
+  for (const card of detectCards(prose, people)) add(card);
+  for (const l of links) add(people.find((c) => (l.source === scene.id && c.id === l.target) || (l.target === scene.id && c.id === l.source)));
+  return out;
+}
+
+/**
+ * Couverture ou affiche (#52) : ce que la couverture de la Bible en dit (tagline, logline, genre, ton, public,
+ * thèmes), pour la description préremplie. Les noms de personnes en sont retirés ensuite, comme toujours.
+ */
+export function describeCover(pitch: Pitch, themes: string[], labels: Record<string, string>, sep = ": "): string {
+  const lines: string[] = [];
+  for (const key of ["tagline", "logline", "genre", "ton", "cible", "format"] as const) {
+    const value = oneLine(pitch[key] ?? "");
+    if (value) lines.push(key === "tagline" || key === "logline" ? value : `${labels[key] ?? key}${sep}${value}`);
+  }
+  if (themes.length > 0) lines.push(`${labels.themes ?? "themes"}${sep}${themes.map(oneLine).join(", ")}`);
+  return lines.join("\n");
 }
 
 // ---------- Requête ----------
@@ -165,7 +262,71 @@ const SHAPES: Record<ImageSubject, { size: string; ratio: string }> = {
   place: { size: "1536x1024", ratio: "3:2" },
   object: { size: "1024x1024", ratio: "1:1" },
   mood: { size: "1536x1024", ratio: "3:2" },
+  scene: { size: "1536x1024", ratio: "3:2" },
+  cover: { size: "1024x1536", ratio: "2:3" },
 };
+
+/** Image de référence jointe à la demande (portrait d'un personnage), déjà réduite. */
+export interface ReferenceImage {
+  mime: ImageMime;
+  data: Uint8Array;
+}
+
+/** Au plus tant d'images de référence (OpenAI en accepte 16 ; au-delà, le modèle les mélange). */
+export const REFERENCE_MAX = 6;
+
+const toBase64 = (bytes: Uint8Array) => {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+
+/**
+ * Demande avec des images de référence. OpenAI : API d'édition, en multipart (`image[]`, un fichier par
+ * personnage). OpenRouter : chat avec `modalities: ["image", "text"]`, les images en data URL ; une réponse par
+ * image demandée (`count` requêtes). Les anciens modèles dall-e n'en acceptent pas : demande ordinaire.
+ */
+export function referenceRequest(config: AiConfig, model: string, prompt: string, count: number, subject: ImageSubject, refs: readonly ReferenceImage[]): HttpRequest | FormRequest {
+  const images = refs.slice(0, REFERENCE_MAX);
+  if (config.provider === "openrouter") {
+    const content = [{ type: "text", text: prompt }, ...images.map((r) => ({ type: "image_url", image_url: { url: `data:${r.mime};base64,${toBase64(r.data)}` } }))];
+    return {
+      url: `${base(config)}/v1/chat/completions`,
+      method: "POST",
+      headers: headers(config),
+      body: JSON.stringify({ model, modalities: ["image", "text"], messages: [{ role: "user", content }], image_config: { aspect_ratio: SHAPES[subject].ratio } }),
+    };
+  }
+  const form = new FormData();
+  form.append("model", model);
+  form.append("prompt", prompt);
+  form.append("n", String(clampCount(count)));
+  form.append("size", SHAPES[subject].size);
+  images.forEach((r, i) => form.append("image[]", new Blob([r.data as BlobPart], { type: r.mime }), `reference-${i + 1}.${IMAGE_EXT[r.mime]}`));
+  // Le navigateur pose lui-même le type multipart et sa frontière : jamais de content-type JSON ici.
+  const { "content-type": _json, ...rest } = headers(config);
+  return { url: `${base(config)}/v1/images/edits`, method: "POST", headers: rest, body: form };
+}
+
+/** Images d'une réponse de chat d'OpenRouter : `choices[].message.images[].image_url.url` en data URL base64. */
+export function readChatImages(json: unknown, max = IMAGE_MAX): GeneratedImage[] {
+  const choices = (json as { choices?: unknown } | null)?.choices;
+  if (!Array.isArray(choices)) return [];
+  const out: GeneratedImage[] = [];
+  for (const choice of choices) {
+    const images = (choice as { message?: { images?: unknown } } | null)?.message?.images;
+    if (!Array.isArray(images)) continue;
+    for (const item of images) {
+      if (out.length >= max) return out;
+      const url = (item as { image_url?: { url?: unknown } } | null)?.image_url?.url;
+      const match = typeof url === "string" ? /^data:image\/(?:png|jpeg|webp);base64,(.+)$/.exec(url) : null;
+      const bytes = match ? decodeBase64(match[1]) : null;
+      const mime = bytes && sniffImage(bytes);
+      if (bytes && mime) out.push({ mime, data: bytes });
+    }
+  }
+  return out;
+}
 
 export function imageRequest(config: AiConfig, model: string, prompt: string, count: number, subject: ImageSubject): HttpRequest {
   const n = clampCount(count);
@@ -259,9 +420,26 @@ async function download(url: string): Promise<GeneratedImage | null> {
 }
 
 /** Demande les images et rend celles qui sont lisibles (au moins une, sinon AiError « empty »). */
-export async function generateImages(config: AiConfig, model: string, prompt: string, count: number, subject: ImageSubject, signal?: AbortSignal): Promise<GeneratedImage[]> {
+export async function generateImages(
+  config: AiConfig,
+  model: string,
+  prompt: string,
+  count: number,
+  subject: ImageSubject,
+  signal?: AbortSignal,
+  refs: readonly ReferenceImage[] = [],
+): Promise<GeneratedImage[]> {
   const { AiError } = await import("./providers");
-  const items = readImages(await send(imageRequest(config, model, prompt, count, subject), false, signal, IMAGE_TIMEOUT_MS), clampCount(count));
+  const withRefs = refs.length > 0 && !/^dall-e/i.test(model);
+  if (withRefs && config.provider === "openrouter") {
+    // Une image par réponse : autant de requêtes que d'images demandées, en même temps.
+    const replies = await Promise.all(Array.from({ length: clampCount(count) }, () => send(referenceRequest(config, model, prompt, 1, subject, refs), false, signal, IMAGE_TIMEOUT_MS)));
+    const images = replies.flatMap((r) => readChatImages(r, 1)).slice(0, clampCount(count));
+    if (images.length === 0) throw new AiError("empty");
+    return images;
+  }
+  const request = withRefs ? referenceRequest(config, model, prompt, count, subject, refs) : imageRequest(config, model, prompt, count, subject);
+  const items = readImages(await send(request, false, signal, IMAGE_TIMEOUT_MS), clampCount(count));
   const images: GeneratedImage[] = [];
   for (const item of items) {
     const image = "url" in item ? await download(item.url) : item;

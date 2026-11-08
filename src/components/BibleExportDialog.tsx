@@ -14,6 +14,7 @@ import { storage } from "../storage";
 import { BIBLE_PARTS, bibleOrder, isPrivatePart, partNumber, type PartKey } from "../bibleParts";
 import {
   ACCENT_COUNT,
+  COVER_NONE,
   BIBLE_THEMES,
   bibleFileName,
   deletePreset,
@@ -81,6 +82,7 @@ export function BibleExportDialog() {
   const pack = useMemo(() => buildBiblePack(source, options, ctx), [source, options, ctx]);
   // Parties qui ont du contenu pour ce lecteur (une partie vide n'est pas imprimée).
   const filled = useMemo(() => new Set(buildBiblePack(source, { ...options, parts: [...BIBLE_PARTS] }, ctx).sections.map((s) => s.part)), [source, options, ctx]);
+  const visual = useCosmos((s) => s.pitch.visuel);
   const mediaImages = useMemo(() => [...new Set(nodes.flatMap((n) => [n.data.image, ...(n.data.images ?? [])]).filter((n): n is string => !!n && isMediaName(n)))], [nodes]);
 
   const set = (next: BibleExportOptions) => {
@@ -300,9 +302,16 @@ export function BibleExportDialog() {
           </div>
           <label className="spdf-field">
             {e.cover}
-            <select value={options.cover} onChange={(ev) => set({ ...options, cover: ev.target.value })}>
-              <option value="">{e.coverNone}</option>
-              {[...new Set([options.cover, ...mediaImages])].filter(Boolean).map((n) => (
+            <select value={!visual && options.cover === COVER_NONE ? "" : options.cover} onChange={(ev) => set({ ...options, cover: ev.target.value })}>
+              {visual ? (
+                <>
+                  <option value="">{e.coverProject}</option>
+                  <option value={COVER_NONE}>{e.coverNone}</option>
+                </>
+              ) : (
+                <option value="">{e.coverNone}</option>
+              )}
+              {[...new Set([options.cover, ...mediaImages])].filter((n) => n && n !== COVER_NONE && n !== visual).map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>

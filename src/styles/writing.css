@@ -1295,3 +1295,9 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
    plein, pour ne pas tenir à la couleur seule. Le mode focus les efface (rien ne distrait la frappe). */
 .ms-page .rev-mark { background: color-mix(in srgb, var(--rev, var(--line)) 16%, transparent); text-decoration: underline solid var(--rev, var(--line)); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .ms-page.is-dimmed .rev-mark, .manuscript.is-focus .ms-page .rev-mark { background: none; text-decoration: none; }
+
+/* Génération d'une image (#52) : titre sur l'image (couverture), personnages d'une scène gardés ressemblants. */
+.image-gen-title > span, .image-gen-cast label > span { display: flex; flex-direction: column; gap: 2px; }
+.image-gen-cast { margin: 4px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
+.image-gen-cast legend { padding: 0 4px; font-weight: 600; font-size: 0.875rem; }
+.image-gen-cast .settings-hint { margin: 0; }

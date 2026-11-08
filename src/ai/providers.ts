@@ -85,6 +85,9 @@ export interface HttpRequest {
   body?: string;
 }
 
+/** Requête en formulaire multipart (images de référence d'une image générée, #52). */
+export type FormRequest = Omit<HttpRequest, "body"> & { body: FormData };
+
 export function headers(config: AiConfig): Record<string, string> {
   const key = config.key.trim();
   if (config.provider === "anthropic") {
@@ -312,7 +315,7 @@ async function httpFetch(): Promise<typeof fetch> {
   }
 }
 
-export async function send(request: HttpRequest, local = false, signal?: AbortSignal, timeoutMs = TIMEOUT_MS): Promise<unknown> {
+export async function send(request: HttpRequest | FormRequest, local = false, signal?: AbortSignal, timeoutMs = TIMEOUT_MS): Promise<unknown> {
   const controller = new AbortController();
   let timedOut = false;
   const timer = setTimeout(() => {
