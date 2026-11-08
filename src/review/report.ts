@@ -79,8 +79,11 @@ export function usageName(card: CardData, cards: CardData[] = []): string | null
 export const cardNames = (card: CardData, cards: CardData[] = []) =>
   [card.title, usageName(card, cards) ?? "", ...(card.fiche?.surnoms ?? "").split(/[,;]/)].map((n) => n.trim()).filter(Boolean);
 
-/** Scénario : une ligne par carte Personnage, plus les noms qui parlent sans carte. */
-export function screenplayReport(elements: ScreenplayElement[], cards: CardData[], locale = "fr"): CharacterRow[] {
+/**
+ * Scénario : une ligne par carte Personnage, plus les noms qui parlent sans carte, plus les personnages muets sans
+ * carte (`silent`, relevés par silent.ts : 0 réplique, leurs scènes sont celles où l'action les nomme).
+ */
+export function screenplayReport(elements: ScreenplayElement[], cards: CardData[], locale = "fr", silent: string[] = []): CharacterRow[] {
   const scenes = listScenes(elements);
   const sceneNumber = new Map(scenes.map((s) => [s.index, s.number]));
   // Répliques et mots dits, par nom replié.
@@ -119,6 +122,7 @@ export function screenplayReport(elements: ScreenplayElement[], cards: CardData[
     rows.push(row(card.id, card.title.trim(), (card.fiche?.genre ?? "").trim(), names));
   }
   for (const [key, s] of spoken) if (!covered.has(key)) rows.push(row(null, s.name, "", [s.name]));
+  for (const name of silent) if (!covered.has(foldName(name)) && !spoken.has(foldName(name))) rows.push(row(null, name, "", [name]));
   return rows;
 }
 
@@ -164,6 +168,8 @@ export function genderSummary(rows: CharacterRow[]): GenderGroup[] {
   const groups = new Map<string, GenderGroup>();
   const totalShare = rows.reduce((n, r) => n + r.share, 0);
   for (const r of rows) {
+    // Un muet sans carte (#47) n'a pas de genre connu : il n'entre pas dans la répartition.
+    if (!r.id && r.lines === 0) continue;
     const key = r.gender.toLocaleLowerCase();
     const g = groups.get(key) ?? { gender: r.gender, characters: 0, lines: 0, words: 0, share: 0 };
     g.characters++;

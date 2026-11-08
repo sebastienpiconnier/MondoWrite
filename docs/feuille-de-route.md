@@ -20,12 +20,11 @@ Dernière mise à jour : 8 novembre 2026 (lot 9, #44 à #47).
 ## Ordre / Order
 
 Les issues sont rangées en lots (jalons GitHub), du plus facile au plus dur, par thème. Les lots 1 (écriture :
-#23, #24, #21), 2 (sécurité : #14, #15, #30), 3 (ergonomie : #27, #26) sont faits ; le lot 4 (outils d'écriture : #20, #16, #17) est fait. / Issues are grouped in
+#23, #24, #21), 2 (sécurité : #14, #15, #30), 3 (ergonomie : #27, #26) sont faits ; le lot 4 (outils d'écriture : #20, #16, #17) et le lot 9 (scénario en production : #44, #45, #46, #47) sont faits. / Issues are grouped in
 batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #24, #21), 2 (safety: #14, #15,
-#30), 3 (usability: #27, #26) are done; batch 4 (writing tools: #20, #16, #17) is done.
+#30), 3 (usability: #27, #26) are done; batch 4 (writing tools: #20, #16, #17) and batch 9 (screenplay for production: #44, #45, #46, #47) are done.
 
-1. Lot 9 · Scénario en production / Screenplay for production : #47 personnages muets
-2. Lot 6 · Import et narration / Import and narration : #28 finitions de
+1. Lot 6 · Import et narration / Import and narration : #28 finitions de
    l'import Scrivener
-3. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
-4. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
+2. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
+3. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)

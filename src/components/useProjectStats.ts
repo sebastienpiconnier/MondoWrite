@@ -11,6 +11,7 @@ import { LAYOUTS } from "../screenplay/layout";
 import { seriesPart } from "../screenplay/series";
 import { novelReport, screenplayReport, withPov } from "../review/report";
 import { listScenes } from "../screenplay/scenes";
+import { silentCharacters } from "../review/silent";
 import { countWords } from "../manuscript";
 import { novelPlaces, screenplayPlaces, settingSummary } from "../review/places";
 import { novelCast, screenplayCast } from "../review/crossings";
@@ -35,7 +36,12 @@ export function useProjectStats(part: string | null = null) {
     () =>
       script
         ? screenplay
-          ? withPov(screenplayReport(screenplay.elements, cards, lang), cards, listScenes(screenplay.elements).flatMap((s) => (s.cardId ? [s.cardId] : [])))
+          ? withPov(
+              // Personnages muets sans carte (#47) : une ligne « Sans réplique » de plus.
+              screenplayReport(screenplay.elements, cards, lang, silentCharacters(screenplay.elements, cards).map((c) => c.name)),
+              cards,
+              listScenes(screenplay.elements).flatMap((s) => (s.cardId ? [s.cardId] : [])),
+            )
           : []
         : withPov(novelReport(manuscript, order, cards), cards, order, (id) => countWords(manuscript[id])),
     [script, screenplay, cards, lang, manuscript, order],

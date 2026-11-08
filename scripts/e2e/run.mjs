@@ -924,6 +924,32 @@ const scenarios = [
     },
   },
   {
+    name: "personnage muet : relevé dans « Vérifier » et dans les Statistiques (« Sans réplique »), carte créée d'un clic (#47)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("int. phare - nuit");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Le GARDIEN monte sans un mot. Un coup de feu : BANG !");
+      await h.wait(600);
+      await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
+      const item = page.locator(".review-group", { hasText: "Personnage muet sans carte" }).locator(".review-item");
+      await until(async () => (await item.count()) === 1, "« Vérifier » ne relève pas le personnage muet");
+      assert(((await item.innerText()) ?? "").includes("GARDIEN"), "le muet relevé n'est pas GARDIEN");
+      // Les Statistiques le montrent sans réplique.
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Statistiques" }).click();
+      const silent = page.locator(".char-stats-silent");
+      await until(() => silent.isVisible(), "pas de partie « Sans réplique » dans les Statistiques");
+      assert((await silent.innerText()).includes("GARDIEN"), "GARDIEN n'est pas dans « Sans réplique »");
+      assert(!(await silent.innerText()).includes("BANG"), "un bruit est pris pour un personnage");
+      await silent.getByRole("button", { name: "Créer la carte de GARDIEN" }).click();
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("cartes/") && /type: personnage/.test(v) && /title: "Gardien"/.test(v)), "la carte du muet n'a pas été créée");
+    },
+  },
+  {
     name: "scène omise : pages verrouillées, « OMIS » garde sa place et son numéro, la scène revient de la corbeille (#46)",
     async run(h) {
       const { page } = h;

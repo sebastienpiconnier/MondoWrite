@@ -54,6 +54,8 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
           : fmt(t.items.similarNamesText, { where: w, rare: f.names![0], common: f.names![1] });
       case "unknownCharacter":
         return fmt(t.items.unknownCharacter, { where: w, name: f.names![0] });
+      case "silentCharacter":
+        return fmt(t.items.silentCharacter, { where: w, name: f.names![0] });
       case "longAction":
         return fmt(t.items.longAction, { where: w, n: f.counts![0] });
       case "headingFormat":
@@ -147,7 +149,7 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
                       {t.rename}
                     </button>
                   )}
-                  {f.rule === "unknownCharacter" && (
+                  {(f.rule === "unknownCharacter" || f.rule === "silentCharacter") && (
                     <button type="button" className="review-primary" onClick={() => useCosmos.getState().addTitledCard("personnage", titleCase(f.names![0], lang))}>
                       {t.createCard}
                     </button>
