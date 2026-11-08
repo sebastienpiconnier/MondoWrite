@@ -828,6 +828,7 @@ export const fr = {
     rules: {
       similarNames: "Noms presque identiques",
       unknownCharacter: "Personnage sans carte",
+      silentCharacter: "Personnage muet sans carte",
       longAction: "Action trop longue",
       headingFormat: "En-tête incomplet",
       emptyElement: "Élément vide",
@@ -848,6 +849,7 @@ export const fr = {
     hints: {
       similarNames: "Sans doute le même nom écrit de deux façons.",
       unknownCharacter: "Il parle, mais n’a ni fiche dans la Bible ni carte sur le canevas.",
+      silentCharacter: "Présenté en capitales dans l’action, il ne parle jamais et n’a pas de carte. Un bruit ou une indication de plan peut aussi être relevé : « Ignorer » l’écarte.",
       longAction: "Au-delà de 4 lignes, un paragraphe d’action se lit mal.",
       headingFormat: "Un en-tête dit INT. ou EXT., le décor, puis le moment (JOUR, NUIT…).",
       emptyElement: "Un en-tête sans texte, ou un personnage sans réplique.",
@@ -869,6 +871,7 @@ export const fr = {
       similarNamesScript: "{where} : « {rare} » ({a}) ressemble à « {common} » ({b}).",
       similarNamesText: "{where} : « {rare} » ressemble à « {common} ».",
       unknownCharacter: "{where} : {name}",
+      silentCharacter: "{where} : {name}",
       longAction: "{where} : {n} lignes (4 au plus conseillées).",
       headingFormat: "{where} : {text}",
       emptyHeading: "{where} : en-tête vide",
@@ -2302,6 +2305,14 @@ export const fr = {
     ficheScript: "{scenes} · {lines} · {share} du temps de parole",
     ficheText: "Cité dans {scenes}",
     empty: "Aucun personnage pour l’instant.",
+    // Personnages muets (#47) : présentés dans l'action, sans réplique.
+    silentTitle: "Sans réplique",
+    silentIntro: "Présentés dans l’action, ils ne parlent jamais. Un nom en capitales sans carte est relevé dans le texte : ce peut aussi être un bruit ou une indication de plan.",
+    silentOne: "Scène {n}",
+    silentMany: "{scenes} · scènes {first} à {last}",
+    silentNone: "Nommé seulement en passant",
+    createCard: "Créer la carte",
+    createCardAria: "Créer la carte de {name}",
   },
   relations: {
     tabsAria: "Présentation des personnages",

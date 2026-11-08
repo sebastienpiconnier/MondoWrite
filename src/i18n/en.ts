@@ -845,6 +845,7 @@ export const en: Messages = {
     rules: {
       similarNames: "Near-identical names",
       unknownCharacter: "Character without a card",
+      silentCharacter: "Silent character without a card",
       longAction: "Action too long",
       headingFormat: "Incomplete heading",
       emptyElement: "Empty element",
@@ -865,6 +866,7 @@ export const en: Messages = {
     hints: {
       similarNames: "Probably the same name spelled two ways.",
       unknownCharacter: "They speak, but have no entry in the Bible and no card on the canvas.",
+      silentCharacter: "Introduced in capitals in the action, they never speak and have no card. A sound or a camera direction may also be picked up: “Ignore” dismisses it.",
       longAction: "Beyond 4 lines, an action paragraph is hard to read.",
       headingFormat: "A heading says INT. or EXT., the location, then the time (DAY, NIGHT…).",
       emptyElement: "A heading with no text, or a character with no line.",
@@ -886,6 +888,7 @@ export const en: Messages = {
       similarNamesScript: "{where}: “{rare}” ({a}) looks like “{common}” ({b}).",
       similarNamesText: "{where}: “{rare}” looks like “{common}”.",
       unknownCharacter: "{where}: {name}",
+      silentCharacter: "{where}: {name}",
       longAction: "{where}: {n} lines (4 at most recommended).",
       headingFormat: "{where}: {text}",
       emptyHeading: "{where}: empty heading",
@@ -2025,6 +2028,13 @@ export const en: Messages = {
     ficheScript: "{scenes} · {lines} · {share} of speaking time",
     ficheText: "Named in {scenes}",
     empty: "No character yet.",
+    silentTitle: "No lines",
+    silentIntro: "Introduced in the action, they never speak. A capitalised name without a card is picked up from the text: it may also be a sound or a camera direction.",
+    silentOne: "Scene {n}",
+    silentMany: "{scenes} · scenes {first} to {last}",
+    silentNone: "Only mentioned in passing",
+    createCard: "Create the card",
+    createCardAria: "Create the card for {name}",
   },
   relations: {
     tabsAria: "How to show the characters",

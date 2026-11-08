@@ -12,9 +12,10 @@ import { isPrincipal } from "../character";
 import { formOf, isSeriesForm, type Pitch } from "../pitch";
 import { cardNames, type CharacterRow } from "./report";
 import { REPEAT_MAX, frequentWords, nearRepeats, properNouns } from "./words";
+import { silentCharacters } from "./silent";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
-export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepeat" | "frequentWords" | "headingFormat" | "emptyElement" | "unknownCharacter" | StoryRule;
+export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepeat" | "frequentWords" | "headingFormat" | "emptyElement" | "unknownCharacter" | "silentCharacter" | StoryRule;
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
 export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent";
@@ -23,6 +24,7 @@ export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "n
 export const RULE_ORDER: RuleKey[] = [
   "similarNames",
   "unknownCharacter",
+  "silentCharacter",
   "longAction",
   "headingFormat",
   "emptyElement",
@@ -55,7 +57,7 @@ export interface Finding {
   text: string;
   /** Roman : passage exact à retrouver dans le texte de la scène (sélectionné quand on y va). */
   needle?: string;
-  /** similarNames : le nom le moins employé d'abord, puis l'autre ; unknownCharacter : le nom. */
+  /** similarNames : le nom le moins employé d'abord, puis l'autre ; unknownCharacter, silentCharacter : le nom. */
   names?: string[];
   /** similarNames : nombre d'emplois de chacun ; longAction : nombre de lignes. */
   counts?: number[];
@@ -117,6 +119,9 @@ export function checkScreenplay(elements: ScreenplayElement[], layout: Layout, c
   // Un nom déjà signalé comme variante d'un autre ne l'est pas deux fois : « Renommer partout » suffit.
   const variants = new Set([...seen].map((pair) => pair.split("|")[0]));
   for (const [name, { first }] of who) if (!hasCard(name, cards) && !variants.has(name)) out.push(make("unknownCharacter", first, { names: [name] }));
+
+  // Personnage muet sans carte (#47) : présenté en capitales dans l'action, il ne parle jamais.
+  for (const { name, first } of silentCharacters(elements, cards)) out.push(make("silentCharacter", first, { names: [name] }));
 
   elements.forEach((el, i) => {
     const text = el.text;

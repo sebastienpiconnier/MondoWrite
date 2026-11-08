@@ -7,6 +7,7 @@ import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { storage } from "../storage";
 import { genderSummary, reportCsv, sortRows, type CharacterRow, type SortKey } from "../review/report";
+import { titleCase } from "../screenplay/editor/autocomplete";
 
 interface Props {
   rows: CharacterRow[];
@@ -22,6 +23,12 @@ export function CharacterStats({ rows, kind, onOpen, onSeeLines }: Props) {
   const title = useCosmos((s) => s.title);
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: kind === "script" ? "lines" : "scenes", desc: true });
   const sorted = useMemo(() => sortRows(rows, sort.key, sort.desc, lang), [rows, sort, lang]);
+  // Scénario : ceux qui ne parlent jamais (#47) ont leur partie, « Sans réplique », sous le tableau.
+  const speaking = kind === "script" ? sorted.filter((r) => r.lines > 0) : sorted;
+  const silent = useMemo(
+    () => (kind === "script" ? sortRows(rows.filter((r) => r.lines === 0), "scenes", true, lang) : []),
+    [kind, rows, lang],
+  );
   const groups = useMemo(() => genderSummary(rows), [rows]);
   const hasPov = rows.some((r) => r.pov);
   const number = (n: number) => new Intl.NumberFormat(lang).format(n);
@@ -54,69 +61,112 @@ export function CharacterStats({ rows, kind, onOpen, onSeeLines }: Props) {
           {t.export}
         </button>
       </div>
-      <div className="char-stats-table">
-        <table>
-          <thead>
-            <tr>
-              {columns.map((c) => (
-                <th key={c.key} scope="col" className={c.numeric ? "is-number" : ""} aria-sort={sort.key === c.key ? (sort.desc ? "descending" : "ascending") : undefined}>
+      {speaking.length > 0 && (
+        <div className="char-stats-table">
+          <table>
+            <thead>
+              <tr>
+                {columns.map((c) => (
+                  <th key={c.key} scope="col" className={c.numeric ? "is-number" : ""} aria-sort={sort.key === c.key ? (sort.desc ? "descending" : "ascending") : undefined}>
+                    <button
+                      type="button"
+                      aria-label={fmt(t.sortBy, { column: c.label })}
+                      onClick={() => setSort(sort.key === c.key ? { key: c.key, desc: !sort.desc } : { key: c.key, desc: c.numeric === true || c.key === "share" })}
+                    >
+                      {c.label}
+                      {sort.key === c.key && <span aria-hidden="true">{sort.desc ? " ▾" : " ▴"}</span>}
+                    </button>
+                  </th>
+                ))}
+                {onSeeLines && <td />}
+              </tr>
+            </thead>
+            <tbody>
+              {speaking.map((r) => (
+                <tr key={r.id ?? `name:${r.name}`}>
+                  <th scope="row">
+                    {r.id ? (
+                      <button type="button" className="link-button char-stats-name" aria-label={fmt(t.openAria, { name: r.name })} onClick={() => onOpen(r.id!)}>
+                        {r.name}
+                      </button>
+                    ) : (
+                      <span className="char-stats-name">
+                        {r.name} <span className="muted">({t.noCard})</span>
+                      </span>
+                    )}
+                  </th>
+                  <td className={r.gender ? "" : "muted"}>{r.gender || t.genderNone}</td>
+                  <td className="is-number">{number(r.scenes)}</td>
+                  {kind === "script" && <td className="is-number">{number(r.lines)}</td>}
+                  <td className="is-number">{number(r.words)}</td>
+                  <td>
+                    <span className="char-stats-share">
+                      <span className="char-stats-bar" aria-hidden="true">
+                        <span style={{ width: `${Math.round(r.share * 100)}%` }} />
+                      </span>
+                      {percent(r.share)}
+                    </span>
+                  </td>
+                  <td>{r.first === null ? "" : r.first === r.last ? number(r.first) : fmt(t.appearRange, { first: number(r.first), last: number(r.last!) })}</td>
+                  {hasPov && <td>{r.pov && r.pov.scenes > 0 ? fmt(t.povCell, { n: plural(r.pov.scenes, t.scenesOne, t.scenesMany), share: percent(r.pov.share) }) : ""}</td>}
+                  {onSeeLines && (
+                    <td>
+                      {r.lines > 0 && (
+                        <button type="button" className="link-button" aria-label={fmt(t.seeLinesAria, { name: r.name })} onClick={() => onSeeLines(r.name)}>
+                          {t.seeLines}
+                        </button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {silent.length > 0 && (
+        <section className="char-stats-silent" aria-labelledby="char-stats-silent-title">
+          <h4 className="char-stats-title" id="char-stats-silent-title">
+            {t.silentTitle}
+          </h4>
+          <p className="muted char-stats-note">{t.silentIntro}</p>
+          <ul>
+            {silent.map((r) => (
+              <li key={r.id ?? `name:${r.name}`}>
+                {r.id ? (
+                  <button type="button" className="link-button char-stats-name" aria-label={fmt(t.openAria, { name: r.name })} onClick={() => onOpen(r.id!)}>
+                    {r.name}
+                  </button>
+                ) : (
+                  <span className="char-stats-name">
+                    {r.name} <span className="muted">({t.noCard})</span>
+                  </span>
+                )}
+                <span className="muted">
+                  {r.scenes === 0 || r.first === null
+                    ? t.silentNone
+                    : r.first === r.last
+                      ? fmt(t.silentOne, { n: number(r.first) })
+                      : fmt(t.silentMany, { scenes: plural(r.scenes, t.scenesOne, t.scenesMany), first: number(r.first), last: number(r.last!) })}
+                </span>
+                {!r.id && (
                   <button
                     type="button"
-                    aria-label={fmt(t.sortBy, { column: c.label })}
-                    onClick={() => setSort(sort.key === c.key ? { key: c.key, desc: !sort.desc } : { key: c.key, desc: c.numeric === true || c.key === "share" })}
+                    className="link-button"
+                    aria-label={fmt(t.createCardAria, { name: r.name })}
+                    onClick={() => useCosmos.getState().addTitledCard("personnage", titleCase(r.name, lang))}
                   >
-                    {c.label}
-                    {sort.key === c.key && <span aria-hidden="true">{sort.desc ? " ▾" : " ▴"}</span>}
+                    {t.createCard}
                   </button>
-                </th>
-              ))}
-              {onSeeLines && <td />}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((r) => (
-              <tr key={r.id ?? `name:${r.name}`}>
-                <th scope="row">
-                  {r.id ? (
-                    <button type="button" className="link-button char-stats-name" aria-label={fmt(t.openAria, { name: r.name })} onClick={() => onOpen(r.id!)}>
-                      {r.name}
-                    </button>
-                  ) : (
-                    <span className="char-stats-name">
-                      {r.name} <span className="muted">({t.noCard})</span>
-                    </span>
-                  )}
-                </th>
-                <td className={r.gender ? "" : "muted"}>{r.gender || t.genderNone}</td>
-                <td className="is-number">{number(r.scenes)}</td>
-                {kind === "script" && <td className="is-number">{number(r.lines)}</td>}
-                <td className="is-number">{number(r.words)}</td>
-                <td>
-                  <span className="char-stats-share">
-                    <span className="char-stats-bar" aria-hidden="true">
-                      <span style={{ width: `${Math.round(r.share * 100)}%` }} />
-                    </span>
-                    {percent(r.share)}
-                  </span>
-                </td>
-                <td>{r.first === null ? "" : r.first === r.last ? number(r.first) : fmt(t.appearRange, { first: number(r.first), last: number(r.last!) })}</td>
-                {hasPov && <td>{r.pov && r.pov.scenes > 0 ? fmt(t.povCell, { n: plural(r.pov.scenes, t.scenesOne, t.scenesMany), share: percent(r.pov.share) }) : ""}</td>}
-                {onSeeLines && (
-                  <td>
-                    {r.lines > 0 && (
-                      <button type="button" className="link-button" aria-label={fmt(t.seeLinesAria, { name: r.name })} onClick={() => onSeeLines(r.name)}>
-                        {t.seeLines}
-                      </button>
-                    )}
-                  </td>
                 )}
-              </tr>
+              </li>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </ul>
+        </section>
+      )}
 
-      <h4 className="char-stats-title">{t.byGender}</h4>
+      {groups.length > 0 && <h4 className="char-stats-title">{t.byGender}</h4>}
       <ul className="char-stats-genders">
         {groups.map((g) => (
           <li key={g.gender || "-"}>

@@ -400,6 +400,9 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
 .char-stats-gender { color: var(--ink-2); }
 .char-stats-big { font-size: 1.375rem; font-weight: 600; color: var(--ink); }
 .char-stats-note { margin: 0; font-size: 0.8125rem; }
+.char-stats-silent { display: grid; gap: 8px; }
+.char-stats-silent ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.char-stats-silent li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 0.875rem; }
 /* Statistiques des lieux : colonnes non triables (même allure que les titres triables) et personnages. */
 .char-stats-head { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
 .place-stats .char-stats-bar { width: 64px; }
