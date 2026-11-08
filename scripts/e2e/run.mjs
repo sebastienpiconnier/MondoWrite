@@ -1236,6 +1236,44 @@ const scenarios = [
     },
   },
   {
+    name: "iPhone : barre de mise en forme collée au clavier, pas de bulle sur la sélection, tous les boutons atteignables",
+    context: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
+    async run(h) {
+      const { page } = h;
+      await h.create("Clavier");
+      await page.locator(".views").getByRole("button", { name: "Plan", exact: true }).tap();
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await page.locator(".views").getByRole("button", { name: "Manuscrit", exact: true }).tap();
+      const editor = page.locator(".ms-page .ProseMirror");
+      await editor.tap();
+      await page.keyboard.type("Le réveil sonne et Ethan rêve encore");
+      const dock = page.locator(".format-dock");
+      await until(() => dock.isVisible(), "la barre de mise en forme n'est pas sur le clavier quand on écrit");
+      assert((await page.locator(".format-bar:not(.format-dock)").count()) === 0, "une bulle de mise en forme est affichée sur téléphone");
+      assert((await dock.getByRole("button", { name: /^Commenter le passage/ }).count()) === 0, "Commenter est proposé sans sélection");
+      for (let i = 0; i < "encore".length; i++) await page.keyboard.press("Shift+ArrowLeft");
+      await until(() => dock.getByRole("button", { name: /^Commenter le passage/ }).isVisible(), "Commenter n'arrive pas dans la barre avec une sélection");
+      assert((await page.locator(".format-bar:not(.format-dock)").count()) === 0, "une bulle paraît sur la sélection");
+      // La rangée défile de côté : son dernier bouton entre dans l'écran.
+      const last = await dock.locator("[role=toolbar]").evaluate((bar) => {
+        bar.scrollLeft = bar.scrollWidth;
+        const r = bar.lastElementChild.getBoundingClientRect();
+        return { left: r.left, right: r.right, width: window.innerWidth };
+      });
+      assert(last.left >= 0 && last.right <= last.width + 1, `le dernier bouton reste hors de l'écran : ${JSON.stringify(last)}`);
+      const fades = () => dock.evaluate((el) => el.classList.contains("has-more"));
+      await until(async () => !(await fades()), "le bord de la rangée reste estompé une fois au bout");
+      await dock.locator("[role=toolbar]").evaluate((bar) => (bar.scrollLeft = 0));
+      await until(fades, "rien ne dit que la rangée défile (bord droit non estompé)");
+      await dock.getByRole("button", { name: /^Gras/ }).tap();
+      await h.saved((f) => Object.keys(f).some((k) => k.startsWith("manuscrit/") && f[k].includes("**encore**")), "Gras depuis la barre du clavier n'a pas mis le mot en gras");
+      await until(() => editor.evaluate((el) => el.contains(document.activeElement)), "toucher un bouton de la barre retire le focus du texte (le clavier se fermerait)");
+      await page.evaluate(() => document.activeElement?.blur());
+      await until(async () => (await dock.count()) === 0, "la barre reste affichée une fois le texte quitté");
+    },
+  },
+  {
     name: "tactile (iPad 834 × 1194) : exemple ouvert, « Nouvelle carte » crée une carte",
     context: { viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
     async run(h) {

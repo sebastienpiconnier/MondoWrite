@@ -1,6 +1,8 @@
 // Barre de mise en forme qui apparaît au-dessus d'un texte sélectionné : gras, italique, barré, titre,
 // listes, case à cocher, citation et « à reprendre ». Le chemin souris et doigt des raccourcis clavier
 // (Cmd/Ctrl+B, +I…) : sur un écran tactile, sélectionner un mot suffit à la faire paraître.
+// Sur un téléphone tactile, les mêmes boutons sont collés au clavier (FormatDock.tsx), pas en bulle : la bulle
+// entrait en concurrence avec le menu du système (Couper, Copier, Coller…) et sortait de l'écran.
 
 import type { ReactNode } from "react";
 import type { EditorState } from "@tiptap/pm/state";
@@ -9,6 +11,10 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import { useT } from "../i18n";
 import { useAtelierFormat } from "./Atelier";
 import { openSynonyms } from "../synonymsState";
+import { isTouch } from "../platform";
+import { dockActions } from "../formatDock";
+import { usePhone } from "./usePhone";
+import { FormatDock } from "./FormatDock";
 
 interface Action {
   key: string;
@@ -175,6 +181,15 @@ export function FormatButtons({ actions }: { actions: Action[] }) {
 export function FormatBar({ editor, atelier = "", ...options }: { editor: Editor; atelier?: string } & FormatOptions) {
   const actions = useFormatActions(editor, options);
   const ia = useAtelierFormat(editor, atelier);
+  const hasSelection = useEditorState({ editor, selector: ({ editor: e }) => !e.state.selection.empty });
+  const docked = usePhone() && isTouch();
+  if (docked)
+    return (
+      <FormatDock editor={editor}>
+        {ia.panel}
+        <FormatButtons actions={dockActions([...actions, ...ia.actions], hasSelection)} />
+      </FormatDock>
+    );
   return (
     // `shift` : la barre (plus large avec les boutons de l'Atelier) reste dans la fenêtre.
     <BubbleMenu
