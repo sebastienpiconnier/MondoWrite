@@ -531,6 +531,8 @@ const scenarios = [
       await page.mouse.move(box.right - 1, box.y, { steps: 5 });
       await page.mouse.up();
       await until(() => page.getByRole("button", { name: /^Commenter le passage/ }).isVisible(), "pas de bouton Commenter dans la barre de mise en forme");
+      assert((await page.locator(".format-bar").getByRole("button", { name: /^À reprendre/ }).count()) === 0, "le bouton « à reprendre » est encore dans la barre (Commenter le remplace)");
+      assert(await page.locator(".format-bar").getByRole("button", { name: /^Gras/ }).isVisible(), "à la souris, la barre a perdu ses mises en forme");
       await page.keyboard.press("Control+Alt+m");
       const field = page.getByRole("textbox", { name: "Commentaire sur « six heures »" });
       await until(() => field.evaluate((el) => el === document.activeElement), "le champ du commentaire n'a pas le focus");
@@ -1233,6 +1235,84 @@ const scenarios = [
       await until(async () => !(await has(frame, "hide-toc")), "glisser vers la droite n'ouvre pas le sommaire de la Bible");
       await swipe(320, 140);
       await until(() => has(frame, "hide-toc"), "glisser vers la gauche ne referme pas le sommaire de la Bible");
+    },
+  },
+  {
+    name: "iPhone : pas de barre de mise en forme sur la sélection (le menu d'iOS reste seul), le Markdown tapé met en forme",
+    context: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
+    async run(h) {
+      const { page } = h;
+      await h.create("Sans barre");
+      await page.locator(".views").getByRole("button", { name: "Plan", exact: true }).tap();
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await page.locator(".views").getByRole("button", { name: "Manuscrit", exact: true }).tap();
+      const editor = page.locator(".ms-page .ProseMirror");
+      await editor.tap();
+      await page.keyboard.type("Ethan rêve **encore** ");
+      for (let i = 0; i < 6; i++) await page.keyboard.press("Shift+ArrowLeft");
+      await h.wait(400);
+      assert((await page.locator(".format-bar").count()) === 0, "une barre de mise en forme paraît sur téléphone");
+      await h.saved((f) => Object.keys(f).some((k) => k.startsWith("manuscrit/") && f[k].includes("**encore**")), "le Markdown tapé n'a pas mis le mot en gras");
+    },
+  },
+  {
+    name: "iPad : la bulle sur la sélection garde Commenter sans les mises en forme ; un glisser ouvre un volet même en écrivant",
+    context: { viewport: { width: 1194, height: 834 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
+    async run(h) {
+      const { page } = h;
+      await h.create("Tablette");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      const editor = page.locator(".ms-page .ProseMirror");
+      await editor.tap();
+      await page.keyboard.type("Le réveil sonne et Ethan rêve encore");
+      for (let i = 0; i < "encore".length; i++) await page.keyboard.press("Shift+ArrowLeft");
+      const bar = page.locator(".format-bar");
+      await until(() => bar.getByRole("button", { name: /^Commenter le passage/ }).isVisible(), "pas de Commenter dans la bulle de l'iPad");
+      for (const name of [/^Gras/, /^Italique/, /^Citation/, /^À reprendre/]) assert((await bar.getByRole("button", { name }).count()) === 0, `bouton de mise en forme encore là sur iPad : ${name}`);
+      // Curseur dans le texte (le clavier serait ouvert) : un glisser vif d'un doigt bouge quand même un volet.
+      await page.keyboard.press("ArrowRight");
+      assert(await editor.evaluate((el) => el.contains(document.activeElement)), "le texte n'a plus le focus avant le glisser");
+      const ms = page.locator(".manuscript");
+      const panels = () => ms.evaluate((el) => `${el.classList.contains("hide-scenes")}/${el.classList.contains("hide-side")}`);
+      const before = await panels();
+      const box = await editor.boundingBox();
+      const cdp = await page.context().newCDPSession(page);
+      const y = Math.round(box.y + box.height / 2);
+      const x0 = Math.round(box.x + box.width / 2);
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: x0, y, id: 0 }] });
+      for (let i = 1; i <= 5; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x0 + i * 40, y, id: 0 }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await until(async () => (await panels()) !== before, "un glisser sur le texte en cours d'écriture ne bouge aucun volet");
+    },
+  },
+  {
+    name: "trackpad : écarter deux doigts entre en mode focus, les pincer en sort (Manuscrit) ; la molette d'une souris avec Ctrl n'y touche pas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Trackpad");
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").first().fill("Le réveil");
+      await page.getByPlaceholder("Nouvelle scène…").first().press("Enter");
+      await h.view(4);
+      const ms = page.locator(".manuscript");
+      await ms.waitFor();
+      const focus = () => ms.evaluate((el) => el.classList.contains("is-focus"));
+      const pinch = (deltaY, steps = 8) =>
+        page.locator(".ms-page").evaluate((el, [d, n]) => {
+          for (let i = 0; i < n; i++) el.dispatchEvent(new WheelEvent("wheel", { deltaY: d, ctrlKey: true, bubbles: true, cancelable: true }));
+        }, [deltaY, steps]);
+      await pinch(-100, 1);
+      await h.wait(300);
+      assert(!(await focus()), "un cran de molette de souris avec Ctrl a ouvert le mode focus");
+      await pinch(-6);
+      await until(focus, "écarter deux doigts sur le trackpad n'entre pas en mode focus");
+      await h.wait(400); // fin du geste
+      await pinch(6);
+      await until(async () => !(await focus()), "pincer sur le trackpad ne sort pas du mode focus");
     },
   },
   {

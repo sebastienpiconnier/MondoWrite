@@ -1,6 +1,9 @@
 // Barre de mise en forme qui apparaît au-dessus d'un texte sélectionné : gras, italique, barré, titre,
-// listes, case à cocher, citation et « à reprendre ». Le chemin souris et doigt des raccourcis clavier
+// listes, case à cocher, citation, puis les actions sur le passage (fiche, note, synonymes, commenter, chutier).
+// Plus de bouton « à reprendre » (novembre 2026) : Commenter fait mieux le même travail ; le raccourci reste. Le chemin souris et doigt des raccourcis clavier
 // (Cmd/Ctrl+B, +I…) : sur un écran tactile, sélectionner un mot suffit à la faire paraître.
+// Pas sur un téléphone tactile : la bulle croisait le menu d'iOS (Couper, Copier, Coller…) et sortait de l'écran ;
+// on y écrit, la mise en forme se tape en Markdown (**gras**, *italique*, ~~barré~~).
 
 import type { ReactNode } from "react";
 import type { EditorState } from "@tiptap/pm/state";
@@ -9,6 +12,9 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import { useT } from "../i18n";
 import { useAtelierFormat } from "./Atelier";
 import { openSynonyms } from "../synonymsState";
+import { isTouch } from "../platform";
+import { bubbleActions } from "../formatBar";
+import { usePhone } from "./usePhone";
 
 interface Action {
   key: string;
@@ -48,7 +54,6 @@ const PLACE = (
 );
 
 interface FormatOptions {
-  revisit?: boolean;
   /** Manuscrit : met le passage sélectionné au chutier. */
   onChutier?: () => void;
   /** Texte d'une scène : commente le passage sélectionné. */
@@ -58,7 +63,7 @@ interface FormatOptions {
 }
 
 /** Les boutons de mise en forme d'un éditeur, état actif compris (barre de sélection et barre du clavier). */
-export function useFormatActions(editor: Editor, { revisit = true, onChutier, onComment, onCreate }: FormatOptions = {}): Action[] {
+export function useFormatActions(editor: Editor, { onChutier, onComment, onCreate }: FormatOptions = {}): Action[] {
   const all = useT();
   const f = all.format;
   const chain = () => editor.chain().focus();
@@ -73,7 +78,6 @@ export function useFormatActions(editor: Editor, { revisit = true, onChutier, on
       bullet: e.isActive("bulletList"),
       task: e.isActive("taskList"),
       quote: e.isActive("blockquote"),
-      revisit: e.isActive("highlight"),
       nameable: onCreate ? onCreate.name(e.state) !== "" : false,
     }),
   });
@@ -85,9 +89,6 @@ export function useFormatActions(editor: Editor, { revisit = true, onChutier, on
     { key: "bullet", label: f.bullet, glyph: "•", active: on.bullet, run: () => chain().toggleBulletList().run() },
     { key: "task", label: f.task, glyph: "☐", active: on.task, run: () => chain().toggleTaskList().run() },
     { key: "quote", label: f.quote, glyph: "“", active: on.quote, run: () => chain().toggleBlockquote().run() },
-    ...(revisit
-      ? [{ key: "revisit", label: f.revisit, glyph: "!", active: on.revisit, run: () => chain().toggleHighlight().run() }]
-      : []),
     ...(onCreate && on.nameable
       ? [
           { key: "create-personnage", label: f.createCharacter, glyph: PERSON, active: false, run: () => onCreate.run("personnage") },
@@ -173,8 +174,17 @@ export function FormatButtons({ actions }: { actions: Action[] }) {
  * « Trois variantes » sur la sélection ; sur un passage de l'IA, « Je l'ai repris » (Atelier.tsx).
  */
 export function FormatBar({ editor, atelier = "", ...options }: { editor: Editor; atelier?: string } & FormatOptions) {
-  const actions = useFormatActions(editor, options);
+  const touch = isTouch();
+  const phone = usePhone() && touch;
+  if (phone) return null;
+  return <SelectionBubble editor={editor} atelier={atelier} touch={touch} {...options} />;
+}
+
+/** `touch` : iPad et autres tablettes, la bulle ne garde que les actions sur le passage (pas la mise en forme). */
+function SelectionBubble({ editor, atelier, touch, ...options }: { editor: Editor; atelier: string; touch: boolean } & FormatOptions) {
+  const actions = bubbleActions(useFormatActions(editor, options), touch);
   const ia = useAtelierFormat(editor, atelier);
+  if (actions.length === 0 && ia.actions.length === 0 && !ia.panel) return null;
   return (
     // `shift` : la barre (plus large avec les boutons de l'Atelier) reste dans la fenêtre.
     <BubbleMenu
