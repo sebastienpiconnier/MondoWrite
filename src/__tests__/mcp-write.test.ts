@@ -339,4 +339,24 @@ describe("application d'une demande", () => {
     expect((await run("rename_everywhere", { card: "Inès", name: "Iris" })).text).toContain("1 occurrence");
     expect((await run("create_episode", { title: "Pilote" })).ok).toBe(false);
   });
+
+  it("fiche d'une scène : statut et point de vue par leur libellé, champs de texte marqués IA", async () => {
+    const { state, store } = fakeStore("roman");
+    const res = await applyMcpRequest({ id: "1", tool: "set_scene_fields", args: { scene: "1", fields: { Statut: "Brouillon", pov: "Inès", "Ce qu’il veut": "Trouver le gardien", couleur: "bleu" } } }, store, fr);
+    expect(res.ok).toBe(true);
+    expect(res.text).toContain("couleur");
+    const scene = state.cards.find((c) => c.id === "s1")!;
+    expect(scene.fiche).toMatchObject({ statut: "brouillon", pov: "c1", but: "Trouver le gardien" });
+    expect(scene.ia).toEqual(["but"]);
+    expect((await applyMcpRequest({ id: "2", tool: "set_scene_fields", args: { scene: "1", fields: { statut: "" } } }, store, fr)).ok).toBe(true);
+    expect(state.cards.find((c) => c.id === "s1")!.fiche?.statut).toBeUndefined();
+    expect((await applyMcpRequest({ id: "3", tool: "set_scene_fields", args: { scene: "1", fields: { rien: "x" } } }, store, fr)).text).toContain("Champs de la fiche d'une scène");
+  });
+
+  it("fiche d'une scène de scénario : le synopsis va dans le Fountain", async () => {
+    const { state, store } = fakeStore("scenario", parse("INT. PHARE - NUIT [[cosmos:s1]]\n\nAction."));
+    expect((await applyMcpRequest({ id: "1", tool: "set_scene_fields", args: { scene: "1", fields: { synopsis: "Inès arrive.", obstacle: "La tempête" } } }, store, fr)).ok).toBe(true);
+    expect(serialize(state.screenplay!)).toContain("= Inès arrive. [[ia]]");
+    expect(state.cards.find((c) => c.id === "s1")!.fiche).toEqual({ obstacle: "La tempête" });
+  });
 });

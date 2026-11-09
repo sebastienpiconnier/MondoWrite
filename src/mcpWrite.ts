@@ -103,11 +103,13 @@ export function resolveFields(type: CardType, fields: unknown, t: Messages, card
   const out: FieldsResult = { fiche: {}, refused: [] };
   if (!fields || typeof fields !== "object") return out;
   const keys = sheetFields(type) as readonly string[];
-  const labels: Record<string, string> = { ...t.character.fields, ...t.fiche.fields, ...((t.fiche.typeLabels as Record<string, Record<string, string>>)[type] ?? {}) };
+  // Tous les libellés d'un champ comptent : celui propre au type (« Objectif de la scène ») comme le général (« Ce qu'il veut »).
+  const labelMaps: Record<string, string>[] = [(t.fiche.typeLabels as Record<string, Record<string, string>>)[type] ?? {}, t.fiche.fields, t.character.fields];
+  const labelled = (k: string, f: string) => labelMaps.some((m) => m[k] && fold(m[k]) === f);
   for (const [name, raw] of Object.entries(fields as Record<string, unknown>)) {
     const value = str(raw);
     const f = fold(name);
-    const key = keys.find((k) => fold(k) === f) ?? keys.find((k) => labels[k] && fold(labels[k]) === f);
+    const key = keys.find((k) => fold(k) === f) ?? keys.find((k) => labelled(k, f));
     if (!key) {
       out.refused.push(name);
       continue;
@@ -495,6 +497,44 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
       store.log(title, countWords(`<p>${synopsis} ${text}</p>`), client);
       const n = store.scenes().find((s) => s.id === id)?.n;
       return { ok: true, text: `Scène créée : « ${title} »${n ? `, scène ${n}` : ""} (id \`${id}\`).` };
+    }
+
+    case "set_scene_fields": {
+      const scene = findScene(store, str(a.scene));
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      const card = store.cards().find((c) => c.id === scene.id);
+      if (!card || card.type !== "scene") return fail("Cette scène n'a pas de carte : impossible d'écrire sa fiche d'ici.");
+      const fields = resolveFields("scene", a.fields, t, store.cards());
+      // Scénario : le synopsis vit dans le Fountain (ligne « = »), jamais dans la fiche.
+      const synopsis = store.kind === "scenario" && "synopsis" in fields.fiche ? fields.fiche.synopsis : null;
+      if (synopsis !== null) delete fields.fiche.synopsis;
+      if (Object.keys(fields.fiche).length === 0 && synopsis === null) {
+        const labels = { ...t.fiche.fields, ...((t.fiche.typeLabels as Record<string, Record<string, string>>).scene ?? {}) } as Record<string, string>;
+        const known = (sheetFields("scene") as readonly string[]).map((k) => (labels[k] ? `${k} (${labels[k]})` : k)).join(", ");
+        return fail(`Aucun champ reconnu${fields.refused.length ? ` : ${fields.refused.join(" ; ")}` : ""}. Champs de la fiche d'une scène : ${known}.`);
+      }
+      store.batch(() => {
+        if (Object.keys(fields.fiche).length > 0) {
+          let ia = card.ia;
+          const fiche = { ...(card.fiche ?? {}) };
+          for (const [key, value] of Object.entries(fields.fiche)) {
+            if (value) {
+              fiche[key] = value;
+              // Un champ à choix ou une référence (statut, point de vue) n'est pas un texte de l'IA : pas de marque.
+              if (!choicesOf(key, t) && !isCardRefField(key)) ia = withIaField(ia, key);
+            } else delete fiche[key];
+          }
+          store.updateCard(card.id, { fiche: Object.keys(fiche).length > 0 ? fiche : undefined, ia });
+        }
+        if (synopsis !== null) {
+          const sp = store.screenplay();
+          if (sp) store.setScreenplay(withIaSynopsis(sp, card.id, synopsis), true);
+        }
+      });
+      const written = [...Object.keys(fields.fiche), ...(synopsis !== null ? ["synopsis"] : [])];
+      store.log(scene.title, countWords(`<p>${Object.values(fields.fiche).join(" ")} ${synopsis ?? ""}</p>`), client);
+      const refused = fields.refused.length > 0 ? ` Champs non repris : ${fields.refused.join(" ; ")}.` : "";
+      return { ok: true, text: `Fiche de la scène ${scene.n} « ${scene.title} » : ${written.join(", ")}.${refused}` };
     }
 
     case "set_scene_synopsis": {

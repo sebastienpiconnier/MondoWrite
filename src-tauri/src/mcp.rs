@@ -33,12 +33,12 @@ const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
 const ANSWER_MS: u64 = 20_000;
 /// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
-const WRITE_TOOLS: [&str; 28] = [
+const WRITE_TOOLS: [&str; 29] = [
   "create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene",
   "move_scene", "create_chapter", "rename_chapter", "move_chapter", "delete_chapter",
   "add_comment", "resolve_comment", "keep_version", "create_episode", "update_episode", "place_scene", "set_template",
   "merge_scenes", "split_scene", "trash_card", "unlink_cards", "rename_everywhere", "replace_text", "set_cover",
-  "create_frame", "organize_canvas",
+  "create_frame", "organize_canvas", "set_scene_fields",
 ];
 /// Lectures faites par l'app ouverte (calculées sur le projet tel qu'il est à l'écran) : accès en lecture suffit.
 const LIVE_TOOLS: [&str; 6] = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"];
@@ -726,6 +726,15 @@ impl Server {
         "name": "set_scene_synopsis",
         "description": "Écrit le synopsis d'une scène (une ou deux phrases). Marqué « IA ». / Sets a scene's synopsis.",
         "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string", "description": "Numéro, identifiant ou titre." }, "synopsis": { "type": "string" } }, "required": ["scene", "synopsis"] }
+      },
+      {
+        "name": "set_scene_fields",
+        "description": "Remplit la fiche d'une scène : statut (à écrire, brouillon, à revoir, révisée, finie), point de vue (nom d'un personnage), ce qu'il veut (but), obstacle, tournant, changement, issue (mieux, pire, pareil), synopsis, dépouillement (accessoires, costumes, figurants, véhicules, effets). Clés ou libellés ; une valeur vide efface le champ. Textes marqués « IA ». / Sets a scene's sheet fields (status, POV, goal, obstacle…).",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
+          "fields": { "type": "object", "description": "Champ → valeur, ex. { \"statut\": \"brouillon\", \"pov\": \"Inès\", \"but\": \"…\" }.", "additionalProperties": { "type": "string" } }
+        }, "required": ["scene", "fields"] }
       },
       {
         "name": "write_scene",

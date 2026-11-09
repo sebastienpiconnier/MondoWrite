@@ -109,7 +109,8 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
       `create_episode`, `update_episode`, `place_scene` (case ou épisode), `set_template`, `merge_scenes`,
       `split_scene` (roman), `trash_card`, `unlink_cards`, `rename_everywhere` (garde-fous de la fenêtre),
       `replace_text`, `set_cover` (marqué IA, journal « external »), `create_frame`, `organize_canvas` (la vue de
-      l'auteur ne change pas)
+      l'auteur ne change pas), `set_scene_fields` (fiche d'une scène : statut, point de vue, but, obstacle… ; synopsis
+      d'un scénario dans le Fountain ; champs à choix et références sans marque IA)
 - [x] lectures faites par l'app ouverte (`src/mcpLive.ts`, accès en lecture suffisant) : `todo_list`, `read_comments`,
       `project_stats`, `review`, `scene_versions`, `read_journal` ; le pont tourne dès qu'un projet est ouvert à
       l'assistant, chaque écriture revérifie l'accès en écriture
