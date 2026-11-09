@@ -33,10 +33,15 @@ const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
 const ANSWER_MS: u64 = 20_000;
 /// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
-const WRITE_TOOLS: [&str; 12] = [
+const WRITE_TOOLS: [&str; 28] = [
   "create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene",
   "move_scene", "create_chapter", "rename_chapter", "move_chapter", "delete_chapter",
+  "add_comment", "resolve_comment", "keep_version", "create_episode", "update_episode", "place_scene", "set_template",
+  "merge_scenes", "split_scene", "trash_card", "unlink_cards", "rename_everywhere", "replace_text", "set_cover",
+  "create_frame", "organize_canvas",
 ];
+/// Lectures faites par l'app ouverte (calculées sur le projet tel qu'il est à l'écran) : accès en lecture suffit.
+const LIVE_TOOLS: [&str; 6] = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Chemins
@@ -598,13 +603,22 @@ impl Server {
 
   /// Outil d'écriture : la demande va à l'app ouverte, qui l'applique et répond. Jamais d'écriture directe ici.
   fn write(&self, name: &str, args: &Value) -> ToolResult {
+    self.forward(name, args, true)
+  }
+
+  /// Une demande passée à l'app ouverte : écriture (`write`), ou lecture faite sur le projet à l'écran.
+  fn forward(&self, name: &str, args: &Value, write: bool) -> ToolResult {
     let (key, v) = self.project(args)?;
-    if str_of(&v, "/project/access") != "write" {
+    if write && str_of(&v, "/project/access") != "write" {
       return Err("Ce projet est ouvert à l'assistant en lecture seule. Dans MondoWrite : Réglages › Ce projet › « Lecture et écriture ». / This project is read only for the assistant.".into());
     }
     let live = std::fs::read_to_string(self.dir.join(LIVE_DIR).join(&key)).ok().and_then(|t| t.trim().parse::<u128>().ok());
     if !live.is_some_and(|at| now_ms().saturating_sub(at) < LIVE_MS) {
-      return Err(format!("Ouvre « {} » dans MondoWrite : l'assistant n'écrit que dans un projet ouvert, pour que tout passe par l'app (annulation, marque IA, journal). / Open the project in MondoWrite first.", str_of(&v, "/project/title")));
+      return Err(if write {
+        format!("Ouvre « {} » dans MondoWrite : l'assistant n'écrit que dans un projet ouvert, pour que tout passe par l'app (annulation, marque IA, journal). / Open the project in MondoWrite first.", str_of(&v, "/project/title"))
+      } else {
+        format!("Ouvre « {} » dans MondoWrite : cette lecture se fait sur le projet ouvert. / Open the project in MondoWrite first.", str_of(&v, "/project/title"))
+      });
     }
     let queue = self.dir.join(QUEUE_DIR).join(&key);
     std::fs::create_dir_all(&queue).map_err(|e| e.to_string())?;
@@ -633,7 +647,7 @@ impl Server {
 
   pub fn tools() -> Value {
     let project = json!({ "type": "string", "description": "Titre ou identifiant du projet (facultatif s'il n'y en a qu'un). / Project title or id (optional if only one)." });
-    json!([
+    let mut tools = json!([
       {
         "name": "list_projects",
         "description": "Liste les projets MondoWrite (romans, scénarios) que l'auteur a ouverts à l'assistant. / Lists the MondoWrite projects (novels, screenplays) the author shared with the assistant.",
@@ -753,7 +767,155 @@ impl Server {
         "description": "Roman : retire un chapitre ; ses scènes rejoignent le chapitre précédent. Aucune scène ni aucun texte n'est supprimé. / Novel: removes a chapter break, never a scene.",
         "inputSchema": { "type": "object", "properties": { "project": project, "chapter": { "type": "string" } }, "required": ["chapter"] }
       }
-    ])
+    ]);
+    // En deux listes : une seule dépasserait la profondeur permise à la macro `json!`.
+    let more = json!([
+      {
+        "name": "add_comment",
+        "description": "Commente un passage d'une scène, comme un relecteur dans la marge : le passage cité (mot pour mot, d'un seul tenant) est surligné, le commentaire va dans l'onglet Commentaires et dans « À faire ». Le texte n'est pas changé. / Anchors a margin comment to an exact quote; the text is not changed.",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
+          "quote": { "type": "string", "description": "Passage exact de la scène (scénario : dans une action ou une réplique)." },
+          "text": { "type": "string", "description": "Le commentaire." }
+        }, "required": ["scene", "quote", "text"] }
+      },
+      {
+        "name": "resolve_comment",
+        "description": "Marque un commentaire comme résolu (ou le rouvre). Identifiant donné par read_comments. / Resolves (or reopens) a comment.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "comment": { "type": "string" }, "resolved": { "type": "boolean", "description": "true par défaut." } }, "required": ["comment"] }
+      },
+      {
+        "name": "keep_version",
+        "description": "Garde le texte actuel d'une scène comme version (fenêtre « Versions de la scène »), avant une série de changements. / Saves the scene's current text as a version.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string" }, "title": { "type": "string" } }, "required": ["scene"] }
+      },
+      {
+        "name": "create_episode",
+        "description": "Scénario de série : nouvel épisode à la fin d'une saison (la dernière par défaut), ou nouvelle saison (`season_only`). Le premier épisode reçoit le texte déjà écrit. / Series: adds an episode (or a season).",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "title": { "type": "string" },
+          "synopsis": { "type": "string" },
+          "season": { "type": "string", "description": "Saison où le poser : numéro, identifiant ou titre." },
+          "season_only": { "type": "boolean", "description": "Créer une saison plutôt qu'un épisode." }
+        } }
+      },
+      {
+        "name": "update_episode",
+        "description": "Série : renomme un épisode ou une saison, écrit le synopsis d'un épisode, ou le déplace d'un cran (`move`). / Series: renames, sets synopsis or moves an episode or season.",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "episode": { "type": "string", "description": "Épisode (« 2.3 », numéro, identifiant ou titre) ou saison (« saison 2 »)." },
+          "title": { "type": "string" },
+          "synopsis": { "type": "string" },
+          "move": { "type": "string", "enum": ["up", "down"] }
+        }, "required": ["episode"] }
+      },
+      {
+        "name": "place_scene",
+        "description": "Range une scène dans une case du gabarit (`beat`, ex. « Catalyseur ») ou, dans une série, dans un épisode (`episode`), avec son texte. / Files a scene into a template beat or a series episode.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string" }, "beat": { "type": "string" }, "episode": { "type": "string" } }, "required": ["scene"] }
+      },
+      {
+        "name": "set_template",
+        "description": "Pose le gabarit du plan ou du séquencier (trois actes, Save the Cat, voyage du héros, huit séquences, sept points, Freytag, Hauge, cercle de Harmon, kishōtenketsu, romance, polar ; roman : libre). Changer de gabarit ne perd aucun rangement. / Sets the story structure template.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "template": { "type": "string" } }, "required": ["template"] }
+      },
+      {
+        "name": "merge_scenes",
+        "description": "Fusionne la scène suivante dans celle-ci : texte, synopsis, fils et commentaires. La carte de la scène suivante part à la corbeille. Roman : même chapitre ; scénario : scènes qui se suivent. / Merges the next scene into this one.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string" } }, "required": ["scene"] }
+      },
+      {
+        "name": "split_scene",
+        "description": "Roman : coupe une scène en deux au paragraphe qui contient `at` ; la suite devient une nouvelle scène juste après (même chapitre). / Novel: splits a scene at the paragraph containing `at`.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string" }, "at": { "type": "string", "description": "Début exact du paragraphe où couper." }, "title": { "type": "string", "description": "Titre de la nouvelle scène." } }, "required": ["scene", "at"] }
+      },
+      {
+        "name": "trash_card",
+        "description": "Met une carte à la corbeille, avec ses fils (et sa scène, dans un scénario). Rien n'est effacé : l'auteur peut la remettre. Le texte d'une scène de roman reste. / Moves a card to the trash (restorable).",
+        "inputSchema": { "type": "object", "properties": { "project": project, "card": { "type": "string" } }, "required": ["card"] }
+      },
+      {
+        "name": "unlink_cards",
+        "description": "Retire le fil entre deux cartes. / Removes the wire between two cards.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "from": { "type": "string" }, "to": { "type": "string" } }, "required": ["from", "to"] }
+      },
+      {
+        "name": "rename_everywhere",
+        "description": "Renomme une carte (personnage, lieu…) et son nom partout : manuscrit ou scénario, notes des cartes. Seulement le nom tel qu'il est écrit (ou en capitales), jamais un mot ordinaire. / Renames a card and its name everywhere.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "card": { "type": "string" }, "name": { "type": "string" } }, "required": ["card", "name"] }
+      },
+      {
+        "name": "replace_text",
+        "description": "Rechercher et remplacer dans le texte des scènes (tout le projet, ou une scène), et si demandé dans les notes des cartes. Annulable par l'auteur. / Find and replace in scene text.",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "find": { "type": "string" },
+          "replace": { "type": "string" },
+          "scene": { "type": "string", "description": "Une seule scène (facultatif)." },
+          "cards": { "type": "boolean", "description": "Aussi les notes des cartes." },
+          "match_case": { "type": "boolean" },
+          "whole_word": { "type": "boolean" }
+        }, "required": ["find", "replace"] }
+      },
+      {
+        "name": "set_cover",
+        "description": "Écrit un champ de la couverture du projet (tagline, logline, résumé, comparables, note d'intention, et pour un scénario les rubriques de la série ou du film). Marqué « IA ». / Writes a cover field (logline, summary...), marked as AI.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "field": { "type": "string", "description": "Clé (logline, resume, tagline, comps, intention…) ou libellé." }, "text": { "type": "string" } }, "required": ["field", "text"] }
+      },
+      {
+        "name": "create_frame",
+        "description": "Pose un cadre titré sur le canevas autour de ces cartes (ou vide). / Draws a titled frame around cards on the canvas.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "cards": { "type": "array", "items": { "type": "string" } } }, "required": ["title"] }
+      },
+      {
+        "name": "organize_canvas",
+        "description": "Range tout le canevas : un cadre par type de carte, par case du gabarit, par chapitre ou épisode. Une seule annulation le défait. / Tidies the whole canvas.",
+        "inputSchema": { "type": "object", "properties": { "project": project } }
+      },
+      {
+        "name": "todo_list",
+        "description": "Ce qui reste à faire, comme dans « À faire » : cases non cochées, passages à reprendre, questions « À creuser », commentaires ouverts, textes de l'IA pas encore repris. Projet ouvert dans MondoWrite. / The author's to-do list.",
+        "inputSchema": { "type": "object", "properties": { "project": project } },
+        "annotations": { "readOnlyHint": true }
+      },
+      {
+        "name": "read_comments",
+        "description": "Commentaires des scènes (passage cité, texte, résolu ou non, identifiant). Projet ouvert dans MondoWrite. / Scene comments.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string", "description": "Une scène (facultatif)." }, "resolved": { "type": "boolean", "description": "Inclure les résolus." } } },
+        "annotations": { "readOnlyHint": true }
+      },
+      {
+        "name": "project_stats",
+        "description": "Statistiques : présence des personnages (scènes, répliques, mots, première et dernière scène), lieux ou décors, qui croise qui, int./ext. et jour/nuit. Projet ouvert dans MondoWrite. / Character, place and crossing statistics.",
+        "inputSchema": { "type": "object", "properties": { "project": project } },
+        "annotations": { "readOnlyHint": true }
+      },
+      {
+        "name": "review",
+        "description": "Points de l'onglet « Vérifier » : répétitions, mots trop employés, noms presque identiques, personnages sans carte ou muets, répliques et actions trop longues, questions sur l'histoire. Projet ouvert dans MondoWrite. / The app's own review findings.",
+        "inputSchema": { "type": "object", "properties": { "project": project } },
+        "annotations": { "readOnlyHint": true }
+      },
+      {
+        "name": "scene_versions",
+        "description": "Versions gardées d'une scène ; avec `version`, le texte de cette version. Projet ouvert dans MondoWrite. / Saved versions of a scene.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string" }, "version": { "type": "string", "description": "Nom ou rang donné par la liste." } }, "required": ["scene"] },
+        "annotations": { "readOnlyHint": true }
+      },
+      {
+        "name": "read_journal",
+        "description": "Journal de l'IA (ia-journal.md) : textes de l'IA acceptés, par date. Projet ouvert dans MondoWrite. / The AI journal.",
+        "inputSchema": { "type": "object", "properties": { "project": project } },
+        "annotations": { "readOnlyHint": true }
+      }
+    ]);
+    if let (Some(list), Value::Array(extra)) = (tools.as_array_mut(), more) {
+      list.extend(extra);
+    }
+    tools
   }
 
   fn call(&self, name: &str, args: &Value) -> ToolResult {
@@ -765,6 +927,7 @@ impl Server {
       "read_card" => self.read_card(args),
       "search" => self.search(args),
       _ if WRITE_TOOLS.contains(&name) => self.write(name, args),
+      _ if LIVE_TOOLS.contains(&name) => self.forward(name, args, false),
       _ => Err(format!("Outil inconnu : {name}")),
     }
   }
@@ -782,9 +945,9 @@ impl Server {
         let version = if PROTOCOLS.contains(&asked) { asked } else { PROTOCOLS[0] };
         json!({
           "protocolVersion": version,
-          "capabilities": { "tools": { "listChanged": false } },
+          "capabilities": { "tools": { "listChanged": false }, "prompts": { "listChanged": false } },
           "serverInfo": { "name": SERVER_NAME, "title": "MondoWrite", "version": env!("CARGO_PKG_VERSION") },
-          "instructions": "MondoWrite est le logiciel d'écriture de l'auteur (romans, scénarios). Ces outils lisent ses projets ; ceux d'écriture ne marchent que pour un projet que l'auteur a ouvert en écriture, et tout ce que tu écris est marqué « IA », journalisé et annulable. Commence par project_overview, puis lis seulement les scènes et les cartes utiles. Cite les scènes par leur numéro et leur titre. Le texte appartient à l'auteur : demande-lui avant d'écrire dans son projet, et préfère add_question pour signaler un doute. / MondoWrite is the author's writing app. These tools read their projects; writing tools work only for projects the author opened for writing, and everything you write is marked as AI, logged and undoable. Start with project_overview. Ask the author before writing."
+          "instructions": "MondoWrite est le logiciel d'écriture de l'auteur (romans, scénarios). Ces outils lisent ses projets ; ceux d'écriture ne marchent que pour un projet que l'auteur a ouvert en écriture, et tout ce que tu écris est marqué « IA », journalisé et annulable. Commence par project_overview, puis lis seulement les scènes et les cartes utiles. Cite les scènes par leur numéro et leur titre. Le texte appartient à l'auteur : demande-lui avant d'écrire dans son projet, et préfère add_comment (sur un passage) ou add_question (sur l'histoire) pour signaler un doute. Les consignes prêtes (relecture bêta, cohérence, dépouillement…) sont dans le menu des consignes. / MondoWrite is the author's writing app. These tools read their projects; writing tools work only for projects the author opened for writing, and everything you write is marked as AI, logged and undoable. Start with project_overview. Ask the author before writing."
         })
       }
       "ping" => json!({}),
@@ -799,11 +962,82 @@ impl Server {
       }
       // Pas de ressources ni de consignes : listes vides plutôt qu'une erreur (certains clients les demandent).
       "resources/list" => json!({ "resources": [] }),
-      "prompts/list" => json!({ "prompts": [] }),
+      "prompts/list" => json!({ "prompts": prompts_list() }),
+      "prompts/get" => {
+        let name = params.get("name").and_then(Value::as_str).unwrap_or("");
+        let args = params.get("arguments").cloned().unwrap_or(json!({}));
+        match prompt_get(name, &args) {
+          Some(v) => v,
+          None => return Some(json!({ "jsonrpc": "2.0", "id": id, "error": { "code": -32602, "message": format!("Consigne inconnue : {name}") } })),
+        }
+      }
       _ => return Some(json!({ "jsonrpc": "2.0", "id": id, "error": { "code": -32601, "message": format!("Méthode inconnue : {method}") } })),
     };
     Some(json!({ "jsonrpc": "2.0", "id": id, "result": result }))
   }
+}
+
+/// Consignes prêtes à l'emploi (menu des consignes du client) : elles reprennent l'esprit de l'IA de MondoWrite.
+const PROMPTS: [(&str, &str, &str, &str); 5] = [
+  (
+    "relecture_beta",
+    "Relecture bêta / Beta read",
+    "Un lecteur bêta lit une partie du récit et dit ce qu'il a ressenti, sans réécrire. / A beta reader's reactions, no rewriting.",
+    "Lis {range} du projet MondoWrite {project} (project_overview puis read_scene). Réagis comme un lecteur bêta attentif : où ton attention a faibli, ce que tu as cru comprendre, ce qui t'a surpris, les questions que tu te poses, ce que tu attends de la suite. Cite les scènes par numéro et titre. Ne réécris rien et ne propose pas de texte. Si l'auteur le souhaite, pose tes remarques en commentaires (add_comment) sur des passages exacts. Réponds dans la langue de l'auteur.",
+  ),
+  (
+    "coherence",
+    "Cohérence / Consistency check",
+    "Chercher les contradictions entre les scènes et la Bible, posées en questions. / Contradictions, as questions.",
+    "Vérifie la cohérence de {range} du projet MondoWrite {project} : lis les scènes (read_scene) et les fiches utiles (list_cards, read_card). Relève les contradictions de faits, de chronologie, de noms ou de caractère, chacune avec les passages exacts qui se contredisent. Formule chaque point comme une question à l'auteur, jamais comme une correction. Propose de garder les plus importantes en questions (add_question). Réponds dans la langue de l'auteur.",
+  ),
+  (
+    "depouillement",
+    "Dépouillement / Breakdown",
+    "Dépouillement d'une ou plusieurs scènes : personnages, figurants, accessoires, costumes, décors, effets. / Production breakdown.",
+    "Fais le dépouillement de {range} du projet MondoWrite {project} (read_scene) : décor, int./ext., jour/nuit, personnages, figurants, accessoires, costumes, véhicules, effets. Ne retiens que ce que le texte dit, avec le passage qui le montre ; signale ce qui est flou. Réponds dans la langue de l'auteur.",
+  ),
+  (
+    "interroger_personnage",
+    "Interroger un personnage / Interview a character",
+    "Le personnage répond, en restant dans ce que l'auteur a écrit. / The character answers from what the author wrote.",
+    "Lis la fiche de {character} dans le projet MondoWrite {project} (read_card) et les scènes où il paraît. Réponds ensuite aux questions de l'auteur à la première personne, comme ce personnage, seulement avec ce que l'auteur a écrit. Ce que le texte ne dit pas, le personnage ne le sait pas ou ne veut pas le dire : dis-le plutôt que d'inventer. Si l'auteur veut garder une réponse, demande-lui avant de l'écrire dans la fiche. Réponds dans la langue de l'auteur.",
+  ),
+  (
+    "point_du_projet",
+    "Où en est le projet / Project status",
+    "Ce qui avance et ce qui reste : statuts, « À faire », points à vérifier. / Status and to-dos.",
+    "Fais le point sur le projet MondoWrite {project} : project_overview, todo_list et review. Dis en quelques lignes où en est l'écriture (scènes écrites, statuts, longueur), ce qui reste à faire, et les trois points qui méritent le plus l'attention de l'auteur. Ne modifie rien. Réponds dans la langue de l'auteur.",
+  ),
+];
+
+fn prompts_list() -> Value {
+  let project = json!({ "name": "project", "description": "Projet (titre), facultatif s'il n'y en a qu'un.", "required": false });
+  Value::Array(
+    PROMPTS
+      .iter()
+      .map(|(name, title, description, body)| {
+        let mut arguments = vec![project.clone()];
+        if body.contains("{range}") {
+          arguments.push(json!({ "name": "range", "description": "Scènes : « 3-7 », un titre, ou vide pour tout.", "required": false }));
+        }
+        if body.contains("{character}") {
+          arguments.push(json!({ "name": "character", "description": "Nom du personnage.", "required": true }));
+        }
+        json!({ "name": name, "title": title, "description": description, "arguments": arguments })
+      })
+      .collect(),
+  )
+}
+
+fn prompt_get(name: &str, args: &Value) -> Option<Value> {
+  let (_, title, description, body) = PROMPTS.iter().find(|p| p.0 == name)?;
+  let arg = |k: &str| args.get(k).and_then(Value::as_str).map(str::trim).filter(|s| !s.is_empty()).map(str::to_string);
+  let project = arg("project").map(|p| format!("« {p} »")).unwrap_or_default();
+  let range = arg("range").map(|r| format!("les scènes {r}")).unwrap_or_else(|| "tout le récit".into());
+  let character = arg("character").unwrap_or_else(|| "ce personnage".into());
+  let text = body.replace("{project}", &project).replace("  ", " ").replace("{range}", &range).replace("{character}", &character);
+  Some(json!({ "description": format!("{title} : {description}"), "messages": [{ "role": "user", "content": { "type": "text", "text": text } }] }))
 }
 
 /// Scènes désignées par un numéro, un intervalle (« 3-5 »), un identifiant ou un titre.
@@ -949,7 +1183,7 @@ mod tests {
     assert_eq!(unknown["result"]["protocolVersion"], PROTOCOLS[0]);
     assert!(s.handle(&json!({ "jsonrpc": "2.0", "method": "notifications/initialized" })).is_none());
     let tools = s.handle(&json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" })).unwrap();
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 6 + WRITE_TOOLS.len());
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 6 + WRITE_TOOLS.len() + LIVE_TOOLS.len());
   }
 
   #[test]
@@ -1038,6 +1272,51 @@ mod tests {
     app.join().unwrap();
     assert!(!err, "{text}");
     assert_eq!(text, "Carte créée.");
+  }
+
+  #[test]
+  fn lecture_par_l_app_en_lecture_seule() {
+    let (mut s, dir) = server();
+    s.answer_ms = 3000;
+    // Instantané en lecture seule : une écriture est refusée, une lecture faite par l'app passe.
+    let (text, err) = call(&s, "create_card", json!({ "type": "lieu", "title": "X" }));
+    assert!(err && text.contains("lecture seule"), "{text}");
+    std::fs::create_dir_all(dir.join(LIVE_DIR)).unwrap();
+    let (text, err) = call(&s, "todo_list", json!({}));
+    assert!(err && text.contains("Ouvre"), "{text}");
+    std::fs::write(dir.join(LIVE_DIR).join("p0000000aaaaaaa"), now_ms().to_string()).unwrap();
+    let queue = dir.join(QUEUE_DIR).join("p0000000aaaaaaa");
+    let app = std::thread::spawn(move || {
+      for _ in 0..50 {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let Ok(entries) = std::fs::read_dir(&queue) else { continue };
+        for e in entries.flatten() {
+          let name = e.file_name().to_string_lossy().to_string();
+          if let Some(id) = name.strip_prefix("req-").and_then(|r| r.strip_suffix(".json")) {
+            std::fs::remove_file(e.path()).unwrap();
+            std::fs::write(queue.join(format!("res-{id}.json")), json!({ "ok": true, "text": "Rien dans « À faire »." }).to_string()).unwrap();
+            return;
+          }
+        }
+      }
+    });
+    let (text, err) = call(&s, "todo_list", json!({}));
+    app.join().unwrap();
+    assert!(!err, "{text}");
+    assert!(text.contains("À faire"));
+  }
+
+  #[test]
+  fn consignes_pretes() {
+    let (s, _dir) = server();
+    let list = s.handle(&json!({ "jsonrpc": "2.0", "id": 1, "method": "prompts/list" })).unwrap();
+    let prompts = list["result"]["prompts"].as_array().unwrap();
+    assert_eq!(prompts.len(), PROMPTS.len());
+    let got = s.handle(&json!({ "jsonrpc": "2.0", "id": 2, "method": "prompts/get", "params": { "name": "interroger_personnage", "arguments": { "character": "Inès", "project": "Le Phare" } } })).unwrap();
+    let text = got["result"]["messages"][0]["content"]["text"].as_str().unwrap();
+    assert!(text.contains("Inès") && text.contains("« Le Phare »") && !text.contains('{'));
+    let bad = s.handle(&json!({ "jsonrpc": "2.0", "id": 3, "method": "prompts/get", "params": { "name": "rien" } })).unwrap();
+    assert!(bad.get("error").is_some());
   }
 
   #[test]

@@ -16,6 +16,14 @@ import type { Screenplay, ScreenplayElement } from "./screenplay/model";
 import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
 import { synopsisEnd } from "./screenplay/scenes";
 import { blocks, moveBlock } from "./screenplay/sequence";
+import { sceneEnd } from "./screenplay/sceneText";
+import { allEpisodes, episodeOfCard, episodeScript, seriesOf } from "./screenplay/series";
+import { SCREENPLAY_TEMPLATES, applyTemplate, isScreenplayTemplate, screenplayPlan, type ScreenplayTemplate } from "./screenplay/template";
+import { NOVEL_TEMPLATES, beatText, templateBeats, type Plan, type PlanTemplate } from "./plan";
+import { COMMENT_TYPES, type Comments } from "./comments";
+import { PITCH_TEXTS, formOf, type Pitch, type PitchText } from "./pitch";
+import { pitchLabels } from "./feasibility";
+import type { ReplaceRequest } from "./replace";
 import { foldName } from "./names";
 import { countWords } from "./manuscript";
 
@@ -161,6 +169,129 @@ export function withSceneText(sp: Screenplay, cardId: string, added: ScreenplayE
   return { ...sp, elements: setSceneBody(sp.elements, at, body) };
 }
 
+// ---------- Passages cités, coupure, série, gabarits, couverture (pur) ----------
+
+/** Texte comparé sans les différences de frappe : espaces insécables et apostrophes courbes (même longueur). */
+const loose = (s: string) => s.replace(/[\u00a0\u202f]/g, " ").replace(/[’‘]/g, "'");
+
+/**
+ * Pose la marque d'un commentaire (`<span data-comment>`) sur un passage cité mot pour mot, dans un seul nœud de
+ * texte (pas à cheval sur une mise en forme). null si le passage n'est pas trouvé tel quel.
+ */
+export function markQuoteInHtml(html: string, quote: string, id: string): string | null {
+  const q = loose(quote.trim());
+  if (!q) return null;
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+    const at = loose(node.data).indexOf(q);
+    if (at < 0) continue;
+    const middle = node.splitText(at);
+    middle.splitText(q.length);
+    const span = doc.createElement("span");
+    span.setAttribute("data-comment", id);
+    middle.parentNode!.replaceChild(span, middle);
+    span.appendChild(middle);
+    return doc.body.innerHTML;
+  }
+  return null;
+}
+
+/** Scénario : le commentaire `id` noté sur l'action ou la réplique de la scène qui contient le passage cité. */
+export function commentInScene(sp: Screenplay, cardId: string, quote: string, id: string): Screenplay | null {
+  const at = headingOf(sp.elements, cardId);
+  const q = loose(quote.trim());
+  if (at < 0 || !q) return null;
+  const end = sceneEnd(sp.elements, at);
+  for (let i = at + 1; i < end; i++) {
+    const el = sp.elements[i];
+    if (!COMMENT_TYPES.has(el.type) || !loose(el.text).includes(q)) continue;
+    const elements = sp.elements.slice();
+    elements[i] = { ...el, comments: [...(el.comments ?? []), id] };
+    return { ...sp, elements };
+  }
+  return null;
+}
+
+/** Roman : le texte d'une scène coupé avant le paragraphe (bloc de premier niveau) qui contient `at`. */
+export function splitHtmlAt(html: string, at: string): [string, string] | null {
+  const q = loose(at.trim());
+  if (!q) return null;
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  const blocks = Array.from(doc.body.children);
+  const i = blocks.findIndex((b) => loose(b.textContent ?? "").includes(q));
+  if (i <= 0) return null;
+  return [blocks.slice(0, i).map((b) => b.outerHTML).join(""), blocks.slice(i).map((b) => b.outerHTML).join("")];
+}
+
+export interface SeriesPart {
+  kind: "season" | "episode";
+  id: string;
+  label: string;
+}
+
+/** Une saison (« saison 2 », titre, identifiant) ou un épisode (« 2.3 », numéro, titre, identifiant) d'une série. */
+export function findSeriesPart(sp: Screenplay, wanted: string): SeriesPart | null {
+  const w = wanted.trim();
+  if (!w) return null;
+  const seasons = seriesOf(sp.elements).filter((s) => s.id);
+  const seasonNo = (id: string | null) => seasons.findIndex((s) => s.id === id) + 1;
+  const season = /^(saison|season|s)\s*(\d+)$/i.exec(w);
+  if (season) {
+    const s = seasons[Number(season[2]) - 1];
+    return s?.id ? { kind: "season", id: s.id, label: s.title || `saison ${season[2]}` } : null;
+  }
+  const episodes = allEpisodes(sp.elements);
+  const label = (e: (typeof episodes)[number]) => `épisode ${seasonNo(e.season) ? `${seasonNo(e.season)}.` : ""}${e.number}${e.title ? ` « ${e.title} »` : ""}`;
+  const pair = /^(?:ép(?:isode)?\.?\s*|e\s*)?(\d+)[.x](\d+)$/i.exec(w) ?? /^s(\d+)\s*e(\d+)$/i.exec(w);
+  if (pair) {
+    const e = episodes.find((x) => seasonNo(x.season) === Number(pair[1]) && x.number === Number(pair[2]));
+    return e ? { kind: "episode", id: e.id, label: label(e) } : null;
+  }
+  const single = /^(?:ép(?:isode)?\.?\s*|episode\s*|e\s*)?(\d+)$/i.exec(w);
+  if (single) {
+    // Un seul numéro : son rang dans toute la série.
+    const e = episodes[Number(single[1]) - 1];
+    return e ? { kind: "episode", id: e.id, label: label(e) } : null;
+  }
+  const byId = episodes.find((e) => e.id === w);
+  if (byId) return { kind: "episode", id: byId.id, label: label(byId) };
+  const s = seasons.find((x) => x.id === w);
+  if (s?.id) return { kind: "season", id: s.id, label: s.title };
+  const ep = findCard(episodes, w);
+  if (ep) return { kind: "episode", id: ep.id, label: label(ep) };
+  const st = findCard(seasons.map((x) => ({ id: x.id!, title: x.title })), w);
+  return st ? { kind: "season", id: st.id, label: st.title } : null;
+}
+
+/** Gabarit par sa clé ou son nom (dans la langue de l'interface) ; null : aucun (« aucun », « libre »). */
+export function templateOf(wanted: string, kind: ProjectKind, t: Messages): PlanTemplate | ScreenplayTemplate | null | undefined {
+  const f = fold(wanted);
+  if (["aucun", "none", "rien", "sans"].includes(f)) return kind === "scenario" ? null : "libre";
+  const list: readonly string[] = kind === "scenario" ? SCREENPLAY_TEMPLATES : NOVEL_TEMPLATES;
+  const names = t.plan.templates as Record<string, string>;
+  const key = list.find((k) => fold(k) === f) ?? list.find((k) => fold(names[k] ?? "") === f) ?? (f.length >= 4 ? list.find((k) => fold(names[k] ?? "").includes(f)) : undefined);
+  if (!key) return f === "libre" && kind === "scenario" ? null : undefined;
+  return key as PlanTemplate;
+}
+
+/** Cases du gabarit en place pour cette scène (plan d'un roman ; sections de son épisode dans un scénario). */
+export function beatsFor(kind: ProjectKind, plan: Plan, sp: Screenplay | null, sceneId: string, t: Messages): { key: string; label: string }[] {
+  const dict = t.plan.beats as Record<string, { label: string; hint: string }>;
+  if (kind !== "scenario") return templateBeats(plan.template, plan.custom).map((key) => ({ key, label: beatText(key, dict, plan.custom).label }));
+  if (!sp) return [];
+  const local = screenplayPlan(episodeScript(sp, episodeOfCard(sp, sceneId)).elements);
+  return templateBeats(local.template, local.custom).map((key) => ({ key, label: beatText(key, dict, local.custom).label }));
+}
+
+/** Champ de la couverture par sa clé ou son libellé. */
+export function pitchKeyOf(wanted: string, kind: ProjectKind, pitch: Pitch, t: Messages): PitchText | null {
+  const f = fold(wanted);
+  const labels = pitchLabels(t.pitch, formOf(kind, pitch)).fields as Record<string, string>;
+  const english: Record<string, PitchText> = { summary: "resume", synopsis: "resume", comparables: "comps", intent: "intention", "note d'intention": "intention" };
+  return PITCH_TEXTS.find((k) => fold(k) === f) ?? PITCH_TEXTS.find((k) => labels[k] && fold(labels[k]) === f) ?? english[f] ?? null;
+}
+
 // ---------- Application dans le store ----------
 
 /** Ce que l'application lit et appelle : le store (passé par l'appelant, pour garder ce module testable). */
@@ -205,6 +336,34 @@ export interface McpStore {
   renameChapter: (id: string, title: string) => void;
   deleteChapter: (id: string) => void;
   moveChapter: (id: string, before: string | null) => void;
+  edges: () => { id: string; source: string; target: string }[];
+  plan: () => Plan;
+  pitch: () => Pitch;
+  comments: () => Comments;
+  /** Commentaire de l'assistant sur un passage déjà marqué dans le texte (sans prendre le focus de l'auteur). */
+  addComment: (cardId: string, id: string, quote: string, text: string) => void;
+  resolveComment: (cardId: string, id: string, resolved: boolean) => void;
+  addEpisode: (season: string | null) => string | null;
+  addSeason: () => string | null;
+  renameSeriesPart: (id: string, title: string) => void;
+  setEpisodeSynopsis: (id: string, text: string) => void;
+  moveSeriesPart: (id: string, way: -1 | 1) => void;
+  placeInEpisode: (id: string, episode: string) => void;
+  placeInBeat: (id: string, beat: string) => void;
+  setPlanTemplate: (template: PlanTemplate) => void;
+  nextMergeable: (id: string) => string | null;
+  joinScenes: (from: string, into: string) => boolean;
+  splitScene: (afterId: string, html: string) => string | null;
+  trash: (ids: string[]) => void;
+  removeLink: (id: string) => void;
+  /** Rechercher et remplacer ; rend le nombre de remplacements. */
+  replace: (req: ReplaceRequest) => number;
+  /** « Renommer partout », avec les garde-fous de la fenêtre : rend les remplacements faits et ceux laissés. */
+  rename: (id: string, name: string) => { count: number; skipped: number };
+  setCoverIa: (key: PitchText, text: string, client: string) => void;
+  /** Cadre titré autour de ces cartes (ou vide). Rend son identifiant. */
+  frame: (title: string, ids: string[]) => string;
+  organize: () => void;
 }
 
 const plainWords = (html: string) => countWords(html);
@@ -448,6 +607,229 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
       if (!chapter) return fail(`Chapitre introuvable : « ${str(a.chapter)} ».`);
       store.batch(() => store.deleteChapter(chapter.id));
       return { ok: true, text: `${chapterName(chapter)} retiré : ses scènes rejoignent le chapitre précédent. Aucune scène ni aucun texte n'a été supprimé.` };
+    }
+
+    case "add_comment": {
+      const scene = findScene(store, str(a.scene));
+      const quote = str(a.quote);
+      const text = str(a.text);
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      if (scene.id.startsWith("@")) return fail("Cette scène n'a pas de carte : impossible de la commenter d'ici.");
+      if (!quote || !text) return fail("Il faut le passage cité (`quote`) et le commentaire (`text`).");
+      const id = newId();
+      if (store.kind === "scenario") {
+        const sp = store.screenplay();
+        const next = sp ? commentInScene(sp, scene.id, quote, id) : null;
+        if (!next) return fail("Passage introuvable mot pour mot dans une action ou une réplique de cette scène (le nom d'un personnage, une didascalie ou l'en-tête ne se commentent pas).");
+        store.batch(() => store.setScreenplay(next, true));
+      } else {
+        const html = store.manuscript()[scene.id] ?? "";
+        const next = markQuoteInHtml(html, quote, id);
+        if (!next) return fail("Passage introuvable mot pour mot dans le texte de la scène. Cite un passage d'un seul tenant, sans changer de mise en forme (gras, italique).");
+        store.setManuscriptText(scene.id, next);
+      }
+      store.addComment(scene.id, id, quote, `${client}\u00a0: ${text}`);
+      return { ok: true, text: `Commentaire posé sur la scène ${scene.n} « ${scene.title} » (id \`${id}\`).` };
+    }
+
+    case "resolve_comment": {
+      const wanted = str(a.comment);
+      const resolved = a.resolved !== false;
+      const hit = Object.entries(store.comments()).flatMap(([cardId, list]) => list.filter((c) => c.id === wanted).map(() => cardId))[0];
+      if (!hit) return fail(`Commentaire introuvable : « ${wanted} » (identifiants dans read_comments).`);
+      store.resolveComment(hit, wanted, resolved);
+      return { ok: true, text: resolved ? "Commentaire résolu." : "Commentaire rouvert." };
+    }
+
+    case "keep_version": {
+      const scene = findScene(store, str(a.scene));
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      if (scene.id.startsWith("@")) return fail("Cette scène n'a pas de carte.");
+      const name = await store.keepVersion(scene.id, str(a.title) || t.mcp.versionTitle);
+      return name ? { ok: true, text: `Version gardée pour la scène ${scene.n} (${name}).` } : fail("Rien à garder : la scène n'a pas encore de texte.");
+    }
+
+    case "create_episode": {
+      if (store.kind !== "scenario") return fail("Les épisodes sont ceux d'un scénario de série. Pour un roman, utilise create_chapter.");
+      const sp = store.screenplay();
+      let season: string | null = null;
+      if (str(a.season) && sp) {
+        const part = findSeriesPart(sp, /^\d+$/.test(str(a.season)) ? `saison ${str(a.season)}` : str(a.season));
+        if (part?.kind !== "season") return fail(`Saison introuvable : « ${str(a.season)} ».`);
+        season = part.id;
+      }
+      const title = str(a.title);
+      const synopsis = str(a.synopsis);
+      const seasonOnly = a.season_only === true;
+      const id = store.batch(() => {
+        const id = seasonOnly ? store.addSeason() : store.addEpisode(season);
+        if (id && title) store.renameSeriesPart(id, title);
+        if (id && synopsis && !seasonOnly) store.setEpisodeSynopsis(id, synopsis);
+        return id;
+      });
+      if (!id) return fail("Impossible de créer la partie demandée.");
+      const now = store.screenplay();
+      const part = now ? findSeriesPart(now, id) : null;
+      return { ok: true, text: `${seasonOnly ? "Saison" : "Épisode"} créé${part ? ` : ${part.label}` : ""} (id \`${id}\`).` };
+    }
+
+    case "update_episode": {
+      if (store.kind !== "scenario") return fail("Les épisodes sont ceux d'un scénario de série.");
+      const sp = store.screenplay();
+      const part = sp ? findSeriesPart(sp, str(a.episode)) : null;
+      if (!part) return fail(`Épisode ou saison introuvable : « ${str(a.episode)} ».`);
+      const done: string[] = [];
+      store.batch(() => {
+        if (typeof a.title === "string") {
+          store.renameSeriesPart(part.id, str(a.title));
+          done.push("renommé");
+        }
+        if (typeof a.synopsis === "string" && part.kind === "episode") {
+          store.setEpisodeSynopsis(part.id, str(a.synopsis));
+          done.push("synopsis écrit");
+        }
+        const way = str(a.move);
+        if (way === "up" || way === "down") {
+          store.moveSeriesPart(part.id, way === "up" ? -1 : 1);
+          done.push(way === "up" ? "monté d'un cran" : "descendu d'un cran");
+        }
+      });
+      if (done.length === 0) return fail("Rien à faire : donne `title`, `synopsis` ou `move`.");
+      return { ok: true, text: `${part.label} : ${done.join(", ")}.` };
+    }
+
+    case "place_scene": {
+      const scene = findScene(store, str(a.scene));
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      if (scene.id.startsWith("@")) return fail("Cette scène n'a pas de carte.");
+      const done: string[] = [];
+      if (str(a.episode)) {
+        const sp = store.screenplay();
+        const part = store.kind === "scenario" && sp ? findSeriesPart(sp, str(a.episode)) : null;
+        if (part?.kind !== "episode") return fail(`Épisode introuvable : « ${str(a.episode)} ».`);
+        store.batch(() => store.placeInEpisode(scene.id, part.id));
+        done.push(`dans ${part.label}`);
+      }
+      if (str(a.beat)) {
+        const beats = beatsFor(store.kind, store.plan(), store.screenplay(), scene.id, t);
+        const f = fold(str(a.beat));
+        const beat = beats.find((b) => b.key === str(a.beat) || fold(b.label) === f) ?? beats.find((b) => fold(b.label).includes(f));
+        if (!beat) return fail(beats.length ? `Case introuvable. Cases du gabarit : ${beats.map((b) => b.label).join(", ")}.` : "Aucun gabarit en place : pose-le d'abord (set_template).");
+        store.batch(() => store.placeInBeat(scene.id, beat.key));
+        done.push(`dans la case « ${beat.label} »`);
+      }
+      if (done.length === 0) return fail("Indique `beat` ou `episode`.");
+      return { ok: true, text: `Scène « ${scene.title} » rangée ${done.join(" et ")}. Les numéros des scènes ont pu changer.` };
+    }
+
+    case "set_template": {
+      const tpl = templateOf(str(a.template), store.kind, t);
+      if (tpl === undefined) {
+        const list = (store.kind === "scenario" ? SCREENPLAY_TEMPLATES : NOVEL_TEMPLATES).map((k) => (t.plan.templates as Record<string, string>)[k] ?? k);
+        return fail(`Gabarit inconnu. Au choix : ${list.join(", ")}.`);
+      }
+      const name = tpl ? ((t.plan.templates as Record<string, string>)[tpl] ?? tpl) : "aucun";
+      if (store.kind === "scenario") {
+        const sp = store.screenplay();
+        if (!sp) return fail("Ce scénario n'a pas encore de texte.");
+        if (allEpisodes(sp.elements).length > 0) return fail("Dans une série, chaque épisode a son gabarit : choisis-le dans le séquencier de MondoWrite.");
+        const next = applyTemplate(sp, tpl && isScreenplayTemplate(tpl) ? tpl : null, (key) => (t.plan.beats as Record<string, { label: string }>)[key]?.label ?? key);
+        if (next !== sp) store.batch(() => store.setScreenplay(next, true));
+      } else {
+        store.batch(() => store.setPlanTemplate(tpl as PlanTemplate));
+      }
+      return { ok: true, text: `Gabarit « ${name} » en place. Les rangements des autres gabarits sont gardés. Range les scènes avec place_scene.` };
+    }
+
+    case "merge_scenes": {
+      const scene = findScene(store, str(a.scene));
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      const next = scene.id.startsWith("@") ? null : store.nextMergeable(scene.id);
+      if (!next) return fail("Pas de scène suivante à fusionner (roman : elle doit être dans le même chapitre ; scénario : juste après, sans section entre les deux).");
+      const nextTitle = store.scenes().find((s) => s.id === next)?.title ?? "";
+      const ok = store.batch(() => store.joinScenes(next, scene.id));
+      if (!ok) return fail("Fusion impossible.");
+      return { ok: true, text: `« ${nextTitle} » fusionnée dans la scène « ${scene.title} ». Sa carte est à la corbeille. Les numéros des scènes ont changé.` };
+    }
+
+    case "split_scene": {
+      if (store.kind === "scenario") return fail("Dans un scénario, crée la nouvelle scène (create_scene) avec son texte, puis place-la (move_scene).");
+      const scene = findScene(store, str(a.scene));
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      const parts = splitHtmlAt(store.manuscript()[scene.id] ?? "", str(a.at));
+      if (!parts) return fail("Paragraphe introuvable, ou c'est le premier de la scène : cite le début exact d'un paragraphe qui n'est pas le premier.");
+      const title = str(a.title);
+      const id = store.batch(() => {
+        const id = store.splitScene(scene.id, parts[1]);
+        if (id && title) store.updateCard(id, { title, ia: ["title"] });
+        return id;
+      });
+      if (!id) return fail("Coupure impossible.");
+      store.setManuscriptText(scene.id, parts[0]);
+      return { ok: true, text: `Scène coupée : la suite est une nouvelle scène${title ? ` « ${title} »` : ""} juste après (id \`${id}\`).` };
+    }
+
+    case "trash_card": {
+      const card = findCard(cards, str(a.card));
+      if (!card) return fail(`Carte introuvable : « ${str(a.card)} ».`);
+      store.batch(() => store.trash([card.id]));
+      return { ok: true, text: `« ${card.title || typeLabel(card.type)} » est dans la corbeille (l'auteur peut la remettre).` };
+    }
+
+    case "unlink_cards": {
+      const from = findCard(cards, str(a.from));
+      const to = findCard(cards, str(a.to));
+      if (!from || !to) return fail(`Carte introuvable : « ${str(from ? a.to : a.from)} ».`);
+      const wires = store.edges().filter((e) => (e.source === from.id && e.target === to.id) || (e.source === to.id && e.target === from.id));
+      if (wires.length === 0) return fail("Ces deux cartes ne sont pas reliées.");
+      store.batch(() => wires.forEach((e) => store.removeLink(e.id)));
+      return { ok: true, text: `Fil retiré entre « ${from.title} » et « ${to.title} ».` };
+    }
+
+    case "rename_everywhere": {
+      const card = findCard(cards, str(a.card));
+      const name = str(a.name);
+      if (!card) return fail(`Carte introuvable : « ${str(a.card)} ».`);
+      if (!name) return fail("Il faut le nouveau nom.");
+      const { count, skipped } = store.rename(card.id, name);
+      return { ok: true, text: `« ${card.title} » devient « ${name} » : ${count} remplacement${count > 1 ? "s" : ""}.${skipped ? ` ${skipped} occurrence${skipped > 1 ? "s" : ""} en tête de phrase laissée${skipped > 1 ? "s" : ""} (le nom est aussi un mot ordinaire) : à vérifier.` : ""}` };
+    }
+
+    case "replace_text": {
+      const find = typeof a.find === "string" ? a.find : "";
+      const replacement = typeof a.replace === "string" ? a.replace : "";
+      if (!find.trim()) return fail("Il faut le texte à chercher.");
+      let sceneId: string | null = null;
+      if (str(a.scene)) {
+        const scene = findScene(store, str(a.scene));
+        if (!scene || scene.id.startsWith("@")) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+        sceneId = scene.id;
+      }
+      const n = store.replace({ find, replacement, sceneId, cards: !sceneId && a.cards === true, matchCase: a.match_case === true, wholeWord: a.whole_word === true });
+      return { ok: true, text: n ? `${n} remplacement${n > 1 ? "s" : ""}.` : "Aucune occurrence." };
+    }
+
+    case "set_cover": {
+      const key = pitchKeyOf(str(a.field), store.kind, store.pitch(), t);
+      if (!key) return fail(`Champ de la couverture inconnu. Au choix : ${PITCH_TEXTS.join(", ")}.`);
+      const text = str(a.text);
+      if (!text) return fail("Il faut le texte.");
+      store.setCoverIa(key, text, client);
+      return { ok: true, text: `Couverture : « ${key} » écrit, marqué IA.` };
+    }
+
+    case "create_frame": {
+      const wanted = Array.isArray(a.cards) ? a.cards.map(str) : [];
+      const found = wanted.map((w) => findCard(cards, w));
+      const missing = wanted.filter((_, i) => !found[i]);
+      const ids = found.flatMap((c) => (c ? [c.id] : []));
+      const id = store.batch(() => store.frame(str(a.title), ids));
+      return { ok: true, text: `Cadre « ${str(a.title)} » posé${ids.length ? ` autour de ${ids.length} carte${ids.length > 1 ? "s" : ""}` : ""} (id \`${id}\`).${missing.length ? ` Introuvables : ${missing.join(", ")}.` : ""}` };
+    }
+
+    case "organize_canvas": {
+      store.batch(() => store.organize());
+      return { ok: true, text: "Canevas rangé (une seule annulation le défait)." };
     }
   }
   return fail(`Outil inconnu : ${req.tool}`);

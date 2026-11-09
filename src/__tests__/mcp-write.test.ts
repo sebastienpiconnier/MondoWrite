@@ -6,9 +6,12 @@ import { describe, expect, it } from "vitest";
 import { fr } from "../i18n/fr";
 import type { CardData, CardType } from "../types";
 import type { Screenplay } from "../screenplay/model";
+import type { Plan } from "../plan";
+import type { Pitch } from "../pitch";
+import type { Comments } from "../comments";
 import { parse } from "../screenplay/parse";
 import { serialize } from "../screenplay/serialize";
-import { applyMcpRequest, cardTypeOf, moveScreenplayScene, findCard, iaFountain, iaHtml, resolveFields, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
+import { applyMcpRequest, cardTypeOf, commentInScene, findSeriesPart, markQuoteInHtml, moveScreenplayScene, pitchKeyOf, splitHtmlAt, templateOf, findCard, iaFountain, iaHtml, resolveFields, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
 
 const card = (c: Partial<CardData> & Pick<CardData, "id" | "type" | "title">): CardData => ({ html: "", ...c });
 
@@ -82,6 +85,11 @@ function fakeStore(kind: "roman" | "scenario", screenplay: Screenplay | null = n
     journal: [] as string[],
     moves: [] as string[][],
     chapters: [] as { id: string; title: string; start: string }[],
+    wires: [] as { id: string; source: string; target: string }[],
+    plan: { template: "libre", beats: {} } as Plan,
+    pitch: {} as Pitch,
+    comments: {} as Comments,
+    calls: [] as string[],
   };
   let n = 0;
   const store: McpStore = {
@@ -128,6 +136,40 @@ function fakeStore(kind: "roman" | "scenario", screenplay: Screenplay | null = n
     renameChapter: (id, title) => void (state.chapters = state.chapters.map((c) => (c.id === id ? { ...c, title } : c))),
     deleteChapter: (id) => void (state.chapters = state.chapters.filter((c) => c.id !== id)),
     moveChapter: (id, before) => void state.moves.push([id, before ?? "", "chapter"]),
+    edges: () => state.wires,
+    plan: () => state.plan,
+    pitch: () => state.pitch,
+    comments: () => state.comments,
+    addComment: (cardId, id, quote, text) => void (state.comments = { ...state.comments, [cardId]: [...(state.comments[cardId] ?? []), { id, date: "2026-11-09T10:00:00+01:00", quote, text }] }),
+    resolveComment: (cardId, id, resolved) =>
+      void (state.comments = { ...state.comments, [cardId]: state.comments[cardId].map((c) => (c.id === id ? { ...c, resolved } : c)) }),
+    addEpisode: () => "ep1",
+    addSeason: () => "sa1",
+    renameSeriesPart: (id, title) => void state.calls.push(`rename:${id}:${title}`),
+    setEpisodeSynopsis: (id, text) => void state.calls.push(`synopsis:${id}:${text}`),
+    moveSeriesPart: (id, way) => void state.calls.push(`move:${id}:${way}`),
+    placeInEpisode: (id, ep) => void state.calls.push(`episode:${id}:${ep}`),
+    placeInBeat: (id, beat) => void state.calls.push(`beat:${id}:${beat}`),
+    setPlanTemplate: (tpl) => void (state.plan = { ...state.plan, template: tpl }),
+    nextMergeable: (id) => (id === "s1" ? "s2" : null),
+    joinScenes: (from, into) => {
+      state.calls.push(`join:${from}:${into}`);
+      return true;
+    },
+    splitScene: (_afterId, html) => {
+      state.manuscript = { ...state.manuscript, cut: html };
+      return "cut";
+    },
+    trash: (ids) => void (state.cards = state.cards.filter((c) => !ids.includes(c.id))),
+    removeLink: (id) => void (state.wires = state.wires.filter((w) => w.id !== id)),
+    replace: () => 3,
+    rename: () => ({ count: 4, skipped: 1 }),
+    setCoverIa: (key, text) => void (state.pitch = { ...state.pitch, [key]: text }),
+    frame: (title, ids) => {
+      state.calls.push(`frame:${title}:${ids.join(",")}`);
+      return "f1";
+    },
+    organize: () => void state.calls.push("organize"),
   };
   return { state, store };
 }
@@ -221,5 +263,80 @@ describe("application d'une demande", () => {
     expect(moveScreenplayScene(sp, "s1", "zz", "after")).toBe(sp);
     const { store } = fakeStore("scenario", sp);
     expect((await applyMcpRequest({ id: "1", tool: "create_chapter", args: { scene: "1" } }, store, fr)).ok).toBe(false);
+  });
+
+  it("commentaire : passage marqué dans le manuscrit, ou noté sur l'élément du scénario", async () => {
+    const html = "<p>Inès monte l\u2019escalier du <em>phare</em>.</p><p>La mer gronde.</p>";
+    expect(markQuoteInHtml(html, "monte l'escalier", "c123456")).toBe('<p>Inès <span data-comment="c123456">monte l’escalier</span> du <em>phare</em>.</p><p>La mer gronde.</p>');
+    expect(markQuoteInHtml(html, "escalier du phare", "c123456")).toBeNull();
+    const sp = parse("INT. PHARE - NUIT [[cosmos:s1]]\n\nLa mer gronde.\n\nINÈS\nQui est là ?");
+    const next = commentInScene(sp, "s1", "Qui est là", "c123456")!;
+    expect(serialize(next)).toContain("Qui est là ? [[cosmos:comment:c123456]]");
+    expect(commentInScene(sp, "s1", "INÈS", "c123456")).toBeNull();
+
+    const { state, store } = fakeStore("roman");
+    const res = await applyMcpRequest({ id: "1", tool: "add_comment", args: { scene: "1", quote: "Avant", text: "Trop court ?" }, client: "Claude" }, store, fr);
+    expect(res.ok).toBe(true);
+    expect(state.manuscript.s1).toMatch(/<span data-comment="[\w-]+">Avant<\/span>/);
+    const [comment] = state.comments.s1;
+    expect(comment.text).toBe("Claude\u00a0: Trop court ?");
+    expect((await applyMcpRequest({ id: "2", tool: "resolve_comment", args: { comment: comment.id } }, store, fr)).ok).toBe(true);
+    expect(state.comments.s1[0].resolved).toBe(true);
+  });
+
+  it("couper une scène au paragraphe cité, jamais au premier", async () => {
+    expect(splitHtmlAt("<p>Un.</p><p>Deux.</p><p>Trois.</p>", "Deux")).toEqual(["<p>Un.</p>", "<p>Deux.</p><p>Trois.</p>"]);
+    expect(splitHtmlAt("<p>Un.</p><p>Deux.</p>", "Un")).toBeNull();
+    const { state, store } = fakeStore("roman");
+    state.manuscript.s1 = "<p>Un.</p><p>Deux.</p>";
+    expect((await applyMcpRequest({ id: "1", tool: "split_scene", args: { scene: "1", at: "Deux" } }, store, fr)).ok).toBe(true);
+    expect(state.manuscript).toMatchObject({ s1: "<p>Un.</p>", cut: "<p>Deux.</p>" });
+  });
+
+  it("série : épisodes et saisons désignés par numéro, « 2.1 », titre ou identifiant", () => {
+    const sp = parse(
+      "# Saison 1 [[cosmos:season:sa1]]\n\n## Le phare [[cosmos:episode:e1]]\n\nINT. PHARE - NUIT\n\nUn.\n\n## La lande [[cosmos:episode:e2]]\n\n# Saison 2 [[cosmos:season:sa2]]\n\n## Retour [[cosmos:episode:e3]]\n",
+    );
+    expect(findSeriesPart(sp, "2.1")?.id).toBe("e3");
+    expect(findSeriesPart(sp, "3")?.id).toBe("e3");
+    expect(findSeriesPart(sp, "la lande")?.id).toBe("e2");
+    expect(findSeriesPart(sp, "saison 2")).toMatchObject({ kind: "season", id: "sa2" });
+    expect(findSeriesPart(sp, "e1")?.kind).toBe("episode");
+    expect(findSeriesPart(sp, "9")).toBeNull();
+  });
+
+  it("gabarits et champs de la couverture par clé ou par nom", () => {
+    expect(templateOf("Save the Cat", "roman", fr)).toBe("saveTheCat");
+    expect(templateOf("trois actes", "scenario", fr)).toBe("troisActes");
+    expect(templateOf("aucun", "scenario", fr)).toBeNull();
+    expect(templateOf("huitSequences", "roman", fr)).toBeUndefined();
+    expect(pitchKeyOf("logline", "roman", {}, fr)).toBe("logline");
+    expect(pitchKeyOf("summary", "roman", {}, fr)).toBe("resume");
+    expect(pitchKeyOf("n'importe quoi", "roman", {}, fr)).toBeNull();
+  });
+
+  it("structure et canevas : gabarit, case, fusion, corbeille, fils, cadre, rangement", async () => {
+    const { state, store } = fakeStore("roman");
+    state.cards.push(card({ id: "s2", type: "scene", title: "La tempête" }));
+    state.wires.push({ id: "w1", source: "c1", target: "s1" });
+    const run = (tool: string, args: Record<string, unknown>) => applyMcpRequest({ id: tool, tool, args }, store, fr);
+    expect((await run("set_template", { template: "Save the Cat" })).ok).toBe(true);
+    expect(state.plan.template).toBe("saveTheCat");
+    expect((await run("place_scene", { scene: "1", beat: "Catalyseur" })).ok).toBe(true);
+    expect(state.calls.at(-1)).toMatch(/^beat:s1:/);
+    expect((await run("place_scene", { scene: "1", beat: "Nulle part" })).ok).toBe(false);
+    expect((await run("merge_scenes", { scene: "1" })).ok).toBe(true);
+    expect(state.calls).toContain("join:s2:s1");
+    expect((await run("merge_scenes", { scene: "2" })).ok).toBe(false);
+    expect((await run("unlink_cards", { from: "Inès", to: "L'arrivée" })).ok).toBe(true);
+    expect(state.wires).toEqual([]);
+    expect((await run("trash_card", { card: "La tempête" })).ok).toBe(true);
+    expect(state.cards.some((c) => c.id === "s2")).toBe(false);
+    expect((await run("create_frame", { title: "Famille", cards: ["Inès", "Personne"] })).text).toContain("Introuvables : Personne");
+    expect((await run("organize_canvas", {})).ok).toBe(true);
+    expect((await run("set_cover", { field: "logline", text: "Une gardienne de phare…" })).ok).toBe(true);
+    expect(state.pitch.logline).toBe("Une gardienne de phare…");
+    expect((await run("rename_everywhere", { card: "Inès", name: "Iris" })).text).toContain("1 occurrence");
+    expect((await run("create_episode", { title: "Pilote" })).ok).toBe(false);
   });
 });

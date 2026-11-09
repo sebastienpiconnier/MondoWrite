@@ -104,8 +104,20 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
 - [x] marque « IA », journal, une étape d'annulation, version gardée avant un remplacement
 - [x] structure : `move_scene`, `create_chapter`, `rename_chapter`, `move_chapter`, `delete_chapter` (le canevas suit
       le récit, `followStory`)
+- [x] lot 4 (novembre 2026, d'un seul coup à la demande de l'auteur) : `add_comment` (passage cité mot pour mot,
+      marque `data-comment` ou note Fountain, texte préfixé du nom du client), `resolve_comment`, `keep_version`,
+      `create_episode`, `update_episode`, `place_scene` (case ou épisode), `set_template`, `merge_scenes`,
+      `split_scene` (roman), `trash_card`, `unlink_cards`, `rename_everywhere` (garde-fous de la fenêtre),
+      `replace_text`, `set_cover` (marqué IA, journal « external »), `create_frame`, `organize_canvas` (la vue de
+      l'auteur ne change pas)
+- [x] lectures faites par l'app ouverte (`src/mcpLive.ts`, accès en lecture suffisant) : `todo_list`, `read_comments`,
+      `project_stats`, `review`, `scene_versions`, `read_journal` ; le pont tourne dès qu'un projet est ouvert à
+      l'assistant, chaque écriture revérifie l'accès en écriture
+- [x] consignes MCP prêtes (`prompts/list`, `prompts/get`) : relecture bêta, cohérence, dépouillement, interroger un
+      personnage, point du projet
+- [ ] écartés exprès : supprimer un projet, vider la corbeille, exporter des fichiers, toucher aux réglages
 - [ ] à faire : message dans l'app quand l'assistant vient d'écrire (« L'assistant a modifié … · Annuler »), avec la
-      pastille du lot 2 ; commentaires ancrés écrits par l'assistant
+      pastille du lot 2
 
 ## Pièges
 

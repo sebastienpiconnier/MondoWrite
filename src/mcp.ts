@@ -87,14 +87,15 @@ const TAKE_EVERY_MS = 700;
 /**
  * Écriture (#62, lot 3) : tant qu'un projet est ouvert en écriture, l'app signale qu'elle est là (`mcp_live`), prend
  * les demandes du serveur (`mcp_take`), les applique (mcpBridge.ts, chargé à la demande) et répond (`mcp_answer`).
- * `writable` rend l'identifiant du projet ouvert s'il est ouvert à l'assistant en écriture, sinon null.
+ * `open` rend l'identifiant du projet ouvert s'il est ouvert à l'assistant (lecture ou écriture), sinon null :
+ * les lectures faites par l'app y passent aussi ; chaque écriture revérifie l'accès en écriture (`applyRaw`).
  */
-export function startMcpBridge(writable: () => string | null): void {
+export function startMcpBridge(open: () => string | null): void {
   if (!mcpAvailable()) return;
   let busy = false;
   let lastLive = 0;
   setInterval(async () => {
-    const id = writable();
+    const id = open();
     if (!id || busy) return;
     busy = true;
     const key = backupKey(id);

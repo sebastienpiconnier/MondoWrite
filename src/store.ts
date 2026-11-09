@@ -440,7 +440,8 @@ export interface CosmosState {
   /** Piste proposée et acceptée : une carte Idée reliée à la scène par un fil « piste ». Une étape. Rend son identifiant. */
   acceptIaDirection: (sceneId: string, text: string) => string | null;
   /** Champ de la couverture proposé et accepté (hors historique, comme la couverture). */
-  acceptIaPitch: (key: PitchText, text: string) => void;
+  /** `who` : service et modèle du journal, quand ce n'est pas l'IA réglée sur l'appareil (assistant externe). */
+  acceptIaPitch: (key: PitchText, text: string, who?: { service: string; model: string }) => void;
   /** « Je l'ai repris » sur un champ de la couverture : il garde son texte, sans la marque de l'IA. */
   reworkIaPitch: (key: PitchText) => void;
   /** « Je l'ai repris » sur un champ d'une carte (titre, synopsis, clé de fiche) : la marque part, le texte reste. */
@@ -3922,14 +3923,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       get().logAtelier("directions", scene.data.title, countWords(title));
       return card.id;
     },
-    acceptIaPitch: (key, text) => {
+    acceptIaPitch: (key, text, who) => {
       const value = text.trim();
       if (!value) return;
       const next = setPitchFieldIa(get().pitch, key, value);
       if (next === get().pitch) return;
       set({ pitch: next });
       touch();
-      get().logAtelier("pitch", get().title, countWords(value));
+      get().logAtelier(who ? "external" : "pitch", get().title, countWords(value), who);
     },
     reworkIaPitch: (key) => {
       const next = withoutPitchIa(get().pitch, key);
