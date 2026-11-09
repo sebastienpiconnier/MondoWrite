@@ -1,6 +1,6 @@
 # Assistant externe par MCP (#62, lot 11)
 
-> **Statut : lot 1 en cours** (novembre 2026). Lecture seule.
+> **Statut : lot 1 presque fait** (novembre 2026) : reste le guide, et l'essai avec Claude Desktop sur Mac et Windows. Lecture seule.
 
 L'assistant IA de l'auteur (Claude Desktop, ou tout client MCP) lit un projet MondoWrite par un serveur MCP local.
 Aucune clé d'API dans MondoWrite : l'auteur utilise l'abonnement qu'il a déjà, ou un modèle local. Sens unique : le
@@ -35,7 +35,7 @@ client appelle MondoWrite, jamais l'inverse (pas de « sampling »).
 {
   "format": 1, "app": "1.28.0", "savedAt": "2026-11-09T17:40:00.000Z",
   "project": { "title": "…", "kind": "roman", "logline": "…", "resume": "…" },
-  "scenes": [{ "id": "k3x…", "title": "…", "part": "Chapitre 2", "synopsis": "…", "status": "brouillon",
+  "scenes": [{ "n": 1, "id": "k3x…", "title": "…", "part": "Chapitre 2", "synopsis": "…", "status": "brouillon",
                "pov": "Inès Morvan", "words": 1234, "text": "Markdown ou Fountain" }],
   "cards": [{ "id": "…", "type": "personnage", "typeLabel": "Personnage", "title": "…", "fiche": { "Âge": "34 ans" },
               "notes": "Markdown", "links": [{ "id": "…", "title": "…", "label": "aime" }] }]
@@ -64,9 +64,9 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
 
 ### Lot 1 · Lecture seule (en cours)
 
-- [ ] `mcpSnapshot.ts` (pur, testé) et écriture après chaque enregistrement (`storage.mcp`, stockage Tauri)
-- [ ] mode `--mcp` de l'exécutable (`src-tauri/src/mcp.rs`), tests Rust du protocole et des outils
-- [ ] Réglages › IA : « Autoriser un assistant externe (MCP) », « Connecter à Claude Desktop » (commande
+- [x] `mcpSnapshot.ts` (pur, testé) et écriture après chaque enregistrement (`publishOpenProject`, commande `mcp_publish`)
+- [x] mode `--mcp` de l'exécutable (`src-tauri/src/mcp.rs`), tests Rust du protocole et des outils ; essayé de bout en bout sous Linux (binaire de dev)
+- [x] Réglages › IA : « Autoriser un assistant externe (MCP) », « Connecter à Claude Desktop » (commande
       `mcp_connect_claude` : ajoute l'entrée `mondowrite` à `claude_desktop_config.json`, garde le reste),
       « Copier la configuration » ; Réglages › Ce projet : accès Aucun / Lecture
 - [ ] guide de l'utilisateur (fr, en, es)

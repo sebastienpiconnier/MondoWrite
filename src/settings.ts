@@ -12,6 +12,7 @@ import { isTauri } from "./platform";
 import { PHOTO_SOURCES, type PhotoSourceId } from "./imageSources";
 import { authorName, cleanProfile, readProfile, type AuthorProfile } from "./profile";
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
+import { readMcp, type McpAccess, type McpSettings } from "./mcp";
 
 export type ThemePref = "system" | "light" | "dark";
 export type Theme = "light" | "dark";
@@ -199,6 +200,10 @@ interface SettingsState {
   /** Mises à jour de l'app : vérification au lancement (une fois par jour au plus), dernière vérification. */
   updates: UpdateSettings;
   setUpdates: (updates: Partial<UpdateSettings>) => void;
+  /** Assistant externe par MCP (#62) : autorisé ou non, et projets ouverts à l'assistant (identifiant → niveau). */
+  mcp: McpSettings;
+  setMcpEnabled: (on: boolean) => void;
+  setMcpProject: (id: string, access: McpAccess | null) => void;
 }
 
 /** Un gabarit de l'auteur gardé sur l'appareil : son nom et ses cases (les clés naissent dans chaque projet). */
@@ -252,7 +257,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; sceneSynopses?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; sceneSynopses?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -314,6 +319,15 @@ export const useSettings = create<SettingsState>((set) => ({
     }),
   updates: readUpdates(saved.updates),
   setUpdates: (updates) => set((s) => ({ updates: { ...s.updates, ...updates } })),
+  mcp: readMcp(saved.mcp),
+  setMcpEnabled: (enabled) => set((s) => ({ mcp: { ...s.mcp, enabled } })),
+  setMcpProject: (id, access) =>
+    set((s) => {
+      const projects = { ...s.mcp.projects };
+      if (access) projects[id] = access;
+      else delete projects[id];
+      return { mcp: readMcp({ ...s.mcp, projects }) };
+    }),
 }));
 
 /**
@@ -340,7 +354,7 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -356,7 +370,7 @@ export function initSettings() {
     else delete root.dataset.pageZoomed;
     try {
       const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

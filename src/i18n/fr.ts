@@ -2609,6 +2609,25 @@ export const fr = {
   },
 
   // Copies Markdown du projet (dossier markdown/) : réglage du projet et avertissement en tête de chaque copie.
+  // Assistant externe par MCP (#62, docs/plan-mcp.md) : l'assistant de l'auteur (Claude Desktop…) lit ses projets.
+  mcp: {
+    title: "Assistant externe (MCP)",
+    enable: "Autoriser un assistant externe à lire mes projets",
+    hint: "Claude Desktop, ou tout logiciel compatible MCP, peut lire les projets que tu lui ouvres (Réglages › Ce projet), en lecture seule. Il utilise ton propre abonnement ou ton modèle local : aucune clé à donner ici.",
+    noProject: "Aucun projet ouvert à l’assistant pour l’instant.",
+    projects: "Projets ouverts à l’assistant : {n}",
+    connect: "Connecter à Claude Desktop",
+    reconnect: "Reconnecter Claude Desktop",
+    connected: "C’est fait. Quitte et relance Claude Desktop pour qu’il voie MondoWrite.",
+    connectFailed: "Impossible d’écrire la configuration de Claude Desktop.",
+    claudeConnected: "Claude Desktop est connecté à MondoWrite.",
+    claudeMissing: "Claude Desktop n’est pas installé sur cet ordinateur.",
+    copy: "Copier la configuration (autres logiciels)",
+    copied: "Configuration copiée : colle-la dans les réglages MCP de ton logiciel.",
+    copyFailed: "Impossible de copier la configuration.",
+    projectAccess: "Ouvrir ce projet à l’assistant externe (lecture seule)",
+    projectHint: "L’assistant lit les scènes et la Bible telles qu’enregistrées. Décoche pour lui retirer l’accès aussitôt.",
+  },
   copies: {
     note: "Copie générée par MondoWrite à chaque enregistrement : une modification faite ici serait perdue. Écris dans l’app.",
     setting: "Copies Markdown dans le dossier du projet",

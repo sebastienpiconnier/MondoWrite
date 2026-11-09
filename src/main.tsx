@@ -30,7 +30,9 @@ import "./styles/screenplay.css";
 import "./styles/writing.css";
 import "./styles/phone.css";
 import { App } from "./App";
-import { initSettings } from "./settings";
+import { initSettings, useSettings } from "./settings";
+import { mcpAvailable, syncMcpAccess } from "./mcp";
+import { publishOpenProject } from "./store";
 import { initKeychain } from "./secrets";
 import { isAppleKeyboard, isMobileOS, isTauri } from "./platform";
 import { initAppMenu } from "./appMenu";
@@ -65,6 +67,16 @@ watchKeyboard();
 watchClosing();
 // iPad et iPhone : les textes de l'interface suivent la taille de texte du système (Dynamic Type).
 watchTextScale();
+// Assistant externe (#62) : seuls les projets ouverts à l'assistant gardent leur instantané ; un accès donné à
+// l'instant écrit celui du projet ouvert sans attendre le prochain enregistrement.
+if (mcpAvailable()) {
+  void syncMcpAccess(useSettings.getState().mcp);
+  useSettings.subscribe((s, prev) => {
+    if (s.mcp === prev.mcp) return;
+    void syncMcpAccess(s.mcp);
+    publishOpenProject(true);
+  });
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

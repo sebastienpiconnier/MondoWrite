@@ -36,6 +36,7 @@ import { aiConfig } from "../settings";
 import { fmt } from "../i18n";
 import { SOURCE_INFO } from "../imageSources";
 import { ImageModelField } from "./ImageGen";
+import { McpAppSettings, McpProjectSetting } from "./McpSettings";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 /** Valeur du choix « Autre modèle… » de la liste. */
@@ -343,6 +344,8 @@ export function Settings({ project = true }: { project?: boolean }) {
               </p>
             </>
           )}
+          {/* Assistant externe (#62) : ce projet ouvert à l'assistant, si l'auteur l'a autorisé (onglet IA). */}
+          <McpProjectSetting />
           {/* Mode Atelier (1.8.0) : seulement quand une IA est branchée (ou s'il est déjà actif, pour pouvoir l'arrêter). */}
           {(isReady(config) || aiMode === "atelier") && (
             <>
@@ -697,6 +700,8 @@ export function Settings({ project = true }: { project?: boolean }) {
               </p>
             </>
           )}
+          {/* Assistant externe par MCP (#62) : indépendant du service choisi ci-dessus (l'IA est celle de l'auteur). */}
+          <McpAppSettings />
           </section>
         </div>
       )}

@@ -35,6 +35,7 @@ import { listScenes, sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes
 import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { aiConfig, useSettings } from "./settings";
+import { mcpAllows, publishMcp } from "./mcp";
 import { bibleOrder } from "./bibleParts";
 import { IMPORT_EXTENSIONS, importFromFile } from "./import";
 import type { ScrivenerReport, ScrivenerSource } from "./import/scrivener/mapping";
@@ -1345,6 +1346,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
             m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, bibleOrder({ ...bibleSections, hidden: [] })), snapshot.markdownCopies, new Date(), forKey),
           );
         }
+        // Assistant externe (#62) : instantané lu par le serveur MCP, si l'auteur a ouvert ce projet à l'assistant.
+        publishOpenProject();
       } catch (err) {
         console.error(err);
         set({ status: "erreur", saveError: classifySaveError(err) });
@@ -4006,3 +4009,23 @@ export const useCosmos = create<CosmosState>((set, get) => {
   }
   return wrapped as unknown as CosmosState;
 });
+
+/**
+ * Assistant externe (#62) : écrit l'instantané du projet ouvert pour le serveur MCP, s'il est ouvert à l'assistant
+ * (après chaque enregistrement, au plus toutes les quelques secondes ; `now` : tout de suite, quand l'auteur vient
+ * de l'ouvrir à l'assistant).
+ */
+export function publishOpenProject(now = false) {
+  const id = storage.current?.();
+  if (!id || !mcpAllows(useSettings.getState().mcp, id)) return;
+  publishMcp(
+    id,
+    () => {
+      const s = useCosmos.getState();
+      // Accès retiré entre-temps : rien ne part (l'instantané vient d'être effacé).
+      if (s.screen !== "project" || storage.current?.() !== id || !mcpAllows(useSettings.getState().mcp, id)) return null;
+      return { title: s.title, kind: s.kind, nodes: s.nodes, edges: s.edges, plan: s.plan, manuscript: s.manuscript, screenplay: s.screenplay, pitch: s.pitch };
+    },
+    now,
+  );
+}
