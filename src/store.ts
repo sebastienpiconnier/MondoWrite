@@ -428,7 +428,9 @@ export interface CosmosState {
   /** Journal de l'IA (ia-journal.md), tel quel. On n'y fait qu'ajouter des lignes, hors historique. */
   journal: string;
   /** Ajoute une ligne au journal (texte proposé par l'IA et accepté), avec le service et le modèle de l'appareil. */
-  logAtelier: (action: AtelierAction, target: string, words: number, extra?: { model?: string; detail?: string }) => void;
+  logAtelier: (action: AtelierAction, target: string, words: number, extra?: { model?: string; detail?: string; service?: string }) => void;
+  /** Assistant externe (#62) : tout ce que fait `fn` (plusieurs actions) ne fait qu'une étape d'annulation. */
+  externalEdit: <T>(fn: () => T) => T;
   /** « Je l'ai repris » : retire la marque de l'IA d'un passage (ou de tous) d'une carte ou d'une scène du roman. */
   unmarkIaPassage: (id: string, where: "card" | "manuscript", markId?: string) => void;
   /** « Je l'ai repris » sur un élément du scénario (note [[ia]]) : l'élément d'index donné. */
@@ -3848,11 +3850,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     journal: "",
+    // Chaque action est une transaction (`inTransaction`) : les actions appelées dans `fn` s'y fondent.
+    externalEdit: (fn) => fn(),
     logAtelier: (action, target, words, extra) => {
       const t = getT().atelier.journal;
       const config = aiConfig(useSettings.getState().ai);
       const line = journalLine(
-        { at: new Date(), action, target: target.trim() || getT().bible.untitled, service: config ? config.provider : "", model: extra?.model ?? config?.model ?? "", words, detail: extra?.detail },
+        { at: new Date(), action, target: target.trim() || getT().bible.untitled, service: extra?.service ?? (config ? config.provider : ""), model: extra?.model ?? config?.model ?? "", words, detail: extra?.detail },
         { header: t.header, actions: t.actions, words: t.words, quoted: t.quoted },
       );
       set({ journal: appendJournal(get().journal, line, t.header) });
@@ -4024,7 +4028,7 @@ export function publishOpenProject(now = false) {
       const s = useCosmos.getState();
       // Accès retiré entre-temps : rien ne part (l'instantané vient d'être effacé).
       if (s.screen !== "project" || storage.current?.() !== id || !mcpAllows(useSettings.getState().mcp, id)) return null;
-      return { title: s.title, kind: s.kind, nodes: s.nodes, edges: s.edges, plan: s.plan, manuscript: s.manuscript, screenplay: s.screenplay, pitch: s.pitch };
+      return { title: s.title, kind: s.kind, nodes: s.nodes, edges: s.edges, plan: s.plan, manuscript: s.manuscript, screenplay: s.screenplay, pitch: s.pitch, access: useSettings.getState().mcp.projects[id] };
     },
     now,
   );

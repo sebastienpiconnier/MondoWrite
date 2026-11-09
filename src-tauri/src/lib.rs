@@ -323,6 +323,9 @@ pub fn run() {
       secrets::secret_delete,
       mcp::mcp_publish,
       mcp::mcp_keep,
+      mcp::mcp_live,
+      mcp::mcp_take,
+      mcp::mcp_answer,
       mcp::mcp_client_config,
       mcp::mcp_claude_state,
       mcp::mcp_connect_claude

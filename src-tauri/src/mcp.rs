@@ -24,6 +24,16 @@ const PROTOCOLS: [&str; 4] = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11
 const MAX_CHARS: usize = 60_000;
 /// Résultats de recherche rendus au plus.
 const MAX_HITS: usize = 40;
+/// Écriture : file des demandes faites à l'app ouverte (`queue/<clé>/req-<id>.json`, réponse `res-<id>.json`) et
+/// battement de cœur de l'app (`live/<clé>`), écrit tant que le projet est ouvert en écriture.
+const QUEUE_DIR: &str = "queue";
+const LIVE_DIR: &str = "live";
+/// L'app est tenue pour ouverte si son battement date de moins de tant de millisecondes.
+const LIVE_MS: u128 = 8_000;
+/// Attente d'une réponse de l'app au plus.
+const ANSWER_MS: u64 = 20_000;
+/// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
+const WRITE_TOOLS: [&str; 7] = ["create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene"];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Chemins
@@ -78,6 +88,63 @@ pub async fn mcp_publish(key: String, snapshot: String) -> Result<(), String> {
   write_safely(&dir.join(format!("{key}.json")), &snapshot).map_err(|e| e.to_string())
 }
 
+/// Identifiant d'une demande : lettres minuscules, chiffres et tirets.
+pub fn is_request_id(id: &str) -> bool {
+  !id.is_empty() && id.len() <= 40 && id.bytes().all(|b| b.is_ascii_digit() || b.is_ascii_lowercase() || b == b'-')
+}
+
+fn now_ms() -> u128 {
+  std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0)
+}
+
+/// Battement de cœur de l'app : le projet est ouvert, en écriture, et l'app prend les demandes.
+#[tauri::command]
+pub async fn mcp_live(key: String) -> Result<(), String> {
+  if !is_key(&key) {
+    return Err("clé refusée".into());
+  }
+  let dir = mcp_dir().ok_or("dossier privé introuvable")?.join(LIVE_DIR);
+  std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+  std::fs::write(dir.join(&key), now_ms().to_string()).map_err(|e| e.to_string())
+}
+
+/// Demandes en attente pour ce projet (contenu JSON), retirées de la file. Au plus 20 à la fois, les plus anciennes d'abord.
+#[tauri::command]
+pub async fn mcp_take(key: String) -> Result<Vec<String>, String> {
+  if !is_key(&key) {
+    return Err("clé refusée".into());
+  }
+  let Some(dir) = mcp_dir().map(|d| d.join(QUEUE_DIR).join(&key)) else { return Ok(Vec::new()) };
+  let Ok(entries) = std::fs::read_dir(&dir) else { return Ok(Vec::new()) };
+  let mut names: Vec<String> = entries
+    .flatten()
+    .map(|e| e.file_name().to_string_lossy().to_string())
+    .filter(|n| n.strip_prefix("req-").and_then(|r| r.strip_suffix(".json")).is_some_and(is_request_id))
+    .collect();
+  names.sort();
+  let mut out = Vec::new();
+  for name in names.into_iter().take(20) {
+    let path = dir.join(&name);
+    if let Ok(text) = std::fs::read_to_string(&path) {
+      let _ = std::fs::remove_file(&path);
+      out.push(text);
+    }
+  }
+  Ok(out)
+}
+
+/// Réponse de l'app à une demande (JSON : `{ "ok": bool, "text": "…" }`).
+#[tauri::command]
+pub async fn mcp_answer(key: String, id: String, answer: String) -> Result<(), String> {
+  if !is_key(&key) || !is_request_id(&id) {
+    return Err("demande refusée".into());
+  }
+  serde_json::from_str::<Value>(&answer).map_err(|_| "réponse illisible".to_string())?;
+  let dir = mcp_dir().ok_or("dossier privé introuvable")?.join(QUEUE_DIR).join(&key);
+  std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+  write_safely(&dir.join(format!("res-{id}.json")), &answer).map_err(|e| e.to_string())
+}
+
 /// Garde seulement les instantanés des projets donnés (accès retiré, assistant coupé : liste vide).
 #[tauri::command]
 pub async fn mcp_keep(keys: Vec<String>) -> Result<(), String> {
@@ -88,6 +155,8 @@ pub async fn mcp_keep(keys: Vec<String>) -> Result<(), String> {
     let Some(key) = name.strip_suffix(".json") else { continue };
     if is_key(key) && !keys.iter().any(|k| k == key) {
       let _ = std::fs::remove_file(entry.path());
+      let _ = std::fs::remove_file(dir.join(LIVE_DIR).join(key));
+      let _ = std::fs::remove_dir_all(dir.join(QUEUE_DIR).join(key));
     }
   }
   Ok(())
@@ -235,11 +304,15 @@ type ToolResult = Result<String, String>;
 
 pub struct Server {
   dir: PathBuf,
+  /// Nom du client (`clientInfo.name` d'`initialize`), écrit dans le journal de l'IA du projet.
+  client: std::cell::RefCell<String>,
+  /// Attente d'une réponse de l'app (plus courte dans les tests).
+  answer_ms: u64,
 }
 
 impl Server {
   pub fn new(dir: PathBuf) -> Self {
-    Self { dir }
+    Self { dir, client: std::cell::RefCell::new(String::new()), answer_ms: ANSWER_MS }
   }
 
   /// Le projet demandé : par clé ou par titre (égal, puis contenu). Facultatif s'il n'y en a qu'un.
@@ -275,10 +348,11 @@ impl Server {
     let mut out = String::from("Projets MondoWrite ouverts à l'assistant / MondoWrite projects shared with the assistant:\n");
     for (key, v) in &all {
       out.push_str(&format!(
-        "- {} ({}, {} scènes/scenes) · id `{}` · {}\n",
+        "- {} ({}, {} scènes/scenes, {}) · id `{}` · {}\n",
         str_of(v, "/project/title"),
         str_of(v, "/project/kindLabel"),
         v.get("scenes").and_then(Value::as_array).map_or(0, Vec::len),
+        if str_of(v, "/project/access") == "write" { "lecture et écriture / read and write" } else { "lecture seule / read only" },
         key,
         str_of(v, "/savedAt")
       ));
@@ -519,6 +593,41 @@ impl Server {
     Ok(clip(out))
   }
 
+  /// Outil d'écriture : la demande va à l'app ouverte, qui l'applique et répond. Jamais d'écriture directe ici.
+  fn write(&self, name: &str, args: &Value) -> ToolResult {
+    let (key, v) = self.project(args)?;
+    if str_of(&v, "/project/access") != "write" {
+      return Err("Ce projet est ouvert à l'assistant en lecture seule. Dans MondoWrite : Réglages › Ce projet › « Lecture et écriture ». / This project is read only for the assistant.".into());
+    }
+    let live = std::fs::read_to_string(self.dir.join(LIVE_DIR).join(&key)).ok().and_then(|t| t.trim().parse::<u128>().ok());
+    if !live.is_some_and(|at| now_ms().saturating_sub(at) < LIVE_MS) {
+      return Err(format!("Ouvre « {} » dans MondoWrite : l'assistant n'écrit que dans un projet ouvert, pour que tout passe par l'app (annulation, marque IA, journal). / Open the project in MondoWrite first.", str_of(&v, "/project/title")));
+    }
+    let queue = self.dir.join(QUEUE_DIR).join(&key);
+    std::fs::create_dir_all(&queue).map_err(|e| e.to_string())?;
+    let id = format!("{}-{}", now_ms(), std::process::id());
+    let mut clean = args.clone();
+    if let Some(o) = clean.as_object_mut() {
+      o.remove("project");
+    }
+    let request = json!({ "id": id, "tool": name, "args": clean, "client": self.client.borrow().clone() });
+    let req = queue.join(format!("req-{id}.json"));
+    write_safely(&req, &request.to_string()).map_err(|e| e.to_string())?;
+    let res = queue.join(format!("res-{id}.json"));
+    let start = std::time::Instant::now();
+    while start.elapsed().as_millis() < self.answer_ms as u128 {
+      if let Ok(text) = std::fs::read_to_string(&res) {
+        let _ = std::fs::remove_file(&res);
+        let answer: Value = serde_json::from_str(&text).unwrap_or(json!({ "ok": false, "text": "Réponse illisible." }));
+        let message = str_of(&answer, "/text").to_string();
+        return if answer.get("ok").and_then(Value::as_bool) == Some(true) { Ok(message) } else { Err(message) };
+      }
+      std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    let _ = std::fs::remove_file(&req);
+    Err("MondoWrite n'a pas répondu à temps : rien n'a été écrit. Vérifie que le projet est ouvert. / MondoWrite did not answer: nothing was written.".into())
+  }
+
   pub fn tools() -> Value {
     let project = json!({ "type": "string", "description": "Titre ou identifiant du projet (facultatif s'il n'y en a qu'un). / Project title or id (optional if only one)." });
     json!([
@@ -557,6 +666,59 @@ impl Server {
         "description": "Cherche un mot ou une expression dans le texte des scènes et dans les cartes (sans casse ni accents), avec le contexte de chaque occurrence. / Searches scenes and cards (case and accent insensitive), with context.",
         "inputSchema": { "type": "object", "properties": { "project": project, "query": { "type": "string" } }, "required": ["query"] },
         "annotations": { "readOnlyHint": true }
+      },
+      {
+        "name": "create_card",
+        "description": "Crée une carte dans la Bible et sur le canevas (personnage, lieu, intrigue, objet, idée…), avec ses notes et des champs de sa fiche. Marquée « IA » et notée dans le journal de l'IA du projet ; l'auteur peut l'annuler. Projet ouvert en écriture dans MondoWrite. / Creates a card (marked as AI, logged, undoable).",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "type": { "type": "string", "description": "personnage, lieu, intrigue, theme, objet, groupe, evenement, regle, secret, question, idee… ou le libellé (Personnage, Character…)." },
+          "title": { "type": "string" },
+          "notes": { "type": "string", "description": "Texte de la carte, en Markdown." },
+          "fields": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Champs de la fiche, par libellé ou clé (Âge, Métier, Veut…)." }
+        }, "required": ["type", "title"] }
+      },
+      {
+        "name": "update_card",
+        "description": "Modifie une carte : champs de la fiche, notes (ajout à la fin ou remplacement), titre. Marqué « IA », journalisé, annulable. / Updates a card's fields, notes or title.",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "card": { "type": "string", "description": "Titre ou identifiant." },
+          "title": { "type": "string" },
+          "fields": { "type": "object", "additionalProperties": { "type": "string" } },
+          "notes": { "type": "string", "description": "Markdown." },
+          "notes_mode": { "type": "string", "enum": ["append", "replace"], "description": "append par défaut." }
+        }, "required": ["card"] }
+      },
+      {
+        "name": "link_cards",
+        "description": "Relie deux cartes par un fil du canevas, avec une étiquette facultative (« aime », « se passe à »…). / Links two cards with a labelled wire.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "from": { "type": "string" }, "to": { "type": "string" }, "label": { "type": "string" } }, "required": ["from", "to"] }
+      },
+      {
+        "name": "add_question",
+        "description": "Pose une question à l'auteur : carte Question (rubrique « À creuser »), reliée aux cartes concernées. La meilleure façon de signaler un doute ou une incohérence. / Adds a Question card for the author, linked to cards.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "question": { "type": "string" }, "about": { "type": "array", "items": { "type": "string" }, "description": "Titres ou identifiants des cartes concernées." } }, "required": ["question"] }
+      },
+      {
+        "name": "create_scene",
+        "description": "Crée une scène à la fin du récit (roman : titre libre ; scénario : en-tête « INT. LIEU - JOUR »), avec synopsis et texte facultatifs. / Creates a scene at the end of the story.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "synopsis": { "type": "string" }, "text": { "type": "string", "description": "Markdown (roman) ou Fountain sans en-tête (scénario)." } }, "required": ["title"] }
+      },
+      {
+        "name": "set_scene_synopsis",
+        "description": "Écrit le synopsis d'une scène (une ou deux phrases). Marqué « IA ». / Sets a scene's synopsis.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string", "description": "Numéro, identifiant ou titre." }, "synopsis": { "type": "string" } }, "required": ["scene", "synopsis"] }
+      },
+      {
+        "name": "write_scene",
+        "description": "Écrit le texte d'une scène : ajout à la fin ou remplacement. Roman : Markdown ; scénario : Fountain sans en-tête de scène. Le texte de l'IA reste marqué jusqu'à ce que l'auteur le reprenne ; avant un remplacement dans un roman, MondoWrite garde une version de la scène. / Writes a scene's text (append or replace), marked as AI.",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
+          "text": { "type": "string" },
+          "mode": { "type": "string", "enum": ["append", "replace"], "description": "append par défaut." }
+        }, "required": ["scene", "text"] }
       }
     ])
   }
@@ -569,6 +731,7 @@ impl Server {
       "list_cards" => self.list_cards(args),
       "read_card" => self.read_card(args),
       "search" => self.search(args),
+      _ if WRITE_TOOLS.contains(&name) => self.write(name, args),
       _ => Err(format!("Outil inconnu : {name}")),
     }
   }
@@ -581,12 +744,14 @@ impl Server {
     let result = match method {
       "initialize" => {
         let asked = params.get("protocolVersion").and_then(Value::as_str).unwrap_or("");
+        let client = params.pointer("/clientInfo/name").and_then(Value::as_str).unwrap_or("").chars().filter(|c| !c.is_control()).take(60).collect();
+        *self.client.borrow_mut() = client;
         let version = if PROTOCOLS.contains(&asked) { asked } else { PROTOCOLS[0] };
         json!({
           "protocolVersion": version,
           "capabilities": { "tools": { "listChanged": false } },
           "serverInfo": { "name": SERVER_NAME, "title": "MondoWrite", "version": env!("CARGO_PKG_VERSION") },
-          "instructions": "MondoWrite est le logiciel d'écriture de l'auteur (romans, scénarios). Ces outils lisent ses projets en lecture seule. Commence par project_overview, puis lis seulement les scènes et les cartes utiles. Cite les scènes par leur numéro et leur titre. Le texte appartient à l'auteur : propose, n'impose pas. / MondoWrite is the author's writing app. These tools read their projects (read only). Start with project_overview, then read only the scenes and cards you need."
+          "instructions": "MondoWrite est le logiciel d'écriture de l'auteur (romans, scénarios). Ces outils lisent ses projets ; ceux d'écriture ne marchent que pour un projet que l'auteur a ouvert en écriture, et tout ce que tu écris est marqué « IA », journalisé et annulable. Commence par project_overview, puis lis seulement les scènes et les cartes utiles. Cite les scènes par leur numéro et leur titre. Le texte appartient à l'auteur : demande-lui avant d'écrire dans son projet, et préfère add_question pour signaler un doute. / MondoWrite is the author's writing app. These tools read their projects; writing tools work only for projects the author opened for writing, and everything you write is marked as AI, logged and undoable. Start with project_overview. Ask the author before writing."
         })
       }
       "ping" => json!({}),
@@ -751,7 +916,7 @@ mod tests {
     assert_eq!(unknown["result"]["protocolVersion"], PROTOCOLS[0]);
     assert!(s.handle(&json!({ "jsonrpc": "2.0", "method": "notifications/initialized" })).is_none());
     let tools = s.handle(&json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" })).unwrap();
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 6);
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 6 + WRITE_TOOLS.len());
   }
 
   #[test]
@@ -791,5 +956,61 @@ mod tests {
   #[test]
   fn repli_sans_accents() {
     assert_eq!(fold("Inès MORVAN, l’Œuvre"), "ines morvan, l'oeuvre");
+  }
+
+  #[test]
+  fn ecriture_refusee_sans_acces_ni_app_ouverte() {
+    let (s, dir) = server();
+    // Instantané en lecture seule.
+    let (text, err) = call(&s, "create_card", json!({ "type": "lieu", "title": "La crique" }));
+    assert!(err && text.contains("lecture seule"));
+    // En écriture mais app fermée (pas de battement).
+    let mut snap = snapshot();
+    snap["project"]["access"] = json!("write");
+    std::fs::write(dir.join("p0000000aaaaaaa.json"), snap.to_string()).unwrap();
+    let (text, err) = call(&s, "create_card", json!({ "type": "lieu", "title": "La crique" }));
+    assert!(err && text.contains("Ouvre"));
+  }
+
+  #[test]
+  fn ecriture_transmise_a_l_app() {
+    let (mut s, dir) = server();
+    s.answer_ms = 3000;
+    let mut snap = snapshot();
+    snap["project"]["access"] = json!("write");
+    std::fs::write(dir.join("p0000000aaaaaaa.json"), snap.to_string()).unwrap();
+    std::fs::create_dir_all(dir.join(LIVE_DIR)).unwrap();
+    std::fs::write(dir.join(LIVE_DIR).join("p0000000aaaaaaa"), now_ms().to_string()).unwrap();
+    // L'app : prend la demande et répond.
+    let queue = dir.join(QUEUE_DIR).join("p0000000aaaaaaa");
+    let app = std::thread::spawn(move || {
+      for _ in 0..50 {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let Ok(entries) = std::fs::read_dir(&queue) else { continue };
+        for e in entries.flatten() {
+          let name = e.file_name().to_string_lossy().to_string();
+          if let Some(id) = name.strip_prefix("req-").and_then(|r| r.strip_suffix(".json")) {
+            let req: Value = serde_json::from_str(&std::fs::read_to_string(e.path()).unwrap()).unwrap();
+            assert_eq!(req["tool"], "create_card");
+            assert_eq!(req["args"]["title"], "La crique");
+            assert!(req["args"].get("project").is_none());
+            std::fs::remove_file(e.path()).unwrap();
+            std::fs::write(queue.join(format!("res-{id}.json")), json!({ "ok": true, "text": "Carte créée." }).to_string()).unwrap();
+            return;
+          }
+        }
+      }
+    });
+    let (text, err) = call(&s, "create_card", json!({ "type": "lieu", "title": "La crique", "project": "Le Phare" }));
+    app.join().unwrap();
+    assert!(!err, "{text}");
+    assert_eq!(text, "Carte créée.");
+  }
+
+  #[test]
+  fn identifiant_de_demande_verifie() {
+    assert!(is_request_id("1731171717-42"));
+    assert!(!is_request_id("../x"));
+    assert!(!is_request_id(""));
   }
 }

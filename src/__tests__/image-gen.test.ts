@@ -206,7 +206,7 @@ describe("marque iaImages (frontmatter)", () => {
 });
 
 describe("journal", () => {
-  const LABELS: JournalLabels = { header: "# J", actions: { variants: "V", synopsis: "S", directions: "D", pitch: "P", sheet: "F", image: "Image" }, words: "{n} mots", quoted: "« {title} »" };
+  const LABELS: JournalLabels = { header: "# J", actions: { variants: "V", synopsis: "S", directions: "D", pitch: "P", sheet: "F", image: "Image", external: "E" }, words: "{n} mots", quoted: "« {title} »" };
   it("une image : sa taille à la place des mots", () => {
     const line = journalLine({ at: new Date(2026, 9, 31, 14, 5), action: "image", target: "Inès", service: "openai", model: "gpt-image-2", words: 0, detail: "1024 × 1536 px" }, LABELS);
     expect(line).toBe("- 2026-10-31 14:05 · Image · « Inès » · openai, gpt-image-2 · 1024 × 1536 px");

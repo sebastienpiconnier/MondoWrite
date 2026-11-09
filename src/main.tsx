@@ -31,8 +31,9 @@ import "./styles/writing.css";
 import "./styles/phone.css";
 import { App } from "./App";
 import { initSettings, useSettings } from "./settings";
-import { mcpAvailable, syncMcpAccess } from "./mcp";
-import { publishOpenProject } from "./store";
+import { mcpAvailable, mcpWritable, startMcpBridge, syncMcpAccess } from "./mcp";
+import { publishOpenProject, useCosmos } from "./store";
+import { storage } from "./storage";
 import { initKeychain } from "./secrets";
 import { isAppleKeyboard, isMobileOS, isTauri } from "./platform";
 import { initAppMenu } from "./appMenu";
@@ -75,6 +76,11 @@ if (mcpAvailable()) {
     if (s.mcp === prev.mcp) return;
     void syncMcpAccess(s.mcp);
     publishOpenProject(true);
+  });
+  // Écriture : les demandes de l'assistant sont appliquées par l'app, seulement pour un projet ouvert en écriture.
+  startMcpBridge(() => {
+    const id = storage.current?.();
+    return useCosmos.getState().screen === "project" && id && mcpWritable(useSettings.getState().mcp, id) ? id : null;
   });
 }
 

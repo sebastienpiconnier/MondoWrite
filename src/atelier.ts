@@ -126,7 +126,8 @@ export function iaAfterPatch(
 /** Fichier du journal, à la racine du projet, lisible hors de l'app (storage/paths.ts). */
 export { JOURNAL_FILE } from "./storage/paths";
 
-export type AtelierAction = "variants" | "synopsis" | "directions" | "pitch" | "sheet" | "image";
+// « external » : écrit par l'assistant externe par MCP (#62), que l'auteur a ouvert en écriture.
+export type AtelierAction = "variants" | "synopsis" | "directions" | "pitch" | "sheet" | "image" | "external";
 
 export interface JournalEntry {
   at: Date;

@@ -87,23 +87,27 @@ export function McpAppSettings() {
   );
 }
 
-/** Onglet Ce projet : ouvrir le projet ouvert à l'assistant (lecture seule). Seulement si l'assistant est autorisé. */
+/** Onglet Ce projet : accès de l'assistant au projet ouvert (aucun, lecture, écriture). Seulement si l'assistant est autorisé. */
 export function McpProjectSetting() {
   const t = useT();
   const mcp = useSettings((s) => s.mcp);
   const setProject = useSettings((s) => s.setMcpProject);
-  const ids = { on: useId(), hint: useId() };
+  const ids = { access: useId(), hint: useId() };
   const id = storage.current?.();
   if (!mcpAvailable() || !mcp.enabled || !id) return null;
+  const access = mcp.projects[id] ?? "";
   return (
     <>
-      <label className="settings-check" htmlFor={ids.on}>
-        <input id={ids.on} type="checkbox" checked={mcp.projects[id] === "read"} aria-describedby={ids.hint} onChange={(e) => setProject(id, e.target.checked ? "read" : null)} />
-        {t.mcp.projectAccess}
-      </label>
-      <p className="settings-hint" id={ids.hint}>
-        {t.mcp.projectHint}
-      </p>
+      <label htmlFor={ids.access}>{t.mcp.projectAccessLabel}</label>
+      <select id={ids.access} value={access} aria-describedby={ids.hint} onChange={(e) => setProject(id, e.target.value === "read" || e.target.value === "write" ? e.target.value : null)}>
+        <option value="">{t.mcp.accessNone}</option>
+        <option value="read">{t.mcp.accessRead}</option>
+        <option value="write">{t.mcp.accessWrite}</option>
+      </select>
+      <div className="settings-hint" id={ids.hint}>
+        <p>{t.mcp.projectHint}</p>
+        {access === "write" && <p>{t.mcp.writeHint}</p>}
+      </div>
     </>
   );
 }

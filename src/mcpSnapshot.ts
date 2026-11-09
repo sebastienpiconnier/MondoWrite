@@ -22,7 +22,8 @@ import { seriesOf } from "./screenplay/series";
 import { plainText } from "./search";
 import { foldName } from "./names";
 import type { Pitch } from "./pitch";
-export { DEFAULT_MCP, mcpAllows, readMcp, type McpAccess, type McpSettings } from "./mcp";
+import type { McpAccess } from "./mcp";
+export { DEFAULT_MCP, mcpAllows, mcpWritable, readMcp, type McpAccess, type McpSettings } from "./mcp";
 
 /** Version du format lu par le serveur (`format` de l'instantané). Le serveur ignore un autre numéro. */
 export const MCP_FORMAT = 1;
@@ -62,7 +63,7 @@ export interface McpSnapshot {
   format: typeof MCP_FORMAT;
   app: string;
   savedAt: string;
-  project: { title: string; kind: ProjectKind; kindLabel: string; logline?: string; resume?: string; labels: { logline: string; resume: string } };
+  project: { title: string; kind: ProjectKind; kindLabel: string; access: McpAccess; logline?: string; resume?: string; labels: { logline: string; resume: string } };
   scenes: McpScene[];
   cards: McpCard[];
 }
@@ -77,6 +78,8 @@ export interface McpSource {
   manuscript: Manuscript;
   screenplay: Screenplay | null;
   pitch: Pitch;
+  /** Accès accordé par l'auteur sur cet appareil (lecture par défaut) : le serveur refuse d'écrire sans « write ». */
+  access?: McpAccess;
 }
 
 /** Mention d'une carte (`[@Titre](cosmos:id)`) écrite « @Titre » ; images de medias/ retirées. */
@@ -259,6 +262,7 @@ export function buildMcpSnapshot(s: McpSource, t: Messages, now: Date, app: stri
       title: s.title.trim() || t.pitch.untitled,
       kind: s.kind,
       kindLabel: t.kinds[s.kind],
+      access: s.access ?? "read",
       ...(logline ? { logline } : {}),
       ...(resume ? { resume } : {}),
       labels: { logline: t.pitch.fields.logline, resume: t.pitch.fields.resume },

@@ -3815,6 +3815,7 @@ export const es = {
         pitch: "Portada",
         sheet: "Ficha",
         image: "Imagen",
+        external: "Asistente externo",
       },
       words: "{n} palabras",
       quoted: "«{title}»",

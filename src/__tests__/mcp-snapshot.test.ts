@@ -6,7 +6,7 @@ import { EMPTY_PLAN } from "../plan";
 import type { CardData } from "../types";
 import type { CardNode } from "../projectState";
 import { parse } from "../screenplay/parse";
-import { DEFAULT_MCP, MCP_FORMAT, buildMcpSnapshot, cleanFountain, cleanMarkdown, mcpAllows, readMcp, type McpSource } from "../mcpSnapshot";
+import { DEFAULT_MCP, MCP_FORMAT, buildMcpSnapshot, cleanFountain, cleanMarkdown, mcpAllows, mcpWritable, readMcp, type McpSource } from "../mcpSnapshot";
 import { backupKey, isBackupKey } from "../backups";
 
 const node = (data: Partial<CardData> & Pick<CardData, "id" | "type">, y = 0): CardNode =>
@@ -35,7 +35,7 @@ describe("instantané d'un roman", () => {
   it("porte son format, la date et le projet", () => {
     expect(snap.format).toBe(MCP_FORMAT);
     expect(snap.savedAt).toBe("2026-11-09T17:40:00.000Z");
-    expect(snap.project).toMatchObject({ title: "Le Phare", kind: "roman", kindLabel: "Roman", logline: "Une gardienne et un secret." });
+    expect(snap.project).toMatchObject({ title: "Le Phare", kind: "roman", kindLabel: "Roman", access: "read", logline: "Une gardienne et un secret." });
   });
 
   it("scènes dans l'ordre du livre, avec chapitre, synopsis, statut, point de vue et texte en Markdown", () => {
@@ -107,10 +107,12 @@ describe("instantané d'un scénario", () => {
 describe("réglage et nettoyage", () => {
   it("rien n'est ouvert à l'assistant sans l'accord de l'auteur, projet par projet", () => {
     expect(mcpAllows(DEFAULT_MCP, "/Romans/Le phare")).toBe(false);
-    const mcp = readMcp({ enabled: true, projects: { "/Romans/Le phare": "read", "/Autre": "write", 3: "read" } });
-    expect(mcp.projects).toEqual({ "/Romans/Le phare": "read", "3": "read" });
+    const mcp = readMcp({ enabled: true, projects: { "/Romans/Le phare": "read", "/Autre": "write", "/Pirate": "admin", 3: "read" } });
+    expect(mcp.projects).toEqual({ "/Romans/Le phare": "read", "/Autre": "write", "3": "read" });
     expect(mcpAllows(mcp, "/Romans/Le phare")).toBe(true);
-    expect(mcpAllows(mcp, "/Autre")).toBe(false);
+    expect(mcpWritable(mcp, "/Romans/Le phare")).toBe(false);
+    expect(mcpWritable(mcp, "/Autre")).toBe(true);
+    expect(mcpAllows(mcp, "/Pirate")).toBe(false);
     expect(mcpAllows({ ...mcp, enabled: false }, "/Romans/Le phare")).toBe(false);
     expect(readMcp("n'importe quoi")).toEqual(DEFAULT_MCP);
   });
