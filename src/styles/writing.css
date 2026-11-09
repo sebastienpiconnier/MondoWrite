@@ -472,6 +472,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .trash-notice .icon-button { background: transparent; color: var(--strong-fg); border-color: transparent; }
 /* Croix en haut à droite, à l'endroit attendu ; le texte et les boutons lui laissent la place (padding). */
 .trash-notice .trash-notice-close { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; }
+/* Message de l'assistant externe : en haut, pour ne jamais croiser celui de la corbeille. */
+.trash-notice.assistant-notice { bottom: auto; top: max(64px, calc(env(safe-area-inset-top) + 56px)); }
 .sq-trash { flex-shrink: 0; color: var(--ink-2); }
 /* Ce qu'est le gabarit choisi, et ce qu'on met dans chaque case du séquencier. */
 .plan-about { flex-basis: 100%; margin: 0; font-size: 0.875rem; line-height: 1.5; color: var(--ink-2); }

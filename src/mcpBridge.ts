@@ -1,6 +1,7 @@
 // Assistant externe par MCP, écriture (#62, lot 3) : branche les demandes du serveur sur le store. Chargé à la
 // demande par la boucle de `startMcpBridge` (mcp.ts), seulement quand une demande arrive.
 
+import { noteAssistantWrite } from "./assistantNotice";
 import { getT } from "./i18n";
 import { publishOpenProject, useCosmos } from "./store";
 import { storage } from "./storage";
@@ -107,6 +108,16 @@ function mcpStore(): McpStore {
       if (s().view !== view) useCosmos.setState({ view });
     },
     log: (target, words, client) => s().logAtelier("external", target, words, { service: "MCP", model: client }),
+    trashed: () => s().trash,
+    restore: (id) => s().restoreFromTrash(id),
+    renameLink: (id, label) => s().renameLink(id, label),
+    setWireFiche: (id, field, value) => s().setWireFiche(id, field, value),
+    frames: () => s().frames.map((f) => ({ id: f.id, title: (f.data.title ?? "").trim() })),
+    renameFrame: (id, title) => s().updateFrame(id, { title }),
+    deleteFrame: (id) => s().deleteFrame(id),
+    setTitle: (title) => s().setTitle(title),
+    goals: () => s().goals,
+    setGoals: (goals) => s().setGoals(goals),
   };
 }
 
@@ -136,9 +147,14 @@ export async function applyRaw(raw: string, projectId: string): Promise<{ id: st
     return { id, answer: { ok: false, text: "Le projet n'est plus ouvert en écriture dans MondoWrite : rien n'a été écrit." } };
   }
   try {
+    const before = s().past.at(-1) ?? null;
     const answer = await applyMcpRequest(req, mcpStore(), getT());
-    // L'IA relit aussitôt ce qu'elle vient d'écrire : l'instantané suit sans attendre l'enregistrement.
-    if (answer.ok) publishOpenProject(true);
+    if (answer.ok) {
+      // L'IA relit aussitôt ce qu'elle vient d'écrire : l'instantané suit sans attendre l'enregistrement.
+      publishOpenProject(true);
+      const after = s().past.at(-1) ?? null;
+      noteAssistantWrite(typeof req.client === "string" && req.client.trim() ? req.client.trim() : "", after !== before ? after : null);
+    }
     return { id, answer };
   } catch (err) {
     console.error(err);

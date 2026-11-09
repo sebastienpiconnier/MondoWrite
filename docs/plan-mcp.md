@@ -117,8 +117,13 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
 - [x] consignes MCP prêtes (`prompts/list`, `prompts/get`) : relecture bêta, cohérence, dépouillement, interroger un
       personnage, point du projet
 - [ ] écartés exprès : supprimer un projet, vider la corbeille, exporter des fichiers, toucher aux réglages
-- [ ] à faire : message dans l'app quand l'assistant vient d'écrire (« L'assistant a modifié … · Annuler »), avec la
-      pastille du lot 2
+- [x] lot 5 (novembre 2026, d'un seul coup) : `update_card` change aussi le type, `create_scene` crée une page du livre
+      (`page`), mentions `[[Titre]]` dans les notes et le texte (`withMentions` : vraie mention et fil tiré),
+      `update_link` (étiquette et fiche du fil), `restore_card`, `replace_passage` (passage cité, version gardée),
+      `add_character_question`, `update_frame` (renommer, retirer ; verrouillé refusé), `set_project` (titre, objectifs)
+- [x] message dans l'app quand l'assistant vient d'écrire (`assistantNotice.ts`, `AssistantNotice`, en haut de
+      l'écran) : écritures regroupées sur 10 s, « Annuler » seulement si ses étapes sont encore au sommet de l'historique
+- [ ] pastille du lot 2 (l'assistant a lu le projet récemment)
 
 ## Pièges
 

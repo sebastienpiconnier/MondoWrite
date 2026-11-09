@@ -2612,6 +2612,9 @@ export const fr = {
   // Assistant externe par MCP (#62, docs/plan-mcp.md) : l'assistant de l'auteur (Claude Desktop…) lit ses projets.
   mcp: {
     title: "Assistant externe (MCP)",
+    notice: "{client} vient de modifier ton projet.",
+    noticeMany: "{client} a fait {n} modifications dans ton projet.",
+    noticeClient: "L’assistant",
     enable: "Autoriser un assistant externe à lire mes projets",
     hint: "Claude Desktop, ou tout logiciel compatible MCP, peut lire les projets que tu lui ouvres (Réglages › Ce projet), en lecture seule. Il utilise ton propre abonnement ou ton modèle local : aucune clé à donner ici.",
     noProject: "Aucun projet ouvert à l’assistant pour l’instant.",

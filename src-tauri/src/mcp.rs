@@ -33,12 +33,13 @@ const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
 const ANSWER_MS: u64 = 20_000;
 /// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
-const WRITE_TOOLS: [&str; 29] = [
+const WRITE_TOOLS: [&str; 35] = [
   "create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene",
   "move_scene", "create_chapter", "rename_chapter", "move_chapter", "delete_chapter",
   "add_comment", "resolve_comment", "keep_version", "create_episode", "update_episode", "place_scene", "set_template",
   "merge_scenes", "split_scene", "trash_card", "unlink_cards", "rename_everywhere", "replace_text", "set_cover",
   "create_frame", "organize_canvas", "set_scene_fields",
+  "update_link", "restore_card", "replace_passage", "add_character_question", "update_frame", "set_project",
 ];
 /// Lectures faites par l'app ouverte (calculées sur le projet tel qu'il est à l'écran) : accès en lecture suffit.
 const LIVE_TOOLS: [&str; 6] = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"];
@@ -691,19 +692,20 @@ impl Server {
           "project": project,
           "type": { "type": "string", "description": "personnage, lieu, intrigue, theme, objet, groupe, evenement, regle, secret, question, idee… ou le libellé (Personnage, Character…)." },
           "title": { "type": "string" },
-          "notes": { "type": "string", "description": "Texte de la carte, en Markdown." },
+          "notes": { "type": "string", "description": "Texte de la carte, en Markdown. [[Titre]] cite une autre carte (mention, fil tiré)." },
           "fields": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Champs de la fiche, par libellé ou clé (Âge, Métier, Veut…)." }
         }, "required": ["type", "title"] }
       },
       {
         "name": "update_card",
-        "description": "Modifie une carte : champs de la fiche, notes (ajout à la fin ou remplacement), titre. Marqué « IA », journalisé, annulable. / Updates a card's fields, notes or title.",
+        "description": "Modifie une carte : type (une Idée devient Personnage…), champs de la fiche, notes (ajout à la fin ou remplacement), titre. Marqué « IA », journalisé, annulable. / Updates a card's type, fields, notes or title.",
         "inputSchema": { "type": "object", "properties": {
           "project": project,
           "card": { "type": "string", "description": "Titre ou identifiant." },
+          "type": { "type": "string", "description": "Nouveau type (clé ou libellé), appliqué avant les champs." },
           "title": { "type": "string" },
           "fields": { "type": "object", "additionalProperties": { "type": "string" } },
-          "notes": { "type": "string", "description": "Markdown." },
+          "notes": { "type": "string", "description": "Markdown. [[Titre]] cite une autre carte." },
           "notes_mode": { "type": "string", "enum": ["append", "replace"], "description": "append par défaut." }
         }, "required": ["card"] }
       },
@@ -720,7 +722,7 @@ impl Server {
       {
         "name": "create_scene",
         "description": "Crée une scène à la fin du récit (roman : titre libre ; scénario : en-tête « INT. LIEU - JOUR »), avec synopsis et texte facultatifs. / Creates a scene at the end of the story.",
-        "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "synopsis": { "type": "string" }, "text": { "type": "string", "description": "Markdown (roman) ou Fountain sans en-tête (scénario)." } }, "required": ["title"] }
+        "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "synopsis": { "type": "string" }, "text": { "type": "string", "description": "Markdown (roman, [[Titre]] cite une carte) ou Fountain sans en-tête (scénario)." }, "page": { "type": "string", "description": "Roman : page hors récit (titre, copyright, dedicace, epigraphe, prologue, epilogue, remerciements, auteur) au lieu d'une scène." } } }
       },
       {
         "name": "set_scene_synopsis",
@@ -738,7 +740,7 @@ impl Server {
       },
       {
         "name": "write_scene",
-        "description": "Écrit le texte d'une scène : ajout à la fin ou remplacement. Roman : Markdown ; scénario : Fountain sans en-tête de scène. Le texte de l'IA reste marqué jusqu'à ce que l'auteur le reprenne ; avant un remplacement dans un roman, MondoWrite garde une version de la scène. / Writes a scene's text (append or replace), marked as AI.",
+        "description": "Écrit le texte d'une scène : ajout à la fin ou remplacement. Roman : Markdown ([[Titre]] cite une carte) ; scénario : Fountain sans en-tête de scène. Le texte de l'IA reste marqué jusqu'à ce que l'auteur le reprenne ; avant un remplacement dans un roman, MondoWrite garde une version de la scène. / Writes a scene's text (append or replace), marked as AI.",
         "inputSchema": { "type": "object", "properties": {
           "project": project,
           "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
@@ -883,6 +885,36 @@ impl Server {
         "name": "organize_canvas",
         "description": "Range tout le canevas : un cadre par type de carte, par case du gabarit, par chapitre ou épisode. Une seule annulation le défait. / Tidies the whole canvas.",
         "inputSchema": { "type": "object", "properties": { "project": project } }
+      },
+      {
+        "name": "update_link",
+        "description": "Modifie le fil entre deux cartes : étiquette et fiche du fil (histoire, enjeu, évolution). / Edits the wire between two cards (label, history, stake, evolution).",
+        "inputSchema": { "type": "object", "properties": { "project": project, "from": { "type": "string" }, "to": { "type": "string" }, "label": { "type": "string" }, "fields": { "type": "object", "additionalProperties": { "type": "string" }, "description": "histoire, enjeu, evolution (ou libellés)." } }, "required": ["from", "to"] }
+      },
+      {
+        "name": "restore_card",
+        "description": "Sort une carte de la corbeille (avec ses fils, et sa scène dans un scénario). / Restores a card from the trash.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "card": { "type": "string", "description": "Titre ou identifiant." } }, "required": ["card"] }
+      },
+      {
+        "name": "replace_passage",
+        "description": "Remplace un passage précis d'une scène, cité mot pour mot (une phrase, un paragraphe ou une partie d'élément du scénario), par un nouveau texte marqué « IA ». Version de la scène gardée avant. Mieux que write_scene pour une retouche. / Replaces one quoted passage in a scene (marked as AI, version kept).",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string" }, "quote": { "type": "string", "description": "Passage exact, sans retour à la ligne." }, "text": { "type": "string", "description": "Nouveau texte, sans retour à la ligne." } }, "required": ["scene", "quote", "text"] }
+      },
+      {
+        "name": "add_character_question",
+        "description": "Garde une question dans la fiche d'un personnage (« À creuser »), sans créer de carte. / Keeps a question in a character's sheet.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "character": { "type": "string" }, "question": { "type": "string" } }, "required": ["character", "question"] }
+      },
+      {
+        "name": "update_frame",
+        "description": "Renomme ou retire un cadre du canevas (les cartes restent). Un cadre verrouillé n'est pas retiré. / Renames or removes a canvas frame.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "frame": { "type": "string", "description": "Titre ou identifiant." }, "title": { "type": "string" }, "remove": { "type": "boolean" } }, "required": ["frame"] }
+      },
+      {
+        "name": "set_project",
+        "description": "Titre du projet et objectifs d'écriture (mots par jour, mots du livre, échéance AAAA-MM-JJ, séance, scène, chapitre ; 0 retire un objectif). / Sets project title and writing goals.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "goals": { "type": "object", "properties": { "daily": { "type": "integer" }, "total": { "type": "integer" }, "deadline": { "type": "string" }, "session": { "type": "integer" }, "scene": { "type": "integer" }, "chapter": { "type": "integer" } } } } }
       },
       {
         "name": "todo_list",

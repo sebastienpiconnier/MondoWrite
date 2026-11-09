@@ -23,6 +23,9 @@ import { NOVEL_TEMPLATES, beatText, templateBeats, type Plan, type PlanTemplate 
 import { COMMENT_TYPES, type Comments } from "./comments";
 import { PITCH_TEXTS, formOf, type Pitch, type PitchText } from "./pitch";
 import { pitchLabels } from "./feasibility";
+import { PAGE_KINDS, type PageKind } from "./book";
+import { WIRE_FIELDS, type WireField } from "./wires";
+import { readGoals, type Goals } from "./stats";
 import type { ReplaceRequest } from "./replace";
 import { foldName } from "./names";
 import { countWords } from "./manuscript";
@@ -294,6 +297,83 @@ export function pitchKeyOf(wanted: string, kind: ProjectKind, pitch: Pitch, t: M
   return PITCH_TEXTS.find((k) => fold(k) === f) ?? PITCH_TEXTS.find((k) => labels[k] && fold(labels[k]) === f) ?? english[f] ?? null;
 }
 
+/**
+ * Mentions écrites par l'IA : `[[Titre]]` devient une vraie mention de la carte (`[@Titre](cosmos:<id>)`, la forme
+ * du disque), une carte inconnue redevient du texte simple. Rend aussi les cartes citées (pour tirer leur fil).
+ */
+export function withMentions<T extends Pick<CardData, "id" | "title">>(md: string, cards: readonly T[]): { md: string; ids: string[] } {
+  const ids: string[] = [];
+  const out = md.replace(/\[\[([^\[\]\n]{1,120})\]\]/g, (_all, name: string) => {
+    const card = findCard(cards, name);
+    if (!card || !card.title.trim()) return name;
+    if (!ids.includes(card.id)) ids.push(card.id);
+    return `[@${card.title.trim().replace(/[[\]]/g, "")}](cosmos:${card.id})`;
+  });
+  return { md: out, ids };
+}
+
+/**
+ * Roman : remplace un passage cité mot pour mot (dans un seul nœud de texte) par le texte de l'IA, marqué
+ * `<span data-ia>`. null si le passage n'est pas trouvé tel quel.
+ */
+export function replaceQuoteInHtml(html: string, quote: string, text: string, markId: string = newId()): string | null {
+  const q = loose(quote.trim());
+  if (!q) return null;
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+    const at = loose(node.data).indexOf(q);
+    if (at < 0) continue;
+    const middle = node.splitText(at);
+    middle.splitText(q.length);
+    const span = doc.createElement("span");
+    span.setAttribute("data-ia", markId);
+    span.textContent = text;
+    middle.parentNode!.replaceChild(span, middle);
+    return doc.body.innerHTML;
+  }
+  return null;
+}
+
+/** Scénario : le passage cité remplacé dans l'élément de la scène qui le contient, élément marqué « IA ». */
+export function replaceQuoteInScene(sp: Screenplay, cardId: string, quote: string, text: string): Screenplay | null {
+  const at = headingOf(sp.elements, cardId);
+  const q = loose(quote.trim());
+  if (at < 0 || !q) return null;
+  const end = sceneEnd(sp.elements, at);
+  for (let i = synopsisEnd(sp.elements, at); i < end; i++) {
+    const el = sp.elements[i];
+    if (!IA_TYPES.has(el.type)) continue;
+    const pos = loose(el.text).indexOf(q);
+    if (pos < 0) continue;
+    const elements = sp.elements.slice();
+    elements[i] = { ...el, text: el.text.slice(0, pos) + text + el.text.slice(pos + q.length), ia: true };
+    return { ...sp, elements };
+  }
+  return null;
+}
+
+/** Page du livre par sa clé ou son libellé (« Dédicace »). */
+export function pageKindOf(wanted: string, t: Messages): PageKind | null {
+  const f = fold(wanted);
+  const kinds = t.book.kinds as Record<string, string>;
+  return PAGE_KINDS.find((k) => fold(k) === f || fold(kinds[k] ?? "") === f) ?? null;
+}
+
+/** Champs de la fiche d'un fil par clé ou libellé. */
+function wireFieldsOf(fields: unknown, t: Messages): { set: [WireField, string][]; refused: string[] } {
+  const out = { set: [] as [WireField, string][], refused: [] as string[] };
+  if (!fields || typeof fields !== "object") return out;
+  const labels = t.bible.wireFields as Record<string, string>;
+  for (const [name, raw] of Object.entries(fields as Record<string, unknown>)) {
+    const f = fold(name);
+    const key = WIRE_FIELDS.find((k) => fold(k) === f || fold(labels[k] ?? "") === f);
+    if (key) out.set.push([key, str(raw)]);
+    else out.refused.push(name);
+  }
+  return out;
+}
+
 // ---------- Application dans le store ----------
 
 /** Ce que l'application lit et appelle : le store (passé par l'appelant, pour garder ce module testable). */
@@ -366,6 +446,16 @@ export interface McpStore {
   /** Cadre titré autour de ces cartes (ou vide). Rend son identifiant. */
   frame: (title: string, ids: string[]) => string;
   organize: () => void;
+  trashed: () => CardData[];
+  restore: (id: string) => void;
+  renameLink: (id: string, label: string) => void;
+  setWireFiche: (id: string, field: WireField, value: string) => void;
+  frames: () => { id: string; title: string }[];
+  renameFrame: (id: string, title: string) => void;
+  deleteFrame: (id: string) => void;
+  setTitle: (title: string) => void;
+  goals: () => Goals;
+  setGoals: (goals: Goals) => void;
 }
 
 const plainWords = (html: string) => countWords(html);
@@ -396,6 +486,12 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
   const client = req.client || "MCP";
   const cards = store.cards();
   const typeLabel = (type: CardType) => vocab(t, store.kind).types[type].label;
+  // Texte de l'IA avec ses mentions `[[Titre]]` ; les cartes citées reçoivent leur fil, comme une mention tapée.
+  const rich = (md: string, from: string | null) => {
+    const m = withMentions(md, store.cards());
+    if (from) for (const id of m.ids) if (id !== from) store.linkCards(from, id, "");
+    return iaHtml(m.md);
+  };
 
   switch (req.tool) {
     case "create_card": {
@@ -411,7 +507,7 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
         const fiche = Object.fromEntries(Object.entries(fields.fiche).filter(([, v]) => v));
         let ia: string[] = withIaField(undefined, "title");
         for (const key of Object.keys(fiche)) ia = withIaField(ia, key);
-        store.updateCard(id, { ...(notes ? { html: iaHtml(notes) } : {}), ...(Object.keys(fiche).length > 0 ? { fiche } : {}), ia });
+        store.updateCard(id, { ...(notes ? { html: rich(notes, id) } : {}), ...(Object.keys(fiche).length > 0 ? { fiche } : {}), ia });
         return id;
       });
       store.log(title, countWords(`<p>${title} ${notes} ${Object.values(fields.fiche).join(" ")}</p>`), client);
@@ -422,13 +518,23 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
     case "update_card": {
       const card = findCard(cards, str(a.card));
       if (!card) return fail(`Carte introuvable : « ${str(a.card)} ». / Card not found.`);
-      const fields = resolveFields(card.type, a.fields, t, cards);
+      let type = card.type;
+      if (str(a.type)) {
+        const wanted = cardTypeOf(str(a.type), t, store.kind);
+        if (!wanted || NO_CREATE.has(wanted)) return fail(`Type inconnu ou impossible ici : « ${str(a.type)} ». / Unknown type.`);
+        if (NO_CREATE.has(card.type)) return fail("Une carte Image ou Document garde son type.");
+        type = wanted;
+      }
+      const fields = resolveFields(type, a.fields, t, cards);
       const notes = str(a.notes);
       const replace = str(a.notes_mode) === "replace";
       const title = str(a.title);
       store.batch(() => {
-        let ia = card.ia;
-        const fiche = { ...(card.fiche ?? {}) };
+        // Le type d'abord : une Scène qui devient autre chose garde son texte dans ses notes (updateCard).
+        if (type !== card.type) store.updateCard(card.id, { type });
+        const now = store.cards().find((c) => c.id === card.id) ?? card;
+        let ia = now.ia;
+        const fiche = { ...(now.fiche ?? {}) };
         for (const [key, value] of Object.entries(fields.fiche)) {
           if (value) {
             fiche[key] = value;
@@ -436,7 +542,7 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
           } else delete fiche[key];
         }
         if (title) ia = withIaField(ia, "title");
-        const html = notes ? (replace ? iaHtml(notes) : `${card.html ?? ""}${iaHtml(notes)}`) : undefined;
+        const html = notes ? (replace ? rich(notes, card.id) : `${now.html ?? ""}${rich(notes, card.id)}`) : undefined;
         store.updateCard(card.id, {
           ...(title ? { title } : {}),
           ...(Object.keys(fields.fiche).length > 0 ? { fiche: Object.keys(fiche).length > 0 ? fiche : undefined } : {}),
@@ -446,7 +552,8 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
       });
       store.log(title || card.title, countWords(`<p>${title} ${notes} ${Object.values(fields.fiche).join(" ")}</p>`), client);
       const refused = fields.refused.length > 0 ? ` Champs non repris : ${fields.refused.join(" ; ")}.` : "";
-      return { ok: true, text: `Carte modifiée : « ${title || card.title} ».${refused}` };
+      const retyped = type !== card.type ? ` Elle est maintenant : ${typeLabel(type)}.` : "";
+      return { ok: true, text: `Carte modifiée : « ${title || card.title} ».${retyped}${refused}` };
     }
 
     case "link_cards": {
@@ -473,7 +580,9 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
     }
 
     case "create_scene": {
-      const title = str(a.title);
+      const page = str(a.page) ? pageKindOf(str(a.page), t) : null;
+      if (str(a.page) && (!page || store.kind === "scenario")) return fail(store.kind === "scenario" ? "Les pages du livre sont celles d'un roman." : `Page inconnue. Au choix : ${PAGE_KINDS.map((k) => (t.book.kinds as Record<string, string>)[k] ?? k).join(", ")}.`);
+      const title = str(a.title) || (page ? ((t.book.kinds as Record<string, string>)[page] ?? "") : "");
       if (!title) return fail("Il faut un titre (scénario : un en-tête « INT. LIEU - JOUR »).");
       const synopsis = str(a.synopsis);
       const text = str(a.text);
@@ -482,7 +591,7 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
       const id = store.batch(() => {
         const id = store.addTitledCard("scene", "");
         // Le titre après coup : dans un scénario, c'est lui qui fait entrer l'en-tête dans le Fountain (fin du récit).
-        store.updateCard(id, { title, ia: ["title"] });
+        store.updateCard(id, { title, ia: ["title"], ...(page ? { page } : {}) });
         if (store.kind === "scenario") {
           let sp = store.screenplay();
           if (sp && synopsis) sp = withIaSynopsis(sp, id, synopsis);
@@ -493,10 +602,10 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
         }
         return id;
       });
-      if (store.kind !== "scenario" && text) store.setManuscriptText(id, iaHtml(text));
+      if (store.kind !== "scenario" && text) store.batch(() => store.setManuscriptText(id, rich(text, id)));
       store.log(title, countWords(`<p>${synopsis} ${text}</p>`), client);
       const n = store.scenes().find((s) => s.id === id)?.n;
-      return { ok: true, text: `Scène créée : « ${title} »${n ? `, scène ${n}` : ""} (id \`${id}\`).` };
+      return { ok: true, text: page ? `Page du livre créée : « ${title} » (id \`${id}\`).` : `Scène créée : « ${title} »${n ? `, scène ${n}` : ""} (id \`${id}\`).` };
     }
 
     case "set_scene_fields": {
@@ -576,7 +685,7 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
         store.batch(() => store.setScreenplay(withSceneText(sp, scene.id, added, replace), true));
       } else {
         const before = store.manuscript()[scene.id] ?? "";
-        store.setManuscriptText(scene.id, replace ? iaHtml(text) : `${before}${iaHtml(text)}`);
+        store.batch(() => store.setManuscriptText(scene.id, replace ? rich(text, scene.id) : `${before}${rich(text, scene.id)}`));
       }
       const words = store.kind === "scenario" ? (text.match(/[\p{L}\p{N}]+/gu)?.length ?? 0) : plainWords(iaHtml(text));
       store.log(scene.title, words, client);
@@ -870,6 +979,106 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
     case "organize_canvas": {
       store.batch(() => store.organize());
       return { ok: true, text: "Canevas rangé (une seule annulation le défait)." };
+    }
+
+    case "replace_passage": {
+      const scene = findScene(store, str(a.scene));
+      const quote = typeof a.quote === "string" ? a.quote : "";
+      const text = typeof a.text === "string" ? a.text.trim() : "";
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      if (scene.id.startsWith("@")) return fail("Cette scène n'a pas de carte : impossible de l'écrire d'ici.");
+      if (!quote.trim()) return fail("Il faut le passage à remplacer (`quote`), cité mot pour mot.");
+      if (/\n/.test(text) || /\n/.test(quote.trim())) return fail("Un passage tient dans un paragraphe (ou un élément du scénario). Pour plus, utilise write_scene.");
+      let next: string | Screenplay | null;
+      if (store.kind === "scenario") {
+        const sp = store.screenplay();
+        next = sp ? replaceQuoteInScene(sp, scene.id, quote, text) : null;
+      } else {
+        next = replaceQuoteInHtml(store.manuscript()[scene.id] ?? "", quote, text);
+      }
+      if (!next) return fail("Passage introuvable mot pour mot dans le texte de la scène (sans changer de mise en forme au milieu).");
+      const kept = (await store.keepVersion(scene.id, t.mcp.versionTitle)) !== null;
+      if (typeof next === "string") store.setManuscriptText(scene.id, next);
+      else {
+        const sp = next;
+        store.batch(() => store.setScreenplay(sp, true));
+      }
+      store.log(scene.title, countWords(`<p>${text}</p>`), client);
+      return { ok: true, text: `Passage remplacé dans la scène ${scene.n} « ${scene.title} », marqué IA.${kept ? " Version d'avant gardée." : ""}` };
+    }
+
+    case "update_link": {
+      const from = findCard(cards, str(a.from));
+      const to = findCard(cards, str(a.to));
+      if (!from || !to) return fail(`Carte introuvable : « ${str(from ? a.to : a.from)} ».`);
+      const wire = store.edges().find((e) => (e.source === from.id && e.target === to.id) || (e.source === to.id && e.target === from.id));
+      if (!wire) return fail("Ces deux cartes ne sont pas reliées : tire d'abord le fil (link_cards).");
+      const fields = wireFieldsOf(a.fields, t);
+      const label = typeof a.label === "string" ? a.label.trim() : null;
+      if (label === null && fields.set.length === 0) return fail(`Rien à faire : donne \`label\` ou \`fields\` (${WIRE_FIELDS.join(", ")}).`);
+      store.batch(() => {
+        if (label !== null) store.renameLink(wire.id, label);
+        for (const [key, value] of fields.set) store.setWireFiche(wire.id, key, value);
+      });
+      const refused = fields.refused.length ? ` Champs non repris : ${fields.refused.join(", ")}.` : "";
+      return { ok: true, text: `Fil entre « ${from.title} » et « ${to.title} » modifié.${refused}` };
+    }
+
+    case "restore_card": {
+      const trashed = store.trashed();
+      const card = findCard(trashed, str(a.card));
+      if (!card) return fail(trashed.length ? `Pas dans la corbeille : « ${str(a.card)} ». Dans la corbeille : ${trashed.slice(0, 20).map((c) => c.title || c.id).join(", ")}.` : "La corbeille est vide.");
+      store.batch(() => store.restore(card.id));
+      return { ok: true, text: `« ${card.title || card.id} » est sortie de la corbeille, avec ses fils${card.type === "scene" && store.kind === "scenario" ? " et sa scène" : ""}.` };
+    }
+
+    case "add_character_question": {
+      const character = findCard(cards.filter((c) => c.type === "personnage"), str(a.character));
+      const question = str(a.question);
+      if (!character) return fail(`Personnage introuvable : « ${str(a.character)} ».`);
+      if (!question) return fail("Il faut une question.");
+      const list = character.questions ?? [];
+      if (list.some((q) => fold(q) === fold(question))) return { ok: true, text: "Cette question est déjà gardée dans sa fiche." };
+      store.batch(() => store.updateCard(character.id, { questions: [...list, question] }));
+      store.log(character.title, countWords(`<p>${question}</p>`), client);
+      return { ok: true, text: `Question gardée « À creuser » dans la fiche de « ${character.title} ».` };
+    }
+
+    case "update_frame": {
+      const frames = store.frames();
+      const w = str(a.frame);
+      const frame = frames.find((f) => f.id === w) ?? findCard(frames.filter((f) => f.title), w);
+      if (!frame) return fail(`Cadre introuvable : « ${w} ».${frames.length ? ` Cadres : ${frames.slice(0, 30).map((f) => f.title || f.id).join(", ")}.` : ""}`);
+      if (a.remove === true) {
+        store.batch(() => store.deleteFrame(frame.id));
+        const still = store.frames().some((f) => f.id === frame.id);
+        return still ? fail("Ce cadre est verrouillé : l'auteur doit d'abord le déverrouiller.") : { ok: true, text: `Cadre « ${frame.title} » retiré ; ses cartes restent à leur place.` };
+      }
+      if (typeof a.title !== "string") return fail("Donne `title` pour le renommer, ou `remove: true` pour le retirer.");
+      store.batch(() => store.renameFrame(frame.id, str(a.title)));
+      return { ok: true, text: `Cadre renommé « ${str(a.title)} ».` };
+    }
+
+    case "set_project": {
+      const done: string[] = [];
+      const title = str(a.title);
+      let goals: Goals | null = null;
+      if (a.goals && typeof a.goals === "object") {
+        const raw = { ...store.goals() } as Record<string, unknown>;
+        for (const [k, v] of Object.entries(a.goals as Record<string, unknown>)) raw[k] = typeof v === "string" && /^\d+$/.test(v) ? Number(v) : v === "" || v === 0 ? undefined : v;
+        goals = readGoals(raw);
+      }
+      if (!title && !goals) return fail("Donne `title` ou `goals` (daily, total, deadline AAAA-MM-JJ, session, scene, chapter).");
+      if (title) {
+        store.setTitle(title);
+        done.push(`titre « ${title} »`);
+      }
+      if (goals) {
+        store.setGoals(goals);
+        const parts = Object.entries(goals).map(([k, v]) => `${k} ${v}`);
+        done.push(parts.length ? `objectifs : ${parts.join(", ")}` : "objectifs retirés");
+      }
+      return { ok: true, text: `Projet : ${done.join(" ; ")}.` };
     }
   }
   return fail(`Outil inconnu : ${req.tool}`);

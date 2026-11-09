@@ -9,9 +9,10 @@ import type { Screenplay } from "../screenplay/model";
 import type { Plan } from "../plan";
 import type { Pitch } from "../pitch";
 import type { Comments } from "../comments";
+import type { Goals } from "../stats";
 import { parse } from "../screenplay/parse";
 import { serialize } from "../screenplay/serialize";
-import { applyMcpRequest, cardTypeOf, commentInScene, findSeriesPart, markQuoteInHtml, moveScreenplayScene, pitchKeyOf, splitHtmlAt, templateOf, findCard, iaFountain, iaHtml, resolveFields, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
+import { applyMcpRequest, cardTypeOf, pageKindOf, replaceQuoteInHtml, replaceQuoteInScene, withMentions, commentInScene, findSeriesPart, markQuoteInHtml, moveScreenplayScene, pitchKeyOf, splitHtmlAt, templateOf, findCard, iaFountain, iaHtml, resolveFields, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
 
 const card = (c: Partial<CardData> & Pick<CardData, "id" | "type" | "title">): CardData => ({ html: "", ...c });
 
@@ -90,6 +91,10 @@ function fakeStore(kind: "roman" | "scenario", screenplay: Screenplay | null = n
     pitch: {} as Pitch,
     comments: {} as Comments,
     calls: [] as string[],
+    trash: [] as CardData[],
+    frames: [] as { id: string; title: string; locked?: boolean }[],
+    title: "Projet",
+    goals: {} as Goals,
   };
   let n = 0;
   const store: McpStore = {
@@ -170,6 +175,20 @@ function fakeStore(kind: "roman" | "scenario", screenplay: Screenplay | null = n
       return "f1";
     },
     organize: () => void state.calls.push("organize"),
+    trashed: () => state.trash,
+    restore: (id) => {
+      const c = state.trash.find((x) => x.id === id)!;
+      state.trash = state.trash.filter((x) => x.id !== id);
+      state.cards = [...state.cards, c];
+    },
+    renameLink: (id, label) => void state.calls.push(`label:${id}:${label}`),
+    setWireFiche: (id, field, value) => void state.calls.push(`wire:${id}:${field}:${value}`),
+    frames: () => state.frames,
+    renameFrame: (id, title) => void (state.frames = state.frames.map((f) => (f.id === id ? { ...f, title } : f))),
+    deleteFrame: (id) => void (state.frames = state.frames.filter((f) => f.id !== id || f.locked)),
+    setTitle: (title) => void (state.title = title),
+    goals: () => state.goals,
+    setGoals: (goals) => void (state.goals = goals),
   };
   return { state, store };
 }
@@ -358,5 +377,88 @@ describe("application d'une demande", () => {
     expect((await applyMcpRequest({ id: "1", tool: "set_scene_fields", args: { scene: "1", fields: { synopsis: "Inès arrive.", obstacle: "La tempête" } } }, store, fr)).ok).toBe(true);
     expect(serialize(state.screenplay!)).toContain("= Inès arrive. [[ia]]");
     expect(state.cards.find((c) => c.id === "s1")!.fiche).toEqual({ obstacle: "La tempête" });
+  });
+});
+
+describe("dernier lot", () => {
+  it("[[Titre]] devient une mention, une carte inconnue reste du texte", () => {
+    const cards = [card({ id: "c1", type: "personnage", title: "Inès Morvan" })];
+    const r = withMentions("Avec [[Inès Morvan]] et [[Personne]].", cards);
+    expect(r.md).toBe("Avec [@Inès Morvan](cosmos:c1) et Personne.");
+    expect(r.ids).toEqual(["c1"]);
+  });
+
+  it("une mention dans les notes tire le fil", async () => {
+    const { state, store } = fakeStore("roman");
+    await applyMcpRequest({ id: "1", tool: "create_card", args: { type: "lieu", title: "Phare", notes: "Là où vit [[Inès Morvan]]." } }, store, fr);
+    const created = state.cards.find((c) => c.title === "Phare")!;
+    expect(created.html).toContain('data-mention="c1"');
+    expect(state.edges).toContainEqual([created.id, "c1", ""]);
+  });
+
+  it("remplacer un passage : roman et scénario", () => {
+    expect(replaceQuoteInHtml("<p>Il pleut sur la mer.</p>", "sur la mer", "sur le port", "m")).toBe('<p>Il pleut <span data-ia="m">sur le port</span>.</p>');
+    expect(replaceQuoteInHtml("<p>Il pleut.</p>", "neige", "x")).toBeNull();
+    const sp = parse("INT. PHARE - NUIT [[cosmos:s1]]\n\nInès monte l'escalier.");
+    const next = replaceQuoteInScene(sp, "s1", "monte l'escalier", "redescend")!;
+    expect(serialize(next)).toContain("Inès redescend. [[ia]]");
+  });
+
+  it("replace_passage garde une version et journalise ; refuse un passage absent", async () => {
+    const { state, store } = fakeStore("roman");
+    const ok = await applyMcpRequest({ id: "1", tool: "replace_passage", args: { scene: "1", quote: "Avant", text: "Plus tôt" } }, store, fr);
+    expect(ok.ok).toBe(true);
+    expect(state.manuscript.s1).toMatch(/<span data-ia="[^"]+">Plus tôt<\/span>\./);
+    expect(state.versions).toEqual(["s1"]);
+    expect((await applyMcpRequest({ id: "2", tool: "replace_passage", args: { scene: "1", quote: "Absent", text: "x" } }, store, fr)).ok).toBe(false);
+  });
+
+  it("changer le type d'une carte, puis ses champs", async () => {
+    const { state, store } = fakeStore("roman");
+    state.cards.push(card({ id: "i1", type: "idee", title: "La lanterne" }));
+    const res = await applyMcpRequest({ id: "1", tool: "update_card", args: { card: "La lanterne", type: "objet", fields: { usage: "Éclairer" } } }, store, fr);
+    expect(res.ok).toBe(true);
+    const c = state.cards.find((x) => x.id === "i1")!;
+    expect(c.type).toBe("objet");
+    expect(c.fiche?.usage).toBe("Éclairer");
+  });
+
+  it("page du livre, pas dans un scénario", async () => {
+    expect(pageKindOf("Dédicace", fr)).toBe("dedicace");
+    const { state, store } = fakeStore("roman");
+    expect((await applyMcpRequest({ id: "1", tool: "create_scene", args: { page: "dedicace", text: "À Yann." } }, store, fr)).ok).toBe(true);
+    expect(state.cards.at(-1)?.page).toBe("dedicace");
+    const sc = fakeStore("scenario", parse("INT. PHARE - NUIT [[cosmos:s1]]\n\nAction."));
+    expect((await applyMcpRequest({ id: "2", tool: "create_scene", args: { page: "dedicace" } }, sc.store, fr)).ok).toBe(false);
+  });
+
+  it("fil : étiquette et fiche", async () => {
+    const { state, store } = fakeStore("roman");
+    state.wires.push({ id: "w1", source: "c1", target: "s1" });
+    const res = await applyMcpRequest({ id: "1", tool: "update_link", args: { from: "s1", to: "Inès", label: "raconte", fields: { Enjeu: "Sa place", taille: "x" } } }, store, fr);
+    expect(res.ok).toBe(true);
+    expect(state.calls).toEqual(["label:w1:raconte", "wire:w1:enjeu:Sa place"]);
+    expect(res.text).toContain("taille");
+  });
+
+  it("corbeille, question d'un personnage, cadre, projet", async () => {
+    const { state, store } = fakeStore("roman");
+    state.trash.push(card({ id: "t1", type: "lieu", title: "La crique" }));
+    expect((await applyMcpRequest({ id: "1", tool: "restore_card", args: { card: "crique" } }, store, fr)).ok).toBe(true);
+    expect(state.cards.some((c) => c.id === "t1")).toBe(true);
+
+    await applyMcpRequest({ id: "2", tool: "add_character_question", args: { character: "Inès", question: "Que craint-elle ?" } }, store, fr);
+    await applyMcpRequest({ id: "3", tool: "add_character_question", args: { character: "Inès", question: "que craint-elle ?" } }, store, fr);
+    expect(state.cards.find((c) => c.id === "c1")?.questions).toEqual(["Que craint-elle ?"]);
+
+    state.frames.push({ id: "f1", title: "Lieux" }, { id: "f2", title: "Verrou", locked: true });
+    await applyMcpRequest({ id: "4", tool: "update_frame", args: { frame: "Lieux", title: "Décors" } }, store, fr);
+    expect(state.frames[0].title).toBe("Décors");
+    expect((await applyMcpRequest({ id: "5", tool: "update_frame", args: { frame: "Verrou", remove: true } }, store, fr)).ok).toBe(false);
+
+    state.goals = { daily: 500 };
+    await applyMcpRequest({ id: "6", tool: "set_project", args: { title: "Le phare", goals: { total: 80000, daily: 0 } } }, store, fr);
+    expect(state.title).toBe("Le phare");
+    expect(state.goals).toEqual({ total: 80000 });
   });
 });

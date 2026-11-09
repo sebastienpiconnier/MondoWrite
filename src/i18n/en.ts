@@ -600,6 +600,9 @@ export const en: Messages = {
   // Markdown copies of the project (markdown/ folder): project setting and warning at the top of each copy.
   mcp: {
     title: "External assistant (MCP)",
+    notice: "{client} just changed your project.",
+    noticeMany: "{client} made {n} changes to your project.",
+    noticeClient: "The assistant",
     enable: "Let an external assistant read my projects",
     hint: "Claude Desktop, or any MCP-compatible app, can read the projects you open to it (Settings › This project), read only. It uses your own subscription or local model: no key to enter here.",
     noProject: "No project is open to the assistant yet.",
