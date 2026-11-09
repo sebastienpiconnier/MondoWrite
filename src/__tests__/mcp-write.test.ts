@@ -8,7 +8,7 @@ import type { CardData, CardType } from "../types";
 import type { Screenplay } from "../screenplay/model";
 import { parse } from "../screenplay/parse";
 import { serialize } from "../screenplay/serialize";
-import { applyMcpRequest, cardTypeOf, findCard, iaFountain, iaHtml, resolveFields, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
+import { applyMcpRequest, cardTypeOf, moveScreenplayScene, findCard, iaFountain, iaHtml, resolveFields, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
 
 const card = (c: Partial<CardData> & Pick<CardData, "id" | "type" | "title">): CardData => ({ html: "", ...c });
 
@@ -80,6 +80,8 @@ function fakeStore(kind: "roman" | "scenario", screenplay: Screenplay | null = n
     batches: 0,
     versions: [] as string[],
     journal: [] as string[],
+    moves: [] as string[][],
+    chapters: [] as { id: string; title: string; start: string }[],
   };
   let n = 0;
   const store: McpStore = {
@@ -113,6 +115,19 @@ function fakeStore(kind: "roman" | "scenario", screenplay: Screenplay | null = n
       return "v";
     },
     log: (target) => void state.journal.push(target),
+    moveBookScene: (id, target, side) => {
+      state.moves.push([id, target, side]);
+      return true;
+    },
+    chapters: () => state.chapters.map((c, i) => ({ n: i + 1, ...c })),
+    startChapterAt: (sceneId) => {
+      if (state.chapters.some((c) => c.start === sceneId)) return null;
+      state.chapters.push({ id: `ch${state.chapters.length + 1}`, title: "", start: sceneId });
+      return `ch${state.chapters.length}`;
+    },
+    renameChapter: (id, title) => void (state.chapters = state.chapters.map((c) => (c.id === id ? { ...c, title } : c))),
+    deleteChapter: (id) => void (state.chapters = state.chapters.filter((c) => c.id !== id)),
+    moveChapter: (id, before) => void state.moves.push([id, before ?? "", "chapter"]),
   };
   return { state, store };
 }
@@ -167,5 +182,44 @@ describe("application d'une demande", () => {
     const { store } = fakeStore("roman");
     expect((await applyMcpRequest({ id: "1", tool: "delete_all", args: {} }, store, fr)).ok).toBe(false);
     expect((await applyMcpRequest({ id: "2", tool: "write_scene", args: { scene: "9", text: "x" } }, store, fr)).ok).toBe(false);
+  });
+
+  it("roman : déplacer une scène avant ou après une autre, une étape", async () => {
+    const { state, store } = fakeStore("roman");
+    state.cards.push(card({ id: "s2", type: "scene", title: "La tempête" }));
+    const res = await applyMcpRequest({ id: "1", tool: "move_scene", args: { scene: "La tempête", before: "1" } }, store, fr);
+    expect(res.ok).toBe(true);
+    expect(state.moves).toEqual([["s2", "s1", "before"]]);
+    expect(state.batches).toBe(1);
+    expect((await applyMcpRequest({ id: "2", tool: "move_scene", args: { scene: "2" } }, store, fr)).ok).toBe(false);
+    expect((await applyMcpRequest({ id: "3", tool: "move_scene", args: { scene: "2", after: "2" } }, store, fr)).ok).toBe(false);
+  });
+
+  it("roman : créer, renommer, déplacer et retirer un chapitre", async () => {
+    const { state, store } = fakeStore("roman");
+    const res = await applyMcpRequest({ id: "1", tool: "create_chapter", args: { scene: "1", title: "Le phare" } }, store, fr);
+    expect(res.ok).toBe(true);
+    expect(state.chapters).toEqual([{ id: "ch1", title: "Le phare", start: "s1" }]);
+    expect(state.batches).toBe(1);
+    expect((await applyMcpRequest({ id: "2", tool: "create_chapter", args: { scene: "1" } }, store, fr)).ok).toBe(false);
+    expect((await applyMcpRequest({ id: "3", tool: "rename_chapter", args: { chapter: "Chapitre 1", title: "La lanterne" } }, store, fr)).ok).toBe(true);
+    expect(state.chapters[0].title).toBe("La lanterne");
+    expect((await applyMcpRequest({ id: "4", tool: "move_chapter", args: { chapter: "lanterne" } }, store, fr)).ok).toBe(true);
+    expect(state.moves).toEqual([["ch1", "", "chapter"]]);
+    expect((await applyMcpRequest({ id: "5", tool: "delete_chapter", args: { chapter: "1" } }, store, fr)).ok).toBe(true);
+    expect(state.chapters).toEqual([]);
+    expect((await applyMcpRequest({ id: "6", tool: "rename_chapter", args: { chapter: "1", title: "x" } }, store, fr)).ok).toBe(false);
+  });
+
+  it("scénario : pas de chapitres, mais la scène se déplace avec son texte", async () => {
+    const sp = parse("INT. PHARE - NUIT [[cosmos:s1]]\n\nUn.\n\nEXT. FALAISE - JOUR [[cosmos:s2]]\n\nDeux.\n\nINT. CUISINE - JOUR [[cosmos:s3]]\n\nTrois.");
+    const after = moveScreenplayScene(sp, "s3", "s1", "before");
+    expect(serialize(after).indexOf("Trois.")).toBeLessThan(serialize(after).indexOf("Un."));
+    const end = moveScreenplayScene(sp, "s1", "s3", "after");
+    expect(serialize(end).trim().endsWith("Un.")).toBe(true);
+    expect(moveScreenplayScene(sp, "s2", "s1", "after")).toBe(sp);
+    expect(moveScreenplayScene(sp, "s1", "zz", "after")).toBe(sp);
+    const { store } = fakeStore("scenario", sp);
+    expect((await applyMcpRequest({ id: "1", tool: "create_chapter", args: { scene: "1" } }, store, fr)).ok).toBe(false);
   });
 });

@@ -7,6 +7,8 @@ import { storage } from "./storage";
 import { useSettings } from "./settings";
 import { mcpWritable } from "./mcp";
 import { buildMcpSnapshot } from "./mcpSnapshot";
+import { bookOrder } from "./book";
+import { chapterNumbers } from "./plan";
 import { applyMcpRequest, type McpAnswer, type McpRequest, type McpStore } from "./mcpWrite";
 
 /** Le store vu par `applyMcpRequest`. */
@@ -29,6 +31,18 @@ function mcpStore(): McpStore {
     setManuscriptText: (id, html) => s().setManuscriptText(id, html),
     setScreenplay: (sp, undoable) => s().setScreenplay(sp, undoable),
     keepVersion: (id, title) => s().keepVersion(id, title),
+    moveBookScene: (id, target, side) => s().moveBookScene(id, target, side),
+    chapters: () => {
+      const st = s();
+      const numbers = chapterNumbers(st.plan, bookOrder(st.nodes, st.plan));
+      return (st.plan.chapters ?? [])
+        .map((c) => ({ n: numbers.get(c.id) ?? 0, id: c.id, title: c.title.trim() }))
+        .sort((x, y) => x.n - y.n);
+    },
+    startChapterAt: (id) => s().startChapterAt(id),
+    renameChapter: (id, title) => s().renamePlanChapter(id, title),
+    deleteChapter: (id) => s().deletePlanChapter(id),
+    moveChapter: (id, before) => s().movePlanChapter(id, before),
     log: (target, words, client) => s().logAtelier("external", target, words, { service: "MCP", model: client }),
   };
 }

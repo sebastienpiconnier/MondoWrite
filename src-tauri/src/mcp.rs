@@ -33,7 +33,10 @@ const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
 const ANSWER_MS: u64 = 20_000;
 /// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
-const WRITE_TOOLS: [&str; 7] = ["create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene"];
+const WRITE_TOOLS: [&str; 12] = [
+  "create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene",
+  "move_scene", "create_chapter", "rename_chapter", "move_chapter", "delete_chapter",
+];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Chemins
@@ -719,6 +722,36 @@ impl Server {
           "text": { "type": "string" },
           "mode": { "type": "string", "enum": ["append", "replace"], "description": "append par défaut." }
         }, "required": ["scene", "text"] }
+      },
+      {
+        "name": "move_scene",
+        "description": "Déplace une scène, avec son texte, juste avant ou après une autre. Roman : elle prend le chapitre et la case du plan de sa voisine ; scénario : son texte suit dans le Fountain. Les numéros des scènes changent ensuite : relis project_overview. / Moves a scene before or after another one.",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "scene": { "type": "string", "description": "Scène à déplacer : numéro, identifiant ou titre." },
+          "before": { "type": "string", "description": "La poser avant cette scène." },
+          "after": { "type": "string", "description": "Ou la poser après cette scène." }
+        }, "required": ["scene"] }
+      },
+      {
+        "name": "create_chapter",
+        "description": "Roman : commence un nouveau chapitre à cette scène (elle et les suivantes du chapitre en cours y passent), avec un titre facultatif. Les chapitres sont renumérotés. / Novel: starts a new chapter at this scene.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string", "description": "Première scène du chapitre : numéro, identifiant ou titre." }, "title": { "type": "string" } }, "required": ["scene"] }
+      },
+      {
+        "name": "rename_chapter",
+        "description": "Roman : donne un titre à un chapitre (vide : il n'a plus que son numéro). / Novel: renames a chapter.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "chapter": { "type": "string", "description": "Numéro, identifiant ou titre du chapitre." }, "title": { "type": "string" } }, "required": ["chapter", "title"] }
+      },
+      {
+        "name": "move_chapter",
+        "description": "Roman : déplace un chapitre entier, toutes ses scènes comprises, avant une scène (sans `before` : à la fin du récit). / Novel: moves a whole chapter.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "chapter": { "type": "string" }, "before": { "type": "string", "description": "Scène devant laquelle le poser." } }, "required": ["chapter"] }
+      },
+      {
+        "name": "delete_chapter",
+        "description": "Roman : retire un chapitre ; ses scènes rejoignent le chapitre précédent. Aucune scène ni aucun texte n'est supprimé. / Novel: removes a chapter break, never a scene.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "chapter": { "type": "string" } }, "required": ["chapter"] }
       }
     ])
   }

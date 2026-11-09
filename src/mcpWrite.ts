@@ -15,6 +15,7 @@ import { parse } from "./screenplay/parse";
 import type { Screenplay, ScreenplayElement } from "./screenplay/model";
 import { headingOf, sceneBody, setSceneBody } from "./screenplay/sceneText";
 import { synopsisEnd } from "./screenplay/scenes";
+import { blocks, moveBlock } from "./screenplay/sequence";
 import { foldName } from "./names";
 import { countWords } from "./manuscript";
 
@@ -163,6 +164,22 @@ export function withSceneText(sp: Screenplay, cardId: string, added: ScreenplayE
 // ---------- Application dans le store ----------
 
 /** Ce que l'application lit et appelle : le store (passé par l'appelant, pour garder ce module testable). */
+/**
+ * Scénario : déplace la scène reliée à `id` juste avant ou après celle reliée à `target`, avec son texte (blocs du
+ * séquencier, `moveBlock`). Rend le même scénario si l'une des deux n'y est pas ou si rien ne bouge.
+ */
+export function moveScreenplayScene(sp: Screenplay, id: string, target: string, side: "before" | "after"): Screenplay {
+  const list = blocks(sp.elements);
+  const from = list.findIndex((b) => b.kind === "scene" && b.cardId === id);
+  const at = list.findIndex((b) => b.kind === "scene" && b.cardId === target);
+  if (from < 0 || at < 0 || from === at) return sp;
+  // Place visée une fois le bloc retiré de la liste.
+  const base = at > from ? at - 1 : at;
+  const to = side === "before" ? base : base + 1;
+  const elements = moveBlock(sp.elements, from, to);
+  return elements === sp.elements ? sp : { ...sp, elements };
+}
+
 export interface McpStore {
   kind: ProjectKind;
   cards: () => CardData[];
@@ -180,6 +197,14 @@ export interface McpStore {
   setScreenplay: (sp: Screenplay, undoable?: boolean) => void;
   keepVersion: (cardId: string, title?: string) => Promise<string | null>;
   log: (target: string, words: number, client: string) => void;
+  /** Roman : une scène avant ou après une autre (case et chapitre de la voisine). Faux si rien ne bouge. */
+  moveBookScene: (id: string, target: string, side: "before" | "after") => boolean;
+  /** Roman : chapitres dans l'ordre du récit, numérotés. */
+  chapters: () => { n: number; id: string; title: string }[];
+  startChapterAt: (sceneId: string) => string | null;
+  renameChapter: (id: string, title: string) => void;
+  deleteChapter: (id: string) => void;
+  moveChapter: (id: string, before: string | null) => void;
 }
 
 const plainWords = (html: string) => countWords(html);
@@ -192,6 +217,17 @@ function findScene(store: McpStore, wanted: string): { n: number; id: string; ti
 }
 
 const fail = (text: string): McpAnswer => ({ ok: false, text });
+
+/** Un chapitre désigné par son numéro, son identifiant ou son titre. */
+function findChapter(store: McpStore, wanted: string): { n: number; id: string; title: string } | null {
+  const list = store.chapters();
+  const w = wanted.trim().replace(/^(chapitre|chapter|ch\.?)\s*/i, "");
+  const n = /^\d+$/.test(w) ? Number(w) : NaN;
+  return list.find((c) => c.n === n) ?? list.find((c) => c.id === w) ?? findCard(list.filter((c) => c.title), wanted);
+}
+
+const chapterName = (c: { n: number; title: string }) => (c.title ? `chapitre ${c.n} « ${c.title} »` : `chapitre ${c.n}`);
+const NO_CHAPTERS = "Un scénario n'a pas de chapitres : ses parties sont les saisons, épisodes et sections du séquencier. / Screenplays have no chapters.";
 
 /** Applique une demande d'écriture. Rend le message que l'IA reçoit. */
 export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messages): Promise<McpAnswer> {
@@ -346,6 +382,72 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
       const words = store.kind === "scenario" ? (text.match(/[\p{L}\p{N}]+/gu)?.length ?? 0) : plainWords(iaHtml(text));
       store.log(scene.title, words, client);
       return { ok: true, text: `Scène ${scene.n} « ${scene.title} » ${replace ? "réécrite" : "complétée"} (${words} mots, marqués IA).${kept ? " Version d'avant gardée (Versions de la scène)." : ""}` };
+    }
+
+    case "move_scene": {
+      const scene = findScene(store, str(a.scene));
+      const side = str(a.before) ? "before" : str(a.after) ? "after" : null;
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      if (!side) return fail("Indique `before` ou `after` : la scène à côté de laquelle la poser.");
+      const target = findScene(store, str(side === "before" ? a.before : a.after));
+      if (!target) return fail(`Scène de repère introuvable : « ${str(side === "before" ? a.before : a.after)} ».`);
+      if (scene.id.startsWith("@") || target.id.startsWith("@")) return fail("Une de ces scènes n'a pas de carte : impossible de la déplacer d'ici.");
+      if (scene.id === target.id) return fail("Une scène ne se déplace pas par rapport à elle-même.");
+      let moved: boolean;
+      if (store.kind === "scenario") {
+        const sp = store.screenplay();
+        const next = sp ? moveScreenplayScene(sp, scene.id, target.id, side) : sp;
+        moved = !!next && next !== sp;
+        if (moved && next) store.batch(() => store.setScreenplay(next, true));
+      } else {
+        moved = store.batch(() => store.moveBookScene(scene.id, target.id, side));
+      }
+      if (!moved) return { ok: true, text: `La scène « ${scene.title} » est déjà à cette place.` };
+      const n = store.scenes().find((s) => s.id === scene.id)?.n;
+      return { ok: true, text: `Scène « ${scene.title} » déplacée ${side === "before" ? "avant" : "après"} « ${target.title} »${n ? ` : c'est maintenant la scène ${n}` : ""}. Les numéros des scènes ont changé : relis le plan avant d'en désigner une par son numéro.` };
+    }
+
+    case "create_chapter": {
+      if (store.kind === "scenario") return fail(NO_CHAPTERS);
+      const scene = findScene(store, str(a.scene));
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      const title = str(a.title);
+      const id = store.batch(() => {
+        const id = store.startChapterAt(scene.id);
+        if (id && title) store.renameChapter(id, title);
+        return id;
+      });
+      if (!id) return fail(`Impossible de commencer un chapitre à « ${scene.title} » (page hors récit, ou un chapitre y commence déjà).`);
+      const chapter = store.chapters().find((c) => c.id === id);
+      return { ok: true, text: `Nouveau ${chapter ? chapterName(chapter) : "chapitre"}, à partir de la scène « ${scene.title} ». Les chapitres suivants sont renumérotés.` };
+    }
+
+    case "rename_chapter": {
+      if (store.kind === "scenario") return fail(NO_CHAPTERS);
+      const chapter = findChapter(store, str(a.chapter));
+      if (!chapter) return fail(`Chapitre introuvable : « ${str(a.chapter)} ».`);
+      const title = str(a.title);
+      store.batch(() => store.renameChapter(chapter.id, title));
+      return { ok: true, text: title ? `Chapitre ${chapter.n} renommé « ${title} ».` : `Chapitre ${chapter.n} : titre retiré, il garde son numéro.` };
+    }
+
+    case "move_chapter": {
+      if (store.kind === "scenario") return fail(NO_CHAPTERS);
+      const chapter = findChapter(store, str(a.chapter));
+      if (!chapter) return fail(`Chapitre introuvable : « ${str(a.chapter)} ».`);
+      const wanted = str(a.before);
+      const before = wanted ? findScene(store, wanted) : null;
+      if (wanted && !before) return fail(`Scène de repère introuvable : « ${wanted} ».`);
+      store.batch(() => store.moveChapter(chapter.id, before?.id ?? null));
+      return { ok: true, text: `${chapterName(chapter)} déplacé ${before ? `avant la scène « ${before.title} »` : "à la fin du récit"}, avec toutes ses scènes. Numéros des chapitres et des scènes recalculés.` };
+    }
+
+    case "delete_chapter": {
+      if (store.kind === "scenario") return fail(NO_CHAPTERS);
+      const chapter = findChapter(store, str(a.chapter));
+      if (!chapter) return fail(`Chapitre introuvable : « ${str(a.chapter)} ».`);
+      store.batch(() => store.deleteChapter(chapter.id));
+      return { ok: true, text: `${chapterName(chapter)} retiré : ses scènes rejoignent le chapitre précédent. Aucune scène ni aucun texte n'a été supprimé.` };
     }
   }
   return fail(`Outil inconnu : ${req.tool}`);

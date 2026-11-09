@@ -71,7 +71,9 @@ Lecture (lot 1) :
 Écriture (lot 3, projet en « Lecture et écriture » et ouvert dans l'app) : `create_card`, `update_card` (champs par
 libellé ou clé, notes ajoutées ou remplacées, titre), `link_cards`, `add_question`, `create_scene`,
 `set_scene_synopsis`, `write_scene` (ajout ou remplacement ; Markdown pour un roman, Fountain sans en-tête pour un
-scénario). Une scène se désigne par son numéro dans le récit, son identifiant ou son titre ; une carte par son titre
+scénario). Structure : `move_scene` (avant ou après une autre scène ; roman par `moveBookScene`, scénario par
+`moveBlock` dans le Fountain), et pour un roman `create_chapter`, `rename_chapter`, `move_chapter`, `delete_chapter`
+(jamais une scène supprimée). Une scène se désigne par son numéro dans le récit, son identifiant ou son titre ; une carte par son titre
 ou son identifiant.
 
 Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ouvert à l'IA, il est facultatif.
@@ -100,6 +102,8 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
 - [x] outils `create_card`, `update_card`, `link_cards`, `add_question`, `create_scene`, `set_scene_synopsis`,
       `write_scene` (`src/mcpWrite.ts`, pur et testé ; `src/mcpBridge.ts` les branche sur le store)
 - [x] marque « IA », journal, une étape d'annulation, version gardée avant un remplacement
+- [x] structure : `move_scene`, `create_chapter`, `rename_chapter`, `move_chapter`, `delete_chapter` (le canevas suit
+      le récit, `followStory`)
 - [ ] à faire : message dans l'app quand l'assistant vient d'écrire (« L'assistant a modifié … · Annuler »), avec la
       pastille du lot 2 ; commentaires ancrés écrits par l'assistant
 
