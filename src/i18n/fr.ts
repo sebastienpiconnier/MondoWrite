@@ -132,6 +132,13 @@ export const fr = {
     showAgainLabel: "Réafficher « {title} »",
     notAProject: "Ce dossier ne contient pas de projet MondoWrite. Pour en démarrer un, utilise « Nouveau projet ».",
     openFailed: "Ce projet n’a pas pu être ouvert.",
+    openFailedWhy: {
+      icloud: "Ce projet n’a pas pu être ouvert : certains de ses fichiers arrivent encore d’iCloud. Attends quelques secondes, puis réessaie. Tes fichiers n’ont pas été modifiés.",
+      missing: "Ce projet n’a pas pu être ouvert : son dossier est introuvable (déplacé, renommé ou sur un disque débranché). Tes fichiers n’ont pas été modifiés.",
+      permission: "Ce projet n’a pas pu être ouvert : le système refuse l’accès à son dossier. Tes fichiers n’ont pas été modifiés.",
+      other: "Ce projet n’a pas pu être ouvert. Réessaie dans un instant ; si ça recommence, « Signaler un bug » (À propos de MondoWrite) joint l’erreur au signalement. Tes fichiers n’ont pas été modifiés.",
+    },
+    retryOpen: "Réessayer",
     newTitle: "Nouveau projet",
     newHint: "Même canevas, même bible : seul l’atelier d’écriture change. Tu pourras basculer plus tard.",
     workingTitle: "Titre de travail",

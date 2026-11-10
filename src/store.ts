@@ -29,7 +29,7 @@ import { MEDIA_DIR, META_FILE, SCREENPLAY_FILE, conflictCopyPath, isConflictCopy
 import { hideProject, showProject, splitHidden } from "./storage/recents";
 import { diffDisk, patchFiles, type FileConflict } from "./conflicts";
 import { NO_FILTER, filterActive, hiddenCards, type CanvasFilter } from "./canvasFilter";
-import { classifySaveError, type SaveErrorKind } from "./saveErrors";
+import { classifyOpenError, classifySaveError, type OpenErrorKind, type SaveErrorKind } from "./saveErrors";
 import type { Screenplay, ScreenplayElement } from "./screenplay/model";
 import { listScenes, sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes";
 import { screenplayWords } from "./screenplay/words";
@@ -569,6 +569,8 @@ export interface CosmosState {
   deleteProject: (id: string) => Promise<boolean>;
   /** Le dossier du projet n'a pas pu être ouvert : un message, à l'accueil, invite à le choisir à nouveau. */
   openFailed: boolean;
+  /** Cause d'un échec d'« openProject » et projet visé, pour un message clair et « Réessayer » à l'accueil (1.30.1). */
+  openError: { kind: OpenErrorKind; id: string } | null;
   dismissOpenFailed: () => void;
   lastFiles: FileMap;
 
@@ -775,6 +777,8 @@ const isBlankCard = (card: CardData) =>
   !card.title.trim() && !card.image && !(card.html ?? "").replace(/<[^>]*>/g, "").trim() && ["idee", "lien", "image"].includes(card.type);
 
 const HISTORY_LIMIT = 100;
+/** Attente avant de relire un projet dont la première lecture a échoué (fichiers iCloud qui arrivent). */
+const OPEN_RETRY_MS = 1500;
 /** Deux gestes de même nature rapprochés (lettres d'un titre, déplacement) ne font qu'une étape. */
 const HISTORY_MERGE_MS = 800;
 
@@ -1210,6 +1214,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       view: firstView(),
       focusId: null,
       openFailed: false,
+      openError: null,
       homeNotice: false,
       status: dirty ? "modifie" : "enregistre",
     });
@@ -2816,11 +2821,17 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
     openProject: async (id) => {
       storage.select(id);
-      set({ openFailed: false, homeNotice: false });
+      set({ openFailed: false, openError: null, homeNotice: false });
       const entry = get().projects.find((p) => p.id === id);
       startLoad(entry?.title || entry?.name || "");
       try {
-        const files = await storage.readAll();
+        // Un accroc passager (fichier iCloud en cours d'arrivée sur l'iPhone) : une seconde lecture un peu plus tard
+        // suffit souvent, comme relancer l'app (novembre 2026).
+        const files = await storage.readAll().catch(async (err) => {
+          console.error(err);
+          await new Promise((resolve) => setTimeout(resolve, OPEN_RETRY_MS));
+          return storage.readAll();
+        });
         // Dossier vidé ou déplacé depuis la dernière fois : on reste à l'accueil, avec un message.
         if (!files || !openFiles(files)) set({ homeNotice: true });
         else {
@@ -2835,7 +2846,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       } catch (err) {
         console.error(err);
         storage.forget();
-        set({ openFailed: true });
+        set({ openFailed: true, openError: { kind: classifyOpenError(err), id } });
       } finally {
         endLoad();
       }
@@ -2885,6 +2896,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         view: firstView(),
         focusId: null,
         openFailed: false,
+        openError: null,
         homeNotice: false,
         status: "modifie",
       });
@@ -2893,7 +2905,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
 
     importNotice: null,
     chooseCloudFolder: async () => {
-      set({ importNotice: null, homeNotice: false, openFailed: false });
+      set({ importNotice: null, homeNotice: false, openFailed: false, openError: null });
       if (await storage.cloud?.pick()) await refreshProjects();
     },
     gatherStrayProjects: async () => {
@@ -2909,7 +2921,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       await refreshProjects();
     },
     openExample: async (entry) => {
-      set({ importNotice: null, homeNotice: false, openFailed: false });
+      set({ importNotice: null, homeNotice: false, openFailed: false, openError: null });
       useExamples.setState({ busy: { id: entry.id, share: 0 }, error: null });
       let data: Uint8Array;
       try {
@@ -2924,12 +2936,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       } catch (err) {
         console.error(err);
         storage.forget();
-        set({ openFailed: true });
+        set({ openFailed: true, openError: null });
       }
     },
 
     importFile: async () => {
-      set({ importNotice: null, homeNotice: false, openFailed: false });
+      set({ importNotice: null, homeNotice: false, openFailed: false, openError: null });
       const t = getT();
       let file: { name: string; data: Uint8Array } | null = null;
       try {
@@ -2970,7 +2982,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         } catch (err) {
           console.error(err);
           storage.forget();
-          set({ openFailed: true });
+          set({ openFailed: true, openError: null });
         }
         return;
       }
@@ -3056,7 +3068,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       return ok;
     },
     openFailed: false,
-    dismissOpenFailed: () => set({ openFailed: false }),
+    openError: null,
+    dismissOpenFailed: () => set({ openFailed: false, openError: null }),
     lastFiles: {},
 
     frames: [],
@@ -3539,7 +3552,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       }
       // Après un échec, on reste à l'accueil : l'auteur choisit à nouveau son dossier.
       if (failed) {
-        set({ loaded: true, openFailed: true, screen: "home" });
+        set({ loaded: true, openFailed: true, openError: null, screen: "home" });
         return;
       }
       const { state, dirty } = openProject((files && deserialize(files)) || demoProject());
@@ -3563,6 +3576,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         view: firstView(),
         focusId: null,
         openFailed: false,
+        openError: null,
         homeNotice: false,
         status: files !== null && !dirty ? "enregistre" : "modifie",
       });
@@ -3574,11 +3588,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       try {
         const files = await storage.readAll();
         // Un dossier sans projet ne s'ouvre pas : pour en démarrer un, c'est « Nouveau projet ».
-        if (!files || !openFiles(files)) set({ homeNotice: true, openFailed: false });
+        if (!files || !openFiles(files)) set({ homeNotice: true, openFailed: false, openError: null });
       } catch (err) {
         console.error(err);
         storage.forget();
-        set({ openFailed: true });
+        set({ openFailed: true, openError: null });
       }
     },
 
@@ -3678,13 +3692,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
         await get().closeProject();
         if (get().screen === "project") return false;
       }
-      set({ dialog: null, importNotice: null, homeNotice: false, openFailed: false });
+      set({ dialog: null, importNotice: null, homeNotice: false, openFailed: false, openError: null });
       try {
         await importEntries(entries);
       } catch (err) {
         console.error(err);
         storage.forget();
-        set({ openFailed: true });
+        set({ openFailed: true, openError: null });
         return false;
       }
       return get().screen === "project";

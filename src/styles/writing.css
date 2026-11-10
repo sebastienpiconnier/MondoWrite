@@ -697,7 +697,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ms-page .ms-editor p.has-dropcap { display: flow-root; }
 /* Lettrine sur deux lignes, quel que soit l'interligne choisi (#24). Repli : la hauteur des capitales (environ 0,7 du
    corps) couvre une capitale plus une ligne, d'où un corps de 1 + interligne / 0,7. */
-.ms-page .ms-editor p.has-dropcap::first-letter { float: left; margin: 0.06em 0.08em 0 0; font-family: var(--font-display); font-weight: 600; font-size: calc(1em + var(--page-leading, 1.6) * 1em / 0.7); line-height: 1; color: var(--accent-ink); }
+.ms-page .ms-editor p.has-dropcap::first-letter { float: left; margin: 0.06em 0.08em 0 0; font-family: inherit; font-weight: 400; font-size: calc(1em + var(--page-leading, 1.6) * 1em / 0.7); line-height: 1; color: var(--accent-ink); }
 /* Là où le navigateur sait caler une lettrine (WebKit du Mac et de Linux, WebView2 de Windows), il la pose
    exactement sur les deux premières lignes, à leur ligne de base. */
 @supports (initial-letter: 2) or (-webkit-initial-letter: 2) {

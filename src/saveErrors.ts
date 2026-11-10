@@ -27,3 +27,14 @@ export function classifySaveError(err: unknown): SaveErrorKind {
 
 /** Message d'erreur posé par le stockage quand le dossier du projet n'existe plus. */
 export const MISSING_FOLDER = "project folder missing";
+
+/** Pourquoi l'ouverture d'un projet a échoué : fichiers iCloud pas encore là, dossier introuvable, droits, autre. */
+export type OpenErrorKind = "icloud" | "missing" | "permission" | "other";
+
+export function classifyOpenError(err: unknown): OpenErrorKind {
+  const text = textOf(err).toLowerCase();
+  // iCloud : fichier en cours de téléchargement ou verrouillé par la synchronisation (EDEADLK 11, EAGAIN 35 sur iOS et macOS).
+  if (/icloud|deadlock|resource temporarily unavailable|not (yet )?downloaded|os error (11|35)\b|edeadlk|eagain/.test(text)) return "icloud";
+  const save = classifySaveError(err);
+  return save === "missing" || save === "permission" ? save : "other";
+}
