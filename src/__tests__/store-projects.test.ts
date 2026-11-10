@@ -333,8 +333,9 @@ describe("liste de l'accueil", () => {
   it("projet illisible : on reste à l'accueil avec un message", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     await state().start();
-    vi.spyOn(storage, "readAll").mockRejectedValueOnce(new Error("forbidden path"));
+    // Refusé deux fois de suite (l'ouverture relit une fois après un premier échec, 1.30.1).
+    vi.spyOn(storage, "readAll").mockRejectedValue(new Error("forbidden path"));
     await state().openProject("interdit");
-    expect(state()).toMatchObject({ screen: "home", openFailed: true });
+    expect(state()).toMatchObject({ screen: "home", openFailed: true, openError: { kind: "permission", id: "interdit" } });
   });
 });

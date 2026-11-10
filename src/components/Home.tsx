@@ -30,6 +30,7 @@ export function Home() {
   const welcome = useMemo(() => greeting(t.home.greeting, new Date(), profile.firstName, projects), [t, profile.firstName, projects]);
   const hiddenProjects = useCosmos((s) => s.hiddenProjects);
   const openFailed = useCosmos((s) => s.openFailed);
+  const openError = useCosmos((s) => s.openError);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
   const { openProject, openFolder, createProject, tryExample, hideProject, showProject, deleteProject, importFile, chooseCloudFolder, leaveCloudFolder, gatherStrayProjects } = useCosmos.getState();
@@ -199,10 +200,21 @@ export function Home() {
                   : importNotice === "scrivenerOld"
                     ? h.importScrivenerOld
                 : openFailed
-                  ? storage.canPickFolder
-                    ? t.app.openFailed
-                    : h.openFailed
+                  ? openError && !(storage.canPickFolder && openError.kind !== "icloud" && openError.kind !== "other")
+                    ? h.openFailedWhy[openError.kind]
+                    : storage.canPickFolder
+                      ? t.app.openFailed
+                      : h.openFailed
                   : h.notAProject}
+            {/* Un accroc passager (iCloud) se règle souvent en relisant : le geste est là, sans relancer l'app (1.30.1). */}
+            {openFailed && openError && !importNotice && (
+              <>
+                {" "}
+                <button type="button" className="link-button" disabled={busy} onClick={() => run(() => openProject(openError.id))}>
+                  {h.retryOpen}
+                </button>
+              </>
+            )}
           </p>
         )}
 

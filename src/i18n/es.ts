@@ -158,6 +158,13 @@ export const es = {
     showAgainLabel: "Volver a mostrar «{title}»",
     notAProject: "Esta carpeta no contiene ningún proyecto de MondoWrite. Para empezar uno, usa «Proyecto nuevo».",
     openFailed: "No se pudo abrir este proyecto.",
+    openFailedWhy: {
+      icloud: "No se pudo abrir este proyecto: algunos de sus archivos aún están llegando desde iCloud. Espera unos segundos y vuelve a intentarlo. Tus archivos no se han modificado.",
+      missing: "No se pudo abrir este proyecto: no se encuentra su carpeta (movida, renombrada o en un disco desconectado). Tus archivos no se han modificado.",
+      permission: "No se pudo abrir este proyecto: el sistema deniega el acceso a su carpeta. Tus archivos no se han modificado.",
+      other: "No se pudo abrir este proyecto. Vuelve a intentarlo en un momento; si vuelve a pasar, «Informar de un error» (Acerca de MondoWrite) adjunta el error al informe. Tus archivos no se han modificado.",
+    },
+    retryOpen: "Reintentar",
     newTitle: "Proyecto nuevo",
     newHint: "El mismo lienzo, la misma biblia: solo cambia el taller de escritura. Podrás cambiar más adelante.",
     workingTitle: "Título provisional",

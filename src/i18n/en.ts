@@ -130,6 +130,13 @@ export const en: Messages = {
     showAgainLabel: "Show “{title}” again",
     notAProject: "This folder doesn’t contain a MondoWrite project. To start one, use “New project”.",
     openFailed: "This project couldn’t be opened.",
+    openFailedWhy: {
+      icloud: "This project couldn’t be opened: some of its files are still arriving from iCloud. Wait a few seconds, then try again. Your files have not been changed.",
+      missing: "This project couldn’t be opened: its folder can’t be found (moved, renamed or on an unplugged drive). Your files have not been changed.",
+      permission: "This project couldn’t be opened: the system denies access to its folder. Your files have not been changed.",
+      other: "This project couldn’t be opened. Try again in a moment; if it happens again, “Report a Bug” (About MondoWrite) attaches the error to the report. Your files have not been changed.",
+    },
+    retryOpen: "Try again",
     newTitle: "New project",
     newHint: "Same canvas, same bible: only the writing workshop changes. You can switch later.",
     workingTitle: "Working title",
