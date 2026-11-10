@@ -2616,7 +2616,7 @@ export const fr = {
     noticeMany: "{client} a fait {n} modifications dans ton projet.",
     noticeClient: "L’assistant",
     enable: "Autoriser un assistant externe à lire mes projets",
-    hint: "Claude Desktop, ou tout logiciel compatible MCP, peut lire les projets que tu lui ouvres (Réglages › Ce projet), en lecture seule. Il utilise ton propre abonnement ou ton modèle local : aucune clé à donner ici.",
+    hint: "Claude Desktop, ou tout logiciel compatible MCP, peut lire les projets que tu lui ouvres (Réglages › Ce projet), et les modifier si tu le permets. Il utilise ton propre abonnement ou ton modèle local : aucune clé à donner ici.",
     noProject: "Aucun projet ouvert à l’assistant pour l’instant.",
     projects: "Projets ouverts à l’assistant : {n}",
     connect: "Connecter à Claude Desktop",

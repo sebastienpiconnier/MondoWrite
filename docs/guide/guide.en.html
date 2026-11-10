@@ -763,6 +763,38 @@
 <figure class="medium"><img src="images/en/atelier-directions.jpg"><figcaption>“Three directions” in Workshop mode: each lead can become a card.</figcaption></figure>
 <p>Everything you accept gets a dotted underline, is listed in <span class="ui">To do</span> (<span class="ui">AI passages</span>) and counted in Statistics (<span class="ui">Text touched by AI</span>). Once you’ve reworked a passage, <span class="ui">I’ve made it mine</span> removes the mark. Each accepted suggestion also adds a line to the project’s <code>ia-journal.md</code> file (date, action, card or scene, service and model, word count): it helps you answer Amazon KDP, which asks you to declare AI-generated text. A MondoWrite version before 1.8.0 keeps the text but drops the mark if it saves the project again.</p>
 
+<h3 id="external-assistant">An external assistant (MCP)</h3>
+<p>MondoWrite can open up to an assistant you already use, such as <strong>Claude Desktop</strong> or any app that supports the MCP protocol. You talk to it in its own window (“read chapter 3 and tell me where attention drops”, “create a sheet for Inès’s sister from the scenes she appears in”) and it works directly on your project. It uses your own subscription or local model: MondoWrite asks for no key and sends nothing on its own. Computer only (macOS, Windows, Linux).</p>
+<h4>Connecting it</h4>
+<ol>
+  <li>In <span class="ui">Settings</span> › <span class="ui">AI</span>, check <span class="ui">Let an external assistant read my projects</span>.</li>
+  <li>Click <span class="ui">Connect to Claude Desktop</span>, then quit and reopen Claude Desktop: MondoWrite shows up among its tools. For another app, <span class="ui">Copy the configuration (other apps)</span> and paste it into its MCP settings.</li>
+  <li>Project by project, in <span class="ui">Settings</span> › <span class="ui">This project</span>, choose the <span class="ui">External assistant’s access to this project</span>: <span class="ui">None</span> (the default), <span class="ui">Read only</span> or <span class="ui">Read and write</span>. A project left at “None” is invisible to it, and going back to “None” removes its access right away.</li>
+</ol>
+<h4>What it can read</h4>
+<ul>
+  <li>With <span class="ui">Read only</span>, even with the app closed: the list of your projects open to the assistant, a project overview, the scenes in story order with their text, the Bible sheets, the wires, and search across the whole project. It reads the project as last saved.</li>
+  <li>When the project is open in MondoWrite, it also reads what the app works out: <span class="ui">To do</span>, comments, statistics, the <span class="ui">Check</span> items, a scene’s versions and the AI log.</li>
+</ul>
+<h4>What it can do, with read and write</h4>
+<p>Only while the project is open in MondoWrite; with the project closed, it can’t write anything.</p>
+<ul>
+  <li><strong>The Bible</strong>: create a sheet, change its type (an Idea becomes a Character), fill in its fields and notes, rename it everywhere in the project, keep a “To dig into” question in a character, add a Question card.</li>
+  <li><strong>Wires</strong>: link two cards, change a wire’s label and its sheet (history, stakes, evolution), unlink. In its notes and texts it cites a card by writing its title in double brackets, <code>[[Inès Morvan]]</code>: MondoWrite turns it into a real mention and draws the wire.</li>
+  <li><strong>Scenes</strong>: create one (or a book page: dedication, prologue…), write or continue its text, replace a single passage quoted word for word, write its synopsis, fill in its sheet (status, point of view, what the character wants, obstacle, turning point, breakdown…), move it, merge two scenes, split one, put it in the trash or take it out.</li>
+  <li><strong>Structure</strong>: create, rename, move and delete a chapter; choose a template and put a scene in a slot; create and rename a series’ episodes and seasons.</li>
+  <li><strong>The rest</strong>: leave a comment on a passage or resolve it, keep a version of a scene, find and replace, write a cover field, change the project title and writing goals, draw, rename or remove a frame, organize the canvas.</li>
+</ul>
+<p>It can’t delete a project, empty the trash, export or change settings.</p>
+<h4>You stay in charge</h4>
+<ul>
+  <li>Everything it writes is <strong>marked as AI</strong> (dotted underline, as in Workshop mode, until <span class="ui">I’ve made it mine</span>) and logged in <code>ia-journal.md</code> with the app’s name.</li>
+  <li>Each request is <strong>a single undo step</strong>. A banner at the top of the screen says “Claude just changed your project” (or how many changes) with <span class="ui">Undo</span>, as long as you haven’t done anything since: your own work is never undone.</li>
+  <li>Before rewriting a scene or replacing a passage, MondoWrite keeps a <strong>version</strong> of it (“Before the external assistant”), found under <span class="ui">Scene versions…</span>.</li>
+</ul>
+<h4>Ready-made prompts</h4>
+<p>In Claude Desktop, the “+” button also offers five MondoWrite prompts: <span class="ui">Beta read</span> (a reader’s reactions, no rewriting), <span class="ui">Consistency check</span> (contradictions between the scenes and the Bible, as questions), <span class="ui">Breakdown</span> (props, costumes, extras… scene by scene), <span class="ui">Interview a character</span> (who answers only with what you wrote) and <span class="ui">Project status</span> (where you stand, what’s left).</p>
+
 <!-- ===================================================================================== -->
 <h2 id="export"><span class="num">Chapter 11</span>Export and publish</h2>
 

@@ -763,6 +763,38 @@
 <figure class="medium"><img src="images/fr/atelier-directions.jpg"><figcaption>« Trois directions » en mode Atelier : chaque piste peut devenir une carte.</figcaption></figure>
 <p>Tout ce que tu acceptes est souligné en pointillé, listé dans <span class="ui">À faire</span> (<span class="ui">Passages de l’IA</span>) et compté dans les Statistiques (<span class="ui">Texte touché par l’IA</span>). Quand tu as retravaillé un passage, <span class="ui">Je l’ai repris</span> retire la marque. Chaque proposition acceptée ajoute aussi une ligne au fichier <code>ia-journal.md</code> du projet (date, action, carte ou scène, service et modèle, nombre de mots) : c’est ce qui t’aide à répondre à Amazon KDP, qui demande de déclarer le texte généré par l’IA. Une version de MondoWrite antérieure à la 1.8.0 garde le texte mais perd la marque si elle réenregistre le projet.</p>
 
+<h3 id="assistant-externe">Un assistant externe (MCP)</h3>
+<p>MondoWrite peut s’ouvrir à un assistant que tu utilises déjà, comme <strong>Claude Desktop</strong> ou tout logiciel compatible avec le protocole MCP. Tu lui parles dans sa propre fenêtre (« relis le chapitre 3 et dis-moi où l’attention faiblit », « crée la fiche de la sœur d’Inès d’après les scènes où elle paraît ») et il travaille directement sur ton projet. Il utilise ton propre abonnement ou ton modèle local : MondoWrite ne demande aucune clé et n’envoie rien de lui-même. Sur ordinateur seulement (macOS, Windows, Linux).</p>
+<h4>Le brancher</h4>
+<ol>
+  <li>Dans <span class="ui">Réglages</span> › <span class="ui">IA</span>, coche <span class="ui">Autoriser un assistant externe à lire mes projets</span>.</li>
+  <li>Clique <span class="ui">Connecter à Claude Desktop</span>, puis quitte et relance Claude Desktop : MondoWrite apparaît dans ses outils. Pour un autre logiciel, <span class="ui">Copier la configuration (autres logiciels)</span> et colle-la dans ses réglages MCP.</li>
+  <li>Projet par projet, dans <span class="ui">Réglages</span> › <span class="ui">Ce projet</span>, choisis l’<span class="ui">Accès de l’assistant externe à ce projet</span> : <span class="ui">Aucun</span> (par défaut), <span class="ui">Lecture seule</span> ou <span class="ui">Lecture et écriture</span>. Un projet laissé à « Aucun » lui est invisible, et repasser à « Aucun » lui retire l’accès aussitôt.</li>
+</ol>
+<h4>Ce qu’il peut lire</h4>
+<ul>
+  <li>En <span class="ui">Lecture seule</span>, même app fermée : la liste de tes projets ouverts à l’assistant, la vue d’ensemble d’un projet, les scènes dans l’ordre du récit avec leur texte, les fiches de la Bible, les fils, et la recherche dans tout le projet. Il lit le projet tel qu’il a été enregistré pour la dernière fois.</li>
+  <li>Quand le projet est ouvert dans MondoWrite, il lit aussi ce que l’app calcule : <span class="ui">À faire</span>, les commentaires, les statistiques, les points de <span class="ui">Vérifier</span>, les versions d’une scène et le journal de l’IA.</li>
+</ul>
+<h4>Ce qu’il peut faire, en lecture et écriture</h4>
+<p>Seulement pendant que le projet est ouvert dans MondoWrite ; projet fermé, il ne peut rien écrire.</p>
+<ul>
+  <li><strong>La Bible</strong> : créer une fiche, changer son type (une Idée devient Personnage), remplir ses champs et ses notes, la renommer partout dans le projet, garder une question « À creuser » dans un personnage, poser une carte Question.</li>
+  <li><strong>Les fils</strong> : relier deux cartes, changer l’étiquette d’un fil et sa fiche (histoire, enjeu, évolution), délier. Dans ses notes et ses textes, il cite une carte en écrivant son titre entre doubles crochets, <code>[[Inès Morvan]]</code> : MondoWrite en fait une vraie mention et tire le fil.</li>
+  <li><strong>Les scènes</strong> : en créer une (ou une page du livre : dédicace, prologue…), écrire ou compléter son texte, remplacer un seul passage cité mot pour mot, écrire son synopsis, remplir sa fiche (statut, point de vue, ce que veut le personnage, obstacle, tournant, dépouillement…), la déplacer, fusionner deux scènes, en couper une, la mettre à la corbeille ou l’en sortir.</li>
+  <li><strong>La structure</strong> : créer, renommer, déplacer et supprimer un chapitre ; choisir un gabarit et ranger une scène dans une case ; créer et renommer des épisodes et des saisons d’une série.</li>
+  <li><strong>Le reste</strong> : laisser un commentaire sur un passage ou le résoudre, garder une version d’une scène, rechercher et remplacer, écrire un champ de la couverture, changer le titre du projet et les objectifs d’écriture, poser, renommer ou retirer un cadre, organiser le canevas.</li>
+</ul>
+<p>Il ne peut ni supprimer un projet, ni vider la corbeille, ni exporter, ni toucher aux réglages.</p>
+<h4>Tu gardes la main</h4>
+<ul>
+  <li>Tout ce qu’il écrit est <strong>marqué IA</strong> (souligné en pointillé, comme en mode Atelier, jusqu’à <span class="ui">Je l’ai repris</span>) et noté dans <code>ia-journal.md</code> avec le nom du logiciel.</li>
+  <li>Chaque demande est <strong>une seule étape d’annulation</strong>. Un bandeau en haut de l’écran annonce « Claude vient de modifier ton projet » (ou le nombre de modifications) avec <span class="ui">Annuler</span>, tant que tu n’as rien fait depuis : ton propre travail n’est jamais défait.</li>
+  <li>Avant de réécrire une scène ou d’en remplacer un passage, MondoWrite en garde une <strong>version</strong> (« Avant l’assistant externe »), à retrouver dans <span class="ui">Versions de la scène…</span>.</li>
+</ul>
+<h4>Des consignes prêtes</h4>
+<p>Dans Claude Desktop, le bouton « + » propose aussi cinq consignes de MondoWrite : <span class="ui">Relecture bêta</span> (les réactions d’un lecteur, sans réécriture), <span class="ui">Cohérence</span> (les contradictions entre les scènes et la Bible, posées en questions), <span class="ui">Dépouillement</span> (accessoires, costumes, figurants… scène par scène), <span class="ui">Interroger un personnage</span> (il répond seulement avec ce que tu as écrit) et <span class="ui">Point du projet</span> (où tu en es, ce qui reste).</p>
+
 <!-- ===================================================================================== -->
 <h2 id="exporter"><span class="num">Chapitre 11</span>Exporter et publier</h2>
 

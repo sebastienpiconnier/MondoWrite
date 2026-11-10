@@ -604,7 +604,7 @@ export const en: Messages = {
     noticeMany: "{client} made {n} changes to your project.",
     noticeClient: "The assistant",
     enable: "Let an external assistant read my projects",
-    hint: "Claude Desktop, or any MCP-compatible app, can read the projects you open to it (Settings › This project), read only. It uses your own subscription or local model: no key to enter here.",
+    hint: "Claude Desktop, or any MCP-compatible app, can read the projects you open to it (Settings › This project), and edit them if you allow it. It uses your own subscription or local model: no key to enter here.",
     noProject: "No project is open to the assistant yet.",
     projects: "Projects open to the assistant: {n}",
     connect: "Connect to Claude Desktop",

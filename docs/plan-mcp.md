@@ -1,6 +1,6 @@
 # Assistant externe par MCP (#62, lot 11)
 
-> **Statut : lots 1 et 3 faits** (novembre 2026) : lecture essayée avec Claude Desktop sur Mac ; écriture à essayer. Restent le guide, Windows et le lot 2.
+> **Statut : lots 1, 3, 4 et 5 faits, publiés en 1.29.0** (novembre 2026) : lecture et écriture, guide fr, en, es. Restent Windows à essayer et le lot 2 (pastille).
 
 L'assistant IA de l'auteur (Claude Desktop, ou tout client MCP) lit un projet MondoWrite par un serveur MCP local.
 Aucune clé d'API dans MondoWrite : l'auteur utilise l'abonnement qu'il a déjà, ou un modèle local. Sens unique : le
@@ -87,7 +87,7 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
 - [x] Réglages › IA : « Autoriser un assistant externe (MCP) », « Connecter à Claude Desktop » (commande
       `mcp_connect_claude` : ajoute l'entrée `mondowrite` à `claude_desktop_config.json`, garde le reste),
       « Copier la configuration » ; Réglages › Ce projet : accès Aucun / Lecture
-- [ ] guide de l'utilisateur (fr, en, es)
+- [x] guide de l'utilisateur (fr, en, es), chapitre 10 « Un assistant externe (MCP) »
 
 ### Lot 2 · Confort
 
