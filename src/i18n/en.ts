@@ -2479,6 +2479,7 @@ export const en: Messages = {
       comment: "Comment on the selected passage",
       footnote: "Insert a footnote",
       guide: "User guide (online help)",
+      fullscreen: "Full screen (Windows, Linux)",
       settings: "Settings",
       views: "Canvas, Outline, Bible, Manuscript",
       search: "Find a card or a passage",

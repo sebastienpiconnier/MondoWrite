@@ -2954,6 +2954,7 @@ export const es = {
       comment: "Comentar el pasaje seleccionado",
       footnote: "Insertar una nota al pie",
       guide: "Guía del usuario (ayuda en línea)",
+      fullscreen: "Pantalla completa (Windows, Linux)",
       settings: "Ajustes",
       views: "Lienzo, Esquema, Biblia, Manuscrito",
       search: "Buscar una tarjeta o un pasaje",

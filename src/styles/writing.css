@@ -695,7 +695,14 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ms-page .ms-editor .pg-copyright { font-size: 0.8em; }
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. Pas dans le paragraphe où l'on écrit (WebKit y perdait le curseur). */
 .ms-page .ms-editor p.has-dropcap { display: flow-root; }
-.ms-page .ms-editor p.has-dropcap::first-letter { float: left; margin: 0.08em 0.08em 0 0; font: 600 3.3em/0.85 var(--font-display); color: var(--accent-ink); }
+/* Lettrine sur deux lignes, quel que soit l'interligne choisi (#24). Repli : la hauteur des capitales (environ 0,7 du
+   corps) couvre une capitale plus une ligne, d'où un corps de 1 + interligne / 0,7. */
+.ms-page .ms-editor p.has-dropcap::first-letter { float: left; margin: 0.06em 0.08em 0 0; font-family: var(--font-display); font-weight: 600; font-size: calc(1em + var(--page-leading, 1.6) * 1em / 0.7); line-height: 1; color: var(--accent-ink); }
+/* Là où le navigateur sait caler une lettrine (WebKit du Mac et de Linux, WebView2 de Windows), il la pose
+   exactement sur les deux premières lignes, à leur ligne de base. */
+@supports (initial-letter: 2) or (-webkit-initial-letter: 2) {
+  .ms-page .ms-editor p.has-dropcap::first-letter { float: none; margin: 0 0.22em 0 0; font-size: inherit; line-height: inherit; -webkit-initial-letter: 2; initial-letter: 2; }
+}
 /* Texte indicatif d'une scène encore vide. */
 .ms-editor p.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; font-style: italic; }
 .ms-editor .pg.is-quiet.is-empty::before { float: none; display: block; width: 100%; text-align: inherit; }

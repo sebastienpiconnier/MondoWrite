@@ -2459,6 +2459,7 @@ export const fr = {
       comment: "Commenter le passage sélectionné",
       footnote: "Insérer une note de bas de page",
       guide: "Guide de l’utilisateur (aide en ligne)",
+      fullscreen: "Plein écran (Windows, Linux)",
       settings: "Réglages",
       views: "Canevas, Plan, Bible, Manuscrit",
       search: "Rechercher une carte ou un passage",
