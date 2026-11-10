@@ -46,6 +46,10 @@ export function TopBar() {
   const setTitle = useCosmos((s) => s.setTitle);
   const phone = usePhone();
   const current = shownView(view, phone);
+  // « Juste écrire » (discussion #61) : seule la vue d'écriture (et celle où l'on est), « Toutes les vues » pour le reste.
+  const writerMode = useSettings((s) => s.writing.writerMode);
+  const [allViews, setAllViews] = useState(false);
+  const shownViews = writerMode && !allViews ? VIEWS.filter((v) => v === "manuscrit" || v === current) : VIEWS;
 
   // Téléphone : les actions se rangent derrière « ⋯ » ; les vues passent en barre d'onglets en bas (CSS).
   const [more, setMore] = useState(false);
@@ -96,7 +100,7 @@ export function TopBar() {
       </div>
 
       <nav className="views" aria-label={t.views.aria}>
-        {VIEWS.map((v) => (
+        {shownViews.map((v) => (
           <button
             key={v}
             type="button"
@@ -111,6 +115,11 @@ export function TopBar() {
             <span className="view-label">{views[v]}</span>
           </button>
         ))}
+        {shownViews.length < VIEWS.length && (
+          <button type="button" className="views-all" onClick={() => setAllViews(true)}>
+            <span className="view-label">{t.views.others}</span>
+          </button>
+        )}
       </nav>
 
       {/* Téléphone : les actions sont derrière « ⋯ », qui porte donc le point d'état d'enregistrement. */}

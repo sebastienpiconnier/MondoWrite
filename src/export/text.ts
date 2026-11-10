@@ -275,7 +275,7 @@ const htmlRuns = (runs: Run[]) =>
     .join("");
 
 /** Corps XHTML d'un chapitre : les listes et les citations retrouvent leurs balises. */
-export function chapterXhtml(blocks: Block[]): string {
+export function chapterXhtml(blocks: Block[], image?: (name: string) => string | null): string {
   const out: string[] = [];
   let open: "" | "ul" | "ol" = "";
   const close = () => {
@@ -283,8 +283,15 @@ export function chapterXhtml(blocks: Block[]): string {
     open = "";
   };
   for (const block of blocks) {
-    // Les images ne vont pas dans un EPUB (seul le manuscrit s'y exporte, et il n'en a pas).
-    if (block.kind === "image") continue;
+    // Les images ne vont pas dans un EPUB (seul le manuscrit s'y exporte, et il n'en a pas) ; la page HTML les embarque.
+    if (block.kind === "image") {
+      const src = image?.(block.name);
+      if (src) {
+        close();
+        out.push(`<figure><img src="${src}" alt=""/></figure>`);
+      }
+      continue;
+    }
     if (block.kind === "heading") {
       close();
       out.push(`<h2>${htmlRuns(block.runs)}</h2>`);
@@ -363,4 +370,63 @@ export function toEpub(doc: ExportDoc, meta: EpubMeta): Uint8Array {
     { path: "OEBPS/cover.xhtml", data: cover },
     ...files.map((f) => ({ path: `OEBPS/${f.href}`, data: f.data })),
   ]);
+}
+
+// ---------- Page HTML ----------
+
+/** Octets en base64, par morceaux (une image peut dépasser la pile d'un `apply`). */
+function base64(data: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < data.length; i += 0x8000) bin += String.fromCharCode(...data.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+// Feuille de la page exportée : un fichier à lire hors de l'app (couleurs propres au fichier, pas aux jetons de l'app),
+// claire ou sombre selon le système du lecteur.
+const HTML_CSS =
+  ":root { color-scheme: light dark; --ink: #1f2128; --soft: #5b5f6b; --rule: #d6d8de; --paper: #fdfcf9; }\n" +
+  "@media (prefers-color-scheme: dark) { :root { --ink: #d4d6de; --soft: #a3a7b3; --rule: #3a3e4c; --paper: #181a22; } }\n" +
+  "body { margin: 0; background: var(--paper); color: var(--ink); font: 1.125rem/1.65 Georgia, \"Iowan Old Style\", \"Times New Roman\", serif; }\n" +
+  "main { max-width: 38em; margin: 0 auto; padding: 3em 1.25em 5em; }\n" +
+  "header.cover { text-align: center; margin: 3em 0 4em; }\nheader.cover h1 { font-size: 2.2em; line-height: 1.2; margin: 0 0 0.5em; }\n" +
+  "header.cover p { margin: 0.25em 0; color: var(--soft); text-indent: 0; }\n" +
+  "nav { margin: 0 0 3em; }\nnav h2 { font-size: 1em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--soft); }\nnav ol { padding-left: 1.4em; }\nnav a { color: inherit; }\n" +
+  "section.chapter { margin-top: 3.5em; }\nh2.chapter-title { font-size: 1.5em; margin: 0 0 1em; }\nh2 { font-size: 1.2em; margin: 1.5em 0 0.5em; }\n" +
+  "p { margin: 0; text-indent: 1.4em; }\nh2 + p, figure + p, blockquote p, li p { text-indent: 0; }\n" +
+  "blockquote { margin: 1em 2em; font-style: italic; }\nfigure { margin: 1.5em 0; text-align: center; }\nimg { max-width: 100%; height: auto; }\n" +
+  ".notes { margin-top: 2em; padding-top: 0.5em; border-top: 1px solid var(--rule); font-size: 0.9em; }\n.notes p { text-indent: 0; margin-top: 0.4em; }\n" +
+  "sup a { text-decoration: none; }\n@media print { body { background: none; } section.chapter { break-before: page; } nav { display: none; } }\n";
+
+export interface HtmlOptions {
+  /** Titre du sommaire (affiché à partir de deux chapitres). */
+  contents: string;
+}
+
+/**
+ * Une seule page HTML autonome (discussion #61) : titre, auteur, sommaire, chapitres, notes, images embarquées.
+ * Elle s'ouvre dans tout navigateur, s'imprime, se colle dans un site. Mêmes blocs que l'EPUB.
+ */
+export function toHtml(doc: ExportDoc, options: HtmlOptions): string {
+  const image = (name: string) => {
+    const img = doc.images?.[name];
+    return img ? `data:image/jpeg;base64,${base64(img.data)}` : null;
+  };
+  const chapters = doc.chapters.map(
+    (chapter, i) =>
+      `<section class="chapter" id="ch-${i + 1}">\n<h2 class="chapter-title">${xml(chapter.title)}</h2>\n${chapterXhtml(chapter.blocks, image)}\n</section>`,
+  );
+  const toc =
+    doc.chapters.length > 1
+      ? `<nav aria-labelledby="toc">\n<h2 id="toc">${xml(options.contents)}</h2>\n<ol>\n${doc.chapters.map((c, i) => `<li><a href="#ch-${i + 1}">${xml(c.title)}</a></li>`).join("\n")}\n</ol>\n</nav>`
+      : "";
+  const cover =
+    `<header class="cover">\n<h1>${xml(doc.title)}</h1>\n${doc.author ? `<p>${xml(doc.author)}</p>\n` : ""}` +
+    `${(doc.contact ?? []).map((line) => `<p>${xml(line)}</p>`).join("\n")}\n</header>`;
+  // Les attributs propres à l'EPUB (epub:type) n'ont pas de sens dans une page web.
+  const body = [cover, toc, ...chapters].filter(Boolean).join("\n").replace(/ epub:type="[^"]*"/g, "");
+  return (
+    `<!DOCTYPE html>\n<html lang="${xml(doc.lang)}">\n<head>\n<meta charset="utf-8"/>\n<meta name="viewport" content="width=device-width, initial-scale=1"/>\n` +
+    `<title>${xml(doc.title)}</title>\n${doc.author ? `<meta name="author" content="${xml(doc.author)}"/>\n` : ""}<meta name="generator" content="MondoWrite"/>\n` +
+    `<style>\n${HTML_CSS}</style>\n</head>\n<body>\n<main>\n${body}\n</main>\n</body>\n</html>\n`
+  );
 }

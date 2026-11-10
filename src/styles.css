@@ -369,6 +369,8 @@ html[data-platform="mac"] .topbar :is(input, textarea) { -webkit-user-select: te
 .views button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-size: 0.875rem; cursor: pointer; min-height: 36px; }
 @media (any-hover: hover) { .views button:hover { background: var(--hover); } }
 .views button.is-current { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+/* « Juste écrire » : le bouton qui remontre les vues cachées, plus discret qu'une vue. */
+.views button.views-all { color: var(--ink-2); }
 
 /* margin-left: auto : si la barre passe sur deux lignes (fenêtre étroite), les actions restent à droite. */
 .actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }

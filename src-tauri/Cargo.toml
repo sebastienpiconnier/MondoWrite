@@ -1,6 +1,6 @@
 [package]
 name = "cosmos"
-version = "1.29.1"
+version = "1.30.0"
 description = "MondoWrite : du chaos au monde ordonné, une toile pour les écrivains"
 authors = ["Sébastien Piconnier"]
 license = "AGPL-3.0-or-later"
@@ -34,6 +34,8 @@ tauri-plugin-http = { version = "2", features = ["unsafe-headers"] }
 
 # Mises à jour de l'app (ordinateur seulement : sur mobile, ce sont les boutiques).
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# Polices installées sur l'ordinateur, pour « Une police de l'ordinateur » (Réglages › Écriture). MIT.
+fontdb = "0.24"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 # Surveillance du dossier du projet (modifications faites dans un autre logiciel), ordinateur seulement.

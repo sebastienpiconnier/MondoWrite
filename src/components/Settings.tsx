@@ -37,6 +37,7 @@ import { fmt } from "../i18n";
 import { SOURCE_INFO } from "../imageSources";
 import { ImageModelField } from "./ImageGen";
 import { McpAppSettings, McpProjectSetting } from "./McpSettings";
+import { SystemFontField } from "./SystemFontField";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 /** Valeur du choix « Autre modèle… » de la liste. */
@@ -134,7 +135,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), atelierHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -493,6 +494,14 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          {/* « Juste écrire » (discussion #61) : les projets s'ouvrent sur la page d'écriture, les autres vues se cachent. */}
+          <label className="settings-check">
+            <input type="checkbox" checked={writing.writerMode} aria-describedby={ids.writerHint} onChange={(e) => setWriting({ ...writing, writerMode: e.target.checked })} />
+            {t.settings.writerMode}
+          </label>
+          <p className="settings-hint" id={ids.writerHint}>
+            {t.settings.writerModeHint}
+          </p>
           {/* Police et interligne de la page du Manuscrit (#24) : à l'écran seulement. */}
           <label htmlFor={ids.pageFont}>{t.settings.pageFont}</label>
           <select id={ids.pageFont} value={writing.pageFont} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, pageFont: e.target.value as PageFont })}>
@@ -502,6 +511,7 @@ export function Settings({ project = true }: { project?: boolean }) {
               </option>
             ))}
           </select>
+          {writing.pageFont === "system" && <SystemFontField />}
           <label htmlFor={ids.lineSpacing}>{t.settings.lineSpacing}</label>
           <select id={ids.lineSpacing} value={writing.lineSpacing} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, lineSpacing: e.target.value as LineSpacing })}>
             {LINE_SPACINGS.map((l) => (

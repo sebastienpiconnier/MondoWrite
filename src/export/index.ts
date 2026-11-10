@@ -4,15 +4,16 @@
 import type { ExportDoc } from "./doc";
 import { fileName, type ExportedFile } from "../screenplay/export";
 
-export type DocFormat = "pdf" | "docx" | "epub" | "md";
-export const MANUSCRIPT_FORMATS: DocFormat[] = ["pdf", "docx", "epub", "md"];
-export const BIBLE_FORMATS: DocFormat[] = ["pdf", "docx", "md"];
+export type DocFormat = "pdf" | "docx" | "epub" | "md" | "html";
+export const MANUSCRIPT_FORMATS: DocFormat[] = ["pdf", "docx", "epub", "md", "html"];
+export const BIBLE_FORMATS: DocFormat[] = ["pdf", "docx", "md", "html"];
 
 const MIME: Record<DocFormat, string> = {
   pdf: "application/pdf",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   epub: "application/epub+zip",
   md: "text/markdown",
+  html: "text/html",
 };
 
 export interface DocExportOptions {
@@ -30,6 +31,7 @@ export async function exportDocument(doc: ExportDoc, format: DocFormat, options:
   } else {
     const text = await import("./text");
     if (format === "md") data = new TextEncoder().encode(text.toMarkdown(doc));
+    else if (format === "html") data = new TextEncoder().encode(text.toHtml(doc, { contents: options.contents }));
     else if (format === "docx") data = text.toDocx(doc);
     else data = text.toEpub(doc, { id: `urn:uuid:${crypto.randomUUID()}`, modified: `${new Date().toISOString().slice(0, 19)}Z`, contents: options.contents });
   }
