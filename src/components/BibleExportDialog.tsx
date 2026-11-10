@@ -35,7 +35,7 @@ import { exportDocument } from "../export";
 import { bibleOf } from "../export/projectDocs";
 import type { DocImage } from "../export/doc";
 
-const FORMATS = ["pdf", "docx", "md"] as const;
+const FORMATS = ["pdf", "docx", "md", "html"] as const;
 type Format = (typeof FORMATS)[number];
 const PREVIEW_DELAY = 350;
 const PREVIEW_WIDTH = 300;

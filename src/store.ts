@@ -34,7 +34,7 @@ import type { Screenplay, ScreenplayElement } from "./screenplay/model";
 import { listScenes, sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes";
 import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
-import { aiConfig, useSettings } from "./settings";
+import { aiConfig, firstView, useSettings } from "./settings";
 import { mcpAllows, publishMcp } from "./mcp";
 import { bibleOrder } from "./bibleParts";
 import { IMPORT_EXTENSIONS, importFromFile } from "./import";
@@ -1207,7 +1207,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       retroInvite: false,
       scrivenerReport: null,
       screen: "project",
-      view: "toile",
+      view: firstView(),
       focusId: null,
       openFailed: false,
       homeNotice: false,
@@ -2882,7 +2882,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         retroInvite: false,
         scrivenerReport: null,
         screen: "project",
-        view: "toile",
+        view: firstView(),
         focusId: null,
         openFailed: false,
         homeNotice: false,
@@ -3560,7 +3560,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         scrivenerReport: null,
         loaded: true,
         screen: "project",
-        view: "toile",
+        view: firstView(),
         focusId: null,
         openFailed: false,
         homeNotice: false,

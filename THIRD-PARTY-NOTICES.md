@@ -171,6 +171,7 @@ MondoWrite uses the following libraries, bundled in the app. Each license's full
 | serde, serde_json, log (crates Rust / Rust crates) | MIT ou / or Apache-2.0 |
 | swift-rs (crate Rust, compilation du pont Swift d'Apple Intelligence, Copyright The swift-rs contributors / build of the Apple Intelligence Swift bridge) | MIT ou / or Apache-2.0 |
 | keyring (crate Rust, clés dans le trousseau du système, Copyright (c) 2016 keyring Developers / keys in the system keychain), et sous Linux / and on Linux secret-service, zbus | MIT ou / or Apache-2.0 (zbus : MIT) |
+| fontdb (crate Rust, liste des polices de l'ordinateur, Copyright (c) 2020 Yevhenii Reizner / list of the computer's fonts), avec / with fontconfig-parser, roxmltree, memmap2, slotmap, tinyvec | MIT (fontconfig-parser, roxmltree, memmap2 : MIT ou / or Apache-2.0 ; slotmap : Zlib ; tinyvec : Zlib, MIT ou / or Apache-2.0) |
 
 ---
 

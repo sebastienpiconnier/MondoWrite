@@ -6,6 +6,7 @@ export const SHORTCUT_GROUPS = {
   everywhere: [
     ["help", ["Mod", "/"]],
     ["guide", ["F1"]],
+    ["fullscreen", ["F11"]],
     ["commands", ["Mod", "K"]],
     ["settings", ["Mod", ","]],
     ["views", ["Mod", "1…4"]],

@@ -3,6 +3,7 @@ mod apple_fm;
 
 /// Clés de l'auteur dans le trousseau du système (commandes secret_*, #30).
 mod secrets;
+mod fonts;
 
 /// Assistant externe par MCP (#62) : serveur (`--mcp`, main.rs) et commandes mcp_* de l'app.
 pub mod mcp;
@@ -328,7 +329,8 @@ pub fn run() {
       mcp::mcp_answer,
       mcp::mcp_client_config,
       mcp::mcp_claude_state,
-      mcp::mcp_connect_claude
+      mcp::mcp_connect_claude,
+      fonts::system_fonts
     ])
     // Lecture/écriture du dossier projet (cosmos.json + cartes/*.md)
     .plugin(tauri_plugin_fs::init())

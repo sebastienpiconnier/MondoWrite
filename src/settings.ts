@@ -95,10 +95,14 @@ export interface WritingSettings {
   pageFont: PageFont;
   /** Interligne de la page du Manuscrit à l'écran (#24) ; les coupures de page suivent, les exports non. */
   lineSpacing: LineSpacing;
+  /** Police de l'ordinateur choisie par son nom (`pageFont` « system », discussion #61) ; vide = police par défaut. */
+  customFont: string;
+  /** « Juste écrire » (discussion #61) : les projets s'ouvrent sur le Manuscrit et les autres vues se cachent. */
+  writerMode: boolean;
 }
 
 /** Polices de la page (#24), toutes embarquées sous licence OFL (l'app marche hors ligne). Clés jamais traduites. */
-export const PAGE_FONTS = ["plex", "literata", "garamond", "atkinson", "courier"] as const;
+export const PAGE_FONTS = ["plex", "literata", "garamond", "atkinson", "courier", "system"] as const;
 export type PageFont = (typeof PAGE_FONTS)[number];
 /** Pile CSS de chaque police, avec un repli du système. */
 export const PAGE_FONT_STACKS: Record<PageFont, string> = {
@@ -107,7 +111,22 @@ export const PAGE_FONT_STACKS: Record<PageFont, string> = {
   garamond: '"EB Garamond", Garamond, Georgia, serif',
   atkinson: '"Atkinson Hyperlegible", system-ui, sans-serif',
   courier: 'var(--font-script)',
+  // Une police de l'ordinateur : son nom est posé devant par `pageFontStack` ; sinon la police par défaut.
+  system: 'var(--font-text)',
 };
+
+/** Nom d'une police tapé ou choisi : une ligne, sans guillemets ni signes qui casseraient la règle CSS. */
+export function cleanFontName(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw.replace(/[^\p{L}\p{N} \-_.&+'’]/gu, "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+/** Pile CSS de la page : la police choisie, ou la police de l'ordinateur nommée, avec la police par défaut en repli. */
+export function pageFontStack(font: PageFont, customFont: string): string {
+  const name = cleanFontName(customFont);
+  if (font === "system" && name) return `"${name}", ${PAGE_FONT_STACKS.plex}`;
+  return PAGE_FONT_STACKS[font];
+}
 /** Interlignes de la page (#24) : celui d'origine (1,6), simple, 1,5 et double (multiples d'une ligne de 1,2). */
 export const LINE_SPACINGS = ["normal", "single", "oneHalf", "double"] as const;
 export type LineSpacing = (typeof LINE_SPACINGS)[number];
@@ -141,6 +160,8 @@ function readWriting(raw: unknown): WritingSettings {
     fullscreen: w.fullscreen === true,
     pageFont: isPageFont(w.pageFont) ? w.pageFont : "plex",
     lineSpacing: isLineSpacing(w.lineSpacing) ? w.lineSpacing : "normal",
+    customFont: cleanFontName(w.customFont),
+    writerMode: w.writerMode === true,
   };
 }
 /** Pour les tests : la lecture prudente des réglages d'écriture. */
@@ -363,7 +384,7 @@ export function initSettings() {
     // Zoom de la page (manuscrit, scénario) : une variable CSS ; agrandie, la page peut défiler de côté.
     root.style.setProperty("--page-zoom", String(writing.zoom));
     // Police et interligne de la page du Manuscrit (#24) : deux variables CSS, lues seulement par .ms-page.
-    root.style.setProperty("--page-font", PAGE_FONT_STACKS[writing.pageFont]);
+    root.style.setProperty("--page-font", pageFontStack(writing.pageFont, writing.customFont));
     root.style.setProperty("--page-leading", String(LINE_HEIGHTS[writing.lineSpacing]));
     applyWritingAids(writing.spellcheck, writing.suggestions);
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
@@ -400,3 +421,6 @@ export function initSettings() {
     if (themePref === "system") useSettings.setState({ theme: resolve("system") });
   });
 }
+
+/** Vue d'un projet qu'on ouvre : le Manuscrit en mode « Juste écrire », sinon le canevas. */
+export const firstView = (): "toile" | "manuscrit" => (useSettings.getState().writing.writerMode ? "manuscrit" : "toile");

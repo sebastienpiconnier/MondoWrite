@@ -27,6 +27,8 @@ import { ConflictNotice } from "./components/ConflictNotice";
 import { RetroInvite } from "./components/StructureTools";
 import { ScrivenerReportNotice } from "./components/ScrivenerImport";
 import { shownView, usePhone } from "./components/usePhone";
+import { toggleFullscreen } from "./fullscreen";
+import { isMobileOS } from "./platform";
 
 const AUTOSAVE_DELAY = 800; // ms après la dernière modification
 /** Ce qui s'écrit dans le projet : toute modification de l'un d'eux relance le délai de la sauvegarde auto. */
@@ -131,6 +133,12 @@ export function App() {
       if (e.key === "F1" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         void openGuide();
+        return;
+      }
+      // F11 : plein écran, le geste habituel de Windows et de Linux (sur Mac, la touche est au système).
+      if (e.key === "F11" && !e.metaKey && !e.ctrlKey && !e.altKey && !isMobileOS()) {
+        e.preventDefault();
+        void toggleFullscreen();
         return;
       }
       if (!(e.metaKey || e.ctrlKey)) return;
