@@ -763,6 +763,38 @@
 <figure class="medium"><img src="images/es/atelier-directions.jpg"><figcaption>«Tres direcciones» en modo Taller: cada pista puede convertirse en tarjeta.</figcaption></figure>
 <p>Todo lo que aceptas recibe un subrayado de puntos, se lista en <span class="ui">Pendientes</span> (<span class="ui">Pasajes de la IA</span>) y se cuenta en las Estadísticas (<span class="ui">Texto tocado por la IA</span>). Cuando has retocado un pasaje, <span class="ui">Ya lo he hecho mío</span> quita la marca. Cada propuesta aceptada añade también una línea al archivo <code>ia-journal.md</code> del proyecto (fecha, acción, tarjeta o escena, servicio y modelo, número de palabras): te ayuda a responder a Amazon KDP, que pide declarar el texto generado por IA. Una versión de MondoWrite anterior a la 1.8.0 conserva el texto pero pierde la marca si vuelve a guardar el proyecto.</p>
 
+<h3 id="asistente-externo">Un asistente externo (MCP)</h3>
+<p>MondoWrite puede abrirse a un asistente que ya usas, como <strong>Claude Desktop</strong> o cualquier programa compatible con el protocolo MCP. Le hablas en su propia ventana («relee el capítulo 3 y dime dónde decae la atención», «crea la ficha de la hermana de Inès a partir de las escenas donde aparece») y trabaja directamente en tu proyecto. Usa tu propia suscripción o tu modelo local: MondoWrite no pide ninguna clave y no envía nada por su cuenta. Solo en ordenador (macOS, Windows, Linux).</p>
+<h4>Conectarlo</h4>
+<ol>
+  <li>En <span class="ui">Ajustes</span> › <span class="ui">IA</span>, marca <span class="ui">Permitir que un asistente externo lea mis proyectos</span>.</li>
+  <li>Haz clic en <span class="ui">Conectar con Claude Desktop</span>, luego sal de Claude Desktop y vuelve a abrirlo: MondoWrite aparece entre sus herramientas. Para otro programa, <span class="ui">Copiar la configuración (otros programas)</span> y pégala en sus ajustes MCP.</li>
+  <li>Proyecto por proyecto, en <span class="ui">Ajustes</span> › <span class="ui">Este proyecto</span>, elige el <span class="ui">Acceso del asistente externo a este proyecto</span>: <span class="ui">Ninguno</span> (por defecto), <span class="ui">Solo lectura</span> o <span class="ui">Lectura y escritura</span>. Un proyecto en «Ninguno» le es invisible, y volver a «Ninguno» le retira el acceso al instante.</li>
+</ol>
+<h4>Lo que puede leer</h4>
+<ul>
+  <li>En <span class="ui">Solo lectura</span>, incluso con la app cerrada: la lista de tus proyectos abiertos al asistente, la vista general de un proyecto, las escenas en el orden del relato con su texto, las fichas de la Biblia, los hilos y la búsqueda en todo el proyecto. Lee el proyecto tal como se guardó por última vez.</li>
+  <li>Cuando el proyecto está abierto en MondoWrite, lee también lo que calcula la app: las tareas pendientes, los comentarios, las estadísticas, los puntos de la revisión, las versiones de una escena y el diario de la IA.</li>
+</ul>
+<h4>Lo que puede hacer, en lectura y escritura</h4>
+<p>Solo mientras el proyecto está abierto en MondoWrite; con el proyecto cerrado, no puede escribir nada.</p>
+<ul>
+  <li><strong>La Biblia</strong>: crear una ficha, cambiar su tipo (una Idea pasa a Personaje), rellenar sus campos y sus notas, renombrarla en todo el proyecto, guardar una pregunta pendiente en un personaje, añadir una tarjeta Pregunta.</li>
+  <li><strong>Los hilos</strong>: unir dos tarjetas, cambiar la etiqueta de un hilo y su ficha (historia, lo que está en juego, evolución), desunir. En sus notas y textos, cita una tarjeta escribiendo su título entre corchetes dobles, <code>[[Inès Morvan]]</code>: MondoWrite lo convierte en una mención real y tira el hilo.</li>
+  <li><strong>Las escenas</strong>: crear una (o una página del libro: dedicatoria, prólogo…), escribir o completar su texto, sustituir un solo pasaje citado palabra por palabra, escribir su sinopsis, rellenar su ficha (estado, punto de vista, lo que quiere el personaje, obstáculo, giro, desglose…), moverla, fusionar dos escenas, cortar una, enviarla a la papelera o sacarla de ella.</li>
+  <li><strong>La estructura</strong>: crear, renombrar, mover y borrar un capítulo; elegir una plantilla y colocar una escena en una casilla; crear y renombrar episodios y temporadas de una serie.</li>
+  <li><strong>El resto</strong>: dejar un comentario sobre un pasaje o resolverlo, guardar una versión de una escena, buscar y reemplazar, escribir un campo de la portada, cambiar el título del proyecto y los objetivos de escritura, poner, renombrar o quitar un marco, organizar el lienzo.</li>
+</ul>
+<p>No puede borrar un proyecto, vaciar la papelera, exportar ni tocar los ajustes.</p>
+<h4>Tú decides</h4>
+<ul>
+  <li>Todo lo que escribe queda <strong>marcado como IA</strong> (subrayado punteado, como en el modo Taller, hasta que lo retomas) y anotado en <code>ia-journal.md</code> con el nombre del programa.</li>
+  <li>Cada petición es <strong>un solo paso de deshacer</strong>. Un aviso arriba de la pantalla dice «Claude acaba de modificar tu proyecto» (o el número de cambios) con <span class="ui">Deshacer</span>, mientras no hayas hecho nada desde entonces: tu propio trabajo nunca se deshace.</li>
+  <li>Antes de reescribir una escena o sustituir un pasaje, MondoWrite guarda una <strong>versión</strong> («Antes del asistente externo»), que encuentras en las versiones de la escena.</li>
+</ul>
+<h4>Instrucciones listas</h4>
+<p>En Claude Desktop, el botón «+» ofrece también cinco instrucciones de MondoWrite: relectura beta (las reacciones de un lector, sin reescribir), coherencia (las contradicciones entre las escenas y la Biblia, en forma de preguntas), desglose (accesorios, vestuario, figurantes… escena por escena), interrogar a un personaje (que solo responde con lo que escribiste) y punto del proyecto (dónde estás, qué falta).</p>
+
 <!-- ===================================================================================== -->
 <h2 id="exportar"><span class="num">Capítulo 11</span>Exportar y publicar</h2>
 

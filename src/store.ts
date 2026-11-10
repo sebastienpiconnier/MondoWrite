@@ -35,6 +35,7 @@ import { listScenes, sceneSynopsis, setSceneSynopsis } from "./screenplay/scenes
 import { screenplayWords } from "./screenplay/words";
 import { defaultPaper, type Paper } from "./screenplay/layout";
 import { aiConfig, useSettings } from "./settings";
+import { mcpAllows, publishMcp } from "./mcp";
 import { bibleOrder } from "./bibleParts";
 import { IMPORT_EXTENSIONS, importFromFile } from "./import";
 import type { ScrivenerReport, ScrivenerSource } from "./import/scrivener/mapping";
@@ -427,7 +428,9 @@ export interface CosmosState {
   /** Journal de l'IA (ia-journal.md), tel quel. On n'y fait qu'ajouter des lignes, hors historique. */
   journal: string;
   /** Ajoute une ligne au journal (texte proposé par l'IA et accepté), avec le service et le modèle de l'appareil. */
-  logAtelier: (action: AtelierAction, target: string, words: number, extra?: { model?: string; detail?: string }) => void;
+  logAtelier: (action: AtelierAction, target: string, words: number, extra?: { model?: string; detail?: string; service?: string }) => void;
+  /** Assistant externe (#62) : tout ce que fait `fn` (plusieurs actions) ne fait qu'une étape d'annulation. */
+  externalEdit: <T>(fn: () => T) => T;
   /** « Je l'ai repris » : retire la marque de l'IA d'un passage (ou de tous) d'une carte ou d'une scène du roman. */
   unmarkIaPassage: (id: string, where: "card" | "manuscript", markId?: string) => void;
   /** « Je l'ai repris » sur un élément du scénario (note [[ia]]) : l'élément d'index donné. */
@@ -437,7 +440,8 @@ export interface CosmosState {
   /** Piste proposée et acceptée : une carte Idée reliée à la scène par un fil « piste ». Une étape. Rend son identifiant. */
   acceptIaDirection: (sceneId: string, text: string) => string | null;
   /** Champ de la couverture proposé et accepté (hors historique, comme la couverture). */
-  acceptIaPitch: (key: PitchText, text: string) => void;
+  /** `who` : service et modèle du journal, quand ce n'est pas l'IA réglée sur l'appareil (assistant externe). */
+  acceptIaPitch: (key: PitchText, text: string, who?: { service: string; model: string }) => void;
   /** « Je l'ai repris » sur un champ de la couverture : il garde son texte, sans la marque de l'IA. */
   reworkIaPitch: (key: PitchText) => void;
   /** « Je l'ai repris » sur un champ d'une carte (titre, synopsis, clé de fiche) : la marque part, le texte reste. */
@@ -1345,6 +1349,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
             m.syncCopies(() => m.buildCopies(snapshot, { t: getT(), lang, author }, bibleOrder({ ...bibleSections, hidden: [] })), snapshot.markdownCopies, new Date(), forKey),
           );
         }
+        // Assistant externe (#62) : instantané lu par le serveur MCP, si l'auteur a ouvert ce projet à l'assistant.
+        publishOpenProject();
       } catch (err) {
         console.error(err);
         set({ status: "erreur", saveError: classifySaveError(err) });
@@ -3845,11 +3851,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
     journal: "",
+    // Chaque action est une transaction (`inTransaction`) : les actions appelées dans `fn` s'y fondent.
+    externalEdit: (fn) => fn(),
     logAtelier: (action, target, words, extra) => {
       const t = getT().atelier.journal;
       const config = aiConfig(useSettings.getState().ai);
       const line = journalLine(
-        { at: new Date(), action, target: target.trim() || getT().bible.untitled, service: config ? config.provider : "", model: extra?.model ?? config?.model ?? "", words, detail: extra?.detail },
+        { at: new Date(), action, target: target.trim() || getT().bible.untitled, service: extra?.service ?? (config ? config.provider : ""), model: extra?.model ?? config?.model ?? "", words, detail: extra?.detail },
         { header: t.header, actions: t.actions, words: t.words, quoted: t.quoted },
       );
       set({ journal: appendJournal(get().journal, line, t.header) });
@@ -3915,14 +3923,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
       get().logAtelier("directions", scene.data.title, countWords(title));
       return card.id;
     },
-    acceptIaPitch: (key, text) => {
+    acceptIaPitch: (key, text, who) => {
       const value = text.trim();
       if (!value) return;
       const next = setPitchFieldIa(get().pitch, key, value);
       if (next === get().pitch) return;
       set({ pitch: next });
       touch();
-      get().logAtelier("pitch", get().title, countWords(value));
+      get().logAtelier(who ? "external" : "pitch", get().title, countWords(value), who);
     },
     reworkIaPitch: (key) => {
       const next = withoutPitchIa(get().pitch, key);
@@ -4006,3 +4014,23 @@ export const useCosmos = create<CosmosState>((set, get) => {
   }
   return wrapped as unknown as CosmosState;
 });
+
+/**
+ * Assistant externe (#62) : écrit l'instantané du projet ouvert pour le serveur MCP, s'il est ouvert à l'assistant
+ * (après chaque enregistrement, au plus toutes les quelques secondes ; `now` : tout de suite, quand l'auteur vient
+ * de l'ouvrir à l'assistant).
+ */
+export function publishOpenProject(now = false) {
+  const id = storage.current?.();
+  if (!id || !mcpAllows(useSettings.getState().mcp, id)) return;
+  publishMcp(
+    id,
+    () => {
+      const s = useCosmos.getState();
+      // Accès retiré entre-temps : rien ne part (l'instantané vient d'être effacé).
+      if (s.screen !== "project" || storage.current?.() !== id || !mcpAllows(useSettings.getState().mcp, id)) return null;
+      return { title: s.title, kind: s.kind, nodes: s.nodes, edges: s.edges, plan: s.plan, manuscript: s.manuscript, screenplay: s.screenplay, pitch: s.pitch, access: useSettings.getState().mcp.projects[id] };
+    },
+    now,
+  );
+}

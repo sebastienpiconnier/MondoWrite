@@ -4,6 +4,9 @@ mod apple_fm;
 /// Clés de l'auteur dans le trousseau du système (commandes secret_*, #30).
 mod secrets;
 
+/// Assistant externe par MCP (#62) : serveur (`--mcp`, main.rs) et commandes mcp_* de l'app.
+pub mod mcp;
+
 /// Conteneur iCloud de l'app (déclaré dans les droits iOS, et dans ceux du Mac quand la Release est signée avec un
 /// profil qui porte iCloud : voir docs/icloud-mac.md).
 #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -317,7 +320,15 @@ pub fn run() {
       apple_fm::fm_cancel,
       secrets::secret_get,
       secrets::secret_set,
-      secrets::secret_delete
+      secrets::secret_delete,
+      mcp::mcp_publish,
+      mcp::mcp_keep,
+      mcp::mcp_live,
+      mcp::mcp_take,
+      mcp::mcp_answer,
+      mcp::mcp_client_config,
+      mcp::mcp_claude_state,
+      mcp::mcp_connect_claude
     ])
     // Lecture/écriture du dossier projet (cosmos.json + cartes/*.md)
     .plugin(tauri_plugin_fs::init())

@@ -2609,6 +2609,33 @@ export const fr = {
   },
 
   // Copies Markdown du projet (dossier markdown/) : réglage du projet et avertissement en tête de chaque copie.
+  // Assistant externe par MCP (#62, docs/plan-mcp.md) : l'assistant de l'auteur (Claude Desktop…) lit ses projets.
+  mcp: {
+    title: "Assistant externe (MCP)",
+    notice: "{client} vient de modifier ton projet.",
+    noticeMany: "{client} a fait {n} modifications dans ton projet.",
+    noticeClient: "L’assistant",
+    enable: "Autoriser un assistant externe à lire mes projets",
+    hint: "Claude Desktop, ou tout logiciel compatible MCP, peut lire les projets que tu lui ouvres (Réglages › Ce projet), et les modifier si tu le permets. Il utilise ton propre abonnement ou ton modèle local : aucune clé à donner ici.",
+    noProject: "Aucun projet ouvert à l’assistant pour l’instant.",
+    projects: "Projets ouverts à l’assistant : {n}",
+    connect: "Connecter à Claude Desktop",
+    reconnect: "Reconnecter Claude Desktop",
+    connected: "C’est fait. Quitte et relance Claude Desktop pour qu’il voie MondoWrite.",
+    connectFailed: "Impossible d’écrire la configuration de Claude Desktop.",
+    claudeConnected: "Claude Desktop est connecté à MondoWrite.",
+    claudeMissing: "Claude Desktop n’est pas installé sur cet ordinateur.",
+    copy: "Copier la configuration (autres logiciels)",
+    copied: "Configuration copiée : colle-la dans les réglages MCP de ton logiciel.",
+    copyFailed: "Impossible de copier la configuration.",
+    projectAccessLabel: "Accès de l’assistant externe à ce projet",
+    accessNone: "Aucun",
+    accessRead: "Lecture seule",
+    accessWrite: "Lecture et écriture",
+    writeHint: "En écriture, l’assistant peut créer et modifier des cartes, des fils, des questions et le texte des scènes, seulement quand le projet est ouvert ici. Tout ce qu’il écrit est marqué IA, noté dans le journal de l’IA et s’annule par Annuler ; avant de réécrire une scène, MondoWrite en garde une version.",
+    versionTitle: "Avant l’assistant externe",
+    projectHint: "L’assistant lit les scènes et la Bible telles qu’enregistrées. « Aucun » lui retire l’accès aussitôt.",
+  },
   copies: {
     note: "Copie générée par MondoWrite à chaque enregistrement : une modification faite ici serait perdue. Écris dans l’app.",
     setting: "Copies Markdown dans le dossier du projet",
@@ -3250,7 +3277,7 @@ export const fr = {
     statsHint: "Passages proposés en mode Atelier et pas encore repris (soulignés en pointillé). Le détail est dans ia-journal.md.",
     journal: {
       header: "# Journal de l’IA\n\nMode Atelier de MondoWrite : chaque ligne dit ce que l’IA a proposé et que tu as accepté (date et heure, action, carte ou scène, service et modèle, mots insérés). MondoWrite ajoute des lignes, il ne réécrit jamais celles d’avant.",
-      actions: { variants: "Variante", synopsis: "Synopsis", directions: "Piste", pitch: "Couverture", sheet: "Fiche", image: "Image" },
+      actions: { variants: "Variante", synopsis: "Synopsis", directions: "Piste", pitch: "Couverture", sheet: "Fiche", image: "Image", external: "Assistant externe" },
       words: "{n} mots",
       quoted: "« {title} »",
     },
