@@ -19,8 +19,8 @@ import { plainText } from "../search";
 import { imageForAi } from "../ai/image";
 import { listScenes, sceneSynopsis, synopsisEnd } from "../screenplay/scenes";
 import {
-  DEFAULT_IMAGE_MODELS,
   IMAGE_MAX,
+  IMAGE_MODEL_CHOICES,
   REFERENCE_MAX,
   canGenerateImages,
   castDescription,
@@ -32,6 +32,7 @@ import {
   generateImages,
   iaImageCount,
   iaImagesOf,
+  imageModelChoice,
   imageModelOf,
   imagePrompt,
   properNames,
@@ -39,6 +40,7 @@ import {
   stripNames,
   subjectOf,
   type GeneratedImage,
+  type ImageModelChoice,
   type ReferenceImage,
 } from "../ai/imageGen";
 
@@ -337,31 +339,68 @@ async function referenceOf(name: string): Promise<ReferenceImage | null> {
   }
 }
 
-/** Réglages : modèle d'image du service (facultatif), ou la phrase qui dit que le service n'en génère pas. */
+/**
+ * Réglages : générateur d'images du service (#66) : GPT Image 2.6 Flare (par défaut), Sunburst, ou un autre modèle
+ * tapé à la main ; ou la phrase qui dit que le service n'en génère pas.
+ */
 export function ImageModelField({ provider }: { provider: AiProvider | null }) {
   const t = useT();
   const ai = useSettings((s) => s.ai);
+  const saved = provider ? (ai.imageModels?.[provider] ?? "") : "";
+  const savedChoice = provider && canGenerateImages(provider) ? imageModelChoice(provider, saved) : "flare";
+  const [other, setOther] = useState(savedChoice === "other");
+  // Un autre service choisi : on repart de ce qui est enregistré pour lui.
+  useEffect(() => setOther(savedChoice === "other"), [provider]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!provider) return null;
   if (!canGenerateImages(provider)) return <ImageGenUnavailable provider={provider} />;
-  const value = ai.imageModels?.[provider] ?? "";
+  const choice = other ? "other" : savedChoice;
+  const save = (model: string) => {
+    const now = useSettings.getState().ai;
+    useSettings.getState().setAi({ ...now, imageModels: { ...now.imageModels, [provider]: model } });
+  };
+  const choices = IMAGE_MODEL_CHOICES[provider];
   return (
     <>
       <label htmlFor="ai-image-model">{t.imageGen.modelLabel}</label>
-      <input
+      <select
         id="ai-image-model"
-        type="text"
-        value={value}
-        placeholder={DEFAULT_IMAGE_MODELS[provider]}
+        value={choice}
         aria-describedby="ai-image-model-hint"
-        autoComplete="off"
-        spellCheck={false}
         onChange={(e) => {
-          const now = useSettings.getState().ai;
-          useSettings.getState().setAi({ ...now, imageModels: { ...now.imageModels, [provider]: e.target.value } });
+          const value = e.target.value as ImageModelChoice | "other";
+          if (value === "other") {
+            setOther(true);
+            // Le champ libre part du modèle en place, à modifier.
+            if (!saved.trim()) save(imageModelOf(provider, saved));
+            return;
+          }
+          setOther(false);
+          // Flare, le modèle par défaut, s'enregistre vide : il suivra le défaut s'il change un jour.
+          save(value === "flare" ? "" : choices[value]);
         }}
-      />
+      >
+        <option value="flare">{t.imageGen.models.flare}</option>
+        <option value="sunburst">{t.imageGen.models.sunburst}</option>
+        <option value="other">{t.imageGen.models.other}</option>
+      </select>
+      {choice === "other" && (
+        <>
+          <label htmlFor="ai-image-model-other" className="sr-only">
+            {t.imageGen.models.otherLabel}
+          </label>
+          <input
+            id="ai-image-model-other"
+            type="text"
+            value={saved}
+            placeholder={choices.flare}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(e) => save(e.target.value)}
+          />
+        </>
+      )}
       <p className="settings-hint" id="ai-image-model-hint">
-        {fmt(t.imageGen.modelHint, { model: DEFAULT_IMAGE_MODELS[provider] })}
+        {choice === "other" ? t.imageGen.modelHintOther : t.imageGen.modelHint}
       </p>
     </>
   );

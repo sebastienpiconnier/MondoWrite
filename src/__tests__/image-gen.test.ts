@@ -12,6 +12,9 @@ import { cardToFile, fileToCard } from "../storage/markdown";
 import { journalLine, type JournalLabels } from "../atelier";
 import {
   DEFAULT_IMAGE_MODELS,
+  IMAGE_MODEL_CHOICES,
+  imageModelChoice,
+  isRetiredImageModel,
   canGenerateImages,
   clampCount,
   decodeBase64,
@@ -57,6 +60,20 @@ describe("services", () => {
   it("modèle d'image : celui de l'auteur, sinon celui par défaut", () => {
     expect(imageModelOf("openai", "")).toBe(DEFAULT_IMAGE_MODELS.openai);
     expect(imageModelOf("openai", "  gpt-image-1.5 ")).toBe("gpt-image-1.5");
+  });
+
+  it("#66 : GPT Image 2.6 Flare par défaut, Sunburst au choix, GPT-Image-2 arrêté vaut le défaut", () => {
+    expect(DEFAULT_IMAGE_MODELS).toEqual({ openai: "gpt-image-2.6-flare", openrouter: "openai/gpt-image-2.6-flare" });
+    expect(IMAGE_MODEL_CHOICES.openai.sunburst).toBe("gpt-image-2.6-sunburst");
+    expect(IMAGE_MODEL_CHOICES.openrouter.sunburst).toBe("openai/gpt-image-2.6-sunburst");
+    expect(imageModelOf("openai", "gpt-image-2")).toBe("gpt-image-2.6-flare");
+    expect(imageModelOf("openrouter", " openai/gpt-image-2 ")).toBe("openai/gpt-image-2.6-flare");
+    expect(isRetiredImageModel("gpt-image-2.5-flare")).toBe(false);
+    expect(imageModelChoice("openai", "")).toBe("flare");
+    expect(imageModelChoice("openai", "gpt-image-2")).toBe("flare");
+    expect(imageModelChoice("openai", "gpt-image-2.6-sunburst")).toBe("sunburst");
+    expect(imageModelChoice("openrouter", "openai/gpt-image-2.6-sunburst")).toBe("sunburst");
+    expect(imageModelChoice("openai", "gpt-image-1.5")).toBe("other");
   });
 
   it("le réglage `imageModels` est gardé sur l'appareil, comme `embedModels`", () => {

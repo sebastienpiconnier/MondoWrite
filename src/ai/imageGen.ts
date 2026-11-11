@@ -32,9 +32,31 @@ export type ImageProvider = "openai" | "openrouter";
 /** Le service génère-t-il des images ? (Toute autre valeur, y compris un service ajouté plus tard : non.) */
 export const canGenerateImages = (provider: string | null | undefined): provider is ImageProvider => provider === "openai" || provider === "openrouter";
 
+/**
+ * Modèles d'image proposés dans les Réglages (#66, novembre 2026) : GPT Image 2.6, Flare (rapide, par défaut) et
+ * Sunburst (plus soigné, visages plus fidèles d'une image à l'autre). Mêmes points d'entrée, même prix au token.
+ * « Autre modèle… » garde le champ libre.
+ */
+export type ImageModelChoice = "flare" | "sunburst";
+export const IMAGE_MODEL_CHOICES: Record<ImageProvider, Record<ImageModelChoice, string>> = {
+  openai: { flare: "gpt-image-2.6-flare", sunburst: "gpt-image-2.6-sunburst" },
+  openrouter: { flare: "openai/gpt-image-2.6-flare", sunburst: "openai/gpt-image-2.6-sunburst" },
+};
 /** Modèle d'image proposé quand l'auteur n'en a pas choisi (réglage facultatif `ai.imageModels`). */
-export const DEFAULT_IMAGE_MODELS: Record<ImageProvider, string> = { openai: "gpt-image-2", openrouter: "openai/gpt-image-2" };
-export const imageModelOf = (provider: ImageProvider, chosen?: string) => chosen?.trim() || DEFAULT_IMAGE_MODELS[provider];
+export const DEFAULT_IMAGE_MODELS: Record<ImageProvider, string> = { openai: IMAGE_MODEL_CHOICES.openai.flare, openrouter: IMAGE_MODEL_CHOICES.openrouter.flare };
+/** Modèles qu'OpenAI arrête (GPT-Image-2 le 10 février 2027) : encore enregistrés, ils valent le modèle par défaut. */
+const RETIRED_IMAGE_MODELS = /^(openai\/)?gpt-image-2$/i;
+export const isRetiredImageModel = (model: string) => RETIRED_IMAGE_MODELS.test(model.trim());
+export const imageModelOf = (provider: ImageProvider, chosen?: string) => {
+  const model = chosen?.trim() ?? "";
+  return model && !isRetiredImageModel(model) ? model : DEFAULT_IMAGE_MODELS[provider];
+};
+/** Choix affiché dans les Réglages pour un modèle enregistré : un modèle proposé, ou « autre ». */
+export function imageModelChoice(provider: ImageProvider, chosen?: string): ImageModelChoice | "other" {
+  const model = imageModelOf(provider, chosen);
+  const found = (Object.keys(IMAGE_MODEL_CHOICES[provider]) as ImageModelChoice[]).find((k) => IMAGE_MODEL_CHOICES[provider][k] === model);
+  return found ?? "other";
+}
 
 /** Nombre d'images proposées d'un coup : 1 à 4 (l'auteur en garde 0 ou 1). */
 export const IMAGE_MAX = 4;
@@ -473,7 +495,7 @@ export function iaImagesOf(card: Pick<CardData, "image" | "images" | "iaImages">
   return Object.keys(kept).length > 0 ? kept : undefined;
 }
 
-/** Valeur de la marque : « openai, gpt-image-2 ». */
+/** Valeur de la marque : « openai, gpt-image-2.6-flare ». */
 export const iaImageSource = (provider: string, model: string) => [oneLine(provider), oneLine(model)].filter(Boolean).join(", ");
 
 /** Service et modèle lus dans une marque, pour l'affichage (le service par son nom). */

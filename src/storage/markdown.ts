@@ -13,7 +13,7 @@
 // images: ["a.jpg","b.png"] (facultatif : photos supplémentaires de la fiche)
 // page: dedicace            (facultatif, carte Scène : page hors récit du livre, voir book.ts)
 // ia: ["synopsis"]          (facultatif, mode Atelier : champs proposés par l'IA et acceptés, voir atelier.ts)
-// iaImages: {"a.png":"openai, gpt-image-2"}  (facultatif, mode Atelier : images générées gardées, voir ai/imageGen.ts)
+// iaImages: {"a.png":"openai, gpt-image-2.6-flare"}  (facultatif, mode Atelier : images générées gardées, voir ai/imageGen.ts)
 // ---
 // Gardienne remplaçante. Ne supporte pas le **silence**.
 // Elle remplace [@Yann Le Goff](cosmos:p4t8w2zq1c).     (mention d'une autre carte)
