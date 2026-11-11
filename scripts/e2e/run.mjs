@@ -1578,7 +1578,7 @@ const scenarios = [
       await h.saved((f) => {
         const card = f[`cartes/${id}.md`] ?? "";
         const image = /^image: ([\w-]+\.png)$/m.exec(card)?.[1];
-        return image && card.includes(`iaImages: {"${image}":"openai, gpt-image-2"}`) && /· Image · «\s?Inès Morvan\s?» · openai, gpt-image-2 · 1 × 1 px/.test(f["ia-journal.md"] ?? "");
+        return image && card.includes(`iaImages: {"${image}":"openai, gpt-image-2.6-flare"}`) && /· Image · «\s?Inès Morvan\s?» · openai, gpt-image-2\.6-flare · 1 × 1 px/.test(f["ia-journal.md"] ?? "");
       }, "image principale, marque ou ligne du journal non enregistrées");
     },
   },
