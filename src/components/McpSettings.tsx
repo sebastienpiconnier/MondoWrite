@@ -7,7 +7,6 @@ import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { mcpAvailable } from "../mcp";
 import { storage } from "../storage";
-import { commandFromConfig, mcpbManifest, mcpbPlatform } from "../mcpBundle";
 
 type ClaudeState = "missing" | "connected" | "other" | "no" | null;
 
@@ -54,21 +53,6 @@ export function McpAppSettings() {
     }
   };
 
-  // Extension .mcpb (#62, lot 2) : un fichier à ouvrir dans Claude Desktop, qui l'installe d'un clic.
-  const bundle = async () => {
-    setStatus("");
-    try {
-      const command = commandFromConfig(await invoke<string>("mcp_client_config"));
-      if (!command) throw new Error("command");
-      const [{ zip }, { getVersion }] = await Promise.all([import("../export/zip"), import("@tauri-apps/api/app")]);
-      const manifest = mcpbManifest({ command, version: await getVersion().catch(() => ""), platform: mcpbPlatform(navigator.userAgent), description: t.mcp.bundleDescription });
-      const saved = await storage.saveAs({ name: "MondoWrite", extension: "mcpb", mime: "application/zip", data: zip([{ path: "manifest.json", data: manifest }]) }, t.mcp.bundleFormat);
-      if (saved) setStatus(t.mcp.bundleSaved);
-    } catch {
-      setStatus(t.mcp.bundleFailed);
-    }
-  };
-
   return (
     <>
       <div className="settings-label">{t.mcp.title}</div>
@@ -93,9 +77,6 @@ export function McpAppSettings() {
           ) : null}
           <button type="button" className="ghost-button" onClick={copy}>
             {t.mcp.copy}
-          </button>
-          <button type="button" className="ghost-button" onClick={() => void bundle()}>
-            {t.mcp.bundle}
           </button>
           <p className="settings-hint" role="status">
             {status}

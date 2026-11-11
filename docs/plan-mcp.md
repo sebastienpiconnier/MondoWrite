@@ -1,6 +1,6 @@
 # Assistant externe par MCP (#62, lot 11)
 
-> **Statut : terminé** (novembre 2026). Lots 1, 3, 4 et 5 publiés en 1.29.0 (lecture et écriture, guide fr, en, es) ; lot 2 (pastille, extension .mcpb, essai sous Windows) en 1.32.0.
+> **Statut : terminé** (novembre 2026). Lots 1, 3, 4 et 5 publiés en 1.29.0 (lecture et écriture, guide fr, en, es) ; lot 2 (pastille, essai sous Windows) en 1.32.0.
 
 L'assistant IA de l'auteur (Claude Desktop, ou tout client MCP) lit un projet MondoWrite par un serveur MCP local.
 Aucune clé d'API dans MondoWrite : l'auteur utilise l'abonnement qu'il a déjà, ou un modèle local. Sens unique : le
@@ -95,11 +95,8 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
       le serveur note chaque appel qui vise un projet (`seen/<clé>` : `{ at, client }`, `Server::seen`), l'app la relit
       toutes les 15 s (commande `mcp_seen`, `AssistantBadge.tsx`) ; son menu dit qui et quand, ouvre les Réglages et
       coupe l'accès au projet (« Couper l'accès à ce projet », `setMcpProject(id, null)`, l'instantané part avec)
-- [x] extension .mcpb pour Claude Desktop (MCP Bundle, manifest 0.3, `src/mcpBundle.ts`) : « Créer l'extension pour
-      Claude Desktop (.mcpb)… » (Réglages › IA) enregistre un zip qui ne contient que `manifest.json`, dont la commande
-      est l'exécutable installé (`mcp_client_config`) avec `--mcp` : rien n'est copié, le paquet ne vaut que pour ce
-      système (`compatibility.platforms`). Double-clic : Claude Desktop l'installe dans ses Extensions
-- [x] Windows : essayé le 11 novembre 2026 sur le PC de l'auteur (Claude Desktop, serveur `mondowrite` actif,
+- [ ] ~~extension .mcpb pour Claude Desktop~~ : faite puis retirée (11 novembre 2026, choix de l'auteur) : « Connecter à Claude Desktop » marche sur Mac et PC, l'extension faisait doublon
+- [x] Windows : essayé le 11 novembre 2026 sur le PC et le Mac de l'auteur (Claude Desktop, serveur `mondowrite` actif,
       `list_projects` répond) : l'exécutable sans console reçoit bien les tubes du client
 
 ### Lot 3 · Écriture (fait)
