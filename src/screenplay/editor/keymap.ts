@@ -2,6 +2,7 @@
 // Tab et Maj+Tab changent le type de l'élément courant, Entrée crée l'élément suivant logique,
 // Retour arrière supprime un élément vide, Maj+Entrée va à la ligne dans le même élément.
 
+import { afterHiddenSynopses } from "./hiddenSynopsis";
 import { Extension } from "@tiptap/react";
 import { Plugin, Selection, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import { GapCursor } from "@tiptap/pm/gapcursor";
@@ -181,7 +182,9 @@ export function enter(state: EditorState, dispatch: Dispatch): boolean {
     const atEnd = offset === text.length || type === "parenthetical";
     const schema = tr.doc.type.schema;
     if (atEnd) {
-      const after = pos + node.nodeSize;
+      // Sous un en-tête, le nouvel élément vient après son synopsis (caché dans la feuille) : sinon le synopsis
+      // passerait sous l'action et ne serait plus celui de la scène.
+      const after = type === "sceneHeading" ? afterHiddenSynopses(tr.doc, pos + node.nodeSize) : pos + node.nodeSize;
       tr.insert(after, schema.nodes[ENTER_NEXT[type]].create());
       tr.setSelection(TextSelection.create(tr.doc, after + 1));
     } else {

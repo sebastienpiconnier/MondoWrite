@@ -489,3 +489,37 @@ describe("ce qu'on écrit alimente le canevas", () => {
     expect(model().elements.find((el) => el.type === "sceneHeading")?.cardId).toBe("carte1");
   });
 });
+
+describe("synopsis d'une scène caché dans la feuille (novembre 2026)", () => {
+  const source = "INT. PHARE - NUIT\n\n= Inès veille seule.\n\nLa lanterne tourne.\n";
+
+  it("Entrée au bout de l'en-tête : le nouvel élément vient sous le synopsis", () => {
+    open(source);
+    cursorAtEnd(0);
+    press("Enter");
+    type("Le vent souffle.");
+    const fountain = serialize(model());
+    expect(fountain.indexOf("= Inès veille seule.")).toBeLessThan(fountain.indexOf("Le vent souffle."));
+    expect(fountain).toMatch(/PHARE - NUIT\n\n= Inès veille seule\./);
+  });
+
+  it("le curseur ne se pose jamais sur le synopsis caché (flèches, Suppr)", async () => {
+    open(source);
+    const { NodeSelection } = await import("@tiptap/pm/state");
+    // Une sélection posée sur le synopsis (ce que font Suppr au bout de l'en-tête, ou une flèche) est déplacée.
+    editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, editor.state.doc.child(0).nodeSize)));
+    expect(editor.state.selection instanceof NodeSelection).toBe(false);
+    expect(currentType()).toBe("action");
+    // Supprimer ensuite n'efface rien du synopsis.
+    press("Backspace");
+    expect(serialize(model())).toMatch(/= Inès veille seule\./);
+  });
+
+  it("Suppr au bout de l'en-tête saute le synopsis au lieu de l'effacer", () => {
+    open(source);
+    cursorAtEnd(0);
+    press("Delete");
+    expect(serialize(model())).toMatch(/= Inès veille seule\./);
+    expect(currentType()).toBe("action");
+  });
+});

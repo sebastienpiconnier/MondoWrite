@@ -42,7 +42,7 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
   const list = items.filter((i): i is MoreItem => !!i);
   const ordered = [...list.filter((i) => !i.danger), ...list.filter((i) => i.danger)];
   const [open, setOpen] = useState(false);
-  const [place, setPlace] = useState<{ left: number; top: number; up: boolean } | null>(null);
+  const [place, setPlace] = useState<{ left: number; top: number; up: boolean; max: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -50,10 +50,15 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
     if (!open || !buttonRef.current) return;
     const r = buttonRef.current.getBoundingClientRect();
     const height = ordered.length * 44 + 24;
-    const up = r.bottom + height > window.innerHeight && r.top > height;
+    const viewH = window.visualViewport?.height ?? window.innerHeight;
+    const below = viewH - r.bottom - 14;
+    const above = r.top - 14;
+    // Vers le haut s'il ne tient pas dessous et qu'il y a plus de place dessus. S'il ne tient d'aucun côté (iPhone,
+    // menu long), il prend le côté le plus grand et défile : jamais une entrée hors de l'écran (novembre 2026).
+    const up = height > below && above > below;
     // Aligné sur le bord droit du bouton (il est le plus souvent au bout d'une barre), sans sortir de l'écran.
     const left = Math.max(8, Math.min(r.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8));
-    setPlace({ left, top: up ? r.top - 6 : r.bottom + 6, up });
+    setPlace({ left, top: up ? r.top - 6 : r.bottom + 6, up, max: Math.max(120, up ? above : below) });
   }, [open, ordered.length]);
 
   useEffect(() => {
@@ -125,7 +130,7 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
             className={`more-menu nodrag nowheel${place.up ? " is-up" : ""}`}
             role="menu"
             aria-label={name}
-            style={{ left: place.left, top: place.top, width: MENU_WIDTH }}
+            style={{ left: place.left, top: place.top, width: MENU_WIDTH, maxHeight: place.max }}
             onKeyDown={onKey}
           >
             {ordered.map((item, k) => (

@@ -12,6 +12,7 @@ import { useRibbon } from "./useRibbon";
 import { fortuneCurve } from "../ribbon";
 import { useBeatText } from "./useBeatText";
 import { narratorColors } from "../pov";
+import { usePhone } from "./usePhone";
 
 interface Props {
   /** Scène en cours (carte, ou `@<index>` pour une scène de scénario sans carte). */
@@ -22,6 +23,8 @@ interface Props {
 export function StoryRibbon({ currentId, onGo }: Props) {
   const { t, kind } = useVocab();
   const r = t.ribbon;
+  // Téléphone : libellés courts et sans la note « une part par scène », pour gagner une ligne (novembre 2026).
+  const phone = usePhone();
   const nodes = useCosmos((s) => s.nodes);
   // Point de vue (1.13.0) : le ruban existe aussi en plan libre dès qu'une scène a un narrateur.
   const anyPov = useMemo(() => nodes.some((n) => n.data.type === "scene" && n.data.fiche?.pov), [nodes]);
@@ -165,12 +168,12 @@ export function StoryRibbon({ currentId, onGo }: Props) {
       )}
       <p className="ribbon-caption">
         {here ? sceneLabel(here.s.id, free ? fmt(r.freeCaption, { n: pct(here.s.start) }) : fmt(r.caption, { beat: beatLabel(here.seg.key), n: pct(here.s.start) })) : free ? r.povHint : r.hint}
-        {!ribbon.measured && <span className="ribbon-note"> · {r.byCount}</span>}
+        {!ribbon.measured && !phone && <span className="ribbon-note"> · {r.byCount}</span>}
         {anyPov && !free && (
           <>
             {" · "}
             <button type="button" className="ribbon-toggle" aria-pressed={povMode} title={r.povHint} onClick={() => setPovPref(!povPref)}>
-              {povMode ? r.hidePov : r.showPov}
+              {phone ? r.povShort : povMode ? r.hidePov : r.showPov}
             </button>
           </>
         )}
@@ -178,7 +181,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
           <>
             {" · "}
             <button type="button" className="ribbon-toggle" aria-expanded={curveOpen} title={r.curveHint} onClick={() => setCurveOpen(!curveOpen)}>
-              {curveOpen ? r.hideCurve : r.showCurve}
+              {phone ? r.curveShort : curveOpen ? r.hideCurve : r.showCurve}
             </button>
           </>
         )}
@@ -186,7 +189,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
           <>
             {" · "}
             <button type="button" className="ribbon-toggle" aria-expanded={lanesOpen} title={r.plotsHint} onClick={() => setLanesOpen(!lanesOpen)}>
-              {lanesOpen ? r.hidePlots : r.showPlots}
+              {phone ? r.plotsShort : lanesOpen ? r.hidePlots : r.showPlots}
             </button>
           </>
         )}

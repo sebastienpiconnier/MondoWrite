@@ -182,8 +182,6 @@ interface SettingsState {
   ribbonPov: boolean;
   setRibbonPov: (on: boolean) => void;
   /** Synopsis sous chaque scène du volet des scènes (Manuscrit et Scénario, #58) ; non par défaut. */
-  sceneSynopses: boolean;
-  setSceneSynopses: (on: boolean) => void;
   /** Aides déjà apprises (#59) : la consigne du canevas, les touches du scénario… ne s'affichent plus. */
   learned: LearnedHint[];
   learn: (hint: LearnedHint) => void;
@@ -278,7 +276,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; sceneSynopses?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -306,8 +304,6 @@ export const useSettings = create<SettingsState>((set) => ({
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   ribbonPov: saved.ribbonPov === true,
   setRibbonPov: (ribbonPov) => set({ ribbonPov }),
-  sceneSynopses: saved.sceneSynopses === true,
-  setSceneSynopses: (sceneSynopses) => set({ sceneSynopses }),
   learned: readLearned(saved.learned),
   learn: (hint) => set((s) => (s.learned.includes(hint) ? s : { learned: [...s.learned, hint] })),
   unlearnAll: () => set({ learned: [] }),
@@ -375,7 +371,7 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -391,7 +387,7 @@ export function initSettings() {
     else delete root.dataset.pageZoomed;
     try {
       const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, sceneSynopses, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

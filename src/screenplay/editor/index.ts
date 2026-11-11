@@ -11,6 +11,7 @@ import { ScreenplayKeymap } from "./keymap";
 import { Pages, type PagesOptions } from "./pages";
 import { Continued, type ContinuedOptions } from "./continued";
 import { Revisions } from "./revisions";
+import { HiddenSynopsis } from "./hiddenSynopsis";
 import { ReadingMark } from "../../components/readingMark";
 import { Synonyms } from "../../components/editorKit";
 import {
@@ -55,6 +56,7 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     Dialogue,
     Transition,
     Preserved,
+    HiddenSynopsis,
     // De StarterKit on ne garde que le texte, l'historique et le curseur entre deux blocs non éditables.
     StarterKit.configure({
       document: false,

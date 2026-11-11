@@ -36,7 +36,6 @@ import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
 import { elementFor, type SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
-import { SynopsesToggle, useSceneSynopses } from "./SynopsesToggle";
 import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { screenplayUtterances, type ReadNode } from "../reading";
@@ -872,7 +871,6 @@ export function ScreenplayView() {
     startReading(editor, screenplayUtterances(nodes, editor.state.selection.$from.index(0), language, reading.parentheticals));
   };
   const readerItems = useReaderItems(startListening);
-  const synopses = useSceneSynopses();
   const keysLearned = useSettings((s) => s.learned.includes("screenplayKeys"));
 
   // (À SUIVRE) / (SUITE) changés dans les réglages : la feuille se redessine (rien n'est écrit dans le texte).
@@ -1080,7 +1078,6 @@ export function ScreenplayView() {
         <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
         {/* Même en-tête que le volet du Manuscrit (#58). */}
         <h2 className="sp-box-title">{sp.scenesTitle}</h2>
-        {scenes.length > 0 && <SynopsesToggle />}
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
         {(speakingList.length > 0 || charFilter) && (
           <div className="sp-filter">
@@ -1203,18 +1200,6 @@ export function ScreenplayView() {
                     );
                   })}
                 </span>
-              )}
-              {/* Le synopsis s'écrit ici, s'il est demandé (#58) ; il apparaît dans le séquencier. Le toucher choisit aussi la scène. */}
-              {synopses && (
-              <div className="sp-scene-synopsis" onFocusCapture={() => showScene(s.index)} onPointerDownCapture={() => showScene(s.index)}>
-              <SynopsisField
-                value={sceneSynopsis(elements, s.index)}
-                scene={s.text || sp.untitledScene}
-                onSave={(text) => saveSynopsis(s.index, text)}
-                ia={synopsisIsIa(elements, s.index)}
-                atelier={elements[s.index]?.cardId ? { sceneId: elements[s.index].cardId!, text: screenplaySceneText(scriptOffset(useCosmos.getState()) + s.index), accept: (text) => saveSynopsis(s.index, text, true) } : undefined}
-              />
-              </div>
               )}
             </li>
           ))(scenes[row.k], row.k))}
@@ -1465,6 +1450,20 @@ export function ScreenplayView() {
                   </button>
                 </>
               )}
+            </section>
+
+            {/* Synopsis de la scène (novembre 2026) : ici seulement, comme dans le Manuscrit ; ni dans la feuille ni dans
+                le volet des scènes. Il reste la ligne « = … » sous l'en-tête du Fountain, et le séquencier le montre. */}
+            <section className="sp-box">
+              <h2 className="sp-box-title">{t.manuscript.synopsis}</h2>
+              <SynopsisField
+                key={scene.index}
+                value={sceneSynopsis(elements, scene.index)}
+                scene={scene.text || sp.untitledScene}
+                onSave={(text) => saveSynopsis(scene.index, text)}
+                ia={synopsisIsIa(elements, scene.index)}
+                atelier={elements[scene.index]?.cardId ? { sceneId: elements[scene.index].cardId!, text: screenplaySceneText(scriptOffset(useCosmos.getState()) + scene.index), accept: (text) => saveSynopsis(scene.index, text, true) } : undefined}
+              />
             </section>
 
             {location && (

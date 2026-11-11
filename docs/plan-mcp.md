@@ -1,6 +1,6 @@
 # Assistant externe par MCP (#62, lot 11)
 
-> **Statut : lots 1, 3, 4 et 5 faits, publiés en 1.29.0** (novembre 2026) : lecture et écriture, guide fr, en, es. Restent Windows à essayer et le lot 2 (pastille).
+> **Statut : terminé** (novembre 2026). Lots 1, 3, 4 et 5 publiés en 1.29.0 (lecture et écriture, guide fr, en, es) ; lot 2 (pastille, essai sous Windows) en 1.32.0.
 
 L'assistant IA de l'auteur (Claude Desktop, ou tout client MCP) lit un projet MondoWrite par un serveur MCP local.
 Aucune clé d'API dans MondoWrite : l'auteur utilise l'abonnement qu'il a déjà, ou un modèle local. Sens unique : le
@@ -89,12 +89,15 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
       « Copier la configuration » ; Réglages › Ce projet : accès Aucun / Lecture
 - [x] guide de l'utilisateur (fr, en, es), chapitre 10 « Un assistant externe (MCP) »
 
-### Lot 2 · Confort
+### Lot 2 · Confort (fait, 1.32.0)
 
-- [ ] pastille dans la barre d'état quand un assistant a lu le projet récemment (horodatage écrit par le serveur),
-      qui coupe l'accès d'un geste
-- [ ] paquet installable en un clic pour Claude Desktop (format à vérifier)
-- [ ] Windows : vérifier que l'exécutable sans console (`windows_subsystem`) reçoit bien les tubes du client
+- [x] pastille « Assistant » dans la barre du haut quand l'assistant a lu le projet ouvert depuis moins de 10 min :
+      le serveur note chaque appel qui vise un projet (`seen/<clé>` : `{ at, client }`, `Server::seen`), l'app la relit
+      toutes les 15 s (commande `mcp_seen`, `AssistantBadge.tsx`) ; son menu dit qui et quand, ouvre les Réglages et
+      coupe l'accès au projet (« Couper l'accès à ce projet », `setMcpProject(id, null)`, l'instantané part avec)
+- [ ] ~~extension .mcpb pour Claude Desktop~~ : faite puis retirée (11 novembre 2026, choix de l'auteur) : « Connecter à Claude Desktop » marche sur Mac et PC, l'extension faisait doublon
+- [x] Windows : essayé le 11 novembre 2026 sur le PC et le Mac de l'auteur (Claude Desktop, serveur `mondowrite` actif,
+      `list_projects` répond) : l'exécutable sans console reçoit bien les tubes du client
 
 ### Lot 3 · Écriture (fait)
 
@@ -123,7 +126,7 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
       `add_character_question`, `update_frame` (renommer, retirer ; verrouillé refusé), `set_project` (titre, objectifs)
 - [x] message dans l'app quand l'assistant vient d'écrire (`assistantNotice.ts`, `AssistantNotice`, en haut de
       l'écran) : écritures regroupées sur 10 s, « Annuler » seulement si ses étapes sont encore au sommet de l'historique
-- [ ] pastille du lot 2 (l'assistant a lu le projet récemment)
+- [x] pastille du lot 2 (l'assistant a lu le projet récemment)
 
 ## Pièges
 

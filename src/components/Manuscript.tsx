@@ -40,7 +40,6 @@ import { useAiReviewReveal, useOpenAiQuestions } from "./AiReview";
 import type { SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
-import { SynopsesToggle, useSceneSynopses } from "./SynopsesToggle";
 import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
@@ -382,7 +381,6 @@ export function Manuscript() {
   };
   // « Écouter » et « Voix de la lecture… » du menu ⋯ (#54), avant tout retour anticipé (c'est un hook).
   const readerItems = useReaderItems(startListening);
-  const synopses = useSceneSynopses();
 
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
   const words = (n: number) => fmt(new Intl.PluralRules(lang).select(n) === "one" ? m.wordsOne : m.wordsMany, { n: num(n) });
@@ -586,7 +584,6 @@ export function Manuscript() {
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
-        <SynopsesToggle />
         {narrators.length > 0 && (
           <label className="ms-pov-filter">
             <span>{m.povFilter}</span>
@@ -773,12 +770,6 @@ export function Manuscript() {
                           );
                         })}
                       </span>
-                    )}
-                    {/* Synopsis sous la scène, comme dans le Scénario (#58), seulement s'il est demandé. */}
-                    {synopses && c && !pageLabel(id) && (
-                      <div className="sp-scene-synopsis">
-                        <SynopsisField value={c.fiche?.synopsis ?? ""} scene={name} onSave={(text) => useCosmos.getState().setFiche(id, "synopsis", text)} ia={c.ia?.includes("synopsis")} />
-                      </div>
                     )}
                   </li>
                 );

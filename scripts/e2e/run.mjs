@@ -1587,7 +1587,7 @@ const scenarios = [
     async run(h) {
       const { page } = h;
       await page.addInitScript(() => {
-        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", sceneSynopses: true, ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", ai: { provider: "anthropic", keys: { anthropic: "test" }, models: { anthropic: "claude-test" }, urls: {} } }));
       });
       await page.route("https://api.anthropic.com/**", (route) => {
         const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
@@ -1615,6 +1615,35 @@ const scenarios = [
         const fountain = f["scenario.fountain"] ?? "";
         return /= Inès veille seule pendant la tempête\. \[\[ia\]\]/.test(fountain) && /Puis rien\./.test(fountain);
       }, "le synopsis ou la frappe d'avant ont été perdus");
+    },
+  },
+  {
+    name: "scénario : le synopsis s'écrit dans la colonne de droite, invisible dans la feuille, et reste sous son en-tête (novembre 2026)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(4);
+      const editor = page.getByRole("textbox", { name: "Texte du scénario" });
+      await editor.click();
+      await page.keyboard.type("INT. PHARE – NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne.");
+      await h.wait(500);
+      await page.getByRole("button", { name: /^Ajouter un synopsis à la scène/ }).click();
+      await page.keyboard.type("Inès veille seule.");
+      await page.keyboard.press("Enter");
+      await h.saved((f) => /PHARE – NUIT.*\n\n?= Inès veille seule\./.test(f["scenario.fountain"] ?? ""), "le synopsis n'est pas sous l'en-tête");
+      assert(!(await page.locator('.sp-preserved[data-preserved="synopsis"]').first().isVisible()), "le synopsis est visible dans la feuille");
+      // Entrée au bout de l'en-tête : le nouvel élément passe sous le synopsis caché, qui reste celui de la scène.
+      await page.locator(".sp-sceneHeading").first().click();
+      await page.keyboard.press("End");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Le vent souffle.");
+      await h.saved((f) => {
+        const fountain = f["scenario.fountain"] ?? "";
+        return fountain.indexOf("= Inès veille seule.") < fountain.indexOf("Le vent souffle.") && /PHARE – NUIT[^\n]*\n\n?= Inès/.test(fountain);
+      }, "le synopsis a quitté son en-tête");
+      assert((await page.getByLabel("Montrer les synopsis").count()) === 0, "la case « Montrer les synopsis » est encore là");
     },
   },
   {
@@ -1946,10 +1975,9 @@ const scenarios = [
       await page.getByRole("menuitem", { name: /^Mode focus/ }).click();
       await until(() => page.locator(".manuscript.is-focus").count(), "Mode focus du menu ⋯ sans effet");
       await page.keyboard.press("Escape");
-      // #58 : titres seuls, synopsis sur demande.
-      assert((await page.locator(".ms-scenes .synopsis-show").count()) === 0, "des synopsis sont déjà dans le volet des scènes");
-      await page.getByLabel("Montrer les synopsis").check();
-      await until(async () => (await page.locator(".ms-scenes .synopsis-show").count()) > 0, "les synopsis ne viennent pas dans le volet");
+      // Novembre 2026 : le volet des scènes n'a que les titres ; le synopsis est dans la colonne de droite.
+      assert((await page.locator(".ms-scenes .synopsis-show").count()) === 0, "des synopsis sont dans le volet des scènes");
+      assert((await page.getByLabel("Montrer les synopsis").count()) === 0, "la case « Montrer les synopsis » est encore là");
       // #55 : chapitre et case derrière « Ranger ».
       await h.view(2);
       assert((await page.locator(".plan-meta").count()) === 0, "chapitre et case encore visibles sans « Ranger »");

@@ -146,3 +146,10 @@
   .screenplay.is-focus .sp-bar.is-open .sp-bar-toggle { justify-content: flex-start; }
   .sp-bar-hint { display: none; }
 }
+
+/* Ruban du récit sur téléphone (novembre 2026) : libellés courts (« Courbe », « Intrigues »), l'état ouvert se lit à
+   la graisse puisque le libellé ne change plus. */
+@media (max-width: 720px) {
+  .ribbon-toggle[aria-expanded="true"],
+  .ribbon-toggle[aria-pressed="true"] { font-weight: 600; text-decoration-thickness: 2px; }
+}
