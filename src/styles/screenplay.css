@@ -49,6 +49,11 @@
 @media (pointer: coarse) { .sp-scene-moves .icon-button { width: 44px; height: 44px; } }
 .sp-towrite-title { margin-top: 12px; }
 .sp-towrite { flex-shrink: 0; font-size: 0.75rem; font-style: italic; color: var(--ink-2); }
+/* Volet des scènes (novembre 2026, iPad) : l'en-tête prend toute la largeur et ne se coupe qu'entre deux mots ; la page
+   et la longueur passent dessous. Côte à côte, l'en-tête en Courier se coupait au milieu des mots (« DEVONSH / IRE »). */
+.sp-scene-list button { flex-wrap: wrap; row-gap: 2px; }
+.ms-scenes .sp-scene-list .ms-name { flex: 1 1 calc(100% - 24px); overflow-wrap: break-word; }
+.sp-scene-list .sp-towrite { margin-left: 16px; }
 
 .sp-center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .sp-bar {
@@ -167,6 +172,11 @@
 .sp-preserved[data-preserved="pageBreak"]::before { content: var(--sp-label-pageBreak); }
 .sp-preserved[data-preserved="section"] { font-weight: 600; color: var(--page-ink); }
 .sp-preserved[data-preserved="synopsis"] { font-style: italic; }
+/* Synopsis d'une scène : caché dans la feuille, il s'écrit dans le volet de droite (novembre 2026). Celui d'un épisode
+   (sous une section) reste visible. hiddenSynopsis.ts tient le curseur à l'écart. */
+.sp-sceneHeading + .sp-preserved[data-preserved="synopsis"],
+.sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"],
+.sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] { display: none; }
 .sp-preserved[data-preserved="centered"] { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
 .sp-preserved[data-preserved="pageBreak"] { padding: 6px 0 0; border: 0; border-top: 1px dashed var(--line-2); border-radius: 0; background: none; text-align: center; }
 .sp-preserved.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }

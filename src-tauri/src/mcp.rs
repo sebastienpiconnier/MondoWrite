@@ -28,6 +28,9 @@ const MAX_HITS: usize = 40;
 /// battement de cœur de l'app (`live/<clé>`), écrit tant que le projet est ouvert en écriture.
 const QUEUE_DIR: &str = "queue";
 const LIVE_DIR: &str = "live";
+/// Dernière lecture d'un projet par l'assistant (`seen/<clé>` : `{ "at": ms, "client": "…" }`), pour la pastille de
+/// l'app (#62, lot 2). Écrite à chaque appel qui vise un projet, lecture comme écriture.
+const SEEN_DIR: &str = "seen";
 /// L'app est tenue pour ouverte si son battement date de moins de tant de millisecondes.
 const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
@@ -154,6 +157,16 @@ pub async fn mcp_answer(key: String, id: String, answer: String) -> Result<(), S
   write_safely(&dir.join(format!("res-{id}.json")), &answer).map_err(|e| e.to_string())
 }
 
+/// Dernière lecture du projet par l'assistant (JSON écrit par le serveur), ou rien.
+#[tauri::command]
+pub async fn mcp_seen(key: String) -> Result<Option<String>, String> {
+  if !is_key(&key) {
+    return Err("clé refusée".into());
+  }
+  let Some(path) = mcp_dir().map(|d| d.join(SEEN_DIR).join(&key)) else { return Ok(None) };
+  Ok(std::fs::read_to_string(path).ok().filter(|t| serde_json::from_str::<Value>(t).is_ok()))
+}
+
 /// Garde seulement les instantanés des projets donnés (accès retiré, assistant coupé : liste vide).
 #[tauri::command]
 pub async fn mcp_keep(keys: Vec<String>) -> Result<(), String> {
@@ -165,6 +178,7 @@ pub async fn mcp_keep(keys: Vec<String>) -> Result<(), String> {
     if is_key(key) && !keys.iter().any(|k| k == key) {
       let _ = std::fs::remove_file(entry.path());
       let _ = std::fs::remove_file(dir.join(LIVE_DIR).join(key));
+      let _ = std::fs::remove_file(dir.join(SEEN_DIR).join(key));
       let _ = std::fs::remove_dir_all(dir.join(QUEUE_DIR).join(key));
     }
   }
@@ -333,7 +347,7 @@ impl Server {
     let wanted = args.get("project").and_then(Value::as_str).map(str::trim).unwrap_or("");
     if wanted.is_empty() {
       if all.len() == 1 {
-        return Ok(all.remove(0));
+        return Ok(self.seen(all.remove(0)));
       }
       return Err(format!("Plusieurs projets : précise `project`. / Several projects, set `project`.\n{}", self.list_projects()));
     }
@@ -344,9 +358,19 @@ impl Server {
       .or_else(|| all.iter().position(|(_, v)| fold(str_of(v, "/project/title")) == f))
       .or_else(|| all.iter().position(|(_, v)| fold(str_of(v, "/project/title")).contains(&f)));
     match pick {
-      Some(i) => Ok(all.remove(i)),
+      Some(i) => Ok(self.seen(all.remove(i))),
       None => Err(format!("Projet introuvable : « {wanted} ». / Project not found.\n{}", self.list_projects())),
     }
+  }
+
+  /// Note que l'assistant vient de lire ce projet (pastille de l'app). Erreur avalée : la lecture continue.
+  fn seen(&self, project: (String, Value)) -> (String, Value) {
+    let dir = self.dir.join(SEEN_DIR);
+    if std::fs::create_dir_all(&dir).is_ok() {
+      let note = json!({ "at": now_ms() as u64, "client": self.client.borrow().clone() });
+      let _ = std::fs::write(dir.join(&project.0), note.to_string());
+    }
+    project
   }
 
   fn list_projects(&self) -> String {
@@ -1225,6 +1249,17 @@ mod tests {
     assert!(s.handle(&json!({ "jsonrpc": "2.0", "method": "notifications/initialized" })).is_none());
     let tools = s.handle(&json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" })).unwrap();
     assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 6 + WRITE_TOOLS.len() + LIVE_TOOLS.len());
+  }
+
+  #[test]
+  fn lecture_notee_pour_la_pastille() {
+    let (s, dir) = server();
+    s.handle(&json!({ "jsonrpc": "2.0", "id": 0, "method": "initialize", "params": { "clientInfo": { "name": "Claude" } } }));
+    assert!(!dir.join(SEEN_DIR).join("p0000000aaaaaaa").exists());
+    call(&s, "project_overview", json!({}));
+    let seen: Value = serde_json::from_str(&std::fs::read_to_string(dir.join(SEEN_DIR).join("p0000000aaaaaaa")).unwrap()).unwrap();
+    assert_eq!(seen["client"], "Claude");
+    assert!(seen["at"].as_u64().unwrap() > 0);
   }
 
   #[test]

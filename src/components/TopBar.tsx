@@ -3,6 +3,7 @@ import { useCosmos, type View } from "../store";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { useVocab } from "../vocab";
 import { Settings } from "./Settings";
+import { AssistantBadge } from "./AssistantBadge";
 import { ExportMenu } from "./ExportMenu";
 import { AiMenu } from "./AiMenu";
 import { AtelierBadge } from "./Atelier";
@@ -59,7 +60,9 @@ export function TopBar() {
   useEffect(() => {
     if (!more) return;
     const onDown = (e: PointerEvent) => {
-      if (!(e.target instanceof Element) || !e.target.closest(".topbar")) setMore(false);
+      // Un menu posé dans <body> (⋯ des Réglages, statut…) appartient encore à la barre : sans cela, « Réglages… »
+      // fermait la rangée d'actions, donc le panneau des Réglages qu'elle contient, sur iPhone (novembre 2026).
+      if (!(e.target instanceof Element) || !e.target.closest(".topbar, .more-menu")) setMore(false);
     };
     document.addEventListener("pointerdown", onDown);
     return () => document.removeEventListener("pointerdown", onDown);
@@ -147,6 +150,7 @@ export function TopBar() {
         </button>
         {/* Trois groupes (règles d'Apple pour une barre d'outils) : produire, retrouver, régler. */}
         <div className="tb-group">
+          <AssistantBadge />
           <AtelierBadge />
           <AiMenu />
           <ExportMenu />

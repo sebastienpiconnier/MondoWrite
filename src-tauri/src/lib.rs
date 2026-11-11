@@ -325,6 +325,7 @@ pub fn run() {
       mcp::mcp_publish,
       mcp::mcp_keep,
       mcp::mcp_live,
+      mcp::mcp_seen,
       mcp::mcp_take,
       mcp::mcp_answer,
       mcp::mcp_client_config,
