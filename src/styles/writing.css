@@ -700,7 +700,11 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
   .ms-page .ms-editor p.has-dropcap::first-letter { float: none; margin: 0 0.22em 0 0; font-size: inherit; line-height: inherit; -webkit-initial-letter: 2; initial-letter: 2; }
 }
 /* Texte indicatif d'une scène encore vide. */
-.ms-editor p.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; height: 0; pointer-events: none; font-style: italic; }
+/* Le synopsis montré en filigrane peut tenir sur plusieurs lignes : le paragraphe vide le contient (flow-root) et le
+   texte flotte sur toute la largeur avec une marge négative, pour que le curseur reste au début (novembre 2026). Avec
+   une hauteur nulle, le filigrane débordait sur la scène suivante et sur le « * * * » (iPad, Monte-Cristo). */
+.ms-editor p.is-empty { display: flow-root; }
+.ms-editor p.is-empty::before { content: attr(data-placeholder); color: var(--placeholder); float: left; width: 100%; margin-right: -100%; pointer-events: none; font-style: italic; }
 .ms-editor .pg.is-quiet.is-empty::before { float: none; display: block; width: 100%; text-align: inherit; }
 
 /* Mode focus : plus de page, seulement le texte (machine à écrire et mise en valeur). */
