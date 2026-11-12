@@ -41,11 +41,11 @@ MondoWrite rassemble tout au même endroit, du premier fragment jusqu'au livre i
 - **La fiche personnage comme moteur dramatique.** Veut, A besoin de, Blessure, en trois cases lisibles, et un assistant qui vous pose les bonnes questions.
 - **Du premier jet au livre imprimé.** PDF au format manuscrit, Word, EPUB, livre broché prêt pour Amazon KDP. Et dans l'autre sens, importez votre manuscrit Word ou votre scénario existant.
 - **Relire en auteur.** Aller à, lecture à voix haute avec une voix par personnage, statistiques des personnages et des décors, et un onglet « Vérifier » qui pose des questions sans jamais corriger à votre place.
-- **Sur ordinateur, iPad et iPhone.** Sur iPhone, MondoWrite devient un carnet : on y écrit, on consulte la Bible, on note ce qui vient en passant, et tout se retrouve sur le canevas du Mac et de l'iPad par iCloud.
+- **Sur ordinateur, iPad et iPhone.** La même app partout. Sur iPhone, canevas, plan, manuscrit et Bible tiennent dans quatre onglets à portée du pouce, le menu ⋯ exporte le manuscrit, la Bible ou le projet, et tout se retrouve sur le Mac et l'iPad par iCloud.
 - **Votre œuvre vous appartient.** Pas de compte, pas de cloud, pas d'abonnement : vos projets sont de simples fichiers Markdown sur votre machine.
-- **Libre et gratuit, et ça le restera.** MondoWrite est un logiciel libre, distribué sous licence AGPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
+- **Gratuit et open source.** MondoWrite est un logiciel libre, distribué sous licence AGPL-3.0 : vous pouvez l'utiliser, l'étudier, le modifier et le partager.
 
-**L'IA, c'est vous qui choisissez.** Aucune par défaut : MondoWrite fonctionne entièrement sans elle. Branchée (un modèle 100 % local, celui d'Apple sur votre Mac ou votre iPhone, ou votre propre clé), elle questionne, relève vos incohérences et vous propose des pistes, sans écrire à votre place. Et pour un projet où vous le décidez, le mode Atelier l'autorise à proposer du texte, toujours marqué et journalisé. Vous restez l'auteur. [En savoir plus](#lia-au-choix).
+**L'IA, à vos conditions.** Aucune par défaut : MondoWrite fonctionne entièrement sans elle. Si vous en voulez une, deux façons de travailler, avec les mêmes règles. **L'IA intégrée** (un modèle 100 % local, celui d'Apple sur votre Mac ou votre iPhone, ou votre propre clé) relit, questionne et range ; pour un projet où vous le décidez, le mode Atelier lui permet aussi de proposer du texte. **Votre assistant IA** (Claude Desktop, ou tout assistant compatible MCP) travaille directement dans votre projet avec votre propre abonnement : il lit et, si vous l'y autorisez, écrit. Dans tous les cas, l'IA n'agit que sur votre demande, ce qu'elle écrit est marqué et journalisé, et tout s'annule. Vous restez l'auteur. [En savoir plus](#lia-au-choix).
 
 ## 🖼️ En images
 
@@ -91,7 +91,7 @@ Toutes les captures viennent du projet d'exemple, « Le Petit Chaperon rouge » 
 <td><img src="docs/guide/images/fr/sombre-manuscrit.jpg" alt="Le manuscrit en mode sombre"><br><b>Mode sombre.</b> Partout, ou comme le système.</td>
 </tr>
 <tr>
-<td><img src="docs/guide/images/fr/iphone-carnet.jpg" width="260" alt="Le Carnet sur iPhone"><br><b>Sur iPhone, le Carnet.</b> Une note prise en passant devient une carte du projet.</td>
+<td><img src="docs/guide/images/fr/iphone-canevas.jpg" width="260" alt="Le canevas sur iPhone, avec les onglets Canevas, Plan, Bible et Manuscrit"><br><b>Sur iPhone.</b> Canevas, plan, Bible et manuscrit, en quatre onglets à portée du pouce.</td>
 <td><img src="docs/guide/images/fr/livre-broche.jpg" width="320" alt="Fenêtre Livre broché (KDP)"><br><b>Livre broché.</b> Intérieur et couverture prêts pour Amazon KDP.</td>
 </tr>
 </table>
@@ -100,11 +100,11 @@ Toutes les captures viennent du projet d'exemple, « Le Petit Chaperon rouge » 
 
 ## 🧱 Prêts à écrire votre prochain monde ?
 
-[Téléchargez MondoWrite](https://mondowrite.app) gratuitement pour macOS, Windows ou Linux. Auteurs testeurs bienvenus : vos retours façonnent MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
+[Téléchargez MondoWrite](https://mondowrite.app) gratuitement pour macOS, Windows ou Linux, ou essayez-le sur iPhone et iPad ([bêta TestFlight](https://testflight.apple.com/join/thVwR1Ag), en attendant l'App Store). Auteurs testeurs bienvenus : vos retours façonnent MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
 
 ## Télécharger
 
-Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases).
+Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases). Sur iPhone et iPad, l'app arrive sur l'App Store ; en attendant, [rejoignez la bêta TestFlight](https://testflight.apple.com/join/thVwR1Ag).
 
 > **Premier lancement.** Sur macOS, l'app est signée et vérifiée par Apple : elle s'ouvre normalement. Sur Windows, si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
 
@@ -185,16 +185,19 @@ Puis toutes les fiches, générées à partir des cartes, sur une seule page et 
 - **Chapitrer en écrivant, comme dans NEO :** Entrée deux fois sur une ligne vide coupe la scène, la suite part dans une nouvelle scène ; Entrée une troisième fois ouvre un nouveau chapitre. Chaque coupure s'annonce en bas de page avec un bouton « Annuler » ; Retour arrière dans la scène vide l'annule aussi. Le numéro et le titre du chapitre s'écrivent en tête de page, comme dans un livre.
 - **Les pages du livre :** une scène peut devenir page de titre, mentions légales, dédicace, épigraphe, prologue, épilogue, remerciements ou « à propos de l'auteur ». Elles se placent d'elles-mêmes avant ou après le récit, et chacune dit ce qu'on y écrit (« À qui dédies-tu ce livre ? »).
 - **Une scène à la fois, en pages :** vous écrivez le texte de chaque scène dans l'ordre du plan, sur des pages au format livre, à la taille de l'écran (alinéas, texte justifié, lettrine en ouverture de chapitre), numérotées d'une scène à l'autre. Les scènes sont regroupées par chapitre ; un chapitre se déplace en le glissant dans la colonne de gauche, ou avec ses flèches. Une scène aussi : glissez-la (au-dessus ou au-dessous d'une autre), ou utilisez ses flèches, ou Alt+↑ / Alt+↓ ; elle prend le chapitre de sa nouvelle voisine.
-- **Importer un manuscrit :** depuis la page des projets, « Importer… » fait d'un fichier Word (`.docx`), PDF, Markdown ou texte un projet roman (un PDF de scénario est reconnu à sa mise en page et devient un projet scénario). Les chapitres viennent des titres, des sauts de page et des lignes « Chapitre 3 » ; les séparateurs (`***`, `#`, `* * *`) coupent les scènes, chacune avec sa carte ; le gras et l'italique sont gardés, un prologue et un épilogue deviennent des pages du livre (règles reprises de NEO).
+- **Importer un manuscrit :** depuis la page des projets, « Importer… » fait d'un fichier Word (`.docx`), PDF, Markdown ou texte un projet roman (un PDF de scénario est reconnu à sa mise en page et devient un projet scénario). Les chapitres viennent des titres, des sauts de page et des lignes « Chapitre 3 » ; les séparateurs (`***`, `#`, `* * *`) coupent les scènes, chacune avec sa carte ; le gras et l'italique sont gardés, un prologue et un épilogue deviennent des pages du livre (règles reprises de NEO). Un projet **Scrivener** (roman ou script) devient lui aussi un projet MondoWrite, avec ses synopsis, statuts, commentaires, notes de bas de page, et ses instantanés devenus versions.
 - **Statut de scène :** brouillon, à revoir ou terminée, une pastille de couleur sur la carte, dans le Plan, le séquencier et la liste des scènes. Les statistiques comptent les scènes terminées.
 - **Le synopsis en filigrane :** une scène encore vide affiche son synopsis en gris, comme une note de plan, jusqu'à ce que vous écriviez. Au-dessus de la page, une barre discrète : le titre de la scène, le type de page, le mode focus et la corbeille.
 - **Mode focus :** la page seule à l'écran, en machine à écrire si vous le souhaitez (la ligne en cours reste à hauteur d'yeux), avec la phrase, la ligne ou le paragraphe en pleine encre et le reste estompé. Ctrl/Cmd+Maj+X marque un passage « à reprendre ».
 - **Dans cette scène :** à côté de la page, les personnages et les lieux cités dans le texte, le synopsis de la scène (modifiable sur place) et le Chutier.
-- **Statistiques et objectifs**, repliés en bas de la même colonne : mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO), avec une échéance (le but du jour se calcule), un objectif de séance, par scène et par chapitre. **Synonymes** hors ligne (Ctrl/Cmd + Alt + Y, anglais pour l'instant) et **annuaire de noms** par pays pour les personnages.
+- **Statistiques et objectifs**, repliés en bas de la même colonne : mots, pages, temps de lecture, scènes écrites, moyenne par scène ; mots écrits aujourd'hui, jours d'affilée, objectif du jour et objectif du livre (idée reprise de NEO), avec une échéance (le but du jour se calcule), un objectif de séance, par scène et par chapitre. **Synonymes** hors ligne (Ctrl/Cmd + Alt + Y, français pour l'instant) et **annuaire de noms** par pays pour les personnages.
 - **Aller à** (Ctrl/Cmd+G) : une page, une scène, un chapitre, un passage à reprendre ou une note.
 - **Écouter :** le texte lu à voix haute par les voix de l'appareil, une voix par personnage et un narrateur, le passage lu surligné.
 - **Vérifier et Statistiques :** à côté du texte, l'onglet « Vérifier » pose des questions (un personnage principal sans « Veut », un secret jamais révélé, une case loin de sa place, un mot répété à quelques lignes d'écart, les mots que vous employez le plus), et la fenêtre Statistiques compte la présence des personnages et des lieux.
 - **Fusionner deux scènes :** « Fusionner avec la scène suivante » (menu ⋯ du Manuscrit, du Scénario, du Plan et du séquencier) réunit texte, synopsis, fils et commentaires en une seule scène ; « Annuler » les sépare de nouveau.
+- **Point de vue :** une pastille dit qui raconte la scène, et le ruban du récit se colore par narrateur pour voir l'alternance des voix.
+- **Versions d'une scène :** « Garder cette version… » (Ctrl/Cmd + Alt + S), puis relire, comparer mot à mot ou revenir en arrière.
+- **Commentaires et notes de bas de page :** des remarques ancrées dans un passage, à résoudre, jamais exportées ; des notes numérotées toutes seules, exportées en vraies notes dans Word, l'EPUB et le PDF.
 - **Votre page :** police (IBM Plex Serif, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) et interligne de la page d'écriture au choix (Réglages › Écriture), sans toucher aux exports.
 - **Vos fichiers :** chaque scène écrite est un fichier Markdown dans `manuscrit/`. Supprimer une carte n'efface jamais son texte : elle va à la corbeille et en revient avec lui.
 
@@ -225,6 +228,8 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma, re
 - **Synopsis :** une phrase par scène, écrite depuis le volet des scènes ou le séquencier, enregistrée comme synopsis Fountain.
 - **Import :** un fichier `.fountain`, Final Draft (`.fdx`) ou PDF existant devient un projet, avec ses cartes Scène, Personnage et Décor déjà créées et reliées.
 - **Durées cibles par acte** dans le séquencier, **emphase** (italique, gras) à l'écran et dans le PDF, et **dialogue double** côte à côte.
+- **Séries :** saisons et épisodes dans un seul scénario. Le séquencier montre l'arbre saison › épisode › scènes, le canevas un cadre par épisode, la Bible une rubrique « Épisodes », et le PDF de la série un livret par épisode.
+- **Révisions :** passes en couleur (bleu, rose, jaune…), astérisque dans la marge des lignes changées, pages verrouillées, scènes omises, pages teintées dans le PDF, comme sur un scénario de tournage. La longueur des scènes se lit en huitièmes de page.
 - **(À SUIVRE) et (SUITE) :** pour une réplique coupée par la page, dans le PDF et à l'écran.
 - **Numéros de scène, en-têtes soulignés et mode focus :** deux boutons de la barre numérotent les scènes dans la marge et soulignent les en-têtes (à l'écran, dans le PDF et dans Final Draft), et un mode ne garde que la feuille à l'écran.
 - **Un format ouvert :** le texte est enregistré dans `scenario.fountain`, au format Fountain, lisible par les autres logiciels de scénario.
@@ -233,19 +238,23 @@ Pour un projet scénario, la vue Scénario est un éditeur au format cinéma, re
 
 ### L'IA, au choix
 
-MondoWrite fonctionne entièrement sans IA, et n'en propose aucune tant que vous n'en avez pas choisi une. Trois façons de travailler, que vous choisissez :
+MondoWrite fonctionne entièrement sans IA, et n'en propose aucune tant que vous n'en avez pas choisi une. Quatre façons de travailler, que vous choisissez :
 
 | | Ce que fait l'IA | Où le régler |
 |---|---|---|
 | **Sans IA** (par défaut) | Rien. Aucun appel, aucune donnée envoyée. | Rien à faire |
 | **IA qui questionne** | Elle pose des questions, relève des incohérences, propose un rangement. Elle n'écrit jamais votre texte, et rien n'entre dans le projet sans votre clic. | Réglages › IA |
 | **Mode Atelier** | En plus, elle peut proposer du texte (variantes, synopsis, pistes, brouillons de fiche). Tout ce que vous acceptez reste marqué et journalisé. | Réglages › Ce projet, projet par projet |
+| **Votre assistant IA** (Claude Desktop, MCP) | Vous lui demandez ce que vous voulez dans votre projet : il lit et, si vous l'y autorisez, écrit. Tout ce qu'il écrit est marqué, journalisé et s'annule. | Réglages › IA, puis Réglages › Ce projet |
+
+**Les mêmes règles, quelle que soit l'IA :** elle ne s'active que si vous la branchez, et n'agit que sur votre demande ; ce qu'elle écrit est marqué IA jusqu'à ce que vous l'ayez repris, et noté dans `ia-journal.md` ; tout s'annule, sans jamais défaire votre propre travail.
 
 #### Quelle IA, et où vont vos textes
 
 - **En local**, avec Ollama ou LM Studio : le modèle tourne sur votre ordinateur, vos textes n'en sortent pas.
 - **Apple Intelligence, sur l'appareil** : sur un Mac ou un iPhone qui l'a (macOS 26, iOS 26), le modèle d'Apple, gratuit, sans clé, rien ne quitte l'appareil. Il est petit : il sert aux actions courtes, les lectures de tout le récit restent réservées aux autres modèles.
 - **Avec votre propre clé**, chez Claude, OpenAI ou OpenRouter : rien ne part tant que vous ne lancez pas une action, et seulement ce dont elle a besoin (vos idées pour les ranger, tout le récit pour une relecture), selon les conditions de ce fournisseur. La clé reste sur votre appareil, rangée dans le trousseau du système (Trousseau d'accès sur Mac, iPhone et iPad, gestionnaire d'identifiants sous Windows, Secret Service sous Linux), jamais dans le projet.
+- **Avec votre abonnement**, par votre assistant IA (Claude Desktop) : MondoWrite ne demande aucune clé et n'envoie rien de lui-même. C'est votre assistant qui lit les projets que vous lui ouvrez, selon les conditions de son fournisseur, ou en local si vous lui branchez un modèle local.
 
 #### Quand elle questionne
 
@@ -261,6 +270,14 @@ Toute proposition fondée sur votre texte porte le passage qui la justifie ; une
 #### Le mode Atelier, pour un projet
 
 Activé dans les Réglages du seul projet où vous le voulez, il permet à l'IA de proposer du texte : trois variantes d'une phrase, un synopsis de scène, trois directions pour la suite, un brouillon de la couverture, la fiche d'un personnage secondaire, et des images de référence (avec OpenAI ou OpenRouter, sans jamais envoyer les noms de votre projet). Rien n'entre sans votre clic. Ce que vous acceptez est souligné en pointillé jusqu'à ce que vous le retravailliez (« Je l'ai repris »), compté dans les statistiques, et chaque acceptation ajoute une ligne au fichier `ia-journal.md` du projet : de quoi répondre honnêtement à un éditeur ou à Amazon KDP, qui demande de déclarer le texte généré.
+
+#### Votre assistant IA (Claude Desktop, MCP)
+
+MondoWrite s'ouvre à Claude Desktop, ou à tout assistant IA compatible avec le protocole MCP. Vous lui parlez dans sa fenêtre (« relis le chapitre 3 et dis-moi où l'attention faiblit », « crée la fiche de la sœur d'Inès d'après les scènes où elle paraît ») et il travaille dans votre projet : faire le point, relire, commenter un passage, remplir la Bible, tirer des fils, renommer partout, déplacer, couper ou fusionner des scènes, gérer chapitres, épisodes et saisons, ranger le canevas. Des consignes prêtes l'attendent dans Claude Desktop (bouton « + ») : relecture bêta, cohérence, dépouillement, interroger un personnage, point du projet. Sur ordinateur (macOS, Windows, Linux).
+
+- **Le brancher :** Réglages › IA, « Autoriser un assistant externe à lire mes projets », puis « Connecter à Claude Desktop » (pour un autre logiciel : « Copier la configuration »).
+- **Projet par projet :** Réglages › Ce projet, « Aucun » (par défaut), « Lecture seule » ou « Lecture et écriture ». Un projet laissé à « Aucun » lui reste invisible ; pour écrire, le projet doit être ouvert dans MondoWrite.
+- **Vous gardez la main :** ce qu'il écrit est marqué IA et noté dans `ia-journal.md` avec le nom du logiciel ; avant de réécrire une scène, MondoWrite en garde une version ; chaque demande s'annule d'un geste, sans toucher à votre propre travail. Une pastille signale qu'un assistant a lu le projet et lui coupe l'accès d'un clic. Il ne peut ni supprimer un projet, ni vider la corbeille, ni exporter, ni toucher aux réglages.
 
 Les consignes exactes envoyées à l'IA sont publiées dans [docs/prompts-ia.md](docs/prompts-ia.md).
 
@@ -335,7 +352,7 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 | Système | État |
 |---|---|
 | macOS (Apple Silicon et Intel), Windows, Linux | Prêt : installeurs fabriqués par GitHub Actions |
-| iPadOS, iOS | En test (TestFlight) ; sur iPhone, l'app devient un Carnet ; projets partagés avec le Mac par iCloud |
+| iPadOS, iOS | En test ([TestFlight](https://testflight.apple.com/join/thVwR1Ag)), bientôt sur l'App Store ; même app sur iPhone et iPad, canevas compris ; projets partagés avec le Mac par iCloud |
 | Android | Code prêt (tactile, stockage), pas encore publié |
 | Navigateur | Pour le développement uniquement (stockage dans le navigateur) |
 

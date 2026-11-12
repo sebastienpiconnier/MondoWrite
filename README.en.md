@@ -41,11 +41,11 @@ MondoWrite brings it all into one place, from the first fragment to the printed 
 - **The character sheet as a dramatic engine.** Wants, Needs, Wound, in three readable boxes, and an assistant that asks you the right questions.
 - **From first draft to printed book.** Manuscript-format PDF, Word, EPUB, and a paperback ready for Amazon KDP. And the other way round, import your Word manuscript or your existing screenplay.
 - **Review like an author.** Go to, reading aloud with one voice per character, character and location statistics, and a “Check” tab that asks questions without ever correcting for you.
-- **On computer, iPad and iPhone.** On iPhone, MondoWrite becomes a notebook: you write, look things up in the Bible, jot down what comes to you on the go, and it all shows up on the canvas of your Mac and iPad through iCloud.
+- **On computer, iPad and iPhone.** The same app everywhere. On iPhone, canvas, outline, manuscript and Bible fit in four tabs within thumb’s reach, the ⋯ menu exports the manuscript, the Bible or the project, and it all shows up on your Mac and iPad through iCloud.
 - **Your work belongs to you.** No account, no cloud, no subscription: your projects are plain Markdown files on your own machine.
-- **Free and open source, for good.** MondoWrite is free software, released under the AGPL-3.0: you can use it, study it, change it and share it.
+- **Free and open source.** MondoWrite is free software, released under the AGPL-3.0: you can use it, study it, change it and share it.
 
-**AI is your call.** There is none by default: MondoWrite works entirely without it. Plugged in (a 100% local model, Apple’s own model on your Mac or iPhone, or your own key), it asks questions, spots inconsistencies and suggests leads, without writing for you. And for a project where you decide so, Workshop mode lets it suggest text, always marked and logged. You remain the author. [Learn more](#ai-your-choice).
+**AI on your terms.** There is none by default: MondoWrite works entirely without it. If you want one, there are two ways to work, with the same rules. **The built-in AI** (a 100% local model, Apple’s own model on your Mac or iPhone, or your own key) reads, asks and sorts; for a project where you decide so, Workshop mode also lets it suggest text. **Your AI assistant** (Claude Desktop, or any MCP-compatible assistant) works right inside your project with your own subscription: it reads and, if you allow it, writes. Either way, the AI only acts when you ask, what it writes is marked and logged, and everything can be undone. You remain the author. [Learn more](#ai-your-choice).
 
 ## 🖼️ Screenshots
 
@@ -91,7 +91,7 @@ All screenshots come from the sample project, Perrault’s “Little Red Riding 
 <td><img src="docs/guide/images/en/sombre-manuscrit.jpg" alt="The manuscript in dark mode"><br><b>Dark mode.</b> Everywhere, or following the system.</td>
 </tr>
 <tr>
-<td><img src="docs/guide/images/en/iphone-carnet.jpg" width="260" alt="The Notebook on iPhone"><br><b>On iPhone, the Notebook.</b> A note taken on the go becomes a card of the project.</td>
+<td><img src="docs/guide/images/en/iphone-canevas.jpg" width="260" alt="The canvas on iPhone, with the Canvas, Outline, Bible and Manuscript tabs"><br><b>On iPhone.</b> Canvas, outline, Bible and manuscript, in four tabs within thumb’s reach.</td>
 <td><img src="docs/guide/images/en/livre-broche.jpg" width="320" alt="Paperback (KDP) window"><br><b>Paperback.</b> Interior and cover ready for Amazon KDP.</td>
 </tr>
 </table>
@@ -100,11 +100,11 @@ All screenshots come from the sample project, Perrault’s “Little Red Riding 
 
 ## 🧱 Ready to write your next world?
 
-[Download MondoWrite](https://mondowrite.app) for free on macOS, Windows or Linux. Writers wanted as testers: your feedback shapes MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
+[Download MondoWrite](https://mondowrite.app) for free on macOS, Windows or Linux, or try it on iPhone and iPad ([TestFlight beta](https://testflight.apple.com/join/thVwR1Ag), until the App Store release). Writers wanted as testers: your feedback shapes MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
 
 ## Download
 
-Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases).
+Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases). On iPhone and iPad, the app is coming to the App Store; meanwhile, [join the TestFlight beta](https://testflight.apple.com/join/thVwR1Ag).
 
 > **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, if SmartScreen appears, click “More info”, then “Run anyway”.
 
@@ -185,15 +185,18 @@ Then every entry, generated from your cards, on a single page and grouped by sec
 - **The pages of a book:** a scene can become a title page, copyright, dedication, epigraph, prologue, epilogue, acknowledgments or “about the author”. They place themselves before or after the story, and each one says what goes there (“Who is this book for?”).
 - **One scene at a time, on pages:** you write the text of each scene in outline order, on book-format pages sized to your screen (indents, justified text, a drop cap at each chapter opening), numbered from one scene to the next. Scenes are grouped by chapter; move a chapter by dragging it in the left column, or with its arrows. A scene too: drag it (above or below another), use its arrows, or Alt+↑ / Alt+↓; it joins the chapter of its new neighbour. Above the page, a quiet bar: the scene title, the page type, focus mode and the trash.
 - **Focus mode:** the page alone on screen, typewriter-style if you like (the current line stays at eye level), with the sentence, line or paragraph in full ink and the rest faded. Ctrl/Cmd+Shift+X marks a passage “to revisit”.
-- **Import a manuscript:** on the projects page, “Import…” turns a Word (`.docx`), PDF, Markdown or text file into a novel project (a screenplay PDF is recognized by its layout and becomes a screenplay project). Chapters come from headings, page breaks and “Chapter 3” lines; separators (`***`, `#`, `* * *`) split the scenes, each with its card; bold and italics are kept, a prologue and an epilogue become book pages (rules taken from NEO).
+- **Import a manuscript:** on the projects page, “Import…” turns a Word (`.docx`), PDF, Markdown or text file into a novel project (a screenplay PDF is recognized by its layout and becomes a screenplay project). Chapters come from headings, page breaks and “Chapter 3” lines; separators (`***`, `#`, `* * *`) split the scenes, each with its card; bold and italics are kept, a prologue and an epilogue become book pages (rules taken from NEO). A **Scrivener** project (novel or script) also becomes a MondoWrite project, with its synopses, statuses, comments, footnotes, and its snapshots turned into versions.
 - **Scene status:** draft, to revise or done, a coloured dot on the card, in the Outline, the step outline and the scene list. The statistics count the scenes done.
 - **The synopsis as a watermark:** an empty scene shows its synopsis in grey, like an outline note, until you write.
 - **In this scene:** beside the page, the characters and places named in the text, the scene’s synopsis (editable in place) and the Graveyard.
-- **Statistics and goals**, folded at the bottom of the same column: words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO), with a deadline (the daily target is computed), a session goal, and goals per scene and per chapter. Offline **synonyms** (Ctrl/Cmd + Alt + Y, English for now) and a **name directory** by country for characters.
+- **Statistics and goals**, folded at the bottom of the same column: words, pages, reading time, scenes written, average per scene; words written today, days in a row, daily goal and book goal (an idea taken from NEO), with a deadline (the daily target is computed), a session goal, and goals per scene and per chapter. Offline **synonyms** (Ctrl/Cmd + Alt + Y, French for now) and a **name directory** by country for characters.
 - **Go to** (Ctrl/Cmd+G): a page, a scene, a chapter, a passage to revisit or a note.
 - **Listen:** the text read aloud by the device’s voices, one voice per character and a narrator, the passage being read highlighted.
 - **Check and Statistics:** beside the text, the “Check” tab asks questions (a main character with no “Wants”, a secret never revealed, a beat far from its place, a word repeated a few lines apart, the words you use most), and the Statistics window counts how present characters and places are.
 - **Merge two scenes:** “Merge with next scene” (⋯ menu of the Manuscript, the Screenplay, the Outline and the step outline) joins text, synopsis, threads and comments into one scene; “Undo” splits them again.
+- **Point of view:** a badge shows who tells the scene, and the story ribbon is coloured by narrator to see how the voices alternate.
+- **Scene versions:** “Keep this version…” (Ctrl/Cmd + Alt + S), then read, compare word by word or go back.
+- **Comments and footnotes:** notes anchored to a passage, to resolve, never exported; footnotes numbered automatically, exported as real notes in Word, EPUB and PDF.
 - **Your page:** choose the font (IBM Plex Serif, Literata, EB Garamond, Atkinson Hyperlegible, Courier Prime) and line spacing of the writing page (Settings › Writing), without changing the exports.
 - **Your files:** every written scene is a Markdown file in `manuscrit/`. Deleting a card never erases its text: it goes to the trash and comes back with it.
 
@@ -224,6 +227,8 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 - **Synopsis:** one sentence per scene, written from the scene panel or the step outline, saved as a Fountain synopsis.
 - **Import:** an existing `.fountain`, Final Draft (`.fdx`) or PDF file becomes a project, with its Scene, Character and Location cards already created and linked.
 - **Target lengths per act** in the Outline, **emphasis** (italic, bold) on screen and in the PDF, and side-by-side **dual dialogue**.
+- **Series:** seasons and episodes in one screenplay. The outline shows the season › episode › scenes tree, the canvas a frame per episode, the Bible an “Episodes” section, and the series PDF one booklet per episode.
+- **Revisions:** coloured passes (blue, pink, yellow…), an asterisk in the margin of changed lines, locked pages, omitted scenes, tinted pages in the PDF, as on a shooting script. Scene length reads in eighths of a page.
 - **(MORE) and (CONT'D):** for dialogue split by a page break, in the PDF and on screen.
 - **Scene numbers, underlined headings and focus mode:** two buttons in the bar number the scenes in the margin and underline the headings (on screen, in the PDF and in Final Draft), and a mode keeps only the page on screen.
 - **An open format:** the text is saved to `scenario.fountain`, in [Fountain](https://fountain.io) format, readable by other screenwriting software.
@@ -232,19 +237,23 @@ For a screenplay project, the Screenplay view is an editor in standard film form
 
 ### AI, your choice
 
-MondoWrite works entirely without AI, and offers none until you pick one. Three ways of working, your choice:
+MondoWrite works entirely without AI, and offers none until you pick one. Four ways of working, your choice:
 
 | | What the AI does | Where to set it |
 |---|---|---|
 | **No AI** (default) | Nothing. No calls, no data sent anywhere. | Nothing to do |
 | **AI that asks** | It asks questions, spots inconsistencies, suggests how to sort things. It never writes your text, and nothing enters the project without your click. | Settings › AI |
 | **Workshop mode** | On top of that, it may suggest text (variants, synopses, leads, draft sheets). Whatever you accept stays marked and logged. | Settings › This project, one project at a time |
+| **Your AI assistant** (Claude Desktop, MCP) | You ask it for whatever you need in your project: it reads and, if you allow it, writes. Everything it writes is marked, logged and can be undone. | Settings › AI, then Settings › This project |
+
+**The same rules, whatever the AI:** it only switches on if you connect it, and only acts when you ask; what it writes is marked as AI until you’ve made it yours, and logged in `ia-journal.md`; everything can be undone, without ever undoing your own work.
 
 #### Which AI, and where your texts go
 
 - **Locally**, with Ollama or LM Studio: the model runs on your computer, your texts never leave it.
 - **Apple Intelligence, on device**: on a Mac or iPhone that has it (macOS 26, iOS 26), Apple’s own model, free, no key, nothing leaves the device. It is small: it handles the short actions, while readings of the whole story are left to the other models.
 - **With your own key**, for Claude, OpenAI or OpenRouter: nothing is sent until you start an action, and only what it needs (your ideas to sort them, the whole story for a review), under that provider’s terms. The key stays on your device, kept in the system keychain (Keychain on Mac, iPhone and iPad, Credential Manager on Windows, Secret Service on Linux), never in the project.
+- **With your subscription**, through your AI assistant (Claude Desktop): MondoWrite asks for no key and sends nothing on its own. Your assistant reads the projects you open to it, under its provider’s terms, or locally if you connect it to a local model.
 
 #### When it asks
 
@@ -260,6 +269,14 @@ Every suggestion based on your text comes with the passage that supports it; a q
 #### Workshop mode, for one project
 
 Turned on in the Settings of the one project where you want it, it lets the AI suggest text: three variants of a sentence, a scene synopsis, three directions for what comes next, a draft of the cover, a minor character’s sheet, and reference images (with OpenAI or OpenRouter, never sending your project’s names). Nothing goes in without your click. What you accept stays underlined with dots until you rework it (“I’ve made it mine”), is counted in the statistics, and each acceptance adds a line to the project’s `ia-journal.md` file: enough to answer a publisher, or Amazon KDP, which asks you to declare AI-generated text, honestly.
+
+#### Your AI assistant (Claude Desktop, MCP)
+
+MondoWrite opens up to Claude Desktop, or any AI assistant that supports the MCP protocol. You talk to it in its own window (“read chapter 3 and tell me where attention drops”, “create a sheet for Inès’s sister from the scenes she appears in”) and it works inside your project: take stock, review, comment on a passage, fill in the Bible, draw threads, rename everywhere, move, split or merge scenes, manage chapters, episodes and seasons, tidy the canvas. Ready-made prompts wait in Claude Desktop (“+” button): beta read, consistency check, breakdown, interview a character, project status. On computers (macOS, Windows, Linux).
+
+- **Connect it:** Settings › AI, “Let an external assistant read my projects”, then “Connect to Claude Desktop” (for another app: “Copy the configuration”).
+- **Project by project:** Settings › This project, “None” (the default), “Read only” or “Read and write”. A project left at “None” stays invisible to it; to write, the project must be open in MondoWrite.
+- **You stay in charge:** what it writes is marked as AI and logged in `ia-journal.md` with the app’s name; before rewriting a scene, MondoWrite keeps a version of it; each request is undone in one step, without touching your own work. A badge shows when an assistant has read the project and cuts its access in one click. It can’t delete a project, empty the trash, export or change settings.
 
 The exact instructions sent to the AI are published in [docs/prompts-ia.md](docs/prompts-ia.md) (in French, with the prompts themselves in English).
 
@@ -336,7 +353,7 @@ Stand-in keeper. Can’t stand **silence**.
 | System | Status |
 |---|---|
 | macOS (Apple Silicon and Intel), Windows, Linux | Ready: installers built by GitHub Actions |
-| iPadOS, iOS | In testing (TestFlight); on iPhone, the app becomes a Notebook; projects shared with the Mac through iCloud |
+| iPadOS, iOS | In testing ([TestFlight](https://testflight.apple.com/join/thVwR1Ag)), coming soon to the App Store; the same app on iPhone and iPad, canvas included; projects shared with the Mac through iCloud |
 | Android | Code is ready (touch, storage), not yet released |
 | Browser | For development only (storage in the browser) |
 
