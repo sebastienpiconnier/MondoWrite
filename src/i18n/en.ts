@@ -698,6 +698,7 @@ export const en: Messages = {
     byline: "by {author}",
     aboutWords: "about {n} words",
     emptyManuscript: "Nothing to export: no scene is written yet.",
+    emptyBible: "Nothing to export: the bible has no entries yet.",
   },
 
   assistant: {

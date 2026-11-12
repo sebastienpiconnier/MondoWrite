@@ -465,6 +465,28 @@ async function backupFolder(key: string): Promise<string> {
 }
 const isBackupMedia = (name: string) => isMediaName(name) || isDocumentName(name);
 
+/** iPhone et iPad (pas Android) : le dialogue d'enregistrement y marche autrement (voir `exportOnIos`). */
+const isIOS = () => isMobileOS() && !/Android/i.test(navigator.userAgent);
+
+/**
+ * Enregistrer un export sur iPhone ou iPad (novembre 2026). Le dialogue de Tauri n'y choisit pas un chemin :
+ * il fait copier par iOS (« Exporter vers Fichiers ») le fichier `Documents/<nom>` de l'app, qu'il crée vide
+ * s'il n'existe pas, et rend un chemin hors de l'app où l'on ne peut plus écrire. Le fichier exporté était
+ * donc vide. On écrit le vrai contenu à cette place AVANT d'ouvrir le dialogue, puis on le retire.
+ */
+async function exportOnIos(file: { name: string; data: Uint8Array }): Promise<boolean> {
+  // Un nom de fichier seul : jamais de dossier (le plugin ne garde que le dernier élément du chemin).
+  const name = file.name.replace(/[\\/:]/g, "-").replace(/^\.+/, "") || "MondoWrite";
+  const staged = await join(await documentDir(), name);
+  await writeFile(staged, file.data);
+  try {
+    const path = await save({ defaultPath: name });
+    return Boolean(path);
+  } finally {
+    await remove(staged).catch(() => undefined);
+  }
+}
+
 export const tauriStorage: Storage = {
   locks: {
     async read() {
@@ -1101,6 +1123,7 @@ export const tauriStorage: Storage = {
   },
 
   async saveAs(file, label) {
+    if (isIOS()) return exportOnIos(file);
     // Dialogue « Enregistrer sous » du système : le chemin choisi est autorisé en écriture par Tauri.
     const path = await save({ defaultPath: file.name, filters: [{ name: label, extensions: [file.extension] }] });
     if (!path) return false;

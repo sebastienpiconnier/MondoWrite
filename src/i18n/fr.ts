@@ -633,6 +633,7 @@ export const fr = {
     contents: "Sommaire",
     bibleName: "{title}, bible",
     emptyManuscript: "Rien à exporter : aucune scène n’est encore écrite.",
+    emptyBible: "Rien à exporter : la Bible n’a encore aucune fiche.",
     // Page de garde du manuscrit au format Shunn.
     byline: "par {author}",
     aboutWords: "environ {n} mots",

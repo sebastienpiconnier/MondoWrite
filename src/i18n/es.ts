@@ -780,6 +780,7 @@ export const es = {
     byline: "por {author}",
     aboutWords: "unas {n} palabras",
     emptyManuscript: "Nada que exportar: todavía no hay ninguna escena escrita.",
+    emptyBible: "Nada que exportar: la biblia aún no tiene fichas.",
   },
   assistant: {
     open: "Preguntar sobre {name}",

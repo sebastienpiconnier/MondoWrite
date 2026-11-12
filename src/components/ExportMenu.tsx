@@ -18,6 +18,9 @@ import { canvasOf, manuscriptOf, withShunn } from "../export/projectDocs";
 import { canvasBounds } from "../export/canvas";
 import { boxes, frameBox } from "../projectState";
 import { fileName } from "../screenplay/export";
+import { usePhone } from "./usePhone";
+import { bibleOrder } from "../bibleParts";
+import { bibleOf } from "../export/projectDocs";
 
 /** Formats du canevas : image, PDF standard ou grand format, texte des cartes. */
 const CANVAS_FORMATS = ["png", "pdf", "pdfLarge", "docx", "md"] as const;
@@ -52,6 +55,9 @@ export function ExportMenu() {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+  // Téléphone (novembre 2026) : les exports directs seulement. Les fenêtres de réglages (PDF du scénario,
+  // livre broché, Bible) ne tiennent pas sur l'écran, et l'image du canevas est trop lourde à fabriquer.
+  const phone = usePhone();
 
   useEffect(() => {
     if (!open) return;
@@ -159,7 +165,25 @@ export function ExportMenu() {
   };
   const canvasLabels: Record<CanvasFormat, string> = { png: x.canvasPng, pdf: x.canvasPdf, pdfLarge: x.canvasPdfLarge, docx: x.canvasDocx, md: x.canvasMd };
 
-  const groups = [
+  // Téléphone : la Bible entière, comme la bible de travail (toutes les rubriques, masquées comprises), sans fenêtre.
+  const bibleFile = (format: DocFormat) => async (): Promise<ExportedFile | null> => {
+    const { lang, author, bibleSections } = useSettings.getState();
+    const doc = bibleOf(useCosmos.getState(), { t: all, lang, author }, bibleOrder({ ...bibleSections, hidden: [] }));
+    if (doc.chapters.length === 0) return null;
+    const full = format === "md" ? doc : await (await import("../export/images")).withImages(doc, (n) => storage.mediaUrl(n));
+    return exportDocument(full, format, { name: fmt(x.bibleName, { title: info().title }), paper: useCosmos.getState().paper, contents: x.contents });
+  };
+
+  type Group = { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] };
+  const phoneGroups: Group[] = [
+    kind === "scenario"
+      ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
+      : { title: x.manuscript, items: MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })) },
+    { title: x.bible, empty: x.emptyBible, items: (["docx", "md", "html"] as const).map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
+    { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
+  ];
+
+  const groups = phone ? phoneGroups : [
     kind === "scenario"
       ? {
           title: x.screenplay,
@@ -180,8 +204,8 @@ export function ExportMenu() {
     { title: x.bible, items: [{ key: "bible", label: all.bibleExport.menu, open: () => useCosmos.getState().setDialog("bibleExport") }] },
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
     { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, label: canvasLabels[f], build: canvasFile(f) })) },
-  ] as { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] }[];
-  const failed = message === t.failed || message === x.emptyManuscript || message === x.emptyCanvas;
+  ] as Group[];
+  const failed = message === t.failed || message === x.emptyManuscript || message === x.emptyCanvas || message === x.emptyBible;
 
   return (
     <div className="settings export-menu" ref={rootRef}>
