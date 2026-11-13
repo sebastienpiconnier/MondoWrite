@@ -227,7 +227,7 @@ src/
     langs.ts            Liste des langues (tenues et de la communauté, COMMUNITY), part traduite (langCoverage), langues proposées (offeredLangs), détection (matchLang : pt-BR puis pt)
     coverage.ts         Traduction partielle : complete (repli sur l'anglais), missingPaths, translatedShare, FREE_LISTS (pur, sans import, lu aussi par scripts/i18n.mjs)
     index.ts            useT(), getT(), fmt()
-  App.tsx               Accueil ou projet ouvert, sauvegarde auto (800 ms après la dernière modif), Cmd/Ctrl+S
+  App.tsx               Accueil ou projet ouvert, sauvegarde auto (2,5 s après la dernière modif), Cmd/Ctrl+S
   components/
     Home.tsx            Accueil : liste des projets de l'appareil, nouveau projet (roman ou scénario)
     TopBar.tsx          Logo et slogan, titre du projet, vues (sur téléphone : onglets en bas, avec une icône), statut, « À faire », bouton « Projets »

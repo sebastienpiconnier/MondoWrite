@@ -30,7 +30,7 @@ import { shownView, usePhone } from "./components/usePhone";
 import { toggleFullscreen } from "./fullscreen";
 import { isMobileOS } from "./platform";
 
-const AUTOSAVE_DELAY = 800; // ms après la dernière modification
+const AUTOSAVE_DELAY = 2500; // ms après la dernière modification (800 faisait clignoter « Non enregistré » à chaque pause)
 /** Ce qui s'écrit dans le projet : toute modification de l'un d'eux relance le délai de la sauvegarde auto. */
 const SAVED_KEYS = [
   "nodes", "frames", "edges", "screenplay", "title", "kind", "paper", "sceneNumbers", "underlineHeadings",
@@ -110,7 +110,7 @@ export function App() {
     const unsubscribe = useCosmos.subscribe((s, prev) => {
       if (!s.loaded || s.screen !== "project" || s.status !== "modifie") return;
       // Tout ce qui s'enregistre relance le délai, y compris la frappe dans le Manuscrit (sinon on enregistrait
-      // toutes les 800 ms en pleine saisie, copies Markdown et version du jour comprises).
+      // toutes les 2,5 s en pleine saisie, copies Markdown et version du jour comprises).
       const same = SAVED_KEYS.every((k) => s[k] === prev[k]);
       if (same && s.status === prev.status) return;
       clearTimeout(timer);
