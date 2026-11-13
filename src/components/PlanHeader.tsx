@@ -3,6 +3,8 @@
 // seconde ligne : le gabarit et ce qu'il raconte. Les deux vues ne diffèrent que par ce qu'elles y mettent.
 
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useShellSlot } from "./useShellSlot";
 import { useT } from "../i18n";
 import { useSettings, type SequencerMode } from "../settings";
 
@@ -41,9 +43,8 @@ export function PlanHeader({ title, timeline, onTimeline, modeAria, actions, tot
   const sq = t.screenplay.sequencer;
   const mode = useSettings((s) => s.sequencerMode);
   const setMode = useSettings((s) => s.setSequencerMode);
-  return (
-    <header className="sq-head">
-      <h1>{title}</h1>
+  const shellSlot = useShellSlot();
+  const modes = (
       <div className="sq-modes" role="group" aria-label={modeAria}>
         {MODES.map((m) => (
           <button
@@ -62,6 +63,9 @@ export function PlanHeader({ title, timeline, onTimeline, modeAria, actions, tot
           {t.plan.timeline}
         </button>
       </div>
+  );
+  const rest = (
+    <>
       {actions}
       {total}
       {(template || about) && (
@@ -70,6 +74,28 @@ export function PlanHeader({ title, timeline, onTimeline, modeAria, actions, tot
           {about && <p className="plan-about">{about}</p>}
         </div>
       )}
+    </>
+  );
+  // Grand écran : présentation, actions et gabarit vivent dans la colonne de verre, le titre est dans le menu des vues.
+  if (shellSlot) {
+    return (
+      <>
+        <h1 className="sr-only">{title}</h1>
+        {createPortal(
+          <div className="shell-plan-tools">
+            {modes}
+            {rest}
+          </div>,
+          shellSlot,
+        )}
+      </>
+    );
+  }
+  return (
+    <header className="sq-head">
+      <h1>{title}</h1>
+      {modes}
+      {rest}
     </header>
   );
 }

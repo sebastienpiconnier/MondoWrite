@@ -288,12 +288,10 @@
   /* Bords haut et bas : flou, transparence et fondu. Les bandes sont des calques posés PAR-DESSUS la zone qui défile
      (jamais dedans) : le contenu qui passe dessous se brouille et s'efface dans la teinte du fond. */
   .shell-scroll { padding: 24px 10px; }
-  .shell-fade::before, .shell-fade::after, .app.has-tabbar .app-main::before, .app.has-tabbar .app-main::after {
+  .app.has-tabbar .app-main::before, .app.has-tabbar .app-main::after {
     content: ""; position: absolute; left: 0; right: 0; z-index: 5; pointer-events: none;
     -webkit-backdrop-filter: blur(var(--edge-blur, 8px)); backdrop-filter: blur(var(--edge-blur, 8px));
   }
-  .shell-fade::before { top: 0; height: 30px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent); mask-image: linear-gradient(to bottom, #000 35%, transparent); }
-  .shell-fade::after { bottom: 0; height: 30px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 35%, transparent); mask-image: linear-gradient(to top, #000 35%, transparent); }
   .app.has-tabbar .app-main::before { top: 0; height: 84px; left: -236px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent); mask-image: linear-gradient(to bottom, #000 45%, transparent); }
   .app.has-tabbar .app-main::after { bottom: 0; height: 40px; left: -236px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent); mask-image: linear-gradient(to top, #000 40%, transparent); }
 
@@ -333,7 +331,7 @@
 @media (prefers-reduced-motion: reduce) { .toc-chevron { transition: none; } }
 
 /* Teinte des bords floutés : le fond de l'app, à moitié transparent. */
-:root { --edge-tint: color-mix(in srgb, var(--ground) 40%, transparent); }
+:root { --edge-tint: color-mix(in srgb, var(--ground) 14%, transparent); }
 :root[data-glass="off"] { --edge-tint: var(--ground); --edge-blur: 0px; }
 @media (prefers-reduced-transparency: reduce) { :root { --edge-tint: var(--ground); --edge-blur: 0px; } }
 @media (min-width: 1100px) {
@@ -376,3 +374,56 @@
   /* Icônes des menus et des barres à la couleur d'accent. */
   .app.has-tabbar .tb-group svg, .sp-bar svg, .ms-meta svg, .zoom-capsule svg, .canvas-dock svg, .app.has-tabbar .topbar .icon-button svg { color: var(--accent); }
 }
+
+/* ---- Retours de novembre 2026 (3) ---- */
+@media (min-width: 1100px) {
+  /* Colonne : le contenu qui défile s'estompe en haut et en bas, sans aplat ni ombre : le verre reste uniforme. */
+  .shell-scroll { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%); }
+  /* Les bandes de l'espace de travail ne couvrent plus la colonne (pas de bande visible sous le menu des vues). */
+  .app.has-tabbar .app-main::before, .app.has-tabbar .app-main::after { left: 0; }
+
+  /* Canevas : la rangée du bas et la capsule de zoom remontent. Ordre : moins, pourcentage, plus, tout voir. */
+  .app[data-view="toile"] .react-flow__panel.zoom-capsule.bottom { margin: 0 18px 64px 0; }
+  .app[data-view="toile"] .canvas-dock { bottom: max(44px, env(safe-area-inset-bottom)); }
+
+  /* Plan et séquencier : présentation, actions et gabarit dans la colonne ; le contenu s'aligne à gauche du volet. */
+  .shell-plan-tools { display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin: 4px 0 8px; }
+  .shell-plan-tools .sq-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 10px; background: var(--glass-fill-strong); }
+  .shell-plan-tools .sq-modes button { min-height: 30px; padding: 0 4px; font-size: 0.75rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .shell-plan-tools .ghost-button, .shell-plan-tools .plan-organize { width: 100%; min-height: 32px; padding: 0 10px; justify-content: flex-start; font-size: 0.8125rem; }
+  .shell-plan-tools .plan-timeline-tab { grid-column: 1 / -1; }
+  .shell-plan-tools .sq-series-add { flex-direction: column; }
+  .shell-plan-tools .sq-total { margin: 0 !important; padding: 0 2px; font-size: 0.75rem; }
+  .shell-plan-tools .sq-total strong { font-size: 0.875rem; }
+  .shell-plan-tools .sq-template-row { flex-direction: column; align-items: stretch; flex-basis: auto; gap: 6px; }
+  .shell-plan-tools .plan-template { flex-direction: column; align-items: stretch; gap: 4px; font-size: 0.75rem; }
+  .shell-plan-tools .plan-template select, .shell-plan-tools select { width: 100%; min-height: 32px; font-size: 0.8125rem; }
+  .shell-plan-tools .plan-about { flex: none; font-size: 0.75rem; line-height: 1.4; }
+  @media (pointer: coarse) { .shell-plan-tools .sq-modes button, .shell-plan-tools .ghost-button, .shell-plan-tools select { min-height: 44px; } }
+  .app.has-tabbar .sequencer .sq-inner { max-width: none; margin: 0; }
+  .app.has-tabbar .sequencer { padding-left: max(24px, env(safe-area-inset-left)); }
+
+  /* Poignées des volets : juste un chevron, sans cadre ni ombre. */
+  .app.has-tabbar .edge-handle { border: 0; background: transparent; box-shadow: none; clip-path: none; color: var(--accent); width: 24px; }
+  .app.has-tabbar .edge-handle.is-left, .app.has-tabbar .edge-handle.is-right { border-radius: 0; }
+  .app.has-tabbar .edge-handle.is-top { width: 56px; height: 20px; border-radius: 0; background: transparent; box-shadow: none; }
+  @media (any-hover: hover) { .app.has-tabbar .edge-handle:hover { background: var(--hover); } }
+
+  /* Barre du haut de la scène (ruban, flèches, compteur) : un panneau pleine largeur de l'espace de travail. */
+  .app.has-tabbar .manuscript .ms-meta-wrap { width: calc(100cqw + 48px); max-width: none; align-self: center; margin: 0 0 8px; }
+  .app.has-tabbar .manuscript .ms-meta {
+    border: 0; border-radius: 0 0 var(--glass-radius) var(--glass-radius); background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow), inset 0 -1px 0 var(--glass-shine);
+  }
+}
+
+/* ---- Fenêtres : verre, transparence et flou ---- */
+.app-dialog { background: var(--glass-fill-strong); -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); border: 0; box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow), inset 0 1px 0 var(--glass-shine); }
+.app-dialog::backdrop { background: color-mix(in srgb, var(--ground) 30%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+:root[data-glass="off"] .app-dialog { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-glass="off"] .app-dialog::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-transparency: reduce) { .app-dialog { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } .app-dialog::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; } }
+.more-menu, .slash-menu { background: var(--glass-fill-strong); -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); border-color: var(--glass-edge); }
+:root[data-glass="off"] :is(.more-menu, .slash-menu) { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-transparency: reduce) { :is(.more-menu, .slash-menu) { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
