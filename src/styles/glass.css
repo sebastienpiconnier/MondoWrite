@@ -276,17 +276,12 @@
   .shell-side { overflow: hidden; }
   .shell-fade { display: block; position: relative; flex: 1 1 auto; min-height: 0; margin: 0 -10px; }
   .shell-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 12px 10px; overscroll-behavior: contain; scrollbar-width: thin; }
-  /* Bords haut et bas : flou progressif (le contenu qui passe dessous s'efface dans le verre). */
-  .shell-fade::before, .shell-fade::after { content: ""; position: absolute; left: 0; right: 0; height: 26px; z-index: 2; pointer-events: none; }
-  .shell-fade::before {
-    top: 0; background: linear-gradient(to bottom, var(--glass-fill), transparent);
-    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
-    -webkit-mask-image: linear-gradient(to bottom, #000 20%, transparent); mask-image: linear-gradient(to bottom, #000 20%, transparent);
-  }
-  .shell-fade::after {
-    bottom: 0; background: linear-gradient(to top, var(--glass-fill), transparent);
-    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
-    -webkit-mask-image: linear-gradient(to top, #000 20%, transparent); mask-image: linear-gradient(to top, #000 20%, transparent);
+  /* Bords haut et bas : le contenu qui défile s'efface dans le verre (masque sur la zone elle-même, sans second
+     backdrop-filter imbriqué, que WebKit n'affiche pas). */
+  .shell-scroll {
+    padding: 22px 10px;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
   }
 
   /* Icônes de la colonne à la couleur d'accent. */
