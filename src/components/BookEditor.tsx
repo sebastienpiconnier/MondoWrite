@@ -196,7 +196,7 @@ export function BookEditor({
         item: (type, node) =>
           type === SCENE_MARK
             ? { margin: 0, keep: node.attrs.chapterId ? 4 : node.attrs.breakBefore ? 2 : 0, before: !!node.attrs.newPage }
-            : { margin: 0, keep: type === "heading" ? 3 : 0 },
+            : { margin: 0, keep: type === "heading" ? 3 : 0, split: type === "paragraph" },
         firstPage: () => 1,
         label: (page) => String(page),
         numberAt: "bottom",

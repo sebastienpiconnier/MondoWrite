@@ -5,7 +5,7 @@
 
 import { Extension } from "@tiptap/react";
 import { Plugin, PluginKey, Selection } from "@tiptap/pm/state";
-import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { hasContd } from "../export/typeset";
 import { pageLabels, resolveLock, type PageStart } from "../lockedPages";
@@ -22,6 +22,11 @@ export interface PageItem {
   before?: boolean;
   /** Suite d'une réplique : s'il ouvre une page, le nom du personnage (SUITE) y prend une ligne avant lui. */
   cont?: boolean;
+  /**
+   * Paragraphe du livre qui peut se couper entre deux pages : hauteur d'une de ses lignes (même unité que
+   * `height`). Absent : l'élément ne se coupe jamais (scénario, titres).
+   */
+  lineHeight?: number;
 }
 
 export interface PageBreak {
@@ -31,7 +36,12 @@ export interface PageBreak {
   rest: number;
   /** Numéro de la page qui commence. */
   page: number;
+  /** Coupure dans l'élément : rang (depuis 0) de sa ligne qui ouvre la nouvelle page. Absent : avant l'élément. */
+  line?: number;
 }
+
+/** Lignes d'un paragraphe à garder ensemble de chaque côté d'une coupure de page (veuves et orphelines). */
+export const MIN_SPLIT_LINES = 2;
 
 /** Répartit des éléments en pages de `lines` lignes. Fonction pure, testée sans navigateur. */
 /**
@@ -45,6 +55,43 @@ export function layoutPages(items: PageItem[], lines: number, offset = 0): { bre
   let page = 1;
   items.forEach((item, index) => {
     const margin = used === start ? 0 : item.margin;
+    // Paragraphe du livre qui ne tient pas en entier : il se coupe à la ligne, au moins deux lignes de chaque côté.
+    const lh = item.lineHeight;
+    if (lh && lh > 0 && !(item.before && used > start) && used + margin + item.height + item.keep > lines + 0.1) {
+      const total = Math.max(1, Math.round(item.height / lh));
+      let done = 0;
+      let gap = margin;
+      for (;;) {
+        const left = total - done;
+        const avail = lines - used - gap;
+        if (left * lh <= avail + 0.1) {
+          used += gap + left * lh;
+          break;
+        }
+        const fit = Math.min(Math.floor((avail + 0.1) / lh), left - MIN_SPLIT_LINES);
+        if (fit >= MIN_SPLIT_LINES) {
+          breaks.push({ index, rest: Math.max(0, avail - fit * lh), page: ++page, line: done + fit });
+          done += fit;
+          start = 0;
+          used = 0;
+          gap = 0;
+          continue;
+        }
+        if (done === 0 && used > start) {
+          // Pas assez de place pour deux lignes : le paragraphe commence sur la page suivante.
+          breaks.push({ index, rest: Math.max(0, lines - used), page: ++page });
+          start = 0;
+          used = 0;
+          gap = 0;
+          continue;
+        }
+        // Haut de page et paragraphe trop court pour être coupé proprement : il déborde, comme avant.
+        used =Math.min(lines, used + gap + left * lh);
+        break;
+      }
+      if (used > lines) used = lines;
+      return;
+    }
     // Tolérance d'un dixième de ligne : les hauteurs mesurées à l'écran ne tombent pas toujours juste.
     if (used > start && (item.before || used + margin + item.height + item.keep > lines + 0.1)) {
       breaks.push({ index, rest: Math.max(0, lines - used), page: ++page });
@@ -65,7 +112,7 @@ export interface PagesOptions {
   /** Faux sur un écran trop étroit pour une vraie page : la feuille redevient continue. */
   enabled: (editorDom: HTMLElement) => boolean;
   /** Marge au-dessus d'un élément et lignes à garder après lui, selon son type (scénario par défaut). */
-  item?: (type: string, node: PMNode) => { margin: number; keep: number; before?: boolean };
+  item?: (type: string, node: PMNode) => { margin: number; keep: number; before?: boolean; split?: boolean };
   /** Numéro de la première page (le manuscrit continue la numérotation des scènes précédentes). */
   firstPage?: () => number;
   /** Texte du numéro de page (scénario : « 2. »). */
@@ -81,7 +128,7 @@ export interface PagesOptions {
 }
 
 /** Règles du scénario : pas de marge avant une réplique, en-tête et personnage jamais seuls en bas de page. */
-const screenplayItem = (type: string) => ({
+const screenplayItem = (type: string): { margin: number; keep: number; split?: boolean } => ({
   margin: TIGHT.has(type) ? 0 : 1,
   // Jamais d'en-tête en bas de page (une ligne vide et une ligne de texte), ni de personnage sans réplique.
   keep: type === "sceneHeading" ? 2 : type === "character" ? 1 : 0,
@@ -98,12 +145,16 @@ export const pagesKey = new PluginKey<DecorationSet>("screenplayPages");
  * `top` : place du numéro dans l'espace (en em) ; `bottom` : numéro centré en bas de la page qu'on quitte (livre),
  * sinon en haut à droite de la page qui commence (scénario).
  */
-function spacer(height: number, gapTop: number | null, label: string, top: number, bottom = false, speech?: { more: string; cue: string; cueTop: number }): () => HTMLElement {
+function spacer(height: number, gapTop: number | null, label: string, top: number, bottom = false, speech?: { more: string; cue: string; cueTop: number }, inlinePx?: number): () => HTMLElement {
   return () => {
-    const el = document.createElement("div");
-    el.className = "sp-pagebreak";
+    const el = document.createElement(inlinePx ? "span" : "div");
+    el.className = inlinePx ? "sp-pagebreak is-inline" : "sp-pagebreak";
     el.contentEditable = "false";
     el.setAttribute("aria-hidden", "true");
+    // Coupure dans un paragraphe : un bloc en ligne de toute la largeur, posé au début de la ligne qui ouvre la
+    // page suivante. La ligne d'avant se coupe d'elle-même, donc reste justifiée. Son corps est celui de
+    // l'éditeur (un paragraphe en petits caractères ne doit pas changer la hauteur de l'espace).
+    if (inlinePx) el.style.fontSize = `${inlinePx}px`;
     el.style.height = `${height}em`;
     if (gapTop !== null) {
       const gap = document.createElement("div");
@@ -136,6 +187,45 @@ function spacer(height: number, gapTop: number | null, label: string, top: numbe
     }
     return el;
   };
+}
+
+/** Hauteur (px) des coupures de page déjà posées dans un paragraphe, à retirer de sa hauteur mesurée. */
+function innerBreaks(dom: HTMLElement): DOMRect[] {
+  return Array.from(dom.querySelectorAll<HTMLElement>(".sp-pagebreak")).map((el) => el.getBoundingClientRect());
+}
+
+const blank = /\s/;
+
+/**
+ * Position dans le document du début de la ligne `line` (depuis 0) d'un paragraphe, comptée comme si aucune
+ * coupure n'y était posée. null : introuvable (paragraphe pas encore dessiné, mesure qui ne tombe pas juste).
+ */
+function lineStart(view: EditorView, offset: number, node: PMNode, dom: HTMLElement, line: number, linePx: number): number | null {
+  const box = dom.getBoundingClientRect();
+  let y = box.top + (line + 0.5) * linePx;
+  // Les coupures déjà posées décalent les lignes qui les suivent.
+  for (const r of innerBreaks(dom)) if (r.top <= y) y += r.height;
+  const hit = view.posAtCoords({ left: box.left + 2, top: y });
+  const from = offset + 1;
+  const to = offset + node.nodeSize - 1;
+  if (!hit || hit.pos <= from || hit.pos >= to) return null;
+  let pos = hit.pos;
+  try {
+    // Revenir au premier caractère de la ligne visée.
+    const top = view.coordsAtPos(pos, 1).top;
+    while (pos - 1 > from && Math.abs(view.coordsAtPos(pos - 1, 1).top - top) < linePx / 3) pos--;
+  } catch {
+    return null;
+  }
+  // Ligne qui commence au milieu d'un mot coupé (césure) : la coupure passe avant le mot entier.
+  const text = (a: number) => view.state.doc.textBetween(a - 1, a, "\n", "\u0000");
+  let back = 0;
+  while (pos - 1 > from && back < 40 && !blank.test(text(pos))) {
+    pos--;
+    back++;
+  }
+  if (pos - 1 <= from || back >= 40) return null;
+  return pos;
 }
 
 export const Pages = Extension.create<PagesOptions>({
@@ -207,9 +297,20 @@ export const Pages = Extension.create<PagesOptions>({
                 // Une réplique ne se coupe qu'entre deux de ses éléments (dialogue, didascalie) : un paragraphe ne se coupe pas à l'écran.
                 const cont = !!continued && TIGHT.has(type) && TIGHT.has(previous) && cue !== "";
                 if (cont) cues.set(items.length, cue);
+                const { split, ...rules } = itemOf(type, node);
+                let height = 1;
+                let lineHeight: number | undefined;
+                if (dom instanceof HTMLElement) {
+                  // Hauteur du texte seul : sans les coupures de page déjà posées dans le paragraphe.
+                  const inner = split ? innerBreaks(dom).reduce((sum, r) => sum + r.height, 0) : 0;
+                  height = (dom.getBoundingClientRect().height - inner) / line;
+                  const lh = split ? parseFloat(getComputedStyle(dom).lineHeight) / line : NaN;
+                  if (Number.isFinite(lh) && lh > 0) lineHeight = lh;
+                }
                 items.push({
-                  height: dom instanceof HTMLElement ? dom.getBoundingClientRect().height / line : 1,
-                  ...itemOf(type, node),
+                  height,
+                  ...rules,
+                  ...(lineHeight ? { lineHeight } : {}),
                   ...(forced.has(items.length) && items.length > 0 ? { before: true } : {}),
                   ...(cont ? { cont } : {}),
                 });
@@ -226,7 +327,16 @@ export const Pages = Extension.create<PagesOptions>({
               const top = parseFloat(getComputedStyle(view.dom).paddingTop) / line;
               const layout = layoutPages(items, lines, Number.isFinite(top) ? top - marginTop : 0);
               pages = layout.pages;
-              breakAt = layout.breaks.map((b) => positions[b.index]);
+              // Coupure dans un paragraphe : position du premier caractère de la ligne qui ouvre la page.
+              const editorPx = line;
+              const splitAt = layout.breaks.map((b) => {
+                if (b.line === undefined) return null;
+                const dom = view.nodeDOM(positions[b.index]);
+                const lh = items[b.index].lineHeight;
+                if (!(dom instanceof HTMLElement) || !lh) return null;
+                return lineStart(view, positions[b.index], doc.child(b.index), dom, b.line, lh * editorPx);
+              });
+              breakAt = layout.breaks.map((b, i) => splitAt[i] ?? positions[b.index]);
               // Libellés des pages verrouillées : l'élément qui ouvre chaque page, au sens de typeset (le nom, pour une réplique coupée).
               let labels: string[] | null = null;
               if (plan) {
@@ -244,21 +354,25 @@ export const Pages = Extension.create<PagesOptions>({
               const atBottom = options.numberAt === "bottom";
               // Numéro centré en bas : au milieu de la marge basse de la page qu'on quitte.
               const bottomTop = (rest: number) => rest + bottom / 2 - 0.45;
-              for (const b of layout.breaks) {
-                // L'élément garde sa marge du dessus (CSS) : on la retire de l'espace ajouté.
-                const base = b.rest + bottom + GAP + marginTop - items[b.index].margin;
+              layout.breaks.forEach((b, i) => {
+                const inside = splitAt[i];
+                // Coupure introuvable dans le paragraphe : il passe en entier à la page suivante, avec ses lignes du bas.
+                const moved = b.line !== undefined && inside === null ? Math.min(lines, b.line * (items[b.index].lineHeight ?? 0)) : 0;
+                const rest = b.rest + moved;
+                // L'élément garde sa marge du dessus (CSS) : on la retire de l'espace ajouté (pas dans un paragraphe coupé).
+                const base = rest + bottom + GAP + marginTop - (inside === null ? items[b.index].margin : 0);
                 // Réplique coupée : une ligne de plus en haut de la page pour le nom et (SUITE).
                 const who = continued && items[b.index].cont ? cues.get(b.index) : undefined;
                 const speech = who && continued ? { more: continued.more, cue: hasContd(who, continued.contd) ? who : `${who} ${continued.contd}`, cueTop: base } : undefined;
                 const height = base + (speech ? 1 : 0);
                 decorations.push(
-                  Decoration.widget(positions[b.index], spacer(height, b.rest + bottom, labels ? `${labels[b.page - 1]}.` : label(atBottom ? b.page - 1 + first : b.page + first), atBottom ? bottomTop(b.rest) : b.rest + bottom + GAP + 2.5, atBottom, speech), {
+                  Decoration.widget(inside ?? positions[b.index], spacer(height, rest + bottom, labels ? `${labels[b.page - 1]}.` : label(atBottom ? b.page - 1 + first : b.page + first), atBottom ? bottomTop(rest) : rest + bottom + GAP + 2.5, atBottom, speech, inside === null ? undefined : editorPx), {
                     side: -1,
-                    key: `page-${b.page + first}-${height.toFixed(2)}-${speech ? `${speech.more}|${speech.cue}` : ""}`,
+                    key: `page-${b.page + first}-${height.toFixed(2)}-${inside ?? ""}-${speech ? `${speech.more}|${speech.cue}` : ""}`,
                   }),
                 );
-                next += `${positions[b.index]}:${height.toFixed(2)}:${speech?.cue ?? ""};`;
-              }
+                next += `${inside ?? positions[b.index]}:${height.toFixed(2)}:${speech?.cue ?? ""};`;
+              });
               // La dernière page va jusqu'en bas, marge comprise.
               const tail = layout.tail + bottom;
               // Livre : la dernière page porte aussi son numéro, en bas.
