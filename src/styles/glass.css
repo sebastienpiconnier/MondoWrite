@@ -92,18 +92,6 @@
   .shell-side .tb-back .tb-label { display: inline; }
   .shell-side .brand-text { flex: 1; min-width: 0; }
   .shell-side .brand-project { max-width: 100%; }
-  .shell-side .views {
-    position: static; transform: none; width: auto; margin: 0; padding: 0; gap: 2px; background: transparent; border-radius: 0;
-    flex-direction: column; align-items: stretch;
-  }
-  .shell-side .views button {
-    display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 9px;
-    min-height: 32px; padding: 0 8px; border-radius: 8px; font-size: 0.8125rem; font-weight: 400; text-align: left; color: var(--ink);
-  }
-  .shell-side .views button.is-current { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
-  .shell-side .views .view-icon { display: block; flex: none; width: 18px; height: 18px; color: var(--accent); }
-  .shell-side .views .view-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  @media (pointer: coarse) { .shell-side .views button { min-height: 44px; } }
 
   /* Plus de barre pleine largeur : le titre de la vue et des capsules d'outils flottantes. */
   .app.has-tabbar .topbar {
@@ -342,7 +330,6 @@
 
 @media (min-width: 1100px) {
   /* Séparateur sous le menu des vues. */
-  .shell-side .views { padding-bottom: 8px; border-bottom: 1px solid var(--glass-edge); }
 
   /* Liste des scènes et chapitres du Manuscrit et du Scénario : sous le menu, dans la colonne de verre. */
   .shell-scroll .sp-scenes { overflow: visible; padding: 0; border: 0; box-shadow: none; background: transparent; display: flex; flex-direction: column; gap: 8px; }
@@ -427,3 +414,29 @@
 .more-menu, .slash-menu { background: var(--glass-fill-strong); -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); border-color: var(--glass-edge); }
 :root[data-glass="off"] :is(.more-menu, .slash-menu) { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (prefers-reduced-transparency: reduce) { :is(.more-menu, .slash-menu) { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* ---- Menu des vues : la pilule revient en haut, au centre, comme à l'origine (en verre) ---- */
+@media (min-width: 1100px) {
+  .app.has-tabbar .topbar > .views {
+    position: fixed; top: 8px; left: calc(236px + (100vw - 236px) / 2); transform: translateX(-50%); z-index: 21;
+    display: flex; flex-direction: row; align-items: center; gap: 2px; width: auto; margin: 0; padding: 4px; min-height: 36px; box-sizing: border-box;
+    border-radius: var(--glass-radius-pill); background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)); backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow), inset 0 1px 0 var(--glass-shine);
+  }
+  .app.has-tabbar .topbar > .views button { display: inline-flex; flex-direction: row; align-items: center; gap: 7px; min-height: 28px; padding: 0 14px; border-radius: 14px; font-size: 0.8125rem; color: var(--ink); }
+  .app.has-tabbar .topbar > .views button.is-current { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+  .topbar > .views .view-icon { display: block; flex: none; width: 16px; height: 16px; color: var(--accent); }
+  @media (pointer: coarse) { .app.has-tabbar .topbar > .views button { min-height: 44px; } }
+  @media (any-hover: hover) { .app.has-tabbar .topbar > .views button:hover:not(.is-current) { background: var(--hover); } }
+}
+/* Fenêtre moyenne : seule la vue en cours garde son mot, pour ne pas toucher les capsules de droite. */
+@media (min-width: 1100px) and (max-width: 1399px) {
+  .app.has-tabbar .topbar > .views button:not(.is-current) .view-label { display: none; }
+}
+:root[data-glass="off"] .app.has-tabbar .topbar > .views { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-transparency: reduce) { .app.has-tabbar .topbar > .views { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+/* Aide et bandeaux du canevas : sous la pilule des vues. */
+@media (min-width: 1100px) {
+  .app[data-view="toile"].has-tabbar .canvas-top { top: 56px; left: calc(50% + 118px); }
+}

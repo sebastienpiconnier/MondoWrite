@@ -141,6 +141,12 @@ export function TopBar() {
         </span>
       </div>
 
+      {/* Zone qui défile sous les vues (grand écran) : types de cartes du canevas, sommaire de la Bible (posé ici par
+          un portail, Bible.tsx). Les bords haut et bas se floutent quand le contenu passe dessous (glass.css). */}
+      <div className="shell-fade">
+        <div className="shell-scroll" id="shell-slot">{current === "toile" && <ShellCards />}</div>
+      </div>
+      </div>
       <nav className="views" aria-label={t.views.aria}>
         {shownViews.map((v) => (
           <button
@@ -163,12 +169,6 @@ export function TopBar() {
           </button>
         )}
       </nav>
-      {/* Zone qui défile sous les vues (grand écran) : types de cartes du canevas, sommaire de la Bible (posé ici par
-          un portail, Bible.tsx). Les bords haut et bas se floutent quand le contenu passe dessous (glass.css). */}
-      <div className="shell-fade">
-        <div className="shell-scroll" id="shell-slot">{current === "toile" && <ShellCards />}</div>
-      </div>
-      </div>
       <span className="shell-title" aria-hidden="true">{views[current as View] ?? ""}</span>
 
       {/* Téléphone : les actions sont derrière « ⋯ », qui porte donc le point d'état d'enregistrement. */}
