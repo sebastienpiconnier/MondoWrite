@@ -5,9 +5,9 @@
 :root {
   --glass-blur: 22px;
   --glass-sat: 1.8;
-  --glass-fill: color-mix(in srgb, var(--surface) 72%, transparent);
-  --glass-fill-strong: color-mix(in srgb, var(--surface) 86%, transparent);
-  --glass-edge: color-mix(in srgb, var(--ink) 10%, transparent);
+  --glass-fill: color-mix(in srgb, var(--surface) 58%, transparent);
+  --glass-fill-strong: color-mix(in srgb, var(--surface) 80%, transparent);
+  --glass-edge: color-mix(in srgb, var(--ink) 16%, transparent);
   --glass-shine: color-mix(in srgb, var(--surface) 90%, transparent);
   --glass-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 8%, transparent);
   --glass-shadow-float: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent);
@@ -15,7 +15,7 @@
   --glass-radius-pill: 999px; /* capsules d'outils, onglets */
 }
 :root[data-theme="dark"] {
-  --glass-fill: color-mix(in srgb, var(--surface) 62%, transparent);
+  --glass-fill: color-mix(in srgb, var(--surface) 52%, transparent);
   --glass-fill-strong: color-mix(in srgb, var(--surface) 80%, transparent);
   --glass-edge: color-mix(in srgb, var(--ink) 16%, transparent);
   --glass-shine: color-mix(in srgb, var(--ink) 12%, transparent);
@@ -67,6 +67,15 @@
 .shell-side { display: contents; }
 .shell-title { display: none; }
 @media (min-width: 1100px) {
+  /* Un fond teinté (comme le papier peint de macOS) : sans lui, le verre n'a rien à flouter et ne se voit pas. */
+  .app.has-tabbar {
+    background:
+      radial-gradient(60% 55% at 0% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+      radial-gradient(55% 50% at 100% 100%, color-mix(in srgb, var(--type-scene) 18%, transparent), transparent 70%),
+      radial-gradient(45% 40% at 100% 0%, color-mix(in srgb, var(--type-lieu) 16%, transparent), transparent 70%),
+      var(--ground);
+  }
+  .app.has-tabbar .react-flow { --xy-background-color-default: transparent; background: transparent; }
   .shell-side {
     display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; overflow: auto;
     position: fixed; left: max(8px, env(safe-area-inset-left)); top: 8px; bottom: 8px; width: 220px; z-index: 30; padding: 14px 10px;
