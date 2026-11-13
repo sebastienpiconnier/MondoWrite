@@ -58,3 +58,30 @@
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+/* Barre latérale flottante (maquettes macOS et iPad) : sur un grand écran, les quatre vues quittent la barre du haut
+   pour une colonne de verre à gauche, icône et nom. Même balisage (nav.views) : le téléphone garde ses onglets du bas
+   (phone.css) et le mode focus n'a pas de barre. Rien ne dépend du survol, cibles de 44 px. */
+@media (min-width: 1100px) {
+  .app.has-tabbar .views {
+    position: fixed; left: max(12px, env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); z-index: 30;
+    flex-direction: column; align-items: stretch; gap: 4px; padding: 8px 6px; margin: 0; width: 88px;
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    border-radius: var(--glass-radius);
+    box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow-float), inset 0 1px 0 var(--glass-shine);
+  }
+  :root[data-glass="off"] .app.has-tabbar .views { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .app.has-tabbar .views button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-height: 56px; padding: 6px 2px; border-radius: 14px; font-size: 0.6875rem;
+  }
+  .app.has-tabbar .views .view-icon { display: block; flex: none; }
+  .app.has-tabbar .views .view-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* La colonne de verre a sa gouttière : le contenu ne passe pas dessous. */
+  .app.has-tabbar .app-main { margin-left: calc(88px + 24px); }
+}
+@media (min-width: 1100px) and (prefers-reduced-transparency: reduce) {
+  .app.has-tabbar .views { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

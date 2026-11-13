@@ -114,7 +114,7 @@ export function TopBar() {
               setMore(false);
             }}
           >
-            {phone && PHONE_ICONS[v]}
+            {PHONE_ICONS[v]}
             <span className="view-label">{views[v]}</span>
           </button>
         ))}

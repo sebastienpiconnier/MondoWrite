@@ -27,4 +27,4 @@ rendu en CSS (`backdrop-filter`), sans la réfraction du vrai Liquid Glass. Une 
 - Police : SF Pro n'est pas embarquée, IBM Plex Sans reste le repli ; les proportions des maquettes bougent légèrement.
 
 ## Avancement
-- Étape 1 : fait. Étape 2 : réglage et capsule d'outils du canevas faits ; reste la barre latérale flottante et l'inspecteur (touchent `TopBar`, `App` et la mise en page des vues : à faire écran par écran avec captures).
+- Étape 1 : fait. Étape 2 : réglage, capsule d'outils du canevas et barre latérale de verre (CSS seul, `nav.views` sortie de la barre du haut dès 1100 px, glass.css) faits ; reste l'inspecteur à droite et le verre de la barre du haut. Vérifié par captures (1440 px, clair et sombre) ; pas encore à 1100 à 1200 px ni en tactile.
