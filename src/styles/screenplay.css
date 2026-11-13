@@ -269,3 +269,6 @@
 .rev-panel button { min-height: 44px; }
 .rev-panel .ghost-button { border: 1px solid var(--line); padding: 0 14px; width: auto; align-self: flex-start; }
 .rev-panel .ghost-button.is-primary { border-color: transparent; background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
+
+/* Nom d'un personnage ou d'un décor du volet « Scène » qui ouvre sa fiche de la Bible (au doigt comme à la souris). */
+.sp-sheet-link { font: inherit; text-align: left; min-height: 44px; padding: 0; text-transform: inherit; }

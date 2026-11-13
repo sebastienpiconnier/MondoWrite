@@ -60,7 +60,8 @@ import { resolveEpisode, seriesOf } from "../screenplay/series";
 import { useEpisodeLabel } from "./EpisodePicker";
 import { EpisodePicker } from "./EpisodePicker";
 import { useSettings } from "../settings";
-import { fmt, getT } from "../i18n";
+import { fmt, getT, useT } from "../i18n";
+import { foldName } from "../review/names";
 import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { colorFor, currentSet, setOf } from "../screenplay/revisions";
@@ -1471,7 +1472,9 @@ export function ScreenplayView() {
                 <div className="eyebrow" style={{ color: "var(--type-lieu)" }}>
                   {types.lieu.label}
                 </div>
-                <div className="is-slugline sp-box-title">{location}</div>
+                <div className="is-slugline sp-box-title">
+                  <SheetLink name={location} type="lieu" nodes={nodes} />
+                </div>
                 <p className="sp-detail">
                   {plural(scenesInLocation(scenes, location, lang), sp.locationScenesOne, sp.locationScenesMany)}
                 </p>
@@ -1488,7 +1491,9 @@ export function ScreenplayView() {
                 <ul className="sp-speakers">
                   {speakers.map((c) => (
                     <li key={c.name}>
-                      <span>{c.name}</span>
+                      <span>
+                        <SheetLink name={c.name} type="personnage" nodes={nodes} />
+                      </span>
                       <span className="sp-detail">{plural(c.lines, sp.linesOne, sp.linesMany)}</span>
                     </li>
                   ))}
@@ -1510,5 +1515,22 @@ export function ScreenplayView() {
         )}
       </aside>
     </div>
+  );
+}
+
+/**
+ * Nom d'un personnage ou d'un décor du volet « Scène » : s'il a sa fiche dans la Bible, un clic l'ouvre
+ * (le bouton « Retour au scénario » ramène au curseur) ; sinon le nom reste du texte.
+ */
+function SheetLink({ name, type, nodes }: { name: string; type: "personnage" | "lieu"; nodes: { id: string; data: { type: string; title: string } }[] }) {
+  const t = useT();
+  const folded = foldName(name);
+  const card = folded ? nodes.find((n) => n.data.type === type && foldName(n.data.title) === folded)?.data : undefined;
+  const id = folded ? nodes.find((n) => n.data.type === type && foldName(n.data.title) === folded)?.id : undefined;
+  if (!card || !id) return <>{name}</>;
+  return (
+    <button type="button" className="link-button sp-sheet-link" title={fmt(t.bible.openSheet, { title: card.title })} onClick={() => useCosmos.getState().openInBible(id)}>
+      {name}
+    </button>
   );
 }

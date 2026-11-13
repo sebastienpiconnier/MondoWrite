@@ -946,7 +946,7 @@ export function Manuscript() {
             <ul className="ms-chips">
               {detected.map((c) => (
                 <li key={c.id}>
-                  <button type="button" className="chip" title={fmt(m.show, { title: c.title })} onClick={() => revealCard(c.id)}>
+                  <button type="button" className="chip" title={fmt(t.bible.openSheet, { title: c.title })} onClick={() => useCosmos.getState().openInBible(c.id)}>
                     <span className="card-dot" style={{ background: typeColor(c.type) }} />
                     {c.title}
                   </button>

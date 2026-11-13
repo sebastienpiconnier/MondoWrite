@@ -3,13 +3,14 @@
 
 import { cleanQuote, isCommentId, removeCommentFromElements, removeCommentMark, type Comments, type SceneComment } from "./comments";
 import { joinSynopses, mergeComments, mergeEdges, mergeScreenplayScenes, nextInStory } from "./sceneMerge";
-import { captureSpot, forgetSpot, readSpot } from "./resume";
+import { captureSpot, currentCaret, forgetSpot, readSpot } from "./resume";
 import { backupDate, backupDue, backupName, backupsToRemove, mediaNamesOf, sortBackups } from "./backups";
 import { localIso, parseVersionPath, readVersionFile, versionFile, versionName, versionPath } from "./versions";
 import { ExampleError, downloadExample, useExamples, type ExampleEntry } from "./examples";
 import { isPhone } from "./components/usePhone";
 import { fileCards } from "./inbox";
 import { isTouch } from "./platform";
+import { flushPendingEdits } from "./pendingEdits";
 import { vracCardHeight, vracGrid, type VracCard, type VracLink } from "./ai/vrac";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
@@ -216,6 +217,8 @@ export interface CosmosState {
   createPov: (sceneId: string, name: string) => string | null;
   /** Ouvre la fiche d'une carte dans la Bible ; `assistant` : avec l'assistant ouvert. */
   openInBible: (id: string, assistant?: boolean) => void;
+  /** Revient à l'écriture (Manuscrit ou Scénario), au curseur d'où l'on était parti pour la Bible. */
+  backFromBible: () => void;
   /**
    * Range une source (lien, extrait, image collés ou déposés) dans la zone Recherche du canevas, créée au
    * besoin et agrandie si elle est pleine. Une seule étape d'historique. Rend l'identifiant de la carte.
@@ -325,6 +328,8 @@ export interface CosmosState {
   toggleTodo: (id: string, where: "card" | "manuscript", index: number) => void;
   /** Fiche à montrer en arrivant dans la Bible, puis remise à null. */
   bibleTarget: { id: string; assistant: boolean } | null;
+  /** Où reprendre l'écriture si l'on est venu à la Bible depuis le Manuscrit ou le Scénario (état d'affichage, jamais enregistré). */
+  bibleReturn: { scene: string; el?: number; offset?: number } | null;
   /** Demande au canevas de cadrer tout le projet (après un rangement). */
   fitRequest: number;
   clearBibleTarget: () => void;
@@ -1694,8 +1699,18 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     openInBible: (id, assistant = false) => {
       if (!get().nodes.some((n) => n.id === id)) return;
-      set({ view: "bible", bibleTarget: { id, assistant } });
+      // Venu de l'écriture : on retient la scène et le curseur pour y revenir d'un clic (bouton de la Bible).
+      const caret = get().view === "manuscrit" ? currentCaret() : null;
+      const bibleReturn = caret?.scene ? { scene: caret.scene, ...(caret.el !== undefined ? { el: caret.el } : {}), ...(caret.offset !== undefined ? { offset: caret.offset } : {}) } : get().view === "bible" ? get().bibleReturn : null;
+      set({ view: "bible", bibleTarget: { id, assistant }, bibleReturn });
     },
+    backFromBible: () => {
+      const back = get().bibleReturn;
+      set({ bibleReturn: null });
+      if (!back) return get().setView("manuscrit");
+      get().openInManuscript(back.scene, undefined, { ...(back.el !== undefined ? { el: back.el } : {}), offset: back.offset ?? 0 });
+    },
+    bibleReturn: null,
     bibleTarget: null,
     clearBibleTarget: () => set({ bibleTarget: null }),
     dialog: null,
@@ -2794,8 +2809,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     past: [],
     future: [],
-    undo: () => restore("past"),
-    redo: () => restore("future"),
+    undo: () => {
+      flushPendingEdits();
+      restore("past");
+    },
+    redo: () => {
+      flushPendingEdits();
+      restore("future");
+    },
     revealCard: (id) => {
       if (!get().nodes.some((n) => n.id === id)) return;
       // Carte masquée par le filtre du canevas : le filtre est retiré, sinon la vue se centrerait sur du vide.
@@ -3020,6 +3041,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     setTour: (tour) => set({ tour }),
 
     closeProject: async (force = false) => {
+      flushPendingEdits();
       // Où l'on en est (#27) : relevé avant de quitter, la vue d'écriture est encore là pour dire son curseur.
       captureSpot(storage.current?.(), get().view);
       if (!force) {
@@ -3536,7 +3558,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
 
-    setView: (view, focusId = null) => set({ view, focusId }),
+    // Quitter la Bible autrement que par « Retour au manuscrit » oublie le retour proposé.
+    setView: (view, focusId = null) => set({ view, focusId, ...(view === "bible" ? {} : { bibleReturn: null }) }),
 
     load: async () => {
       let files: FileMap | null = null;
@@ -3600,6 +3623,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     // « Projets »), il est refait une fois à la fin, et l'appelant attend la fin des deux. Sans cela, deux
     // enregistrements qui se chevauchaient voyaient trois versions d'un fichier et annonçaient un faux conflit.
     save: () => {
+      flushPendingEdits();
       if (saving) {
         saveAgain = true;
         return saving;

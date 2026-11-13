@@ -96,6 +96,15 @@ export function setCaretSource(source: (() => Caret | null) | null) {
   caretSource = source;
 }
 
+/** Où est le curseur de la vue d'écriture ouverte (scène, élément, place), ou rien si aucune n'est ouverte. */
+export function currentCaret(): Caret | null {
+  try {
+    return caretSource?.() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Nouvelle position (pur) : la vue en cours, et la scène lue dans la vue d'écriture si elle est ouverte, sinon
  * celle d'avant (passer du Manuscrit au Canevas garde la scène où l'on écrivait).

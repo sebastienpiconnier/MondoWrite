@@ -118,6 +118,7 @@ export function Bible() {
   const updateCard = useCosmos((s) => s.updateCard);
   const addTitledCard = useCosmos((s) => s.addTitledCard);
   const target = useCosmos((s) => s.bibleTarget);
+  const bibleReturn = useCosmos((s) => s.bibleReturn);
   const clearTarget = useCosmos((s) => s.clearBibleTarget);
   // Chiffres relus dans le texte : une ligne sous chaque personnage et chaque lieu (le détail est dans la
   // fenêtre Statistiques, ouverte depuis le Manuscrit ou le Scénario).
@@ -503,6 +504,11 @@ export function Bible() {
 
   return (
     <div className={`bible-frame${tocOpen ? "" : " hide-toc"}`}>
+    {bibleReturn && (
+      <button type="button" className="bible-back" onClick={() => useCosmos.getState().backFromBible()}>
+        <span aria-hidden="true">←</span> {kind === "scenario" ? t.bible.backToScreenplay : t.bible.backToManuscript}
+      </button>
+    )}
     <EdgeHandle side="left" open={tocOpen} label={t.bible.tocTitle} onClick={toggleToc} />
     <div className="bible" ref={rootRef} onScroll={onScroll}>
       <BibleToc

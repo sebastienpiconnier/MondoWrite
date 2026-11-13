@@ -13,6 +13,10 @@ import { useSettings } from "../settings";
 import { MentionNode } from "./MentionNode";
 import type { CardData } from "../types";
 import { useMentionMenu } from "./useMentionMenu";
+import { registerPendingEdit } from "../pendingEdits";
+
+/** Pause de frappe avant de pousser le texte d'une fiche dans le store (le rendu de la Bible n'attend plus chaque lettre). */
+const PUSH_DELAY = 350;
 
 const attributes = (title: string) => ({
   class: "bible-editor",
@@ -26,6 +30,31 @@ export function BibleBody({ card }: { card: CardData }) {
   const mentionsRef = useRef(mentions);
   mentionsRef.current = mentions;
   const seenHtml = useRef(card.html);
+  // Frappe pas encore poussée dans le store : l'éditeur concerné, l'attente et le retrait de la file `pendingEdits`.
+  const dirty = useRef<{ editor: Editor; timer: ReturnType<typeof setTimeout>; unregister: () => void } | null>(null);
+  const cardId = useRef(card.id);
+  cardId.current = card.id;
+  const flushNow = () => {
+    const d = dirty.current;
+    if (!d) return;
+    dirty.current = null;
+    clearTimeout(d.timer);
+    d.unregister();
+    if (d.editor.isDestroyed) return;
+    const html = d.editor.getHTML();
+    seenHtml.current = html;
+    useCosmos.getState().updateCard(cardId.current, { html });
+  };
+  const flushRef = useRef(flushNow);
+  flushRef.current = flushNow;
+  const schedulePush = (ed: Editor) => {
+    const d = dirty.current;
+    if (d) clearTimeout(d.timer);
+    const timer = setTimeout(() => flushRef.current(), PUSH_DELAY);
+    dirty.current = { editor: ed, timer, unregister: d ? d.unregister : registerPendingEdit(() => flushRef.current()) };
+  };
+  // Quitter la fiche (autre vue, fiche supprimée) : ce qui attend part dans le store.
+  useEffect(() => () => flushRef.current(), []);
   // L'éditeur n'est créé qu'au moment d'écrire dans la fiche (lazyEditor.tsx) : une rubrique de la Bible
   // en montrait sinon des dizaines, toutes créées d'un coup.
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -42,18 +71,25 @@ export function BibleBody({ card }: { card: CardData }) {
     immediatelyRender: true,
     editorProps: { attributes: attributes(card.title), handleKeyDown: (_view, event) => mentionsRef.current.handleKey(event) },
     onUpdate: ({ editor: ed }) => {
-      const html = ed.getHTML();
-      seenHtml.current = html;
-      useCosmos.getState().updateCard(card.id, { html });
+      schedulePush(ed);
       mentionsRef.current.detect(ed);
     },
     onSelectionUpdate: ({ editor: ed }) => mentionsRef.current.detect(ed),
-    onBlur: () => mentionsRef.current.onBlur(),
+    onBlur: () => {
+      flushRef.current();
+      mentionsRef.current.onBlur();
+    },
   };
 
   // Texte changé ailleurs (annuler, réponse de l'assistant, synthèse ajoutée) : l'éditeur suit.
   useEffect(() => {
     if (!editor || editor.isDestroyed || card.html === seenHtml.current) return;
+    // Changement venu d'ailleurs (annuler, assistant) : il l'emporte sur une frappe pas encore poussée.
+    if (dirty.current) {
+      clearTimeout(dirty.current.timer);
+      dirty.current.unregister();
+      dirty.current = null;
+    }
     seenHtml.current = card.html;
     if (card.html === editor.getHTML()) return;
     if (card.html === "" && editor.isEmpty) return;
