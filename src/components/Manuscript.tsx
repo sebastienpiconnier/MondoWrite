@@ -24,6 +24,8 @@ import { DirectionsSuggest, novelSceneText } from "./Atelier";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { usePhone } from "./usePhone";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useShellSlot } from "./useShellSlot";
 import { useSettled } from "./useSettled";
 import { setCaretSource } from "../resume";
 import { useCosmos } from "../store";
@@ -90,6 +92,7 @@ export function Manuscript() {
   const m = t.manuscript;
   // Volets escamotables (plan à gauche, infos à droite) : on garde le choix d'une fois sur l'autre.
   const [panels, setPanels] = useState(readPanels);
+  const shellSlot = useShellSlot();
   const togglePanel = (key: keyof Panels) =>
     setPanels((p) => {
       const next = { ...p, [key]: !p[key] };
@@ -574,222 +577,228 @@ export function Manuscript() {
         : sceneWords;
 
   return (
-    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
+    <div className={`manuscript${panels.scenes && !shellSlot ? "" : " hide-scenes"}${shellSlot ? " has-shell-scenes" : ""}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
       ref={rootRef}
       style={focusMode ? { ["--focus-col" as string]: FOCUS_COLUMN_EM[writing.column] } : undefined}
     >
       {focusMode && <FocusBar />}
       {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
-      <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
-        <h2 className="sp-box-title">{m.scenesTitle}</h2>
-        <p className="ms-total">{words(stats.words)}</p>
-        <p className="ms-drag-hint">{m.sceneHint}</p>
-        {narrators.length > 0 && (
-          <label className="ms-pov-filter">
-            <span>{m.povFilter}</span>
-            <select value={povOn ?? ""} onChange={(e) => setPovFilter(e.target.value || null)}>
-              <option value="">{m.povAll}</option>
-              {narrators.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {fmt(m.povOption, { name: x.name, n: x.n })}
+      {(() => {
+        if (shellSlot && (!panels.scenes || focusMode)) return null;
+        const nav = (
+        <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
+          <h2 className="sp-box-title">{m.scenesTitle}</h2>
+          <p className="ms-total">{words(stats.words)}</p>
+          <p className="ms-drag-hint">{m.sceneHint}</p>
+          {narrators.length > 0 && (
+            <label className="ms-pov-filter">
+              <span>{m.povFilter}</span>
+              <select value={povOn ?? ""} onChange={(e) => setPovFilter(e.target.value || null)}>
+                <option value="">{m.povAll}</option>
+                {narrators.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {fmt(m.povOption, { name: x.name, n: x.n })}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {groupByChapter(plan, order).map((group) => (
+            <div
+              key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`}
+              className={`${group.chapter ? "ms-chapter" : ""}${over === group.ids[0] ? " is-over" : ""}`}
+              // Dépôt d'un chapitre sur un groupe : avant lui en remontant, après lui en descendant.
+              // Le groupe se repère par sa première scène du récit : celui d'avant le premier chapitre commence par les
+              // pages du livre (titre, dédicace…), qui ne comptent pas (sinon le dépôt y était refusé).
+              onDragOver={(e) => {
+                const id = draggedRef.current;
+                if (!id || group.chapter?.id === id || !group.ids.some((x) => story.includes(x))) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setOver(group.ids[0]);
+              }}
+              onDragLeave={() => setOver((o) => (o === group.ids[0] ? null : o))}
+              onDrop={(e) => {
+                const id = draggedRef.current;
+                setOver(null);
+                if (!id) return;
+                e.preventDefault();
+                const groups = groupByChapter(plan, story);
+                const head = group.ids.find((x) => story.includes(x));
+                const from = groups.findIndex((g) => g.chapter?.id === id);
+                const to = groups.findIndex((g) => g.ids[0] === head);
+                if (from < 0 || to < 0) return;
+                movePlanChapter(id, to < from ? groups[to].ids[0] : (groups[to + 1]?.ids[0] ?? null));
+              }}
+            >
+              {group.chapter && (
+                <h3
+                  className={`ms-chapter-title${dragged === group.chapter.id ? " is-dragged" : ""}`}
+                  draggable
+                  title={b.chapterDrag}
+                  onDragStart={(e) => {
+                    draggedRef.current = group.chapter!.id;
+                    setDragged(group.chapter!.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", chapterName(group.chapter!));
+                  }}
+                  onDragEnd={() => {
+                    draggedRef.current = null;
+                    setDragged(null);
+                  }}
+                >
+                  <span>{chapterName(group.chapter)}</span>
+                  <span className="ms-words">{num(group.ids.reduce((sum, id) => sum + (stats.perScene.get(id) ?? 0), 0))}</span>
+                  {(["up", "down"] as const).map((way) => {
+                    const to = chapterStep(plan, story, group.chapter!.id, way);
+                    const label = fmt(way === "up" ? b.chapterUp : b.chapterDown, { title: chapterName(group.chapter!) });
+                    return (
+                      <button key={way} type="button" className="icon-button ms-chapter-move" disabled={to === undefined} aria-label={label} title={label} onClick={() => to !== undefined && movePlanChapter(group.chapter!.id, to)}>
+                        <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
+                      </button>
+                    );
+                  })}
+                </h3>
+              )}
+              <ol className="sp-scene-list">
+                {withFolds(group.ids).map((entry) => {
+                  if (typeof entry !== "string") {
+                    // Scènes d'autres narrateurs : une ligne, jamais cachées sans trace ; la toucher montre tout et y mène.
+                    const label = fmt(entry.fold.length === 1 ? m.povFoldOne : m.povFoldMany, { n: num(entry.fold.length) });
+                    return (
+                      <li key={`fold-${entry.fold[0]}`} className="ms-fold">
+                        <button
+                          type="button"
+                          className="link-button"
+                          title={m.povFoldHint}
+                          onClick={() => {
+                            setPovFilter(null);
+                            go(entry.fold[0]);
+                          }}
+                        >
+                          {label}
+                        </button>
+                      </li>
+                    );
+                  }
+                  const id = entry;
+                  const c = cards.find((x) => x.id === id);
+                  const count = stats.perScene.get(id) ?? 0;
+                  const movable = story.includes(id);
+                  const name = c?.title.trim() || m.untitled;
+                  const step = (way: "up" | "down") => {
+                    if (!useCosmos.getState().stepBookScene(id, way)) return false;
+                    setSaid(fmt(m.sceneMoved, { title: name }));
+                    return true;
+                  };
+                  const drop = sceneOver?.id === id && sceneDrag !== id ? ` is-drop-${sceneOver.side}` : "";
+                  return (
+                    <li
+                      key={id}
+                      className={`${sceneDrag === id ? "is-dragged" : ""}${drop}`}
+                      draggable={movable}
+                      onDragStart={(e) => {
+                        if (!movable) return;
+                        e.stopPropagation();
+                        sceneDragRef.current = id;
+                        setSceneDrag(id);
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", name);
+                      }}
+                      onDragEnd={() => {
+                        sceneDragRef.current = null;
+                        setSceneDrag(null);
+                        setSceneOver(null);
+                      }}
+                      onDragOver={(e) => {
+                        const from = sceneDragRef.current;
+                        if (!from || !movable || from === id) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.dataTransfer.dropEffect = "move";
+                        // Moitié haute : avant cette scène ; moitié basse : après (même chapitre qu'elle).
+                        const box = e.currentTarget.getBoundingClientRect();
+                        const side = e.clientY < box.top + box.height / 2 ? "before" : "after";
+                        setSceneOver((o) => (o?.id === id && o.side === side ? o : { id, side }));
+                      }}
+                      onDragLeave={() => setSceneOver((o) => (o?.id === id ? null : o))}
+                      onDrop={(e) => {
+                        const from = sceneDragRef.current;
+                        const side = sceneOver?.id === id ? sceneOver.side : "before";
+                        sceneDragRef.current = null;
+                        setSceneDrag(null);
+                        setSceneOver(null);
+                        if (!from || !movable) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (useCosmos.getState().moveBookScene(from, id, side)) setSaid(fmt(m.sceneMoved, { title: cards.find((x) => x.id === from)?.title.trim() || m.untitled }));
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className={`${id === current ? "is-current" : ""}${movable ? " is-movable" : ""}`}
+                        aria-current={id === current ? "true" : undefined}
+                        aria-keyshortcuts={movable ? "Alt+ArrowUp Alt+ArrowDown" : undefined}
+                        title={movable ? m.sceneDrag : undefined}
+                        onClick={() => go(id)}
+                        onKeyDown={(e) => {
+                          // Au clavier : Alt + flèche déplace la scène d'un cran (le focus reste sur elle).
+                          if (!movable || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+                          e.preventDefault();
+                          const button = e.currentTarget;
+                          if (step(e.key === "ArrowUp" ? "up" : "down")) requestAnimationFrame(() => button.isConnected ? button.focus() : document.querySelector<HTMLButtonElement>(`[data-scene="${id}"]`)?.focus());
+                        }}
+                        data-scene={id}
+                      >
+                        {movable && <span className="ms-grip" aria-hidden="true" />}
+                        <span className="ms-name">
+                          {pageLabel(id) ? (
+                            <em>{c?.title.trim() && c.title.trim() !== pageLabel(id) ? `${pageLabel(id)} · ${c.title.trim()}` : pageLabel(id)}</em>
+                          ) : (
+                            <>
+                              {storyNumber(id)}. {c?.title.trim() || m.untitled}
+                            </>
+                          )}
+                        </span>
+                        {c && <StatusDot card={c} />}
+                        {count > 0 && <span className="ms-words">{num(count)}</span>}
+                      </button>
+                      {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}
+                      {id === current && movable && story.length > 1 && (
+                        <span className="sp-scene-moves">
+                          {(["up", "down"] as const).map((way) => {
+                            const label = fmt(way === "up" ? t.plan.moveUp : t.plan.moveDown, { title: name });
+                            const edge = way === "up" ? story[0] === id : story[story.length - 1] === id;
+                            return (
+                              <button key={way} type="button" className="icon-button" disabled={edge} aria-label={label} title={label} onClick={() => step(way)}>
+                                <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
+                              </button>
+                            );
+                          })}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          ))}
+          <label className="ms-add-page">
+            <span className="sr-only">{b.addPage}</span>
+            <select value="" onChange={(e) => addPage(e.target.value)}>
+              <option value="">{b.addPage}</option>
+              {PAGE_KINDS.map((k) => (
+                <option key={k} value={k}>
+                  {b.kinds[k]}
                 </option>
               ))}
             </select>
           </label>
-        )}
-        {groupByChapter(plan, order).map((group) => (
-          <div
-            key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`}
-            className={`${group.chapter ? "ms-chapter" : ""}${over === group.ids[0] ? " is-over" : ""}`}
-            // Dépôt d'un chapitre sur un groupe : avant lui en remontant, après lui en descendant.
-            // Le groupe se repère par sa première scène du récit : celui d'avant le premier chapitre commence par les
-            // pages du livre (titre, dédicace…), qui ne comptent pas (sinon le dépôt y était refusé).
-            onDragOver={(e) => {
-              const id = draggedRef.current;
-              if (!id || group.chapter?.id === id || !group.ids.some((x) => story.includes(x))) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-              setOver(group.ids[0]);
-            }}
-            onDragLeave={() => setOver((o) => (o === group.ids[0] ? null : o))}
-            onDrop={(e) => {
-              const id = draggedRef.current;
-              setOver(null);
-              if (!id) return;
-              e.preventDefault();
-              const groups = groupByChapter(plan, story);
-              const head = group.ids.find((x) => story.includes(x));
-              const from = groups.findIndex((g) => g.chapter?.id === id);
-              const to = groups.findIndex((g) => g.ids[0] === head);
-              if (from < 0 || to < 0) return;
-              movePlanChapter(id, to < from ? groups[to].ids[0] : (groups[to + 1]?.ids[0] ?? null));
-            }}
-          >
-            {group.chapter && (
-              <h3
-                className={`ms-chapter-title${dragged === group.chapter.id ? " is-dragged" : ""}`}
-                draggable
-                title={b.chapterDrag}
-                onDragStart={(e) => {
-                  draggedRef.current = group.chapter!.id;
-                  setDragged(group.chapter!.id);
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData("text/plain", chapterName(group.chapter!));
-                }}
-                onDragEnd={() => {
-                  draggedRef.current = null;
-                  setDragged(null);
-                }}
-              >
-                <span>{chapterName(group.chapter)}</span>
-                <span className="ms-words">{num(group.ids.reduce((sum, id) => sum + (stats.perScene.get(id) ?? 0), 0))}</span>
-                {(["up", "down"] as const).map((way) => {
-                  const to = chapterStep(plan, story, group.chapter!.id, way);
-                  const label = fmt(way === "up" ? b.chapterUp : b.chapterDown, { title: chapterName(group.chapter!) });
-                  return (
-                    <button key={way} type="button" className="icon-button ms-chapter-move" disabled={to === undefined} aria-label={label} title={label} onClick={() => to !== undefined && movePlanChapter(group.chapter!.id, to)}>
-                      <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
-                    </button>
-                  );
-                })}
-              </h3>
-            )}
-            <ol className="sp-scene-list">
-              {withFolds(group.ids).map((entry) => {
-                if (typeof entry !== "string") {
-                  // Scènes d'autres narrateurs : une ligne, jamais cachées sans trace ; la toucher montre tout et y mène.
-                  const label = fmt(entry.fold.length === 1 ? m.povFoldOne : m.povFoldMany, { n: num(entry.fold.length) });
-                  return (
-                    <li key={`fold-${entry.fold[0]}`} className="ms-fold">
-                      <button
-                        type="button"
-                        className="link-button"
-                        title={m.povFoldHint}
-                        onClick={() => {
-                          setPovFilter(null);
-                          go(entry.fold[0]);
-                        }}
-                      >
-                        {label}
-                      </button>
-                    </li>
-                  );
-                }
-                const id = entry;
-                const c = cards.find((x) => x.id === id);
-                const count = stats.perScene.get(id) ?? 0;
-                const movable = story.includes(id);
-                const name = c?.title.trim() || m.untitled;
-                const step = (way: "up" | "down") => {
-                  if (!useCosmos.getState().stepBookScene(id, way)) return false;
-                  setSaid(fmt(m.sceneMoved, { title: name }));
-                  return true;
-                };
-                const drop = sceneOver?.id === id && sceneDrag !== id ? ` is-drop-${sceneOver.side}` : "";
-                return (
-                  <li
-                    key={id}
-                    className={`${sceneDrag === id ? "is-dragged" : ""}${drop}`}
-                    draggable={movable}
-                    onDragStart={(e) => {
-                      if (!movable) return;
-                      e.stopPropagation();
-                      sceneDragRef.current = id;
-                      setSceneDrag(id);
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData("text/plain", name);
-                    }}
-                    onDragEnd={() => {
-                      sceneDragRef.current = null;
-                      setSceneDrag(null);
-                      setSceneOver(null);
-                    }}
-                    onDragOver={(e) => {
-                      const from = sceneDragRef.current;
-                      if (!from || !movable || from === id) return;
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.dataTransfer.dropEffect = "move";
-                      // Moitié haute : avant cette scène ; moitié basse : après (même chapitre qu'elle).
-                      const box = e.currentTarget.getBoundingClientRect();
-                      const side = e.clientY < box.top + box.height / 2 ? "before" : "after";
-                      setSceneOver((o) => (o?.id === id && o.side === side ? o : { id, side }));
-                    }}
-                    onDragLeave={() => setSceneOver((o) => (o?.id === id ? null : o))}
-                    onDrop={(e) => {
-                      const from = sceneDragRef.current;
-                      const side = sceneOver?.id === id ? sceneOver.side : "before";
-                      sceneDragRef.current = null;
-                      setSceneDrag(null);
-                      setSceneOver(null);
-                      if (!from || !movable) return;
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (useCosmos.getState().moveBookScene(from, id, side)) setSaid(fmt(m.sceneMoved, { title: cards.find((x) => x.id === from)?.title.trim() || m.untitled }));
-                    }}
-                  >
-                    <button
-                      type="button"
-                      className={`${id === current ? "is-current" : ""}${movable ? " is-movable" : ""}`}
-                      aria-current={id === current ? "true" : undefined}
-                      aria-keyshortcuts={movable ? "Alt+ArrowUp Alt+ArrowDown" : undefined}
-                      title={movable ? m.sceneDrag : undefined}
-                      onClick={() => go(id)}
-                      onKeyDown={(e) => {
-                        // Au clavier : Alt + flèche déplace la scène d'un cran (le focus reste sur elle).
-                        if (!movable || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
-                        e.preventDefault();
-                        const button = e.currentTarget;
-                        if (step(e.key === "ArrowUp" ? "up" : "down")) requestAnimationFrame(() => button.isConnected ? button.focus() : document.querySelector<HTMLButtonElement>(`[data-scene="${id}"]`)?.focus());
-                      }}
-                      data-scene={id}
-                    >
-                      {movable && <span className="ms-grip" aria-hidden="true" />}
-                      <span className="ms-name">
-                        {pageLabel(id) ? (
-                          <em>{c?.title.trim() && c.title.trim() !== pageLabel(id) ? `${pageLabel(id)} · ${c.title.trim()}` : pageLabel(id)}</em>
-                        ) : (
-                          <>
-                            {storyNumber(id)}. {c?.title.trim() || m.untitled}
-                          </>
-                        )}
-                      </span>
-                      {c && <StatusDot card={c} />}
-                      {count > 0 && <span className="ms-words">{num(count)}</span>}
-                    </button>
-                    {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}
-                    {id === current && movable && story.length > 1 && (
-                      <span className="sp-scene-moves">
-                        {(["up", "down"] as const).map((way) => {
-                          const label = fmt(way === "up" ? t.plan.moveUp : t.plan.moveDown, { title: name });
-                          const edge = way === "up" ? story[0] === id : story[story.length - 1] === id;
-                          return (
-                            <button key={way} type="button" className="icon-button" disabled={edge} aria-label={label} title={label} onClick={() => step(way)}>
-                              <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
-                            </button>
-                          );
-                        })}
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        ))}
-        <label className="ms-add-page">
-          <span className="sr-only">{b.addPage}</span>
-          <select value="" onChange={(e) => addPage(e.target.value)}>
-            <option value="">{b.addPage}</option>
-            {PAGE_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {b.kinds[k]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Orphans ids={orphans} manuscript={manuscript} onRestore={restoreScene} />
-      </nav>
+          <Orphans ids={orphans} manuscript={manuscript} onRestore={restoreScene} />
+        </nav>
+        );
+        return shellSlot ? createPortal(nav, shellSlot) : nav;
+      })()}
 
       {/* Poignées sur les bords : plan à gauche, infos à droite, barre de la scène en haut. */}
       <EdgeHandle side="left" open={panels.scenes} label={m.panelScenes} onClick={() => togglePanel("scenes")} />

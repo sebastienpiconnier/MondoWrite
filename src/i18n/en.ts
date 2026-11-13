@@ -241,6 +241,7 @@ export const en: Messages = {
     aria: "Project views",
     others: "All views",
     cards: "Cards",
+    fitAll: "Fit to screen",
     todo: "To do",
     toile: "Canvas",
     plan: "Outline",

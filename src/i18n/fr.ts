@@ -243,6 +243,7 @@ export const fr = {
     aria: "Vues du projet",
     others: "Toutes les vues",
     cards: "Cartes",
+    fitAll: "Tout voir",
     todo: "À faire",
     toile: "Canevas",
     plan: "Plan",

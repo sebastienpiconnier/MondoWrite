@@ -339,3 +339,19 @@
 @media (min-width: 1100px) {
   .app[data-view="toile"].has-tabbar .app-main::before, .app[data-view="toile"].has-tabbar .app-main::after { left: 236px; }
 }
+
+@media (min-width: 1100px) {
+  /* Séparateur sous le menu des vues. */
+  .shell-side .views { padding-bottom: 8px; border-bottom: 1px solid var(--glass-edge); }
+
+  /* Liste des scènes et chapitres du Manuscrit et du Scénario : sous le menu, dans la colonne de verre. */
+  .shell-scroll .sp-scenes { overflow: visible; padding: 0; border: 0; box-shadow: none; background: transparent; display: flex; flex-direction: column; gap: 8px; }
+  .shell-scroll .ms-scenes { display: flex; }
+  .has-shell-scenes > .edge-handle.is-left { display: none; }
+
+  /* Manuscrit : l'espace de travail passe sous la barre du haut. */
+  .app.has-tabbar .manuscript { top: 0; }
+  .app.has-tabbar .manuscript .ms-main { padding-top: 64px; }
+  .app.has-tabbar .manuscript .ms-meta-wrap { top: 52px; }
+  .app.has-tabbar .manuscript .sp-side { padding-top: 64px; }
+}

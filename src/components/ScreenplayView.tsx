@@ -21,6 +21,8 @@ import { sceneStatus } from "../character";
 import type { ManuscriptStats } from "../stats";
 import { blocks, moveBlock } from "../screenplay/sequence";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
+import { useShellSlot } from "./useShellSlot";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
@@ -150,6 +152,7 @@ export function ScreenplayView() {
   const chutier = useCosmos((s) => s.chutier);
   // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
   const [panels, togglePanel] = usePanels();
+  const shellSlot = useShellSlot();
   // Présentation › volets (barre des menus du Mac, 1.11.1).
   useCommand("toggle-scenes", () => togglePanel("scenes"));
   useCommand("toggle-side", () => togglePanel("side"));
@@ -787,7 +790,7 @@ export function ScreenplayView() {
     editor.commands.setTextSelection(posOf(editor.state.doc, blocks(elements)[b].start) + 1);
     const dom = editor.view.nodeDOM(posOf(editor.state.doc, blocks(elements)[b].start));
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
-    if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
+    if (keepFocus) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
   };
 
   const goToFinding = (f: Finding) => goToElement(f.at);
@@ -1063,7 +1066,7 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
+      className={`screenplay${panels.scenes && !shellSlot ? "" : " hide-scenes"}${shellSlot ? " has-shell-scenes" : ""}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
       ref={rootRef}
     >
       {focusMode && <FocusBar />}
@@ -1074,160 +1077,166 @@ export function ScreenplayView() {
           num={num}
         />
       )}
-      <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
-        <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
-        {/* Même en-tête que le volet du Manuscrit (#58). */}
-        <h2 className="sp-box-title">{sp.scenesTitle}</h2>
-        {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
-        {(speakingList.length > 0 || charFilter) && (
-          <div className="sp-filter">
-            <label htmlFor="sp-filter-name">{sp.filterLabel}</label>
-            <select
-              id="sp-filter-name"
-              value={charFilter?.name ?? ""}
-              onChange={(e) => setCharFilter(e.target.value ? { name: e.target.value, mode: charFilter?.mode ?? "scenes" } : null)}
-            >
-              <option value="">{sp.filterAll}</option>
-              {/* Nom venu de la Bible sans réplique encore : il reste proposé. */}
-              {(charFilter && !speakingList.includes(charFilter.name) ? [...speakingList, charFilter.name] : speakingList).map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            {charFilter && (
-              <>
-                <div className="side-tabs" role="group" aria-label={sp.filterModes}>
-                  <button type="button" aria-pressed={charFilter.mode === "scenes"} onClick={() => setCharFilter({ ...charFilter, mode: "scenes" })}>
-                    {sp.filterScenes}
-                  </button>
-                  <button type="button" aria-pressed={charFilter.mode === "lines"} onClick={() => setCharFilter({ ...charFilter, mode: "lines" })}>
-                    {sp.filterLines}
-                  </button>
-                </div>
-                <p className="sp-detail">{fmt(sp.filterCount, { shown: keptScenes?.size ?? 0, total: scenes.length })}</p>
-              </>
-            )}
-          </div>
-        )}
-        <ol className="sp-scene-list">
-          {sceneRows.map((row) => row.kind === "omitted" ? (keptScenes ? null : (
-            <li key={`omitted:${row.id}`} className="sp-scene-omitted">
-              <button type="button" aria-label={fmt(sp.omittedAria, { n: elements[row.at]?.sceneNumber ?? String(row.number) })} onClick={() => goTo(row.at)}>
-                <span className="is-slugline ms-name">
-                  {row.number}. {row.title}
-                </span>
-              </button>
-            </li>
-          )) : row.kind !== "scene" ? (
-            <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
-              <button type="button" onClick={() => goTo(row.at)}>
-                {row.title}
-              </button>
-            </li>
-          ) : ((s: (typeof scenes)[number], k: number) => keptScenes && !keptScenes.has(s.index) ? null : (
-            <li
-              key={s.index}
-              className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}`}
-              // Glisser une scène dans la liste la déplace dans le scénario (texte compris).
-              draggable
-              onDragStart={(e) => {
-                if ((e.target as HTMLElement).closest("textarea")) return e.preventDefault();
-                dragRef.current = s.index;
-                setDragScene(s.index);
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", s.text);
-              }}
-              onDragEnd={() => {
-                dragRef.current = null;
-                setDragScene(null);
-                setOverScene(null);
-              }}
-              onDragOver={(e) => {
-                if (dragRef.current === null) return;
-                e.preventDefault();
-                setOverScene(s.index);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                const from = dragRef.current;
-                dragRef.current = null;
-                setDragScene(null);
-                setOverScene(null);
-                if (from !== null) moveScene(from, s.index);
-              }}
-            >
-              <button
-                type="button"
-                className={s.index === scene?.index ? "is-current" : ""}
-                aria-current={s.index === scene?.index ? "true" : undefined}
-                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                title={t.manuscript.sceneDrag}
-                onClick={() => goTo(s.index)}
-                onKeyDown={(e) => {
-                  // Au clavier : Alt + flèche déplace la scène d'un cran.
-                  if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
-                  const other = scenes[k + (e.key === "ArrowUp" ? -1 : 1)];
-                  if (!other) return;
+      {(() => {
+        if (shellSlot && (!panels.scenes || focusMode)) return null;
+        const nav = (
+        <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
+          <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
+          {/* Même en-tête que le volet du Manuscrit (#58). */}
+          <h2 className="sp-box-title">{sp.scenesTitle}</h2>
+          {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
+          {(speakingList.length > 0 || charFilter) && (
+            <div className="sp-filter">
+              <label htmlFor="sp-filter-name">{sp.filterLabel}</label>
+              <select
+                id="sp-filter-name"
+                value={charFilter?.name ?? ""}
+                onChange={(e) => setCharFilter(e.target.value ? { name: e.target.value, mode: charFilter?.mode ?? "scenes" } : null)}
+              >
+                <option value="">{sp.filterAll}</option>
+                {/* Nom venu de la Bible sans réplique encore : il reste proposé. */}
+                {(charFilter && !speakingList.includes(charFilter.name) ? [...speakingList, charFilter.name] : speakingList).map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              {charFilter && (
+                <>
+                  <div className="side-tabs" role="group" aria-label={sp.filterModes}>
+                    <button type="button" aria-pressed={charFilter.mode === "scenes"} onClick={() => setCharFilter({ ...charFilter, mode: "scenes" })}>
+                      {sp.filterScenes}
+                    </button>
+                    <button type="button" aria-pressed={charFilter.mode === "lines"} onClick={() => setCharFilter({ ...charFilter, mode: "lines" })}>
+                      {sp.filterLines}
+                    </button>
+                  </div>
+                  <p className="sp-detail">{fmt(sp.filterCount, { shown: keptScenes?.size ?? 0, total: scenes.length })}</p>
+                </>
+              )}
+            </div>
+          )}
+          <ol className="sp-scene-list">
+            {sceneRows.map((row) => row.kind === "omitted" ? (keptScenes ? null : (
+              <li key={`omitted:${row.id}`} className="sp-scene-omitted">
+                <button type="button" aria-label={fmt(sp.omittedAria, { n: elements[row.at]?.sceneNumber ?? String(row.number) })} onClick={() => goTo(row.at)}>
+                  <span className="is-slugline ms-name">
+                    {row.number}. {row.title}
+                  </span>
+                </button>
+              </li>
+            )) : row.kind !== "scene" ? (
+              <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
+                <button type="button" onClick={() => goTo(row.at)}>
+                  {row.title}
+                </button>
+              </li>
+            ) : ((s: (typeof scenes)[number], k: number) => keptScenes && !keptScenes.has(s.index) ? null : (
+              <li
+                key={s.index}
+                className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}`}
+                // Glisser une scène dans la liste la déplace dans le scénario (texte compris).
+                draggable
+                onDragStart={(e) => {
+                  if ((e.target as HTMLElement).closest("textarea")) return e.preventDefault();
+                  dragRef.current = s.index;
+                  setDragScene(s.index);
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", s.text);
+                }}
+                onDragEnd={() => {
+                  dragRef.current = null;
+                  setDragScene(null);
+                  setOverScene(null);
+                }}
+                onDragOver={(e) => {
+                  if (dragRef.current === null) return;
                   e.preventDefault();
-                  moveScene(s.index, other.index, true);
+                  setOverScene(s.index);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = dragRef.current;
+                  dragRef.current = null;
+                  setDragScene(null);
+                  setOverScene(null);
+                  if (from !== null) moveScene(from, s.index);
                 }}
               >
-                <span className="ms-grip" aria-hidden="true" />
-                <span className={`is-slugline ms-name${s.text ? "" : " is-untitled"}`}>
-                  {s.number}. {s.text || sp.untitledScene}
-                </span>
-                {statusCards.get(s.cardId ?? "") && <StatusDot card={statusCards.get(s.cardId!)!} />}
-                {pagination && pagination.startPage[s.index] !== undefined && (
-                  <span className="sp-towrite">
-                    {fmt(sp.pageShort, { n: pagination.startPage[s.index] })}
-                    {/* Longueur en huitièmes de page (#44). */}
-                    {eighthsBetween(pagination, s.index, s.end) > 0 && " · "}
-                    <SceneLength eighths={eighthsBetween(pagination, s.index, s.end)} template="{n}" />
+                <button
+                  type="button"
+                  className={s.index === scene?.index ? "is-current" : ""}
+                  aria-current={s.index === scene?.index ? "true" : undefined}
+                  aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                  title={t.manuscript.sceneDrag}
+                  onClick={() => goTo(s.index)}
+                  onKeyDown={(e) => {
+                    // Au clavier : Alt + flèche déplace la scène d'un cran.
+                    if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+                    const other = scenes[k + (e.key === "ArrowUp" ? -1 : 1)];
+                    if (!other) return;
+                    e.preventDefault();
+                    moveScene(s.index, other.index, true);
+                  }}
+                >
+                  <span className="ms-grip" aria-hidden="true" />
+                  <span className={`is-slugline ms-name${s.text ? "" : " is-untitled"}`}>
+                    {s.number}. {s.text || sp.untitledScene}
+                  </span>
+                  {statusCards.get(s.cardId ?? "") && <StatusDot card={statusCards.get(s.cardId!)!} />}
+                  {pagination && pagination.startPage[s.index] !== undefined && (
+                    <span className="sp-towrite">
+                      {fmt(sp.pageShort, { n: pagination.startPage[s.index] })}
+                      {/* Longueur en huitièmes de page (#44). */}
+                      {eighthsBetween(pagination, s.index, s.end) > 0 && " · "}
+                      <SceneLength eighths={eighthsBetween(pagination, s.index, s.end)} template="{n}" />
+                    </span>
+                  )}
+                </button>
+                {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}
+                {s.index === scene?.index && scenes.length > 1 && (
+                  <span className="sp-scene-moves">
+                    {(["up", "down"] as const).map((way) => {
+                      const other = scenes[k + (way === "up" ? -1 : 1)];
+                      const label = fmt(way === "up" ? sp.sequencer.moveUp : sp.sequencer.moveDown, { title: s.text || sp.untitledScene });
+                      return (
+                        <button key={way} type="button" className="icon-button" disabled={!other} aria-label={label} title={label} onClick={() => other && moveScene(s.index, other.index)}>
+                          <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
+                        </button>
+                      );
+                    })}
                   </span>
                 )}
-              </button>
-              {/* Scène en cours : ses flèches (doigt, souris), en plus du glisser et d'Alt + flèche. */}
-              {s.index === scene?.index && scenes.length > 1 && (
-                <span className="sp-scene-moves">
-                  {(["up", "down"] as const).map((way) => {
-                    const other = scenes[k + (way === "up" ? -1 : 1)];
-                    const label = fmt(way === "up" ? sp.sequencer.moveUp : sp.sequencer.moveDown, { title: s.text || sp.untitledScene });
-                    return (
-                      <button key={way} type="button" className="icon-button" disabled={!other} aria-label={label} title={label} onClick={() => other && moveScene(s.index, other.index)}>
-                        <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
-                      </button>
-                    );
-                  })}
-                </span>
-              )}
-            </li>
-          ))(scenes[row.k], row.k))}
-        </ol>
+              </li>
+            ))(scenes[row.k], row.k))}
+          </ol>
 
-        <div className="sr-only" aria-live="polite">
-          {announce}
-        </div>
-        {toWrite.length > 0 && (
-          <>
-            <div className="eyebrow sp-towrite-title">{sp.toWriteTitle}</div>
-            <ul className="sp-scene-list">
-              {toWrite.map((c) => (
-                <li key={c.id}>
-                  <button
-                    type="button"
-                    aria-label={fmt(sp.writeScene, { title: c.title || sp.untitledScene })}
-                    onClick={() => writeScene(c)}
-                  >
-                    <span className="is-slugline">{c.title || sp.untitledScene}</span>
-                    <span className="sp-towrite">{sp.toWrite}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </nav>
+          <div className="sr-only" aria-live="polite">
+            {announce}
+          </div>
+          {toWrite.length > 0 && (
+            <>
+              <div className="eyebrow sp-towrite-title">{sp.toWriteTitle}</div>
+              <ul className="sp-scene-list">
+                {toWrite.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      aria-label={fmt(sp.writeScene, { title: c.title || sp.untitledScene })}
+                      onClick={() => writeScene(c)}
+                    >
+                      <span className="is-slugline">{c.title || sp.untitledScene}</span>
+                      <span className="sp-towrite">{sp.toWrite}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </nav>
+        );
+        return shellSlot ? createPortal(nav, shellSlot) : nav;
+      })()}
 
       <div className="sp-center">
         <div className={`sp-bar${toolsOpen ? " is-open" : ""}`} role="toolbar" aria-label={sp.barAria} ref={barRef}>

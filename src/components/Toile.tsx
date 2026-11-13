@@ -118,7 +118,7 @@ const shellPadding = (base: number) =>
 /** Capsule de zoom en bas à droite (maquette 2a) : moins, pourcentage, plus. Remplace les boutons de React Flow. */
 function ZoomCapsule() {
   const t = useT();
-  const { zoomIn, zoomOut, zoomTo } = useReactFlow();
+  const { zoomIn, zoomOut, zoomTo, fitView } = useReactFlow();
   const zoom = useFlowStore((s) => s.transform[2]);
   return (
     <Panel position="bottom-right" className="zoom-capsule glass-pill">
@@ -126,6 +126,9 @@ function ZoomCapsule() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
       </button>
       <button type="button" className="zoom-value" aria-label={t.appMenu.actualSize} title={t.appMenu.actualSize} onClick={() => void zoomTo(1, { duration: 200 })}>{Math.round(zoom * 100)}&nbsp;%</button>
+      <button type="button" aria-label={t.views.fitAll} title={t.views.fitAll} onClick={() => void fitView({ padding: shellPadding(0.12), duration: 400 })}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4" /></svg>
+      </button>
       <button type="button" aria-label={t.appMenu.zoomIn} title={t.appMenu.zoomIn} onClick={() => void zoomIn({ duration: 150 })}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
