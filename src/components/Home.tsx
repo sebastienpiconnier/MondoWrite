@@ -14,11 +14,24 @@ import { ScrivenerChoice } from "./ScrivenerImport";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { ExamplesPanel } from "./ExamplesPanel";
 import { greeting } from "../greeting";
-import { hasProfile } from "../profile";
+import { hasProfile, legalName } from "../profile";
 import { MoreMenu } from "./MoreMenu";
 import { LIST_TOOLS_MIN, PROJECT_SORTS, hasBothKinds, listProjects, readListPrefs, writeListPrefs, type KindFilter, type ListPrefs, type ProjectSort } from "../projectList";
 import { readSpot } from "../resume";
 import { vocab } from "../vocab";
+
+/** Couverture d'un projet (grille de l'accueil, grand écran) : une couleur de type tirée de l'identifiant, le genre et le titre.
+ *  Rien n'est enregistré : la couleur vient de l'identifiant, donc elle ne change pas d'une fois à l'autre. */
+function CoverArt({ p, title, kindLabel, small = false }: { p: ProjectEntry; title: string; kindLabel: string; small?: boolean }) {
+  let n = 0;
+  for (const ch of p.id) n = (n * 31 + ch.charCodeAt(0)) % 997;
+  return (
+    <span className={`home-cover${small ? " is-small" : ""}`} style={{ background: `var(--pov-${(n % 6) + 1})` }} aria-hidden="true">
+      {!small && kindLabel && <span className="home-cover-kind">{kindLabel}</span>}
+      <span className="home-cover-title">{title}</span>
+    </span>
+  );
+}
 
 export function Home() {
   const t = useT();
@@ -38,6 +51,8 @@ export function Home() {
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
   const [busy, setBusy] = useState(false);
+  // Le formulaire de nouveau projet : toujours là sur petit écran, derrière « Nouveau projet » sur grand écran (CSS).
+  const [creating, setCreating] = useState(false);
   // Projets synchronisés devenus inaccessibles (iCloud coupé, dossier cloud introuvable) : on le dit, sans alarmer.
   const [cloudIssue, setCloudIssue] = useState<"icloud" | "folder" | "waiting" | null>(null);
   // Projets restés dans un doublon « projets 2 » créé par iCloud : on propose de les remettre avec les autres.
@@ -84,8 +99,8 @@ export function Home() {
   const tools = projects.length >= LIST_TOOLS_MIN;
   const bothKinds = hasBothKinds(projects);
   // Filtre sur un type absent de la liste (le dernier scénario masqué) : on ne le garde pas en silence.
-  const shownPrefs: ListPrefs = tools ? { ...prefs, kind: bothKinds ? prefs.kind : "all" } : { sort: "recent", kind: "all" };
-  const shown = useMemo(() => listProjects(projects, tools ? query : "", shownPrefs, lang, nameOf), [projects, query, shownPrefs.sort, shownPrefs.kind, tools, lang, h.untitled]);
+  const shownPrefs: ListPrefs = { sort: tools ? prefs.sort : "recent", kind: bothKinds ? prefs.kind : "all" };
+  const shown = useMemo(() => listProjects(projects, query, shownPrefs, lang, nameOf), [projects, query, shownPrefs.sort, shownPrefs.kind, lang, h.untitled]);
   const filtered = shown.length !== projects.length;
   // « Reprendre là où j'en étais » (#27) : le dernier projet ouvert, s'il a une position gardée sur l'appareil.
   const last = useMemo(() => projects.reduce<ProjectEntry | null>((best, p) => (p.openedAt > (best?.openedAt ?? 0) ? p : best), null), [projects]);
@@ -104,6 +119,7 @@ export function Home() {
   const projectRow = (p: ProjectEntry, hidden = false) => (
     <li key={p.id} className={hidden ? "is-hidden" : undefined}>
       <button type="button" className="home-project" disabled={busy} onClick={() => run(() => openProject(p.id))}>
+        <CoverArt p={p} title={nameOf(p)} kindLabel={p.kind ? t.kinds[p.kind] : ""} />
         <span className="home-project-title">{nameOf(p)}</span>
         <span className="home-project-meta">
           {p.kind ? t.kinds[p.kind] : ""}
@@ -181,10 +197,58 @@ export function Home() {
             <span className="brand-tagline">{t.app.tagline}</span>
           </span>
         </div>
+        <span className="shell-title">{h.navAll}</span>
         <div className="actions home-actions">
+          <label className="home-capsule-search">
+            <span className="sr-only">{h.listSearch}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            <input type="search" value={query} placeholder={h.searchShort} autoComplete="off" spellCheck={false} onChange={(e) => setQuery(e.target.value)} />
+          </label>
+          <button type="button" className="home-capsule-new" aria-expanded={creating} disabled={busy} onClick={() => setCreating((c) => !c)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            {h.newShort}
+          </button>
           <Settings project={false} />
         </div>
       </header>
+
+      {/* Colonne de verre (grand écran seulement, CSS) : bibliothèque, premiers pas, profil. */}
+      <aside className="home-nav" aria-label={h.navLibrary}>
+        <div className="brand">
+          <BrandMark size={34} />
+          <span className="brand-text">
+            <Wordmark className="brand-name" />
+          </span>
+        </div>
+        <p className="home-nav-head">{h.navLibrary}</p>
+        <ul className="home-nav-list">
+          {([["all", h.navAll, projects.length], ["roman", h.navNovels, projects.filter((p) => p.kind !== "scenario").length], ["scenario", h.navScripts, projects.filter((p) => p.kind === "scenario").length]] as [KindFilter, string, number][])
+            .filter(([k]) => k === "all" || bothKinds)
+            .map(([k, label, n]) => (
+              <li key={k}>
+                <button type="button" className={`home-nav-item${shownPrefs.kind === k ? " is-current" : ""}`} aria-pressed={shownPrefs.kind === k} onClick={() => setPrefs({ ...prefs, kind: k })}>
+                  <span className="home-nav-label">{label}</span>
+                  <span className="home-nav-n">{n}</span>
+                </button>
+              </li>
+            ))}
+        </ul>
+        <p className="home-nav-head">{h.navStart}</p>
+        <ul className="home-nav-list">
+          <li><button type="button" className="home-nav-item" disabled={busy} onClick={() => setCreating(true)}><span className="home-nav-label">{h.newShort}</span></button></li>
+          <li><button type="button" className="home-nav-item" disabled={busy} onClick={() => run(importFile)}><span className="home-nav-label">{h.importFountain}</span></button></li>
+          <li><button type="button" className="home-nav-item" disabled={busy} onClick={() => run(tryExample)}><span className="home-nav-label">{h.example}</span></button></li>
+          {storage.canPickFolder && <li><button type="button" className="home-nav-item" disabled={busy} onClick={() => run(openFolder)}><span className="home-nav-label">{h.openFolder}</span></button></li>}
+        </ul>
+        <p className="home-nav-head">{h.navProfile}</p>
+        <button type="button" className="home-nav-profile" onClick={() => useCosmos.getState().setDialog("profile")}>
+          <span className="home-nav-avatar" aria-hidden="true">{(profile.firstName[0] ?? "").toUpperCase()}{(profile.lastName[0] ?? "").toUpperCase() || (!profile.firstName ? "·" : "")}</span>
+          <span className="home-nav-who">
+            <span className="home-nav-name">{profile.penName || legalName(profile) || h.navProfile}</span>
+            <span className="home-nav-sub">{h.navProfileHint}</span>
+          </span>
+        </button>
+      </aside>
 
       <main className="home-main">
         {/* Phrase d'accueil (greeting.ts) : bonjour selon l'heure, le prénom, le dernier projet ouvert. */}
@@ -262,8 +326,13 @@ export function Home() {
           <h2 id={ids.recent}>{h.title}</h2>
           {last && spot && (
             <button type="button" className="home-resume" disabled={busy} title={fmt(h.resumeHint, { title: nameOf(last) })} onClick={() => run(() => useCosmos.getState().resumeProject(last.id))}>
-              <span className="home-resume-title">{h.resume}</span>
-              <span className="home-resume-where">{resumeLine}</span>
+              <CoverArt p={last} title={nameOf(last)} kindLabel="" small />
+              <span className="home-resume-text">
+                <span className="home-resume-title">{h.resume}</span>
+                <span className="home-resume-name">{nameOf(last)}</span>
+                <span className="home-resume-where">{resumeLine}</span>
+              </span>
+              <span className="home-resume-go" aria-hidden="true">{h.resumeShort}</span>
             </button>
           )}
           {tools && (
@@ -358,7 +427,7 @@ export function Home() {
         </section>
 
         {/* Colonne de droite : nouveau projet puis profil. La liste des projets peut s'allonger sans les repousser. */}
-        <div className="home-side">
+        <div className={`home-side${creating ? " is-open" : ""}`}>
           <section className="home-panel" aria-labelledby={ids.fresh}>
             <h2 id={ids.fresh}>{h.newTitle}</h2>
             <p className="sp-empty">{h.newHint}</p>

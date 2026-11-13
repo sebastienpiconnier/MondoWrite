@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, type View } from "../store";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { useVocab } from "../vocab";
@@ -12,6 +12,7 @@ import { TodoPanel } from "./TodoPanel";
 import { useTopbarFit } from "./useTopbarFit";
 import { useSettings } from "../settings";
 import { shownView, usePhone } from "./usePhone";
+import { CARD_TYPES, typeColor, type CardType } from "../types";
 
 /** Les quatre vues, dans le même ordre partout (#56) : barre du haut, onglets du téléphone, Cmd/Ctrl + 1 à 4. Sur
  *  téléphone, elles sont en onglets avec une icône (Plan et Manuscrit prennent leur nom de scénario). */
@@ -33,6 +34,42 @@ const PHONE_ICONS: Partial<Record<View, React.ReactNode>> = {
   // Trois cartes posées en vrac, reliées.
   toile: tabIcon("M3 4h7v6H3zM14 3h7v6h-7zM8 15h8v6H8zM10 7h4M7 10l3 5M17 9l-3 6"),
 };
+
+/** Colonne de verre du canevas (maquette 2a) : les types de cartes avec leur nombre, et « À faire ». Visible dès
+ *  1100 px (CSS) ; un type touché est masqué ou remontré sur le canevas (`filter.types`, types masqués). */
+function ShellCards() {
+  const { t } = useVocab();
+  const nodes = useCosmos((s) => s.nodes);
+  const filterTypes = useCosmos((s) => s.filter.types);
+  const setFilterTypes = useCosmos((s) => s.setFilterTypes);
+  const counts = useMemo(() => {
+    const m = new Map<CardType, number>();
+    for (const n of nodes) m.set(n.data.type, (m.get(n.data.type) ?? 0) + 1);
+    return m;
+  }, [nodes]);
+  const present = CARD_TYPES.filter((ty) => counts.has(ty));
+  if (present.length === 0) return null;
+  return (
+    <div className="shell-cards">
+      <p className="shell-head">{t.views.cards}</p>
+      <ul>
+        {present.map((ty) => (
+          <li key={ty}>
+            <button type="button" className={`shell-type${filterTypes.includes(ty) ? " is-hidden" : ""}`} onClick={() => setFilterTypes(filterTypes.includes(ty) ? filterTypes.filter((x) => x !== ty) : [...filterTypes, ty])}>
+              <span className="shell-dot" style={{ background: typeColor(ty) }} aria-hidden="true" />
+              <span className="shell-type-label">{t.types[ty].label}</span>
+              <span className="shell-n">{counts.get(ty)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="shell-head" aria-hidden="true">&nbsp;</p>
+      <button type="button" className="shell-type" onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "l", ctrlKey: true, shiftKey: true }))}>
+        <span className="shell-type-label">{t.views.todo}</span>
+      </button>
+    </div>
+  );
+}
 
 export function TopBar() {
   const { t, views, kind } = useVocab();
@@ -126,6 +163,7 @@ export function TopBar() {
           </button>
         )}
       </nav>
+      {current === "toile" && <ShellCards />}
       </div>
       <span className="shell-title" aria-hidden="true">{views[current as View] ?? ""}</span>
 

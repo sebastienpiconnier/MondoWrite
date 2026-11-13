@@ -9,7 +9,8 @@ import {
   Background,
   BackgroundVariant,
   ConnectionMode,
-  Controls,
+  Panel,
+  useStore as useFlowStore,
   MiniMap,
   ReactFlow,
   SelectionMode,
@@ -113,6 +114,24 @@ const shellPadding = (base: number) =>
   typeof window !== "undefined" && window.matchMedia?.("(min-width: 1100px)").matches
     ? ({ top: "84px", left: "260px", right: "40px", bottom: "96px" } as const)
     : (`${Math.round(base * 100)}%` as const);
+
+/** Capsule de zoom en bas à droite (maquette 2a) : moins, pourcentage, plus. Remplace les boutons de React Flow. */
+function ZoomCapsule() {
+  const t = useT();
+  const { zoomIn, zoomOut, zoomTo } = useReactFlow();
+  const zoom = useFlowStore((s) => s.transform[2]);
+  return (
+    <Panel position="bottom-right" className="zoom-capsule glass-pill">
+      <button type="button" aria-label={t.appMenu.zoomOut} title={t.appMenu.zoomOut} onClick={() => void zoomOut({ duration: 150 })}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+      </button>
+      <button type="button" className="zoom-value" aria-label={t.appMenu.actualSize} title={t.appMenu.actualSize} onClick={() => void zoomTo(1, { duration: 200 })}>{Math.round(zoom * 100)}&nbsp;%</button>
+      <button type="button" aria-label={t.appMenu.zoomIn} title={t.appMenu.zoomIn} onClick={() => void zoomIn({ duration: 150 })}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+      </button>
+    </Panel>
+  );
+}
 
 export function Toile() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
@@ -758,7 +777,7 @@ export function Toile() {
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} />
         <FrameLabels hidden={hiddenFrameIds} />
-        <Controls showInteractive={false} position="bottom-right" />
+        <ZoomCapsule />
         <MiniMap
           position="top-right"
           pannable
