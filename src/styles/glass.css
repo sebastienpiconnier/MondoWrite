@@ -276,13 +276,17 @@
   .shell-side { overflow: hidden; }
   .shell-fade { display: block; position: relative; flex: 1 1 auto; min-height: 0; margin: 0 -10px; }
   .shell-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 12px 10px; overscroll-behavior: contain; scrollbar-width: thin; }
-  /* Bords haut et bas : le contenu qui défile s'efface dans le verre (masque sur la zone elle-même, sans second
-     backdrop-filter imbriqué, que WebKit n'affiche pas). */
-  .shell-scroll {
-    padding: 22px 10px;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  /* Bords haut et bas : flou, transparence et fondu. Les bandes sont des calques posés PAR-DESSUS la zone qui défile
+     (jamais dedans) : le contenu qui passe dessous se brouille et s'efface dans la teinte du fond. */
+  .shell-scroll { padding: 24px 10px; }
+  .shell-fade::before, .shell-fade::after, .app.has-tabbar:not([data-view="toile"]) .app-main::before, .app.has-tabbar:not([data-view="toile"]) .app-main::after {
+    content: ""; position: absolute; left: 0; right: 0; z-index: 5; pointer-events: none;
+    -webkit-backdrop-filter: blur(var(--edge-blur, 8px)); backdrop-filter: blur(var(--edge-blur, 8px));
   }
+  .shell-fade::before { top: 0; height: 30px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent); mask-image: linear-gradient(to bottom, #000 35%, transparent); }
+  .shell-fade::after { bottom: 0; height: 30px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 35%, transparent); mask-image: linear-gradient(to top, #000 35%, transparent); }
+  .app.has-tabbar:not([data-view="toile"]) .app-main::before { top: 0; height: 48px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent); mask-image: linear-gradient(to bottom, #000 40%, transparent); }
+  .app.has-tabbar:not([data-view="toile"]) .app-main::after { bottom: 0; height: 40px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent); mask-image: linear-gradient(to top, #000 40%, transparent); }
 
   /* Icônes de la colonne à la couleur d'accent. */
   .shell-side .tb-back svg, .shell-side .toc-cover svg, .shell-side .toc-chevron { color: var(--accent); }
@@ -315,8 +319,11 @@
   .bible-frame.has-shell-toc .bible {
     padding-top: 40px;
     padding-bottom: calc(40px + var(--keyboard-h, 0px));
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
   }
 }
 @media (prefers-reduced-motion: reduce) { .toc-chevron { transition: none; } }
+
+/* Teinte des bords floutés : le fond de l'app, à moitié transparent. */
+:root { --edge-tint: color-mix(in srgb, var(--ground) 62%, transparent); }
+:root[data-glass="off"] { --edge-tint: var(--ground); --edge-blur: 0px; }
+@media (prefers-reduced-transparency: reduce) { :root { --edge-tint: var(--ground); --edge-blur: 0px; } }
