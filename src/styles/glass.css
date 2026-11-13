@@ -294,8 +294,8 @@
   }
   .shell-fade::before { top: 0; height: 30px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent); mask-image: linear-gradient(to bottom, #000 35%, transparent); }
   .shell-fade::after { bottom: 0; height: 30px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 35%, transparent); mask-image: linear-gradient(to top, #000 35%, transparent); }
-  .app.has-tabbar .app-main::before { top: 0; height: 84px; left: 0; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent); mask-image: linear-gradient(to bottom, #000 45%, transparent); }
-  .app.has-tabbar .app-main::after { bottom: 0; height: 40px; left: 0; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent); mask-image: linear-gradient(to top, #000 40%, transparent); }
+  .app.has-tabbar .app-main::before { top: 0; height: 84px; left: -236px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent); mask-image: linear-gradient(to bottom, #000 45%, transparent); }
+  .app.has-tabbar .app-main::after { bottom: 0; height: 40px; left: -236px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent); mask-image: linear-gradient(to top, #000 40%, transparent); }
 
   /* Icônes de la colonne à la couleur d'accent. */
   .shell-side .tb-back svg, .shell-side .toc-cover svg, .shell-side .toc-chevron { color: var(--accent); }
@@ -333,11 +333,13 @@
 @media (prefers-reduced-motion: reduce) { .toc-chevron { transition: none; } }
 
 /* Teinte des bords floutés : le fond de l'app, à moitié transparent. */
-:root { --edge-tint: color-mix(in srgb, var(--ground) 62%, transparent); }
+:root { --edge-tint: color-mix(in srgb, var(--ground) 40%, transparent); }
 :root[data-glass="off"] { --edge-tint: var(--ground); --edge-blur: 0px; }
 @media (prefers-reduced-transparency: reduce) { :root { --edge-tint: var(--ground); --edge-blur: 0px; } }
 @media (min-width: 1100px) {
-  .app[data-view="toile"].has-tabbar .app-main::before, .app[data-view="toile"].has-tabbar .app-main::after { left: 236px; }
+  .app[data-view="toile"].has-tabbar .app-main::before { left: 0; }
+  /* Canevas : capsules et outils du bas au premier plan, donc pas de flou en bas. */
+  .app[data-view="toile"].has-tabbar .app-main::after { display: none; }
 }
 
 @media (min-width: 1100px) {
@@ -354,4 +356,23 @@
   .app.has-tabbar .manuscript .ms-main { padding-top: 64px; }
   .app.has-tabbar .manuscript .ms-meta-wrap { top: 52px; }
   .app.has-tabbar .manuscript .sp-side { padding-top: 64px; }
+}
+
+@media (min-width: 1100px) {
+  /* Bible : l'ancre d'une rubrique laisse la place sous le flou du haut (titre et actions restent visibles). */
+  .bible-frame.has-shell-toc .bible-group { scroll-margin-top: 88px; }
+
+  /* Écriture : un fond uni (le saut de page est de la même teinte), plus de liseré ni d'ombre entre les volets. */
+  .app.has-tabbar[data-view="manuscrit"] { background: var(--ground); }
+  .sp-pagebreak-gap { border-block: 0; }
+  .app.has-tabbar .manuscript > .sp-side, .app.has-tabbar .screenplay > .sp-side { box-shadow: none; border: 0; background: transparent; }
+
+  /* Scénario : la barre des éléments remonte tout en haut, comme les capsules ; la colonne de droite passe dessous. */
+  .app.has-tabbar .screenplay { top: 0; }
+  .app.has-tabbar .screenplay .sp-center { padding-top: 8px; }
+  .app.has-tabbar .screenplay .sp-bar { position: relative; z-index: 8; margin-inline: 16px; }
+  .app.has-tabbar .screenplay > .sp-side { padding-top: 64px; }
+
+  /* Icônes des menus et des barres à la couleur d'accent. */
+  .app.has-tabbar .tb-group svg, .sp-bar svg, .ms-meta svg, .zoom-capsule svg, .canvas-dock svg, .app.has-tabbar .topbar .icon-button svg { color: var(--accent); }
 }
