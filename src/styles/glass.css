@@ -111,7 +111,7 @@
     grid-template-columns: minmax(0, 1fr) auto; box-sizing: border-box;
   }
   html[data-platform="mac"]:not([data-fullscreen]) .app.has-tabbar .topbar { padding-left: 8px; }
-  .app.has-tabbar .topbar .shell-title { display: block; grid-column: 1; padding-left: 8px; font-size: 0.9375rem; font-weight: 600; color: var(--ink); }
+  .app.has-tabbar .topbar .shell-title { display: none; }
   .app.has-tabbar .topbar > .actions { grid-column: 2; gap: 10px; }
   .app.has-tabbar .tb-group {
     gap: 2px; padding: 0 4px; min-height: 36px; border-radius: var(--glass-radius-pill);
@@ -122,6 +122,15 @@
   }
   .app.has-tabbar .tb-group :is(.ghost-button, .icon-button) { border-color: transparent; background: transparent; box-shadow: none; }
   .app.has-tabbar .app-main { margin-left: 236px; }
+
+  /* La barre du haut flotte pour toutes les vues : l'espace de travail commence tout en haut de l'écran, le contenu
+     passe sous les capsules et sous le flou du bord. */
+  .app.has-tabbar .topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 20; margin-left: 236px; pointer-events: none; }
+  .app.has-tabbar .topbar > * { pointer-events: auto; }
+  .app.has-tabbar .topbar { grid-template-columns: 1fr; justify-items: end; }
+  .app.has-tabbar:not([data-view="toile"]) .bible { padding-top: 72px; }
+  .app.has-tabbar .sequencer { padding-top: 72px; }
+  .app.has-tabbar .manuscript, .app.has-tabbar .screenplay { top: 52px; }
 
   /* Canevas : plein cadre, le fond à points passe sous la colonne et sous les capsules. */
   .app[data-view="toile"].has-tabbar .topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 20; margin-left: 236px; pointer-events: none; }
@@ -279,14 +288,14 @@
   /* Bords haut et bas : flou, transparence et fondu. Les bandes sont des calques posés PAR-DESSUS la zone qui défile
      (jamais dedans) : le contenu qui passe dessous se brouille et s'efface dans la teinte du fond. */
   .shell-scroll { padding: 24px 10px; }
-  .shell-fade::before, .shell-fade::after, .app.has-tabbar:not([data-view="toile"]) .app-main::before, .app.has-tabbar:not([data-view="toile"]) .app-main::after {
+  .shell-fade::before, .shell-fade::after, .app.has-tabbar .app-main::before, .app.has-tabbar .app-main::after {
     content: ""; position: absolute; left: 0; right: 0; z-index: 5; pointer-events: none;
     -webkit-backdrop-filter: blur(var(--edge-blur, 8px)); backdrop-filter: blur(var(--edge-blur, 8px));
   }
   .shell-fade::before { top: 0; height: 30px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent); mask-image: linear-gradient(to bottom, #000 35%, transparent); }
   .shell-fade::after { bottom: 0; height: 30px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 35%, transparent); mask-image: linear-gradient(to top, #000 35%, transparent); }
-  .app.has-tabbar:not([data-view="toile"]) .app-main::before { top: 0; height: 48px; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent); mask-image: linear-gradient(to bottom, #000 40%, transparent); }
-  .app.has-tabbar:not([data-view="toile"]) .app-main::after { bottom: 0; height: 40px; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent); mask-image: linear-gradient(to top, #000 40%, transparent); }
+  .app.has-tabbar .app-main::before { top: 0; height: 84px; left: 0; background: linear-gradient(to bottom, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent); mask-image: linear-gradient(to bottom, #000 45%, transparent); }
+  .app.has-tabbar .app-main::after { bottom: 0; height: 40px; left: 0; background: linear-gradient(to top, var(--edge-tint), transparent); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent); mask-image: linear-gradient(to top, #000 40%, transparent); }
 
   /* Icônes de la colonne à la couleur d'accent. */
   .shell-side .tb-back svg, .shell-side .toc-cover svg, .shell-side .toc-chevron { color: var(--accent); }
@@ -317,7 +326,7 @@
   .bible-frame.has-shell-toc:not(.hide-toc) .bible { padding-left: max(24px, env(safe-area-inset-left)); }
   /* Espace de travail : le contenu qui défile s'efface en haut et en bas au lieu d'être coupé net. */
   .bible-frame.has-shell-toc .bible {
-    padding-top: 40px;
+    padding-top: 72px;
     padding-bottom: calc(40px + var(--keyboard-h, 0px));
   }
 }
@@ -327,3 +336,6 @@
 :root { --edge-tint: color-mix(in srgb, var(--ground) 62%, transparent); }
 :root[data-glass="off"] { --edge-tint: var(--ground); --edge-blur: 0px; }
 @media (prefers-reduced-transparency: reduce) { :root { --edge-tint: var(--ground); --edge-blur: 0px; } }
+@media (min-width: 1100px) {
+  .app[data-view="toile"].has-tabbar .app-main::before, .app[data-view="toile"].has-tabbar .app-main::after { left: 236px; }
+}
