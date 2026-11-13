@@ -106,6 +106,8 @@
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. */
 /* La bande déborde de la page : elle recouvre l'ombre des bords, qui sinon filait en deux barres verticales entre les pages. */
 .ms-main { overflow-x: hidden; }
+/* Saut de page dans un paragraphe coupé (#75) : un bloc en ligne de toute la largeur, seul sur sa ligne. */
+.sp-pagebreak.is-inline { display: inline-block; width: 100%; vertical-align: top; text-indent: 0; line-height: normal; }
 .ms-page .sp-pagebreak-gap { left: calc(-4em - 60px); right: calc(-4em - 60px); border-block: 0; }
 .ms-page .sp-pagebreak-number { right: 0; font-size: 0.85em; color: var(--ink-2); }
 /* Livre : le numéro est dans la page, centré en bas. */
