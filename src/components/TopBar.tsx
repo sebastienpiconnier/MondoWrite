@@ -62,7 +62,7 @@ export function TopBar() {
     const onDown = (e: PointerEvent) => {
       // Un menu posé dans <body> (⋯ des Réglages, statut…) appartient encore à la barre : sans cela, « Réglages… »
       // fermait la rangée d'actions, donc le panneau des Réglages qu'elle contient, sur iPhone (novembre 2026).
-      if (!(e.target instanceof Element) || !e.target.closest(".topbar, .more-menu")) setMore(false);
+      if (!(e.target instanceof Element) || !e.target.closest(".topbar, .more-menu, .font-list-menu")) setMore(false);
     };
     document.addEventListener("pointerdown", onDown);
     return () => document.removeEventListener("pointerdown", onDown);

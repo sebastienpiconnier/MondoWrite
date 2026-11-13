@@ -147,7 +147,9 @@ export function Settings({ project = true }: { project?: boolean }) {
       }
     };
     const onDown = (e: PointerEvent) => {
-      // Dehors, ou sur le bouton lui-même (il rouvre le menu de l'app) : le panneau se ferme.
+      // Dehors, ou sur le bouton lui-même (il rouvre le menu de l'app) : le panneau se ferme. La liste des polices est
+      // posée dans <body> (hors du panneau) : la toucher ne le ferme pas, sinon aucune police ne pouvait être choisie.
+      if (e.target instanceof Element && e.target.closest(".font-list-menu")) return;
       if (!rootRef.current?.contains(e.target as Node) || (e.target instanceof Element && e.target.closest(".settings-button"))) setOpen(false);
     };
     document.addEventListener("keydown", onKey);
