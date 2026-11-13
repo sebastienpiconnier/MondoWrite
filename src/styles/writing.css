@@ -633,6 +633,17 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Le menu est posé dans <body>, en position fixe sous le bouton (ou au-dessus, `is-up`). */
 .status-menu { position: fixed; z-index: 2000; min-width: 170px; padding: 6px; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); font: 14px var(--font-ui); }
 .status-menu.is-up { transform: translateY(-100%); }
+.font-list-button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 14px; text-align: left; cursor: pointer; }
+@media (any-hover: hover) { .font-list-button:hover { background: var(--hover); } }
+.font-list-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.font-list-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.font-list-menu { position: fixed; z-index: 2000; box-sizing: border-box; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); }
+.font-list-menu.is-up { transform: translateY(-100%); }
+.font-list-option { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 4px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font-size: 16px; text-align: left; cursor: pointer; flex: none; }
+.font-list-option:focus-visible, .font-list-option[aria-selected="true"] { background: var(--hover); }
+.font-list-option:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (any-hover: hover) { .font-list-option:hover { background: var(--hover); } }
+@media (pointer: coarse) { .font-list-button, .font-list-option { min-height: 44px; } }
 .status-option { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .status-option:focus-visible { background: var(--ground); outline: none; }
 @media (any-hover: hover) { .status-option:hover { background: var(--ground); outline: none; } }
