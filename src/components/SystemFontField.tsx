@@ -5,7 +5,7 @@ import { systemFonts } from "../systemFonts";
 
 /**
  * « Une police de l'ordinateur » (discussion #61) : choisie dans la liste des polices installées quand l'appareil sait
- * la donner, sinon tapée. Le champ s'affiche dans la police choisie, en aperçu.
+ * la donner, sinon tapée. Aperçu dans la police choisie : sous la liste (le menu natif de la liste garde la police de l'interface, sinon toutes les options prenaient celle du choix), ou dans le champ tapé.
  */
 export function SystemFontField() {
   const t = useT();
@@ -43,16 +43,20 @@ export function SystemFontField() {
           id={ids.input}
           value={current}
           aria-describedby={ids.hint}
-          style={preview(current)}
           onChange={(e) => commit(e.target.value)}
         >
           {!current && <option value="">{t.settings.customFontPick}</option>}
           {options.map((f) => (
-            <option key={f} value={f}>
+            <option key={f} value={f} style={preview(f)}>
               {f}
             </option>
           ))}
         </select>
+        {current && (
+          <p className="settings-hint" style={preview(current)} aria-hidden="true">
+            {current}
+          </p>
+        )}
         <p className="settings-hint" id={ids.hint}>
           {t.settings.customFontListHint}
         </p>
