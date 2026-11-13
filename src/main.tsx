@@ -24,6 +24,7 @@ import "@fontsource/atkinson-hyperlegible/700.css";
 import "@xyflow/react/dist/style.css";
 import "./styles.css";
 import "./styles/palettes.css";
+import "./styles/glass.css";
 import "./styles/canvas.css";
 import "./styles/bible.css";
 import "./styles/screenplay.css";

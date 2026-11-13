@@ -1,0 +1,52 @@
+/* MondoWrite : matériaux « verre » (maquettes Liquid Glass, novembre 2026, docs/plan-liquid-glass.md).
+   Aucune couleur en dur : tout est dérivé des jetons de palette (--surface, --ground, --line, --ink, --accent),
+   donc les huit palettes et les deux thèmes suivent sans jeton de plus.
+   Ces classes ne s'appliquent que là où un écran les demande ; rien ne change tant qu'elles ne sont pas posées. */
+:root {
+  --glass-blur: 22px;
+  --glass-sat: 1.8;
+  --glass-fill: color-mix(in srgb, var(--surface) 72%, transparent);
+  --glass-fill-strong: color-mix(in srgb, var(--surface) 86%, transparent);
+  --glass-edge: color-mix(in srgb, var(--ink) 10%, transparent);
+  --glass-shine: color-mix(in srgb, var(--surface) 90%, transparent);
+  --glass-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 8%, transparent);
+  --glass-shadow-float: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent);
+  --glass-radius: 18px; /* barre latérale, inspecteur */
+  --glass-radius-pill: 999px; /* capsules d'outils, onglets */
+}
+:root[data-theme="dark"] {
+  --glass-fill: color-mix(in srgb, var(--surface) 62%, transparent);
+  --glass-fill-strong: color-mix(in srgb, var(--surface) 80%, transparent);
+  --glass-edge: color-mix(in srgb, var(--ink) 16%, transparent);
+  --glass-shine: color-mix(in srgb, var(--ink) 12%, transparent);
+  --glass-shadow: 0 6px 20px color-mix(in srgb, var(--ground) 60%, transparent);
+  --glass-shadow-float: 0 8px 24px color-mix(in srgb, var(--ground) 70%, transparent);
+}
+
+/* Panneau flottant : barre latérale, inspecteur (arrondi 18 px, liseré, reflet en haut). */
+.glass {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border-radius: var(--glass-radius);
+  box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow), inset 0 1px 0 var(--glass-shine);
+}
+/* Capsule : groupe d'outils, onglets, zoom. */
+.glass-pill {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border-radius: var(--glass-radius-pill);
+  box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow-float), inset 0 1px 0 var(--glass-shine);
+}
+/* Verre qui porte du texte courant : plus opaque pour garder 4,5:1 sur n'importe quel fond. */
+.glass-strong { background: var(--glass-fill-strong); }
+
+/* Réduire la transparence : fonds pleins (le flou est déjà coupé par styles.css). */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-pill { background: var(--surface); }
+}
+/* Pas de verre sur un navigateur sans flou : même repli. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .glass-pill { background: var(--surface); }
+}
