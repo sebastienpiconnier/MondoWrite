@@ -98,6 +98,10 @@
    son texte descend plus bas (page de titre, dédicace, mentions légales…). */
 .ms-page .ms-editor, .ms-page .ms-editor:focus-visible { --ms-top: 5; min-height: calc((var(--ms-height) - var(--ms-top)) * 1em); padding: calc(var(--ms-top) * 1em) 4em 0; font: inherit; color: inherit; }
 .ms-page .ms-editor p { margin: 0; text-indent: 1.5em; text-align: justify; hyphens: auto; }
+/* TipTap pose `white-space: break-spaces` : l'espace qui ne tient plus en bout de ligne passait au début de la
+   suivante et décalait le bord gauche du texte justifié. En `pre-wrap`, il reste suspendu dans la marge de droite,
+   comme dans un livre. Affichage seulement : le texte enregistré et les exports ne changent pas. */
+.ms-page .ms-editor.ProseMirror { white-space: pre-wrap; }
 .ms-page .ms-editor h2, .ms-page .ms-editor h3 { margin: 0; padding: 0.8em 0 0.8em; text-align: center; font-size: 1em; line-height: 1.6; letter-spacing: 0.08em; }
 /* Ouverture d'un chapitre : une lettrine, comme dans NEO. */
 /* La bande déborde de la page : elle recouvre l'ombre des bords, qui sinon filait en deux barres verticales entre les pages. */
