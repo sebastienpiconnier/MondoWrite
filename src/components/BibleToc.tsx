@@ -3,6 +3,7 @@
 // Une partie qui n'a qu'une rubrique est un seul bouton ; sinon ses rubriques sont listées sous son nom.
 // En mode « Choisir et ranger », on coche les rubriques et on les déplace à l'intérieur de leur partie.
 
+import { useState } from "react";
 import { typeColor, type CardType } from "../types";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
@@ -38,8 +39,29 @@ function PartBadge({ part }: { part: PartKey }) {
   );
 }
 
+const FOLD_KEY = "mondowrite.bible.tocFolded";
+/** Parties repliées du sommaire : réglage de l'appareil, jamais le projet. */
+function readFolded(): PartKey[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(FOLD_KEY) ?? "[]");
+    return Array.isArray(raw) ? raw.filter((x): x is PartKey => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 export function BibleToc({ sections, counts, prefs, setPrefs, arranging, setArranging, onCover, current, openCover, goTo }: Props) {
   const { t, types } = useVocab();
+  const [folded, setFolded] = useState<PartKey[]>(readFolded);
+  const toggleFold = (part: PartKey) => {
+    const next = folded.includes(part) ? folded.filter((p) => p !== part) : [...folded, part];
+    setFolded(next);
+    try {
+      localStorage.setItem(FOLD_KEY, JSON.stringify(next));
+    } catch {
+      /* stockage refusé : le pli ne dure que la session */
+    }
+  };
   const parts = t.bible.parts;
   // La Présentation existe toujours : elle porte la couverture, même si la rubrique Thèmes est masquée.
   const groups = groupByPart(sections, (s) => s.type);
@@ -112,11 +134,13 @@ export function BibleToc({ sections, counts, prefs, setPrefs, arranging, setArra
                   </button>
                 ) : (
                   <>
-                    <div className="toc-part-head" id={`toc-part-${part}`}>
+                    {/* La partie se replie : son titre est un bouton (déplier, replier), le sommaire reste court. */}
+                    <button type="button" className={`toc-part-head toc-fold${folded.includes(part) ? "" : " is-open"}`} id={`toc-part-${part}`} aria-expanded={!folded.includes(part)} aria-controls={`toc-list-${part}`} onClick={() => toggleFold(part)}>
                       <PartBadge part={part} />
-                      {parts[part]}
-                    </div>
-                    <ul aria-labelledby={`toc-part-${part}`}>
+                      <span className="toc-fold-name">{parts[part]}</span>
+                      <svg className="toc-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                    <ul id={`toc-list-${part}`} aria-labelledby={`toc-part-${part}`} hidden={folded.includes(part)}>
                       {part === "presentation" && (
                         <li>
                           <button type="button" className={`toc-sub toc-cover${onCover ? " is-current" : ""}`} aria-current={onCover ? "true" : undefined} onClick={openCover}>

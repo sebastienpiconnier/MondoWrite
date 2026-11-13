@@ -14,6 +14,7 @@ import { PovPicker, PovScenes } from "./PovPicker";
 import { headingOf } from "../screenplay/sceneText";
 import { DraftPreview } from "./SceneDraft";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { loadFolded, saveFolded, setFolded } from "../bibleFold";
 import { useCosmos } from "../store";
 import { typeColor, typesFor, type CardData, type CardType } from "../types";
@@ -131,6 +132,15 @@ export function Bible() {
     useCosmos.getState().setView("manuscrit");
   };
   // Sommaire repliable par sa poignée ; fermé d'office sur téléphone, où il prenait la moitié de l'écran.
+  // Grand écran : le sommaire quitte la Bible et se pose dans la colonne de verre, sous les vues (#shell-slot de TopBar).
+  const [shellSlot, setShellSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1100px)");
+    const sync = () => setShellSlot(mq.matches ? document.getElementById("shell-slot") : null);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   const [tocOpen, setTocOpen] = useState(() => {
     try {
       const saved = localStorage.getItem(TOC_KEY);
@@ -502,24 +512,29 @@ export function Bible() {
   }
 
   return (
-    <div className={`bible-frame${tocOpen ? "" : " hide-toc"}`}>
+    <div className={`bible-frame${tocOpen ? "" : " hide-toc"}${shellSlot ? " has-shell-toc" : ""}`}>
     <EdgeHandle side="left" open={tocOpen} label={t.bible.tocTitle} onClick={toggleToc} />
     <div className="bible" ref={rootRef} onScroll={onScroll}>
-      <BibleToc
-        sections={sections.map((g) => ({ type: g.type, count: g.type === "episode" && seriesCount !== null ? seriesCount : g.cards.length }))}
-        counts={counts}
-        prefs={prefs}
-        setPrefs={setPrefs}
-        arranging={arranging}
-        setArranging={setArranging}
-        onCover={onPage}
-        current={shown?.type ?? null}
-        openCover={() => {
-          closeTocOnPhone();
-          setCurrent("projet");
-        }}
-        goTo={goTo}
-      />
+      {(() => {
+        const toc = (
+        <BibleToc
+          sections={sections.map((g) => ({ type: g.type, count: g.type === "episode" && seriesCount !== null ? seriesCount : g.cards.length }))}
+          counts={counts}
+          prefs={prefs}
+          setPrefs={setPrefs}
+          arranging={arranging}
+          setArranging={setArranging}
+          onCover={onPage}
+          current={shown?.type ?? null}
+          openCover={() => {
+            closeTocOnPhone();
+            setCurrent("projet");
+          }}
+          goTo={goTo}
+        />
+        );
+        return shellSlot ? createPortal(toc, shellSlot) : toc;
+      })()}
 
       {onCover || !shown ? (
         <section className="bible-main is-cover" aria-label={t.pitch.toc} ref={mainRef}>

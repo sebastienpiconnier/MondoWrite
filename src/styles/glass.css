@@ -268,3 +268,53 @@
 }
 :root[data-glass="off"] .home-nav, :root[data-glass="off"] .home-capsule-search { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (prefers-reduced-transparency: reduce) { .home-nav, .home-capsule-search { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* ---- Colonne de verre : zone qui défile, bords floutés, sommaire de la Bible, icônes à l'accent ---- */
+.shell-fade { display: none; }
+@media (min-width: 1100px) {
+  /* Les vues restent en haut, toujours à portée ; ce qui suit défile dans sa zone. */
+  .shell-side { overflow: hidden; }
+  .shell-fade { display: block; position: relative; flex: 1 1 auto; min-height: 0; margin: 0 -10px; }
+  .shell-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 12px 10px; overscroll-behavior: contain; scrollbar-width: thin; }
+  /* Bords haut et bas : flou progressif (le contenu qui passe dessous s'efface dans le verre). */
+  .shell-fade::before, .shell-fade::after { content: ""; position: absolute; left: 0; right: 0; height: 26px; z-index: 2; pointer-events: none; }
+  .shell-fade::before {
+    top: 0; background: linear-gradient(to bottom, var(--glass-fill), transparent);
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+    -webkit-mask-image: linear-gradient(to bottom, #000 20%, transparent); mask-image: linear-gradient(to bottom, #000 20%, transparent);
+  }
+  .shell-fade::after {
+    bottom: 0; background: linear-gradient(to top, var(--glass-fill), transparent);
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+    -webkit-mask-image: linear-gradient(to top, #000 20%, transparent); mask-image: linear-gradient(to top, #000 20%, transparent);
+  }
+
+  /* Icônes de la colonne à la couleur d'accent. */
+  .shell-side .tb-back svg, .shell-side .toc-cover svg, .shell-side .toc-chevron { color: var(--accent); }
+
+  /* Sommaire de la Bible dans la colonne : compact, sans carte ni bordure. */
+  .shell-side .bible-toc { position: static; max-width: none; flex: none; padding: 0; background: transparent; border-radius: 0; box-shadow: none; border: 0; overflow: visible; }
+  .shell-side .bible-toc .eyebrow { display: none; }
+  .shell-side .bible-toc ul { margin: 0; }
+  .shell-side .bible-toc ul[hidden] { display: none; }
+  .shell-side .bible-toc .toc-parts { gap: 6px; }
+  .shell-side .bible-toc button { min-height: 28px; padding: 0 8px; border-radius: 8px; font-size: 0.8125rem; color: var(--ink); }
+  .shell-side .bible-toc button.toc-sub { padding-left: 26px; }
+  .shell-side .bible-toc button.is-current { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+  .shell-side .bible-toc .toc-part-head { padding: 0 8px; font-size: 0.8125rem; }
+  .shell-side .bible-toc button.toc-fold { display: flex; align-items: center; gap: 8px; justify-content: flex-start; width: 100%; font-family: var(--font-display); font-weight: 700; text-align: left; }
+  .toc-fold-name { flex: 1; min-width: 0; }
+  .toc-chevron { flex: none; transition: transform 0.15s; }
+  .toc-fold:not(.is-open) .toc-chevron { transform: rotate(-90deg); }
+  .toc-part-num { background: var(--accent-soft); color: var(--accent-ink); }
+  .shell-side .bible-toc .toc-part-hint { margin-left: 26px; }
+  .shell-side .bible-toc .toc-tools { margin: 10px 8px 0; }
+  .shell-side .bible-toc .toc-tools button { min-height: 28px; }
+  @media (pointer: coarse) { .shell-side .bible-toc button { min-height: 44px; } }
+  @media (any-hover: hover) { .shell-side .bible-toc button:hover:not(.is-current) { background: var(--hover); } }
+
+  /* La Bible reprend la place du sommaire. */
+  .bible-frame.has-shell-toc > .edge-handle { display: none; }
+  .bible-frame.has-shell-toc .bible { padding-left: max(24px, env(safe-area-inset-left)); }
+}
+@media (prefers-reduced-motion: reduce) { .toc-chevron { transition: none; } }
