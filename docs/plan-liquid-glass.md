@@ -19,6 +19,12 @@ rendu en CSS (`backdrop-filter`), sans la réfraction du vrai Liquid Glass. Une 
 6. **iPhone** : barre d'onglets flottante en verre, boutons de coin, feuilles à détentes ; retirer le réglage d'apparence propre à l'app si l'on suit le système.
 7. **Vérification** : captures Playwright clair et sombre (8 palettes), puis essai sur appareil (zones de sécurité, clavier).
 
-## Décisions à prendre avec l'auteur
-- Variante a (clair) ou b (sombre, structure différente) pour chaque écran : les maquettes en proposent deux.
-- Sur Windows et Linux : verre identique ou repli sans flou.
+## Décisions prises (13 novembre 2026)
+- **Variante A** (clair) pour la structure de tous les écrans ; le sombre en dérive avec les jetons sombres de `glass.css`.
+- **Même interface partout.** Windows : verre actif, barre de titre du système. Linux : même forme (arrondis, liseré, ombre), fond plein et sans flou par défaut (WebKitGTK rend mal `backdrop-filter`). Mac : verre, feux tricolores dans la barre.
+- **Réglage « Effets de transparence »** (Réglages › Général, appareil, jamais le projet) : Automatique (actif sauf sous Linux, `isLinuxDesktop`, défaut seulement), Oui, Non. Il pose `data-glass="on|off"` sur `<html>` (`glassShown`, settings.ts) ; `glass.css` lit `off` (fond plein, sans flou). « Réduire la transparence » du système l'emporte toujours.
+- **Pas de `windowEffects`** (Mica, Acrylic, vibrance) sur aucune plateforme : il exige une fenêtre transparente et le Mac App Store le refuse.
+- Police : SF Pro n'est pas embarquée, IBM Plex Sans reste le repli ; les proportions des maquettes bougent légèrement.
+
+## Avancement
+- Étape 1 : fait. Étape 2 : réglage et capsule d'outils du canevas faits ; reste la barre latérale flottante et l'inspecteur (touchent `TopBar`, `App` et la mise en page des vues : à faire écran par écran avec captures).

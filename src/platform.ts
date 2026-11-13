@@ -13,6 +13,9 @@ export const isMobileOS = () => {
   return /Android|iPhone|iPad|iPod/i.test(ua) || iPadOS;
 };
 
+/** Linux de bureau (hors Android) : seulement pour le défaut des effets de transparence, jamais pour une fonction. */
+export const isLinuxDesktop = () => typeof navigator !== "undefined" && /Linux|X11/.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent);
+
 /** Pointeur principal imprécis (doigt) : pas de survol, cibles plus grandes. */
 export const isTouch = () =>
   typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;

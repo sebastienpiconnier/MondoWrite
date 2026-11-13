@@ -302,6 +302,9 @@
 .canvas-dock > * { pointer-events: auto; }
 .history-buttons { display: flex; gap: 6px; }
 .history-buttons .icon-button { width: 44px; height: 44px; box-shadow: var(--shadow-card); }
+/* Capsule de verre (Liquid Glass, docs/plan-liquid-glass.md) : les boutons y sont à plat, sans cadre ni ombre propres. */
+.history-buttons.glass-pill { padding: 4px; gap: 2px; }
+.history-buttons.glass-pill .icon-button { background: transparent; border-color: transparent; box-shadow: none; }
 .history-buttons .icon-button:disabled { opacity: 0.45; cursor: default; }
 
 /* Barre de mise en forme (texte sélectionné) */

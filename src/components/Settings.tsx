@@ -22,7 +22,7 @@ import { REPO } from "../updates";
 
 /** Guide des traducteurs sur GitHub. */
 const TRANSLATE_URL = `https://github.com/${REPO}/blob/main/TRANSLATING.md`;
-import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type Palette, type ThemePref, type WheelMode } from "../settings";
+import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type Palette, type ThemePref, type WheelMode, type GlassMode } from "../settings";
 import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS } from "../focusText";
 import { canFullscreen } from "./FocusBar";
 import { useCosmos } from "../store";
@@ -124,6 +124,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   // Barre des menus du Mac (Réglages…) et Cmd/Ctrl + virgule : ouvrir.
   useCommand("settings", () => setOpen(true));
   const wheelMode = useSettings((s) => s.wheelMode);
+  const glass = useSettings((s) => s.glass);
   const finePointer = typeof window !== "undefined" && !!window.matchMedia?.("(any-pointer: fine)").matches;
   // Augmenter le contraste (réglage du système) : la palette Contraste s'impose, on le dit sous le choix.
   const [moreContrast, setMoreContrast] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-contrast: more)").matches);
@@ -135,7 +136,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), glass: useId(), glassHint: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -404,6 +405,13 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </select>
           {moreContrast && <p className="settings-hint">{t.settings.paletteSystemContrast}</p>}
+          <label htmlFor={ids.glass}>{t.settings.glass}</label>
+          <select id={ids.glass} value={glass} aria-describedby={ids.glassHint} onChange={(e) => useSettings.getState().setGlass(e.target.value as GlassMode)}>
+            <option value="auto">{t.settings.glassAuto}</option>
+            <option value="on">{t.settings.glassOn}</option>
+            <option value="off">{t.settings.glassOff}</option>
+          </select>
+          <p className="settings-hint" id={ids.glassHint}>{t.settings.glassHint}</p>
           {/* Seulement avec une souris ou un trackpad : au doigt, déplacer et pincer ne changent pas. */}
           {finePointer && (
             <>

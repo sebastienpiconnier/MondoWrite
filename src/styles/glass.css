@@ -50,3 +50,11 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass, .glass-pill { background: var(--surface); }
 }
+
+/* Effets de transparence coupés (réglage, ou Linux en automatique) : même forme, fond plein, sans flou. */
+:root[data-glass="off"] .glass,
+:root[data-glass="off"] .glass-pill {
+  background: var(--surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

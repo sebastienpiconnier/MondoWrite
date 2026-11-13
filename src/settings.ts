@@ -8,7 +8,7 @@ import { isFocusColumn, isFocusHighlight, type FocusColumn, type FocusHighlight 
 import { readSections, type BibleSections } from "./bibleSections";
 import { create } from "zustand";
 import { detectLang, isLang, type Lang } from "./i18n/langs";
-import { isTauri } from "./platform";
+import { isTauri, isLinuxDesktop } from "./platform";
 import { PHOTO_SOURCES, type PhotoSourceId } from "./imageSources";
 import { authorName, cleanProfile, readProfile, type AuthorProfile } from "./profile";
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
@@ -26,6 +26,11 @@ export const isPalette = (v: unknown): v is Palette => (PALETTES as readonly unk
  * déplacent, pincer ou Ctrl + molette zoome ; « zoom » = la molette zoome, comme avant la 1.0.17 (souris).
  */
 export type WheelMode = "pan" | "zoom";
+/** Effets de transparence (verre) : automatique (actifs sauf sous Linux), oui, non. Réglage de l'appareil. */
+export type GlassMode = "auto" | "on" | "off";
+const GLASS_MODES: GlassMode[] = ["auto", "on", "off"];
+/** Le verre est-il dessiné ? Automatique : oui, sauf sous Linux (WebKitGTK rend mal le flou). Le réglage « Réduire la transparence » du système l'emporte en CSS. */
+export const glassShown = (mode: GlassMode) => (mode === "auto" ? !isLinuxDesktop() : mode === "on");
 /** Présentation du séquencier : en liste ou en fiches. */
 export type SequencerMode = "outline" | "cards";
 /** Aides qui s'effacent une fois apprises (#59) : consigne du canevas, touches du scénario (voir learn.ts). */
@@ -189,6 +194,8 @@ interface SettingsState {
   unlearnAll: () => void;
   wheelMode: WheelMode;
   setWheelMode: (mode: WheelMode) => void;
+  glass: GlassMode;
+  setGlass: (mode: GlassMode) => void;
   setSequencerMode: (mode: SequencerMode) => void;
   /** Profil de l'auteur (nom, nom de plume, coordonnées), repris par les nouveaux projets. */
   profile: AuthorProfile;
@@ -276,7 +283,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; glass?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -309,6 +316,8 @@ export const useSettings = create<SettingsState>((set) => ({
   unlearnAll: () => set({ learned: [] }),
   wheelMode: saved.wheelMode === "zoom" ? "zoom" : "pan",
   setWheelMode: (wheelMode) => set({ wheelMode }),
+  glass: GLASS_MODES.includes(saved.glass as GlassMode) ? (saved.glass as GlassMode) : "auto",
+  setGlass: (glass) => set({ glass }),
   profile: initialProfile,
   setProfile: (profile) => {
     const clean = cleanProfile(profile);
@@ -371,11 +380,12 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, glass, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.dataset.palette = shownPalette(palette, !!contrastQuery()?.matches);
+    root.dataset.glass = glassShown(glass) ? "on" : "off"; // verre : lu par src/styles/glass.css
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
     // Zoom de la page (manuscrit, scénario) : une variable CSS ; agrandie, la page peut défiler de côté.
     root.style.setProperty("--page-zoom", String(writing.zoom));
@@ -387,7 +397,7 @@ export function initSettings() {
     else delete root.dataset.pageZoomed;
     try {
       const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, glass, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

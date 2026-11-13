@@ -805,7 +805,7 @@ export function Toile() {
       <div className="canvas-dock">
       <NewCardMenu onCreate={createKind} />
 
-      <div className="history-buttons">
+      <div className="history-buttons glass-pill">
         <button type="button" className="icon-button has-label" aria-label={t.toile.addFrame} title={t.toile.addFrameHint} aria-keyshortcuts="C" onClick={createFrame}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="3 3.2" aria-hidden="true">
             <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
