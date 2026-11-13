@@ -310,6 +310,13 @@
 
   /* La Bible reprend la place du sommaire. */
   .bible-frame.has-shell-toc > .edge-handle { display: none; }
-  .bible-frame.has-shell-toc .bible { padding-left: max(24px, env(safe-area-inset-left)); }
+  .bible-frame.has-shell-toc:not(.hide-toc) .bible { padding-left: max(24px, env(safe-area-inset-left)); }
+  /* Espace de travail : le contenu qui défile s'efface en haut et en bas au lieu d'être coupé net. */
+  .bible-frame.has-shell-toc .bible {
+    padding-top: 40px;
+    padding-bottom: calc(40px + var(--keyboard-h, 0px));
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+  }
 }
 @media (prefers-reduced-motion: reduce) { .toc-chevron { transition: none; } }
