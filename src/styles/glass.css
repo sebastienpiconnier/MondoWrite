@@ -59,29 +59,71 @@
   backdrop-filter: none;
 }
 
-/* Barre latérale flottante (maquettes macOS et iPad) : sur un grand écran, les quatre vues quittent la barre du haut
-   pour une colonne de verre à gauche, icône et nom. Même balisage (nav.views) : le téléphone garde ses onglets du bas
-   (phone.css) et le mode focus n'a pas de barre. Rien ne dépend du survol, cibles de 44 px. */
+/* Coque « Liquid Glass » (maquettes macOS et iPad, docs/plan-liquid-glass.md) : dès 1100 px, plus de barre pleine largeur.
+   Une colonne de verre sur toute la hauteur (retour, nom du projet, vues avec icône), des capsules d'outils flottantes
+   en haut à droite, et sur le canevas le fond à points passe sous le verre. Même balisage que la barre d'avant
+   (`.shell-side` vaut `display: contents` ailleurs) : téléphone et fenêtre étroite ne changent pas. Rien ne dépend du
+   survol, cibles de 44 px au doigt. */
+.shell-side { display: contents; }
+.shell-title { display: none; }
 @media (min-width: 1100px) {
-  .app.has-tabbar .views {
-    position: fixed; left: max(12px, env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); z-index: 30;
-    flex-direction: column; align-items: stretch; gap: 4px; padding: 8px 6px; margin: 0; width: 88px;
+  .shell-side {
+    display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; overflow: auto;
+    position: fixed; left: max(8px, env(safe-area-inset-left)); top: 8px; bottom: 8px; width: 220px; z-index: 30; padding: 14px 10px;
     background: var(--glass-fill);
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border-radius: var(--glass-radius);
-    box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow-float), inset 0 1px 0 var(--glass-shine);
+    box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow), inset 0 1px 0 var(--glass-shine);
   }
-  :root[data-glass="off"] .app.has-tabbar .views { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .app.has-tabbar .views button {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    min-height: 56px; padding: 6px 2px; border-radius: 14px; font-size: 0.6875rem;
+  /* Mac : les trois boutons de fenêtre sont posés sur le haut de la colonne. */
+  html[data-platform="mac"]:not([data-fullscreen]) .shell-side { padding-top: 44px; }
+  .shell-side .brand { flex-wrap: wrap; gap: 6px 10px; padding: 0 4px; }
+  .shell-side .tb-back { flex-basis: 100%; margin-left: -6px; }
+  .shell-side .tb-back .tb-label { display: inline; }
+  .shell-side .brand-text { flex: 1; min-width: 0; }
+  .shell-side .brand-project { max-width: 100%; }
+  .shell-side .views {
+    position: static; transform: none; width: auto; margin: 0; padding: 0; gap: 2px; background: transparent; border-radius: 0;
+    flex-direction: column; align-items: stretch;
   }
-  .app.has-tabbar .views .view-icon { display: block; flex: none; }
-  .app.has-tabbar .views .view-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* La colonne de verre a sa gouttière : le contenu ne passe pas dessous. */
-  .app.has-tabbar .app-main { margin-left: calc(88px + 24px); }
+  .shell-side .views button {
+    display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 9px;
+    min-height: 32px; padding: 0 8px; border-radius: 8px; font-size: 0.8125rem; font-weight: 400; text-align: left; color: var(--ink);
+  }
+  .shell-side .views button.is-current { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+  .shell-side .views .view-icon { display: block; flex: none; width: 18px; height: 18px; color: var(--accent); }
+  .shell-side .views .view-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (pointer: coarse) { .shell-side .views button { min-height: 44px; } }
+
+  /* Plus de barre pleine largeur : le titre de la vue et des capsules d'outils flottantes. */
+  .app.has-tabbar .topbar {
+    margin-left: 236px; min-height: 52px; padding: 8px 16px 8px 8px; background: transparent; border-bottom: 0;
+    grid-template-columns: minmax(0, 1fr) auto; box-sizing: border-box;
+  }
+  html[data-platform="mac"]:not([data-fullscreen]) .app.has-tabbar .topbar { padding-left: 8px; }
+  .app.has-tabbar .topbar .shell-title { display: block; grid-column: 1; padding-left: 8px; font-size: 0.9375rem; font-weight: 600; color: var(--ink); }
+  .app.has-tabbar .topbar > .actions { grid-column: 2; gap: 10px; }
+  .app.has-tabbar .tb-group {
+    gap: 2px; padding: 0 4px; min-height: 36px; border-radius: var(--glass-radius-pill);
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow: 0 0 0 0.5px var(--glass-edge), var(--glass-shadow), inset 0 1px 0 var(--glass-shine);
+  }
+  .app.has-tabbar .tb-group :is(.ghost-button, .icon-button) { border-color: transparent; background: transparent; box-shadow: none; }
+  .app.has-tabbar .app-main { margin-left: 236px; }
+
+  /* Canevas : plein cadre, le fond à points passe sous la colonne et sous les capsules. */
+  .app[data-view="toile"].has-tabbar .topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 20; margin-left: 236px; pointer-events: none; }
+  .app[data-view="toile"].has-tabbar .topbar > * { pointer-events: auto; }
+  .app[data-view="toile"].has-tabbar .topbar .shell-title { pointer-events: none; }
+  .app[data-view="toile"].has-tabbar .app-main { margin-left: 0; }
+  .app[data-view="toile"] .canvas-dock { left: 244px; }
+  .app[data-view="toile"] .react-flow__panel.top { margin-top: 52px; }
 }
-@media (min-width: 1100px) and (prefers-reduced-transparency: reduce) {
-  .app.has-tabbar .views { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Effets coupés (réglage) ou « Réduire la transparence » : même forme, fond plein. */
+:root[data-glass="off"] .shell-side, :root[data-glass="off"] .app.has-tabbar .tb-group { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-transparency: reduce) {
+  .shell-side, .app.has-tabbar .tb-group { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }

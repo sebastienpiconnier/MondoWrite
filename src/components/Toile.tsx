@@ -108,6 +108,12 @@ function chosenCards(target: HTMLElement | Element | null): string[] {
 }
 
 
+/** Marge du « tout voir » : sur grand écran, la colonne de verre (236 px) et les capsules d'outils (60 px) couvrent le canevas (glass.css). */
+const shellPadding = (base: number) =>
+  typeof window !== "undefined" && window.matchMedia?.("(min-width: 1100px)").matches
+    ? ({ top: "84px", left: "260px", right: "40px", bottom: "96px" } as const)
+    : (`${Math.round(base * 100)}%` as const);
+
 export function Toile() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
     useCosmos();
@@ -228,7 +234,7 @@ export function Toile() {
   const [fitAtMount] = useState(fitRequest);
   useEffect(() => {
     if (!fitRequest || fitRequest === fitAtMount) return;
-    const timer = setTimeout(() => fitView({ padding: 0.12, duration: 500 }), 60);
+    const timer = setTimeout(() => fitView({ padding: shellPadding(0.12), duration: 500 }), 60);
     return () => clearTimeout(timer);
   }, [fitRequest, fitView]);
 
@@ -736,7 +742,7 @@ export function Toile() {
         // Arrivée pour montrer une carte (Bible, Plan, recherche depuis une autre vue) : pas de « tout voir »
         // initial, qui passait après le centrage sur un gros projet (toutes les cartes mesurées plus tard).
         fitView={!arrivedFor}
-        fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
+        fitViewOptions={{ padding: shellPadding(0.3), maxZoom: 1 }}
         defaultEdgeOptions={{
           type: "floating",
           // Zone de toucher plus large autour du fil (20 px par défaut) : à l'index, le fil est trop fin.

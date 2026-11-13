@@ -72,6 +72,8 @@ export function TopBar() {
     // data-tauri-drag-region : le fond de la barre déplace la fenêtre (barre de titre intégrée du Mac),
     // un double-clic l'agrandit ; les boutons et le titre gardent leurs clics.
     <header ref={barRef} className={`topbar${more ? " more-open" : ""}${compact ? " is-compact" : ""}${stacked ? " is-stacked" : ""}`} data-tauri-drag-region>
+      {/* Grand écran : colonne de verre (glass.css) ; ailleurs « display: contents », la barre est celle d'avant. */}
+      <div className="shell-side">
       <div className="brand" data-tauri-drag-region>
         {/* Retour à la liste des projets, à gauche comme un bouton Retour (1.11.1) : le projet est enregistré avant. */}
         <button type="button" className="tb-back" aria-label={t.home.projects} title={t.home.backHint} onClick={() => closeProject()}>
@@ -124,6 +126,8 @@ export function TopBar() {
           </button>
         )}
       </nav>
+      </div>
+      <span className="shell-title" aria-hidden="true">{views[current as View] ?? ""}</span>
 
       {/* Téléphone : les actions sont derrière « ⋯ », qui porte donc le point d'état d'enregistrement. */}
       <button type="button" className={`icon-button topbar-more is-${status}`} aria-label={status === "enregistre" ? t.app.moreOptions : `${t.app.moreOptions} (${t.status[status]})`} title={`${t.app.moreOptions} (${t.status[status]})`} aria-expanded={more} onClick={() => setMore(!more)}>
@@ -159,7 +163,9 @@ export function TopBar() {
           <TodoPanel />
           <Search />
         </div>
-        <Settings />
+        <div className="tb-group">
+          <Settings />
+        </div>
       </div>
     </header>
   );

@@ -232,7 +232,7 @@ export function App() {
 
   return (
     <ReactFlowProvider>
-      <div className={`app${focusMode && view === "manuscrit" ? "" : " has-tabbar"}`}>
+      <div className={`app${focusMode && view === "manuscrit" ? "" : " has-tabbar"}`} data-view={view}>
         {/* Mode focus (scénario ou manuscrit) : la barre du haut s'efface, la page prend la place. */}
         {!(focusMode && view === "manuscrit") && <TopBar />}
         {status === "erreur" && (

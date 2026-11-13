@@ -27,4 +27,4 @@ rendu en CSS (`backdrop-filter`), sans la réfraction du vrai Liquid Glass. Une 
 - Police : SF Pro n'est pas embarquée, IBM Plex Sans reste le repli ; les proportions des maquettes bougent légèrement.
 
 ## Avancement
-- Étape 1 : fait. Étape 2 : réglage, capsule d'outils du canevas et barre latérale de verre (CSS seul, `nav.views` sortie de la barre du haut dès 1100 px, glass.css) faits ; reste l'inspecteur à droite et le verre de la barre du haut. Vérifié par captures (1440 px, clair et sombre) ; pas encore à 1100 à 1200 px ni en tactile.
+- Étape 1 : fait. Étape 2 : fait (coque) : colonne de verre sur toute la hauteur (retour, nom du projet, vues avec icône), plus de barre pleine largeur, capsules d'outils flottantes, canevas plein cadre sous le verre (glass.css, `.shell-side`, `data-view` sur `.app`). Reste, pour ressembler aux maquettes : types de cartes avec comptes et « À faire » dans la colonne, zoom en capsule, inspecteur à droite, puis écrans 1 (accueil en grille) et 3 à 9.
