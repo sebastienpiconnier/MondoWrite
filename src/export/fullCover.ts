@@ -10,20 +10,25 @@
 import { INCH, coverLayout, type Box, type CoverLayout, type FontStyle } from "./paperback";
 import { SPINE_TEXT_PAGES, type PaperId, type TrimId } from "./printOptions";
 import type { CoverDesign } from "./coverDesign";
+import type { CoverGenre } from "../ai/imageGen";
+import { CAP_HEIGHTS, COVER_FONT_SPECS, type CoverFontSet } from "./coverFonts";
 
 /** Résolution demandée par KDP pour les images imprimées. */
 export const PRINT_DPI = 300;
 /** En dessous, l'image sera nettement floue à l'impression. */
 export const BLURRY_DPI = 200;
-/** Hauteur des capitales, en fraction du corps (Crimson Text). */
+/** Hauteur des capitales, en fraction du corps (Crimson Text : quatrième). */
 const CAP = 0.64;
 /** Marge du texte du dos de part et d'autre (KDP : 0,0625 in au moins). */
 const SPINE_MARGIN = 0.0625 * INCH;
 /** Plus petit corps lisible sur le dos. */
 const SPINE_MIN_SIZE = 6;
 
+/** Police d'un texte : Crimson Text (quatrième), ou le rôle tenu dans le jeu de polices choisi (coverFonts.ts). */
+export type CoverFont = FontStyle | "title" | "author" | "spineTitle" | "spineAuthor";
+
 export interface CoverMetrics {
-  width: (text: string, font: FontStyle, size: number) => number;
+  width: (text: string, font: CoverFont, size: number) => number;
 }
 
 export interface CoverTexts {
@@ -44,6 +49,10 @@ export interface FullCoverInput {
   texts: CoverTexts;
   /** Taille de l'image du premier plat, en pixels ; null : premier plat uni. */
   image: { width: number; height: number } | null;
+  /** Genre lu dans la couverture du projet (coverGenre), pour la police « auto ». */
+  genre?: CoverGenre | null;
+  /** Jeu de polices du titre et du nom, déjà résolu (genre, lettres disponibles) ; classique par défaut. */
+  fontSet?: CoverFontSet;
 }
 
 /** Partie de l'image source à dessiner dans le premier plat (pixels). */
@@ -61,7 +70,7 @@ export interface CoverText {
   x: number;
   y: number;
   size: number;
-  font: FontStyle;
+  font: CoverFont;
   panel: CoverPanel;
   /** Texte du dos : écrit de haut en bas. */
   rotate?: -90;
@@ -75,7 +84,9 @@ export type CoverCheck =
   | { kind: "noBack" }
   | { kind: "backOverflow"; lines: number }
   | { kind: "noSpineText" }
-  | { kind: "spineTooThin" };
+  | { kind: "spineTooThin" }
+  /** La police choisie n'a pas toutes les lettres du titre ou du nom : le jeu classique la remplace. */
+  | { kind: "fontFallback" };
 
 /** Contrôles qui empêchent d'enregistrer : le fichier ne serait pas celui qu'on croit. */
 export const BLOCKING: readonly CoverCheck["kind"][] = ["noTitle", "backOverflow"];
@@ -122,7 +133,7 @@ export function zoneInImage(zone: Box, frontBox: Box, crop: Crop): Crop {
 }
 
 /** Lignes d'un texte coupé aux espaces dans une largeur ; null si un mot seul ne tient pas. */
-export function wrap(text: string, maxWidth: number, font: FontStyle, size: number, m: CoverMetrics): string[] | null {
+export function wrap(text: string, maxWidth: number, font: CoverFont, size: number, m: CoverMetrics): string[] | null {
   const lines: string[] = [];
   let cur = "";
   for (const word of text.split(/\s+/).filter(Boolean)) {
@@ -138,7 +149,7 @@ export function wrap(text: string, maxWidth: number, font: FontStyle, size: numb
 }
 
 /** Le plus grand corps (de `from` à `min`, par pas de `step`) où le texte tient en `maxLines` lignes. */
-function fitLines(text: string, maxWidth: number, font: FontStyle, from: number, min: number, maxLines: number, m: CoverMetrics, step = 1): { size: number; lines: string[] } | null {
+function fitLines(text: string, maxWidth: number, font: CoverFont, from: number, min: number, maxLines: number, m: CoverMetrics, step = 1): { size: number; lines: string[] } | null {
   for (let size = from; size >= min; size -= step) {
     const lines = wrap(text, maxWidth, font, size, m);
     if (lines && lines.length <= maxLines) return { size, lines };
@@ -212,33 +223,39 @@ export function layoutFullCover(input: FullCoverInput, m: CoverMetrics): FullCov
   const textWidth = safe.width - 2 * inset;
   let titleZone: Box | null = null;
   let authorZone: Box | null = null;
+  const spec = COVER_FONT_SPECS[input.fontSet ?? "classic"];
+  const capOf = (f: CoverFont) =>
+    f === "title" ? CAP_HEIGHTS[spec.title] : f === "author" ? CAP_HEIGHTS[spec.author] : f === "spineTitle" ? CAP_HEIGHTS[spec.spineTitle] : f === "spineAuthor" ? CAP_HEIGHTS[spec.spineAuthor] : CAP;
   if (!design.titleOnImage) {
     if (!title) checks.push({ kind: "noTitle" });
+    const shown = spec.titleUpper ? title.toLocaleUpperCase() : title;
     const startSize = Math.round(Math.min(72, (cover.front.width / INCH) * 9));
-    const fit = title ? fitLines(title, textWidth, "bold", startSize, 16, 3, m) : null;
+    const fit = shown ? fitLines(shown, textWidth, "title", startSize, 16, 3, m) : null;
     const authorSize = fit ? Math.max(11, Math.round(fit.size * 0.38)) : 14;
     const upper = author.toLocaleUpperCase();
     const spacing = authorSize * 0.12;
-    const authorFit = upper ? fitLines(upper, textWidth - spacing * upper.length, "regular", authorSize, 8, 1, m) : null;
+    const authorFit = upper ? fitLines(upper, textWidth - spacing * upper.length, "author", authorSize, 8, 1, m) : null;
+    const TCAP = capOf("title");
+    const ACAP = capOf("author");
     const top = safe.y + 0.35 * INCH;
     const bottom = safe.y + safe.height - 0.35 * INCH;
     if (fit) {
-      const lead = fit.size * 1.08;
-      const height = (fit.lines.length - 1) * lead + fit.size * CAP;
-      const firstBase = design.titlePlace === "top" ? top + fit.size * CAP : bottom - height + fit.size * CAP;
+      const lead = fit.size * spec.lead;
+      const height = (fit.lines.length - 1) * lead + fit.size * TCAP;
+      const firstBase = design.titlePlace === "top" ? top + fit.size * TCAP : bottom - height + fit.size * TCAP;
       fit.lines.forEach((line, i) => {
-        const w = m.width(line, "bold", fit.size);
-        out.push({ text: line, x: safe.x + (safe.width - w) / 2, y: firstBase + i * lead, size: fit.size, font: "bold", panel: "front" });
+        const w = m.width(line, "title", fit.size);
+        out.push({ text: line, x: safe.x + (safe.width - w) / 2, y: firstBase + i * lead, size: fit.size, font: "title", panel: "front" });
       });
-      titleZone = box(safe.x, firstBase - fit.size * CAP - 0.15 * INCH, safe.width, height + 0.3 * INCH);
+      titleZone = box(safe.x, firstBase - fit.size * TCAP - 0.15 * INCH, safe.width, height + 0.3 * INCH);
     }
     if (authorFit) {
       const s = authorFit.size;
-      const base = design.titlePlace === "top" ? bottom : top + s * CAP;
+      const base = design.titlePlace === "top" ? bottom : top + s * ACAP;
       const line = authorFit.lines[0];
-      const w = m.width(line, "regular", s) + spacing * Math.max(0, [...line].length - 1);
-      out.push({ text: line, x: safe.x + (safe.width - w) / 2, y: base, size: s, font: "regular", panel: "front", spacing: s * 0.12 });
-      authorZone = box(safe.x, base - s * CAP - 0.15 * INCH, safe.width, s * CAP + 0.3 * INCH);
+      const w = m.width(line, "author", s) + spacing * Math.max(0, [...line].length - 1);
+      out.push({ text: line, x: safe.x + (safe.width - w) / 2, y: base, size: s, font: "author", panel: "front", spacing: s * 0.12 });
+      authorZone = box(safe.x, base - s * ACAP - 0.15 * INCH, safe.width, s * ACAP + 0.3 * INCH);
     }
   }
 
@@ -248,14 +265,18 @@ export function layoutFullCover(input: FullCoverInput, m: CoverMetrics): FullCov
     const room = cover.spine.width - 2 * SPINE_MARGIN;
     const length = cover.spine.height - 2 * (0.3 * INCH);
     const gap = 0.25 * INCH;
-    const runs = [title && { text: title, font: "bold" as const }, author && { text: author, font: "regular" as const }].filter((r): r is { text: string; font: "bold" | "regular" } => !!r);
-    let size = Math.min(16, Math.floor((room / CAP) * 0.85));
+    const spineTitle = spec.titleUpper ? title.toLocaleUpperCase() : title;
+    const runs = [spineTitle && { text: spineTitle, font: "spineTitle" as const }, author && { text: author, font: "spineAuthor" as const }].filter(
+      (r): r is { text: string; font: "spineTitle" | "spineAuthor" } => !!r,
+    );
+    const SCAP = Math.max(capOf("spineTitle"), capOf("spineAuthor"));
+    let size = Math.min(16, Math.floor((room / SCAP) * 0.85));
     const total = (s: number) => runs.reduce((sum, r) => sum + m.width(r.text, r.font, s), 0) + gap * (runs.length - 1);
     while (size >= SPINE_MIN_SIZE && total(size) > length) size -= 0.5;
     if (size < SPINE_MIN_SIZE) checks.push({ kind: "spineTooThin" });
     else {
       let y = cover.spine.y + (cover.spine.height - total(size)) / 2;
-      const x = cover.spine.x + cover.spine.width / 2 - (size * CAP) / 2;
+      const x = cover.spine.x + cover.spine.width / 2 - (size * SCAP) / 2;
       for (const r of runs) {
         out.push({ text: r.text, x, y, size, font: r.font, panel: "spine", rotate: -90 });
         y += m.width(r.text, r.font, size) + gap;

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { BLOCKING, coverCrop, shadowPasses, inkOn, layoutFullCover, luminance, toHex, wrap, zoneInImage, type CoverMetrics, type CoverTexts, type FullCoverInput } from "../export/fullCover";
 import { DEFAULT_COVER_DESIGN, cleanCoverDesign, coverDesignToMeta } from "../export/coverDesign";
 import { INCH, coverLayout } from "../export/paperback";
+import { COVER_FONTS, COVER_FONT_SETS, COVER_FONT_SPECS, GENRE_FONTS, coverFontFor, resolveCoverFont } from "../export/coverFonts";
+import { COVER_GENRES } from "../ai/imageGen";
 
 /** Mesure simple : chaque caractère fait la moitié du corps. */
 const m: CoverMetrics = { width: (s, _f, size) => [...s].length * size * 0.5 };
@@ -16,6 +18,37 @@ describe("couverture complète KDP (#78)", () => {
     expect(cleanCoverDesign({ spineColor: "red" }).spineColor).toBe("");
     expect(coverDesignToMeta(DEFAULT_COVER_DESIGN)).toBeUndefined();
     expect(coverDesignToMeta({ ...DEFAULT_COVER_DESIGN, titlePlace: "bottom" })).toEqual({ ...DEFAULT_COVER_DESIGN, titlePlace: "bottom" });
+  });
+
+  it("polices du titre (lot 2) : selon le genre, choix relu, repli sur la classique", () => {
+    expect(cleanCoverDesign({}).font).toBe("auto");
+    expect(cleanCoverDesign({ font: "condensed" }).font).toBe("condensed");
+    expect(cleanCoverDesign({ font: "comic" }).font).toBe("auto");
+    for (const g of COVER_GENRES) for (const f of GENRE_FONTS[g]) expect(COVER_FONT_SETS).toContain(f);
+    expect(COVER_FONTS[0]).toBe("auto");
+    expect(resolveCoverFont("auto", "thriller")).toBe("condensed");
+    expect(resolveCoverFont("auto", "romance")).toBe("script");
+    expect(resolveCoverFont("auto", null)).toBe("classic");
+    expect(resolveCoverFont("epic", "romance")).toBe("epic");
+    // Une police sans « ł » laisse la place à la classique ; les espaces ne comptent pas.
+    const latin = (_f: string, cp: number) => cp < 0x100;
+    expect(coverFontFor("condensed", ["Le Phare", "CLAIRE DUMAS"], latin)).toBe("condensed");
+    expect(coverFontFor("condensed", ["Łódź"], latin)).toBe("classic");
+    // Le jeu manuscrit garde une police lisible sur le dos.
+    expect(COVER_FONT_SPECS.script.spineTitle).not.toBe(COVER_FONT_SPECS.script.title);
+  });
+
+  it("polices du titre : chaque texte prend le rôle de son jeu, titre en capitales pour la condensée", () => {
+    const seen = new Set<string>();
+    const metrics: CoverMetrics = { width: (s, f, size) => (seen.add(f), [...s].length * size * 0.5) };
+    const l = layoutFullCover(input({ fontSet: "condensed" }), metrics);
+    const front = l.texts.filter((t) => t.panel === "front");
+    expect(front.find((t) => t.font === "title")?.text).toBe(front.find((t) => t.font === "title")?.text.toLocaleUpperCase());
+    expect(front.some((t) => t.font === "author")).toBe(true);
+    expect(l.texts.filter((t) => t.panel === "spine").map((t) => t.font)).toEqual(["spineTitle", "spineAuthor"]);
+    expect(l.texts.filter((t) => t.panel === "back").every((t) => !["title", "author"].includes(t.font))).toBe(true);
+    const classic = layoutFullCover(input(), m);
+    expect(classic.texts.find((t) => t.font === "title")?.text).toBe("Le Phare des");
   });
 
   it("cadrage : l'image remplit le plat, coupée selon le réglage", () => {
@@ -43,11 +76,11 @@ describe("couverture complète KDP (#78)", () => {
     const front = l.texts.filter((t) => t.panel === "front");
     expect(front.map((t) => t.text).join(" ")).toContain("CLAIRE DUMAS");
     for (const t of front) expect(inside(l.cover.safe[1], t.x, t.y)).toBe(true);
-    const titleY = front.find((t) => t.font === "bold")!.y;
+    const titleY = front.find((t) => t.font === "title")!.y;
     const authorY = front.find((t) => t.text === "CLAIRE DUMAS")!.y;
     expect(titleY).toBeLessThan(authorY);
     const flipped = layoutFullCover(input({ design: { ...DEFAULT_COVER_DESIGN, titlePlace: "bottom" } }), m).texts.filter((t) => t.panel === "front");
-    expect(flipped.find((t) => t.font === "bold")!.y).toBeGreaterThan(flipped.find((t) => t.text === "CLAIRE DUMAS")!.y);
+    expect(flipped.find((t) => t.font === "title")!.y).toBeGreaterThan(flipped.find((t) => t.text === "CLAIRE DUMAS")!.y);
     const onImage = layoutFullCover(input({ design: { ...DEFAULT_COVER_DESIGN, titleOnImage: true }, texts: { ...texts, title: "" } }), m);
     expect(onImage.texts.some((t) => t.panel === "front")).toBe(false);
     expect(onImage.checks.some((c) => c.kind === "noTitle")).toBe(false);

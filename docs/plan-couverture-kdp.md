@@ -60,7 +60,8 @@ Pistes, de la plus simple à la plus lourde :
 - [x] Mise en page pure et testée (`fullCover.ts`), image préparée sur canvas (`coverImage.ts`), PDF (`prepareFullCover`)
 - [x] Contrôles : résolution, quatrième trop longue (bloque), titre absent (bloque), pas d'image, dos trop fin ou trop court
 - [x] Aperçu du vrai PDF, enregistrement, guide (fr, en, es), test de bout en bout
-- [ ] Pas encore : position du titre réglable au millimètre, polices selon le genre (lot 2), couverture Kindle
+- [x] Lot 2 : six jeux de polices (`coverFonts.ts`), « auto » selon le genre (`GENRE_FONTS`), repli sur la classique si une lettre manque
+- [ ] Pas encore : position du titre réglable au millimètre, couverture Kindle
 
 Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à déposer sur KDP.
 
@@ -72,7 +73,7 @@ Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à d�
 
 ### Lot 2 : typographie selon le genre
 
-Quatre à six jeux de polices (un serif classique, un sans-serif sobre, une police condensée pour le thriller, une police manuscrite pour la comédie romantique…), proposés selon le genre comme les styles d'image. Polices OFL seulement, chargées à l'export, citées dans `THIRD-PARTY-NOTICES.md`.
+**Fait.** Six jeux (`coverFonts.ts`, clés jamais traduites, `coverDesign.font`) : classique (Crimson Text), élégante (Playfair Display), moderne (IBM Plex Sans), condensée (Oswald, titre en capitales), manuscrite (Dancing Script ; le dos reste en Crimson, lisible petit), épique (Cinzel). « Auto » prend le premier jeu conseillé pour la famille de genres reconnue par `coverGenre` (`GENRE_FONTS`), sinon le classique. Fichiers WOFF de Fontsource (sous-ensemble latin) chargés à l'export ; une lettre absente (polonais…) ramène au classique avec un contrôle (`fontFallback`). Polices OFL citées dans `THIRD-PARTY-NOTICES.md`.
 
 ### Lot 3 : image enveloppante (option)
 

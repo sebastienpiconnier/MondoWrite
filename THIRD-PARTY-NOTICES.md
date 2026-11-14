@@ -140,6 +140,9 @@ All these fonts are released under the SIL Open Font License 1.1. They are bundl
 | EB Garamond (police de la page au choix / page font option) | Copyright 2017 The EB Garamond Project Authors (https://github.com/octaviopardo/EBGaramond12) | SIL OFL 1.1, via `@fontsource/eb-garamond` |
 | Atkinson Hyperlegible (police de la page au choix / page font option) | Copyright 2020 Braille Institute of America, Inc. | SIL OFL 1.1, via `@fontsource/atkinson-hyperlegible` |
 | Playfair Display | Copyright 2017 The Playfair Display Project Authors (https://github.com/clauseggers/Playfair-Display), with Reserved Font Name "Playfair Display" | SIL OFL 1.1, via `@fontsource/playfair-display` |
+| Oswald (couverture complète du livre broché / paperback full cover) | Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont) | SIL OFL 1.1, via `@fontsource/oswald` |
+| Dancing Script (couverture complète / full cover) | Copyright 2016 The Dancing Script Project Authors (https://github.com/googlefonts/DancingScript), with Reserved Font Name 'Dancing Script' | SIL OFL 1.1, via `@fontsource/dancing-script` |
+| Cinzel (couverture complète / full cover) | Copyright 2020 The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel) | SIL OFL 1.1, via `@fontsource/cinzel` |
 | Space Grotesk | Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk) | SIL OFL 1.1, via `@fontsource/space-grotesk` |
 
 Le texte complet de la SIL OFL 1.1 est identique pour toutes ces polices : voir [src/assets/fonts/OFL.txt](src/assets/fonts/OFL.txt).

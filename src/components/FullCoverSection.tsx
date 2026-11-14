@@ -13,6 +13,8 @@ import { isMediaName } from "../media";
 import { loadPaperback } from "../export";
 import { fileName } from "../screenplay/export";
 import { BLOCKING, type CoverCheck } from "../export/fullCover";
+import { coverGenre } from "../ai/imageGen";
+import { COVER_FONTS, resolveCoverFont, type CoverFontChoice } from "../export/coverFonts";
 import { COVER_BACKS, COVER_CROPS, COVER_TITLE_PLACES, type CoverBack, type CoverCrop, type CoverTitlePlace } from "../export/coverDesign";
 
 const PREVIEW_WIDTH = 560;
@@ -31,6 +33,9 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
   const backCopy = useCosmos((s) => s.pitch.quatrieme ?? "");
   const visualName = useCosmos((s) => s.pitch.visuel ?? "");
   const visual = isMediaName(visualName) ? visualName : "";
+  const pitchGenre = useCosmos((s) => s.pitch.genre);
+  const pitchTone = useCosmos((s) => s.pitch.ton);
+  const genre = coverGenre(pitchGenre, pitchTone);
   const author = useSettings((s) => s.author).trim();
   const bio = useSettings((s) => s.profile.bio).trim();
   const [preview, setPreview] = useState<Preview>({ status: "working" });
@@ -72,6 +77,7 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
           design,
           texts: { title, author, tagline, back: backCopy, bio: design.bio ? bio : "" },
           image: img ? { width: img.naturalWidth, height: img.naturalHeight } : null,
+          genre,
         });
         const { prepareCoverArt } = await import("../export/coverImage");
         const art = img ? prepareCoverArt(img, prepared.layout, design.back === "image") : null;
@@ -98,7 +104,7 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
       stale = true;
       window.clearTimeout(timer);
     };
-  }, [pages, print.trim, print.paper, design, title, author, tagline, backCopy, bio, visual]);
+  }, [pages, print.trim, print.paper, design, title, author, tagline, backCopy, bio, visual, genre]);
 
   const blocked = preview.status !== "ready" || preview.checks.some((c) => BLOCKING.includes(c.kind));
   const save = async () => {
@@ -142,6 +148,18 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
             ))}
           </select>
         </label>
+        {!design.titleOnImage && (
+          <label className="replace-field">
+            <span>{k.font}</span>
+            <select value={design.font} onChange={(e) => setDesign({ font: e.target.value as CoverFontChoice })}>
+              {COVER_FONTS.map((id) => (
+                <option key={id} value={id}>
+                  {id === "auto" ? fmt(k.fontAuto, { font: k.fonts[resolveCoverFont("auto", genre)] }) : k.fonts[id]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {visual && (
           <label className="replace-field">
             <span>{k.crop}</span>
@@ -192,6 +210,7 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
         </label>
       </div>
       {!bio && <p className="paperback-note">{k.bioEmpty}</p>}
+      {!design.titleOnImage && design.font === "auto" && <p className="paperback-note">{genre ? fmt(k.fontGenre, { font: k.fonts[resolveCoverFont("auto", genre)] }) : k.fontNoGenre}</p>}
       {preview.status === "ready" && preview.checks.length > 0 && (
         <ul className="full-cover-checks" role="status">
           {preview.checks.map((c) => (
