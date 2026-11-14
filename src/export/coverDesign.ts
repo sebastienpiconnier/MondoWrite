@@ -3,6 +3,8 @@
 // d'une version d'avant viderait des clés ajoutées à `print`. Module léger (lu par le store). Les clés et les
 // valeurs sont écrites dans le fichier : ne jamais les renommer ni les traduire.
 
+import { COVER_FONTS, type CoverFontChoice } from "./coverFonts";
+
 /** Cadrage de l'image dans le premier plat, quand ses proportions ne sont pas celles du livre. */
 export const COVER_CROPS = ["top", "center", "bottom"] as const;
 export type CoverCrop = (typeof COVER_CROPS)[number];
@@ -25,9 +27,11 @@ export interface CoverDesign {
   bio: boolean;
   /** Ombre portée douce sous le titre et le nom du premier plat, pour les détacher de l'image. */
   shadow: boolean;
+  /** Polices du titre et du nom (coverFonts.ts) ; « auto » : selon le genre de la couverture. */
+  font: CoverFontChoice;
 }
 
-export const DEFAULT_COVER_DESIGN: CoverDesign = { crop: "center", titlePlace: "top", titleOnImage: false, back: "color", spineColor: "", bio: true, shadow: true };
+export const DEFAULT_COVER_DESIGN: CoverDesign = { crop: "center", titlePlace: "top", titleOnImage: false, back: "color", spineColor: "", bio: true, shadow: true, font: "auto" };
 
 const pick = <T extends string>(list: readonly T[], v: unknown, fallback: T): T => (list.includes(v as T) ? (v as T) : fallback);
 export const isHexColor = (v: unknown): v is string => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
@@ -44,6 +48,7 @@ export function cleanCoverDesign(raw: unknown): CoverDesign {
     spineColor: isHexColor(p.spineColor) ? p.spineColor.toLowerCase() : "",
     bio: typeof p.bio === "boolean" ? p.bio : d.bio,
     shadow: typeof p.shadow === "boolean" ? p.shadow : d.shadow,
+    font: pick(COVER_FONTS, p.font, d.font),
   };
 }
 

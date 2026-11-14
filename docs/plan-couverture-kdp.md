@@ -60,7 +60,10 @@ Pistes, de la plus simple à la plus lourde :
 - [x] Mise en page pure et testée (`fullCover.ts`), image préparée sur canvas (`coverImage.ts`), PDF (`prepareFullCover`)
 - [x] Contrôles : résolution, quatrième trop longue (bloque), titre absent (bloque), pas d'image, dos trop fin ou trop court
 - [x] Aperçu du vrai PDF, enregistrement, guide (fr, en, es), test de bout en bout
-- [ ] Pas encore : position du titre réglable au millimètre, polices selon le genre (lot 2), couverture Kindle
+- [x] Lot 2 : six jeux de polices (`coverFonts.ts`), « auto » selon le genre (`GENRE_FONTS`), repli sur la classique si une lettre manque
+- [x] Lot 4 : agrandisseur ×2 sur l'appareil (`upscaler.ts`, `upscaleWorker.ts`, `scripts/upscaler/`), essayé dans Chromium (WebAssembly : 400 × 600 en 37 s sur 2 cœurs) ; reste à publier `dist-upscaler/` sur mondowrite.app et à mesurer sur Mac, iPad et Windows
+- [x] Génération « Pour l'impression » (14 novembre 2026, demande de l'auteur) : la couverture générée à la taille du livre broché à 300 DPI (`printCoverSize`, OpenAI GPT Image 2 et suivants : `canSizeFreely`), repli en 1024 × 1536 si le service refuse ; « Pour le web » reste le défaut, l'agrandisseur aussi
+- [ ] Pas encore : position du titre réglable au millimètre, couverture Kindle
 
 Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à déposer sur KDP.
 
@@ -72,15 +75,15 @@ Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à d�
 
 ### Lot 2 : typographie selon le genre
 
-Quatre à six jeux de polices (un serif classique, un sans-serif sobre, une police condensée pour le thriller, une police manuscrite pour la comédie romantique…), proposés selon le genre comme les styles d'image. Polices OFL seulement, chargées à l'export, citées dans `THIRD-PARTY-NOTICES.md`.
+**Fait.** Six jeux (`coverFonts.ts`, clés jamais traduites, `coverDesign.font`) : classique (Crimson Text), élégante (Playfair Display), moderne (IBM Plex Sans), condensée (Oswald, titre en capitales), manuscrite (Dancing Script ; le dos reste en Crimson, lisible petit), épique (Cinzel). « Auto » prend le premier jeu conseillé pour la famille de genres reconnue par `coverGenre` (`GENRE_FONTS`), sinon le classique. Fichiers WOFF de Fontsource (sous-ensemble latin) chargés à l'export ; une lettre absente (polonais…) ramène au classique avec un contrôle (`fontFallback`). Polices OFL citées dans `THIRD-PARTY-NOTICES.md`.
 
 ### Lot 3 : image enveloppante (option)
 
 Générer une image en largeur qui couvre les deux plats et le dos, sujet principal tenu dans le tiers droit (premier plat) par la consigne. Plus spectaculaire, mais la résolution manque encore plus (environ 3 800 px de large pour un 6 × 9 de 200 pages) et le dos peut couper un détail. À n'essayer qu'après le lot 1.
 
-### Lot 4 : agrandissement (si l'auteur le veut)
+### Lot 4 : agrandissement
 
-Voir la piste 3 ci-dessus.
+**Fait (code), à publier.** « Agrandir l'image sur l'appareil (×2) » à côté du contrôle de résolution. Real-ESRGAN compact (`realesr-general-x4v3`, BSD 3 clauses, 4,9 Mo) converti en ONNX sans PyTorch (`scripts/upscaler/convert.py`), exécuté par onnxruntime-web 1.31.1 (MIT) dans un worker : WebGPU si l'appareil a une vraie carte graphique (l'émulation logicielle est écartée, plus lente que WebAssembly), sinon WebAssembly sur un fil. Modèle et moteur WebAssembly (28,7 Mo) jamais dans l'installeur : `scripts/upscaler/build.mjs` prépare `dist-upscaler/` à publier dans https://mondowrite.app/upscaler/ (moteur nommé par version, les anciens gardés) ; l'app les télécharge une fois, vérifie la SHA-256, les garde dans IndexedDB. Tuiles de 192 px lues avec 24 px de marge, agrandies ×4 puis réduites ×2. L'image agrandie est une nouvelle image de `medias/` (l'ancienne reste), qui garde marque d'IA ou crédit (`setUpscaledCover`). CSP : `script-src 'self' 'wasm-unsafe-eval'`. Mesuré dans Chromium sans carte graphique : 400 × 600 en 37 s (une couverture de 1024 × 1536 : environ 4 min) ; à mesurer sur iPad, Mac et Windows.
 
 ### En passant : couverture Kindle
 

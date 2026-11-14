@@ -140,6 +140,9 @@ All these fonts are released under the SIL Open Font License 1.1. They are bundl
 | EB Garamond (police de la page au choix / page font option) | Copyright 2017 The EB Garamond Project Authors (https://github.com/octaviopardo/EBGaramond12) | SIL OFL 1.1, via `@fontsource/eb-garamond` |
 | Atkinson Hyperlegible (police de la page au choix / page font option) | Copyright 2020 Braille Institute of America, Inc. | SIL OFL 1.1, via `@fontsource/atkinson-hyperlegible` |
 | Playfair Display | Copyright 2017 The Playfair Display Project Authors (https://github.com/clauseggers/Playfair-Display), with Reserved Font Name "Playfair Display" | SIL OFL 1.1, via `@fontsource/playfair-display` |
+| Oswald (couverture complète du livre broché / paperback full cover) | Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont) | SIL OFL 1.1, via `@fontsource/oswald` |
+| Dancing Script (couverture complète / full cover) | Copyright 2016 The Dancing Script Project Authors (https://github.com/googlefonts/DancingScript), with Reserved Font Name 'Dancing Script' | SIL OFL 1.1, via `@fontsource/dancing-script` |
+| Cinzel (couverture complète / full cover) | Copyright 2020 The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel) | SIL OFL 1.1, via `@fontsource/cinzel` |
 | Space Grotesk | Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk) | SIL OFL 1.1, via `@fontsource/space-grotesk` |
 
 Le texte complet de la SIL OFL 1.1 est identique pour toutes ces polices : voir [src/assets/fonts/OFL.txt](src/assets/fonts/OFL.txt).
@@ -166,6 +169,7 @@ MondoWrite uses the following libraries, bundled in the app. Each license's full
 | pdf-lib, `@pdf-lib/fontkit` | MIT |
 | PDF.js (`pdfjs-dist`) | Apache-2.0 |
 | fflate | MIT |
+| ONNX Runtime Web (`onnxruntime-web`, agrandisseur de la couverture complète, Copyright (c) Microsoft Corporation / upscaler of the paperback full cover) : le code JavaScript est dans l'app, son moteur WebAssembly n'est **pas dans l'installeur** (téléchargé à la demande depuis mondowrite.app avec sa licence, vérifié par SHA-256) / the JavaScript is bundled, its WebAssembly engine is downloaded on demand | MIT |
 | html-to-image | MIT |
 | nanoid | MIT |
 | serde, serde_json, log (crates Rust / Rust crates) | MIT ou / or Apache-2.0 |
@@ -190,6 +194,7 @@ Ces fichiers de données sont fabriqués par `scripts/thesaurus/build.mjs` et `s
 These data files are built by `scripts/thesaurus/build.mjs` and `scripts/names/build.mjs` and shipped in `src/assets/thesaurus/` and `src/assets/names/`. Only data is reused, no library.
 
 - **Synonymes français / French synonyms** : « Dictionnaire des synonymes français myThes » (`thes_fr`), version 2.3, par Frédéric Labbé, repris par Dicollecte / Grammalecte (https://grammalecte.net/), **LGPL 2.1 ou ultérieure**. Ce fichier n'est **pas dans l'installeur** : `scripts/thesaurus/build.mjs` le convertit en `fr.json`, publié à part sur https://mondowrite.app/thesaurus/ avec le texte de sa licence (`LICENSE-thes_fr.txt`) ; l'app le télécharge une fois, le vérifie (SHA-256) et le garde sur l'appareil. Il reste un fichier de données séparé et remplaçable, jamais mêlé au code. / The French thesaurus (`thes_fr`, myThes dictionary by Frédéric Labbé, maintained by Dicollecte / Grammalecte) is under the **LGPL 2.1 or later**. It is **not bundled** with the app: it is converted by `scripts/thesaurus/build.mjs`, published separately on mondowrite.app with its license text, downloaded once, verified (SHA-256) and kept on the device. It stays a separate, replaceable data file, never mixed into the code. Texte de la LGPL 2.1 : https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+- **Modèle d'agrandissement d'images / Image upscaling model** : Real-ESRGAN, modèle compact `realesr-general-x4v3`, Copyright (c) 2021, Xintao Wang, **BSD 3 clauses** (https://github.com/xinntao/Real-ESRGAN). Converti en ONNX par `scripts/upscaler/convert.py` ; **pas dans l'installeur**, publié sur https://mondowrite.app/upscaler/ avec le texte de sa licence (`LICENSE-Real-ESRGAN.txt`), téléchargé à la première utilisation, vérifié (SHA-256) et gardé sur l'appareil. / Converted to ONNX, not bundled, published on mondowrite.app with its license, downloaded on first use, verified and kept on the device.
 - **Prénoms et noms par pays / First and last names by country** : listes de données de Faker (`@faker-js/faker`), MIT, reproduite ci-dessous / Faker data lists, MIT license reproduced below.
 
 ### Prénoms français (INSEE) / French first names (INSEE)

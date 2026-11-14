@@ -359,6 +359,11 @@ export interface CosmosState {
   setCoverVisual: (name: string | null, extra?: { ia?: string; credit?: string }) => void;
   /** Image de la couverture choisie sur l'appareil, ou déposée (`file`). */
   pickCoverVisual: (file?: { name: string; data: Uint8Array }) => Promise<boolean>;
+  /**
+   * Image de la couverture agrandie sur l'appareil (#78, lot 4) : copiée dans medias/ sous un nom neuf, elle
+   * remplace l'ancienne (qui reste dans le dossier, comme toujours) et garde sa marque d'IA ou son crédit.
+   */
+  setUpscaledCover: (data: Uint8Array) => Promise<string | null>;
   /** Réglages du livre broché (fenêtre « Livre broché »), hors historique comme la couverture. */
   print: PrintOptions;
   setPrint: (patch: Partial<PrintOptions>) => void;
@@ -2215,6 +2220,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!name) return false;
       get().setCoverVisual(name);
       return true;
+    },
+    setUpscaledCover: async (data) => {
+      const name = await storeImage({ name: "cover.jpg", data });
+      if (!name) return null;
+      const { visuelIa, visuelCredit } = get().pitch;
+      get().setCoverVisual(name, { ia: visuelIa, credit: visuelCredit });
+      return name;
     },
     print: DEFAULT_PRINT,
     setPrint: (patch) => {

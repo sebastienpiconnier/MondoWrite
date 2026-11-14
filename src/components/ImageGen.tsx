@@ -16,6 +16,7 @@ import type { CardData } from "../types";
 import { storage } from "../storage";
 import type { ScreenplayElement } from "../screenplay/model";
 import { plainText } from "../search";
+import { KDP_TRIMS } from "../export/printOptions";
 import { imageForAi } from "../ai/image";
 import { listScenes, sceneSynopsis, synopsisEnd } from "../screenplay/scenes";
 import {
@@ -25,7 +26,10 @@ import {
   IMAGE_MODEL_CHOICES,
   REFERENCE_MAX,
   canGenerateImages,
+  canSizeFreely,
   castDescription,
+  PRINT_COVER_DPI,
+  printCoverSize,
   coverGenre,
   decodeBase64,
   describeCard,
@@ -114,6 +118,12 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
   const author = useSettings((s) => s.author).trim();
   const [writeAuthor, setWriteAuthor] = useState(false);
   const [space, setSpace] = useState(true);
+  // Couverture pour le web (1024 × 1536) ou pour l'impression (taille du livre broché à 300 DPI), si le modèle le permet.
+  const [use, setUse] = useState<"web" | "print">("web");
+  const [notice, setNotice] = useState("");
+  const trimId = useCosmos((s) => s.print.trim);
+  const printSize = useMemo(() => printCoverSize(KDP_TRIMS[trimId]), [trimId]);
+  const sizable = cover && !!config && canSizeFreely(config.provider, model);
   const [style, setStyle] = useState<CoverStyle>("auto");
   const pitchGenre = useCosmos((s) => s.pitch.genre);
   const pitchTone = useCosmos((s) => s.pitch.ton);
@@ -157,6 +167,7 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
     abort.current = controller;
     setBusy("generate");
     setError("");
+    setNotice("");
     clear();
     try {
       // Personnages cochés : leur description (jamais leur nom), et leur portrait réduit comme image de référence.
@@ -171,7 +182,16 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
       const title = cover && writeTitle ? useCosmos.getState().title.trim() : "";
       const signed = cover && writeAuthor ? author : "";
       const prompt = imagePrompt(subject, description, names, cover ? { cast: members, title, author: signed, style: resolveStyle(style, genre), space } : { cast: members });
-      const images = await generateImages(config, model, prompt, count, subject, controller.signal, refs);
+      const forPrint = sizable && use === "print";
+      let images;
+      try {
+        images = await generateImages(config, model, prompt, count, subject, controller.signal, refs, forPrint ? `${printSize.width}x${printSize.height}` : undefined);
+      } catch (err) {
+        // Taille refusée (400) : on refait en 1024 × 1536, l'agrandisseur reste possible.
+        if (!forPrint || !(err instanceof AiError && err.code === "model")) throw err;
+        images = await generateImages(config, model, prompt, count, subject, controller.signal, refs);
+        setNotice(g.printRefused);
+      }
       const next = images.map((image) => {
         const url = URL.createObjectURL(new Blob([image.data as BlobPart], { type: image.mime }));
         urls.current.push(url);
@@ -249,6 +269,23 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
                 {genre ? g.genreTips[genre] : g.genreTipNone} {g.thumbnailTip}
               </p>
             </div>
+            {sizable && (
+              <fieldset className="image-gen-use">
+                <legend>{g.useLabel}</legend>
+                <label className="spdf-choice">
+                  <input type="radio" name="image-gen-use" checked={use === "web"} disabled={busy !== ""} onChange={() => setUse("web")} />
+                  <span>{fmt(g.useWeb, { w: 1024, h: 1536 })}</span>
+                </label>
+                <label className="spdf-choice">
+                  <input type="radio" name="image-gen-use" checked={use === "print"} disabled={busy !== ""} onChange={() => setUse("print")} />
+                  <span>{fmt(g.usePrint, { w: printSize.width, h: printSize.height, trim: KDP_TRIMS[trimId].mm })}</span>
+                </label>
+                <p className="settings-hint">
+                  {g.usePrintHint}
+                  {use === "print" && printSize.dpi < PRINT_COVER_DPI && <> {fmt(g.usePrintDpi, { dpi: printSize.dpi })}</>}
+                </p>
+              </fieldset>
+            )}
             <label className="spdf-choice image-gen-title">
               <input type="checkbox" checked={writeTitle} onChange={(e) => setWriteTitle(e.target.checked)} />
               <span>
@@ -316,6 +353,7 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
       <p className="settings-hint" role="status">
         {busy === "generate" ? g.running : busy === "keep" ? t.photos.adding : ""}
       </p>
+      {notice && <p className="settings-hint" role="status">{notice}</p>}
       {error && (
         <p className="photos-error" role="alert">
           {error}

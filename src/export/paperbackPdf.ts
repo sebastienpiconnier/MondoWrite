@@ -27,7 +27,18 @@ import {
   type PrintOptions,
   type TrimId,
 } from "./paperback";
-import { inkOn, layoutFullCover, shadowPasses, type FullCoverInput, type FullCoverLayout } from "./fullCover";
+import { inkOn, layoutFullCover, shadowPasses, type CoverFont, type FullCoverInput, type FullCoverLayout } from "./fullCover";
+import { COVER_FONT_SPECS, coverFontFor, resolveCoverFont, type CoverFontFile, type CoverFontSet } from "./coverFonts";
+import { woffToSfnt } from "./woff";
+import playfairUrl from "@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff?url";
+import playfairBoldUrl from "@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff?url";
+import plexSansUrl from "@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff?url";
+import plexSansBoldUrl from "@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff?url";
+import oswaldUrl from "@fontsource/oswald/files/oswald-latin-400-normal.woff?url";
+import oswaldBoldUrl from "@fontsource/oswald/files/oswald-latin-600-normal.woff?url";
+import dancingBoldUrl from "@fontsource/dancing-script/files/dancing-script-latin-700-normal.woff?url";
+import cinzelUrl from "@fontsource/cinzel/files/cinzel-latin-400-normal.woff?url";
+import cinzelBoldUrl from "@fontsource/cinzel/files/cinzel-latin-700-normal.woff?url";
 import type { CoverArt } from "./coverImage";
 
 const fromDataUri = (uri: string) => Uint8Array.from(atob(uri.slice(uri.indexOf(",") + 1)), (c) => c.charCodeAt(0));
@@ -226,18 +237,77 @@ const DARK_INK = "#141414";
 
 export interface PreparedFullCover {
   layout: FullCoverLayout;
+  /** Jeu de polices employé (après « auto » et le repli sur le classique). */
+  fontSet: CoverFontSet;
   /** Dessine le PDF avec l'image préparée (coverImage.ts) ; `art` null : premier plat uni. */
   draw: (art: CoverArt | null) => Promise<Uint8Array>;
 }
 
+/** Polices des jeux de la couverture (coverFonts.ts) : Crimson Text embarquée, les autres en WOFF de Fontsource. */
+const COVER_FONT_SOURCES: Record<CoverFontFile, { inline: string } | { url: string }> = {
+  crimson: { inline: regularData },
+  crimsonBold: { inline: boldData },
+  playfair: { url: playfairUrl },
+  playfairBold: { url: playfairBoldUrl },
+  plexSans: { url: plexSansUrl },
+  plexSansBold: { url: plexSansBoldUrl },
+  oswald: { url: oswaldUrl },
+  oswaldBold: { url: oswaldBoldUrl },
+  dancingBold: { url: dancingBoldUrl },
+  cinzel: { url: cinzelUrl },
+  cinzelBold: { url: cinzelBoldUrl },
+};
+
+const coverFontCache = new Map<CoverFontFile, Promise<Uint8Array>>();
+function coverFontBytes(file: CoverFontFile): Promise<Uint8Array> {
+  let p = coverFontCache.get(file);
+  if (!p) {
+    const src = COVER_FONT_SOURCES[file];
+    p =
+      "inline" in src
+        ? Promise.resolve(fromDataUri(src.inline))
+        : fetch(src.url).then((r) => {
+            if (!r.ok) throw new Error(`police ${file}`);
+            return r.arrayBuffer().then((b) => woffToSfnt(new Uint8Array(b)));
+          });
+    p.catch(() => coverFontCache.delete(file));
+    coverFontCache.set(file, p);
+  }
+  return p;
+}
+
+/** Jeu de polices choisi, ramené au classique si une police n'a pas toutes les lettres du titre ou du nom. */
+async function coverFontSet(input: FullCoverInput): Promise<CoverFontSet> {
+  const wanted = resolveCoverFont(input.design.font, input.genre ?? null);
+  if (wanted === "classic") return wanted;
+  const spec = COVER_FONT_SPECS[wanted];
+  const files = [...new Set([spec.title, spec.author, spec.spineTitle, spec.spineAuthor])];
+  try {
+    const loaded = new Map(await Promise.all(files.map(async (f) => [f, fontkit.create(await coverFontBytes(f) as never)] as const)));
+    const has = (f: CoverFontFile, cp: number) => !!(loaded.get(f) as { hasGlyphForCodePoint?: (c: number) => boolean } | undefined)?.hasGlyphForCodePoint?.(cp);
+    return coverFontFor(wanted, [input.texts.title, input.texts.title.toLocaleUpperCase(), input.texts.author.toLocaleUpperCase(), input.texts.author], has);
+  } catch {
+    return "classic"; // police introuvable : jamais de couverture sans titre
+  }
+}
+
 /** Met la couverture complète en page avec les vraies polices ; le dessin attend l'image préparée. */
-export async function prepareFullCover(input: FullCoverInput): Promise<PreparedFullCover> {
+export async function prepareFullCover(raw: FullCoverInput): Promise<PreparedFullCover> {
   const pdf = await PDFDocument.create();
-  const fonts = await embedFonts(pdf);
+  const base = await embedFonts(pdf);
+  const wanted = resolveCoverFont(raw.design.font, raw.genre ?? null);
+  const fontSet = await coverFontSet(raw);
+  const input = { ...raw, fontSet };
+  const spec = COVER_FONT_SPECS[fontSet];
+  const embedCover = (f: CoverFontFile) => coverFontBytes(f).then((b) => pdf.embedFont(b, { subset: true }));
+  const [titleF, authorF, spineTitleF, spineAuthorF] = await Promise.all([spec.title, spec.author, spec.spineTitle, spec.spineAuthor].map(embedCover));
+  const fonts: Record<CoverFont, PDFFont> = { ...base, title: titleF, author: authorF, spineTitle: spineTitleF, spineAuthor: spineAuthorF };
   const layout = layoutFullCover(input, { width: (text, font, size) => fonts[font].widthOfTextAtSize(noThinSpace(text), size) });
+  if (fontSet !== wanted && !raw.design.titleOnImage) layout.checks.push({ kind: "fontFallback" });
   let drawn = false;
   return {
     layout,
+    fontSet,
     draw: async (art) => {
       if (drawn) throw new Error("déjà dessinée");
       drawn = true;

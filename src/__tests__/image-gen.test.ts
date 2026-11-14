@@ -424,3 +424,27 @@ describe("#52 : couverture, titres et personnages d'une scène", () => {
     expect(cleanOptions({ cover: "../x" }).cover).toBe("");
   });
 });
+
+describe("couverture pour l'impression (#78)", () => {
+  it("taille du premier plat et du fond perdu à 300 DPI, multiples de 16, dans les limites du service", async () => {
+    const { printCoverSize, canSizeFreely, imageRequest } = await import("../ai/imageGen");
+    const six = printCoverSize({ width: 6, height: 9 });
+    expect(six).toEqual({ width: 1840, height: 2784, dpi: 300 });
+    const five = printCoverSize({ width: 5, height: 8 });
+    expect(five.width % 16).toBe(0);
+    expect(five.dpi).toBe(300);
+    // Grand format : ramené sous 8 294 400 pixels, aux mêmes proportions.
+    const big = printCoverSize({ width: 8.5, height: 11 });
+    expect(big.width * big.height).toBeLessThanOrEqual(8_294_400);
+    expect(Math.max(big.width, big.height)).toBeLessThanOrEqual(3840);
+    expect(big.dpi).toBeLessThan(300);
+    expect(big.dpi).toBeGreaterThan(280);
+    // Taille sur mesure : GPT Image 2 et suivants d'OpenAI seulement.
+    expect(canSizeFreely("openai", "gpt-image-2.6-flare")).toBe(true);
+    expect(canSizeFreely("openai", "gpt-image-1")).toBe(false);
+    expect(canSizeFreely("openai", "dall-e-3")).toBe(false);
+    expect(canSizeFreely("openrouter", "openai/gpt-image-2.6-flare")).toBe(false);
+    expect(JSON.parse(imageRequest(openai, "gpt-image-2.6-flare", "p", 1, "cover", "1840x2784").body!).size).toBe("1840x2784");
+    expect(JSON.parse(imageRequest(openai, "gpt-image-2.6-flare", "p", 1, "cover").body!).size).toBe("1024x1536");
+  });
+});

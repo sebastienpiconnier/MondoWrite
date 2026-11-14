@@ -13,10 +13,19 @@ import { isMediaName } from "../media";
 import { loadPaperback } from "../export";
 import { fileName } from "../screenplay/export";
 import { BLOCKING, type CoverCheck } from "../export/fullCover";
+import { coverGenre } from "../ai/imageGen";
+import { COVER_FONTS, resolveCoverFont, type CoverFontChoice } from "../export/coverFonts";
 import { COVER_BACKS, COVER_CROPS, COVER_TITLE_PLACES, type CoverBack, type CoverCrop, type CoverTitlePlace } from "../export/coverDesign";
 
 const PREVIEW_WIDTH = 560;
 const DELAY = 400;
+
+type Upscale =
+  | { status: "idle" }
+  | { status: "download" }
+  | { status: "running"; done: number; total: number; slow: boolean }
+  | { status: "done"; width: number; height: number }
+  | { status: "failed"; reason: "network" | "size" | "checksum" | "runtime" | "tooBig" | "cancelled" };
 
 type Preview = { status: "working" } | { status: "failed" } | { status: "ready"; checks: CoverCheck[]; edge: string | null };
 
@@ -31,6 +40,9 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
   const backCopy = useCosmos((s) => s.pitch.quatrieme ?? "");
   const visualName = useCosmos((s) => s.pitch.visuel ?? "");
   const visual = isMediaName(visualName) ? visualName : "";
+  const pitchGenre = useCosmos((s) => s.pitch.genre);
+  const pitchTone = useCosmos((s) => s.pitch.ton);
+  const genre = coverGenre(pitchGenre, pitchTone);
   const author = useSettings((s) => s.author).trim();
   const bio = useSettings((s) => s.profile.bio).trim();
   const [preview, setPreview] = useState<Preview>({ status: "working" });
@@ -41,6 +53,39 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
   const bytes = useRef<Uint8Array | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const image = useRef<{ name: string; img: HTMLImageElement | null } | null>(null);
+  const [upscale, setUpscale] = useState<Upscale>({ status: "idle" });
+  const upscaleStop = useRef<AbortController | null>(null);
+  useEffect(() => () => upscaleStop.current?.abort(), []);
+  const busyUpscaling = upscale.status === "download" || upscale.status === "running";
+  // Agrandissement sur l'appareil (#78, lot 4) : la nouvelle image remplace celle de la couverture.
+  const runUpscale = async () => {
+    const img = image.current?.img;
+    if (!img || busyUpscaling) return;
+    const stop = new AbortController();
+    upscaleStop.current = stop;
+    setUpscale({ status: "download" });
+    let slow = false;
+    try {
+      const { upscaleImage } = await import("../upscaler");
+      const blob = await upscaleImage(
+        img,
+        (s) => {
+          if (s.kind === "start") slow = s.backend !== "webgpu";
+          if (s.kind === "start" || s.kind === "tile") setUpscale({ status: "running", done: s.kind === "tile" ? s.done : 0, total: s.kind === "tile" ? s.total : 0, slow });
+        },
+        stop.signal,
+      );
+      const name = await useCosmos.getState().setUpscaledCover(new Uint8Array(await blob.arrayBuffer()));
+      if (!name) throw new Error("medias");
+      setUpscale({ status: "done", width: img.naturalWidth * 2, height: img.naturalHeight * 2 });
+    } catch (err) {
+      const reason = (err as { reason?: string }).reason;
+      if (reason !== "cancelled") console.error(err);
+      setUpscale({ status: "failed", reason: (["network", "size", "checksum", "tooBig", "cancelled"].includes(reason ?? "") ? reason : "runtime") as "runtime" });
+    } finally {
+      upscaleStop.current = null;
+    }
+  };
 
   useEffect(() => {
     if (pages === null) return;
@@ -72,6 +117,7 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
           design,
           texts: { title, author, tagline, back: backCopy, bio: design.bio ? bio : "" },
           image: img ? { width: img.naturalWidth, height: img.naturalHeight } : null,
+          genre,
         });
         const { prepareCoverArt } = await import("../export/coverImage");
         const art = img ? prepareCoverArt(img, prepared.layout, design.back === "image") : null;
@@ -98,7 +144,7 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
       stale = true;
       window.clearTimeout(timer);
     };
-  }, [pages, print.trim, print.paper, design, title, author, tagline, backCopy, bio, visual]);
+  }, [pages, print.trim, print.paper, design, title, author, tagline, backCopy, bio, visual, genre]);
 
   const blocked = preview.status !== "ready" || preview.checks.some((c) => BLOCKING.includes(c.kind));
   const save = async () => {
@@ -142,6 +188,18 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
             ))}
           </select>
         </label>
+        {!design.titleOnImage && (
+          <label className="replace-field">
+            <span>{k.font}</span>
+            <select value={design.font} onChange={(e) => setDesign({ font: e.target.value as CoverFontChoice })}>
+              {COVER_FONTS.map((id) => (
+                <option key={id} value={id}>
+                  {id === "auto" ? fmt(k.fontAuto, { font: k.fonts[resolveCoverFont("auto", genre)] }) : k.fonts[id]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {visual && (
           <label className="replace-field">
             <span>{k.crop}</span>
@@ -192,11 +250,20 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
         </label>
       </div>
       {!bio && <p className="paperback-note">{k.bioEmpty}</p>}
+      {!design.titleOnImage && design.font === "auto" && <p className="paperback-note">{genre ? fmt(k.fontGenre, { font: k.fonts[resolveCoverFont("auto", genre)] }) : k.fontNoGenre}</p>}
       {preview.status === "ready" && preview.checks.length > 0 && (
         <ul className="full-cover-checks" role="status">
           {preview.checks.map((c) => (
             <li key={c.kind} className={BLOCKING.includes(c.kind) || (c.kind === "lowRes" && c.severe) ? "is-blocking" : ""}>
               {checkText(c)}
+              {c.kind === "lowRes" && visual && !busyUpscaling && upscale.status !== "done" && (
+                <>
+                  {" "}
+                  <button type="button" className="link-button" onClick={() => void runUpscale()}>
+                    {k.upscale}
+                  </button>
+                </>
+              )}
               {c.kind === "noBack" && (
                 <>
                   {" "}
@@ -208,6 +275,26 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
             </li>
           ))}
         </ul>
+      )}
+      {preview.status === "ready" && preview.checks.some((c) => c.kind === "lowRes") && upscale.status === "idle" && visual && <p className="paperback-note">{k.upscaleNote}</p>}
+      {upscale.status !== "idle" && (
+        <div className="full-cover-upscale" role="status" aria-live="polite">
+          {upscale.status === "download" && <span>{k.upscaleDownload}</span>}
+          {upscale.status === "running" && (
+            <>
+              <progress max={upscale.total || 1} value={upscale.done} />
+              <span>{upscale.total ? fmt(k.upscaleRunning, { done: upscale.done, total: upscale.total }) : k.upscaleDownload}</span>
+              {upscale.slow && <span className="paperback-note">{k.upscaleSlow}</span>}
+            </>
+          )}
+          {busyUpscaling && (
+            <button type="button" className="link-button" onClick={() => upscaleStop.current?.abort()}>
+              {k.upscaleCancel}
+            </button>
+          )}
+          {upscale.status === "done" && <span>{fmt(k.upscaleDone, { w: upscale.width, h: upscale.height })}</span>}
+          {upscale.status === "failed" && <span>{k.upscaleErrors[upscale.reason]}</span>}
+        </div>
       )}
       <figure className="full-cover-preview" aria-label={k.preview}>
         {preview.status !== "ready" && !(drawn && preview.status === "working") && (
