@@ -2,7 +2,7 @@
 // titre, fond de la quatrième, couleur du dos, présentation de l'auteur), contrôles, aperçu du vrai PDF (pdf.js)
 // et enregistrement. La mise en page attend le nombre de pages de l'intérieur (largeur du dos). Réglages gardés
 // dans le projet (`coverDesign`). Textes : titre du projet, nom signé du profil (nom de plume d'abord), accroche
-// et quatrième de couverture de la Bible, parcours du profil, ISBN des réglages du livre.
+// et quatrième de couverture de la Bible, parcours du profil. Pas d'ISBN à part : le code-barres de KDP le porte déjà.
 
 import { useEffect, useRef, useState } from "react";
 import { useCosmos } from "../store";
@@ -70,7 +70,7 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
           paper: print.paper,
           pages,
           design,
-          texts: { title, author, tagline, back: backCopy, bio: design.bio ? bio : "", isbn: print.isbn },
+          texts: { title, author, tagline, back: backCopy, bio: design.bio ? bio : "" },
           image: img ? { width: img.naturalWidth, height: img.naturalHeight } : null,
         });
         const { prepareCoverArt } = await import("../export/coverImage");
@@ -98,7 +98,7 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
       stale = true;
       window.clearTimeout(timer);
     };
-  }, [pages, print.trim, print.paper, print.isbn, design, title, author, tagline, backCopy, bio, visual]);
+  }, [pages, print.trim, print.paper, design, title, author, tagline, backCopy, bio, visual]);
 
   const blocked = preview.status !== "ready" || preview.checks.some((c) => BLOCKING.includes(c.kind));
   const save = async () => {

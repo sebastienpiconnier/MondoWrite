@@ -6,7 +6,7 @@ import { INCH, coverLayout } from "../export/paperback";
 /** Mesure simple : chaque caractère fait la moitié du corps. */
 const m: CoverMetrics = { width: (s, _f, size) => [...s].length * size * 0.5 };
 
-const texts: CoverTexts = { title: "Le Phare des Absents", author: "Claire Dumas", tagline: "Ils reviennent chaque nuit.", back: "Inès garde un phare.\nUne nuit, la lanterne s’éteint.", bio: "Claire Dumas vit en Bretagne.", isbn: "978-2-1234-5678-9" };
+const texts: CoverTexts = { title: "Le Phare des Absents", author: "Claire Dumas", tagline: "Ils reviennent chaque nuit.", back: "Inès garde un phare.\nUne nuit, la lanterne s’éteint.", bio: "Claire Dumas vit en Bretagne." };
 const input = (patch: Partial<FullCoverInput> = {}): FullCoverInput => ({ trim: "5x8", paper: "cream", pages: 240, design: DEFAULT_COVER_DESIGN, texts, image: { width: 2048, height: 3072 }, ...patch });
 const inside = (b: { x: number; y: number; width: number; height: number }, x: number, y: number) => x >= b.x - 0.01 && x <= b.x + b.width + 0.01 && y >= b.y - 0.01 && y <= b.y + b.height + 0.01;
 
@@ -72,11 +72,11 @@ describe("couverture complète KDP (#78)", () => {
 
   it("quatrième : jamais sous le haut du code-barres ; trop long, l'enregistrement attend", () => {
     const l = layoutFullCover(input(), m);
-    const back = l.texts.filter((t) => t.panel === "back" && !t.text.startsWith("ISBN"));
+    const back = l.texts.filter((t) => t.panel === "back");
     expect(back.length).toBeGreaterThan(3);
     for (const t of back) expect(t.y).toBeLessThan(l.cover.barcode.y);
-    const isbn = l.texts.find((t) => t.text.startsWith("ISBN"))!;
-    expect(isbn.x + m.width(isbn.text, "regular", isbn.size)).toBeLessThan(l.cover.barcode.x);
+    // Pas d'ISBN écrit à part : le code-barres de KDP le porte déjà.
+    expect(l.texts.some((t) => t.text.includes("ISBN"))).toBe(false);
     const long = layoutFullCover(input({ texts: { ...texts, back: Array.from({ length: 40 }, () => "Une phrase assez longue pour remplir la quatrième de couverture.").join("\n") } }), m);
     const over = long.checks.find((c) => c.kind === "backOverflow");
     expect(over && over.kind === "backOverflow" && over.lines).toBeGreaterThan(0);

@@ -1,7 +1,8 @@
 // Couverture complète du livre broché pour KDP (#78, docs/plan-couverture-kdp.md) : mise en page pure, testée.
 // Le gabarit (`coverLayout`) donne les mesures ; ici on place l'image du premier plat (cadrée pour remplir le plat
 // et son fond perdu), le titre et le nom de l'auteur, le texte du dos (à partir de SPINE_TEXT_PAGES), et la
-// quatrième (accroche, texte, présentation de l'auteur, ISBN), toujours hors de la place du code-barres. Les
+// quatrième (accroche, texte, présentation de l'auteur), toujours hors de la place du code-barres. Pas d'ISBN
+// écrit à part : le code-barres que KDP imprime porte déjà l'ISBN en clair au-dessus des barres. Les
 // couleurs se décident au dessin (paperbackPdf.ts), d'après l'image (coverImage.ts). Les textes trop longs ne sont
 // jamais coupés en silence : un contrôle le dit, et l'enregistrement attend qu'on raccourcisse.
 // Origine en haut à gauche, en points ; `y` d'un texte est sa ligne de base.
@@ -33,7 +34,6 @@ export interface CoverTexts {
   back: string;
   /** Présentation de l'auteur (parcours du profil), vide si décochée. */
   bio: string;
-  isbn: string;
 }
 
 export interface FullCoverInput {
@@ -240,7 +240,7 @@ export function layoutFullCover(input: FullCoverInput, m: CoverMetrics): FullCov
     }
   }
 
-  // Quatrième : accroche, texte, présentation de l'auteur, ISBN ; rien sous le haut du code-barres.
+  // Quatrième : accroche, texte, présentation de l'auteur ; rien sous le haut du code-barres.
   const left = cover.back.x + 0.5 * INCH;
   const width = cover.back.width - 1 * INCH;
   const topY = bleed + 0.6 * INCH;
@@ -289,8 +289,6 @@ export function layoutFullCover(input: FullCoverInput, m: CoverMetrics): FullCov
   }
   if (back.over > 0) checks.push({ kind: "backOverflow", lines: back.over });
   out.push(...back.texts);
-  const isbn = oneLine(texts.isbn);
-  if (isbn) out.push({ text: `ISBN ${isbn}`, x: left, y: cover.barcode.y + cover.barcode.height, size: 9, font: "regular", panel: "back" });
 
   return { cover, frontBox, backBox, spineBox, crop, dpi, titleZone, authorZone, texts: out, checks };
 }

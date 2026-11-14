@@ -66,7 +66,7 @@ Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à d�
 
 - **Premier plat** : `pitch.visuel` recadré pour remplir le plat et son fond perdu (cadrage haut, centre ou bas). Titre et nom de l'auteur composés par l'app, en haut ou en bas, dans la zone sûre ; couleur claire ou foncée choisie d'après la luminosité de la zone (mesurée sur l'image). Case « Le titre est déjà sur l'image » quand l'auteur l'a fait écrire par l'IA.
 - **Dos** : couleur unie tirée du bord de l'image (modifiable), titre et nom de haut en bas seulement quand KDP le permet, taille calculée pour tenir dans le dos moins ses marges.
-- **Quatrième** : même couleur, ou l'image floutée et assombrie ; accroche (tagline) en tête, texte de quatrième, courte présentation de l'auteur (`profile.bio`, raccourcie à la demande), ISBN ; zone du code-barres laissée claire.
+- **Quatrième** : même couleur, ou l'image floutée et assombrie ; accroche (tagline) en tête, texte de quatrième, courte présentation de l'auteur (`profile.bio`, raccourcie à la demande) ; zone du code-barres laissée claire (KDP y imprime le code-barres avec l'ISBN en clair).
 - **Contrôles avant d'enregistrer** : résolution, texte de quatrième trop long pour la place (mesuré, jamais coupé en silence), titre présent, rien hors des zones sûres.
 - **Aperçu** dans la fenêtre (pdf.js, comme l'export de la Bible), avec les zones sûres en option, jamais dans le PDF final.
 
@@ -98,4 +98,5 @@ Le premier plat seul, en JPEG de 1 600 × 2 560 px, pour l'ebook : presque gratu
 2. **Pas de photo de l'auteur** au dos.
 3. **Agrandir les images** trop petites : oui. Moyen proposé (à confirmer) : agrandisseur sur l'appareil, Real-ESRGAN (licence BSD 3 clauses) par onnxruntime-web (MIT), modèle téléchargé à la demande depuis mondowrite.app avec son empreinte SHA-256, comme les synonymes, jamais dans l'installeur ; agrandissement ×2 par tuiles (1024 × 1536 donne 2048 × 3072, assez pour tous les formats proposés). Taille du modèle et durée sur iPad à mesurer avant de s'engager. Pas de service en ligne : il faudrait une clé de plus.
 4. **Texte du dos à partir de 80 pages** : fait (`SPINE_TEXT_PAGES`).
-5. **Nom sur la couverture** : le nom de plume s'il est rempli, sinon prénom et nom (`authorName` du profil, déjà la règle de `settings.author`).
+5. **Pas d'ISBN écrit au dos** (14 novembre 2026) : le code-barres que KDP imprime le porte déjà en clair.
+6. **Nom sur la couverture** : le nom de plume s'il est rempli, sinon prénom et nom (`authorName` du profil, déjà la règle de `settings.author`).
