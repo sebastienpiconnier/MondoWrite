@@ -1427,6 +1427,7 @@ export const es = {
       backs: { color: "Color del lomo", image: "La imagen, difuminada" },
       spineColor: "Color del lomo",
       spineAuto: "Volver al color de la imagen",
+      shadow: "Sombra bajo el título y mi nombre",
       bio: "Mi presentación detrás (trayectoria del perfil)",
       bioEmpty: "Tu trayectoria está vacía: complétala en tu perfil para ponerla detrás.",
       writeBack: "Escribir la contracubierta",

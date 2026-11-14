@@ -27,7 +27,7 @@ import {
   type PrintOptions,
   type TrimId,
 } from "./paperback";
-import { inkOn, layoutFullCover, luminance, type FullCoverInput, type FullCoverLayout } from "./fullCover";
+import { inkOn, layoutFullCover, shadowPasses, type FullCoverInput, type FullCoverLayout } from "./fullCover";
 import type { CoverArt } from "./coverImage";
 
 const fromDataUri = (uri: string) => Uint8Array.from(atob(uri.slice(uri.indexOf(",") + 1)), (c) => c.charCodeAt(0));
@@ -223,11 +223,6 @@ const DEFAULT_SPINE = "#1f2a44";
 const rgbOf = (hex: string) => rgb(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255);
 const LIGHT_INK = "#ffffff";
 const DARK_INK = "#141414";
-/** Rapport de contraste entre deux couleurs (WCAG). */
-const contrast = (a: string, b: string) => {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
-};
 
 export interface PreparedFullCover {
   layout: FullCoverLayout;
@@ -265,27 +260,24 @@ export async function prepareFullCover(input: FullCoverInput): Promise<PreparedF
         const image = await pdf.embedJpg(art.front.data);
         page.drawImage(image, { x: layout.frontBox.x, y: H - layout.frontBox.y - layout.frontBox.height, width: layout.frontBox.width, height: layout.frontBox.height });
       } else rect(layout.frontBox, spine);
-      // Encre du premier plat : claire ou foncée selon la zone ; un voile discret quand l'image est trop mêlée.
-      const frontInk = (bg: string | null) => {
-        const ground = bg ?? spine;
-        const ink = inkOn(ground) === "light" ? LIGHT_INK : DARK_INK;
-        return { ink, veil: contrast(ink, ground) < 4.5 ? (ink === LIGHT_INK ? "#000000" : "#ffffff") : null };
-      };
+      // Encre du premier plat : claire ou foncée selon la lumière de la zone. Ombre portée (réglage, cochée
+      // d'office) : sombre sous une encre claire, claire sous une encre foncée ; jamais de bandeau sur l'image.
+      const frontInk = (bg: string | null) => (inkOn(bg ?? spine) === "light" ? LIGHT_INK : DARK_INK);
       const titleInk = frontInk(art?.titleBg ?? null);
       const authorInk = frontInk(art?.authorBg ?? null);
-      if (art?.front) {
-        // Bandeau sur toute la largeur du plat (fond perdu compris), jamais un cadre au milieu de l'image.
-        const band = (z: NonNullable<FullCoverLayout["titleZone"]>) => ({ x: layout.frontBox.x, y: z.y, width: layout.frontBox.width, height: z.height });
-        if (titleInk.veil && layout.titleZone) rect(band(layout.titleZone), titleInk.veil, 0.4);
-        if (authorInk.veil && layout.authorZone) rect(band(layout.authorZone), authorInk.veil, 0.4);
-      }
       const spineInk = inkOn(spine) === "light" ? LIGHT_INK : DARK_INK;
       const backInk = inkOn(backBg) === "light" ? LIGHT_INK : DARK_INK;
       for (const t of layout.texts) {
         const color =
-          t.panel === "spine" ? spineInk : t.panel === "back" ? backInk : layout.titleZone && t.y <= layout.titleZone.y + layout.titleZone.height && t.y >= layout.titleZone.y ? titleInk.ink : authorInk.ink;
-        const draw = () =>
-          page.drawText(noThinSpace(t.text), { x: t.x, y: H - t.y, size: t.size, font: fonts[t.font], color: rgbOf(color), ...(t.rotate ? { rotate: degrees(t.rotate) } : {}) });
+          t.panel === "spine" ? spineInk : t.panel === "back" ? backInk : layout.titleZone && t.y <= layout.titleZone.y + layout.titleZone.height && t.y >= layout.titleZone.y ? titleInk : authorInk;
+        const shadow = t.panel === "front" && input.design.shadow ? (color === LIGHT_INK ? "#000000" : "#ffffff") : null;
+        const text = noThinSpace(t.text);
+        const draw = () => {
+          if (shadow)
+            for (const p of shadowPasses(t.size))
+              page.drawText(text, { x: t.x + p.dx, y: H - t.y - p.dy, size: t.size, font: fonts[t.font], color: rgbOf(shadow), opacity: p.opacity });
+          page.drawText(text, { x: t.x, y: H - t.y, size: t.size, font: fonts[t.font], color: rgbOf(color), ...(t.rotate ? { rotate: degrees(t.rotate) } : {}) });
+        };
         if (t.spacing) {
           page.pushOperators(pushGraphicsState(), setCharacterSpacing(t.spacing));
           draw();

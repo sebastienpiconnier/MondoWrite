@@ -158,6 +158,29 @@ export function luminance(hex: string): number {
 /** Encre lisible sur un fond : claire sur un fond sombre, foncée sur un fond clair. */
 export const inkOn = (hex: string): "light" | "dark" => (luminance(hex) > 0.36 ? "dark" : "light");
 
+/** Une couche de l'ombre portée : décalage (points) et opacité. */
+export interface ShadowPass {
+  dx: number;
+  dy: number;
+  opacity: number;
+}
+
+/**
+ * Ombre portée douce d'un texte de corps `size` : une couche décalée vers le bas à droite, entourée de deux anneaux
+ * de couches plus pâles pour fondre le bord (pdf-lib ne sait pas flouter). Décalage et rayon suivent le corps.
+ */
+export function shadowPasses(size: number): ShadowPass[] {
+  const dx = size * 0.02;
+  const dy = size * 0.035;
+  // Deux anneaux de huit couches, de plus en plus pâles : un bord fondu plutôt qu'un relief.
+  const ring = (r: number, opacity: number) =>
+    Array.from({ length: 8 }, (_, i) => {
+      const a = (i * Math.PI) / 4;
+      return { dx: dx + r * Math.cos(a), dy: dy + r * Math.sin(a), opacity };
+    });
+  return [...ring(Math.max(1.2, size * 0.09), 0.035), ...ring(Math.max(0.6, size * 0.045), 0.06), { dx, dy, opacity: 0.22 }];
+}
+
 /** Couleur « #rrggbb » d'une moyenne RVB (0 à 255). */
 export const toHex = (r: number, g: number, b: number) => `#${[r, g, b].map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, "0")).join("")}`;
 

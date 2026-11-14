@@ -182,6 +182,11 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
             <input type="checkbox" checked={design.titleOnImage} onChange={(e) => setDesign({ titleOnImage: e.target.checked })} /> {k.titleOnImage}
           </label>
         )}
+        {!design.titleOnImage && (
+          <label>
+            <input type="checkbox" checked={design.shadow} onChange={(e) => setDesign({ shadow: e.target.checked })} /> {k.shadow}
+          </label>
+        )}
         <label>
           <input type="checkbox" checked={design.bio && !!bio} disabled={!bio} onChange={(e) => setDesign({ bio: e.target.checked })} /> {k.bio}
         </label>

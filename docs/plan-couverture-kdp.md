@@ -64,7 +64,7 @@ Pistes, de la plus simple à la plus lourde :
 
 Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à déposer sur KDP.
 
-- **Premier plat** : `pitch.visuel` recadré pour remplir le plat et son fond perdu (cadrage haut, centre ou bas). Titre et nom de l'auteur composés par l'app, en haut ou en bas, dans la zone sûre ; couleur claire ou foncée choisie d'après la luminosité de la zone (mesurée sur l'image). Case « Le titre est déjà sur l'image » quand l'auteur l'a fait écrire par l'IA.
+- **Premier plat** : `pitch.visuel` recadré pour remplir le plat et son fond perdu (cadrage haut, centre ou bas). Titre et nom de l'auteur composés par l'app, en haut ou en bas, dans la zone sûre ; couleur claire ou foncée choisie d'après la luminosité de la zone (mesurée sur l'image), avec une ombre portée douce en option (cochée d'office ; le voile en bandeau du premier essai a été retiré, jugé laid). Case « Le titre est déjà sur l'image » quand l'auteur l'a fait écrire par l'IA.
 - **Dos** : couleur unie tirée du bord de l'image (modifiable), titre et nom de haut en bas seulement quand KDP le permet, taille calculée pour tenir dans le dos moins ses marges.
 - **Quatrième** : même couleur, ou l'image floutée et assombrie ; accroche (tagline) en tête, texte de quatrième, courte présentation de l'auteur (`profile.bio`, raccourcie à la demande) ; zone du code-barres laissée claire (KDP y imprime le code-barres avec l'ISBN en clair).
 - **Contrôles avant d'enregistrer** : résolution, texte de quatrième trop long pour la place (mesuré, jamais coupé en silence), titre présent, rien hors des zones sûres.

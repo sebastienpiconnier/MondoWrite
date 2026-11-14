@@ -23,9 +23,11 @@ export interface CoverDesign {
   spineColor: string;
   /** Présentation de l'auteur (parcours du profil) au dos. */
   bio: boolean;
+  /** Ombre portée douce sous le titre et le nom du premier plat, pour les détacher de l'image. */
+  shadow: boolean;
 }
 
-export const DEFAULT_COVER_DESIGN: CoverDesign = { crop: "center", titlePlace: "top", titleOnImage: false, back: "color", spineColor: "", bio: true };
+export const DEFAULT_COVER_DESIGN: CoverDesign = { crop: "center", titlePlace: "top", titleOnImage: false, back: "color", spineColor: "", bio: true, shadow: true };
 
 const pick = <T extends string>(list: readonly T[], v: unknown, fallback: T): T => (list.includes(v as T) ? (v as T) : fallback);
 export const isHexColor = (v: unknown): v is string => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
@@ -41,6 +43,7 @@ export function cleanCoverDesign(raw: unknown): CoverDesign {
     back: pick(COVER_BACKS, p.back, d.back),
     spineColor: isHexColor(p.spineColor) ? p.spineColor.toLowerCase() : "",
     bio: typeof p.bio === "boolean" ? p.bio : d.bio,
+    shadow: typeof p.shadow === "boolean" ? p.shadow : d.shadow,
   };
 }
 

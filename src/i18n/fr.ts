@@ -1254,6 +1254,7 @@ export const fr = {
       backs: { color: "Couleur du dos", image: "L’image, floutée" },
       spineColor: "Couleur du dos",
       spineAuto: "Reprendre la couleur de l’image",
+      shadow: "Ombre portée sous le titre et mon nom",
       bio: "Ma présentation au dos (parcours du profil)",
       bioEmpty: "Ton parcours est vide : renseigne-le dans ton profil pour le mettre au dos.",
       writeBack: "Écrire la quatrième de couverture",

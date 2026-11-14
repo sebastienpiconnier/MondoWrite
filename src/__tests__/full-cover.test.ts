@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BLOCKING, coverCrop, inkOn, layoutFullCover, luminance, toHex, wrap, zoneInImage, type CoverMetrics, type CoverTexts, type FullCoverInput } from "../export/fullCover";
+import { BLOCKING, coverCrop, shadowPasses, inkOn, layoutFullCover, luminance, toHex, wrap, zoneInImage, type CoverMetrics, type CoverTexts, type FullCoverInput } from "../export/fullCover";
 import { DEFAULT_COVER_DESIGN, cleanCoverDesign, coverDesignToMeta } from "../export/coverDesign";
 import { INCH, coverLayout } from "../export/paperback";
 
@@ -89,6 +89,18 @@ describe("couverture complète KDP (#78)", () => {
     const c = coverLayout("5x8", "cream", 240);
     expect(l.backBox.width + l.spineBox.width + l.frontBox.width).toBeCloseTo(c.width, 5);
     expect(l.frontBox.height).toBeCloseTo(c.height, 5);
+  });
+
+  it("ombre portée : décalée vers le bas à droite, douce, à l'échelle du corps", () => {
+    const p = shadowPasses(40);
+    expect(p).toHaveLength(17);
+    const core = p[p.length - 1];
+    expect(core.dx).toBeGreaterThan(0);
+    expect(core.dy).toBeGreaterThan(0);
+    expect(core.opacity).toBeGreaterThan(p[0].opacity);
+    expect(shadowPasses(80)[16].dy).toBeCloseTo(core.dy * 2, 5);
+    expect(cleanCoverDesign({}).shadow).toBe(true);
+    expect(cleanCoverDesign({ shadow: false }).shadow).toBe(false);
   });
 
   it("encre lisible et couleurs", () => {

@@ -1297,6 +1297,7 @@ export const en: Messages = {
       backs: { color: "Spine color", image: "The image, blurred" },
       spineColor: "Spine color",
       spineAuto: "Use the image color again",
+      shadow: "Drop shadow under the title and my name",
       bio: "My bio on the back (from my profile)",
       bioEmpty: "Your bio is empty: add it to your profile to put it on the back.",
       writeBack: "Write the back-cover copy",
