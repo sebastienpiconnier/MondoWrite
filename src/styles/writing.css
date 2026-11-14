@@ -695,6 +695,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .full-cover-color .link-button { align-self: flex-start; }
 .full-cover-checks { margin: 0; padding-left: 1.2em; font-size: 0.875rem; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
 .full-cover-checks .is-blocking { color: var(--danger); font-weight: 600; }
+.full-cover-upscale { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 0.875rem; color: var(--ink-2); }
+.full-cover-upscale progress { flex: 1 1 160px; accent-color: var(--accent); }
 .full-cover-preview { margin: 0; overflow-x: auto; }
 .full-cover-preview canvas { display: block; max-width: 100%; height: auto !important; border: 1px solid var(--line); border-radius: 4px; transition: opacity 0.2s; }
 .full-cover-preview canvas.is-working { opacity: 0.5; }

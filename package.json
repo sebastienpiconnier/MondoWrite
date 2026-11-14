@@ -51,6 +51,7 @@
     "hyphen": "^1.14.1",
     "marked": "^18.1.0",
     "nanoid": "^6.0.2",
+    "onnxruntime-web": "^1.31.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "6.3.289",
     "react": "^19.3.0",

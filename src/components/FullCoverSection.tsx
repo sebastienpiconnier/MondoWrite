@@ -20,6 +20,13 @@ import { COVER_BACKS, COVER_CROPS, COVER_TITLE_PLACES, type CoverBack, type Cove
 const PREVIEW_WIDTH = 560;
 const DELAY = 400;
 
+type Upscale =
+  | { status: "idle" }
+  | { status: "download" }
+  | { status: "running"; done: number; total: number; slow: boolean }
+  | { status: "done"; width: number; height: number }
+  | { status: "failed"; reason: "network" | "size" | "checksum" | "runtime" | "tooBig" | "cancelled" };
+
 type Preview = { status: "working" } | { status: "failed" } | { status: "ready"; checks: CoverCheck[]; edge: string | null };
 
 export function FullCoverSection({ pages }: { pages: number | null }) {
@@ -46,6 +53,39 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
   const bytes = useRef<Uint8Array | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const image = useRef<{ name: string; img: HTMLImageElement | null } | null>(null);
+  const [upscale, setUpscale] = useState<Upscale>({ status: "idle" });
+  const upscaleStop = useRef<AbortController | null>(null);
+  useEffect(() => () => upscaleStop.current?.abort(), []);
+  const busyUpscaling = upscale.status === "download" || upscale.status === "running";
+  // Agrandissement sur l'appareil (#78, lot 4) : la nouvelle image remplace celle de la couverture.
+  const runUpscale = async () => {
+    const img = image.current?.img;
+    if (!img || busyUpscaling) return;
+    const stop = new AbortController();
+    upscaleStop.current = stop;
+    setUpscale({ status: "download" });
+    let slow = false;
+    try {
+      const { upscaleImage } = await import("../upscaler");
+      const blob = await upscaleImage(
+        img,
+        (s) => {
+          if (s.kind === "start") slow = s.backend !== "webgpu";
+          if (s.kind === "start" || s.kind === "tile") setUpscale({ status: "running", done: s.kind === "tile" ? s.done : 0, total: s.kind === "tile" ? s.total : 0, slow });
+        },
+        stop.signal,
+      );
+      const name = await useCosmos.getState().setUpscaledCover(new Uint8Array(await blob.arrayBuffer()));
+      if (!name) throw new Error("medias");
+      setUpscale({ status: "done", width: img.naturalWidth * 2, height: img.naturalHeight * 2 });
+    } catch (err) {
+      const reason = (err as { reason?: string }).reason;
+      if (reason !== "cancelled") console.error(err);
+      setUpscale({ status: "failed", reason: (["network", "size", "checksum", "tooBig", "cancelled"].includes(reason ?? "") ? reason : "runtime") as "runtime" });
+    } finally {
+      upscaleStop.current = null;
+    }
+  };
 
   useEffect(() => {
     if (pages === null) return;
@@ -216,6 +256,14 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
           {preview.checks.map((c) => (
             <li key={c.kind} className={BLOCKING.includes(c.kind) || (c.kind === "lowRes" && c.severe) ? "is-blocking" : ""}>
               {checkText(c)}
+              {c.kind === "lowRes" && visual && !busyUpscaling && upscale.status !== "done" && (
+                <>
+                  {" "}
+                  <button type="button" className="link-button" onClick={() => void runUpscale()}>
+                    {k.upscale}
+                  </button>
+                </>
+              )}
               {c.kind === "noBack" && (
                 <>
                   {" "}
@@ -227,6 +275,26 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
             </li>
           ))}
         </ul>
+      )}
+      {preview.status === "ready" && preview.checks.some((c) => c.kind === "lowRes") && upscale.status === "idle" && visual && <p className="paperback-note">{k.upscaleNote}</p>}
+      {upscale.status !== "idle" && (
+        <div className="full-cover-upscale" role="status" aria-live="polite">
+          {upscale.status === "download" && <span>{k.upscaleDownload}</span>}
+          {upscale.status === "running" && (
+            <>
+              <progress max={upscale.total || 1} value={upscale.done} />
+              <span>{upscale.total ? fmt(k.upscaleRunning, { done: upscale.done, total: upscale.total }) : k.upscaleDownload}</span>
+              {upscale.slow && <span className="paperback-note">{k.upscaleSlow}</span>}
+            </>
+          )}
+          {busyUpscaling && (
+            <button type="button" className="link-button" onClick={() => upscaleStop.current?.abort()}>
+              {k.upscaleCancel}
+            </button>
+          )}
+          {upscale.status === "done" && <span>{fmt(k.upscaleDone, { w: upscale.width, h: upscale.height })}</span>}
+          {upscale.status === "failed" && <span>{k.upscaleErrors[upscale.reason]}</span>}
+        </div>
       )}
       <figure className="full-cover-preview" aria-label={k.preview}>
         {preview.status !== "ready" && !(drawn && preview.status === "working") && (

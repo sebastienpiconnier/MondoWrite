@@ -61,6 +61,7 @@ Pistes, de la plus simple à la plus lourde :
 - [x] Contrôles : résolution, quatrième trop longue (bloque), titre absent (bloque), pas d'image, dos trop fin ou trop court
 - [x] Aperçu du vrai PDF, enregistrement, guide (fr, en, es), test de bout en bout
 - [x] Lot 2 : six jeux de polices (`coverFonts.ts`), « auto » selon le genre (`GENRE_FONTS`), repli sur la classique si une lettre manque
+- [x] Lot 4 : agrandisseur ×2 sur l'appareil (`upscaler.ts`, `upscaleWorker.ts`, `scripts/upscaler/`), essayé dans Chromium (WebAssembly : 400 × 600 en 37 s sur 2 cœurs) ; reste à publier `dist-upscaler/` sur mondowrite.app et à mesurer sur Mac, iPad et Windows
 - [ ] Pas encore : position du titre réglable au millimètre, couverture Kindle
 
 Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à déposer sur KDP.
@@ -79,9 +80,9 @@ Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à d�
 
 Générer une image en largeur qui couvre les deux plats et le dos, sujet principal tenu dans le tiers droit (premier plat) par la consigne. Plus spectaculaire, mais la résolution manque encore plus (environ 3 800 px de large pour un 6 × 9 de 200 pages) et le dos peut couper un détail. À n'essayer qu'après le lot 1.
 
-### Lot 4 : agrandissement (si l'auteur le veut)
+### Lot 4 : agrandissement
 
-Voir la piste 3 ci-dessus.
+**Fait (code), à publier.** « Agrandir l'image sur l'appareil (×2) » à côté du contrôle de résolution. Real-ESRGAN compact (`realesr-general-x4v3`, BSD 3 clauses, 4,9 Mo) converti en ONNX sans PyTorch (`scripts/upscaler/convert.py`), exécuté par onnxruntime-web 1.31.1 (MIT) dans un worker : WebGPU si l'appareil a une vraie carte graphique (l'émulation logicielle est écartée, plus lente que WebAssembly), sinon WebAssembly sur un fil. Modèle et moteur WebAssembly (28,7 Mo) jamais dans l'installeur : `scripts/upscaler/build.mjs` prépare `dist-upscaler/` à publier dans https://mondowrite.app/upscaler/ (moteur nommé par version, les anciens gardés) ; l'app les télécharge une fois, vérifie la SHA-256, les garde dans IndexedDB. Tuiles de 192 px lues avec 24 px de marge, agrandies ×4 puis réduites ×2. L'image agrandie est une nouvelle image de `medias/` (l'ancienne reste), qui garde marque d'IA ou crédit (`setUpscaledCover`). CSP : `script-src 'self' 'wasm-unsafe-eval'`. Mesuré dans Chromium sans carte graphique : 400 × 600 en 37 s (une couverture de 1024 × 1536 : environ 4 min) ; à mesurer sur iPad, Mac et Windows.
 
 ### En passant : couverture Kindle
 
