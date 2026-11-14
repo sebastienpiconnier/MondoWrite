@@ -15,7 +15,7 @@ Règles :
 - on ne cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité
   (import Scrivener, fichiers Final Draft, Fountain) ou pour du code repris (licence, `THIRD-PARTY-NOTICES.md`).
 
-Dernière mise à jour : 11 novembre 2026 (lot 11, #62, terminé).
+Dernière mise à jour : 14 novembre 2026 (#78 ajoutée).
 
 ## Ordre / Order
 
@@ -27,4 +27,5 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
 1. Lot 6 · Import et narration / Import and narration : #28 finitions de
    l'import Scrivener
 2. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
-3. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
+3. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
+4. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)

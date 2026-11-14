@@ -1,5 +1,7 @@
 # Couverture complète pour le livre broché (KDP)
 
+> Issue : #78.
+
 > **Statut : étude faite, décisions de l'auteur prises (14 novembre 2026), lot 1 pas commencé.** Les deux premières demandes de la même série sont faites dans la fenêtre « Générer la couverture » : nom de l'auteur sur l'image, style de l'image avec un conseil selon le genre, place laissée au texte.
 
 Question de l'auteur : MondoWrite peut-il fabriquer la couverture entière d'un livre broché pour Amazon KDP (premier plat, dos, quatrième de couverture), au bon gabarit, à partir de la couverture générée ?
