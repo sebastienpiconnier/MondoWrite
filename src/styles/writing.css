@@ -686,6 +686,20 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .paperback-panel .replace-actions { flex-wrap: wrap; }
 .paperback-panel .paperback-actions { flex-direction: column; align-items: flex-end; }
 .paperback-panel .paperback-row { align-self: stretch; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+/* Couverture complète (#78) : réglages, contrôles, aperçu du vrai PDF (une page large : quatrième, dos, premier plat). */
+.app-dialog.is-paperback:has(.full-cover) { width: min(760px, calc(100vw - 32px)); }
+.full-cover { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.full-cover h3 { margin: 0; font-size: 1.0625rem; }
+.full-cover-color { display: flex; flex-direction: column; gap: 4px; }
+.full-cover-color input[type="color"] { width: 64px; min-height: 44px; padding: 2px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); }
+.full-cover-color .link-button { align-self: flex-start; }
+.full-cover-checks { margin: 0; padding-left: 1.2em; font-size: 0.875rem; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
+.full-cover-checks .is-blocking { color: var(--danger); font-weight: 600; }
+.full-cover-preview { margin: 0; overflow-x: auto; }
+.full-cover-preview canvas { display: block; max-width: 100%; height: auto !important; border: 1px solid var(--line); border-radius: 4px; transition: opacity 0.2s; }
+.full-cover-preview canvas.is-working { opacity: 0.5; }
+.full-cover-preview canvas.is-hidden { display: none; }
+.full-cover-actions { justify-content: flex-end; }
 
 
 /* ---------- Le livre en pages (un seul éditeur pour tout le manuscrit) ---------- */
@@ -1343,3 +1357,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .image-gen-cast { margin: 4px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
 .image-gen-cast legend { padding: 0 4px; font-weight: 600; font-size: 0.875rem; }
 .image-gen-cast .settings-hint { margin: 0; }
+/* Couverture : style de l'image et conseil selon le genre. */
+.image-gen-style { display: flex; flex-direction: column; gap: 4px; }
+.image-gen-style select { min-height: 44px; max-width: 100%; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+.image-gen-style select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.image-gen-style .settings-hint { margin: 0; }

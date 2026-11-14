@@ -27,6 +27,8 @@ import {
   type PrintOptions,
   type TrimId,
 } from "./paperback";
+import { inkOn, layoutFullCover, shadowPasses, type FullCoverInput, type FullCoverLayout } from "./fullCover";
+import type { CoverArt } from "./coverImage";
 
 const fromDataUri = (uri: string) => Uint8Array.from(atob(uri.slice(uri.indexOf(",") + 1)), (c) => c.charCodeAt(0));
 /** Hauteur des capitales de Crimson Text, en fraction du corps (656 / 1024). */
@@ -213,3 +215,79 @@ export async function buildCoverTemplate(trim: TrimId, paper: PaperId, pages: nu
   return pdf.save();
 }
 
+
+// ---------- Couverture complète (#78) ----------
+
+/** Couleur du dos sans image ni couleur choisie : le bleu nuit de l'app. */
+const DEFAULT_SPINE = "#1f2a44";
+const rgbOf = (hex: string) => rgb(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255);
+const LIGHT_INK = "#ffffff";
+const DARK_INK = "#141414";
+
+export interface PreparedFullCover {
+  layout: FullCoverLayout;
+  /** Dessine le PDF avec l'image préparée (coverImage.ts) ; `art` null : premier plat uni. */
+  draw: (art: CoverArt | null) => Promise<Uint8Array>;
+}
+
+/** Met la couverture complète en page avec les vraies polices ; le dessin attend l'image préparée. */
+export async function prepareFullCover(input: FullCoverInput): Promise<PreparedFullCover> {
+  const pdf = await PDFDocument.create();
+  const fonts = await embedFonts(pdf);
+  const layout = layoutFullCover(input, { width: (text, font, size) => fonts[font].widthOfTextAtSize(noThinSpace(text), size) });
+  let drawn = false;
+  return {
+    layout,
+    draw: async (art) => {
+      if (drawn) throw new Error("déjà dessinée");
+      drawn = true;
+      const { cover } = layout;
+      const page = pdf.addPage([cover.width, cover.height]);
+      const H = cover.height;
+      const rect = (b: { x: number; y: number; width: number; height: number }, color: string, opacity = 1) =>
+        page.drawRectangle({ x: b.x, y: H - b.y - b.height, width: b.width, height: b.height, color: rgbOf(color), opacity });
+      const spine = input.design.spineColor || art?.edge || DEFAULT_SPINE;
+      // Quatrième et dos.
+      let backBg = spine;
+      if (art?.back) {
+        const image = await pdf.embedJpg(art.back);
+        page.drawImage(image, { x: layout.backBox.x, y: H - layout.backBox.y - layout.backBox.height, width: layout.backBox.width, height: layout.backBox.height });
+        backBg = art.backBg ?? spine;
+      } else rect(layout.backBox, spine);
+      rect(layout.spineBox, spine);
+      // Premier plat : l'image, ou la couleur du dos.
+      if (art?.front) {
+        const image = await pdf.embedJpg(art.front.data);
+        page.drawImage(image, { x: layout.frontBox.x, y: H - layout.frontBox.y - layout.frontBox.height, width: layout.frontBox.width, height: layout.frontBox.height });
+      } else rect(layout.frontBox, spine);
+      // Encre du premier plat : claire ou foncée selon la lumière de la zone. Ombre portée (réglage, cochée
+      // d'office) : sombre sous une encre claire, claire sous une encre foncée ; jamais de bandeau sur l'image.
+      const frontInk = (bg: string | null) => (inkOn(bg ?? spine) === "light" ? LIGHT_INK : DARK_INK);
+      const titleInk = frontInk(art?.titleBg ?? null);
+      const authorInk = frontInk(art?.authorBg ?? null);
+      const spineInk = inkOn(spine) === "light" ? LIGHT_INK : DARK_INK;
+      const backInk = inkOn(backBg) === "light" ? LIGHT_INK : DARK_INK;
+      for (const t of layout.texts) {
+        const color =
+          t.panel === "spine" ? spineInk : t.panel === "back" ? backInk : layout.titleZone && t.y <= layout.titleZone.y + layout.titleZone.height && t.y >= layout.titleZone.y ? titleInk : authorInk;
+        const shadow = t.panel === "front" && input.design.shadow ? (color === LIGHT_INK ? "#000000" : "#ffffff") : null;
+        const text = noThinSpace(t.text);
+        const draw = () => {
+          if (shadow)
+            for (const p of shadowPasses(t.size))
+              page.drawText(text, { x: t.x + p.dx, y: H - t.y - p.dy, size: t.size, font: fonts[t.font], color: rgbOf(shadow), opacity: p.opacity });
+          page.drawText(text, { x: t.x, y: H - t.y, size: t.size, font: fonts[t.font], color: rgbOf(color), ...(t.rotate ? { rotate: degrees(t.rotate) } : {}) });
+        };
+        if (t.spacing) {
+          page.pushOperators(pushGraphicsState(), setCharacterSpacing(t.spacing));
+          draw();
+          page.pushOperators(popGraphicsState());
+        } else draw();
+      }
+      pdf.setTitle(input.texts.title || "Cover");
+      if (input.texts.author) pdf.setAuthor(input.texts.author);
+      pdf.setCreator("MondoWrite");
+      return pdf.save();
+    },
+  };
+}

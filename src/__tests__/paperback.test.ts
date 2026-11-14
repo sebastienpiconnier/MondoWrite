@@ -223,6 +223,8 @@ describe("gabarit de couverture", () => {
     expect(cover.spine.width / INCH).toBeCloseTo(0.6756);
     expect(cover.spineText).toBe(true);
     expect(coverLayout("5x8", "cream", 60).spineText).toBe(false);
+    expect(coverLayout("5x8", "cream", 79).spineText).toBe(false);
+    expect(coverLayout("5x8", "cream", 80).spineText).toBe(true);
     // Le code-barres est au dos, en bas à droite, à un quart de pouce des bords.
     expect(cover.barcode.x + cover.barcode.width).toBeCloseTo(cover.back.x + cover.back.width - 0.25 * INCH);
   });

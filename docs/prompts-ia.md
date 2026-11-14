@@ -241,17 +241,17 @@ You help a writer who is stuck at the end of a scene of their {novel | screenpla
 
 ### A4. Brouillon de la couverture
 
-Couverture du projet (Bible), sous « Questionner » : « Proposer un brouillon » pour l'accroche, la logline, le résumé, les comparables et la note d'intention restés vides.
+Couverture du projet (Bible), sous « Questionner » : « Proposer un brouillon » pour l'accroche, la logline, le résumé, la quatrième de couverture (roman seulement, #78), les comparables et la note d'intention restés vides.
 
 ```
 You help a writer draft the cover page of their {novel | screenplay} project, which they will rework. Draft only the fields asked for, from what the cards and the fields already filled say. Do not invent characters, events or an ending the cards do not give. Leave out a field you cannot draft honestly. {règle commune} Answer with a JSON object only, with these keys: {"logline": "one sentence: who wants what, against what obstacle, with what at stake", …}.
 ```
 
-Repères donnés par champ : tagline « a one-line hook for the cover, at most 15 words » ; logline ci-dessus ; résumé « a summary of the story in one or two short paragraphs, in the present tense, ending included if the cards say it » ; comparables « two or three comparable published works or films, as "Title (Author or director)", separated by commas » ; note d'intention « a short statement of intent, in the first person, about why this story and what it is about, using only what the cards say ».
+Repères donnés par champ : tagline « a one-line hook for the cover, at most 15 words » ; logline ci-dessus ; résumé « a summary of the story in one or two short paragraphs, in the present tense, ending included if the cards say it » ; quatrième de couverture « the back-cover copy of the printed novel, 120 to 200 words in one to three short paragraphs, in the present tense, written to make a reader want to open the book: the situation, the main character, what is at stake; never the ending, a twist or the solution of a mystery » ; comparables « two or three comparable published works or films, as "Title (Author or director)", separated by commas » ; note d'intention « a short statement of intent, in the first person, about why this story and what it is about, using only what the cards say ».
 
 **Données** : titre du projet, champs déjà remplis, au plus 80 cartes (type, titre, 300 caractères de texte).
 
-**Ce que MondoWrite garde** (`parsePitchDraft`) : seulement les champs demandés, bornés (160, 400, 2 500, 400, 2 500 caractères), paragraphes gardés pour le résumé et la note. Chaque champ s'accepte à part (Ajouter, ou Remplacer avec la valeur actuelle sous les yeux, ou Ignorer). Accepté : `pitch.ia` (« logline,resume »), retiré quand l'auteur retouche le champ ou dit « Je l'ai repris ».
+**Ce que MondoWrite garde** (`parsePitchDraft`) : seulement les champs demandés, bornés (160, 400, 2 500, 1 500, 400, 2 500 caractères), paragraphes gardés pour le résumé, la quatrième et la note. Chaque champ s'accepte à part (Ajouter, ou Remplacer avec la valeur actuelle sous les yeux, ou Ignorer). Accepté : `pitch.ia` (« logline,resume »), retiré quand l'auteur retouche le champ ou dit « Je l'ai repris ».
 
 ### A5. Fiche d'un personnage secondaire
 
@@ -420,6 +420,12 @@ Rules: every person shown is fictional and must not resemble any real person, ce
 Description (written by the author, follow it faithfully, do not add names):
 {description sans noms propres}
 ```
+
+**Couverture ou affiche** (sujet `cover`, 2:3, description tirée de la couverture de la Bible par `describeCover`) : la ligne du sujet demande une image lisible en vignette. Options de la fenêtre, jamais enregistrées :
+
+- **Style** : une ligne `Style: …` après le sujet (`STYLE_LINES` : photographie, peinture numérique, illustration moderne, graphisme minimaliste, aquarelle, gravure, affiche rétro, noir et blanc). « Selon le genre » prend le premier style conseillé pour la famille reconnue dans les pastilles Genre puis Ton (`coverGenre`, `GENRE_STYLES`) ; sans genre reconnu, pas de ligne de style.
+- **Titre et nom de l'auteur** : la règle « No text… » devient « Write the title "…" and the author's name "…" on the image… » (ou l'un des deux seulement), suivie de « No other text… ». Le nom signé du profil ne part que si « Écrire ton nom sur l'image » est coché ; il n'entre jamais dans la description, d'où `stripNames` le retire toujours.
+- **Place du texte** (cochée d'office) : `Composition: leave calm, uncluttered space in the top third for the title and along the bottom for the author's name, to be added later…`, seulement pour ce que l'IA n'écrit pas.
 
 **Ce que MondoWrite garde** (`readImages`, `sniffImage`) : `data[].b64_json` décodé, reconnu à sa signature (PNG, JPEG, WebP ; jamais au type annoncé, un SVG est refusé), 15 Mo au plus ; une adresse `data[].url` seulement en https sur un hôte d'OpenAI, téléchargée puis vérifiée de même. Délai : 3 minutes, « Annuler » arrête la requête.
 

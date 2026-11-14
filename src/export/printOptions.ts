@@ -18,8 +18,8 @@ export type PaperId = keyof typeof KDP_PAPER;
 export const PAPER_IDS = Object.keys(KDP_PAPER) as PaperId[];
 export const KDP_MAX_PAGES: Record<PaperId, number> = { white: 828, cream: 776, groundwood: 812 };
 export const KDP_MIN_PAGES = 24;
-/** En dessous, KDP refuse tout texte sur le dos. */
-export const SPINE_TEXT_PAGES = 79;
+/** En dessous, pas de texte sur le dos : KDP dit « plus de 79 pages », et son outil de couverture en demande 80 (novembre 2026). */
+export const SPINE_TEXT_PAGES = 80;
 
 /** Grand fond minimal de KDP selon le nombre de pages (pouces). */
 export const gutterMin = (pages: number) => (pages <= 150 ? 0.375 : pages <= 300 ? 0.5 : pages <= 500 ? 0.625 : pages <= 700 ? 0.75 : 0.875);

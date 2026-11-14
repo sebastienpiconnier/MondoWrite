@@ -29,6 +29,7 @@ import { isEmptyPitch, readPitch, type Pitch } from "./pitch";
 import { readChutier, type Passage } from "./chutier";
 import { cleanPrint, printToMeta, type PrintOptions } from "./export/printOptions";
 import { bibleExportToMeta, cleanBibleExport, type BibleExportState } from "./bibleExport";
+import { cleanCoverDesign, coverDesignToMeta, type CoverDesign } from "./export/coverDesign";
 import { cleanScriptPrint, scriptPrintToMeta, type ScriptPrint } from "./screenplay/export/scriptPrint";
 import { readRevisions, revisionsToMeta, type Revisions } from "./screenplay/revisions";
 import { writeTitleField } from "./screenplay/titlePage";
@@ -105,11 +106,11 @@ export function fromProject(p: Project) {
   const frames = (p.meta.frames ?? [])
     .filter((f) => typeof f?.id === "string" && [f.x, f.y, f.width, f.height].every((n) => typeof n === "number" && Number.isFinite(n)))
     .map((f) => toFrameNode({ ...f, title: String(f.title ?? ""), kind: f.kind === "research" ? "research" : undefined, locked: f.locked === true, beat: typeof f.beat === "string" && (isBeat(f.beat) || isCustomBeat(f.beat)) ? f.beat : undefined, season: seriesRef(f.season), episode: seriesRef(f.episode) }));
-  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", comments: p.comments ?? {}, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), revisions: readRevisions(p.meta.revisions), bibleExport: cleanBibleExport(p.meta.bibleExport), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
+  return { title: p.meta.title, kind, paper, paperChosen, sceneNumbers: p.meta.sceneNumbers === true, underlineHeadings: p.meta.underlineHeadings === true, hideWires: p.meta.hideWires === true, aiMode: readAiMode(p.meta.aiMode), journal: p.journal ?? "", comments: p.comments ?? {}, markdownCopies: p.meta.markdownCopies !== false, nodes, frames, edges, plan: readPlan(p.meta.plan), manuscript: p.manuscript ?? {}, goals: readGoals(p.meta.goals), progress: readProgress(p.meta.progress), pitch: readPitch(p.meta.pitch), chutier: readChutier(p.meta.chutier), print: cleanPrint(p.meta.print), scriptPdf: cleanScriptPrint(p.meta.scriptPdf), revisions: readRevisions(p.meta.revisions), bibleExport: cleanBibleExport(p.meta.bibleExport), coverDesign: cleanCoverDesign(p.meta.coverDesign), metaKeep: unknownMeta(p.meta), trash: (p.trash ?? []).filter((c): c is TrashedCard => !!c.trashed) };
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "revisions", "bibleExport", "wires", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "revisions", "bibleExport", "coverDesign", "wires", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -358,6 +359,7 @@ export function toProject(
       ...(scriptPrintToMeta(s.scriptPdf) ? { scriptPdf: scriptPrintToMeta(s.scriptPdf) } : {}),
       ...(revisionsToMeta(s.revisions) ? { revisions: revisionsToMeta(s.revisions) } : {}),
       ...(bibleExportToMeta(s.bibleExport) ? { bibleExport: bibleExportToMeta(s.bibleExport) } : {}),
+      ...(s.coverDesign && coverDesignToMeta(s.coverDesign) ? { coverDesign: coverDesignToMeta(s.coverDesign) } : {}),
       ...(wiresToMeta(s.edges) ? { wires: wiresToMeta(s.edges) } : {}),
     },
     cards: s.nodes.map((n) => n.data),
@@ -402,6 +404,8 @@ export interface ProjectSlice {
   scriptPdf: ScriptPrint;
   revisions: Revisions;
   bibleExport: BibleExportState;
+  /** Réglages de la couverture complète du livre broché (#78). Facultatif ici : absent, rien n'est écrit. */
+  coverDesign?: CoverDesign;
   metaKeep: Record<string, unknown>;
   trash: TrashedCard[];
   /**
