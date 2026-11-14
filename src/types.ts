@@ -179,6 +179,8 @@ export interface ProjectMeta {
   revisions?: unknown;
   /** Réglages de l'export de la Bible (pour qui, parties, rendu) et réglages nommés, voir bibleExport.ts. Absent : valeurs par défaut. */
   bibleExport?: unknown;
+  /** Réglages de la couverture complète du livre broché, voir export/coverDesign.ts. Absent : valeurs par défaut. */
+  coverDesign?: unknown;
   viewport?: { x: number; y: number; zoom: number };
 }
 

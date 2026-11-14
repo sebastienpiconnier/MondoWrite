@@ -194,7 +194,7 @@ function Chip({ field }: { field: PitchChip }) {
 }
 
 /** Texte de la couverture : une zone qui grandit avec ce qu'on écrit. */
-function PitchArea({ field, className, hint, fallback, children }: { field: PitchText; className?: string; hint?: string; fallback?: string; children?: React.ReactNode }) {
+function PitchArea({ field, className, hint, fallback, placeholder, children }: { field: PitchText; className?: string; hint?: string; fallback?: string; placeholder?: string; children?: React.ReactNode }) {
   const { t, kind } = useVocab();
   // Libellés selon la forme du projet (« Ce qu'il n'est pas » pour un film, « Ce qu'elle n'est pas » pour une série).
   const form = useCosmos((s) => formOf(kind, s.pitch));
@@ -213,7 +213,7 @@ function PitchArea({ field, className, hint, fallback, children }: { field: Pitc
         id={id}
         rows={1}
         value={value}
-        placeholder={labels.placeholders[field]}
+        placeholder={placeholder ?? labels.placeholders[field]}
         aria-describedby={hint ? `${id}-hint` : undefined}
         onCommit={(v) => setPitch(field, v)}
       />
@@ -288,6 +288,20 @@ function Volume() {
       )}
     </div>
   );
+}
+
+/**
+ * Quatrième de couverture d'un roman (#78) : à part du résumé, qui dit la fin. Vide, le début du résumé paraît en
+ * filigrane pour aider, jamais recopié ; la longueur conseillée suit ce qu'on écrit.
+ */
+function BackCopy() {
+  const { t } = useVocab();
+  const p = t.pitch;
+  const resume = useCosmos((s) => s.pitch.resume ?? "");
+  const text = useCosmos((s) => s.pitch.quatrieme ?? "");
+  const start = resume.replace(/\s+/g, " ").trim();
+  const placeholder = start ? fmt(p.quatriemeFromResume, { text: start.length > 220 ? `${start.slice(0, 220).replace(/\s+\S*$/, "")}…` : start }) : undefined;
+  return <PitchArea field="quatrieme" placeholder={placeholder} hint={text.trim() ? fmt(p.quatriemeLength, { n: countWords(text) }) : undefined} />;
 }
 
 /** Mots d'une page de note d'intention, à peu près (repère, jamais une limite). */
@@ -390,6 +404,7 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
         <PitchDraft pitch={pitch} kind={kind} form={form} />
         <PitchArea field="logline" className="is-logline" hint={p.loglineHint} />
         <PitchArea field="resume" />
+        {kind === "roman" && <BackCopy />}
         <PitchArea field="comps" />
         <Volume />
         <div className="pitch-themes">

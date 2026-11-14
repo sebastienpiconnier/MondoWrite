@@ -17,6 +17,8 @@ export const PITCH_TEXTS = [
   "tagline",
   "logline",
   "resume",
+  // #78 : la quatrième de couverture du livre broché (roman seulement), à part du résumé, qui dit la fin.
+  "quatrieme",
   "comps",
   "intention",
   "pourquoi",
@@ -105,6 +107,9 @@ export function formOf(kind: "roman" | "scenario", pitch: Pitch): ProjectForm {
   return SERIES_ONLY.some((k) => (pitch as Record<string, string | undefined>)[k]?.trim()) ? "serie" : "libre";
 }
 
+/** Rubriques d'un roman seulement : la quatrième de couverture du livre broché (#78). */
+export const NOVEL_TEXTS: readonly string[] = ["quatrieme"];
+
 export const isSeriesForm = (form: ProjectForm) => form === "serie" || form === "miniserie";
 
 /** Rubriques d'écriture de la couverture pour cette forme (« Écrire la série » ou « Écrire le film »). */
@@ -119,7 +124,7 @@ export function writingTexts(form: ProjectForm): readonly PitchText[] {
 export function otherTexts(pitch: Pitch, form: ProjectForm): PitchText[] {
   if (form === "roman") return [];
   const own: readonly string[] = writingTexts(form);
-  return [...new Set<PitchText>([...SERIES_TEXTS, ...FILM_TEXTS])].filter((k) => !own.includes(k) && !!pitch[k]?.trim());
+  return [...new Set<PitchText>([...SERIES_TEXTS, ...FILM_TEXTS, ...(NOVEL_TEXTS as PitchText[])])].filter((k) => !own.includes(k) && !!pitch[k]?.trim());
 }
 
 /** Pastilles d'un roman seulement (un scénario est toujours au présent, vu par la caméra). */
@@ -269,7 +274,7 @@ const WRITING: readonly string[] = [...new Set<string>([...SERIES_TEXTS, ...FILM
 export const pitchFields = (kind: "roman" | "scenario" = "roman", form: ProjectForm = kind === "scenario" ? "serie" : "roman"): PitchField[] => {
   const own: readonly string[] = writingTexts(form);
   const chips: readonly string[] = chipsFor(kind, form);
-  return FIELDS.filter((key) => !RETIRED.includes(key)).filter((key) =>
+  return FIELDS.filter((key) => !RETIRED.includes(key) && (kind === "roman" || !NOVEL_TEXTS.includes(key))).filter((key) =>
     (PITCH_CHIPS as readonly string[]).includes(key) ? chips.includes(key) : !WRITING.includes(key) || own.includes(key),
   );
 };
@@ -309,7 +314,7 @@ const NOT_ASKED: readonly string[] = ["traitement", "faisabilite"];
 
 export const askableFields = (kind: "roman" | "scenario", form: ProjectForm = kind === "scenario" ? "serie" : "roman"): PitchText[] => {
   const own: readonly string[] = writingTexts(form);
-  return PITCH_TEXTS.filter((key) => !RETIRED.includes(key) && !NOT_ASKED.includes(key)).filter((key) => !WRITING.includes(key) || own.includes(key));
+  return PITCH_TEXTS.filter((key) => !RETIRED.includes(key) && !NOT_ASKED.includes(key) && (kind === "roman" || !NOVEL_TEXTS.includes(key))).filter((key) => !WRITING.includes(key) || own.includes(key));
 };
 
 /**

@@ -12,6 +12,7 @@ import { loadPaperback } from "../export";
 import { KDP_MAX_PAGES, KDP_MIN_PAGES, KDP_TRIMS, PAPER_IDS, TRIM_IDS, type PaperId, type TrimId } from "../export/printOptions";
 import { fileName, type ExportedFile } from "../screenplay/export";
 import type { PreparedPaperback } from "../export/paperbackPdf";
+import { FullCoverSection } from "./FullCoverSection";
 
 type State = { kind: "busy" } | { kind: "empty" } | { kind: "failed" } | { kind: "ready"; prepared: PreparedPaperback };
 
@@ -156,6 +157,8 @@ export function PaperbackPanel() {
           {message}
         </p>
       )}
+      {/* Couverture complète (#78) : elle attend le nombre de pages de l'intérieur pour la largeur du dos. */}
+      {(state.kind === "ready" || state.kind === "busy") && <FullCoverSection pages={state.kind === "ready" ? state.prepared.pages : null} />}
       {/* Le gabarit de couverture au-dessus ; Fermer et l'export de l'intérieur sur la même ligne. */}
       <div className="assistant-actions replace-actions paperback-actions">
         <button type="button" disabled={state.kind !== "ready" || saving} onClick={() => void save("cover")}>

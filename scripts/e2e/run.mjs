@@ -1738,6 +1738,25 @@ const scenarios = [
     },
   },
   {
+    name: "livre broché (#78) : couverture complète de l'exemple, aperçu, contrôles et réglage gardé dans le projet",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await page.getByRole("button", { name: "Exporter", exact: true }).click();
+      await page.getByText("Livre broché (KDP)…", { exact: true }).click();
+      const preview = page.locator(".full-cover-preview canvas:not(.is-hidden):not(.is-working)");
+      await until(() => preview.isVisible(), "pas d'aperçu de la couverture complète", 30000);
+      const size = await preview.evaluate((c) => ({ w: c.width, h: c.height }));
+      // Quatrième, dos et premier plat côte à côte : bien plus large que haute.
+      assert(size.w > size.h * 1.15, `aperçu de ${size.w} × ${size.h}`);
+      // Le petit exemple fait moins de 80 pages : pas de texte sur le dos, et c'est dit.
+      await until(() => page.getByText(/Moins de 80 pages/).isVisible(), "le contrôle du dos n'est pas affiché");
+      await page.locator(".full-cover select").first().selectOption("bottom");
+      await until(() => preview.isVisible(), "l'aperçu ne revient pas après un réglage", 30000);
+      await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").coverDesign?.titlePlace === "bottom", "coverDesign n'est pas enregistré");
+    },
+  },
+  {
     name: "Bible (#52) : une couverture importée sous le titre du projet, enregistrée dans pitch.visuel, retirée par son menu",
     async run(h) {
       const { page } = h;

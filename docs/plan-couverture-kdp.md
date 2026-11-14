@@ -2,7 +2,7 @@
 
 > Issue : #78.
 
-> **Statut : étude faite, décisions de l'auteur prises (14 novembre 2026), lot 1 pas commencé.** Les deux premières demandes de la même série sont faites dans la fenêtre « Générer la couverture » : nom de l'auteur sur l'image, style de l'image avec un conseil selon le genre, place laissée au texte.
+> **Statut : lot 1 fait (14 novembre 2026, à essayer par l'auteur) ; lots 2 à 4 à venir.** Les deux premières demandes de la même série sont faites dans la fenêtre « Générer la couverture » : nom de l'auteur sur l'image, style de l'image avec un conseil selon le genre, place laissée au texte.
 
 Question de l'auteur : MondoWrite peut-il fabriquer la couverture entière d'un livre broché pour Amazon KDP (premier plat, dos, quatrième de couverture), au bon gabarit, à partir de la couverture générée ?
 
@@ -53,7 +53,14 @@ Pistes, de la plus simple à la plus lourde :
 
 ## Découpage proposé
 
-### Lot 1 : « Couverture complète » dans la fenêtre Livre broché
+### Lot 1 : « Couverture complète » dans la fenêtre Livre broché (fait)
+
+- [x] Champ « Quatrième de couverture » (`pitch.quatrieme`, roman), filigrane du résumé, longueur conseillée, brouillon de l'Atelier
+- [x] Réglages `coverDesign` (cadrage, place du titre, titre déjà sur l'image, fond de la quatrième, couleur du dos, présentation)
+- [x] Mise en page pure et testée (`fullCover.ts`), image préparée sur canvas (`coverImage.ts`), PDF (`prepareFullCover`)
+- [x] Contrôles : résolution, quatrième trop longue (bloque), titre absent (bloque), pas d'image, dos trop fin ou trop court
+- [x] Aperçu du vrai PDF, enregistrement, guide (fr, en, es), test de bout en bout
+- [ ] Pas encore : position du titre réglable au millimètre, polices selon le genre (lot 2), couverture Kindle
 
 Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à déposer sur KDP.
 

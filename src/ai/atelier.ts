@@ -154,13 +154,15 @@ export function parseDirections(reply: string): string[] {
 // ---------- d. Brouillon de la couverture ----------
 
 /** Champs de la couverture que l'Atelier peut proposer. */
-export const PITCH_DRAFT_FIELDS = ["tagline", "logline", "resume", "comps", "intention"] as const;
+export const PITCH_DRAFT_FIELDS = ["tagline", "logline", "resume", "quatrieme", "comps", "intention"] as const;
 export type PitchDraftField = (typeof PITCH_DRAFT_FIELDS)[number];
-const PITCH_LIMITS: Record<PitchDraftField, number> = { tagline: 160, logline: 400, resume: 2500, comps: 400, intention: 2500 };
+const PITCH_LIMITS: Record<PitchDraftField, number> = { tagline: 160, logline: 400, resume: 2500, quatrieme: 1500, comps: 400, intention: 2500 };
 const PITCH_GUIDE: Record<PitchDraftField, string> = {
   tagline: "a one-line hook for the cover, at most 15 words",
   logline: "one sentence: who wants what, against what obstacle, with what at stake",
   resume: "a summary of the story in one or two short paragraphs, in the present tense, ending included if the cards say it",
+  quatrieme:
+    "the back-cover copy of the printed novel, 120 to 200 words in one to three short paragraphs, in the present tense, written to make a reader want to open the book: the situation, the main character, what is at stake; never the ending, a twist or the solution of a mystery",
   comps: "two or three comparable published works or films, as \"Title (Author or director)\", separated by commas",
   intention: "a short statement of intent, in the first person, about why this story and what it is about, using only what the cards say",
 };
@@ -200,7 +202,7 @@ export function parsePitchDraft(reply: string, fields: readonly PitchDraftField[
     const value = obj[key];
     if (typeof value !== "string") continue;
     const text =
-      key === "resume" || key === "intention"
+      key === "resume" || key === "quatrieme" || key === "intention"
         ? value
             .split(/\n\s*\n/)
             .map((p) => plainLine(p, PITCH_LIMITS[key]))

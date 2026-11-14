@@ -58,6 +58,7 @@ import { appendJournal, iaAfterPatch, journalLine, unmarkIa, withIaField, withou
 import type { Passage } from "./chutier";
 import { DEFAULT_PRINT, type PrintOptions } from "./export/printOptions";
 import { DEFAULT_BIBLE_EXPORT, type BibleExportState } from "./bibleExport";
+import { DEFAULT_COVER_DESIGN, type CoverDesign } from "./export/coverDesign";
 import { DEFAULT_SCRIPT_PRINT, type ScriptPrint } from "./screenplay/export/scriptPrint";
 import { assignSceneNumbers } from "./screenplay/lockedPages";
 import { EMPTY_REVISIONS, clearScreenplayMarks, closeRevision as closeRevisionPass, markChanged, openRevision as openRevisionPass, type LockedPage, type RevColor, type Revisions } from "./screenplay/revisions";
@@ -379,6 +380,9 @@ export interface CosmosState {
   /** Réglages de l'export de la Bible (`bibleExport` de cosmos.json), hors historique comme `print`. */
   bibleExport: BibleExportState;
   setBibleExport: (next: BibleExportState) => void;
+  /** Réglages de la couverture complète du livre broché (`coverDesign` de cosmos.json, #78), hors historique comme `print`. */
+  coverDesign: CoverDesign;
+  setCoverDesign: (patch: Partial<CoverDesign>) => void;
   progress: Progress;
   /** Total de mots avant la première modification de la séance (null : rien n'a encore été écrit), objectif de séance (#20). État d'affichage. */
   sessionStart: number | null;
@@ -2257,6 +2261,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
     unlockPages: () => {
       if (!get().revisions.locked) return;
       set({ revisions: { ...get().revisions, locked: null } });
+      touch();
+    },
+    coverDesign: DEFAULT_COVER_DESIGN,
+    setCoverDesign: (patch) => {
+      const next = { ...get().coverDesign, ...patch };
+      if (JSON.stringify(next) === JSON.stringify(get().coverDesign)) return;
+      set({ coverDesign: next });
       touch();
     },
     bibleExport: DEFAULT_BIBLE_EXPORT,
