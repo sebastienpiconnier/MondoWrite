@@ -1698,6 +1698,46 @@ const scenarios = [
     },
   },
   {
+    name: "couverture générée : style conseillé selon le genre, nom de l'auteur écrit seulement sur demande, place laissée au titre",
+    async run(h) {
+      const { page } = h;
+      const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", profile: { penName: "Claire Dumas" }, ai: { provider: "openai", keys: { openai: "test" }, models: { openai: "gpt-test" }, urls: {} } }));
+      });
+      const prompts = [];
+      await page.route("https://api.openai.com/**", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        prompts.push(JSON.parse(route.request().postData() ?? "{}").prompt ?? "");
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ created: 1, data: [{ b64_json: PNG }] }) });
+      });
+      await h.create("Le Phare");
+      await openSettings(page);
+      await page.getByLabel("Activer le mode Atelier pour ce projet").check();
+      await page.keyboard.press("Escape");
+      await h.view(3);
+      await page.getByRole("button", { name: "Choisir : Genre" }).click();
+      await page.getByLabel("Genre, saisie libre").fill("Thriller psychologique");
+      await page.getByRole("button", { name: "Valider" }).click();
+      await page.getByRole("button", { name: "Générer une image" }).first().click();
+      const style = page.getByLabel("Style de l’image");
+      await style.waitFor();
+      const chosen = await style.evaluate((el) => el.selectedOptions[0]?.textContent ?? "");
+      assert(/Selon le genre\s?:\s?Photographie/.test(chosen), `style par défaut : ${chosen}`);
+      await until(() => page.getByText(/Polar et thriller/).isVisible(), "pas de conseil pour le genre");
+      await page.getByRole("button", { name: "1 image" }).click();
+      await page.getByRole("button", { name: "Générer", exact: true }).click();
+      await until(() => prompts.length === 1, "première demande non partie");
+      assert(/Style: cinematic photograph/.test(prompts[0]) && /Composition: leave calm/.test(prompts[0]) && !/Claire|Dumas/.test(prompts[0]), `consigne sans nom : ${prompts[0]}`);
+      await page.getByLabel("Écrire ton nom sur l’image").check();
+      await style.selectOption("noir");
+      await page.getByRole("button", { name: "Générer", exact: true }).click();
+      await until(() => prompts.length === 2, "seconde demande non partie");
+      assert(/the author's name on the image[^\n]*"Claire Dumas"/.test(prompts[1]) && /Style: black and white/.test(prompts[1]) && /top third for the title/.test(prompts[1]), `consigne avec le nom : ${prompts[1]}`);
+    },
+  },
+  {
     name: "Bible (#52) : une couverture importée sous le titre du projet, enregistrée dans pitch.visuel, retirée par son menu",
     async run(h) {
       const { page } = h;

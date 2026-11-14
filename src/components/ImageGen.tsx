@@ -20,10 +20,13 @@ import { imageForAi } from "../ai/image";
 import { listScenes, sceneSynopsis, synopsisEnd } from "../screenplay/scenes";
 import {
   IMAGE_MAX,
+  COVER_STYLES,
+  GENRE_STYLES,
   IMAGE_MODEL_CHOICES,
   REFERENCE_MAX,
   canGenerateImages,
   castDescription,
+  coverGenre,
   decodeBase64,
   describeCard,
   describeCover,
@@ -37,8 +40,10 @@ import {
   imagePrompt,
   properNames,
   readIaImageSource,
+  resolveStyle,
   stripNames,
   subjectOf,
+  type CoverStyle,
   type GeneratedImage,
   type ImageModelChoice,
   type ReferenceImage,
@@ -105,6 +110,14 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
   }, [card, scene, nodes]);
   const [picked, setPicked] = useState<string[]>(() => cast.filter((c) => c.image).slice(0, REFERENCE_MAX).map((c) => c.id));
   const [writeTitle, setWriteTitle] = useState(false);
+  // Couverture : nom signé du profil (nom de plume, sinon prénom et nom), style, place laissée au texte.
+  const author = useSettings((s) => s.author).trim();
+  const [writeAuthor, setWriteAuthor] = useState(false);
+  const [space, setSpace] = useState(true);
+  const [style, setStyle] = useState<CoverStyle>("auto");
+  const pitchGenre = useCosmos((s) => s.pitch.genre);
+  const pitchTone = useCosmos((s) => s.pitch.ton);
+  const genre = useMemo(() => (cover ? coverGenre(pitchGenre, pitchTone) : null), [cover, pitchGenre, pitchTone]);
   const [description, setDescription] = useState(() => {
     if (cover) {
       const s = useCosmos.getState();
@@ -156,7 +169,8 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
         members.push({ description: castDescription(c, labels, g.fieldSep), reference: !!ref });
       }
       const title = cover && writeTitle ? useCosmos.getState().title.trim() : "";
-      const prompt = imagePrompt(subject, description, names, { cast: members, title });
+      const signed = cover && writeAuthor ? author : "";
+      const prompt = imagePrompt(subject, description, names, cover ? { cast: members, title, author: signed, style: resolveStyle(style, genre), space } : { cast: members });
       const images = await generateImages(config, model, prompt, count, subject, controller.signal, refs);
       const next = images.map((image) => {
         const url = URL.createObjectURL(new Blob([image.data as BlobPart], { type: image.mime }));
@@ -215,13 +229,50 @@ export function ImageGenPanel({ onBack }: { onBack: () => void }) {
           {g.descriptionHint}
         </p>
         {cover && (
-          <label className="spdf-choice image-gen-title">
-            <input type="checkbox" checked={writeTitle} onChange={(e) => setWriteTitle(e.target.checked)} />
-            <span>
-              {g.writeTitle}
-              <span className="settings-hint">{g.writeTitleHint}</span>
-            </span>
-          </label>
+          <>
+            <div className="image-gen-style">
+              <label htmlFor="image-gen-style">{g.styleLabel}</label>
+              <select id="image-gen-style" value={style} disabled={busy !== ""} aria-describedby="image-gen-style-tip" onChange={(e) => setStyle(e.target.value as CoverStyle)}>
+                {COVER_STYLES.map((id) => (
+                  <option key={id} value={id}>
+                    {id === "auto"
+                      ? genre
+                        ? fmt(g.styleAuto, { style: g.styles[GENRE_STYLES[genre][0]] })
+                        : g.styleFree
+                      : genre && GENRE_STYLES[genre].includes(id)
+                        ? fmt(g.styleRecommended, { style: g.styles[id] })
+                        : g.styles[id]}
+                  </option>
+                ))}
+              </select>
+              <p className="settings-hint" id="image-gen-style-tip">
+                {genre ? g.genreTips[genre] : g.genreTipNone} {g.thumbnailTip}
+              </p>
+            </div>
+            <label className="spdf-choice image-gen-title">
+              <input type="checkbox" checked={writeTitle} onChange={(e) => setWriteTitle(e.target.checked)} />
+              <span>
+                {g.writeTitle}
+                <span className="settings-hint">{g.writeTitleHint}</span>
+              </span>
+            </label>
+            <label className="spdf-choice image-gen-title">
+              <input type="checkbox" checked={writeAuthor && !!author} disabled={!author} onChange={(e) => setWriteAuthor(e.target.checked)} />
+              <span>
+                {g.writeAuthor}
+                <span className="settings-hint">{author ? fmt(g.writeAuthorHint, { name: author }) : g.writeAuthorNoProfile}</span>
+              </span>
+            </label>
+            {!(writeTitle && writeAuthor && author) && (
+              <label className="spdf-choice image-gen-title">
+                <input type="checkbox" checked={space} onChange={(e) => setSpace(e.target.checked)} />
+                <span>
+                  {g.leaveSpace}
+                  <span className="settings-hint">{g.leaveSpaceHint}</span>
+                </span>
+              </label>
+            )}
+          </>
         )}
         {cast.length > 0 && (
           <fieldset className="image-gen-cast">

@@ -23,6 +23,10 @@ import {
   iaImagesOf,
   imageModelOf,
   imagePrompt,
+  coverGenre,
+  resolveStyle,
+  GENRE_STYLES,
+  COVER_STYLES,
   imageRequest,
   isImageUrl,
   properNames,
@@ -329,6 +333,48 @@ describe("#52 : couverture, titres et personnages d'une scène", () => {
     expect(cast).toContain("Character 2: Barbe grise");
     expect(cast).toMatch(/Keep each one's face/);
     expect(cast).not.toMatch(/Inès|Morvan/);
+  });
+
+  it("couverture : nom de l'auteur écrit seulement sur demande, tel quel, même s'il est retiré de la description", () => {
+    const names = properNames([ines], ["Claire Dumas"]);
+    const both = imagePrompt("cover", "Un phare, signé Claire Dumas", names, { title: "Le Phare", author: "Claire Dumas" });
+    expect(both).toContain('the title "Le Phare" and the author\'s name "Claire Dumas"');
+    expect(both.split("Description")[1]).not.toContain("Claire Dumas");
+    const alone = imagePrompt("cover", "Un phare", names, { author: "Claire \"CD\" Dumas" });
+    expect(alone).toContain("Write only the author's name");
+    expect(alone).toContain("Claire 'CD' Dumas");
+    expect(imagePrompt("cover", "Un phare", names)).not.toMatch(/Claire|author's name/);
+  });
+
+  it("couverture : style et place laissée au texte qui n'est pas écrit", () => {
+    const names = properNames([]);
+    const styled = imagePrompt("cover", "Un phare", names, { style: "noir", space: true });
+    expect(styled).toMatch(/Style: black and white/);
+    expect(styled).toMatch(/top third for the title and along the bottom for the author's name/);
+    expect(imagePrompt("cover", "Un phare", names, { title: "Le Phare", space: true })).toMatch(/space along the bottom for the author's name/);
+    expect(imagePrompt("cover", "Un phare", names, { title: "T", author: "A", space: true })).not.toMatch(/Composition:/);
+    expect(imagePrompt("cover", "Un phare", names)).not.toMatch(/Style:|Composition:/);
+  });
+
+  it("genre de la couverture : reconnu en français, anglais et espagnol, comédie romantique avant romance", () => {
+    expect(coverGenre("Thriller psychologique")).toBe("thriller");
+    expect(coverGenre("Comédie romantique")).toBe("romcom");
+    expect(coverGenre("Romance historique")).toBe("romance");
+    expect(coverGenre("Science-fiction")).toBe("scifi");
+    expect(coverGenre("SF")).toBe("scifi");
+    expect(coverGenre("Novela negra")).toBe("thriller");
+    expect(coverGenre("Young Adult")).toBe("youth");
+    expect(coverGenre("Épouvante")).toBe("horror");
+    expect(coverGenre("", "Feel-good")).toBe("romcom");
+    expect(coverGenre("Sayonara")).toBeNull();
+    expect(coverGenre(undefined)).toBeNull();
+  });
+
+  it("style « auto » : premier style conseillé pour le genre, rien sans genre ; un style choisi reste", () => {
+    expect(resolveStyle("auto", "fantasy")).toBe("painting");
+    expect(resolveStyle("auto", null)).toBeUndefined();
+    expect(resolveStyle("graphic", "fantasy")).toBe("graphic");
+    for (const styles of Object.values(GENRE_STYLES)) for (const s of styles) expect(COVER_STYLES).toContain(s);
   });
 
   it("couverture : tagline, logline, pastilles et thèmes", () => {

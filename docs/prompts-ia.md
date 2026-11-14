@@ -421,6 +421,12 @@ Description (written by the author, follow it faithfully, do not add names):
 {description sans noms propres}
 ```
 
+**Couverture ou affiche** (sujet `cover`, 2:3, description tirée de la couverture de la Bible par `describeCover`) : la ligne du sujet demande une image lisible en vignette. Options de la fenêtre, jamais enregistrées :
+
+- **Style** : une ligne `Style: …` après le sujet (`STYLE_LINES` : photographie, peinture numérique, illustration moderne, graphisme minimaliste, aquarelle, gravure, affiche rétro, noir et blanc). « Selon le genre » prend le premier style conseillé pour la famille reconnue dans les pastilles Genre puis Ton (`coverGenre`, `GENRE_STYLES`) ; sans genre reconnu, pas de ligne de style.
+- **Titre et nom de l'auteur** : la règle « No text… » devient « Write the title "…" and the author's name "…" on the image… » (ou l'un des deux seulement), suivie de « No other text… ». Le nom signé du profil ne part que si « Écrire ton nom sur l'image » est coché ; il n'entre jamais dans la description, d'où `stripNames` le retire toujours.
+- **Place du texte** (cochée d'office) : `Composition: leave calm, uncluttered space in the top third for the title and along the bottom for the author's name, to be added later…`, seulement pour ce que l'IA n'écrit pas.
+
 **Ce que MondoWrite garde** (`readImages`, `sniffImage`) : `data[].b64_json` décodé, reconnu à sa signature (PNG, JPEG, WebP ; jamais au type annoncé, un SVG est refusé), 15 Mo au plus ; une adresse `data[].url` seulement en https sur un hôte d'OpenAI, téléchargée puis vérifiée de même. Délai : 3 minutes, « Annuler » arrête la requête.
 
 **Rien n'entre sans clic** : les images proposées s'affichent (adresses `blob:` rendues à la fermeture) ; « Garder » (`keepGeneratedImage`) copie l'image dans `medias/` sous un nom neuf, en image principale (image d'une carte, galerie encore vide) ou dans la galerie, ou en nouvelle carte Image, en une étape d'historique. **Marque** : `iaImages` de la carte (`{"<fichier>": "<service>, <modèle>"}`, écrit seulement pour les images qu'elle porte encore), repère « IA » sur la vignette de la galerie et crédit « Image générée · OpenAI, gpt-image-2.6-flare » sous l'image agrandie ; une carte Image reçoit aussi ce crédit dans « Publication », comme une photo libre. **Journal** : une ligne `Image` dans `ia-journal.md`, avec le modèle d'image et la taille à la place des mots (« 1024 × 1536 px »). Statistiques : nombre d'images générées encore gardées.

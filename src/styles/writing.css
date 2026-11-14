@@ -1343,3 +1343,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .image-gen-cast { margin: 4px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
 .image-gen-cast legend { padding: 0 4px; font-weight: 600; font-size: 0.875rem; }
 .image-gen-cast .settings-hint { margin: 0; }
+/* Couverture : style de l'image et conseil selon le genre. */
+.image-gen-style { display: flex; flex-direction: column; gap: 4px; }
+.image-gen-style select { min-height: 44px; max-width: 100%; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+.image-gen-style select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.image-gen-style .settings-hint { margin: 0; }

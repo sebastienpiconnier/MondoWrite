@@ -186,7 +186,7 @@ const SUBJECT_LINES: Record<ImageSubject, string> = {
   object: "A reference image of an object for a novelist's notes: the object alone, clearly visible, on a simple background.",
   mood: "A mood image for a novelist's notes: the atmosphere, colours and light described below.",
   scene: "An illustration of a scene from a work of fiction, for the author's notes: the moment described below, its setting, light and atmosphere.",
-  cover: "A book cover or film poster for a work of fiction, portrait format: one strong, evocative image that tells the genre and the mood described below.",
+  cover: "A book cover or film poster for a work of fiction, portrait format: one strong, evocative image that tells the genre and the mood described below, readable even as a small thumbnail (one clear focal subject, strong contrast, few details).",
 };
 
 /** Personnage d'une scène illustrée : sa description (jamais son nom), et s'il a une image de référence. */
@@ -198,6 +198,12 @@ export interface CastMember {
 export interface PromptOptions {
   /** Couverture : titre à écrire sur l'image, tel quel (case « Écrire le titre sur l'image »). */
   title?: string;
+  /** Couverture : nom de l'auteur à écrire sur l'image, tel quel (case « Écrire ton nom », nom signé du profil). */
+  author?: string;
+  /** Couverture : style d'image choisi (déjà résolu : jamais « auto »). */
+  style?: ImageStyle;
+  /** Couverture : laisser un espace calme pour le titre et le nom qui ne sont pas écrits par l'IA. */
+  space?: boolean;
   /** Scène : les personnages, dans l'ordre des images de référence jointes. */
   cast?: CastMember[];
 }
@@ -209,10 +215,24 @@ export interface PromptOptions {
 export function imagePrompt(subject: ImageSubject, description: string, names: ProperNames, options: PromptOptions = {}): string {
   const text = clip(stripNames(description, names), DESCRIPTION_MAX);
   const title = oneLine(options.title ?? "").slice(0, 120);
-  const textRule = title
-    ? `Write this title on the image, legibly, exactly as given and nowhere else: "${title.replace(/"/g, "'")}". No other text, letters, numbers, captions, signatures, watermarks or logos.`
-    : "No text, letters, numbers, captions, signatures, watermarks or logos anywhere in the image.";
-  const parts = [SUBJECT_LINES[subject], `Rules: every person shown is fictional and must not resemble any real person, celebrity or public figure. ${textRule}`];
+  const author = oneLine(options.author ?? "").slice(0, 80);
+  const quoted = (s: string) => `"${s.replace(/"/g, "'")}"`;
+  const noOther = "No other text, letters, numbers, captions, signatures, watermarks or logos.";
+  const textRule =
+    title && author
+      ? `Write the title ${quoted(title)} and the author's name ${quoted(author)} on the image, legibly, exactly as given and nowhere else: the title large and prominent, the author's name smaller, at the top or the bottom. ${noOther}`
+      : title
+        ? `Write this title on the image, legibly, exactly as given and nowhere else: ${quoted(title)}. ${noOther}`
+        : author
+          ? `Write only the author's name on the image, legibly, exactly as given, smaller than a title would be, at the top or the bottom: ${quoted(author)}. ${noOther}`
+          : "No text, letters, numbers, captions, signatures, watermarks or logos anywhere in the image.";
+  const parts = [SUBJECT_LINES[subject]];
+  if (options.style) parts.push(`Style: ${STYLE_LINES[options.style]}`);
+  parts.push(`Rules: every person shown is fictional and must not resemble any real person, celebrity or public figure. ${textRule}`);
+  if (options.space && !(title && author)) {
+    const room = !title && !author ? "in the top third for the title and along the bottom for the author's name" : !title ? "in the top third for the title" : "along the bottom for the author's name";
+    parts.push(`Composition: leave calm, uncluttered space ${room}, to be added later; keep the main subject and any face away from those areas and from the edges.`);
+  }
   const cast = (options.cast ?? []).map((c) => ({ ...c, description: clip(stripNames(c.description, names), 300) }));
   if (cast.length > 0) {
     let ref = 0;
@@ -275,6 +295,71 @@ export function describeCover(pitch: Pitch, themes: string[], labels: Record<str
   if (themes.length > 0) lines.push(`${labels.themes ?? "themes"}${sep}${themes.map(oneLine).join(", ")}`);
   return lines.join("\n");
 }
+
+// ---------- Couverture : styles et conseils selon le genre ----------
+
+/** Styles proposés pour une couverture ou une affiche (clés jamais traduites ; « auto » suit le genre). */
+export const COVER_STYLES = ["auto", "photo", "painting", "illustration", "graphic", "watercolor", "engraving", "vintage", "noir"] as const;
+export type CoverStyle = (typeof COVER_STYLES)[number];
+export type ImageStyle = Exclude<CoverStyle, "auto">;
+
+/** Consigne de chaque style, en anglais (la langue que les modèles d'image suivent le mieux). */
+const STYLE_LINES: Record<ImageStyle, string> = {
+  photo: "cinematic photograph, realistic, dramatic lighting, shallow depth of field.",
+  painting: "rich digital painting, painterly brushwork, detailed and atmospheric, epic scale.",
+  illustration: "modern flat illustration, bold simple shapes, bright harmonious colours, clean lines.",
+  graphic: "minimalist graphic design, one strong symbolic element, large areas of flat colour, generous negative space.",
+  watercolor: "soft watercolour painting, delicate washes, visible paper texture, light and airy.",
+  engraving: "vintage engraving or woodcut, fine line work, cross-hatching, limited palette.",
+  vintage: "retro mid-century poster, grainy print texture, limited bold palette, pulp atmosphere.",
+  noir: "black and white, high contrast, deep shadows, film noir mood.",
+};
+
+/** Familles de genres reconnues dans la pastille Genre (puis Ton) de la couverture, dans l'ordre où on les cherche. */
+export const COVER_GENRES = ["thriller", "horror", "romcom", "romance", "fantasy", "scifi", "historical", "youth", "literary"] as const;
+export type CoverGenre = (typeof COVER_GENRES)[number];
+
+/** Mots qui désignent chaque famille (français, anglais, espagnol), repliés : sans accents, en minuscules. */
+const GENRE_WORDS: Record<CoverGenre, string[]> = {
+  thriller: ["thriller", "polar", "policier", "crime", "criminal", "suspense", "enquete", "detective", "espionnage", "spy", "roman noir", "mystery", "mystere", "misterio", "novela negra"],
+  horror: ["horreur", "horror", "epouvante", "gothique", "gothic", "terror", "terreur"],
+  romcom: ["comedie romantique", "romantic comedy", "romcom", "rom com", "feel good", "feelgood", "chick lit", "comedia romantica"],
+  romance: ["romance", "romantique", "romantic", "sentimental", "love story", "romantica"],
+  fantasy: ["fantasy", "fantastique", "fantastico", "merveilleux", "magie", "magic", "magia", "conte", "fairy tale", "dragon", "fantasia"],
+  scifi: ["science fiction", "sci fi", "sf", "anticipation", "dystopie", "dystopia", "distopia", "cyberpunk", "space opera", "post apocalyptique", "post apocalyptic", "ciencia ficcion"],
+  historical: ["historique", "historical", "historico", "historia", "saga familiale", "epoque"],
+  youth: ["jeunesse", "young adult", "ya", "ado", "adolescent", "enfant", "children", "middle grade", "teen", "juvenil", "infantil"],
+  literary: ["litterature", "litteraire", "literary", "literaria", "drame", "drama", "contemporain", "contemporary", "general fiction", "autofiction"],
+};
+
+/** Styles conseillés pour chaque famille, du plus courant au moins courant ; le premier est celui d'« auto ». */
+export const GENRE_STYLES: Record<CoverGenre, ImageStyle[]> = {
+  thriller: ["photo", "noir", "graphic"],
+  horror: ["photo", "noir", "engraving"],
+  romcom: ["illustration", "watercolor"],
+  romance: ["photo", "watercolor", "illustration"],
+  fantasy: ["painting", "engraving", "illustration"],
+  scifi: ["painting", "photo", "graphic"],
+  historical: ["painting", "photo", "engraving"],
+  youth: ["illustration", "painting"],
+  literary: ["graphic", "watercolor", "photo"],
+};
+
+const foldWords = (s: string) => ` ${s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()} `;
+
+/** Famille du genre écrit par l'auteur (« Thriller psychologique » : thriller), ou null s'il n'y en a pas de connue. */
+export function coverGenre(...texts: (string | undefined)[]): CoverGenre | null {
+  for (const text of texts) {
+    if (!text?.trim()) continue;
+    const folded = foldWords(text);
+    const found = COVER_GENRES.find((g) => GENRE_WORDS[g].some((w) => folded.includes(` ${w} `)));
+    if (found) return found;
+  }
+  return null;
+}
+
+/** Style réellement demandé : « auto » prend le premier style conseillé pour le genre, sinon aucun. */
+export const resolveStyle = (style: CoverStyle, genre: CoverGenre | null): ImageStyle | undefined => (style !== "auto" ? style : genre ? GENRE_STYLES[genre][0] : undefined);
 
 // ---------- Requête ----------
 
