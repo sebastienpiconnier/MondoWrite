@@ -3,6 +3,7 @@
 // l'arc : son type, dessiné, et ses deux temps (Au début, À la fin). Ce sont des champs de la fiche
 // (frontmatter `fiche`), rien n'est recopié ailleurs. L'ancien texte « Évolution » reste affiché s'il est rempli.
 
+import { BufferedTextarea } from "./BufferedField";
 import { useId } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
@@ -34,12 +35,12 @@ export function CharacterMotor({ card }: { card: CardData }) {
         {fields.map((key) => (
           <div key={key} className={`motor-cell${card.fiche?.[key]?.trim() ? " is-filled" : ""}`}>
             <label htmlFor={`${id}-${key}`}>{t.motor.labels[key as keyof typeof t.motor.labels]}</label>
-            <textarea
+            <BufferedTextarea
               id={`${id}-${key}`}
               rows={1}
               value={card.fiche?.[key] ?? ""}
               placeholder={t.motor.placeholders[key as keyof typeof t.motor.placeholders]}
-              onChange={(e) => setFiche(card.id, key, e.target.value)}
+              onCommit={(v) => setFiche(card.id, key, v)}
             />
           </div>
         ))}
@@ -68,7 +69,7 @@ export function CharacterMotor({ card }: { card: CardData }) {
         {(["debut", "fin"] as const).map((key, i) => (
           <div key={key} className={`motor-cell is-arc-end${card.fiche?.[key]?.trim() ? " is-filled" : ""}`}>
             <label htmlFor={`${id}-${key}`}>{t.fields[key]}</label>
-            <textarea id={`${id}-${key}`} rows={1} value={card.fiche?.[key] ?? ""} placeholder={t.placeholders[key]} onChange={(e) => setFiche(card.id, key, e.target.value)} />
+            <BufferedTextarea id={`${id}-${key}`} rows={1} value={card.fiche?.[key] ?? ""} placeholder={t.placeholders[key]} onCommit={(v) => setFiche(card.id, key, v)} />
             {i === 0 && <span className="motor-arc-arrow" aria-hidden="true">→</span>}
           </div>
         ))}
@@ -77,7 +78,7 @@ export function CharacterMotor({ card }: { card: CardData }) {
       {(card.fiche?.arc ?? "") !== "" && (
         <div className="motor-arc-text">
           <label htmlFor={`${id}-arc`}>{t.fields.arc}</label>
-          <textarea id={`${id}-arc`} rows={1} value={card.fiche?.arc ?? ""} placeholder={t.placeholders.arc} onChange={(e) => setFiche(card.id, "arc", e.target.value)} />
+          <BufferedTextarea id={`${id}-arc`} rows={1} value={card.fiche?.arc ?? ""} placeholder={t.placeholders.arc} onCommit={(v) => setFiche(card.id, "arc", v)} />
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@
 // Tout s'y modifie sur place : titre, texte (le corps de la carte) et, pour un personnage, sa fiche
 // d'identité. Le portrait d'un personnage tient dans un cercle, à côté de son nom.
 
+import { BufferedTextarea } from "./BufferedField";
 import { useTouchGestures } from "./useTouchGestures";
 import { panelAfterSwipe } from "../touchGestures";
 import { formOf } from "../pitch";
@@ -339,7 +340,7 @@ export function Bible() {
                 <h3>
                   {/* Le titre se change ici comme sur le canevas : c'est la même carte. Un champ qui passe à la
                       ligne (jamais tronqué, même sur iPhone), mais sans retour à la ligne : Entrée quitte le champ. */}
-                  <textarea
+                  <BufferedTextarea
                     rows={1}
                     ref={autosize}
                     data-card={card.id}
@@ -348,10 +349,9 @@ export function Bible() {
                     placeholder={types[type].titlePlaceholder}
                     aria-label={t.bible.titleAria}
                     autoComplete="off"
-                    onChange={(e) => {
-                      autosize(e.currentTarget);
-                      updateCard(card.id, { title: oneLine(e.target.value) });
-                    }}
+                    clean={oneLine}
+                    onCommit={(title) => updateCard(card.id, { title })}
+                    onChange={(e) => autosize(e.currentTarget)}
                     onBlur={() => card.id === fresh && setFresh(null)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === "Escape") {
@@ -363,7 +363,7 @@ export function Bible() {
                 </h3>
                 {/* L'accroche : le personnage en une phrase, sous son nom, comme dans un dossier. */}
                 {type === "personnage" && (
-                  <textarea
+                  <BufferedTextarea
                     rows={1}
                     ref={autosize}
                     className="bible-hook"
@@ -371,10 +371,9 @@ export function Bible() {
                     placeholder={t.character.placeholders.accroche}
                     aria-label={t.character.hookAria}
                     autoComplete="off"
-                    onChange={(e) => {
-                      autosize(e.currentTarget);
-                      useCosmos.getState().setFiche(card.id, "accroche", oneLine(e.target.value));
-                    }}
+                    clean={oneLine}
+                    onCommit={(v) => useCosmos.getState().setFiche(card.id, "accroche", v)}
+                    onChange={(e) => autosize(e.currentTarget)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === "Escape") {
                         e.preventDefault();

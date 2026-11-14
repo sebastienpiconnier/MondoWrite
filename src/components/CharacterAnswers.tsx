@@ -2,6 +2,7 @@
 // (« Réponses aux questions (12) ») pour ne pas envahir la fiche ; chacune se relit et se modifie sur place.
 // Elles vivent dans la carte (`reponses`), pas dans son texte.
 
+import { BufferedTextarea } from "./BufferedField";
 import { useId, useMemo, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
@@ -35,7 +36,7 @@ export function CharacterAnswers({ card }: { card: CardData }) {
                   {/* Réponse de « Interroger le personnage » : dite par lui, gardée par l'auteur. */}
                   {isInterviewKey(key) && <span className="answer-tag"> · {all.interrogate.answerTag}</span>}
                 </label>
-                <textarea id={`${id}-${key}`} rows={1} value={value} onChange={(e) => setReponse(card.id, key, e.target.value)} />
+                <BufferedTextarea id={`${id}-${key}`} rows={1} value={value} onCommit={(v) => setReponse(card.id, key, v)} />
               </div>
             );
           })}

@@ -2,7 +2,7 @@
 // partagées. Partagées par la fenêtre Statistiques, la ligne sous chaque fiche de la Bible et la carte des
 // Relations, pour que tout le monde compte de la même façon.
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { bookOrder } from "../book";
@@ -30,8 +30,16 @@ export function useProjectStats(part: string | null = null) {
   // Pagination du texte compté (toute la série, ou la partie choisie) : les rangs d'éléments sont les siens.
   const pagination = useMemo(() => (screenplay ? paginate(screenplay.elements, LAYOUTS[paper]) : null), [screenplay, paper]);
   const script = kind === "scenario";
-  const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
-  const order = useMemo(() => (script ? [] : bookOrder(nodes, plan)), [script, nodes, plan]);
+  // Les chiffres ne lisent des cartes que leur nom, leur type et quelques champs (genre, surnoms, narrateur, page du
+  // livre). Taper dans une fiche (« Veut », notes…) change `nodes` à chaque pause : sans cette clé, toute la Bible
+  // relisait le scénario entier (répliques, muets, décors, croisements), une à deux secondes sur un gros projet.
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
+  const signature = useMemo(() => statsSignature(nodes), [nodes]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cards = useMemo(() => nodesRef.current.map((n) => n.data), [signature]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const order = useMemo(() => (script ? [] : bookOrder(nodesRef.current, plan)), [script, signature, plan]);
   const characters = useMemo(
     () =>
       script
@@ -56,4 +64,14 @@ export function useProjectStats(part: string | null = null) {
     [script, screenplay, cards, lang, manuscript, order],
   );
   return { script, characters, places, summary, cast };
+}
+
+/** Ce que les statistiques lisent des cartes : une autre valeur ici, et tout est recompté. */
+export function statsSignature(nodes: readonly { data: { id: string; type: string; title: string; page?: string; fiche?: Record<string, string> } }[]): string {
+  return nodes
+    .map(({ data: d }) => {
+      const f = d.fiche ?? {};
+      return [d.id, d.type, d.title, d.page ?? "", f.genre ?? "", f.surnoms ?? "", f.pov ?? "", f.prenom ?? "", f.nom ?? ""].join("\u0001");
+    })
+    .join("\u0002");
 }

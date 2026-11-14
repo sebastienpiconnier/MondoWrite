@@ -3,6 +3,7 @@
 // d'intention. Rien n'est obligatoire : une pastille vide est un simple « + Genre », un texte vide garde
 // son texte indicatif. Le volume vient de l'objectif d'écriture, les thèmes des cartes Thème.
 
+import { BufferedTextarea } from "./BufferedField";
 import { useEffect, useId, useMemo, useRef, useState, type DragEvent } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
@@ -208,13 +209,13 @@ function PitchArea({ field, className, hint, fallback, children }: { field: Pitc
   return (
     <div className={`pitch-field ${className ?? ""}${ia ? " is-ia" : ""}`}>
       <label htmlFor={id}>{labels.fields[field]}</label>
-      <textarea
+      <BufferedTextarea
         id={id}
         rows={1}
         value={value}
         placeholder={labels.placeholders[field]}
         aria-describedby={hint ? `${id}-hint` : undefined}
-        onChange={(e) => setPitch(field, e.target.value)}
+        onCommit={(v) => setPitch(field, v)}
       />
       {hint && (
         <p className="pitch-hint" id={`${id}-hint`}>
@@ -366,13 +367,13 @@ export function ProjectCover({ onOpenTheme, onAddTheme }: { onOpenTheme: (id: st
         <label className="sr-only" htmlFor={tagId}>
           {p.fields.tagline}
         </label>
-        <textarea
+        <BufferedTextarea
           id={tagId}
           className="cover-tagline"
           rows={1}
           value={pitch.tagline ?? ""}
           placeholder={p.placeholders.tagline}
-          onChange={(e) => useCosmos.getState().setPitch("tagline", e.target.value)}
+          onCommit={(v) => useCosmos.getState().setPitch("tagline", v)}
         />
         {pitchIaKeys(pitch).includes("tagline") && <IaFieldNote onCover onRework={() => useCosmos.getState().reworkIaPitch("tagline")} />}
         {author.trim() && <div className="cover-author">{fmt(p.byAuthor, { author: author.trim() })}</div>}

@@ -5,6 +5,7 @@
 // Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; les autres attendent
 // derrière « Ajouter si utile », une pastille par champ (Bible v2), ou tous d'un coup par « Afficher les champs vides ». Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
+import { BufferedInput, BufferedTextarea } from "./BufferedField";
 import { IaFieldNote } from "./Atelier";
 import { useEffect, useId, useState } from "react";
 import { useCosmos } from "../store";
@@ -60,6 +61,11 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
         setFiche(card.id, key, e.target.value);
       },
     };
+    // Champs de texte : la frappe reste dans le champ et part au store après une pause (BufferedField).
+    const markTouched = () => {
+      if (!touched.has(key)) setTouched(new Set(touched).add(key));
+    };
+    const commit = (value: string) => setFiche(card.id, key, value);
     return (
       <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) || isChoiceField(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}${card.ia?.includes(key) ? " is-ia" : ""}`}>
         <label htmlFor={props.id}>{labels[key]}</label>
@@ -83,9 +89,9 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
             ))}
           </select>
         ) : SHORT_FIELDS.has(key) ? (
-          <input type="text" autoComplete="off" {...props} />
+          <BufferedInput type="text" autoComplete="off" id={props.id} placeholder={props.placeholder} value={props.value} onCommit={commit} onChange={markTouched} />
         ) : (
-          <textarea rows={1} {...props} />
+          <BufferedTextarea rows={1} id={props.id} placeholder={props.placeholder} value={props.value} onCommit={commit} onChange={markTouched} />
         )}
         {/* Mode Atelier : valeur proposée par l'IA et acceptée, jusqu'à ce que l'auteur y touche. */}
         {card.ia?.includes(key) && <IaFieldNote onRework={() => useCosmos.getState().reworkIaField(card.id, key)} />}
