@@ -1423,7 +1423,7 @@ export const es = {
       full: "Cubierta completa: {w} × {h} in ({wmm} × {hmm} mm), sangrado incluido",
       trim: "Formato: {w} × {h} in, {pages} páginas, {paper}",
       spineSize: "Lomo: {s} in ({smm} mm)",
-      noSpineText: "menos de 79 páginas, sin texto en el lomo",
+      noSpineText: "menos de 80 páginas, sin texto en el lomo",
       legend: "Rosa: sangrado, se recorta. Línea roja: corte. Punteado: mantener el texto dentro.",
       howTo: "Usa esta página como capa guía y ocúltala antes de exportar tu cubierta: un solo PDF, a 300 ppp como mínimo.",
       paper: {

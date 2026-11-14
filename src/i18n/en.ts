@@ -1293,7 +1293,7 @@ export const en: Messages = {
       full: "Full cover: {w} × {h} in ({wmm} × {hmm} mm), bleed included",
       trim: "Trim: {w} × {h} in, {pages} pages, {paper}",
       spineSize: "Spine: {s} in ({smm} mm)",
-      noSpineText: "under 79 pages, no text on the spine",
+      noSpineText: "under 80 pages, no text on the spine",
       legend: "Pink: bleed, trimmed off. Red line: trim. Dashed: keep text inside.",
       howTo: "Use this page as a guide layer and hide it before you export your cover: one PDF, at least 300 DPI.",
       paper: { white: "white paper", cream: "cream paper", groundwood: "groundwood paper" },

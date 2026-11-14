@@ -1250,7 +1250,7 @@ export const fr = {
       full: "Couverture entière : {w} × {h} in ({wmm} × {hmm} mm), fond perdu compris",
       trim: "Format : {w} × {h} in, {pages} pages, {paper}",
       spineSize: "Dos : {s} in ({smm} mm)",
-      noSpineText: "moins de 79 pages, pas de texte sur le dos",
+      noSpineText: "moins de 80 pages, pas de texte sur le dos",
       legend: "Rose : fond perdu, coupé au massicot. Trait rouge : coupe. Pointillés : garder le texte à l’intérieur.",
       howTo: "Sers-toi de cette page comme calque guide, puis masque-la avant d’exporter ta couverture : un seul PDF, 300 DPI au moins.",
       paper: { white: "papier blanc", cream: "papier crème", groundwood: "papier journal" },

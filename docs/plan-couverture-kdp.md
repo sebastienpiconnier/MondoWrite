@@ -1,6 +1,6 @@
 # Couverture complète pour le livre broché (KDP)
 
-> **Statut : étude de faisabilité (novembre 2026), rien n'est commencé.** Les deux premières demandes de la même série sont faites dans la fenêtre « Générer la couverture » : nom de l'auteur sur l'image, style de l'image avec un conseil selon le genre, place laissée au texte.
+> **Statut : étude faite, décisions de l'auteur prises (14 novembre 2026), lot 1 pas commencé.** Les deux premières demandes de la même série sont faites dans la fenêtre « Générer la couverture » : nom de l'auteur sur l'image, style de l'image avec un conseil selon le genre, place laissée au texte.
 
 Question de l'auteur : MondoWrite peut-il fabriquer la couverture entière d'un livre broché pour Amazon KDP (premier plat, dos, quatrième de couverture), au bon gabarit, à partir de la couverture générée ?
 
@@ -21,7 +21,7 @@ Oui, sans dépendance nouvelle, **à condition que l'app compose la couverture**
 
 - Un seul PDF d'une page : quatrième, dos et premier plat, fond perdu de 0,125 in sur les bords extérieurs.
 - Images à 300 DPI au moins.
-- Texte sur le dos seulement au-delà de 79 pages, à 0,0625 in au moins de chaque bord du dos. L'aide de KDP dit tantôt « plus de 79 », tantôt « au moins 79 », et Cover Creator demande 80 : `SPINE_TEXT_PAGES` vaut 79 ; passer à 80 serait plus prudent.
+- Texte sur le dos seulement au-delà de 79 pages, à 0,0625 in au moins de chaque bord du dos. L'aide de KDP dit tantôt « plus de 79 », tantôt « au moins 79 », et son outil de couverture demande 80 : `SPINE_TEXT_PAGES` vaut 80 depuis le 14 novembre 2026 (gabarit et guide suivent).
 - Titre présent sur le premier plat ; polices incorporées ; ni repères de coupe, ni annotations, ni texte provisoire.
 - Code-barres : si l'auteur n'en fournit pas, KDP l'imprime dans la zone prévue. Il suffit de la laisser claire et vide.
 
@@ -83,9 +83,10 @@ Le premier plat seul, en JPEG de 1 600 × 2 560 px, pour l'ebook : presque gratu
 - Réglages de la couverture (cadrage, place du titre, police, couleur du dos, fond de la quatrième) : un bloc à part dans cosmos.json (`coverDesign`, dans `KNOWN_META`), pas dans `print`, que `cleanPrint` d'une version d'avant viderait.
 - L'image reste dans `medias/` ; rien n'est réécrit quand on ne fait qu'exporter.
 
-## Questions pour l'auteur
+## Décisions de l'auteur (14 novembre 2026)
 
-1. Un champ « Quatrième de couverture » à part, ou le résumé de la Bible suffit-il ?
-2. Une photo de l'auteur au dos ?
-3. Agrandissement des images : à faire (et par quel moyen), ou seulement prévenir ?
-4. Le texte du dos à partir de 80 pages plutôt que 79, par prudence ?
+1. **Quatrième de couverture** : un champ à part, `pitch.quatrieme` (conseil retenu, à confirmer). Le résumé de la Bible raconte toute l'histoire, fin comprise, pour un éditeur ou un producteur ; la quatrième donne envie sans rien dévoiler et tient en 150 à 200 mots. Le champ vide montre en filigrane le début du résumé, jamais recopié ; en mode Atelier, « Proposer une quatrième » comme le brouillon de la couverture (marqué et journalisé).
+2. **Pas de photo de l'auteur** au dos.
+3. **Agrandir les images** trop petites : oui. Moyen proposé (à confirmer) : agrandisseur sur l'appareil, Real-ESRGAN (licence BSD 3 clauses) par onnxruntime-web (MIT), modèle téléchargé à la demande depuis mondowrite.app avec son empreinte SHA-256, comme les synonymes, jamais dans l'installeur ; agrandissement ×2 par tuiles (1024 × 1536 donne 2048 × 3072, assez pour tous les formats proposés). Taille du modèle et durée sur iPad à mesurer avant de s'engager. Pas de service en ligne : il faudrait une clé de plus.
+4. **Texte du dos à partir de 80 pages** : fait (`SPINE_TEXT_PAGES`).
+5. **Nom sur la couverture** : le nom de plume s'il est rempli, sinon prénom et nom (`authorName` du profil, déjà la règle de `settings.author`).
