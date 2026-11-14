@@ -62,6 +62,7 @@ Pistes, de la plus simple à la plus lourde :
 - [x] Aperçu du vrai PDF, enregistrement, guide (fr, en, es), test de bout en bout
 - [x] Lot 2 : six jeux de polices (`coverFonts.ts`), « auto » selon le genre (`GENRE_FONTS`), repli sur la classique si une lettre manque
 - [x] Lot 4 : agrandisseur ×2 sur l'appareil (`upscaler.ts`, `upscaleWorker.ts`, `scripts/upscaler/`), essayé dans Chromium (WebAssembly : 400 × 600 en 37 s sur 2 cœurs) ; reste à publier `dist-upscaler/` sur mondowrite.app et à mesurer sur Mac, iPad et Windows
+- [x] Génération « Pour l'impression » (14 novembre 2026, demande de l'auteur) : la couverture générée à la taille du livre broché à 300 DPI (`printCoverSize`, OpenAI GPT Image 2 et suivants : `canSizeFreely`), repli en 1024 × 1536 si le service refuse ; « Pour le web » reste le défaut, l'agrandisseur aussi
 - [ ] Pas encore : position du titre réglable au millimètre, couverture Kindle
 
 Un bouton de plus, à côté de « Gabarit de couverture » : un PDF prêt à déposer sur KDP.

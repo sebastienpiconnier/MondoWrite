@@ -361,6 +361,40 @@ export function coverGenre(...texts: (string | undefined)[]): CoverGenre | null 
 /** Style réellement demandé : « auto » prend le premier style conseillé pour le genre, sinon aucun. */
 export const resolveStyle = (style: CoverStyle, genre: CoverGenre | null): ImageStyle | undefined => (style !== "auto" ? style : genre ? GENRE_STYLES[genre][0] : undefined);
 
+// ---------- Couverture pour l'impression ----------
+
+/** Résolution visée pour une couverture imprimée (celle que demande KDP). */
+export const PRINT_COVER_DPI = 300;
+/** Limites des tailles sur mesure des modèles GPT Image 2 et suivants : plus grand côté et nombre de pixels. */
+const MAX_EDGE = 3840;
+const MAX_PIXELS = 8_294_400;
+/** Fond perdu de KDP (pouces) : un côté pour la largeur du premier plat, haut et bas pour sa hauteur. */
+const BLEED = 0.125;
+
+/**
+ * Taille d'une couverture « pour l'impression » : le premier plat et son fond perdu au format du livre, à 300 DPI,
+ * en multiples de 16 ; au-delà des limites du service, la plus grande taille permise aux mêmes proportions
+ * (la résolution réelle est rendue dans `dpi`).
+ */
+export function printCoverSize(trim: { width: number; height: number }): { width: number; height: number; dpi: number } {
+  const inW = trim.width + BLEED;
+  const inH = trim.height + 2 * BLEED;
+  const w = inW * PRINT_COVER_DPI;
+  const h = inH * PRINT_COVER_DPI;
+  const scale = Math.min(1, MAX_EDGE / Math.max(w, h), Math.sqrt(MAX_PIXELS / (w * h)));
+  const round = (v: number) => (scale < 1 ? Math.floor(v / 16) : Math.ceil(v / 16)) * 16;
+  const width = round(w * scale);
+  const height = round(h * scale);
+  return { width, height, dpi: Math.floor(Math.min(width / inW, height / inH)) };
+}
+
+/** Le service accepte une taille sur mesure : OpenAI avec un modèle GPT Image 2 ou suivant (pas dall-e, ni gpt-image-1). */
+export function canSizeFreely(provider: string, model: string): boolean {
+  if (provider !== "openai") return false;
+  const m = /^gpt-image-(\d+)/i.exec(model.trim());
+  return !!m && Number(m[1]) >= 2;
+}
+
 // ---------- Requête ----------
 
 /** Taille demandée selon le sujet : portrait en hauteur, lieu et ambiance en largeur, objet carré. */
@@ -393,7 +427,7 @@ const toBase64 = (bytes: Uint8Array) => {
  * personnage). OpenRouter : chat avec `modalities: ["image", "text"]`, les images en data URL ; une réponse par
  * image demandée (`count` requêtes). Les anciens modèles dall-e n'en acceptent pas : demande ordinaire.
  */
-export function referenceRequest(config: AiConfig, model: string, prompt: string, count: number, subject: ImageSubject, refs: readonly ReferenceImage[]): HttpRequest | FormRequest {
+export function referenceRequest(config: AiConfig, model: string, prompt: string, count: number, subject: ImageSubject, refs: readonly ReferenceImage[], size?: string): HttpRequest | FormRequest {
   const images = refs.slice(0, REFERENCE_MAX);
   if (config.provider === "openrouter") {
     const content = [{ type: "text", text: prompt }, ...images.map((r) => ({ type: "image_url", image_url: { url: `data:${r.mime};base64,${toBase64(r.data)}` } }))];
@@ -408,7 +442,7 @@ export function referenceRequest(config: AiConfig, model: string, prompt: string
   form.append("model", model);
   form.append("prompt", prompt);
   form.append("n", String(clampCount(count)));
-  form.append("size", SHAPES[subject].size);
+  form.append("size", size ?? SHAPES[subject].size);
   images.forEach((r, i) => form.append("image[]", new Blob([r.data as BlobPart], { type: r.mime }), `reference-${i + 1}.${IMAGE_EXT[r.mime]}`));
   // Le navigateur pose lui-même le type multipart et sa frontière : jamais de content-type JSON ici.
   const { "content-type": _json, ...rest } = headers(config);
@@ -435,7 +469,8 @@ export function readChatImages(json: unknown, max = IMAGE_MAX): GeneratedImage[]
   return out;
 }
 
-export function imageRequest(config: AiConfig, model: string, prompt: string, count: number, subject: ImageSubject): HttpRequest {
+/** `size` : taille sur mesure (« 1840x2784 »), seulement pour un modèle qui l'accepte (`canSizeFreely`). */
+export function imageRequest(config: AiConfig, model: string, prompt: string, count: number, subject: ImageSubject, size?: string): HttpRequest {
   const n = clampCount(count);
   if (config.provider === "openrouter") {
     return { url: `${base(config)}/v1/images`, method: "POST", headers: headers(config), body: JSON.stringify({ model, prompt, n, aspect_ratio: SHAPES[subject].ratio }) };
@@ -445,7 +480,7 @@ export function imageRequest(config: AiConfig, model: string, prompt: string, co
   const dalle = /^dall-e/i.test(model);
   const body = dalle
     ? { model, prompt, n: /^dall-e-3/i.test(model) ? 1 : n, size: "1024x1024", response_format: "b64_json" }
-    : { model, prompt, n, size: SHAPES[subject].size };
+    : { model, prompt, n, size: size ?? SHAPES[subject].size };
   return { url: `${base(config)}/v1/images/generations`, method: "POST", headers: headers(config), body: JSON.stringify(body) };
 }
 
@@ -535,6 +570,7 @@ export async function generateImages(
   subject: ImageSubject,
   signal?: AbortSignal,
   refs: readonly ReferenceImage[] = [],
+  size?: string,
 ): Promise<GeneratedImage[]> {
   const { AiError } = await import("./providers");
   const withRefs = refs.length > 0 && !/^dall-e/i.test(model);
@@ -545,7 +581,8 @@ export async function generateImages(
     if (images.length === 0) throw new AiError("empty");
     return images;
   }
-  const request = withRefs ? referenceRequest(config, model, prompt, count, subject, refs) : imageRequest(config, model, prompt, count, subject);
+  const custom = size && canSizeFreely(config.provider, model) ? size : undefined;
+  const request = withRefs ? referenceRequest(config, model, prompt, count, subject, refs, custom) : imageRequest(config, model, prompt, count, subject, custom);
   const items = readImages(await send(request, false, signal, IMAGE_TIMEOUT_MS), clampCount(count));
   const images: GeneratedImage[] = [];
   for (const item of items) {
