@@ -100,11 +100,11 @@ Toutes les captures viennent du projet d'exemple, « Le Petit Chaperon rouge » 
 
 ## 🧱 Prêts à écrire votre prochain monde ?
 
-[Téléchargez MondoWrite](https://mondowrite.app) gratuitement pour macOS, Windows ou Linux, ou essayez-le sur iPhone et iPad ([bêta TestFlight](https://testflight.apple.com/join/thVwR1Ag), en attendant l'App Store). Auteurs testeurs bienvenus : vos retours façonnent MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
+[Téléchargez MondoWrite](https://mondowrite.app) gratuitement pour macOS, Windows ou Linux, et sur l'[App Store](https://apps.apple.com/fr/app/mondowrite/id6825299934) pour iPhone et iPad. Auteurs testeurs bienvenus : vos retours façonnent MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
 
 ## Télécharger
 
-Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases). Sur iPhone et iPad, l'app arrive sur l'App Store ; en attendant, [rejoignez la bêta TestFlight](https://testflight.apple.com/join/thVwR1Ag).
+Les installeurs pour macOS (Apple Silicon et Intel), Windows et Linux sont disponibles dans les [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases). Sur iPhone et iPad, MondoWrite est sur l'[App Store](https://apps.apple.com/fr/app/mondowrite/id6825299934) ; la [bêta TestFlight](https://testflight.apple.com/join/thVwR1Ag) reste ouverte pour essayer les versions en avance.
 
 > **Premier lancement.** Sur macOS, l'app est signée et vérifiée par Apple : elle s'ouvre normalement. Sur Windows, si SmartScreen s'affiche, cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
 
@@ -344,7 +344,7 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 
 | Étape | Contenu |
 |---|---|
-| Mobile | iPad et iPhone sur l'App Store, puis Android |
+| Mobile | Android |
 | Synchronisation | Au-delà d'iCloud, puis collaboration |
 
 ## Plateformes
@@ -352,7 +352,7 @@ Gardienne remplaçante. Ne supporte pas le **silence**.
 | Système | État |
 |---|---|
 | macOS (Apple Silicon et Intel), Windows, Linux | Prêt : installeurs fabriqués par GitHub Actions |
-| iPadOS, iOS | En test ([TestFlight](https://testflight.apple.com/join/thVwR1Ag)), bientôt sur l'App Store ; même app sur iPhone et iPad, canevas compris ; projets partagés avec le Mac par iCloud |
+| iPadOS, iOS | Sur l'[App Store](https://apps.apple.com/fr/app/mondowrite/id6825299934) (versions en avance sur [TestFlight](https://testflight.apple.com/join/thVwR1Ag)) ; même app sur iPhone et iPad, canevas compris ; projets partagés avec le Mac par iCloud |
 | Android | Code prêt (tactile, stockage), pas encore publié |
 | Navigateur | Pour le développement uniquement (stockage dans le navigateur) |
 

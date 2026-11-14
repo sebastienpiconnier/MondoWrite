@@ -100,11 +100,11 @@ All screenshots come from the sample project, Perrault’s “Little Red Riding 
 
 ## 🧱 Ready to write your next world?
 
-[Download MondoWrite](https://mondowrite.app) for free on macOS, Windows or Linux, or try it on iPhone and iPad ([TestFlight beta](https://testflight.apple.com/join/thVwR1Ag), until the App Store release). Writers wanted as testers: your feedback shapes MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
+[Download MondoWrite](https://mondowrite.app) for free on macOS, Windows or Linux, and on the [App Store](https://apps.apple.com/us/app/mondowrite/id6825299934) for iPhone and iPad. Writers wanted as testers: your feedback shapes MondoWrite ([contact@mondowrite.app](mailto:contact@mondowrite.app)).
 
 ## Download
 
-Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases). On iPhone and iPad, the app is coming to the App Store; meanwhile, [join the TestFlight beta](https://testflight.apple.com/join/thVwR1Ag).
+Installers for macOS (Apple Silicon and Intel), Windows and Linux are available in the [Releases](https://github.com/sebastienpiconnier/MondoWrite/releases). On iPhone and iPad, MondoWrite is on the [App Store](https://apps.apple.com/us/app/mondowrite/id6825299934); the [TestFlight beta](https://testflight.apple.com/join/thVwR1Ag) stays open to try early versions.
 
 > **First launch.** On macOS, the app is signed and verified by Apple: it opens normally. On Windows, if SmartScreen appears, click “More info”, then “Run anyway”.
 
@@ -345,7 +345,7 @@ Stand-in keeper. Can’t stand **silence**.
 
 | Step | Content |
 |---|---|
-| Mobile | iPad and iPhone on the App Store, then Android |
+| Mobile | Android |
 | Sync | Beyond iCloud, then collaboration |
 
 ## Platforms
@@ -353,7 +353,7 @@ Stand-in keeper. Can’t stand **silence**.
 | System | Status |
 |---|---|
 | macOS (Apple Silicon and Intel), Windows, Linux | Ready: installers built by GitHub Actions |
-| iPadOS, iOS | In testing ([TestFlight](https://testflight.apple.com/join/thVwR1Ag)), coming soon to the App Store; the same app on iPhone and iPad, canvas included; projects shared with the Mac through iCloud |
+| iPadOS, iOS | On the [App Store](https://apps.apple.com/us/app/mondowrite/id6825299934) (early versions on [TestFlight](https://testflight.apple.com/join/thVwR1Ag)); the same app on iPhone and iPad, canvas included; projects shared with the Mac through iCloud |
 | Android | Code is ready (touch, storage), not yet released |
 | Browser | For development only (storage in the browser) |
 
