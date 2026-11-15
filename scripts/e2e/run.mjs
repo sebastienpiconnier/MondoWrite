@@ -314,7 +314,7 @@ const scenarios = [
     },
   },
   {
-    name: "suivre les fils (#81) : fils masqués, « Relié à » estompe ce qui n'est pas relié, Échap le fait revenir",
+    name: "suivre les fils (#81) : fils masqués, « Relié à » estompe ce qui n'est pas relié, « Tout revoir » le fait revenir",
     async run(h) {
       const { page } = h;
       await h.example();
@@ -327,11 +327,9 @@ const scenarios = [
       await until(async () => (await page.locator(".react-flow__node.is-faded").count()) > 0, "rien n'est estompé après « Relié à »");
       const faded = await page.locator(".react-flow__node.is-faded").evaluateAll((els) => els.map((e) => e.dataset.id));
       assert(!faded.includes(id), "la carte suivie est estompée");
-      await until(async () => Number(await page.locator(".react-flow__node.is-faded").first().evaluate((el) => getComputedStyle(el).opacity)) < 0.5, "carte estompée trop visible");
-      await h.pane();
-      await page.keyboard.press("Escape");
-      await page.keyboard.press("Escape");
-      await until(async () => (await page.locator(".react-flow__node.is-faded").count()) === 0, "Échap ne fait pas revenir les cartes estompées");
+      await until(async () => Number(await page.locator(".react-flow__node.is-faded").first().evaluate((el) => getComputedStyle(el).opacity)) < 0.6, "carte estompée trop visible");
+      await page.locator(".follow-banner").getByRole("button", { name: "Tout revoir" }).click();
+      await until(async () => (await page.locator(".react-flow__node.is-faded").count()) === 0, "« Tout revoir » ne fait pas revenir les cartes estompées");
     },
   },
   {

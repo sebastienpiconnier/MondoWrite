@@ -258,7 +258,7 @@
 .react-flow__node.is-spotlit .card { box-shadow: var(--shadow-pop), 0 0 0 4px var(--accent); }
 /* Suivre les fils (#81, fils masqués et « Relié à » touché) : ce qui n'est pas relié s'estompe, sans disparaître.
    Une carte choisie (clic, toucher, en écriture) redevient nette. */
-.react-flow__node.is-faded:not(.selected):not(:focus-within) { opacity: 0.25; }
+.react-flow__node.is-faded:not(.selected):not(:focus-within) { opacity: 0.5; }
 .toile-hint.is-spotlight { color: var(--accent-ink); }
 @media (prefers-reduced-motion: reduce) {
   .toile .react-flow__node, .toile .react-flow__edge, .toile .react-flow__edgelabel-renderer > * { transition: none; }
@@ -478,7 +478,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Téléphone : pas de bandeau « Filtre actif », il couvrait le menu des filtres ; le bouton du filtre, plein,
    dit qu'un filtre est posé. */
 @media (max-width: 720px) {
-  .filter-banner { display: none; }
+  .filter-banner:not(.follow-banner) { display: none; }
 }
 /* Bouton du filtre quand un filtre est posé : entonnoir plein. */
 .canvas-filter > .is-on svg { fill: currentColor; }

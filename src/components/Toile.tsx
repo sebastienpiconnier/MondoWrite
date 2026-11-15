@@ -885,6 +885,15 @@ export function Toile() {
           </button>
         </div>
       )}
+      {/* Suivre les fils (#81) : ce qui est estompé, et le chemin pour tout revoir (souris, doigt, clavier). */}
+      {lit && (
+        <div className="filter-banner follow-banner" role="status">
+          <span>{wiresShown.length === 1 ? t.toile.followOne : fmt(t.toile.followMany, { n: wiresShown.length })}</span>
+          <button type="button" className="ghost-button" onClick={() => useCosmos.getState().clearCardWires()}>
+            {t.toile.followClear}
+          </button>
+        </div>
+      )}
       {spotlightId && <div className="toile-hint is-spotlight">{t.spotlight.hint}</div>}
       {/* Plusieurs cartes choisies : ce qu'on peut en faire d'un coup, aussi au doigt (pas de clavier). */}
       {selectedCards + selectedFrames > 1 && (
