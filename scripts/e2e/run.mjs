@@ -314,6 +314,27 @@ const scenarios = [
     },
   },
   {
+    name: "suivre les fils (#81) : fils masqués, « Relié à » estompe ce qui n'est pas relié, Échap le fait revenir",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await until(async () => (await h.cards().count()) >= 21, "moins de 21 cartes dans le projet d'exemple");
+      await page.getByRole("button", { name: "Masquer les fils", exact: true }).click();
+      assert((await page.locator(".react-flow__node.is-faded").count()) === 0, "des cartes sont estompées sans fil suivi");
+      const card = page.locator(".react-flow__node-card").filter({ has: page.locator("button.card-links-toggle") }).first();
+      const id = await card.getAttribute("data-id");
+      await card.locator("button.card-links-toggle").click();
+      await until(async () => (await page.locator(".react-flow__node.is-faded").count()) > 0, "rien n'est estompé après « Relié à »");
+      const faded = await page.locator(".react-flow__node.is-faded").evaluateAll((els) => els.map((e) => e.dataset.id));
+      assert(!faded.includes(id), "la carte suivie est estompée");
+      await until(async () => Number(await page.locator(".react-flow__node.is-faded").first().evaluate((el) => getComputedStyle(el).opacity)) < 0.5, "carte estompée trop visible");
+      await h.pane();
+      await page.keyboard.press("Escape");
+      await page.keyboard.press("Escape");
+      await until(async () => (await page.locator(".react-flow__node.is-faded").count()) === 0, "Échap ne fait pas revenir les cartes estompées");
+    },
+  },
+  {
     name: "roman en gabarit libre : la fenêtre n'est pas vide après rechargement",
     async run(h) {
       const { page } = h;

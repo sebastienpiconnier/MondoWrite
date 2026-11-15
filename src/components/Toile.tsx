@@ -27,7 +27,7 @@ import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FrameLabels } from "./FrameLabels";
 import { FloatingEdge } from "./FloatingEdge";
-import { wireShown } from "../cardLinks";
+import { litCards, wireShown } from "../cardLinks";
 import { NewCardMenu } from "./NewCardMenu";
 import type { CardData, CardType } from "../types";
 import { fmt, useT } from "../i18n";
@@ -158,22 +158,26 @@ export function Toile() {
     () => (hiddenFrameIds.size === 0 ? frames : frames.map((f) => (hiddenFrameIds.has(f.id) ? { ...f, hidden: true } : f))),
     [frames, hiddenFrameIds],
   );
+  // Fils masqués (réglage du projet) : seuls restent ceux des cartes dont on a rallumé les fils.
+  const hideWires = useCosmos((s) => s.hideWires);
+  const wiresShown = useCosmos((s) => s.wiresShown);
+  // Suivre les fils (#81) : les cartes ni rallumées ni voisines d'une carte rallumée sont estompées.
+  const lit = useMemo(() => litCards(hideWires, wiresShown, edges), [hideWires, wiresShown, edges]);
   const allNodes = useMemo(() => {
     const held = heldCardIds(nodes, frames);
-    if (held.size === 0 && hidden.size === 0 && !spotlightId) return [...shownFrames, ...nodes];
+    if (held.size === 0 && hidden.size === 0 && !spotlightId && !lit) return [...shownFrames, ...nodes];
     return [
       ...shownFrames,
       ...nodes.map((n) => {
         const lock = held.has(n.id);
         const off = hidden.has(n.id);
-        const lit = n.id === spotlightId;
-        return lock || off || lit ? { ...n, ...(lock ? { draggable: false } : {}), ...(off ? { hidden: true } : {}), ...(lit ? { className: "is-spotlit" } : {}) } : n;
+        const spot = n.id === spotlightId;
+        const faded = !!lit && !lit.has(n.id) && !spot;
+        const className = spot ? "is-spotlit" : faded ? "is-faded" : undefined;
+        return lock || off || className ? { ...n, ...(lock ? { draggable: false } : {}), ...(off ? { hidden: true } : {}), ...(className ? { className } : {}) } : n;
       }),
     ];
-  }, [frames, shownFrames, nodes, hidden, spotlightId]);
-  // Fils masqués (réglage du projet) : seuls restent ceux des cartes dont on a rallumé les fils.
-  const hideWires = useCosmos((s) => s.hideWires);
-  const wiresShown = useCosmos((s) => s.wiresShown);
+  }, [frames, shownFrames, nodes, hidden, spotlightId, lit]);
   const shownEdges = useMemo(() => {
     if (hidden.size === 0 && !hideWires) return edges;
     const lit = new Set(wiresShown);
@@ -391,10 +395,13 @@ export function Toile() {
         return;
       }
       if (e.key === "Escape" && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        const { nodes: all, frames: boxesNow, clearSelection, spotlightId: lit, setSpotlight, cardMenu, setCardMenu } = useCosmos.getState();
+        const { nodes: all, frames: boxesNow, clearSelection, spotlightId: lit, setSpotlight, cardMenu, setCardMenu, wiresShown: following, clearCardWires } = useCosmos.getState();
+        const chosen = all.some((n) => n.selected) || boxesNow.some((b) => b.selected);
+        // Rien d'autre à fermer : Échap ne suit plus aucun fil (les cartes estompées reviennent, #81).
+        if (!cardMenu && !lit && !chosen && following.length > 0) clearCardWires();
         if (cardMenu) setCardMenu(null);
         if (lit) setSpotlight(null);
-        if (all.some((n) => n.selected) || boxesNow.some((b) => b.selected)) clearSelection();
+        if (chosen) clearSelection();
         setSelecting(false);
         return;
       }

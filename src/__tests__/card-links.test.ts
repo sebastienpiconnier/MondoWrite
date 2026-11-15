@@ -1,7 +1,7 @@
 // Liaisons écrites sur les cartes, et fils dessinés quand ils sont masqués.
 
 import { describe, expect, it } from "vitest";
-import { fromLinkedKey, linkedCards, linkedKey, wireShown } from "../cardLinks";
+import { fromLinkedKey, linkedCards, linkedKey, litCards, wireShown } from "../cardLinks";
 import { KNOWN_META, openProject, toProject } from "../projectState";
 
 const cards = [
@@ -57,5 +57,24 @@ describe("réglage enregistré", () => {
     expect(on.meta.hideWires).toBe(true);
     expect(openProject(on).state.hideWires).toBe(true);
     expect(KNOWN_META.has("hideWires")).toBe(true);
+  });
+});
+
+describe("suivre les fils : cartes nettes (#81)", () => {
+  const edges = [
+    { source: "a", target: "b" },
+    { source: "c", target: "a" },
+    { source: "b", target: "d" },
+    { source: "e", target: "f" },
+  ];
+  it("rien d'estompé tant que les fils sont visibles ou qu'aucune carte n'a ses fils rallumés", () => {
+    expect(litCards(false, ["a"], edges)).toBeNull();
+    expect(litCards(true, [], edges)).toBeNull();
+  });
+  it("la carte rallumée et ses voisines dans les deux sens, pas les voisines des voisines", () => {
+    expect([...(litCards(true, ["a"], edges) ?? [])].sort()).toEqual(["a", "b", "c"]);
+  });
+  it("au fur et à mesure : chaque carte rallumée ajoute ses voisines", () => {
+    expect([...(litCards(true, ["a", "b"], edges) ?? [])].sort()).toEqual(["a", "b", "c", "d"]);
   });
 });
