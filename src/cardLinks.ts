@@ -67,3 +67,18 @@ export function fromLinkedKey(key: string): LinkedCard[] {
 export function wireShown(edge: EdgeLike, hideWires: boolean, shownFor: ReadonlySet<string>): boolean {
   return !hideWires || shownFor.has(edge.source) || shownFor.has(edge.target);
 }
+
+/**
+ * Cartes qui restent nettes quand on suit les fils (#81) : fils masqués et au moins une carte aux fils rallumés,
+ * ce sont ces cartes et leurs voisines par un fil ; les autres sont estompées. `null` : rien n'est estompé.
+ */
+export function litCards(hideWires: boolean, shownFor: readonly string[], edges: readonly EdgeLike[]): Set<string> | null {
+  if (!hideWires || shownFor.length === 0) return null;
+  const shown = new Set(shownFor);
+  const lit = new Set(shownFor);
+  for (const e of edges) {
+    if (shown.has(e.source)) lit.add(e.target);
+    if (shown.has(e.target)) lit.add(e.source);
+  }
+  return lit;
+}

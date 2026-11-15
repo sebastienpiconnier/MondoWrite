@@ -435,6 +435,8 @@ export interface CosmosState {
   /** Fils masqués : cartes dont on a rallumé les fils (affichage, jamais enregistré). */
   wiresShown: string[];
   toggleCardWires: (id: string) => void;
+  /** Ne plus suivre aucun fil (Échap sur le canevas) : les cartes estompées reviennent (#81). */
+  clearCardWires: () => void;
   // ---------- Mode Atelier (1.8.0) : l'IA propose du texte, marqué et journalisé (voir atelier.ts) ----------
   /** Mode de l'IA du projet : réglage enregistré dans cosmos.json (`aiMode`), hors historique. */
   aiMode: AiMode;
@@ -2688,6 +2690,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
     toggleCardWires: (id) => {
       const shown = get().wiresShown;
       set({ wiresShown: shown.includes(id) ? shown.filter((x) => x !== id) : [...shown, id] });
+    },
+    clearCardWires: () => {
+      if (get().wiresShown.length > 0) set({ wiresShown: [] });
     },
     markdownCopies: true,
     setMarkdownCopies: (markdownCopies) => {

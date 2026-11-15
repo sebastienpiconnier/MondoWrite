@@ -256,6 +256,9 @@
 .toile.has-spotlight .react-flow__edge,
 .toile.has-spotlight .react-flow__edgelabel-renderer > * { opacity: 0.2; }
 .react-flow__node.is-spotlit .card { box-shadow: var(--shadow-pop), 0 0 0 4px var(--accent); }
+/* Suivre les fils (#81, fils masqués et « Relié à » touché) : ce qui n'est pas relié s'estompe, sans disparaître.
+   Une carte choisie (clic, toucher, en écriture) redevient nette. */
+.react-flow__node.is-faded:not(.selected):not(:focus-within) { opacity: 0.25; }
 .toile-hint.is-spotlight { color: var(--accent-ink); }
 @media (prefers-reduced-motion: reduce) {
   .toile .react-flow__node, .toile .react-flow__edge, .toile .react-flow__edgelabel-renderer > * { transition: none; }
