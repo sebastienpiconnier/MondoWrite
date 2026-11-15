@@ -24,8 +24,16 @@ export const isAppleKeyboard = () => typeof navigator !== "undefined" && /Mac|iP
 export async function openExternal(url: string): Promise<void> {
   if (!/^https?:\/\//i.test(url)) return;
   if (isTauri()) {
-    const { openUrl } = await import("@tauri-apps/plugin-opener");
-    await openUrl(url);
+    // Commande de l'app (src-tauri/src/lib.rs, open_web_url) : sous Linux, elle nettoie l'environnement de
+    // l'AppImage avant de lancer le navigateur ; ailleurs, elle passe par le plugin opener. Repli : le plugin direct.
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("open_web_url", { url });
+    } catch (err) {
+      console.error(err);
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
+    }
   } else {
     window.open(url, "_blank", "noopener,noreferrer");
   }

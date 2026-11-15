@@ -297,6 +297,68 @@ async fn cloud_restore(app: tauri::AppHandle, bookmark: String) -> Option<CloudF
   }
 }
 
+/// Ouvre une adresse web (http/https) dans le navigateur du système.
+/// Linux : dans une AppImage, l'AppRun ajoute ses bibliothèques et modules (LD_LIBRARY_PATH, GTK, GIO, GStreamer,
+/// XDG_DATA_DIRS…) à l'environnement. xdg-open puis le navigateur en héritent et échouent sans rien dire : le bouton
+/// « Nouveautés » ne faisait rien (Debian 13). On lance donc le xdg-open du système avec un environnement nettoyé,
+/// et le plugin opener reste le chemin des autres systèmes (et le repli si xdg-open manque).
+#[tauri::command]
+async fn open_web_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
+  let lower = url.to_ascii_lowercase();
+  if !(lower.starts_with("https://") || lower.starts_with("http://")) {
+    return Err("adresse refusée".into());
+  }
+  #[cfg(target_os = "linux")]
+  if linux_open::open(&url).is_ok() {
+    return Ok(());
+  }
+  use tauri_plugin_opener::OpenerExt;
+  app.opener().open_url(&url, None::<&str>).map_err(|e| e.to_string())
+}
+
+#[cfg(target_os = "linux")]
+mod linux_open {
+  use std::process::{Command, Stdio};
+
+  /// Variables posées par l'AppRun de l'AppImage (et par ses greffons GTK/GStreamer) : à retirer.
+  const APPIMAGE_VARS: &[&str] = &[
+    "LD_LIBRARY_PATH", "LD_PRELOAD", "GDK_PIXBUF_MODULE_FILE", "GDK_PIXBUF_MODULEDIR", "GDK_BACKEND",
+    "GIO_MODULE_DIR", "GIO_EXTRA_MODULES", "GSETTINGS_SCHEMA_DIR", "GTK_PATH", "GTK_EXE_PREFIX",
+    "GTK_DATA_PREFIX", "GTK_IM_MODULE_FILE", "GTK_THEME", "GST_PLUGIN_PATH", "GST_PLUGIN_PATH_1_0",
+    "GST_PLUGIN_SYSTEM_PATH", "GST_PLUGIN_SYSTEM_PATH_1_0", "GST_PLUGIN_SCANNER", "GST_PLUGIN_SCANNER_1_0",
+    "GST_REGISTRY", "GST_REGISTRY_1_0", "PYTHONHOME", "PYTHONPATH", "PERLLIB", "QT_PLUGIN_PATH",
+    "APPDIR", "APPIMAGE", "ARGV0", "OWD", "APPIMAGE_BUNDLE_XDG_OPEN",
+  ];
+  /// Listes de dossiers où l'AppImage s'est ajoutée : on garde seulement les dossiers du système.
+  const PATH_LISTS: &[&str] = &["PATH", "XDG_DATA_DIRS", "XDG_CONFIG_DIRS"];
+
+  pub fn open(url: &str) -> std::io::Result<()> {
+    let mut cmd = Command::new("xdg-open");
+    cmd.arg(url).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    if let Some(appdir) = std::env::var_os("APPDIR").filter(|_| std::env::var_os("APPIMAGE").is_some()) {
+      let appdir = std::path::PathBuf::from(appdir);
+      for key in PATH_LISTS {
+        if let Some(value) = std::env::var_os(key) {
+          let kept: Vec<_> = std::env::split_paths(&value).filter(|p| !p.starts_with(&appdir)).collect();
+          match std::env::join_paths(kept) {
+            Ok(v) if !v.is_empty() => cmd.env(key, v),
+            _ => cmd.env_remove(key),
+          };
+        }
+      }
+      for key in APPIMAGE_VARS {
+        cmd.env_remove(key);
+      }
+    }
+    let mut child = cmd.spawn()?;
+    // xdg-open rend la main dès le navigateur lancé : on l'attend à part pour ne pas laisser de processus zombie.
+    std::thread::spawn(move || {
+      let _ = child.wait();
+    });
+    Ok(())
+  }
+}
+
 /// Projet Scrivener choisi dans le dialogue (Mac : un paquet .scriv, vu comme un fichier). Le dialogue n'autorise
 /// que le chemin choisi, pas ce qu'il contient : on ouvre la lecture du dossier, seulement pour un vrai dossier .scriv.
 #[tauri::command]
@@ -316,6 +378,7 @@ pub fn run() {
       cloud_pick_folder,
       cloud_restore,
       allow_scriv,
+      open_web_url,
       apple_fm::fm_availability,
       apple_fm::fm_complete,
       apple_fm::fm_cancel,
