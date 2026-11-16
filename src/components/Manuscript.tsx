@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { requestTextImage } from "./sceneImage";
 import { useTouchGestures } from "./useTouchGestures";
 import { panelAfterSwipe } from "../touchGestures";
 import { useStoryFindings } from "./useStoryFindings";
@@ -198,6 +199,11 @@ export function Manuscript() {
   }, [notice]);
   const handlers = useRef<BookHandlers | null>(null);
   const bookApi = useRef<BookApi | null>(null);
+  /** « Insérer une image… » (#84, lot 1) : au curseur du livre. */
+  const insertImage = () => {
+    const ed = bookApi.current?.editor();
+    if (ed) requestTextImage(ed);
+  };
 
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<SideTab>("scene");
@@ -221,6 +227,7 @@ export function Manuscript() {
   useCommand("review", openReview);
   const mergeNextRef = useRef<() => void>(() => {});
   useCommand("merge-next", () => mergeNextRef.current());
+  useCommand("insert-image", () => insertImage());
 
   // Commentaires ancrés (1.13.0) : l'onglet du volet, le surlignage des passages ouverts, le passage choisi.
   const comments = useCosmos((s) => s.comments);
@@ -850,6 +857,7 @@ export function Manuscript() {
                 !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
                 // Fusionner (#23) : la scène suivante du même chapitre rejoint celle-ci ; sa carte part à la corbeille.
                 !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
+                { label: t.textImage.insert, onSelect: () => insertImage() },
                 { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), onSelect: () => useCosmos.getState().openVersions(current, true) },
                 { label: t.versions.listMenu, onSelect: () => useCosmos.getState().openVersions(current) },
                 { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },

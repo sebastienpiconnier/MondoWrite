@@ -79,6 +79,7 @@ async function buildMenu() {
       await item("keep-version"),
       await item("synonyms"),
       await item("comment"),
+      await item("insert-image"),
       await item("merge-next"),
       await item("omit-scene"),
       await item("review"),

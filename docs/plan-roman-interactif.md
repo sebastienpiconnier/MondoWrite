@@ -25,7 +25,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | Lot | Contenu |
 | --- | --- |
 | 0. Isolation | Ce document ; voir ci-dessous |
-| 1. Images (cœur) | `images/`, insertion, texte alternatif, exports |
+| 1. Images (cœur) | `medias/`, insertion, texte alternatif, exports (partie 1 faite) |
 | 2. Carte des choix | Vue dédiée, flèches de choix, scène créée par une flèche, bloc `choix` |
 | 3. Lecture et compilation | Ink (bladeink côté Rust ou inkjs), Mode Lecture, « tester à partir d'ici » |
 | 4. Variables | Objets, clés, mots de passe ; conditions sur les flèches |
@@ -58,3 +58,26 @@ Règle : un roman ou un scénario existant ne voit, ne lit ni ne modifie rien de
 - **Projet ouvert** : Réglages › Ce projet dit « Roman interactif » sous le type (option active seulement).
 - **Pas encore** : crate Rust dédiée (arrive avec la compilation Ink, lot 3), libellé dans la liste des projets
   (la liste ne garde que `kind`).
+
+## Lot 1 · Images dans le texte des scènes (partie 1 faite)
+
+Pour tout roman, interactif ou non. Rien ne change pour un projet sans image.
+
+- **Fichier** : l'image est copiée dans `medias/` sous un nom neuf, comme celles des cartes (jamais supprimée par
+  l'app). Dans `manuscrit/<id>.md` : `![description](../medias/nom.jpg "page")`, lien relatif lisible par tout
+  éditeur Markdown. Le titre Markdown est la place : absent = dans le texte, `page` = seule sur sa page,
+  `chapter` = ouverture de chapitre.
+- **En mémoire** : `<img data-media alt data-place>`, nœud TipTap `sceneImage` (bloc atome, éditeurs `prose`
+  seulement : manuscrit et carte Scène agrandie). `sanitizeHtml` refait une image propre ou la retire
+  (`mediaFromSrc` : seulement un nom de `medias/`, jamais une adresse, un `data:` ou un autre dossier).
+- **Gestes** : coller ou déposer une image dans le texte ; « Insérer une image… » (⋯ du Manuscrit, palette,
+  Édition du Mac) ouvre la fenêtre Photos (appareil ou photo libre, crédit en italique sous l'image). Sous
+  l'image : description, place, « Retirer l'image ». Une image ne se pose jamais avant le repère de la première
+  scène (`insideScene`).
+- **Exports** : Markdown, Word, EPUB (images dans `OEBPS/images/`), page web, PDF du manuscrit par le bloc
+  `image` d'`ExportDoc` ; la description devient le texte alternatif. Une scène faite d'une seule image n'est
+  pas vide (`isBlank`). Sauvegardes : images du manuscrit copiées (`manuscriptImages`).
+- **Versions d'avant** : une version sans ce lot retire l'image d'une scène qu'elle réenregistre (le fichier
+  reste dans `medias/`). Accepté, à dire dans les notes de version.
+- **Partie 2, reste** : livre broché KDP (place, contrôle 300 DPI), vignette de l'image sur la carte Scène,
+  étiquette Ink `# image:` (lot 3), effets de la place dans les exports.

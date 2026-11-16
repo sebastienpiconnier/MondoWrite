@@ -7,7 +7,8 @@ import { plainText } from "./search";
 /** Texte de chaque scène, en HTML (format de travail de l'éditeur), par identifiant de carte. */
 export type Manuscript = Record<string, string>;
 
-export const isBlank = (html: string | undefined) => !html || plainText(html) === "";
+/** Scène sans texte : ni mot, ni image dans le texte (#84, lot 1 : une scène faite d'une seule image reste écrite). */
+export const isBlank = (html: string | undefined) => !html || (plainText(html) === "" && !/<img\b[^>]*\bdata-media=/.test(html));
 
 /** Nombre de mots d'un texte (HTML de l'éditeur). Les apostrophes et traits d'union ne coupent pas un mot. */
 export function countWords(html: string | undefined): number {
