@@ -1,0 +1,232 @@
+// Mode Lecture d'un roman interactif (lot 3, docs/plan-roman-interactif.md) : l'histoire se lit comme la lira le
+// lecteur, choix compris. Le projet est composé en Ink (interactive/ink.ts) puis compilé par inkjs, chargé à la
+// demande. Lecture depuis le début ou « à partir d'ici » (une scène), retour en arrière d'un choix, recommencer, et
+// « Écrire cette scène » ramène au Manuscrit. Rien n'est enregistré : c'est un état d'affichage.
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Story } from "inkjs/engine/Story";
+import { fmt, useT } from "../i18n";
+import { useCosmos } from "../store";
+import { isMediaName } from "../media";
+import { imagesOfTags, inkProblems, projectToInk, sceneOfPath, type InkProblem, type InkSource } from "../interactive/ink";
+import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { useMediaUrl } from "./useMediaUrl";
+import { usePlay } from "../interactive/playState";
+
+interface Passage {
+  /** Ce que le lecteur a choisi pour arriver ici (rien au départ). */
+  chose?: string;
+  lines: { text: string; images: string[] }[];
+}
+
+interface Step {
+  state: string;
+  passages: number;
+}
+
+function PlayImage({ name }: { name: string }) {
+  const url = useMediaUrl(name);
+  return url ? <img className="play-image" src={url} alt="" /> : null;
+}
+
+export function PlayDialog() {
+  const t = useT();
+  const p = t.interactive.play;
+  const from = usePlay((s) => s.from);
+  const title = useCosmos((s) => s.title);
+  const nodes = useCosmos((s) => s.nodes);
+  const plan = useCosmos((s) => s.plan);
+  const manuscript = useCosmos((s) => s.manuscript);
+  const scenes = interactiveScenes(nodes, plan);
+  const titleOf = (id?: string | null) => (id && scenes.find((s) => s.id === id)?.title.trim()) || t.interactive.map.untitled;
+
+  // Le texte est relu à l'ouverture : modifier une scène puis rouvrir la lecture prend la nouvelle version.
+  const source = useMemo<InkSource>(() => projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [story, setStory] = useState<Story | null>(null);
+  const [problems, setProblems] = useState<InkProblem[] | null>(null);
+  const [passages, setPassages] = useState<Passage[]>([]);
+  const [choices, setChoices] = useState<{ text: string; index: number }[]>([]);
+  const [current, setCurrent] = useState<string | null>(null);
+  const history = useRef<Step[]>([]);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  /** Passages de chaque scène (nombre de visites), pour savoir où l'on est même dans une scène sans texte. */
+  const visits = useCallback(
+    (s: Story) => new Map([...source.knots].map(([id, knot]) => [id, s.state.VisitCountAtPathString(knot) ?? 0])),
+    [source],
+  );
+
+  /** Lit tout ce qui vient jusqu'au prochain choix. */
+  const advance = useCallback(
+    (s: Story, chose?: string) => {
+      const before = visits(s);
+      const lines: Passage["lines"] = [];
+      let path: string | null = null;
+      while (s.canContinue) {
+        const text = (s.Continue() ?? "").trim();
+        path = s.state.previousPointer?.path?.toString() ?? s.state.currentPathString ?? path;
+        const images = imagesOfTags(s.currentTags).filter(isMediaName);
+        if (text || images.length) lines.push({ text, images });
+      }
+      setPassages((all) => [...all, { ...(chose !== undefined ? { chose } : {}), lines }]);
+      setChoices(s.currentChoices.map((c) => ({ text: c.text, index: c.index })));
+      // La scène lue en dernier ; à défaut (scène sans texte), celle qu'on vient de visiter.
+      const after = visits(s);
+      const entered = [...after].filter(([id, n]) => n > (before.get(id) ?? 0)).map(([id]) => id);
+      const scene = sceneOfPath(path, source.knots) ?? (entered.length === 1 ? entered[0] : null);
+      if (scene) setCurrent(scene);
+    },
+    [source, visits],
+  );
+
+  const start = useCallback(
+    (s: Story) => {
+      s.ResetState();
+      history.current = [];
+      setPassages([]);
+      setCurrent(from);
+      if (from && source.knots.get(from)) s.ChoosePathString(source.knots.get(from)!);
+      advance(s);
+    },
+    [advance, from, source],
+  );
+
+  // Compilation, une fois par ouverture ; inkjs (et son compilateur) n'est chargé qu'ici.
+  useEffect(() => {
+    let alive = true;
+    void import("inkjs/full").then(({ Compiler }) => {
+      if (!alive) return;
+      const compiler = new Compiler(source.ink);
+      try {
+        const compiled = compiler.Compile();
+        if (!alive) return;
+        setStory(compiled);
+        start(compiled);
+      } catch {
+        if (alive) setProblems(inkProblems(compiler.errors.length ? compiler.errors : [p.failed], source));
+      }
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [passages]);
+
+  const choose = (index: number, text: string) => {
+    if (!story) return;
+    history.current.push({ state: story.state.ToJson(), passages: passages.length });
+    story.ChooseChoiceIndex(index);
+    advance(story, text || t.interactive.map.defaultLabel);
+  };
+  const back = () => {
+    const last = history.current.pop();
+    if (!story || !last) return;
+    story.state.LoadJson(last.state);
+    setPassages((all) => all.slice(0, last.passages));
+    setChoices(story.currentChoices.map((c) => ({ text: c.text, index: c.index })));
+  };
+
+  // 1 à 9 choisissent, comme dans un livre qu'on lit au clavier.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement).closest("input, textarea")) return;
+    const n = Number(e.key);
+    if (n >= 1 && n <= choices.length) {
+      e.preventDefault();
+      choose(choices[n - 1].index, choices[n - 1].text);
+    }
+  };
+
+  const close = () => useCosmos.getState().setDialog(null);
+  const write = (id: string | null) => {
+    close();
+    if (id) useCosmos.getState().openInManuscript(id);
+  };
+  const ended = !!story && choices.length === 0 && !story.canContinue;
+
+  return (
+    <div className="play-panel" onKeyDown={onKeyDown}>
+      <button type="button" className="expanded-close" aria-label={t.gallery.close} title={t.gallery.close} onClick={close}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+      <h2 id="app-dialog-title">{fmt(p.title, { title: title.trim() || t.home.untitled })}</h2>
+      <div className="play-bar">
+        {from && <span className="play-from">{fmt(p.from, { title: titleOf(from) })}</span>}
+        <button type="button" className="ghost-button" disabled={!story} onClick={() => story && start(story)}>
+          {p.restart}
+        </button>
+        <button type="button" className="ghost-button" disabled={!story || history.current.length === 0} onClick={back}>
+          {p.back}
+        </button>
+        <button type="button" className="ghost-button" disabled={!current} onClick={() => write(current)}>
+          {current ? fmt(p.write, { title: titleOf(current) }) : p.writeNone}
+        </button>
+      </div>
+
+      {problems && (
+        <div className="play-problems" role="alert">
+          <p>{p.problems}</p>
+          <ul>
+            {problems.map((pb, i) => (
+              <li key={i}>
+                {pb.scene && <strong>{titleOf(pb.scene)} · </strong>}
+                <code>{pb.message}</code>
+                {pb.scene && (
+                  <button type="button" className="ghost-button" onClick={() => write(pb.scene!)}>
+                    {p.openScene}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!story && !problems && <p className="sp-empty">{p.loading}</p>}
+
+      <div className="play-text" aria-live="polite">
+        {passages.map((passage, i) => (
+          <section key={i} className="play-passage">
+            {passage.chose !== undefined && <p className="play-chose">› {passage.chose}</p>}
+            {passage.lines.map((line, j) => (
+              <div key={j}>
+                {line.images.map((name) => (
+                  <PlayImage key={name} name={name} />
+                ))}
+                {line.text && <p>{line.text}</p>}
+              </div>
+            ))}
+          </section>
+        ))}
+        {story && choices.length > 0 && (
+          <ol className="play-choices">
+            {choices.map((c, i) => (
+              <li key={c.index}>
+                <button type="button" onClick={() => choose(c.index, c.text)}>
+                  <span className="play-key" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  {c.text || t.interactive.map.defaultLabel}
+                </button>
+              </li>
+            ))}
+          </ol>
+        )}
+        {ended && (
+          <div className="play-end">
+            <p>{p.end}</p>
+            <button type="button" className="ghost-button" onClick={() => start(story!)}>
+              {p.restart}
+            </button>
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+    </div>
+  );
+}

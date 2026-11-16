@@ -49,6 +49,7 @@
     "fflate": "^0.8.2",
     "html-to-image": "1.11.11",
     "hyphen": "^1.14.1",
+    "inkjs": "^2.4.0",
     "marked": "^18.1.0",
     "nanoid": "^6.0.2",
     "onnxruntime-web": "^1.31.1",

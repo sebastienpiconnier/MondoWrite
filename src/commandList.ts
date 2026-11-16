@@ -17,6 +17,8 @@ import { replayShortcut, sendCommand } from "./commands";
 import { storage } from "./storage";
 import { vocab } from "./vocab";
 import { quitApp } from "./closing";
+import { showsInteractive } from "./interactive";
+import { openPlay } from "./interactive/playState";
 import { unlearnAll } from "./learn";
 import { nextHighlight } from "./focusText";
 import type { View } from "./projectState";
@@ -148,6 +150,8 @@ export const COMMANDS: AppCommandItem[] = [
     },
   },
   // Fenêtre Statistiques : personnages, lieux, qui croise qui (tout le projet, depuis n'importe quelle vue).
+  // Roman interactif (lot 3) : lire l'histoire comme le lecteur, depuis le début.
+  { id: "play-story", group: "view", label: (t) => t.interactive.play.open, enabled: (c) => inProject(c) && c.kind !== "scenario" && showsInteractive(s().metaKeep, useSettings.getState().experimental), run: () => openPlay() },
   { id: "stats", group: "view", label: (t) => t.appMenu.stats, enabled: inProject, run: () => s().setDialog("stats") },
   // Zoom de la page du manuscrit ou du scénario : seulement dans cette vue (raccourcis rejoués).
   { id: "zoom-in", group: "view", label: (t) => t.appMenu.zoomIn, accelerator: "CmdOrCtrl+=", enabled: writing, run: () => replayShortcut("=", "Equal") },

@@ -27,7 +27,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 0. Isolation | Ce document ; voir ci-dessous |
 | 1. Images (cœur) | `medias/`, insertion, texte alternatif, exports (partie 1 faite) |
 | 2. Carte des choix | Présentation du Plan, flèches de choix, scène créée par une flèche, bloc `choix` (fait) |
-| 3. Lecture et compilation | Ink (bladeink côté Rust ou inkjs), Mode Lecture, « tester à partir d'ici » |
+| 3. Lecture et compilation | Ink par inkjs, Mode Lecture, « Lire à partir d'ici », export .ink (fait) |
 | 4. Variables | Objets, clés, mots de passe ; conditions sur les flèches |
 | 5. Vérificateur | Impasses, inaccessibles, parties automatiques, mise en page automatique |
 | 6. Assistant IA interactif | Outils MCP |
@@ -56,7 +56,7 @@ Règle : un roman ou un scénario existant ne voit, ne lit ni ne modifie rien de
 - **Option de compilation** : `VITE_NO_INTERACTIVE=1` fabrique une version sans le module (`INTERACTIVE_BUILD`
   faux) : ni case dans les Réglages, ni type proposé.
 - **Projet ouvert** : Réglages › Ce projet dit « Roman interactif » sous le type (option active seulement).
-- **Pas encore** : crate Rust dédiée (arrive avec la compilation Ink, lot 3), libellé dans la liste des projets
+- **Pas encore** : libellé dans la liste des projets
   (la liste ne garde que `kind`).
 
 ## Lot 1 · Images dans le texte des scènes (partie 1 faite)
@@ -108,3 +108,21 @@ chaque choix tapé dans le texte apparaît sur la carte.
 - **Mots** : le bloc de choix ne compte pas dans les mots d'une scène.
 - **Reste** : deux choix vers la même scène se superposent sur la carte ; conditions et variables (lot 4) ;
   vérificateur (lot 5) ; guide de l'utilisateur à écrire avant la sortie de l'option expérimentale.
+
+## Lot 3 · Lecture et compilation (fait sur la branche `roman-interactif`)
+
+- **Ink par inkjs** (MIT, compilateur compris, chargé à la demande : environ 60 Ko compressés), pas de crate Rust :
+  la même lecture marche dans l'app de bureau, sur mobile et dans le navigateur.
+- **Texte Ink** (`interactive/ink.ts`, pur, testé avec inkjs) : `-> départ`, puis une section par scène
+  (`=== nom ===`), son texte en lignes, chaque image en étiquette `# image: nom`, ses choix tels qu'écrits (les lignes
+  inconnues passent telles quelles : c'est là que viendront variables et conditions). Une scène sans choix ni renvoi
+  finit l'histoire (`-> END`). Le texte de l'auteur est rendu inerte (`escapeInk`) : rien de ce qu'il écrit ne devient
+  une instruction. Gras et italique ne passent pas encore. Chaque ligne garde sa scène : une erreur du compilateur
+  est rapportée à la scène, avec « Ouvrir la scène » (`inkProblems`).
+- **Mode Lecture** (`PlayDialog`, fenêtre `play`, état `interactive/playState.ts`) : l'histoire comme la lira le
+  lecteur, choix en boutons (touches 1 à 9), « Revenir au choix précédent », « Recommencer », « Écrire « scène » »
+  (la scène où l'on est, `sceneOfPath` puis les visites). Entrées : « Lire l'histoire » (carte des choix, palette,
+  Présentation du Mac), « Lire à partir d'ici » (⋯ d'une scène de la carte, ⋯ du Manuscrit).
+- **Export Ink** : « Ink (.ink) » dans le menu Exporter d'un roman interactif, ouvrable dans Inky.
+- **Exports suivis** (Word, EPUB, PDF, Markdown, page web) : le bloc de choix n'y est plus imprimé (`htmlToBlocks`).
+- **Reste** : gras et italique dans la lecture ; variables et conditions (lot 4).

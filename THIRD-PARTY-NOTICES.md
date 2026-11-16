@@ -170,6 +170,7 @@ MondoWrite uses the following libraries, bundled in the app. Each license's full
 | PDF.js (`pdfjs-dist`) | Apache-2.0 |
 | fflate | MIT |
 | ONNX Runtime Web (`onnxruntime-web`, agrandisseur de la couverture complète, Copyright (c) Microsoft Corporation / upscaler of the paperback full cover) : le code JavaScript est dans l'app, son moteur WebAssembly n'est **pas dans l'installeur** (téléchargé à la demande depuis mondowrite.app avec sa licence, vérifié par SHA-256) / the JavaScript is bundled, its WebAssembly engine is downloaded on demand | MIT |
+| inkjs (moteur et compilateur d'Ink, roman interactif, Copyright (c) 2017 inkle Ltd. et les contributeurs d'inkjs / Ink engine and compiler, interactive novel), chargé à la demande / loaded on demand | MIT |
 | html-to-image | MIT |
 | nanoid | MIT |
 | serde, serde_json, log (crates Rust / Rust crates) | MIT ou / or Apache-2.0 |

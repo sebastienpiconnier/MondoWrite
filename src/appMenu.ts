@@ -101,6 +101,7 @@ async function buildMenu() {
       await item("highlight"),
       await sep(),
       await item("stats"),
+      await item("play-story"),
       await sep(),
       await item("zoom-in"),
       await item("zoom-out"),

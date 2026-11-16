@@ -3,6 +3,9 @@
 // standard ou grand format, Word, Markdown).
 // Menu de vrais boutons : souris, doigt et clavier (Échap referme, le focus revient sur le bouton).
 
+import { useInteractive } from "../interactive/useInteractive";
+import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { projectToInk } from "../interactive/ink";
 import { useEffect, useId, useRef, useState } from "react";
 import { useCommand } from "../commands";
 import { authorName, contactLines } from "../profile";
@@ -174,11 +177,22 @@ export function ExportMenu() {
     return exportDocument(full, format, { name: fmt(x.bibleName, { title: info().title }), paper: useCosmos.getState().paper, contents: x.contents });
   };
 
+  // Roman interactif (lot 3) : l'histoire en Ink, lisible par Inky et les autres outils d'Ink.
+  const interactive = useInteractive();
+  const inkFile = async (): Promise<ExportedFile | null> => {
+    const { nodes, plan, manuscript } = useCosmos.getState();
+    const scenes = interactiveScenes(nodes, plan);
+    if (scenes.length === 0) return null;
+    const ink = projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript).ink;
+    return { name: `${fileName(info().title, "mondowrite")}.ink`, extension: "ink", mime: "text/plain", data: new TextEncoder().encode(ink) };
+  };
+  const inkItem = { key: "ms-ink", label: all.interactive.play.exportInk, build: inkFile };
+
   type Group = { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] };
   const phoneGroups: Group[] = [
     kind === "scenario"
       ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
-      : { title: x.manuscript, items: MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })) },
+      : { title: x.manuscript, items: [...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })), ...(interactive ? [inkItem] : [])] },
     { title: x.bible, empty: x.emptyBible, items: (["docx", "md", "html"] as const).map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
   ];
@@ -198,6 +212,7 @@ export function ExportMenu() {
             ...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })),
             // Livre broché : une fenêtre de réglages, qui enregistre elle-même ses deux PDF.
             { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") },
+            ...(interactive ? [inkItem] : []),
           ],
         },
     // La Bible a sa fenêtre (pour qui, parties, rendu, aperçu, PDF, Word ou Markdown).

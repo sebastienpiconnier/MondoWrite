@@ -24,6 +24,7 @@ import { BibleExportDialog } from "./BibleExportDialog";
 import { ProfileDialog } from "./ProfileDialog";
 import { VracDialog } from "./VracDialog";
 import { VersionsDialog } from "./VersionsDialog";
+import { PlayDialog } from "./PlayDialog";
 import { BackupsDialog } from "./BackupsDialog";
 import { SynonymsPanel } from "./SynonymsPanel";
 import { NamePicker } from "./NamePicker";
@@ -73,7 +74,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "synonyms" || dialog === "names" ? " is-replace is-names" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : dialog === "revisions" ? " is-replace is-revisions" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "synonyms" || dialog === "names" ? " is-replace is-names" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : dialog === "revisions" ? " is-replace is-revisions" : dialog === "play" ? " is-play" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -117,6 +118,7 @@ export function Dialogs() {
       {dialog === "paperback" && <PaperbackPanel />}
       {dialog === "stats" && <StatsPanel />}
       {dialog === "versions" && <VersionsDialog />}
+      {dialog === "play" && <PlayDialog />}
       {dialog === "backups" && <BackupsDialog />}
       {dialog === "goto" && <GoToPanel />}
       {dialog === "commands" && <CommandPalette />}

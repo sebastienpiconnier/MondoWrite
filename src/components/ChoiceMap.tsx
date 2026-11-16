@@ -30,6 +30,7 @@ import { plainText } from "../search";
 import { END_TARGET, choiceGraph, layoutChoiceMap, readChoiceMap, type ChoiceEdge, type MapPositions } from "../interactive/choices";
 import { interactiveScenes } from "../interactive/scenes";
 import { MoreMenu } from "./MoreMenu";
+import { openPlay } from "../interactive/playState";
 
 interface SceneData extends Record<string, unknown> {
   title: string;
@@ -65,6 +66,7 @@ const SceneCard = memo(function SceneCard({ id, data, selected }: NodeProps<Scen
           label={fmt(m.more, { title })}
           items={[
             { label: m.write, onSelect: () => useCosmos.getState().openInManuscript(id) },
+            { label: t.interactive.play.openHere, onSelect: () => openPlay(id) },
             { label: m.addChoice, onSelect: () => ask("pick") },
             { label: m.sceneAfter, onSelect: () => ask("after") },
             { label: m.endHere, onSelect: () => ask("end") },
@@ -249,7 +251,10 @@ function ChoiceFlow() {
         <Panel position="bottom-left" className="choice-map-hint">
           {m.hint}
         </Panel>
-        <Panel position="top-right">
+        <Panel position="top-right" className="choice-map-actions">
+          <button type="button" className="ghost-button" onClick={() => openPlay()}>
+            {t.interactive.play.open}
+          </button>
           <button type="button" className="ghost-button" title={m.tidyHint} onClick={tidy}>
             {m.tidy}
           </button>

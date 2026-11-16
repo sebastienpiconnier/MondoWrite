@@ -10,6 +10,7 @@
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
 import { useInteractive } from "../interactive/useInteractive";
+import { openPlay } from "../interactive/playState";
 import { requestTextImage } from "./sceneImage";
 import { useTouchGestures } from "./useTouchGestures";
 import { panelAfterSwipe } from "../touchGestures";
@@ -861,6 +862,7 @@ export function Manuscript() {
                 !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
                 { label: t.textImage.insert, onSelect: () => insertImage() },
                 // Roman interactif (lot 2) : un choix en fin de la scène du curseur.
+                interactive && !pageKind && { label: t.interactive.play.openHere, onSelect: () => openPlay(current) },
                 interactive && !pageKind && { label: t.interactive.choices.add, onSelect: () => bookApi.current?.editor()?.chain().focus().addChoice().run() },
                 { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), onSelect: () => useCosmos.getState().openVersions(current, true) },
                 { label: t.versions.listMenu, onSelect: () => useCosmos.getState().openVersions(current) },
