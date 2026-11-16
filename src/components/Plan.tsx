@@ -5,6 +5,8 @@
 // Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
+import { useInteractive } from "../interactive/useInteractive";
+import { ChoiceMap } from "./ChoiceMap";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { MoreMenu } from "./MoreMenu";
@@ -71,6 +73,10 @@ export function Plan() {
   const [announce, setAnnounce] = useState("");
   // Chronologie par intrigue : une troisième lecture du plan, non mémorisée.
   const [timeline, setTimeline] = useState(false);
+  // Carte des choix (roman interactif, lot 2) : quatrième lecture du plan, non mémorisée.
+  const interactive = useInteractive();
+  const [choiceMap, setChoiceMap] = useState(false);
+  const showMap = interactive && choiceMap;
   // La scène dont « Ranger » est ouvert (chapitre et case) : un affichage, une seule à la fois.
   const [arranging, setArranging] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -277,11 +283,13 @@ export function Plan() {
 
   return (
     <div className="sequencer" ref={rootRef}>
-      <div className={`sq-inner${asCards || timeline ? " is-cards" : ""}`}>
+      <div className={`sq-inner${asCards || timeline || showMap ? " is-cards" : ""}${showMap ? " is-map" : ""}`}>
         <PlanHeader
           title={p.title}
           timeline={timeline}
           onTimeline={setTimeline}
+          map={showMap}
+          onMap={interactive ? setChoiceMap : undefined}
           modeAria={p.modeAria}
           actions={
             <button type="button" className="ghost-button plan-organize" title={t.organize.hint} onClick={organizeCanvas}>
@@ -306,7 +314,9 @@ export function Plan() {
           }
           about={p.templateAbout[plan.template]}
         />
-        {timeline ? (
+        {showMap ? (
+          <ChoiceMap />
+        ) : timeline ? (
           <Timeline order={[...order, ...arranged.unplaced]} />
         ) : (
           <>

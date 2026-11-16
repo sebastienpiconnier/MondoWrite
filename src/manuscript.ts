@@ -1,6 +1,7 @@
 // Manuscrit d'un roman : un texte par scène, dans l'ordre du Plan. Fonctions pures.
 // Sur disque : manuscrit/<id de la carte Scène>.md, du Markdown sans en-tête (le titre reste celui de la carte).
 
+import { withoutChoices } from "./interactive/choices";
 import type { CardData } from "./types";
 import { plainText } from "./search";
 
@@ -13,7 +14,7 @@ export const isBlank = (html: string | undefined) => !html || (plainText(html) =
 /** Nombre de mots d'un texte (HTML de l'éditeur). Les apostrophes et traits d'union ne coupent pas un mot. */
 export function countWords(html: string | undefined): number {
   if (!html) return 0;
-  return plainText(html).match(/[\p{L}\p{N}]+(?:[’'-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+  return plainText(withoutChoices(html)).match(/[\p{L}\p{N}]+(?:[’'-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
 }
 
 export const totalWords = (manuscript: Manuscript, ids: string[]) => ids.reduce((sum, id) => sum + countWords(manuscript[id]), 0);

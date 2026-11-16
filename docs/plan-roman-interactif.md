@@ -26,7 +26,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | --- | --- |
 | 0. Isolation | Ce document ; voir ci-dessous |
 | 1. Images (cœur) | `medias/`, insertion, texte alternatif, exports (partie 1 faite) |
-| 2. Carte des choix | Vue dédiée, flèches de choix, scène créée par une flèche, bloc `choix` |
+| 2. Carte des choix | Présentation du Plan, flèches de choix, scène créée par une flèche, bloc `choix` (fait) |
 | 3. Lecture et compilation | Ink (bladeink côté Rust ou inkjs), Mode Lecture, « tester à partir d'ici » |
 | 4. Variables | Objets, clés, mots de passe ; conditions sur les flèches |
 | 5. Vérificateur | Impasses, inaccessibles, parties automatiques, mise en page automatique |
@@ -81,3 +81,30 @@ Pour tout roman, interactif ou non. Rien ne change pour un projet sans image.
   reste dans `medias/`). Accepté, à dire dans les notes de version.
 - **Partie 2, reste** : livre broché KDP (place, contrôle 300 DPI), vignette de l'image sur la carte Scène,
   étiquette Ink `# image:` (lot 3), effets de la place dans les exports.
+
+## Lot 2 · Carte des choix (fait sur la branche `roman-interactif`)
+
+Le texte des scènes reste la seule source : chaque geste sur la carte écrit dans le bloc de choix de la scène, et
+chaque choix tapé dans le texte apparaît sur la carte.
+
+- **Format** : en fin de `manuscrit/<id>.md`, un bloc de code Markdown ` ```choix `, une ligne par choix :
+  `* [Texte du choix] -> nom_de_scene`, `* { condition } [...] -> ...` (lue, pas encore modifiable : lot 4),
+  `-> END` pour une fin. Toute autre ligne est gardée telle quelle. En mémoire : `<pre data-choices="true">`.
+- **Noms des scènes** (`sceneSlugs`) : tirés du titre (`la_cour`) ; deux scènes au même titre prennent la fin de leur
+  identifiant (`la_cour_k3x9`). Les noms ne dépendent jamais de l'ordre : déplacer ou ajouter une scène ne renomme
+  rien. Une scène renommée, ou qui entre en collision, fait suivre les choix qui y mènent (abonnement en fin de
+  `store.ts`, suspendu pendant une annulation).
+- **Places de la carte** : `choiceMap` de cosmos.json (`{ pos: { id: [x, y] } }`), gardée par `metaKeep` comme
+  `interactive`, hors historique. Pas de fichier `interactif/carte.json` (prévu au départ) : une clé de cosmos.json
+  profite de tout ce que le format sait déjà faire (iCloud, conflits, .zip, sauvegardes). Une scène sans place se
+  pose à droite de celle d'où part son choix (`layoutChoiceMap`).
+- **Gestes** : tirer une flèche entre deux scènes (un choix), la lâcher dans le vide (nouvelle scène et son choix),
+  menu ⋯ d'une scène (Écrire la scène, Ajouter un choix vers…, Nouvelle scène après celle-ci, Ajouter un choix
+  « Fin »), flèche choisie : son texte et « Retirer ce choix » dans le bandeau du haut, Suppr la retire.
+  Manuscrit : encadré « Choix » en fin de scène (texte, destination numérotée comme le volet, retirer, ajouter),
+  « Ajouter un choix » dans le ⋯ de la barre.
+- **Annuler** : chaque geste de la carte est une étape ; l'annulation ne rend que les blocs de choix
+  (`choicesAfterUndo`), jamais le reste du texte, qui a l'historique de l'éditeur.
+- **Mots** : le bloc de choix ne compte pas dans les mots d'une scène.
+- **Reste** : deux choix vers la même scène se superposent sur la carte ; conditions et variables (lot 4) ;
+  vérificateur (lot 5) ; guide de l'utilisateur à écrire avant la sortie de l'option expérimentale.

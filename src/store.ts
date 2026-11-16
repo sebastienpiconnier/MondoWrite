@@ -80,6 +80,9 @@ import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
+import { isInteractiveMeta } from "./interactive";
+import { CHOICE_MAP_KEY, END_TARGET, choiceMapValue, choicesAfterUndo, choicesIn, cleanLabel, editChoice, readChoiceMap, renameTargets, withChoices, type ChoiceLine, type MapPositions } from "./interactive/choices";
+import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { IMAGE_EXT, iaImageSource, iaImagesOf, readIaImageSource, type GeneratedImage } from "./ai/imageGen";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, headingRenames, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
@@ -149,6 +152,17 @@ export interface CosmosState {
    * même chapitre, avec le texte `html` (la suite de la scène coupée). Rend son identifiant.
    */
   splitScene: (afterId: string, html: string) => string | null;
+  // ---------- Roman interactif (lot 2, src/interactive/choices.ts) ----------
+  /** Pose les choix d'une scène (bloc en fin de son texte ; sans ligne, le bloc part). Une étape d'historique. */
+  setSceneChoices: (id: string, lines: ChoiceLine[]) => void;
+  /** Ajoute un choix de `from` vers une scène (ou `END`). */
+  addChoiceTo: (from: string, to: string, label?: string) => void;
+  /** Modifie ou retire (null) le choix de rang `index` de la scène. */
+  editChoiceAt: (from: string, index: number, next: { label: string; target: string; cond?: string } | null) => void;
+  /** Nouvelle scène après `from` (même case, même chapitre) et le choix qui y mène ; posée à `at` sur la carte des choix. */
+  addSceneAfter: (from: string, at?: { x: number; y: number }, label?: string) => string | null;
+  /** Places de la carte des choix (cosmos.json, `choiceMap`), hors historique comme la vue du canevas. */
+  setChoiceMapPositions: (positions: MapPositions) => void;
   /** Coupe le récit : un nouveau chapitre commence à cette scène. Rend son identifiant. */
   startChapterAt: (sceneId: string) => string | null;
   /** Défait une coupure de scène : le texte de `fromId` revient à la fin de `intoId`, et sa carte part. */
@@ -806,6 +820,9 @@ const OPEN_RETRY_MS = 1500;
 /** Deux gestes de même nature rapprochés (lettres d'un titre, déplacement) ne font qu'une étape. */
 const HISTORY_MERGE_MS = 800;
 
+/** Roman interactif : les choix suivent le nom de leur scène (voir l'abonnement en fin de fichier), sauf pendant une annulation. */
+let followSceneNames = true;
+
 export const useCosmos = create<CosmosState>((set, get) => {
   const touch = () => set({ status: "modifie" });
   /**
@@ -1186,6 +1203,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     lastTag = "";
     const here: Snapshot = { nodes, frames, edges, screenplay, plan, trash, manuscript };
     const titles = new Map(target.nodes.map((n) => [n.id, n.data.title]));
+    // Les blocs de choix reviennent tels qu'à l'étape, déjà justes pour ses titres : on ne les renomme pas.
+    followSceneNames = false;
     set({
       past: from === "past" ? past.slice(0, -1) : [...past, here],
       future: from === "past" ? [...future, here] : future.slice(0, -1),
@@ -1196,10 +1215,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       plan: target.plan,
       trash: target.trash,
       // Le manuscrit n'est pas remis par l'annulation : ses mentions reprennent le titre des cartes de l'étape.
-      manuscript: mapTexts(manuscriptAfterUndo(manuscript, nodes, target), (html) => relabelMentions(html, titles)),
+      manuscript: ((m) => (isInteractiveMeta(get().metaKeep) ? choicesAfterUndo(m, target.manuscript) : m))(
+        mapTexts(manuscriptAfterUndo(manuscript, nodes, target), (html) => relabelMentions(html, titles)),
+      ),
       trashNotice: null,
       pendingFocusId: null,
     });
+    followSceneNames = true;
     touch();
   };
   /** Adopte un projet lu sur disque. Rend faux si ces fichiers ne forment pas un projet. */
@@ -2547,6 +2569,41 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ nodes: next, plan: nextPlan, manuscript });
       touch();
       return card.id;
+    },
+    setSceneChoices: (id, lines) => {
+      const html = get().manuscript[id];
+      const next = withChoices(html, lines);
+      if (next === (html ?? "")) return;
+      record();
+      const manuscript = { ...get().manuscript };
+      if (next) manuscript[id] = next;
+      else delete manuscript[id];
+      set({ manuscript });
+      touch();
+    },
+    addChoiceTo: (from, to, label = "") => {
+      const { nodes, plan, manuscript } = get();
+      const target = to === END_TARGET ? END_TARGET : interactiveSlugs(nodes, plan).get(to);
+      if (!target) return;
+      get().setSceneChoices(from, [...choicesIn(manuscript[from]), { kind: "choice", label: cleanLabel(label), target }]);
+    },
+    editChoiceAt: (from, index, next) => {
+      get().setSceneChoices(from, editChoice(choicesIn(get().manuscript[from]), index, next));
+    },
+    addSceneAfter: (from, at, label = "") => {
+      const id = get().splitScene(from, "");
+      if (!id) return null;
+      const title = getT().interactive.map.newSceneTitle;
+      set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, title } } : n)) });
+      get().addChoiceTo(from, id, label);
+      if (at) get().setChoiceMapPositions({ ...readChoiceMap(get().metaKeep), [id]: at });
+      return id;
+    },
+    setChoiceMapPositions: (positions) => {
+      const { metaKeep, nodes, plan } = get();
+      const keep = new Set(interactiveScenes(nodes, plan).map((s) => s.id));
+      set({ metaKeep: { ...metaKeep, [CHOICE_MAP_KEY]: choiceMapValue(positions, keep) } });
+      touch();
     },
     joinScenes: (fromId, intoId) => {
       const { nodes, manuscript, comments, kind, screenplay } = get();
@@ -4130,3 +4187,14 @@ export function publishOpenProject(now = false) {
     now,
   );
 }
+
+/**
+ * Roman interactif (lot 2) : une scène renommée, ou dont le titre entre en collision avec une autre (ou en sort),
+ * change de nom (choices.ts, `sceneSlugs`) ; les choix qui y mènent suivent, dans la même étape d'historique.
+ * Les noms ne dépendent pas de l'ordre : déplacer une scène ne renomme rien.
+ */
+useCosmos.subscribe((s, prev) => {
+  if (!followSceneNames || s.nodes === prev.nodes || s.screen !== "project" || !isInteractiveMeta(s.metaKeep)) return;
+  const renamed = renameTargets(s.manuscript, interactiveSlugs(prev.nodes, prev.plan), interactiveSlugs(s.nodes, s.plan));
+  if (renamed !== s.manuscript) useCosmos.setState({ manuscript: renamed });
+});

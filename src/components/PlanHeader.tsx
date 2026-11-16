@@ -13,6 +13,9 @@ interface Props {
   /** Chronologie affichée (état de la vue). */
   timeline: boolean;
   onTimeline: (on: boolean) => void;
+  /** Carte des choix (roman interactif, lot 2) : présentée seulement si `onMap` est donné. */
+  map?: boolean;
+  onMap?: (on: boolean) => void;
   /** Libellé du groupe des présentations. */
   modeAria: string;
   /** Boutons d'action après les présentations (Organiser le canevas, Nouvel épisode…). */
@@ -36,7 +39,7 @@ export function ArrangeToggle({ open, title, onToggle }: { open: boolean; title:
   );
 }
 
-export function PlanHeader({ title, timeline, onTimeline, modeAria, actions, total, template, about }: Props) {
+export function PlanHeader({ title, timeline, onTimeline, map = false, onMap, modeAria, actions, total, template, about }: Props) {
   const t = useT();
   const sq = t.screenplay.sequencer;
   const mode = useSettings((s) => s.sequencerMode);
@@ -49,18 +52,32 @@ export function PlanHeader({ title, timeline, onTimeline, modeAria, actions, tot
           <button
             key={m}
             type="button"
-            aria-pressed={!timeline && mode === m}
+            aria-pressed={!timeline && !map && mode === m}
             onClick={() => {
               setMode(m);
               onTimeline(false);
+              onMap?.(false);
             }}
           >
             {sq[m]}
           </button>
         ))}
-        <button type="button" className="plan-timeline-tab" aria-pressed={timeline} onClick={() => onTimeline(true)}>
+        <button
+          type="button"
+          className="plan-timeline-tab"
+          aria-pressed={timeline && !map}
+          onClick={() => {
+            onTimeline(true);
+            onMap?.(false);
+          }}
+        >
           {t.plan.timeline}
         </button>
+        {onMap && (
+          <button type="button" className="plan-map-tab" aria-pressed={map} onClick={() => onMap(true)}>
+            {t.interactive.map.tab}
+          </button>
+        )}
       </div>
       {actions}
       {total}

@@ -1381,3 +1381,73 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 @media (pointer: coarse) {
   .scene-image-bar input, .scene-image-bar select, .scene-image-remove { min-height: 44px; }
 }
+
+/* Choix d'une scène (roman interactif, lot 2, choicesNode.ts) : encadré en fin de scène, une ligne par choix. */
+.scene-choices { margin: 1.2em 0 0.8em; padding: 0.7em 0.9em 0.8em; border: 1px solid var(--line-2); border-left: 3px solid var(--accent); border-radius: 8px; background: var(--surface); font-family: var(--font-ui); font-size: 0.8rem; line-height: 1.4; text-align: left; white-space: normal; }
+.scene-choices.is-selected, .scene-choices.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scene-choices-title { margin: 0 0 0.5em; font-weight: 600; color: var(--ink-2); text-indent: 0; }
+.scene-choices ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.4em; }
+.scene-choices li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4em; margin: 0; text-indent: 0; }
+.scene-choices .choice-label { flex: 1 1 14em; min-width: 0; }
+.scene-choices input, .scene-choices select { min-height: 32px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.25em 0.5em; }
+.scene-choices select { flex: 0 1 16em; max-width: 100%; }
+.scene-choices .choice-arrow { color: var(--muted); }
+.scene-choices .choice-cond { flex-basis: 100%; color: var(--muted); font-style: italic; }
+.scene-choices li.is-broken select { border-color: var(--danger); color: var(--danger); }
+.scene-choices li.is-raw code { font-size: 0.95em; color: var(--muted); }
+.scene-choices .choice-remove { min-width: 32px; min-height: 32px; }
+.scene-choices-add { margin-top: 0.5em; }
+@media (pointer: coarse) {
+  .scene-choices input, .scene-choices select, .scene-choices .choice-remove, .scene-choices-add { min-height: 44px; }
+  .scene-choices .choice-remove { min-width: 44px; }
+}
+
+/* Carte des choix (roman interactif, lot 2, ChoiceMap.tsx) : quatrième présentation du Plan. */
+.sq-inner.is-map { max-width: none; }
+.choice-map { position: relative; height: max(420px, calc(100vh - 230px)); height: max(420px, calc(100dvh - 230px)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--ground); }
+.choice-map.is-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem; height: auto; min-height: 240px; padding: 2rem; }
+.choice-map .react-flow, .choice-map .react-flow.dark {
+  background: var(--ground);
+  --xy-background-color-default: var(--ground);
+  --xy-edge-stroke-default: var(--ink-2);
+  --xy-edge-stroke-selected-default: var(--accent);
+  --xy-edge-label-background-color-default: var(--surface);
+  --xy-edge-label-color-default: var(--ink);
+  --xy-handle-background-color-default: var(--accent);
+  --xy-handle-border-color-default: var(--surface);
+  --xy-connectionline-stroke-default: var(--accent);
+}
+.choice-map .react-flow__edge.selected .react-flow__edge-path { stroke: var(--accent) !important; stroke-width: 2.5 !important; }
+.choice-map .react-flow__edge.is-unnamed .react-flow__edge-text { fill: var(--muted) !important; font-style: italic; }
+.choice-map-hint { max-width: min(30rem, 60%); margin: 10px; padding: 0.4rem 0.7rem; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 0.8rem; line-height: 1.35; }
+.choice-scene { width: 240px; padding: 10px 12px 10px 14px; border: 1px solid var(--line-2); border-left: 4px solid var(--type-scene); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 13px; line-height: 1.35; box-shadow: var(--shadow-card); }
+.choice-scene.is-selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.choice-scene.is-start { border-left-color: var(--accent); }
+.choice-scene-head { display: flex; align-items: flex-start; gap: 6px; }
+.choice-scene-title { flex: 1; font-weight: 600; word-break: break-word; }
+.choice-scene-text { margin: 6px 0 0; color: var(--ink-2); font-size: 12px; overflow-wrap: anywhere; }
+.choice-scene-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; }
+.choice-scene-tags:empty { display: none; }
+.choice-tag { padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 11px; color: var(--ink-2); }
+.choice-tag.is-start { border-color: var(--accent); color: var(--accent); }
+.choice-tag.is-end { border-color: var(--status-done); color: var(--status-done); }
+.choice-tag.is-dead { color: var(--muted); border-style: dashed; }
+.choice-tag.is-broken { border-color: var(--danger); color: var(--danger); }
+.choice-handle { width: 12px; height: 12px; }
+.choice-map-edge { margin-top: 14px; }
+.choice-edge-editor { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.6rem; padding: 0.6rem 0.8rem; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop); font-size: 0.85rem; }
+.choice-edge-editor label { display: grid; gap: 0.2rem; color: var(--ink-2); }
+.choice-edge-editor input { min-width: 16rem; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.3em 0.6em; }
+.choice-picker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; width: min(24rem, calc(100% - 2rem)); max-height: calc(100% - 2rem); overflow: auto; padding: 1rem; border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); }
+.choice-picker-title { margin: 0; font-weight: 600; }
+.choice-picker-hint { margin: 0.3rem 0 0.6rem; color: var(--muted); font-size: 0.85rem; }
+.choice-picker ul { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 4px; }
+.choice-picker li button { width: 100%; min-height: 40px; text-align: left; padding: 0.4rem 0.7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+@media (any-hover: hover) {
+  .choice-picker li button:hover { background: var(--hover); }
+}
+@media (pointer: coarse) {
+  .choice-handle { width: 22px; height: 22px; }
+  .choice-picker li button, .choice-edge-editor input { min-height: 44px; }
+}
+.choice-scene-rank { color: var(--muted); font-weight: 500; }

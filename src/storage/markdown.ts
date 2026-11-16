@@ -32,6 +32,7 @@ import { isCommentId } from "../comments";
 import { cleanNote, putFootnotes, readFootnotes, takeFootnotes } from "../footnotes";
 import { iaImagesOf, readIaImages } from "../ai/imageGen";
 import { cleanAlt, imageMarkdown, isImagePlace, mediaFromSrc } from "../sceneImages";
+import { CHOICES_LANG } from "../interactive/choices";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
 // Une mention s'écrit comme un lien Markdown vers la carte citée.
@@ -71,6 +72,15 @@ turndown.addRule("sceneImage", {
     const el = node as HTMLElement;
     const place = el.getAttribute("data-place");
     return `\n\n${imageMarkdown(el.getAttribute("data-media")!, el.getAttribute("alt") ?? "", isImagePlace(place) ? place : "inline")}\n\n`;
+  },
+});
+
+// Choix d'un roman interactif (interactive/choices.ts) : un bloc de code ```choix, en fin de scène.
+turndown.addRule("choices", {
+  filter: (node) => node.nodeName === "PRE" && (node as HTMLElement).getAttribute("data-choices") === "true",
+  replacement: (_content, node) => {
+    const text = ((node as HTMLElement).textContent ?? "").replace(/`{3,}/g, "``").replace(/\s+$/, "");
+    return `\n\n\`\`\`${CHOICES_LANG}\n${text}\n\`\`\`\n\n`;
   },
 });
 
@@ -130,6 +140,14 @@ export function sanitizeHtml(html: string): string {
         span.setAttribute("data-mention", mention);
         span.textContent = child.textContent;
         child.replaceWith(span);
+        continue;
+      }
+      // Bloc de choix (roman interactif) : du texte seul, marqué ; marked le donne en <pre><code class="language-choix">.
+      if (child.tagName === "PRE" && (child.getAttribute("data-choices") === "true" || child.querySelector(`:scope > code.language-${CHOICES_LANG}`))) {
+        const pre = doc.createElement("pre");
+        pre.setAttribute("data-choices", "true");
+        pre.textContent = (child.textContent ?? "").replace(/\n+$/, "");
+        child.replaceWith(pre);
         continue;
       }
       if (child.tagName === "LI") adoptCheckbox(child);

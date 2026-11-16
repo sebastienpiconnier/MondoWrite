@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { useInteractive } from "../interactive/useInteractive";
 import { requestTextImage } from "./sceneImage";
 import { useTouchGestures } from "./useTouchGestures";
 import { panelAfterSwipe } from "../touchGestures";
@@ -200,6 +201,7 @@ export function Manuscript() {
   const handlers = useRef<BookHandlers | null>(null);
   const bookApi = useRef<BookApi | null>(null);
   /** « Insérer une image… » (#84, lot 1) : au curseur du livre. */
+  const interactive = useInteractive();
   const insertImage = () => {
     const ed = bookApi.current?.editor();
     if (ed) requestTextImage(ed);
@@ -858,6 +860,8 @@ export function Manuscript() {
                 // Fusionner (#23) : la scène suivante du même chapitre rejoint celle-ci ; sa carte part à la corbeille.
                 !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
                 { label: t.textImage.insert, onSelect: () => insertImage() },
+                // Roman interactif (lot 2) : un choix en fin de la scène du curseur.
+                interactive && !pageKind && { label: t.interactive.choices.add, onSelect: () => bookApi.current?.editor()?.chain().focus().addChoice().run() },
                 { label: t.versions.keepMenu, hint: key("Mod", "Alt", "S"), onSelect: () => useCosmos.getState().openVersions(current, true) },
                 { label: t.versions.listMenu, onSelect: () => useCosmos.getState().openVersions(current) },
                 { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },
