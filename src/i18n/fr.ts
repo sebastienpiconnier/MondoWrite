@@ -3653,6 +3653,14 @@ export const fr = {
       other: "Le modèle d’Apple n’a pas pu répondre.",
     },
   },
+  interactive: {
+    kind: "Un roman interactif",
+    kindHint: "Des scènes reliées par des choix, à lire à l’écran ou à imprimer en livre-jeu. Expérimental.",
+    settingsTitle: "Fonctions expérimentales",
+    settingLabel: "Roman interactif",
+    settingHint: "Propose « Un roman interactif » à la création d’un projet. Encore en préparation, rien ne change pour tes romans et tes scénarios.",
+    projectNote: "Roman interactif. Les outils des choix arrivent bientôt, en attendant il se travaille comme un roman.",
+  },
 };
 
 export type Messages = typeof fr;

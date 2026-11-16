@@ -13,6 +13,7 @@ import { PHOTO_SOURCES, type PhotoSourceId } from "./imageSources";
 import { authorName, cleanProfile, readProfile, type AuthorProfile } from "./profile";
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
 import { readMcp, type McpAccess, type McpSettings } from "./mcp";
+import { readExperimental, type ExperimentalSettings } from "./interactive";
 
 export type ThemePref = "system" | "light" | "dark";
 export type Theme = "light" | "dark";
@@ -222,6 +223,9 @@ interface SettingsState {
   /** Assistant externe par MCP (#62) : autorisé ou non, et projets ouverts à l'assistant (identifiant → niveau). */
   mcp: McpSettings;
   setMcpEnabled: (on: boolean) => void;
+  /** Fonctions expérimentales (roman interactif, docs/plan-roman-interactif.md) : coupées par défaut. */
+  experimental: ExperimentalSettings;
+  setExperimental: (patch: Partial<ExperimentalSettings>) => void;
   setMcpProject: (id: string, access: McpAccess | null) => void;
 }
 
@@ -276,7 +280,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -337,6 +341,8 @@ export const useSettings = create<SettingsState>((set) => ({
   updates: readUpdates(saved.updates),
   setUpdates: (updates) => set((s) => ({ updates: { ...s.updates, ...updates } })),
   mcp: readMcp(saved.mcp),
+  experimental: readExperimental(saved.experimental),
+  setExperimental: (patch) => set((s) => ({ experimental: readExperimental({ ...s.experimental, ...patch }) })),
   setMcpEnabled: (enabled) => set((s) => ({ mcp: { ...s.mcp, enabled } })),
   setMcpProject: (id, access) =>
     set((s) => {
@@ -371,7 +377,7 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -387,7 +393,7 @@ export function initSettings() {
     else delete root.dataset.pageZoomed;
     try {
       const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

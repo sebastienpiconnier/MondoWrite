@@ -15,7 +15,7 @@ Règles :
 - on ne cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité
   (import Scrivener, fichiers Final Draft, Fountain) ou pour du code repris (licence, `THIRD-PARTY-NOTICES.md`).
 
-Dernière mise à jour : 14 novembre 2026 (#78 ajoutée).
+Dernière mise à jour : 16 novembre 2026 (roman interactif ajouté).
 
 ## Ordre / Order
 
@@ -28,4 +28,6 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
    l'import Scrivener
 2. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
 3. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
-4. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
+4. Lot 13 · Roman interactif / Interactive novel : #84, lot 0 (isolation, option expérimentale) fait sur la branche `roman-interactif`,
+   `docs/plan-roman-interactif.md`
+5. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)

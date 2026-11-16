@@ -3597,4 +3597,12 @@ export const en: Messages = {
       other: "Apple’s model could not answer.",
     },
   },
+  interactive: {
+    kind: "An interactive novel",
+    kindHint: "Scenes linked by choices, to read on screen or print as a gamebook. Experimental.",
+    settingsTitle: "Experimental features",
+    settingLabel: "Interactive novel",
+    settingHint: "Offers “An interactive novel” when you create a project. Still in the works, nothing changes for your novels and screenplays.",
+    projectNote: "Interactive novel. The tools for choices are coming soon; meanwhile it works like a novel.",
+  },
 };

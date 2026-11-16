@@ -27,6 +27,7 @@ import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS } from "../focusText";
 import { canFullscreen } from "./FocusBar";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
+import { INTERACTIVE_BUILD, showsInteractive } from "../interactive";
 import { PAPERS, isPaper } from "../screenplay/layout";
 import { AI_PROVIDERS, aiErrorText, PROVIDERS, isAiProvider, isLoopback, isReady, listModels } from "../ai/providers";
 import { canEmbed, isEmbedModel, proposeEmbedModel } from "../ai/semantic";
@@ -119,6 +120,10 @@ export function Settings({ project = true }: { project?: boolean }) {
   const underlineHeadings = useCosmos((s) => s.underlineHeadings);
   const markdownCopies = useCosmos((s) => s.markdownCopies);
   const aiMode = useCosmos((s) => s.aiMode);
+  // Roman interactif (lot 0) : réglage de l'appareil, et projet ouvert qui en est un (clé gardée dans metaKeep).
+  const experimental = useSettings((s) => s.experimental);
+  const metaKeep = useCosmos((s) => s.metaKeep);
+  const interactiveProject = showsInteractive(metaKeep, experimental);
   const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const [open, setOpen] = useState(false);
   // Barre des menus du Mac (Réglages…) et Cmd/Ctrl + virgule : ouvrir.
@@ -135,7 +140,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -289,6 +294,7 @@ export function Settings({ project = true }: { project?: boolean }) {
           <p className="settings-hint" id={ids.kindHint}>
             {t.kinds.hint}
           </p>
+          {interactiveProject && <p className="settings-hint">{t.interactive.projectNote}</p>}
           {kind === "scenario" && (
             <>
               <label htmlFor={ids.paper}>{t.kinds.paper}</label>
@@ -451,6 +457,25 @@ export function Settings({ project = true }: { project?: boolean }) {
           <p className="settings-hint" id={ids.photosHint}>
             {t.photos.settingsHint}
           </p>
+          {/* Fonctions expérimentales (roman interactif, lot 0) : coupées par défaut, absentes d'une version sans le module. */}
+          {INTERACTIVE_BUILD && (
+            <>
+              <div className="eyebrow settings-sep">{t.interactive.settingsTitle}</div>
+              <label className="settings-check" htmlFor={ids.experimental}>
+                <input
+                  id={ids.experimental}
+                  type="checkbox"
+                  checked={experimental.interactive}
+                  aria-describedby={ids.experimentalHint}
+                  onChange={(e) => useSettings.getState().setExperimental({ interactive: e.target.checked })}
+                />
+                {t.interactive.settingLabel}
+              </label>
+              <p className="settings-hint" id={ids.experimentalHint}>
+                {t.interactive.settingHint}
+              </p>
+            </>
+          )}
           </section>
 
           <section className="settings-col" role="tabpanel" id={`${ids.panel}-writing`} aria-labelledby={`${ids.panel}-tab-writing`} hidden={tab !== "writing"}>

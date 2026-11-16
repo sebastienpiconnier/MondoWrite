@@ -66,6 +66,10 @@ Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absen
 4. **Export scénario** : PDF au format standard (Courier 12, marges normalisées, une page ≈ une minute), Fountain, FDX (Final Draft).
 5. La **Bible d'un scénario** montre sous chaque personnage et chaque décor ses scènes (utile au dépouillement) ; le détail (pages, int./ext., jour/nuit, qui croise qui) est dans la fenêtre Statistiques. Plus tard : accessoires, costumes.
 
+## Roman interactif (expérimental, `docs/plan-roman-interactif.md`)
+
+Un roman interactif est un **roman** dont `cosmos.json` porte `interactive: true` (clé hors de `KNOWN_META`, gardée par `metaKeep`) : jamais de troisième `kind`. Tout passe par `src/interactive/` ; rien n'est visible tant que le réglage de l'appareil `experimental.interactive` est coupé (défaut), et une version construite avec `VITE_NO_INTERACTIVE=1` n'en a rien. Un roman ou un scénario ordinaire ne doit jamais voir changer quoi que ce soit : toute nouvelle fonction interactive se branche sur `showsInteractive(metaKeep, experimental)`. Jamais « livre dont vous êtes le héros » (marque de Gallimard) ni système de jeu livré (caractéristiques, combats, dés).
+
 ## Multilingue (règle du projet)
 
 Langues : **français** (référence) et **anglais**, tenues complètes par le projet, et les **langues de la communauté** (espagnol depuis novembre 2026 ; partielles, complétées par l'anglais, guide des traducteurs : `TRANSLATING.md`). Système maison, sans dépendance (`src/i18n/`).

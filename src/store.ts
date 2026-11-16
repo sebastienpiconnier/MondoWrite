@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { interactiveMeta } from "./interactive";
 import { cleanQuote, isCommentId, removeCommentFromElements, removeCommentMark, type Comments, type SceneComment } from "./comments";
 import { joinSynopses, mergeComments, mergeEdges, mergeScreenplayScenes, nextInStory } from "./sceneMerge";
 import { captureSpot, currentCaret, forgetSpot, readSpot } from "./resume";
@@ -553,7 +554,8 @@ export interface CosmosState {
   openProject: (id: string) => Promise<void>;
   /** « Reprendre là où j'en étais » (#27) : ouvre le projet, puis la vue, la scène et le curseur gardés sur l'appareil. */
   resumeProject: (id: string) => Promise<void>;
-  createProject: (options: { title: string; kind: ProjectKind }) => Promise<void>;
+  /** `interactive` : roman interactif (`interactive: true` dans cosmos.json, gardé dans `metaKeep`), voir src/interactive. */
+  createProject: (options: { title: string; kind: ProjectKind; interactive?: boolean }) => Promise<void>;
   /** Un fichier Fountain existant devient un nouveau projet scénario, avec ses cartes. */
   /** Accueil : un manuscrit (.docx, .md, .txt) ou un scénario (.fountain, .fdx) devient un nouveau projet. */
   importFile: () => Promise<void>;
@@ -2919,13 +2921,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       else if (spot.view !== "toile") st.setView(spot.view);
     },
 
-    createProject: async ({ title, kind }) => {
+    createProject: async ({ title, kind, interactive }) => {
       if (!(await storage.create(title))) return;
       // L'emplacement choisi contient déjà un projet : on l'ouvre, on ne l'écrase pas.
       const existing = await storage.readAll().catch(() => null);
       if (existing && openFiles(existing)) return;
       void claimLock();
-      const { state } = openProject({ meta: { version: 1, title, kind, layout: [], links: [] }, cards: [], screenplay: null });
+      const { state } = openProject({ meta: { version: 1, title, kind: interactive ? "roman" : kind, layout: [], links: [], ...(interactive ? interactiveMeta() : {}) }, cards: [], screenplay: null });
       set({
         ...state,
         lastFiles: {},

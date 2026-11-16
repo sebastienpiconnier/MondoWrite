@@ -6,6 +6,7 @@ import { LoadingProject } from "./LoadingProject";
 import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
+import { interactiveOffered } from "../interactive";
 import { useCosmos } from "../store";
 import { storage, type ProjectEntry } from "../storage";
 import { PROJECT_KINDS, type ProjectKind } from "../types";
@@ -25,6 +26,8 @@ export function Home() {
   const h = t.home;
   const lang = useSettings((s) => s.lang);
   const profile = useSettings((s) => s.profile);
+  // Roman interactif (lot 0) : proposé seulement si l'auteur a activé l'option expérimentale.
+  const offerInteractive = useSettings((s) => interactiveOffered(s.experimental));
   const projects = useCosmos((s) => s.projects);
   // Calculée à l'affichage de la page (l'heure du moment) ; la tournure ne change pas d'un rendu à l'autre.
   const welcome = useMemo(() => greeting(t.home.greeting, new Date(), profile.firstName, projects), [t, profile.firstName, projects]);
@@ -37,6 +40,9 @@ export function Home() {
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
+  const [interactive, setInteractive] = useState(false);
+  // Option coupée entre-temps : on ne crée jamais un roman interactif qui ne serait plus proposé.
+  const wantsInteractive = interactive && offerInteractive;
   const [busy, setBusy] = useState(false);
   // Projets synchronisés devenus inaccessibles (iCloud coupé, dossier cloud introuvable) : on le dit, sans alarmer.
   const [cloudIssue, setCloudIssue] = useState<"icloud" | "folder" | "waiting" | null>(null);
@@ -77,7 +83,7 @@ export function Home() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    run(() => createProject({ title: title.trim() || h.untitled, kind }));
+    run(() => createProject({ title: title.trim() || h.untitled, kind, interactive: wantsInteractive }));
   };
 
   const nameOf = (p: ProjectEntry) => p.title || p.name || h.untitled;
@@ -376,12 +382,37 @@ export function Home() {
               <fieldset className="home-kinds">
                 <legend>{h.youWrite}</legend>
                 {PROJECT_KINDS.map((k) => (
-                  <label key={k} className={`home-kind${kind === k ? " is-selected" : ""}`}>
-                    <input type="radio" name="kind" value={k} checked={kind === k} onChange={() => setKind(k)} />
+                  <label key={k} className={`home-kind${kind === k && !wantsInteractive ? " is-selected" : ""}`}>
+                    <input
+                      type="radio"
+                      name="kind"
+                      value={k}
+                      checked={kind === k && !wantsInteractive}
+                      onChange={() => {
+                        setKind(k);
+                        setInteractive(false);
+                      }}
+                    />
                     <span className="home-kind-name">{kindNames[k]}</span>
                     <span className="home-kind-hint">{kindHints[k]}</span>
                   </label>
                 ))}
+                {offerInteractive && (
+                  <label className={`home-kind${wantsInteractive ? " is-selected" : ""}`}>
+                    <input
+                      type="radio"
+                      name="kind"
+                      value="interactive"
+                      checked={wantsInteractive}
+                      onChange={() => {
+                        setKind("roman");
+                        setInteractive(true);
+                      }}
+                    />
+                    <span className="home-kind-name">{t.interactive.kind}</span>
+                    <span className="home-kind-hint">{t.interactive.kindHint}</span>
+                  </label>
+                )}
               </fieldset>
 
               {storage.canPickFolder && (
