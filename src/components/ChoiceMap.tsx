@@ -31,6 +31,9 @@ import { END_TARGET, choiceGraph, layoutChoiceMap, readChoiceMap, type ChoiceEdg
 import { interactiveScenes } from "../interactive/scenes";
 import { MoreMenu } from "./MoreMenu";
 import { openPlay } from "../interactive/playState";
+import { verifyStory } from "../interactive/verify";
+import { readFactLabels } from "../interactive/facts";
+import { useChoiceMapView } from "../interactive/mapView";
 import { ChoiceRules, FactsPanel, ruleSummary, useFacts } from "./ChoiceRules";
 
 interface SceneData extends Record<string, unknown> {
@@ -41,6 +44,10 @@ interface SceneData extends Record<string, unknown> {
   ending: boolean;
   deadEnd: boolean;
   broken: number;
+  /** Vérificateur (lot 5). */
+  unreachable: boolean;
+  locked: boolean;
+  factIssue: boolean;
 }
 type SceneNode = Node<SceneData, "scene">;
 
@@ -80,6 +87,9 @@ const SceneCard = memo(function SceneCard({ id, data, selected }: NodeProps<Scen
         {data.ending && <span className="choice-tag is-end">{m.end}</span>}
         {data.deadEnd && <span className="choice-tag is-dead">{m.deadEnd}</span>}
         {data.broken > 0 && <span className="choice-tag is-broken">{fmt(m.broken, { n: data.broken })}</span>}
+        {data.unreachable && <span className="choice-tag is-broken">{m.unreachable}</span>}
+        {data.locked && <span className="choice-tag is-warn">{m.locked}</span>}
+        {data.factIssue && <span className="choice-tag is-warn">{m.factIssue}</span>}
       </p>
       <Handle type="source" position={Position.Right} className="choice-handle" />
     </div>
@@ -101,6 +111,7 @@ function ChoiceFlow() {
   const scenes = interactiveScenes(nodes, plan);
   const graph = useMemo(() => choiceGraph(manuscript, scenes), [manuscript, scenes]);
   const saved = useMemo(() => readChoiceMap(metaKeep), [metaKeep]);
+  const points = useMemo(() => verifyStory(scenes, manuscript, readFactLabels(metaKeep)), [scenes, manuscript, metaKeep]);
   const placed = useMemo(() => layoutChoiceMap(scenes.map((s) => s.id), graph, saved), [scenes, graph, saved]);
 
   const built = useMemo<SceneNode[]>(
@@ -119,10 +130,13 @@ function ChoiceFlow() {
             ending: out.some((e) => e.to === END_TARGET),
             deadEnd: out.length === 0,
             broken: out.filter((e) => e.to === null).length,
+            unreachable: points.some((p) => p.rule === "unreachableScene" && p.scene === s.id),
+            locked: points.some((p) => p.rule === "lockedScene" && p.scene === s.id),
+            factIssue: points.some((p) => (p.rule === "factNeverGiven" || p.rule === "factTooLate") && p.scene === s.id),
           },
         };
       }),
-    [scenes, graph, placed, manuscript],
+    [scenes, graph, placed, manuscript, points],
   );
   // Places locales pendant qu'on glisse ; enregistrées au lâcher.
   const [local, setLocal] = useState<SceneNode[]>(built);
@@ -139,6 +153,16 @@ function ChoiceFlow() {
     if (count > seenCount.current) requestAnimationFrame(() => flow.fitView({ padding: 0.2, maxZoom: 1, duration: 200 }));
     seenCount.current = count;
   }, [count, flow]);
+  // « Voir sur la carte des choix » (onglet « Vérifier ») : la scène est choisie et mise au centre.
+  const focus = useChoiceMapView((s) => s.focus);
+  useEffect(() => {
+    if (!focus) return;
+    const at = placed[focus];
+    useChoiceMapView.setState({ focus: null });
+    if (!at) return;
+    setLocal((ns) => ns.map((n) => ({ ...n, selected: n.id === focus })));
+    requestAnimationFrame(() => flow.setCenter(at.x + 130, at.y + 50, { zoom: Math.max(flow.getZoom(), 0.9), duration: 250 }));
+  }, [focus, placed, flow]);
   const onNodesChange = useCallback((changes: NodeChange<SceneNode>[]) => setLocal((ns) => applyNodeChanges(changes, ns)), []);
   const savePositions = useCallback(() => {
     const pos: MapPositions = {};

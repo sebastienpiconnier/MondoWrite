@@ -6,7 +6,9 @@ import { create } from "zustand";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
-import { STORY_RULES, groupFindings, type Finding } from "../review/checks";
+import { INTERACTIVE_RULES, STORY_RULES, groupFindings, type Finding } from "../review/checks";
+import { END_TARGET } from "../interactive/choices";
+import { showOnChoiceMap } from "../interactive/mapView";
 import type { PlanBeat } from "../plan";
 import { titleCase } from "../screenplay/editor/autocomplete";
 import type { SceneRef } from "../ai/review";
@@ -46,7 +48,7 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
   const replies = (n: number) => (n === 1 ? t.repliesOne : fmt(t.repliesMany, { n }));
 
   const label = (f: Finding): string => {
-    const w = STORY_RULES.includes(f.rule) ? "" : where(f);
+    const w = STORY_RULES.includes(f.rule) || INTERACTIVE_RULES.includes(f.rule) ? "" : where(f);
     switch (f.rule) {
       case "similarNames":
         return kind === "script"
@@ -86,6 +88,15 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
         return fmt(t.items.secretNoClue, { name: f.names![0] });
       case "objectOnce":
         return fmt(t.items.objectOnce, { name: f.names![0] });
+      case "noEnding":
+      case "unreachableScene":
+      case "brokenChoice":
+      case "lockedScene":
+      case "implicitEnd":
+        return fmt(t.items.verifyScene, { scene: f.text });
+      case "factNeverGiven":
+      case "factTooLate":
+        return fmt(t.items.verifyFact, { scene: f.text, fact: f.names?.[0] ?? "" });
       case "beatDrift":
         return fmt(t.items.beatDrift, { beat: beats[f.text as PlanBeat]?.label ?? f.text, at: f.counts![0], target: f.counts![1] });
     }
@@ -95,6 +106,8 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
   const findWord = (word: string) => useCosmos.getState().openReplace({ find: word, sceneId: null, renameId: null });
   const go = (f: Finding) => {
     if (f.rule === "frequentWords") return findWord(f.names![0]);
+    // Roman interactif : on va à la scène, dans le texte (son bloc de choix est à la fin).
+    if (INTERACTIVE_RULES.includes(f.rule)) return f.sceneId ? useCosmos.getState().openInManuscript(f.sceneId) : showOnChoiceMap();
     if (!STORY_RULES.includes(f.rule)) return onGo(f);
     const s = useCosmos.getState();
     // Une case loin de sa place : on va à sa première scène, dans le texte.
@@ -125,7 +138,7 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
           <ul className="review-list">
             {g.items.map((f) => (
               <li key={f.key} className="review-item">
-                <button type="button" className="review-go" title={STORY_RULES.includes(f.rule) ? t.openSheet : t.goTo} onClick={() => go(f)}>
+                <button type="button" className="review-go" title={STORY_RULES.includes(f.rule) && !INTERACTIVE_RULES.includes(f.rule) ? t.openSheet : t.goTo} onClick={() => go(f)}>
                   {label(f)}
                 </button>
                 {f.rule === "frequentWords" && (
@@ -168,8 +181,18 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
                       {t.newEpisode}
                     </button>
                   )}
+                  {f.rule === "implicitEnd" && f.sceneId && (
+                    <button type="button" className="review-primary" onClick={() => useCosmos.getState().addChoiceTo(f.sceneId!, END_TARGET)}>
+                      {t.addEnd}
+                    </button>
+                  )}
+                  {INTERACTIVE_RULES.includes(f.rule) && f.rule !== "implicitEnd" && (
+                    <button type="button" className="review-primary" onClick={() => showOnChoiceMap(f.sceneId)}>
+                      {t.showOnMap}
+                    </button>
+                  )}
                   <button type="button" className="review-ignore" onClick={() => ignore(f.key)}>
-                    {STORY_RULES.includes(f.rule) ? t.intended : t.ignore}
+                    {STORY_RULES.includes(f.rule) || INTERACTIVE_RULES.includes(f.rule) ? t.intended : t.ignore}
                   </button>
                 </div>
               </li>

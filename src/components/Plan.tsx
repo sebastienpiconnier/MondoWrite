@@ -5,6 +5,7 @@
 // Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
+import { setChoiceMapOpen, useChoiceMapView } from "../interactive/mapView";
 import { useInteractive } from "../interactive/useInteractive";
 import { ChoiceMap } from "./ChoiceMap";
 import { SceneStatusPicker } from "./SceneStatusPicker";
@@ -75,7 +76,8 @@ export function Plan() {
   const [timeline, setTimeline] = useState(false);
   // Carte des choix (roman interactif, lot 2) : quatrième lecture du plan, non mémorisée.
   const interactive = useInteractive();
-  const [choiceMap, setChoiceMap] = useState(false);
+  const choiceMap = useChoiceMapView((s) => s.open);
+  const setChoiceMap = setChoiceMapOpen;
   const showMap = interactive && choiceMap;
   // La scène dont « Ranger » est ouvert (chapitre et case) : un affichage, une seule à la fois.
   const [arranging, setArranging] = useState<string | null>(null);

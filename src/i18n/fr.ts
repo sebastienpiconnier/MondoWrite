@@ -831,6 +831,8 @@ export const fr = {
   // Rechercher et remplacer dans les textes, renommer partout (menu d'une carte).
   // Vérification du texte (onglet « Vérifier » du Manuscrit et du Scénario) : des points à regarder, jamais corrigés tout seuls.
   review: {
+      addEnd: "Ajouter un choix « Fin »",
+      showOnMap: "Voir sur la carte des choix",
     tabScene: "Dans cette scène",
     tabSceneShort: "Scène",
     tabReview: "Vérifier",
@@ -853,6 +855,13 @@ export const fr = {
     repliesOne: "1 réplique",
     repliesMany: "{n} répliques",
     rules: {
+      noEnding: "Aucune fin",
+      unreachableScene: "Une scène qu’aucun choix n’atteint",
+      brokenChoice: "Un choix sans destination",
+      lockedScene: "Une scène qui peut bloquer",
+      factNeverGiven: "Un fait que rien ne donne",
+      factTooLate: "Un fait donné trop tard",
+      implicitEnd: "Une fin sans choix « Fin »",
       similarNames: "Noms presque identiques",
       unknownCharacter: "Personnage sans carte",
       silentCharacter: "Personnage muet sans carte",
@@ -874,6 +883,13 @@ export const fr = {
       beatDrift: "Une case loin de sa place",
     },
     hints: {
+      noEnding: "Depuis la première scène, aucun chemin ne mène à une fin : le lecteur tournerait en rond.",
+      unreachableScene: "Aucun choix ne mène à cette scène depuis la première : le lecteur ne la lira jamais.",
+      brokenChoice: "La scène visée par un choix n’existe plus, ou a changé de titre hors de l’app.",
+      lockedScene: "Tous ses choix demandent un fait : s’il manque, le lecteur reste sans choix et l’histoire s’arrête.",
+      factNeverGiven: "Un choix le demande, mais aucun choix ne le donne : il ne sera jamais proposé.",
+      factTooLate: "Il n’est donné qu’après cette scène, ou sur un chemin qui n’y mène pas.",
+      implicitEnd: "Une scène sans choix finit l’histoire. Si c’est voulu, un choix « Fin » le dit clairement.",
       similarNames: "Sans doute le même nom écrit de deux façons.",
       unknownCharacter: "Il parle, mais n’a ni fiche dans la Bible ni carte sur le canevas.",
       silentCharacter: "Présenté en capitales dans l’action, il ne parle jamais et n’a pas de carte. Un bruit ou une indication de plan peut aussi être relevé : « Ignorer » l’écarte.",
@@ -895,6 +911,8 @@ export const fr = {
       beatDrift: "Le ruban du récit compare où chaque case commence à sa place habituelle dans cette structure. Un écart peut être voulu.",
     },
     items: {
+      verifyScene: "« {scene} »",
+      verifyFact: "« {scene} » : {fact}",
       similarNamesScript: "{where} : « {rare} » ({a}) ressemble à « {common} » ({b}).",
       similarNamesText: "{where} : « {rare} » ressemble à « {common} ».",
       unknownCharacter: "{where} : {name}",
@@ -3722,6 +3740,9 @@ export const fr = {
       exportInkHint: "Le texte de l’histoire au format Ink, pour Inky et les autres outils",
     },
     map: {
+      unreachable: "Inaccessible",
+      locked: "Peut bloquer",
+      factIssue: "Fait manquant",
       tab: "Carte des choix",
       aria: "Carte des choix",
       empty: "Pas encore de scène. Crée la première avec « Nouvelle scène ».",

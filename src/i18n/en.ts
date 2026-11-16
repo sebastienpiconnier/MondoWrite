@@ -878,6 +878,8 @@ export const en: Messages = {
 
   // Find and replace in the texts, rename everywhere (card menu).
   review: {
+      addEnd: "Add an “End” choice",
+      showOnMap: "Show on the choice map",
     tabScene: "In this scene",
     tabSceneShort: "Scene",
     tabReview: "Check",
@@ -900,6 +902,13 @@ export const en: Messages = {
     repliesOne: "1 line",
     repliesMany: "{n} lines",
     rules: {
+      noEnding: "No ending",
+      unreachableScene: "A scene no choice reaches",
+      brokenChoice: "A choice with no destination",
+      lockedScene: "A scene that can get stuck",
+      factNeverGiven: "A fact nothing gives",
+      factTooLate: "A fact given too late",
+      implicitEnd: "An ending without an “End” choice",
       similarNames: "Near-identical names",
       unknownCharacter: "Character without a card",
       silentCharacter: "Silent character without a card",
@@ -921,6 +930,13 @@ export const en: Messages = {
       beatDrift: "A beat far from its usual place",
     },
     hints: {
+      noEnding: "From the first scene, no path leads to an ending: the reader would go round in circles.",
+      unreachableScene: "No choice leads to this scene from the first one: the reader will never read it.",
+      brokenChoice: "The scene a choice points to no longer exists, or was renamed outside the app.",
+      lockedScene: "All its choices require a fact: if it is missing, the reader has no choice and the story stops.",
+      factNeverGiven: "A choice requires it, but no choice gives it: that choice will never be offered.",
+      factTooLate: "It is only given after this scene, or on a path that doesn’t lead here.",
+      implicitEnd: "A scene without choices ends the story. If that’s intended, an “End” choice says so clearly.",
       similarNames: "Probably the same name spelled two ways.",
       unknownCharacter: "They speak, but have no entry in the Bible and no card on the canvas.",
       silentCharacter: "Introduced in capitals in the action, they never speak and have no card. A sound or a camera direction may also be picked up: “Ignore” dismisses it.",
@@ -942,6 +958,8 @@ export const en: Messages = {
       beatDrift: "The story ribbon compares where each beat begins with its usual place in this structure. A gap can be intended.",
     },
     items: {
+      verifyScene: "“{scene}”",
+      verifyFact: "“{scene}”: {fact}",
       similarNamesScript: "{where}: “{rare}” ({a}) looks like “{common}” ({b}).",
       similarNamesText: "{where}: “{rare}” looks like “{common}”.",
       unknownCharacter: "{where}: {name}",
@@ -3666,6 +3684,9 @@ export const en: Messages = {
       exportInkHint: "The story’s text in Ink format, for Inky and other tools",
     },
     map: {
+      unreachable: "Unreachable",
+      locked: "Can get stuck",
+      factIssue: "Missing fact",
       tab: "Choice map",
       aria: "Choice map",
       empty: "No scene yet. Create the first one with “New scene”.",

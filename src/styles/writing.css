@@ -1447,6 +1447,7 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .choice-edge-editor input { min-width: 16rem; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.3em 0.6em; }
 .choice-picker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; width: min(24rem, calc(100% - 2rem)); max-height: calc(100% - 2rem); overflow: auto; padding: 1rem; border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); }
 .choice-picker-title { margin: 0; font-weight: 600; }
+.choice-tag.is-warn { border-color: var(--status-revise); color: var(--ink-2); }
 .choice-edge-editor .choice-rules { flex-basis: auto; padding: 0; }
 .choice-edge-editor .choice-rule { display: grid; gap: 0.2rem; color: var(--ink-2); }
 .choice-edge-editor select { min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.3em 0.5em; }

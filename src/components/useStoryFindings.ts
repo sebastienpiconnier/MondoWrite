@@ -5,6 +5,7 @@
 import { useMemo } from "react";
 import { currentScript, useCosmos } from "../store";
 import { useSettings } from "../settings";
+import { useT } from "../i18n";
 import { bookOrder } from "../book";
 import { novelReport, screenplayReport } from "../review/report";
 import { checkStory, type Finding } from "../review/checks";
@@ -17,6 +18,10 @@ import { allEpisodes, episodeScript } from "../screenplay/series";
 import { seriesLinks } from "../episodes";
 import { listScenes, sceneCharacters } from "../screenplay/scenes";
 import { useEpisodeLabel } from "./EpisodePicker";
+import { useInteractive } from "../interactive/useInteractive";
+import { interactiveScenes } from "../interactive/scenes";
+import { verifyKey, verifyStory } from "../interactive/verify";
+import { readFactLabels } from "../interactive/facts";
 
 export function useStoryFindings(): Finding[] {
   const kind = useCosmos((s) => s.kind);
@@ -31,7 +36,25 @@ export function useStoryFindings(): Finding[] {
   const drifts = useRibbon()?.drifts;
   const edges = useCosmos((s) => s.edges);
   const episodeLabel = useEpisodeLabel();
-  return useMemo(() => {
+  const interactive = useInteractive();
+  const metaKeep = useCosmos((s) => s.metaKeep);
+  // Roman interactif (lot 5) : le chemin du lecteur.
+  const untitled = useT().interactive.map.untitled;
+  const verified = useMemo<Finding[]>(() => {
+    if (!interactive) return [];
+    const scenes = interactiveScenes(nodes, plan);
+    const titles = new Map(scenes.map((sc) => [sc.id, sc.title.trim() || untitled]));
+    return verifyStory(scenes, manuscript, readFactLabels(metaKeep)).map((p) => ({
+      key: `verify:${verifyKey(p)}`,
+      rule: p.rule,
+      at: -1,
+      scene: 0,
+      sceneId: p.scene,
+      text: titles.get(p.scene ?? "") ?? "",
+      ...(p.label ? { names: [p.label] } : {}),
+    }));
+  }, [interactive, nodes, plan, manuscript, metaKeep, untitled]);
+  const story = useMemo(() => {
     const cards = nodes.map((n) => n.data);
     const order = kind === "scenario" ? [] : bookOrder(nodes, plan);
     const rows = kind === "scenario" ? (screenplay ? screenplayReport(screenplay.elements, cards, lang) : []) : novelReport(manuscript, order, cards);
@@ -66,4 +89,5 @@ export function useStoryFindings(): Finding[] {
         : undefined;
     return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined, series });
   }, [kind, screenplay, full, paper, nodes, plan, manuscript, pitch, lang, drifts, edges, episodeLabel]);
+  return useMemo(() => (verified.length ? [...verified, ...story] : story), [verified, story]);
 }

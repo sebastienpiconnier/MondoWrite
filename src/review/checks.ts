@@ -13,15 +13,20 @@ import { formOf, isSeriesForm, type Pitch } from "../pitch";
 import { cardNames, type CharacterRow } from "./report";
 import { REPEAT_MAX, frequentWords, nearRepeats, properNouns } from "./words";
 import { silentCharacters } from "./silent";
+import type { VerifyRule } from "../interactive/verify";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
-export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepeat" | "frequentWords" | "headingFormat" | "emptyElement" | "unknownCharacter" | "silentCharacter" | StoryRule;
+export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepeat" | "frequentWords" | "headingFormat" | "emptyElement" | "unknownCharacter" | "silentCharacter" | StoryRule | VerifyRule;
+
+/** Roman interactif (lot 5) : le chemin du lecteur, posé à une scène ; « C'est voulu » les écarte. */
+export const INTERACTIVE_RULES: readonly RuleKey[] = ["noEnding", "unreachableScene", "brokenChoice", "lockedScene", "factNeverGiven", "factTooLate", "implicitEnd"];
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
 export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent";
 export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "episodeLength", "principalAbsent", "secretNoReveal", "secretNoClue", "objectOnce", "beatDrift"];
 
 export const RULE_ORDER: RuleKey[] = [
+  ...INTERACTIVE_RULES,
   "similarNames",
   "unknownCharacter",
   "silentCharacter",

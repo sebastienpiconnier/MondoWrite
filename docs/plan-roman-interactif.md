@@ -29,7 +29,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 2. Carte des choix | Présentation du Plan, flèches de choix, scène créée par une flèche, bloc `choix` (fait) |
 | 3. Lecture et compilation | Ink par inkjs, Mode Lecture, « Lire à partir d'ici », export .ink (fait) |
 | 4. Variables | Faits et compteurs, « Seulement si » et « Donne » sur les choix (fait) |
-| 5. Vérificateur | Impasses, inaccessibles, parties automatiques, mise en page automatique |
+| 5. Vérificateur | Sans fin, inaccessibles, blocages, faits (fait) ; parties automatiques à décider |
 | 6. Assistant IA interactif | Outils MCP |
 | 7. Export web | HTML autonome |
 | 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF |
@@ -149,4 +149,21 @@ chaque choix tapé dans le texte apparaît sur la carte.
   plusieurs lignes (`* [..]`, `~ …`, `-> …`). Un choix sans texte reçoit « Continuer » (Ink cacherait un choix vide,
   défaut du lot 3 corrigé ici).
 - **Lecture** : « Ce que sait le lecteur » sous la barre, faits acquis et compteurs non nuls.
-- **Reste** : vérifier qu'un fait demandé est donné avant (lot 5, vérificateur) ; outils MCP (lot 6).
+- **Reste** : outils MCP (lot 6).
+
+## Lot 5 · Vérificateur (fait sur la branche `roman-interactif`)
+
+- **Règles** (`interactive/verify.ts`, pur et testé ; chemin suivi par les choix et les renvois `-> nom`, depuis la
+  première scène, sans tenir compte des conditions) : aucune fin atteignable (`noEnding`), scène qu'aucun choix
+  n'atteint (`unreachableScene`), choix sans destination (`brokenChoice`), scène dont tous les choix demandent un
+  fait (`lockedScene`), fait demandé que rien ne donne (`factNeverGiven`), fait donné seulement après, ou sur un
+  chemin qui ne mène pas à la scène (`factTooLate`), scène atteinte sans choix ni « Fin » (`implicitEnd`).
+  « pas : » un fait et une condition qui nomme une scène ne demandent rien.
+- **Onglet « Vérifier » du Manuscrit** : règles en tête (`INTERACTIVE_RULES` de review/checks.ts, points fabriqués
+  par `useStoryFindings` seulement si `useInteractive()`), toujours comptées dans « Vérifier · N » ; un point mène à
+  la scène, « Voir sur la carte des choix » ou « Ajouter un choix « Fin » », « C'est voulu » pour la session.
+- **Carte des choix** : pastilles « Inaccessible », « Peut bloquer », « Fait manquant ». La carte ouverte est un état
+  de la session (`interactive/mapView.ts`) : elle reste ouverte quand on revient au Plan, et « Voir sur la carte
+  des choix » l'ouvre sur la scène, choisie et centrée.
+- **Mise en page automatique** : « Réorganiser la carte » (lot 2) suffit pour l'instant.
+- **Reste** : « parties automatiques » (regrouper les scènes en branches ou en parties) à préciser avec l'auteur.
