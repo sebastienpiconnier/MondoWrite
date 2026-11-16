@@ -28,7 +28,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 1. Images (cœur) | `medias/`, insertion, texte alternatif, exports (partie 1 faite) |
 | 2. Carte des choix | Présentation du Plan, flèches de choix, scène créée par une flèche, bloc `choix` (fait) |
 | 3. Lecture et compilation | Ink par inkjs, Mode Lecture, « Lire à partir d'ici », export .ink (fait) |
-| 4. Variables | Objets, clés, mots de passe ; conditions sur les flèches |
+| 4. Variables | Faits et compteurs, « Seulement si » et « Donne » sur les choix (fait) |
 | 5. Vérificateur | Impasses, inaccessibles, parties automatiques, mise en page automatique |
 | 6. Assistant IA interactif | Outils MCP |
 | 7. Export web | HTML autonome |
@@ -125,4 +125,28 @@ chaque choix tapé dans le texte apparaît sur la carte.
   Présentation du Mac), « Lire à partir d'ici » (⋯ d'une scène de la carte, ⋯ du Manuscrit).
 - **Export Ink** : « Ink (.ink) » dans le menu Exporter d'un roman interactif, ouvrable dans Inky.
 - **Exports suivis** (Word, EPUB, PDF, Markdown, page web) : le bloc de choix n'y est plus imprimé (`htmlToBlocks`).
-- **Reste** : gras et italique dans la lecture ; variables et conditions (lot 4).
+- **Reste** : gras et italique dans la lecture.
+
+## Lot 4 · Faits et compteurs (fait sur la branche `roman-interactif`)
+
+- **Un fait** est ce que le lecteur apprend ou obtient en chemin (« a trouvé la clé ») : une variable Ink booléenne.
+  **Un compteur** est une variable entière, écrite à la main (`~ pieces += 1`, `{ pieces >= 3 }`). Rien d'autre :
+  pas de caractéristiques, de combats ni de dés livrés.
+- **Format** : un effet est une ligne `~ …` juste sous son choix, dans le bloc ` ```choix ` (`  ~ cle = true`,
+  `effects` du choix ; un `~` sans choix au-dessus reste une ligne gardée). La condition reste `{ … }` devant le
+  libellé. Retirer un choix retire ses effets. Rien n'est déclaré à part : les variables se lisent dans les choix
+  (`storyFacts`, `interactive/facts.ts`, pur et testé). Seul le libellé d'un fait est gardé, dans `storyFacts` de
+  cosmos.json (`{ "cle": "a trouvé la clé" }`, gardé par `metaKeep`, hors historique). Le nom d'un fait vient de
+  son libellé (`newFactName`) et ne prend jamais celui d'une scène ni un mot d'Ink.
+- **Réglages d'un choix** : « Seulement si » (toujours, un fait, « pas : » un fait) et « Donne » (rien, un fait),
+  avec « Nouveau fait… » dans les deux listes. Dans le bloc du texte (`choicesNode.ts`) et dans le bandeau d'une
+  flèche de la carte (`ChoiceRules.tsx`). Une condition ou des effets écrits à la main restent tels quels et
+  s'affichent en clair.
+- **Carte des choix** : une flèche soumise à une condition est en pointillé, son étiquette dit « si … » et « + … » ;
+  bouton « Faits · N » et volet « Ce que sait le lecteur » (libellés modifiables, où sert chaque fait, alerte
+  quand un fait demandé n'est jamais donné, « Oublier ce fait » pour un fait qui ne sert plus).
+- **Ink** : `VAR cle = false // a trouvé la clé`, `VAR pieces = 0` en tête ; un choix à effets s'écrit sur
+  plusieurs lignes (`* [..]`, `~ …`, `-> …`). Un choix sans texte reçoit « Continuer » (Ink cacherait un choix vide,
+  défaut du lot 3 corrigé ici).
+- **Lecture** : « Ce que sait le lecteur » sous la barre, faits acquis et compteurs non nuls.
+- **Reste** : vérifier qu'un fait demandé est donné avant (lot 5, vérificateur) ; outils MCP (lot 6).

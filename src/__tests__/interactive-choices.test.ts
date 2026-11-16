@@ -25,13 +25,13 @@ import { htmlToMarkdown, markdownToHtml } from "../storage/markdown";
 
 describe("lignes d'un bloc", () => {
   it("choix, condition, fin, et lignes gardées telles quelles", () => {
-    const text = "* [Pousser la grille] -> la_cour\n\n* { cle_trouvee } [Ouvrir la porte] -> les_cuisines\n* [Rentrer] -> END\n~ courage = courage + 1";
+    const text = "* [Pousser la grille] -> la_cour\n\n* { cle_trouvee } [Ouvrir la porte] -> les_cuisines\n* [Rentrer] -> END\n-> la_cour";
     const lines = parseChoices(text);
     expect(lines).toEqual([
       { kind: "choice", label: "Pousser la grille", target: "la_cour" },
       { kind: "choice", label: "Ouvrir la porte", target: "les_cuisines", cond: "cle_trouvee" },
       { kind: "choice", label: "Rentrer", target: "END" },
-      { kind: "raw", text: "~ courage = courage + 1" },
+      { kind: "raw", text: "-> la_cour" },
     ]);
     expect(serializeChoices(lines)).toBe(text.replace("\n\n", "\n"));
   });
@@ -110,9 +110,10 @@ describe("graphe, modification, renommage, annulation", () => {
   });
 
   it("modifier ou retirer le choix de rang n", () => {
-    const lines = parseChoices("* [A] -> a\n~ x = 1\n* [B] -> b");
-    expect(serializeChoices(editChoice(lines, 1, { label: "Bé", target: "c" }))).toBe("* [A] -> a\n~ x = 1\n* [Bé] -> c");
-    expect(serializeChoices(editChoice(lines, 0, null))).toBe("~ x = 1\n* [B] -> b");
+    const lines = parseChoices("-> a\n* [A] -> a\n  ~ x = 1\n* [B] -> b");
+    expect(serializeChoices(editChoice(lines, 1, { label: "Bé", target: "c" }))).toBe("-> a\n* [A] -> a\n  ~ x = 1\n* [Bé] -> c");
+    // Retirer un choix retire ses effets avec lui ; une ligne gardée reste.
+    expect(serializeChoices(editChoice(lines, 0, null))).toBe("-> a\n* [B] -> b");
   });
 
   it("un titre changé : les destinations suivent", () => {

@@ -1397,6 +1397,13 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .scene-choices li.is-raw code { font-size: 0.95em; color: var(--muted); }
 .scene-choices .choice-remove { min-width: 32px; min-height: 32px; }
 .scene-choices-add { margin-top: 0.5em; }
+/* Lot 4 : « Seulement si » et « Donne » sous chaque choix (choicesNode.ts, ChoiceRules.tsx). */
+.choice-rules { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3em 0.9em; padding-left: 0.2em; color: var(--muted); }
+.choice-rule { display: inline-flex; align-items: center; gap: 0.4em; }
+.choice-rule > span { white-space: nowrap; }
+.choice-rules select, .choice-rules .choice-new-fact { flex: 0 1 14em; max-width: 100%; }
+.choice-effects { font-size: 0.95em; color: var(--muted); }
+.scene-choices li + li { padding-top: 0.4em; border-top: 1px solid var(--line); }
 @media (pointer: coarse) {
   .scene-choices input, .scene-choices select, .scene-choices .choice-remove, .scene-choices-add { min-height: 44px; }
   .scene-choices .choice-remove { min-width: 44px; }
@@ -1440,6 +1447,26 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .choice-edge-editor input { min-width: 16rem; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.3em 0.6em; }
 .choice-picker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; width: min(24rem, calc(100% - 2rem)); max-height: calc(100% - 2rem); overflow: auto; padding: 1rem; border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); }
 .choice-picker-title { margin: 0; font-weight: 600; }
+.choice-edge-editor .choice-rules { flex-basis: auto; padding: 0; }
+.choice-edge-editor .choice-rule { display: grid; gap: 0.2rem; color: var(--ink-2); }
+.choice-edge-editor select { min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.3em 0.5em; }
+/* Volet « Ce que sait le lecteur » (ChoiceRules.tsx). */
+.facts-panel { position: absolute; top: 3.6rem; right: 1rem; z-index: 10; width: min(22rem, calc(100% - 2rem)); max-height: calc(100% - 5rem); overflow: auto; padding: 0.9rem 1rem 1rem; border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-pop); font-size: 0.85rem; }
+.facts-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.facts-head h3 { margin: 0; font-size: 1rem; }
+.facts-hint { margin: 0.3rem 0 0.7rem; color: var(--muted); }
+.facts-panel ul { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 0.6rem; }
+.facts-row { display: grid; gap: 0.25rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
+.facts-row input, .facts-add input { min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.3em 0.6em; }
+.facts-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0; color: var(--muted); }
+.facts-meta code { font-size: 0.9em; }
+.facts-warn { margin: 0; color: var(--danger); }
+.facts-row .ghost-button { justify-self: start; }
+.facts-add { display: flex; gap: 0.4rem; }
+.facts-add input { flex: 1; min-width: 0; }
+.choice-map-actions .ghost-button.is-on { border-color: var(--accent); color: var(--accent); }
+.play-known { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.8rem; color: var(--muted); }
+.play-known .choice-tag { color: var(--ink-2); }
 .choice-picker-hint { margin: 0.3rem 0 0.6rem; color: var(--muted); font-size: 0.85rem; }
 .choice-picker ul { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 4px; }
 .choice-picker li button { width: 100%; min-height: 40px; text-align: left; padding: 0.4rem 0.7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
@@ -1448,7 +1475,7 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 }
 @media (pointer: coarse) {
   .choice-handle { width: 22px; height: 22px; }
-  .choice-picker li button, .choice-edge-editor input { min-height: 44px; }
+  .choice-picker li button, .choice-edge-editor input, .choice-edge-editor select, .facts-row input, .facts-add input, .facts-panel button { min-height: 44px; }
 }
 .choice-scene-rank { color: var(--muted); font-weight: 500; }
 

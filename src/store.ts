@@ -81,8 +81,9 @@ import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
 import { isInteractiveMeta } from "./interactive";
-import { CHOICE_MAP_KEY, END_TARGET, choiceMapValue, choicesAfterUndo, choicesIn, cleanLabel, editChoice, readChoiceMap, renameTargets, withChoices, type ChoiceLine, type MapPositions } from "./interactive/choices";
+import { CHOICE_MAP_KEY, END_TARGET, choiceMapValue, choicesAfterUndo, choicesIn, cleanLabel, editChoice, readChoiceMap, renameTargets, sceneSlugs, withChoices, type ChoiceLine, type MapPositions } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
+import { FACTS_KEY, cleanFactLabel, isFactName, newFactName, readFactLabels, storyFacts } from "./interactive/facts";
 import { IMAGE_EXT, iaImageSource, iaImagesOf, readIaImageSource, type GeneratedImage } from "./ai/imageGen";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, headingRenames, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
 export type { CardNode, FrameNode, View, SaveStatus } from "./projectState";
@@ -158,7 +159,11 @@ export interface CosmosState {
   /** Ajoute un choix de `from` vers une scène (ou `END`). */
   addChoiceTo: (from: string, to: string, label?: string) => void;
   /** Modifie ou retire (null) le choix de rang `index` de la scène. */
-  editChoiceAt: (from: string, index: number, next: { label: string; target: string; cond?: string } | null) => void;
+  editChoiceAt: (from: string, index: number, next: { label: string; target: string; cond?: string; effects?: string[] } | null) => void;
+  /** Roman interactif (lot 4) : nouveau fait au libellé donné ; rend son nom (variable Ink), ou null. */
+  createFact: (label: string) => string | null;
+  /** Libellé d'un fait (gardé dans `storyFacts` de cosmos.json, hors historique) ; null l'oublie. */
+  setFactLabel: (name: string, label: string | null) => void;
   /** Nouvelle scène après `from` (même case, même chapitre) et le choix qui y mène ; posée à `at` sur la carte des choix. */
   addSceneAfter: (from: string, at?: { x: number; y: number }, label?: string) => string | null;
   /** Places de la carte des choix (cosmos.json, `choiceMap`), hors historique comme la vue du canevas. */
@@ -2598,6 +2603,34 @@ export const useCosmos = create<CosmosState>((set, get) => {
       get().addChoiceTo(from, id, label);
       if (at) get().setChoiceMapPositions({ ...readChoiceMap(get().metaKeep), [id]: at });
       return id;
+    },
+    createFact: (label) => {
+      const clean = cleanFactLabel(label);
+      if (!clean) return null;
+      const { nodes, plan, manuscript, metaKeep } = get();
+      const scenes = interactiveScenes(nodes, plan);
+      const slugs = new Set(sceneSlugs(scenes).values());
+      const labels = readFactLabels(metaKeep);
+      const known = storyFacts(manuscript, scenes.map((sc) => sc.id), slugs, labels);
+      const same = known.find((f) => f.label.toLowerCase() === clean.toLowerCase());
+      if (same) return same.name;
+      const name = newFactName(clean, new Set([...slugs, ...known.map((f) => f.name)]));
+      get().setFactLabel(name, clean);
+      return name;
+    },
+    setFactLabel: (name, label) => {
+      if (!isFactName(name)) return;
+      const metaKeep = get().metaKeep;
+      const labels = readFactLabels(metaKeep);
+      const clean = label === null ? "" : cleanFactLabel(label);
+      if ((labels[name] ?? "") === clean) return;
+      if (clean) labels[name] = clean;
+      else delete labels[name];
+      const next = { ...metaKeep };
+      if (Object.keys(labels).length) next[FACTS_KEY] = labels;
+      else delete next[FACTS_KEY];
+      set({ metaKeep: next });
+      touch();
     },
     setChoiceMapPositions: (positions) => {
       const { metaKeep, nodes, plan } = get();

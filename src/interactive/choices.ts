@@ -9,7 +9,8 @@
 //   ```
 //
 // C'est un sous-ensemble de la syntaxe Ink : un choix `*`, une condition facultative `{ }`, le libellé entre crochets,
-// la destination après `->`. Une destination est le nom d'une scène tiré de son titre (`sceneSlugs`), ou `END` pour
+// la destination après `->`. Une ligne qui commence par `~` sous un choix est un de ses effets (lot 4 : `~ cle = true`,
+// le lecteur acquiert un fait ; `~ pieces += 1`, un compteur). Une destination est le nom d'une scène tiré de son titre (`sceneSlugs`), ou `END` pour
 // une fin. Une ligne qui ne se lit pas comme un choix est gardée telle quelle, jamais perdue.
 //
 // En mémoire (HTML de l'éditeur et du store), le bloc est `<pre data-choices="true">texte</pre>`.
@@ -25,6 +26,8 @@ export interface Choice {
   target: string;
   /** Condition Ink, sans les accolades (lot 4). */
   cond?: string;
+  /** Effets du choix (lot 4) : affectations Ink sans le `~` (`cle = true`, `pieces += 1`), une par ligne. */
+  effects?: string[];
 }
 export interface RawLine {
   kind: "raw";
@@ -47,8 +50,11 @@ export function parseChoices(text: string): ChoiceLine[] {
     const trimmed = line.trim();
     if (!trimmed) continue;
     const m = CHOICE_RE.exec(trimmed);
+    const last = lines[lines.length - 1];
     if (m) lines.push({ kind: "choice", label: m[2].trim(), target: m[3], ...(m[1] ? { cond: m[1] } : {}) });
-    else lines.push({ kind: "raw", text: trimmed });
+    else if (trimmed.startsWith("~") && last?.kind === "choice" && trimmed.slice(1).trim()) {
+      last.effects = [...(last.effects ?? []), trimmed.slice(1).trim()];
+    } else lines.push({ kind: "raw", text: trimmed });
   }
   return lines;
 }
@@ -56,8 +62,13 @@ export function parseChoices(text: string): ChoiceLine[] {
 /** Écrit un choix sur une ligne. */
 export function choiceLine(c: Omit<Choice, "kind">): string {
   const cond = c.cond?.trim() ? `{ ${c.cond.trim()} } ` : "";
-  return `* ${cond}[${cleanLabel(c.label)}] -> ${c.target}`;
+  const head = `* ${cond}[${cleanLabel(c.label)}] -> ${c.target}`;
+  const effects = (c.effects ?? []).map(cleanEffect).filter(Boolean);
+  return effects.length ? [head, ...effects.map((e) => `  ~ ${e}`)].join("\n") : head;
 }
+
+/** Effet d'un choix : une ligne, sans le `~` de tête. */
+export const cleanEffect = (raw: string) => raw.replace(/[\r\n]+/g, " ").replace(/^\s*~\s*/, "").trim().slice(0, 200);
 
 export function serializeChoices(lines: readonly ChoiceLine[]): string {
   return lines.map((l) => (l.kind === "raw" ? l.text : choiceLine(l))).join("\n");
@@ -178,6 +189,7 @@ export interface ChoiceEdge {
   /** Scène atteinte, `END`, ou null si la destination ne désigne aucune scène. */
   to: string | null;
   cond?: string;
+  effects?: string[];
 }
 
 /** Tous les choix du livre, scène par scène, dans l'ordre reçu. */
@@ -188,7 +200,15 @@ export function choiceGraph(manuscript: Readonly<Record<string, string>>, scenes
     let index = 0;
     for (const line of choicesIn(manuscript[s.id])) {
       if (line.kind !== "choice") continue;
-      edges.push({ from: s.id, index: index++, label: line.label, target: line.target, to: resolveTarget(line.target, slugs), ...(line.cond ? { cond: line.cond } : {}) });
+      edges.push({
+        from: s.id,
+        index: index++,
+        label: line.label,
+        target: line.target,
+        to: resolveTarget(line.target, slugs),
+        ...(line.cond ? { cond: line.cond } : {}),
+        ...(line.effects?.length ? { effects: line.effects } : {}),
+      });
     }
   }
   return edges;
@@ -200,7 +220,16 @@ export function editChoice(lines: readonly ChoiceLine[], index: number, next: Om
   const out: ChoiceLine[] = [];
   for (const l of lines) {
     if (l.kind === "choice" && ++rank === index) {
-      if (next) out.push({ kind: "choice", label: cleanLabel(next.label), target: next.target, ...(next.cond ? { cond: next.cond } : {}) });
+      if (next) {
+        const effects = (next.effects ?? []).map(cleanEffect).filter(Boolean);
+        out.push({
+          kind: "choice",
+          label: cleanLabel(next.label),
+          target: next.target,
+          ...(next.cond?.trim() ? { cond: next.cond.trim() } : {}),
+          ...(effects.length ? { effects } : {}),
+        });
+      }
       continue;
     }
     out.push(l);

@@ -7,6 +7,7 @@
 
 import { htmlToBlocks, type Block } from "../export/doc";
 import { END_TARGET, choicesIn, type SceneRef } from "./choices";
+import { inkDeclarations, storyFacts } from "./facts";
 
 /** Étiquette Ink d'une image du texte : `# image: nom.jpg` (nom d'un fichier de medias/). */
 export const IMAGE_TAG = "image:";
@@ -54,13 +55,23 @@ export interface InkSource {
  * Compose le texte Ink du projet. `scenes` dans l'ordre du livre (la première est le départ), `slugs` leurs noms,
  * `manuscript` le HTML de chaque scène.
  */
-export function projectToInk(scenes: readonly SceneRef[], slugs: ReadonlyMap<string, string>, manuscript: Readonly<Record<string, string>>): InkSource {
+export function projectToInk(
+  scenes: readonly SceneRef[],
+  slugs: ReadonlyMap<string, string>,
+  manuscript: Readonly<Record<string, string>>,
+  factLabels: Readonly<Record<string, string>> = {},
+  /** Texte d'un choix laissé vide : Ink cacherait un choix sans texte (choix de repli). */
+  emptyLabel = "…",
+): InkSource {
   const out: string[] = [];
   const lines: InkLine[] = [];
   const push = (text: string, scene?: string) => {
     out.push(text);
     lines.push(scene ? { scene } : {});
   };
+  // Faits et compteurs (lot 4) : déclarés en tête, faux ou à zéro au départ.
+  const facts = storyFacts(manuscript, scenes.map((s) => s.id), new Set(slugs.values()), factLabels);
+  for (const decl of inkDeclarations(facts)) push(decl);
   const first = scenes[0];
   push(first ? `-> ${slugs.get(first.id)}` : `-> ${END_TARGET}`);
   for (const s of scenes) {
@@ -78,7 +89,15 @@ export function projectToInk(scenes: readonly SceneRef[], slugs: ReadonlyMap<str
     const choices = choicesIn(manuscript[s.id]);
     for (const line of choices) {
       if (line.kind === "raw") push(line.text, s.id);
-      else push(`* ${line.cond?.trim() ? `{ ${line.cond.trim()} } ` : ""}[${escapeInk(line.label).trimStart()}] -> ${line.target}`, s.id);
+      else {
+        const head = `* ${line.cond?.trim() ? `{ ${line.cond.trim()} } ` : ""}[${escapeInk(line.label.trim() || emptyLabel).trimStart()}]`;
+        if (!line.effects?.length) push(`${head} -> ${line.target}`, s.id);
+        else {
+          push(head, s.id);
+          for (const e of line.effects) push(`  ~ ${e}`, s.id);
+          push(`  -> ${line.target}`, s.id);
+        }
+      }
     }
     // Sans choix ni renvoi écrit par l'auteur, la scène finit l'histoire.
     if (!choices.some((l) => l.kind === "choice" || /^\s*->/.test(l.text))) push(`-> ${END_TARGET}`, s.id);

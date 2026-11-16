@@ -10,6 +10,8 @@ import { useCosmos } from "../store";
 import { isMediaName } from "../media";
 import { imagesOfTags, inkProblems, projectToInk, sceneOfPath, type InkProblem, type InkSource } from "../interactive/ink";
 import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { readFactLabels, shownValue } from "../interactive/facts";
+import { projectFacts } from "../interactive/projectFacts";
 import { useMediaUrl } from "./useMediaUrl";
 import { usePlay } from "../interactive/playState";
 
@@ -41,7 +43,7 @@ export function PlayDialog() {
   const titleOf = (id?: string | null) => (id && scenes.find((s) => s.id === id)?.title.trim()) || t.interactive.map.untitled;
 
   // Le texte est relu à l'ouverture : modifier une scène puis rouvrir la lecture prend la nouvelle version.
-  const source = useMemo<InkSource>(() => projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const source = useMemo<InkSource>(() => projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript, readFactLabels(useCosmos.getState().metaKeep), t.interactive.map.defaultLabel), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [story, setStory] = useState<Story | null>(null);
   const [problems, setProblems] = useState<InkProblem[] | null>(null);
@@ -49,6 +51,25 @@ export function PlayDialog() {
   const [choices, setChoices] = useState<{ text: string; index: number }[]>([]);
   const [current, setCurrent] = useState<string | null>(null);
   const history = useRef<Step[]>([]);
+  // Faits et compteurs (lot 4) : relus après chaque pas, montrés quand le lecteur les a.
+  const facts = useMemo(() => projectFacts(useCosmos.getState()), []);
+  const [known, setKnown] = useState<{ label: string; value: string }[]>([]);
+  const readKnown = useCallback(
+    (s: Story) =>
+      setKnown(
+        facts.flatMap((f) => {
+          let raw: unknown;
+          try {
+            raw = s.variablesState.$(f.name);
+          } catch {
+            raw = undefined;
+          }
+          const value = shownValue(raw);
+          return value === null ? [] : [{ label: f.label, value }];
+        }),
+      ),
+    [facts],
+  );
   const endRef = useRef<HTMLDivElement>(null);
 
   /** Passages de chaque scène (nombre de visites), pour savoir où l'on est même dans une scène sans texte. */
@@ -71,13 +92,14 @@ export function PlayDialog() {
       }
       setPassages((all) => [...all, { ...(chose !== undefined ? { chose } : {}), lines }]);
       setChoices(s.currentChoices.map((c) => ({ text: c.text, index: c.index })));
+      readKnown(s);
       // La scène lue en dernier ; à défaut (scène sans texte), celle qu'on vient de visiter.
       const after = visits(s);
       const entered = [...after].filter(([id, n]) => n > (before.get(id) ?? 0)).map(([id]) => id);
       const scene = sceneOfPath(path, source.knots) ?? (entered.length === 1 ? entered[0] : null);
       if (scene) setCurrent(scene);
     },
-    [source, visits],
+    [source, visits, readKnown],
   );
 
   const start = useCallback(
@@ -129,6 +151,7 @@ export function PlayDialog() {
     story.state.LoadJson(last.state);
     setPassages((all) => all.slice(0, last.passages));
     setChoices(story.currentChoices.map((c) => ({ text: c.text, index: c.index })));
+    readKnown(story);
   };
 
   // 1 à 9 choisissent, comme dans un livre qu'on lit au clavier.
@@ -169,6 +192,16 @@ export function PlayDialog() {
         </button>
       </div>
 
+      {known.length > 0 && (
+        <p className="play-known">
+          <span>{t.interactive.facts.known}</span>
+          {known.map((k) => (
+            <span key={k.label} className="choice-tag">
+              {k.value ? fmt(t.interactive.facts.value, { fact: k.label, value: k.value }) : k.label}
+            </span>
+          ))}
+        </p>
+      )}
       {problems && (
         <div className="play-problems" role="alert">
           <p>{p.problems}</p>

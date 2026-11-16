@@ -5,6 +5,7 @@
 
 import { useInteractive } from "../interactive/useInteractive";
 import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { readFactLabels } from "../interactive/facts";
 import { projectToInk } from "../interactive/ink";
 import { useEffect, useId, useRef, useState } from "react";
 import { useCommand } from "../commands";
@@ -180,10 +181,10 @@ export function ExportMenu() {
   // Roman interactif (lot 3) : l'histoire en Ink, lisible par Inky et les autres outils d'Ink.
   const interactive = useInteractive();
   const inkFile = async (): Promise<ExportedFile | null> => {
-    const { nodes, plan, manuscript } = useCosmos.getState();
+    const { nodes, plan, manuscript, metaKeep } = useCosmos.getState();
     const scenes = interactiveScenes(nodes, plan);
     if (scenes.length === 0) return null;
-    const ink = projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript).ink;
+    const ink = projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript, readFactLabels(metaKeep), all.interactive.map.defaultLabel).ink;
     return { name: `${fileName(info().title, "mondowrite")}.ink`, extension: "ink", mime: "text/plain", data: new TextEncoder().encode(ink) };
   };
   const inkItem = { key: "ms-ink", label: all.interactive.play.exportInk, build: inkFile };

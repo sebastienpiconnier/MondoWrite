@@ -31,6 +31,7 @@ import { END_TARGET, choiceGraph, layoutChoiceMap, readChoiceMap, type ChoiceEdg
 import { interactiveScenes } from "../interactive/scenes";
 import { MoreMenu } from "./MoreMenu";
 import { openPlay } from "../interactive/playState";
+import { ChoiceRules, FactsPanel, ruleSummary, useFacts } from "./ChoiceRules";
 
 interface SceneData extends Record<string, unknown> {
   title: string;
@@ -146,29 +147,36 @@ function ChoiceFlow() {
   }, [flow]);
 
   const titleOf = (id: string) => scenes.find((s) => s.id === id)?.title.trim() || m.untitled;
+  const facts = useFacts();
   const edges = useMemo<Edge[]>(
     () =>
       graph
         .filter((e): e is ChoiceEdge & { to: string } => !!e.to && e.to !== END_TARGET)
-        .map((e) => ({
+        .map((e) => {
+          // Un choix soumis à un fait, ou qui en donne un, le dit sur sa flèche.
+          const rules = ruleSummary(e, facts, { ifFact: m.edgeIf, ifNot: m.edgeIfNot, gives: m.edgeGives });
+          return {
           id: `${e.from}:${e.index}`,
           source: e.from,
           target: e.to,
-          label: e.label || m.defaultLabel,
+          label: [rules.before, e.label || m.defaultLabel, rules.after].filter(Boolean).join(" · "),
           ariaLabel: fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }),
           className: e.label ? "choice-edge" : "choice-edge is-unnamed",
           markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "var(--ink-2)" },
-          style: { stroke: "var(--ink-2)", strokeWidth: 1.5 },
+          // Choix soumis à une condition : flèche en pointillé.
+          style: { stroke: "var(--ink-2)", strokeWidth: 1.5, ...(e.cond ? { strokeDasharray: "6 4" } : {}) },
           labelStyle: { fill: "var(--ink)", fontSize: 12 },
           labelBgStyle: { fill: "var(--surface)" },
           labelBgPadding: [6, 3] as [number, number],
           labelBgBorderRadius: 4,
           data: { from: e.from, index: e.index },
-        })),
+          };
+        }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [graph, scenes, t],
+    [graph, scenes, t, facts],
   );
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
+  const [showFacts, setShowFacts] = useState(false);
   const edgeInfo = graph.find((e) => `${e.from}:${e.index}` === selectedEdge) ?? null;
 
   // Tirer une flèche vers une autre scène : un choix. La lâcher dans le vide : une nouvelle scène et son choix.
@@ -255,6 +263,9 @@ function ChoiceFlow() {
           <button type="button" className="ghost-button" onClick={() => openPlay()}>
             {t.interactive.play.open}
           </button>
+          <button type="button" className={`ghost-button${showFacts ? " is-on" : ""}`} aria-expanded={showFacts} onClick={() => setShowFacts((v) => !v)}>
+            {fmt(t.interactive.facts.button, { n: facts.length })}
+          </button>
           <button type="button" className="ghost-button" title={m.tidyHint} onClick={tidy}>
             {m.tidy}
           </button>
@@ -265,6 +276,7 @@ function ChoiceFlow() {
           </Panel>
         )}
       </ReactFlow>
+      {showFacts && <FactsPanel onClose={() => setShowFacts(false)} />}
       {picking && <TargetPicker from={picking} title={titleOf(picking)} scenes={scenes.map((s, i) => ({ ...s, rank: i + 1 })).filter((s) => s.id !== picking)} onClose={() => setPicking(null)} />}
     </div>
   );
@@ -275,7 +287,7 @@ function EdgeEditor({ edge, onDone }: { edge: ChoiceEdge; onDone: () => void }) 
   const m = useT().interactive.map;
   const [label, setLabel] = useState(edge.label);
   const commit = () => {
-    if (label !== edge.label) useCosmos.getState().editChoiceAt(edge.from, edge.index, { label, target: edge.target, cond: edge.cond });
+    if (label !== edge.label) useCosmos.getState().editChoiceAt(edge.from, edge.index, { label, target: edge.target, cond: edge.cond, effects: edge.effects });
   };
   return (
     <div className="choice-edge-editor">
@@ -296,6 +308,7 @@ function EdgeEditor({ edge, onDone }: { edge: ChoiceEdge; onDone: () => void }) 
           }}
         />
       </label>
+      <ChoiceRules line={{ ...edge, label }} n={edge.index + 1} onChange={(next) => useCosmos.getState().editChoiceAt(edge.from, edge.index, next)} />
       <button
         type="button"
         className="ghost-button is-danger"
