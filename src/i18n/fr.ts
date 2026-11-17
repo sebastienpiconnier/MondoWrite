@@ -2554,6 +2554,8 @@ export const fr = {
     items: {
       help: "Cette liste",
       commands: "Palette de commandes",
+      findNext: "Passage suivant de la recherche (sur Mac : Cmd + Alt + G)",
+      findPrev: "Passage précédent de la recherche (sur Mac : Maj + Cmd + Alt + G)",
       keepVersion: "Garder une version de la scène",
       synonyms: "Synonymes du mot",
       comment: "Commenter le passage sélectionné",
@@ -2626,6 +2628,8 @@ export const fr = {
     exportMenu: "Exporter…",
     save: "Enregistrer",
     find: "Rechercher…",
+    findNext: "Occurrence suivante",
+    findPrev: "Occurrence précédente",
     replace: "Rechercher et remplacer…",
     keepVersion: "Garder une version de la scène…",
     synonyms: "Synonymes du mot…",

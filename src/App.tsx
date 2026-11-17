@@ -29,6 +29,7 @@ import { ScrivenerReportNotice } from "./components/ScrivenerImport";
 import { shownView, usePhone } from "./components/usePhone";
 import { toggleFullscreen } from "./fullscreen";
 import { isMobileOS } from "./platform";
+import { findOrSearch } from "./writingFind";
 
 const AUTOSAVE_DELAY = 2500; // ms après la dernière modification (800 faisait clignoter « Non enregistré » à chaque pause)
 /** Ce qui s'écrit dans le projet : toute modification de l'un d'eux relance le délai de la sauvegarde auto. */
@@ -141,6 +142,13 @@ export function App() {
         void toggleFullscreen();
         return;
       }
+      // F3, Maj + F3 : occurrence suivante ou précédente de la recherche, dans le Manuscrit et le Scénario (#85).
+      if (e.key === "F3" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (useCosmos.getState().screen !== "project" || useCosmos.getState().view !== "manuscrit") return;
+        e.preventDefault();
+        findOrSearch(e.shiftKey ? -1 : 1);
+        return;
+      }
       if (!(e.metaKey || e.ctrlKey)) return;
       const key = e.key.toLowerCase();
       // Cmd/Ctrl + / : la liste des raccourcis, partout (accueil compris).
@@ -179,6 +187,13 @@ export function App() {
         e.preventDefault();
         const { writing, setWriting } = useSettings.getState();
         setWriting({ ...writing, zoom: nextZoom(writing.zoom, zoomStep) });
+        return;
+      }
+      // Cmd/Ctrl + Alt + G, avec Maj : la même chose que F3, que le Mac garde pour lui (#85). Lu par `e.code` : Alt
+      // change la lettre sur Mac.
+      if (e.altKey && e.code === "KeyG" && useCosmos.getState().view === "manuscrit") {
+        e.preventDefault();
+        findOrSearch(e.shiftKey ? -1 : 1);
         return;
       }
       // Cmd/Ctrl + G : aller à une page, une scène, un chapitre (Manuscrit ou Scénario), depuis n'importe quelle vue.

@@ -11,18 +11,15 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { typeColor } from "../types";
 import { useVocab } from "../vocab";
-import { findPassages, plainText, searchCards, type TextUnit } from "../search";
+import { findPassages, plainText, searchCards } from "../search";
 import { sceneBody, sceneText } from "../screenplay/sceneText";
 import { excerptOf } from "../ai/semantic";
 import { openPalette } from "../commandList";
 import { useKeyHint } from "./MoreMenu";
 import { fmt } from "../i18n";
 import { goToHit, useCanSearchBySense, useSemanticSearch } from "./SemanticSearch";
-import { SCENE_AT } from "../store";
-import { bookOrder } from "../book";
-import { htmlParagraphs } from "../cardText";
 import { sceneSynopsis } from "../screenplay/scenes";
-import { isEditableType } from "../screenplay/editor/nodes";
+import { PASSAGE_LIMIT, goToPassage, nextIndex, writingUnits } from "../writingFind";
 import { revealPlanRow } from "./revealRow";
 import type { SemanticHit } from "../ai/semantic";
 
@@ -107,27 +104,12 @@ export function Search() {
     [open, mode, inWriting, cards, query, lang, where, synopses, texts],
   );
 
-  // Manuscrit et Scénario : les scènes dans l'ordre du livre, leurs paragraphes (ou éléments) comme l'éditeur les montre.
-  const units = useMemo((): TextUnit[] => {
-    if (!open || !inWriting) return [];
-    if (kind === "scenario") {
-      const elements = screenplay?.elements ?? [];
-      const out: TextUnit[] = [];
-      let unit: TextUnit | null = null;
-      elements.forEach((el, i) => {
-        // Une scène va de son en-tête au suivant ; le texte d'avant la première scène a sa propre entrée.
-        if (el.type === "sceneHeading" || !unit) {
-          unit = { target: `${SCENE_AT}${i}`, title: el.type === "sceneHeading" ? el.text.trim() || m.untitledScene : "", texts: [] };
-          out.push(unit);
-        }
-        if (isEditableType(el.type) && el.text.trim()) unit.texts.push(el.text);
-      });
-      return out;
-    }
-    const titles = new Map(nodes.map((n) => [n.id, n.data.title.trim()]));
-    return bookOrder(nodes, plan).flatMap((id) => (manuscript[id] ? [{ target: id, title: titles.get(id) || m.untitledScene, texts: htmlParagraphs(manuscript[id]) }] : []));
-  }, [open, inWriting, kind, screenplay, nodes, plan, manuscript, m.untitledScene]);
-  const passages = useMemo(() => (mode === "words" && inWriting ? findPassages(units, query) : []), [mode, inWriting, units, query]);
+  // Manuscrit et Scénario : les scènes dans l'ordre du livre (et les titres des chapitres), comme l'éditeur les montre.
+  const units = useMemo(
+    () => (open && inWriting ? writingUnits({ kind, screenplay, nodes, plan, manuscript }) : []),
+    [open, inWriting, kind, screenplay, nodes, plan, manuscript],
+  );
+  const passages = useMemo(() => (mode === "words" && inWriting ? findPassages(units, query, PASSAGE_LIMIT) : []), [mode, inWriting, units, query]);
 
   // Par le sens : les passages du texte dans le Manuscrit et le Scénario, les scènes dans le Plan, tout ailleurs.
   const senseHits = useMemo(
@@ -158,7 +140,8 @@ export function Search() {
     if (!open) return;
     inputRef.current?.focus();
     inputRef.current?.select();
-    setActive(0);
+    // Manuscrit et Scénario : la recherche rouverte se place sur le passage qui suit le dernier choisi (#85).
+    setActive(mode === "words" && inWriting ? nextIndex(passages, query) : 0);
     const onDown = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -186,7 +169,7 @@ export function Search() {
     if (inWriting) {
       // Le passage dans le texte : la scène, puis la `nth` occurrence du mot, sélectionnée au milieu de l'écran.
       const p = passages[i];
-      if (p) useCosmos.getState().openInManuscript(p.target, query.trim(), undefined, p.nth);
+      if (p) goToPassage(p, query);
       return;
     }
     const r = results[i];
@@ -199,6 +182,10 @@ export function Search() {
     if (inWriting) goToHit(hit);
     else if (hit.chunk.cardId) showCard(hit.chunk.cardId);
   };
+  // Le résultat choisi reste visible dans la liste (flèches, ou passage suivant à la réouverture).
+  useEffect(() => {
+    if (open) document.getElementById(`${ids.list}-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [open, active, ids.list]);
   // Une nouvelle recherche rend tout le canevas.
   useEffect(() => {
     if (open) useCosmos.getState().setSpotlight(null);
@@ -289,7 +276,9 @@ export function Search() {
                   <button type="button" className={`search-result${i === active ? " is-active" : ""}`} tabIndex={-1} onClick={() => choose(i)}>
                     <span className="search-result-head">
                       <span className="card-dot" style={{ background: typeColor("scene") }} />
+                      {p.kind === "chapter" && <span className="search-result-type">{t.chapters.short}</span>}
                       <span className="search-result-title">{p.title || m.untitledScene}</span>
+                      {p.context && <span className="search-result-type">{p.context}</span>}
                     </span>
                     <span className="search-result-text">{p.excerpt}</span>
                   </button>

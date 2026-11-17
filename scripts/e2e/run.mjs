@@ -341,6 +341,48 @@ const scenarios = [
     },
   },
   {
+    name: "recherche dans le Manuscrit (#85) : F3 et Maj+F3 passent d'un passage à l'autre, la recherche rouverte part du suivant, un titre de chapitre est trouvé",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      await until(() => page.locator(".manuscript .ProseMirror").first().isVisible(), "le Manuscrit ne s'ouvre pas");
+      // Rang (dans tout le livre) de l'occurrence sélectionnée : on compte les « galette » qui la précèdent.
+      const rank = () =>
+        page.evaluate(() => {
+          const sel = window.getSelection();
+          if (!sel || !sel.rangeCount || !/^galette$/i.test(String(sel))) return -1;
+          const root = document.querySelector(".manuscript .ProseMirror");
+          const before = document.createRange();
+          before.setStart(root, 0);
+          before.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset);
+          return (before.toString().match(/galette/gi) ?? []).length;
+        });
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("galette");
+      await until(async () => (await page.locator(".search-result").count()) >= 3, "moins de trois passages pour « galette »");
+      await page.locator(".search-input").press("Enter");
+      await until(async () => (await rank()) === 0, "le premier passage n'est pas sélectionné");
+      await page.keyboard.press("F3");
+      await until(async () => (await rank()) === 1, "F3 ne mène pas au passage suivant");
+      await page.keyboard.press("F3");
+      await until(async () => (await rank()) === 2, "F3 ne mène pas au troisième passage");
+      await page.keyboard.press("Shift+F3");
+      await until(async () => (await rank()) === 1, "Maj+F3 ne revient pas au passage précédent");
+      // La recherche rouverte se place sur le passage qui suit le dernier choisi : Entrée y mène.
+      await page.keyboard.press("Control+f");
+      await until(() => page.locator(".search-result.is-active").isVisible(), "pas de passage choisi à la réouverture");
+      await page.locator(".search-input").press("Enter");
+      await until(async () => (await rank()) === 2, "la recherche rouverte ne part pas du passage suivant");
+      // Le titre d'un chapitre : sa ligne dans la liste, avec le mot « Chapitre ».
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("le bois");
+      await until(async () => (await page.locator(".search-result").first().innerText()).includes("Chapitre"), "le titre du chapitre « Le bois » n'est pas trouvé");
+      await page.locator(".search-input").press("Enter");
+      assert(await page.locator(".manuscript").isVisible(), "la recherche a quitté le Manuscrit");
+    },
+  },
+  {
     name: "recherche sur le canevas (#85) : un mot du texte d'une scène met sa carte en avant, sans quitter le canevas",
     async run(h) {
       const { page } = h;

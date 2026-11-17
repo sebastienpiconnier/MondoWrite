@@ -107,6 +107,10 @@ export interface TextUnit {
   target: string;
   title: string;
   texts: string[];
+  /** Le titre d'un chapitre (on y va par sa première scène, sans sélection : il est dans la marge de la page). */
+  kind?: "chapter";
+  /** Où se trouve la scène (« Chapitre 2 · Le bois »), montré à côté de son titre. */
+  context?: string;
 }
 
 /** Un passage trouvé : la scène, l'extrait autour du mot et son rang dans la scène (pour y aller, `nthMatch`). */
@@ -115,6 +119,8 @@ export interface Passage {
   title: string;
   excerpt: string;
   nth: number;
+  kind?: "chapter";
+  context?: string;
 }
 
 /**
@@ -130,7 +136,14 @@ export function findPassages(units: TextUnit[], query: string, limit = 50): Pass
     let nth = 0;
     for (const text of unit.texts) {
       for (const at of matchesIn(text, query)) {
-        out.push({ target: unit.target, title: unit.title, excerpt: excerptAround(text, at, length), nth: nth++ });
+        out.push({
+          target: unit.target,
+          title: unit.title,
+          excerpt: excerptAround(text, at, length),
+          nth: nth++,
+          ...(unit.kind ? { kind: unit.kind } : {}),
+          ...(unit.context ? { context: unit.context } : {}),
+        });
         if (out.length >= limit) return out;
       }
     }

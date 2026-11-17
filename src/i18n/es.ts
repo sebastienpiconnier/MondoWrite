@@ -3044,6 +3044,8 @@ export const es = {
     items: {
       commands: "Paleta de comandos",
       help: "Esta lista",
+      findNext: "Siguiente resultado de la búsqueda (en Mac: Cmd + Opción + G)",
+      findPrev: "Resultado anterior de la búsqueda (en Mac: Mayús + Cmd + Opción + G)",
       keepVersion: "Conservar una versión de la escena",
       synonyms: "Sinónimos de la palabra",
       comment: "Comentar el pasaje seleccionado",
@@ -3115,6 +3117,8 @@ export const es = {
     exportMenu: "Exportar…",
     save: "Guardar",
     find: "Buscar…",
+    findNext: "Buscar siguiente",
+    findPrev: "Buscar anterior",
     replace: "Buscar y reemplazar…",
     keepVersion: "Conservar una versión de la escena…",
     synonyms: "Sinónimos de la palabra…",

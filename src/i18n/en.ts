@@ -2576,6 +2576,8 @@ export const en: Messages = {
     items: {
       help: "This list",
       commands: "Command palette",
+      findNext: "Next search result (on Mac: Cmd + Option + G)",
+      findPrev: "Previous search result (on Mac: Shift + Cmd + Option + G)",
       keepVersion: "Keep a version of the scene",
       synonyms: "Synonyms for the word",
       comment: "Comment on the selected passage",
@@ -2647,6 +2649,8 @@ export const en: Messages = {
     exportMenu: "Export…",
     save: "Save",
     find: "Find…",
+    findNext: "Find Next",
+    findPrev: "Find Previous",
     replace: "Find and Replace…",
     keepVersion: "Keep a Version of the Scene…",
     synonyms: "Synonyms for the Word…",
