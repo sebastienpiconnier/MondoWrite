@@ -33,7 +33,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 6. Assistant IA interactif | Outils MCP (fait) |
 | 7. Export web | HTML autonome (fait) |
 | 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF (fait) |
-| 9. Import | Twee 3 et Ink |
+| 9. Import | Twee 3 et Ink (fait) |
 | 10. Storylets | Option, à décider après retours |
 
 ## Lot 0 · Isolation (fait sur la branche `roman-interactif`)
@@ -220,3 +220,26 @@ chaque choix tapé dans le texte apparaît sur la carte.
   la page web (`#ch-<n>`) ; Word, Markdown et PDF l'écrivent en texte.
 - Le PDF passe par le PDF du manuscrit (Courier, interligne simple). Reste possible : mise en page du livre broché,
   feuille d'aventure à imprimer, réglages (garder l'ordre, numéro de départ).
+
+## Lot 9 · Import Twee 3 et Ink (fait sur la branche `roman-interactif`)
+
+- **Accueil, « Importer… »** : `.twee`, `.tw` et `.ink` s'ajoutent aux formats proposés seulement quand le roman
+  interactif est proposé sur l'appareil (`importExtensions`, `STORY_EXTENSIONS`, `ImportOptions.interactive`) ;
+  sinon le fichier est refusé comme illisible. Le résultat est toujours un nouveau projet, roman interactif
+  (`interactive: true`, libellés des faits dans `storyFacts`), plan libre, le départ en tête.
+- **Twee 3** (`parseTwee`) : un passage = une scène (titre = nom du passage). `StoryTitle` donne le titre,
+  `StoryData.start` le départ (sinon « Start », sinon le premier). Passages spéciaux de SugarCube et passages
+  `script`, `stylesheet`, `widget` laissés de côté. Liens `[[a->b]]`, `[[b<-a]]`, `[[a|b]]`, `[[b]]` (setter de
+  SugarCube retiré) : un choix chacun, sans doublon ; une ligne faite seulement de liens n'est pas du texte, un lien
+  dans une phrase y laisse son texte. Ligne faite seulement d'une macro `<<…>>` retirée ; le reste des macros
+  (Harlowe, SugarCube en ligne) reste dans le texte, à nettoyer par l'auteur.
+- **Ink** (`parseInk`) : un knot ou un stitch = une scène (« La cour », « La cour, porte ») ; texte avant le premier
+  knot = scène « Ouverture » ; `VAR x = … // libellé` donne le libellé du fait ; fonctions laissées de côté ;
+  étiquettes (`# image: …`) ignorées (pas de fichier à reprendre). Un choix simple (`*` ou `+`, conditions,
+  effets `~`, renvoi) devient un choix du bloc ; un choix imbriqué ou suivi de texte, un rassemblement, un renvoi
+  ou de la logique restent en lignes brutes du bloc, donc l'histoire se lit toujours. Les renvois et conditions sont
+  réécrits vers les noms des scènes du projet (`renamer`, stitch voisin nommé sans son knot, `DONE` → `END`).
+- Une histoire exportée par MondoWrite en `.ink` se relit et se rejoue à l'identique (test).
+- **Choix collants** : l'Ink composé par MondoWrite écrit désormais ses choix en `+` (toujours proposés quand on
+  revient dans une scène, comme un lien de Twine ou un livre-jeu) ; le bloc ```choix garde l'écriture `*`.
+- Pas encore : archive HTML publiée par Twine, mise en forme du texte (gras, italique) et logique en ligne.

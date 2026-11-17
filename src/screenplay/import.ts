@@ -17,6 +17,11 @@ export interface ImportOptions {
   /** Étiquette du fil scène → décor (i18n). */
   linkLabel: string;
   newId: () => string;
+  /**
+   * Roman interactif proposé sur cet appareil (#84, lot 9) : les fichiers Twee et Ink sont alors lus ; `opening`
+   * titre la scène faite du texte qui précède le premier knot d'Ink.
+   */
+  interactive?: { opening: string };
   /** Passes de révision lues avec le fichier (Final Draft) ; les marques du texte sans passe connue en reçoivent une. */
   revisions?: Revisions;
 }

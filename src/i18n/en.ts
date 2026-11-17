@@ -3683,6 +3683,9 @@ export const en: Messages = {
       exportInk: "Ink (.ink)",
       exportInkHint: "The story’s text in Ink format, for Inky and other tools",
     },
+    import: {
+      opening: "Opening",
+    },
     gamebook: {
       epub: "Gamebook (EPUB)",
       pdf: "Gamebook (PDF)",

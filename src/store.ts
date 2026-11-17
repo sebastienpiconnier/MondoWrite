@@ -41,7 +41,7 @@ import { defaultPaper, type Paper } from "./screenplay/layout";
 import { aiConfig, firstView, useSettings } from "./settings";
 import { mcpAllows, publishMcp } from "./mcp";
 import { bibleOrder } from "./bibleParts";
-import { IMPORT_EXTENSIONS, importFromFile } from "./import";
+import { importExtensions, importFromFile } from "./import";
 import type { ScrivenerReport, ScrivenerSource } from "./import/scrivener/mapping";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
@@ -80,7 +80,7 @@ import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
-import { isInteractiveMeta, showsInteractive } from "./interactive";
+import { interactiveOffered, isInteractiveMeta, showsInteractive } from "./interactive";
 import { CHOICE_MAP_KEY, END_TARGET, choiceMapValue, choicesAfterUndo, choicesIn, cleanLabel, editChoice, readChoiceMap, renameTargets, sceneSlugs, withChoices, type ChoiceLine, type MapPositions } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { FACTS_KEY, cleanFactLabel, isFactName, newFactName, readFactLabels, storyFacts } from "./interactive/facts";
@@ -3114,7 +3114,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
       try {
         // Un seul bouton : manuscrit, scénario, projet MondoWrite (.zip) ou projet Scrivener (.scriv sur le disque).
         // pickFile rend null quand l'auteur annule ; pickImport, undefined (null : format inconnu).
-        const picked = storage.pickImport ? await storage.pickImport(t.home.fountainFiles, IMPORT_EXTENSIONS) : ((await storage.pickFile(t.home.fountainFiles, IMPORT_EXTENSIONS)) ?? undefined);
+        const interactive = interactiveOffered(useSettings.getState().experimental);
+        const extensions = importExtensions(interactive);
+        const picked = storage.pickImport ? await storage.pickImport(t.home.fountainFiles, extensions) : ((await storage.pickFile(t.home.fountainFiles, extensions)) ?? undefined);
         if (picked === undefined) return;
         if (picked && "scrivener" in picked) {
           const { scrivenerFolders } = await import("./import/scrivener");
@@ -3137,6 +3139,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         locale: useSettings.getState().lang,
         linkLabel: t.screenplay.linkSetIn,
         newId,
+        ...(interactiveOffered(useSettings.getState().experimental) ? { interactive: { opening: t.interactive.import.opening } } : {}),
       }).catch((err) => {
         console.error(err);
         failure = err;

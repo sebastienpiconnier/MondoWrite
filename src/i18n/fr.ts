@@ -3739,6 +3739,9 @@ export const fr = {
       exportInk: "Ink (.ink)",
       exportInkHint: "Le texte de l’histoire au format Ink, pour Inky et les autres outils",
     },
+    import: {
+      opening: "Ouverture",
+    },
     gamebook: {
       epub: "Livre-jeu (EPUB)",
       pdf: "Livre-jeu (PDF)",

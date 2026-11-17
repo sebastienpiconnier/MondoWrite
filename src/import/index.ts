@@ -12,6 +12,12 @@ import { bookToProject, chapterize, textParagraphs } from "./manuscript";
 
 export const IMPORT_EXTENSIONS = ["docx", "md", "markdown", "txt", "fountain", "spmd", "fdx", "pdf", "zip"];
 
+/** Histoires interactives (#84, lot 9) : Twee 3 (Twine) et Ink, seulement quand le roman interactif est proposé. */
+export const STORY_EXTENSIONS = ["twee", "tw", "ink"];
+
+/** Extensions proposées au choix du fichier. */
+export const importExtensions = (interactive: boolean) => (interactive ? [...IMPORT_EXTENSIONS, ...STORY_EXTENSIONS] : IMPORT_EXTENSIONS);
+
 const extensionOf = (name: string) => name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
 
 /** Un texte brut est un scénario s'il a au moins deux en-têtes de scène (INT., EXT.) reconnus par Fountain. */
@@ -44,7 +50,14 @@ export async function projectFromFile(file: { name: string; data: Uint8Array }, 
   const ext = extensionOf(file.name);
   const text = () => new TextDecoder("utf-8").decode(file.data);
   let project: Project;
-  if (ext === "fdx") {
+  if (STORY_EXTENSIONS.includes(ext)) {
+    // Roman interactif : refusé (rien de lisible) quand la fonction n'est pas proposée sur cet appareil.
+    if (!options.interactive) return null;
+    const story = await import("../interactive/storyImport");
+    const source = ext === "ink" ? story.parseInk(text(), options.interactive.opening) : story.parseTwee(text());
+    if (!source) return null;
+    project = story.storyToProject(source, { fileName: file.name, newId: options.newId });
+  } else if (ext === "fdx") {
     const screenplay = parseFdx(text());
     if (!screenplay) return null;
     project = importScreenplayModel(screenplay, { ...options, revisions: parseFdxRevisions(text()) });

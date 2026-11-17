@@ -90,7 +90,9 @@ export function projectToInk(
     for (const line of choices) {
       if (line.kind === "raw") push(line.text, s.id);
       else {
-        const head = `* ${line.cond?.trim() ? `{ ${line.cond.trim()} } ` : ""}[${escapeInk(line.label.trim() || emptyLabel).trimStart()}]`;
+        // Choix « collant » (`+`) : comme dans un livre-jeu ou un lien de Twine, il reste proposé quand le lecteur
+        // revient dans la scène (un `*` d'Ink disparaît une fois choisi).
+        const head = `+ ${line.cond?.trim() ? `{ ${line.cond.trim()} } ` : ""}[${escapeInk(line.label.trim() || emptyLabel).trimStart()}]`;
         if (!line.effects?.length) push(`${head} -> ${line.target}`, s.id);
         else {
           push(head, s.id);
