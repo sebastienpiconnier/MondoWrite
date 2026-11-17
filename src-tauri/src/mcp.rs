@@ -36,14 +36,14 @@ const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
 const ANSWER_MS: u64 = 20_000;
 /// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
-const WRITE_TOOLS: [&str; 36] = [
+const WRITE_TOOLS: [&str; 37] = [
   "create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene",
   "move_scene", "create_chapter", "rename_chapter", "move_chapter", "delete_chapter",
   "add_comment", "resolve_comment", "keep_version", "create_episode", "update_episode", "place_scene", "set_template",
   "merge_scenes", "split_scene", "trash_card", "unlink_cards", "rename_everywhere", "replace_text", "set_cover",
   "create_frame", "organize_canvas", "set_scene_fields",
   "update_link", "restore_card", "replace_passage", "add_character_question", "update_frame", "set_project",
-  "set_choices",
+  "set_choices", "remove_fact",
 ];
 /// Lectures faites par l'app ouverte (calculées sur le projet tel qu'il est à l'écran) : accès en lecture suffit.
 const LIVE_TOOLS: [&str; 6] = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"];
@@ -1017,6 +1017,11 @@ impl Server {
         }, "required": ["scene", "choices"] }
       },
       {
+        "name": "remove_fact",
+        "description": "Roman interactif seulement : retire de la liste un fait qu'aucun choix n'emploie plus (un reste de brouillon). Un fait encore donné ou demandé par un choix est refusé : retire-le d'abord de ces choix. / Interactive novels only: removes a fact no choice uses anymore.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "fact": { "type": "string", "description": "Libellé ou nom du fait." } }, "required": ["fact"] }
+      },
+      {
         "name": "todo_list",
         "description": "Ce qui reste à faire, comme dans « À faire » : cases non cochées, passages à reprendre, questions « À creuser », commentaires ouverts, textes de l'IA pas encore repris. Projet ouvert dans MondoWrite. / The author's to-do list.",
         "inputSchema": { "type": "object", "properties": { "project": project } },
@@ -1119,7 +1124,7 @@ impl Server {
 }
 
 /// Ce qu'un assistant doit savoir d'un roman interactif avant d'y écrire (en tête de `project_overview`).
-const INTERACTIVE_RULES: &str = "**Roman interactif / Interactive novel.** Le lecteur choisit la suite à la fin de chaque scène ; l'ordre du livre ne compte pas (la première scène est le départ). Règles : écris les choix avec `set_choices` (ou `choices` de `create_scene`), jamais en texte (« va à… », « rendez-vous au 12 ») ; MondoWrite numérote les scènes et écrit le mode d'emploi du livre-jeu à l'export, n'en écris pas ; pas de chapitres ; ce que le lecteur obtient ou perd se dit par des faits et des compteurs (`gives`, `effects`, `condition`), jamais par des consignes au lecteur (« note… », « retire 1 à… ») ; pas de système de jeu livré (dés, combats, caractéristiques) ; vérifie le chemin avec `review`. / Write choices with set_choices, never as prose; no chapters, no hand-written numbers; facts and counters instead of reader instructions.";
+const INTERACTIVE_RULES: &str = "**Roman interactif / Interactive novel.** Le lecteur choisit la suite à la fin de chaque scène ; l'ordre du livre ne compte pas (la première scène est le départ). Règles : écris les choix avec `set_choices` (ou `choices` de `create_scene`), jamais en texte (« va à… », « rendez-vous au 12 ») ; MondoWrite numérote les scènes et écrit le mode d'emploi du livre-jeu à l'export, n'en écris pas ; pas de chapitres ; ce que le lecteur obtient ou perd se dit par des faits et des compteurs (`gives`, `effects`, `condition`), jamais par des consignes au lecteur (« note… », « retire 1 à… ») ; pas de système de jeu livré (dés, combats, caractéristiques) ; un fait qui ne sert plus se retire par `remove_fact` ; vérifie le chemin avec `review`. / Write choices with set_choices, never as prose; no chapters, no hand-written numbers; facts and counters instead of reader instructions.";
 
 /// Consignes prêtes à l'emploi (menu des consignes du client) : elles reprennent l'esprit de l'IA de MondoWrite.
 const PROMPTS: [(&str, &str, &str, &str); 6] = [

@@ -58,7 +58,7 @@ function mcpStore(): McpStore {
     interactive: () => {
       const st = s();
       if (st.kind === "scenario" || !showsInteractive(st.metaKeep, useSettings.getState().experimental)) return null;
-      return { slugs: interactiveSlugs(st.nodes, st.plan), facts: projectFacts(st), createFact: (label) => s().createFact(label) };
+      return { slugs: interactiveSlugs(st.nodes, st.plan), facts: projectFacts(st), createFact: (label) => s().createFact(label), forgetFact: (name) => s().setFactLabel(name, null) };
     },
     batch: (fn) => s().externalEdit(fn),
     addTitledCard: (type, title) => s().addTitledCard(type, title),

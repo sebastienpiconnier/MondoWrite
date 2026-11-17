@@ -111,6 +111,17 @@ describe("vérification d'un roman", () => {
   });
 });
 
+describe("roman interactif : ce que « Vérifier » ne lit pas", () => {
+  it("les blocs de choix ne sont pas du texte, et un nom en capitales est voulu", () => {
+    const cards = [card("p", "Étienne"), card("l", "Ourdas", "lieu")];
+    const block = '<pre data-choices="true"><code>* [Descendre]  -> le_puits\n  ~ lanterne = true\n* [Remonter] -> END</code></pre>';
+    const found = checkManuscript({ s1: `<p>Sur la pierre : ÉTIENNE, OURDAS, ETIENNE. Ourdas se tait.</p>${block}` }, ["s1"], cards);
+    expect(found.filter((f) => f.rule === "similarNames")).toEqual([]);
+    expect(found.filter((f) => f.rule === "extraSpaces")).toEqual([]);
+    expect(found.some((f) => f.rule === "frequentWords" && f.names?.includes("true"))).toBe(false);
+  });
+});
+
 describe("variante d'un nom connu", () => {
   it("n'est signalée qu'une fois, avec le nom de la carte comme bon nom", () => {
     const els = script("INT. SALON - JOUR\n\nETHANN\nSalut.\n\nETHAN\nBonjour.");

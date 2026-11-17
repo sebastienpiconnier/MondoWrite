@@ -101,6 +101,24 @@ export interface FieldsResult {
 }
 
 /**
+ * Autres noms qu'un assistant donne à un champ (repliés par `fold`) : « Révélé dans » pour la révélation d'un secret.
+ * Seulement des noms sans ambiguïté pour le type qui a ce champ.
+ */
+const FIELD_ALIASES: Record<string, readonly string[]> = {
+  revelation: ["revelation", "revele", "revele dans", "revele par", "revelee dans", "quand il eclate", "eclate", "reveal", "revealed", "revealed in", "revealed by"],
+  indices: ["indice", "clue", "clues", "hints"],
+};
+
+/** Les champs de la fiche d'un type, avec leur libellé (« revelation (Quand et comment il éclate) ») : dit ce qui s'écrit. */
+export function fieldList(type: CardType, t: Messages): string {
+  const maps: Record<string, string>[] = [(t.fiche.typeLabels as Record<string, Record<string, string>>)[type] ?? {}, t.fiche.fields, t.character.fields];
+  return (sheetFields(type) as readonly string[]).map((k) => {
+    const label = maps.find((m) => m[k])?.[k];
+    return label ? `${k} (${label})` : k;
+  }).join(", ");
+}
+
+/**
  * Champs donnés par l'IA (par clé ou par libellé) → champs de la fiche d'une carte de ce type. Un champ à choix
  * n'accepte qu'une de ses valeurs (clé ou libellé) ; un champ-référence (point de vue…) prend le titre d'une carte
  * du bon type et garde son identifiant.
@@ -116,7 +134,7 @@ export function resolveFields(type: CardType, fields: unknown, t: Messages, card
   for (const [name, raw] of Object.entries(fields as Record<string, unknown>)) {
     const value = str(raw);
     const f = fold(name);
-    const key = keys.find((k) => fold(k) === f) ?? keys.find((k) => labelled(k, f));
+    const key = keys.find((k) => fold(k) === f) ?? keys.find((k) => labelled(k, f)) ?? keys.find((k) => FIELD_ALIASES[k]?.includes(f));
     if (!key) {
       out.refused.push(name);
       continue;
@@ -470,6 +488,8 @@ export interface McpInteractive {
   facts: readonly Fact[];
   /** Fait au libellé donné : le même s'il existe (libellé ou nom), sinon créé. Rend son nom. */
   createFact: (label: string) => string | null;
+  /** Oublie le libellé d'un fait (un fait qu'aucun choix n'emploie disparaît alors de la liste). */
+  forgetFact: (name: string) => void;
 }
 
 /** Un fait désigné par son libellé ou son nom (sans casse ni accents). */
@@ -620,7 +640,7 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
         return id;
       });
       store.log(title, countWords(`<p>${title} ${notes} ${Object.values(fields.fiche).join(" ")}</p>`), client);
-      const refused = fields.refused.length > 0 ? ` Champs non repris : ${fields.refused.join(" ; ")}.` : "";
+      const refused = fields.refused.length > 0 ? ` Champs non repris : ${fields.refused.join(" ; ")}. Champs de la fiche : ${fieldList(type, t)}.` : "";
       return { ok: true, text: `Carte créée : « ${title} » (${typeLabel(type)}), id \`${id}\`.${refused}` };
     }
 
@@ -660,7 +680,7 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
         });
       });
       store.log(title || card.title, countWords(`<p>${title} ${notes} ${Object.values(fields.fiche).join(" ")}</p>`), client);
-      const refused = fields.refused.length > 0 ? ` Champs non repris : ${fields.refused.join(" ; ")}.` : "";
+      const refused = fields.refused.length > 0 ? ` Champs non repris : ${fields.refused.join(" ; ")}. Champs de la fiche : ${fieldList(type, t)}.` : "";
       const retyped = type !== card.type ? ` Elle est maintenant : ${typeLabel(type)}.` : "";
       return { ok: true, text: `Carte modifiée : « ${title || card.title} ».${retyped}${refused}` };
     }
@@ -1254,6 +1274,17 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
             : `Scène ${scene.n} : choix retirés (la scène finit l'histoire).`,
         };
       });
+    }
+
+    case "remove_fact": {
+      const ix = store.interactive?.() ?? null;
+      if (!ix) return fail("Ce projet n'est pas un roman interactif (ou l'option est coupée dans MondoWrite) : il n'a pas de faits. / Not an interactive novel.");
+      const fact = findFact(ix.facts, str(a.fact));
+      if (!fact) return fail(`Fait introuvable : « ${str(a.fact)} ». Faits : ${ix.facts.map((f) => `${f.label} (\`${f.name}\`)`).join(", ") || "aucun"}.`);
+      const used = fact.given + fact.needed;
+      if (used > 0) return fail(`« ${fact.label} » sert encore dans ${used} choix : retire-le d'abord de ces choix (set_choices), puis recommence. / Still used by ${used} choice(s).`);
+      store.batch(() => ix.forgetFact(fact.name));
+      return { ok: true, text: `Fait « ${fact.label} » (\`${fact.name}\`) retiré de la liste.` };
     }
 
     case "set_project": {

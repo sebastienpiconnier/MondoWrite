@@ -14,6 +14,7 @@ import { cardNames, type CharacterRow } from "./report";
 import { REPEAT_MAX, frequentWords, nearRepeats, properNouns } from "./words";
 import { silentCharacters } from "./silent";
 import type { VerifyRule } from "../interactive/verify";
+import { withoutChoices } from "../interactive/choices";
 
 /** Clés des règles : fixes, jamais traduites (les libellés sont dans `t.review.rules`). */
 export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepeat" | "frequentWords" | "headingFormat" | "emptyElement" | "unknownCharacter" | "silentCharacter" | StoryRule | VerifyRule;
@@ -190,12 +191,14 @@ export function checkManuscript(manuscript: Record<string, string>, order: strin
   order.forEach((id, n) => {
     const html = manuscript[id];
     if (!html) return;
-    const text = rawText(html);
+    const text = rawText(withoutChoices(html));
     const flagged = new Set<string>();
     for (const m of text.matchAll(WORD)) {
       const w = m[0];
       if (nameWords.has(w) || flagged.has(w)) continue;
-      const near = words.find((name) => similarNames(w, name));
+      // Un nom écrit tout en capitales (inscription, cri, enseigne) est le même nom, accents compris : voulu.
+      const capitals = w === w.toLocaleUpperCase() && w !== w.toLocaleLowerCase();
+      const near = words.find((name) => similarNames(w, name) && !(capitals && foldName(w) === foldName(name)));
       if (!near) continue;
       flagged.add(w);
       out.push({ key: `similarNames:${id}:${w}`, rule: "similarNames", at: -1, scene: n + 1, sceneId: id, text: w, needle: w, names: [w, near] });
@@ -210,7 +213,8 @@ export function checkManuscript(manuscript: Record<string, string>, order: strin
     }
   });
   // Fréquence des mots et répétitions proches (#21) : hors mots outils et noms propres (cartes, mots à capitale).
-  const texts = order.map((id) => (manuscript[id] ? rawText(manuscript[id]) : ""));
+  // Les blocs de choix d'un roman interactif ne sont pas du texte : ni espaces, ni mots (« true », noms des scènes).
+  const texts = order.map((id) => (manuscript[id] ? rawText(withoutChoices(manuscript[id])) : ""));
   const names = properNouns(texts, cards.map((c) => c.title), lang);
   let repeats = 0;
   order.forEach((id, n) => {

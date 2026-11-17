@@ -12,7 +12,7 @@ import type { Comments } from "../comments";
 import type { Goals } from "../stats";
 import { parse } from "../screenplay/parse";
 import { serialize } from "../screenplay/serialize";
-import { applyMcpRequest, cardTypeOf, pageKindOf, replaceQuoteInHtml, replaceQuoteInScene, withMentions, commentInScene, findSeriesPart, markQuoteInHtml, moveScreenplayScene, pitchKeyOf, splitHtmlAt, templateOf, findCard, iaFountain, iaHtml, resolveFields, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
+import { applyMcpRequest, cardTypeOf, pageKindOf, replaceQuoteInHtml, replaceQuoteInScene, withMentions, commentInScene, findSeriesPart, markQuoteInHtml, moveScreenplayScene, pitchKeyOf, splitHtmlAt, templateOf, findCard, iaFountain, iaHtml, resolveFields, fieldList, withIaSynopsis, withSceneText, type McpStore } from "../mcpWrite";
 
 const card = (c: Partial<CardData> & Pick<CardData, "id" | "type" | "title">): CardData => ({ html: "", ...c });
 
@@ -41,6 +41,9 @@ describe("résolution", () => {
     expect(r.refused).toEqual(["Taille"]);
     // Les libellés du moteur, tels que la Bible les montre.
     expect(resolveFields("personnage", { Veut: "Vendre la ferme", "A besoin de": "Regarder en face" }, fr, cards).fiche).toEqual({ objectif: "Vendre la ferme", besoin: "Regarder en face" });
+    // Un secret : « Révélé dans » est la révélation, comme son libellé « Quand et comment il éclate ».
+    expect(resolveFields("secret", { "Révélé dans": "La scène du puits", Indices: "La corde" }, fr, cards).fiche).toEqual({ revelation: "La scène du puits", indices: "La corde" });
+    expect(fieldList("secret", fr)).toContain("revelation (Quand et comment il éclate)");
     const scene = resolveFields("scene", { statut: "À revoir", pov: "Inès", issue: "n'importe" }, fr, cards);
     expect(scene.fiche).toEqual({ statut: "revoir", pov: "c1" });
     expect(scene.refused[0]).toMatch(/^issue/);

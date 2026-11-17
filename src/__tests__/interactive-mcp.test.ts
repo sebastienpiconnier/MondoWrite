@@ -65,6 +65,7 @@ function store(interactive: boolean) {
       state.labels[name] = label;
       return name;
     },
+    forgetFact: (name) => void delete state.labels[name],
   });
   const s = {
     kind: "roman",
@@ -215,5 +216,17 @@ describe("retours du « Puits » (novembre 2026)", () => {
     // Un « Continuer » sans texte, donné exprès ; un texte oublié est refusé.
     expect((await applyMcpRequest({ id: "2", tool: "set_choices", args: { scene: "2", choices: [{ text: "", to: "1" }] } }, s, fr)).ok).toBe(true);
     expect((await applyMcpRequest({ id: "3", tool: "set_choices", args: { scene: "2", choices: [{ to: "1" }] } }, s, fr)).ok).toBe(false);
+  });
+
+  it("remove_fact : retire un fait qu'aucun choix n'emploie, refuse un fait employé", async () => {
+    const { state, store: s } = store(true);
+    state.labels.courage = "Le courage";
+    await applyMcpRequest({ id: "1", tool: "set_choices", args: { scene: "1", choices: [{ text: "Entrer", to: "2", gives: "a la lanterne" }] } }, s, fr);
+    const used = await applyMcpRequest({ id: "2", tool: "remove_fact", args: { fact: "a la lanterne" } }, s, fr);
+    expect(used.ok).toBe(false);
+    expect(used.text).toMatch(/1 choix/);
+    const res = await applyMcpRequest({ id: "3", tool: "remove_fact", args: { fact: "Le courage" } }, s, fr);
+    expect(res.ok).toBe(true);
+    expect(state.labels.courage).toBeUndefined();
   });
 });

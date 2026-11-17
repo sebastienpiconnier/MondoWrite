@@ -285,3 +285,7 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
 - [x] Le livre-jeu imprimé écrivait sans leur condition les choix à conditions combinées : phrases pour les faits, compteurs, « et » et « ou » ; ce qui ne se dit pas est signalé par « Vérifier ».
 - [x] « Veut » d'un personnage ignoré par l'assistant (libellés du moteur).
 - [x] Un « Continuer » sans texte se pose aussi par l'assistant (`text: ""`).
+- [x] Seconde passe (exemple corrigé par l'assistant) : « Vérifier » lisait les blocs de choix comme du texte (espaces en trop, « true » parmi les mots les plus employés) : `checkManuscript` passe par `withoutChoices`.
+- [x] Un nom gravé en capitales (OURDAS, ÉTIENNE ou ETIENNE pour « Étienne ») n'est plus pris pour une variante dans un roman ; le scénario garde sa règle (INES et INÈS).
+- [x] L'assistant ne savait pas quel champ attend un secret révélé : « Révélé dans » et quelques autres noms désignent `revelation`, un champ refusé donne la liste des champs du type, et `review` dit comment répondre (`MCP_FIX` de mcpLive.ts) en plus de l'explication de la règle.
+- [x] Un fait laissé par un brouillon restait dans la liste : outil `remove_fact` (refusé tant qu'un choix l'emploie). Dans l'app, la fenêtre des faits avait déjà « Oublier ».

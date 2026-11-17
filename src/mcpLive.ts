@@ -173,6 +173,13 @@ function interactivePoints(src: LiveSource): Finding[] {
   }));
 }
 
+/** Comment l'assistant répond à un point de « Vérifier » qui attend un champ de fiche (les autres se lisent seuls). */
+const MCP_FIX: Record<string, string> = {
+  secretNoReveal: "update_card sur la carte Secret, champ `revelation` (la scène où il éclate, qui le découvre)",
+  secretNoClue: "update_card sur la carte Secret, champ `indices` (ce qui le laisse deviner avant)",
+  noGoal: "update_card sur la carte Personnage, champ `objectif`",
+};
+
 function review(src: LiveSource, t: Messages): McpAnswer {
   const sp = src.screenplay;
   const found: Finding[] =
@@ -184,8 +191,11 @@ function review(src: LiveSource, t: Messages): McpAnswer {
   const byRule = new Map<string, Finding[]>();
   for (const f of all) byRule.set(f.rule, [...(byRule.get(f.rule) ?? []), f]);
   const out: string[] = [];
+  const hints = t.review.hints as Record<string, string>;
   for (const [rule, list] of byRule) {
     out.push(`## ${rules[rule] ?? rule} (${list.length})`);
+    if (hints[rule]) out.push(hints[rule]);
+    if (MCP_FIX[rule]) out.push(`Pour y répondre : ${MCP_FIX[rule]}.`);
     for (const f of list.slice(0, 25)) {
       const where = f.sceneId ? sceneName(src, f.sceneId) : f.scene ? `scène ${f.scene}` : "";
       const names = f.names?.length ? ` [${f.names.join(" / ")}]` : "";
