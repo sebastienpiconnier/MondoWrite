@@ -113,6 +113,8 @@ export const COMMANDS: AppCommandItem[] = [
   { id: "synonyms", group: "edit", label: (t) => t.appMenu.synonyms, accelerator: "CmdOrCtrl+Alt+Y", enabled: writing, run: () => replayShortcut("y", "KeyY", false, true) },
   { id: "comment", group: "edit", label: (t) => t.appMenu.comment, accelerator: "CmdOrCtrl+Alt+M", enabled: writing, run: () => replayShortcut("m", "KeyM", false, true) },
   // Fusionner la scène en cours avec la suivante (#23) : la vue sait quelle scène.
+  // Image dans le texte d'une scène (#87) : roman seulement, la vue Manuscrit sait où est le curseur.
+  { id: "insert-image", group: "edit", label: (t) => t.appMenu.insertImage, enabled: (c) => writing(c) && c.kind !== "scenario", run: () => sendCommand("insert-image") },
   { id: "merge-next", group: "edit", label: (t) => t.appMenu.mergeNext, enabled: writing, run: () => sendCommand("merge-next") },
   // Omettre la scène en cours (#46) : scénario aux pages verrouillées seulement, la vue sait quelle scène.
   { id: "omit-scene", group: "edit", label: (t) => t.appMenu.omitScene, enabled: (c) => writing(c) && c.kind === "scenario" && !!s().revisions.locked, run: () => sendCommand("omit-scene") },

@@ -7,6 +7,7 @@
 // Raccourcis : Cmd/Ctrl+B gras, +I italique, +Maj+X à reprendre, +Maj+9 case à cocher, +Maj+8 liste,
 // +Maj+7 liste numérotée, +Maj+B citation, +Alt+1 à 3 titres.
 
+import { SceneImage } from "./sceneImage";
 import { Extension, wrappingInputRule } from "@tiptap/react";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
@@ -133,7 +134,7 @@ const ProseBulletList = BulletList.extend({
 export function richTextExtensions({ link = true, prose = false }: { link?: boolean; prose?: boolean } = {}) {
   return [
     StarterKit.configure({ heading: { levels: [1, 2, 3] }, strike: false, ...(link ? {} : { link: false }), ...(prose ? { bulletList: false } : {}) }),
-    ...(prose ? [ProseBulletList, CommentMark, Footnote] : []),
+    ...(prose ? [ProseBulletList, CommentMark, Footnote, SceneImage] : []),
     StrikeD,
     TaskList,
     TaskItem.configure({ nested: true }),

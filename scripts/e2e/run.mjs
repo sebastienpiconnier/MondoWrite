@@ -314,6 +314,42 @@ const scenarios = [
     },
   },
   {
+    name: "image dans le texte (#87) : insérée par le ⋯ du Manuscrit, enregistrée en Markdown, sa description et sa place modifiables",
+    async run(h) {
+      const { page } = h;
+      await h.create("Images");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("La lanterne tourne.");
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Insérer une image…" }).click();
+      const device = page.getByRole("button", { name: /^Choisir une image sur l’appareil/ });
+      await device.waitFor();
+      const chooser = page.waitForEvent("filechooser");
+      await device.click();
+      const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+      await (await chooser).setFiles({ name: "phare.png", mimeType: "image/png", buffer: png });
+      const alt = page.getByRole("textbox", { name: "Description de l’image" });
+      await until(() => alt.isVisible(), "l'image n'apparaît pas dans le texte");
+      await alt.fill("Le phare sous l’orage");
+      await page.getByRole("combobox", { name: "Place de l’image" }).selectOption("page");
+      await h.saved(
+        (f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && /!\[Le phare sous l’orage\]\(\.\.\/medias\/[A-Za-z0-9_-]+\.png "page"\)/.test(v)),
+        "l'image n'est pas enregistrée en Markdown avec sa description et sa place",
+      );
+      await h.reloadAndOpen();
+      await h.view(4);
+      const figure = page.locator(".ms-page figure.scene-image");
+      await until(async () => (await figure.count()) === 1, "après rechargement, l'image a disparu du texte");
+      assert((await figure.getAttribute("data-place")) === "page", "après rechargement, l'image n'est plus seule sur sa page");
+      assert((await figure.locator("input").inputValue()) === "Le phare sous l’orage", "après rechargement, la description de l'image est perdue");
+    },
+  },
+  {
     name: "recherche dans le Manuscrit (#85) : un mot tapé sans accent ni majuscule, sélectionné au milieu de l'écran, sans changer de vue",
     async run(h) {
       const { page } = h;

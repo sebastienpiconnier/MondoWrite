@@ -90,7 +90,7 @@ export function toMarkdown(doc: ExportDoc, options: MarkdownOptions = {}): strin
       } else if (block.kind === "image") {
         // Adresse relative au fichier écrit : l'image reste dans medias/.
         flush();
-        out.push(`![](${media}${encodeURI(block.name)})`);
+        out.push(`![${(block.alt ?? "").replace(/[[\]]/g, "")}](${media}${encodeURI(block.name)})`);
       } else if (block.list) {
         list.push(`${block.quote ? "> " : ""}${block.list === "number" ? `${block.index ?? 1}.` : "-"} ${mdRuns(block.runs, options.link)}`);
       } else {
@@ -283,12 +283,12 @@ export function chapterXhtml(blocks: Block[], image?: (name: string) => string |
     open = "";
   };
   for (const block of blocks) {
-    // Les images ne vont pas dans un EPUB (seul le manuscrit s'y exporte, et il n'en a pas) ; la page HTML les embarque.
+    // Image : fichier de l'EPUB (images/…) ou embarquée dans la page HTML, selon `image`.
     if (block.kind === "image") {
       const src = image?.(block.name);
       if (src) {
         close();
-        out.push(`<figure><img src="${src}" alt=""/></figure>`);
+        out.push(`<figure><img src="${src}" alt="${xml(block.alt ?? "")}"/></figure>`);
       }
       continue;
     }
@@ -338,11 +338,14 @@ export interface EpubMeta {
 }
 
 export function toEpub(doc: ExportDoc, meta: EpubMeta): Uint8Array {
+  // Images du texte (#87) : une fois chacune, en JPEG (export/images.ts), dans OEBPS/images/.
+  const pictures = Object.keys(doc.images ?? {}).map((name, i) => ({ name, id: `img${i + 1}`, href: `images/img${i + 1}.jpg` }));
+  const pictureOf = (name: string) => pictures.find((p) => p.name === name)?.href ?? null;
   const files = doc.chapters.map((chapter, i) => ({
     id: `ch${i + 1}`,
     href: `ch${i + 1}.xhtml`,
     title: chapter.title,
-    data: page(doc.lang, chapter.title, `<h1>${xml(chapter.title)}</h1>\n${chapterXhtml(chapter.blocks)}`),
+    data: page(doc.lang, chapter.title, `<h1>${xml(chapter.title)}</h1>\n${chapterXhtml(chapter.blocks, pictureOf)}`),
   }));
   const cover = page(doc.lang, doc.title, `<div class="cover"><h1>${xml(doc.title)}</h1>${doc.author ? `<p>${xml(doc.author)}</p>` : ""}</div>`);
   const nav = page(
@@ -355,7 +358,7 @@ export function toEpub(doc: ExportDoc, meta: EpubMeta): Uint8Array {
     `<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n<dc:identifier id="id">${xml(meta.id)}</dc:identifier>\n<dc:title>${xml(doc.title)}</dc:title>\n` +
     `<dc:language>${xml(doc.lang)}</dc:language>\n${doc.author ? `<dc:creator>${xml(doc.author)}</dc:creator>\n` : ""}<meta property="dcterms:modified">${xml(meta.modified)}</meta>\n</metadata>\n` +
     `<manifest>\n<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>\n<item id="css" href="style.css" media-type="text/css"/>\n` +
-    `<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>\n${files.map((f) => `<item id="${f.id}" href="${f.href}" media-type="application/xhtml+xml"/>`).join("\n")}\n</manifest>\n` +
+    `<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>\n${files.map((f) => `<item id="${f.id}" href="${f.href}" media-type="application/xhtml+xml"/>`).join("\n")}\n${pictures.map((p) => `<item id="${p.id}" href="${p.href}" media-type="image/jpeg"/>\n`).join("")}</manifest>\n` +
     `<spine>\n<itemref idref="cover"/>\n${files.map((f) => `<itemref idref="${f.id}"/>`).join("\n")}\n</spine>\n</package>\n`;
   return zip([
     // Toujours en premier, et sans compression : c'est ce qui fait reconnaître un EPUB.
@@ -369,6 +372,7 @@ export function toEpub(doc: ExportDoc, meta: EpubMeta): Uint8Array {
     { path: "OEBPS/style.css", data: EPUB_CSS },
     { path: "OEBPS/cover.xhtml", data: cover },
     ...files.map((f) => ({ path: `OEBPS/${f.href}`, data: f.data })),
+    ...pictures.map((p) => ({ path: `OEBPS/${p.href}`, data: doc.images![p.name].data })),
   ]);
 }
 

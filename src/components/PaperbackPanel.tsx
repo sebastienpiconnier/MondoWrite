@@ -7,6 +7,8 @@ import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { storage } from "../storage";
+import { bookImageNames, type BookDoc } from "../export/paperback";
+import type { DocImage } from "../export/doc";
 import { bookOf } from "../export/projectDocs";
 import { loadPaperback } from "../export";
 import { KDP_MAX_PAGES, KDP_MIN_PAGES, KDP_TRIMS, PAPER_IDS, TRIM_IDS, type PaperId, type TrimId } from "../export/printOptions";
@@ -31,14 +33,25 @@ export function PaperbackPanel() {
   const run = useRef(0);
 
   const title = () => useCosmos.getState().title.trim() || t.home.untitled;
-  const book = () => bookOf(useCosmos.getState(), { t, lang, author: useSettings.getState().author }, new Date().getFullYear());
+  // Images du texte des scènes, gardées d'une mise en page à l'autre (on ne relit que celles qui manquent).
+  const images = useRef<Record<string, DocImage>>({});
+  const book = async (): Promise<BookDoc> => {
+    const doc = bookOf(useCosmos.getState(), { t, lang, author: useSettings.getState().author }, new Date().getFullYear());
+    const names = bookImageNames(doc);
+    const missing = names.filter((n) => !(n in images.current));
+    if (missing.length > 0) {
+      const { loadImages, PRINT_SIDE } = await import("../export/images");
+      Object.assign(images.current, await loadImages(missing, (n) => storage.mediaUrl(n), PRINT_SIDE));
+    }
+    return names.length > 0 ? { ...doc, images: Object.fromEntries(names.flatMap((n) => (images.current[n] ? [[n, images.current[n]]] : []))) } : doc;
+  };
 
   // Mise en page à l'ouverture et à chaque réglage (un court délai pendant la frappe).
   useEffect(() => {
     const id = ++run.current;
     setState({ kind: "busy" });
     const timer = setTimeout(async () => {
-      const doc = book();
+      const doc = await book();
       if (!doc.sections.some((s) => s.kind === "chapter" || s.page === "prologue" || s.page === "epilogue")) {
         if (id === run.current) setState({ kind: "empty" });
         return;

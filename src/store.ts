@@ -1,6 +1,8 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { deliverTextImage, forgetTextImage } from "./textImageState";
+import { manuscriptImages } from "./sceneImages";
 import { cleanQuote, isCommentId, removeCommentFromElements, removeCommentMark, type Comments, type SceneComment } from "./comments";
 import { joinSynopses, mergeComments, mergeEdges, mergeScreenplayScenes, nextInStory } from "./sceneMerge";
 import { captureSpot, currentCaret, forgetSpot, readSpot } from "./resume";
@@ -237,8 +239,12 @@ export interface CosmosState {
   /** Carte Lien encore sans adresse : une adresse tapée dans son titre devient son lien. Rend vrai si c'est fait. */
   linkFromTitle: (id: string) => boolean;
   /** Où va la photo choisie dans la recherche de photos : une nouvelle carte Image, la galerie d'une fiche, ou l'image d'une carte. */
-  photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string } | { kind: "cover" } | null;
+  photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string } | { kind: "cover" } | { kind: "text" } | null;
   openPhotos: (target: NonNullable<CosmosState["photoTarget"]>) => void;
+  /** Image dans le texte d'une scène (#87) : copiée dans medias/ sous un nom neuf ; rend ce nom, ou null. */
+  storeTextImage: (file: { name: string; data: Uint8Array }) => Promise<string | null>;
+  /** Image de l'appareil posée dans le texte de l'éditeur qui l'attend (textImageState.ts). */
+  pickTextImage: () => Promise<boolean>;
   /** Télécharge la photo choisie et la pose (carte Image créditée, ou galerie). Rend faux si le téléchargement échoue. */
   addPhoto: (photo: Photo) => Promise<boolean>;
   /** Carte Document ouverte dans la liseuse (fenêtre « document »). */
@@ -1399,7 +1405,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const file = await get().projectZip({ media: false });
       // Un autre projet a été ouvert entre-temps : cette copie n'est pas la sienne.
       if (!file || backups.key() !== key || get().screen !== "project") return false;
-      const medias = mediaNamesOf([...get().nodes.map((n) => n.data as CardData), ...get().trash, { image: get().pitch.visuel }]);
+      const medias = mediaNamesOf([...get().nodes.map((n) => n.data as CardData), ...get().trash, { image: get().pitch.visuel }, { images: manuscriptImages(get().manuscript) }]);
       await backups.write(key, backupName(now), file.data, { title: get().title, kind: get().kind }, medias);
       lastBackup.set(key, now);
       const names = (await backups.list()).find((b) => b.key === key)?.names ?? [];
@@ -1824,6 +1830,19 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     photoTarget: null,
     openPhotos: (target) => set({ photoTarget: target, dialog: "photos" }),
+    storeTextImage: (file) => storeImage(file),
+    pickTextImage: async () => {
+      const file = await storage.pickImage(getT().card.imageFiles).catch((err) => {
+        console.error(err);
+        return null;
+      });
+      const media = file ? await storeImage(file) : null;
+      if (!media) {
+        forgetTextImage();
+        return false;
+      }
+      return deliverTextImage({ media });
+    },
     replaceInit: null,
     replaceUndo: null,
     openReplace: (init = {}) => set({ replaceInit: { find: "", sceneId: null, renameId: null, ...init }, dialog: "replace", replaceUndo: null }),
@@ -1880,6 +1899,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (!file) return false;
       if (photo.source === "unsplash") void import("./imageSources").then((m) => m.trackChoice(photo, useSettings.getState().photos.keys.unsplash));
       if (target.kind === "gallery") return (await get().addGalleryImages(target.id, [file])) > 0;
+      // Dans le texte d'une scène : l'image, et son crédit en légende sous elle (texte ordinaire, modifiable).
+      if (target.kind === "text") {
+        const media = await storeImage(file);
+        if (!media) return false;
+        const by = photo.author ? fmt(getT().photos.photoBy, { name: photo.author }) : "";
+        return deliverTextImage({ media, alt: photo.alt, credit: [by, photo.credit].filter(Boolean).join(", ") });
+      }
       if (target.kind === "cover") {
         const name = await storeImage(file);
         if (!name) return false;
@@ -3734,7 +3760,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const meta = { ...project.meta, title: fmt(t.backups.restoredTitle, { title: project.meta.title || t.backups.untitled, date }) };
         entries = entries.map(([path, data]) => [path, path === META_FILE ? strToU8(JSON.stringify(meta, null, 2)) : data]);
         // Images gardées à côté des sauvegardes : seulement celles que ce projet cite.
-        for (const media of mediaNamesOf([...project.cards, ...(project.trash ?? []), { image: readPitch(project.meta.pitch).visuel }])) {
+        for (const media of mediaNamesOf([...project.cards, ...(project.trash ?? []), { image: readPitch(project.meta.pitch).visuel }, { images: manuscriptImages(project.manuscript ?? {}) }])) {
           const data = await backups.readMedia(key, media).catch(() => null);
           if (data) entries.push([`${MEDIA_DIR}/${media}`, data]);
         }
@@ -4062,6 +4088,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
         get().logAtelier("image", title, 0, extra);
         return true;
       }
+      // Pas d'image générée dans le texte d'une scène (sa marque d'IA n'aurait pas de carte où vivre).
+      if (target.kind === "text") return false;
       const card = get().nodes.find((n) => n.id === target.id)?.data;
       if (!card) return false;
       const iaImages = { ...(iaImagesOf(card) ?? {}), [name]: mark };

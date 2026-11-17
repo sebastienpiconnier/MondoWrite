@@ -16,6 +16,7 @@ const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
 export function PhotoSearch() {
   const t = useT().photos;
   const tg = useT().imageGen;
+  const tt = useT().textImage;
   const kind = useCosmos((s) => s.kind);
   const source = useSettings((s) => s.photos.source);
   const keys = useSettings((s) => s.photos.keys);
@@ -101,6 +102,7 @@ export function PhotoSearch() {
           if (target.kind === "card") void useCosmos.getState().pickCardImage(target.id);
           else if (target.kind === "cover") void useCosmos.getState().pickCoverVisual();
           else if (target.kind === "canvas") void useCosmos.getState().pickImageCard(target.at);
+          else if (target.kind === "text") void useCosmos.getState().pickTextImage();
           else void useCosmos.getState().addGalleryImages(target.id);
         }}
       >
@@ -135,11 +137,11 @@ export function PhotoSearch() {
   return (
     <div className="photos">
       <div className="photos-head">
-        <h2 id="app-dialog-title">{target?.kind === "card" ? t.titleCard : target?.kind === "gallery" ? t.titleGallery : target?.kind === "cover" ? (kind === "scenario" ? t.titlePoster : t.titleCover) : t.title}</h2>
+        <h2 id="app-dialog-title">{target?.kind === "text" ? tt.photosTitle : target?.kind === "card" ? t.titleCard : target?.kind === "gallery" ? t.titleGallery : target?.kind === "cover" ? (kind === "scenario" ? t.titlePoster : t.titleCover) : t.title}</h2>
         {fromDevice}
       </div>
       {sources}
-      {target && gen.ready && (
+      {target && target.kind !== "text" && gen.ready && (
         <div className="image-gen-entry">
           <ImageGenButton target={target} onOpen={() => setGenerating(true)} />
         </div>
