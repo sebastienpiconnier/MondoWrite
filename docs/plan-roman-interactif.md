@@ -272,3 +272,16 @@ Lot A, fait : outils du roman linéaire masqués dans un roman interactif (chron
 - [x] Lot B : livre broché KDP au format livre-jeu (sections à la suite, numéro centré en gras, numéros des sections en haut de page, sommaire sans les sections) ; le livre-jeu PDF en Courier a quitté le menu.
 - [x] Images dans le livre broché (roman et livre-jeu) : image du texte centrée sur la largeur du texte ; « Seule sur sa page » = illustration sur la page qui suit, légende avec le numéro de la section, sans folio ni titre courant (comme dans les livres-jeux imprimés).
 - [ ] Pas encore : choix imprimés autrement que des paragraphes (retrait, italique ?).
+
+## Retours du « Puits » écrit par un assistant (17 novembre 2026)
+
+Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « Puits ». Ce qui a cloché et ce qui est corrigé :
+
+- [x] L'assistant ne voyait pas que c'était un roman interactif : règles en tête de `project_overview`, « Roman interactif » dans la liste des projets, consigne `histoire_interactive`.
+- [x] Il écrivait les choix en texte (« va à… »), puis des numéros de renvoi à la main : les règles le défendent, MondoWrite numérote et écrit le mode d'emploi.
+- [x] `write_scene` effaçait le bloc de choix en remplaçant le texte : il le garde maintenant, et signale les choix écrits à la main qui clochent.
+- [x] `set_choices` ne savait pas les compteurs ni les conditions combinées (la lanterne du « Puits ») : `condition` et `effects`, vérifiés ; `create_scene` accepte `choices`.
+- [x] Il créait des chapitres : refusé. « Organiser » rangeait les scènes par chapitre : elles se rangent en arbre selon les choix.
+- [x] Le livre-jeu imprimé écrivait sans leur condition les choix à conditions combinées : phrases pour les faits, compteurs, « et » et « ou » ; ce qui ne se dit pas est signalé par « Vérifier ».
+- [x] « Veut » d'un personnage ignoré par l'assistant (libellés du moteur).
+- [x] Un « Continuer » sans texte se pose aussi par l'assistant (`text: ""`).

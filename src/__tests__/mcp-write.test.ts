@@ -39,6 +39,8 @@ describe("résolution", () => {
     const r = resolveFields("personnage", { Âge: "34 ans", metier: "Gardienne", "Type d’arc": "Tragique", Taille: "1,70 m" }, fr, cards);
     expect(r.fiche).toMatchObject({ age: "34 ans", metier: "Gardienne", arcType: "negatif" });
     expect(r.refused).toEqual(["Taille"]);
+    // Les libellés du moteur, tels que la Bible les montre.
+    expect(resolveFields("personnage", { Veut: "Vendre la ferme", "A besoin de": "Regarder en face" }, fr, cards).fiche).toEqual({ objectif: "Vendre la ferme", besoin: "Regarder en face" });
     const scene = resolveFields("scene", { statut: "À revoir", pov: "Inès", issue: "n'importe" }, fr, cards);
     expect(scene.fiche).toEqual({ statut: "revoir", pov: "c1" });
     expect(scene.refused[0]).toMatch(/^issue/);

@@ -83,6 +83,7 @@ import { endLoad, startLoad } from "./loadProgress";
 import { interactiveOffered, isInteractiveMeta, showsInteractive } from "./interactive";
 import { CHOICE_MAP_KEY, END_TARGET, choiceMapValue, choicesAfterUndo, choicesIn, cleanLabel, editChoice, readChoiceMap, renameTargets, sceneSlugs, withChoices, type ChoiceLine, type MapPositions } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
+import { choiceGraph, choiceTree } from "./interactive/choices";
 import { FACTS_KEY, cleanFactLabel, isFactName, newFactName, readFactLabels, storyFacts } from "./interactive/facts";
 import { IMAGE_EXT, iaImageSource, iaImagesOf, readIaImageSource, type GeneratedImage } from "./ai/imageGen";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, headingRenames, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
@@ -790,6 +791,8 @@ const IMAGE_ROOM = 220;
 /** Carte encore vide (ni titre, ni texte, ni image), Idée ou Lien/Image tout juste créé : elle peut devenir ce qu'on y colle. */
 /** Espace laissé entre les cadres verrouillés et le reste du canevas rangé sous eux. */
 const LOCKED_GAP = 120;
+/** Entre l'arbre des scènes d'un roman interactif et les cadres des autres cartes, sous lui. */
+const TREE_GAP = 160;
 const insideBox = (x: number, y: number, b: { x: number; y: number; width: number; height: number }) =>
   x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
 
@@ -1049,11 +1052,34 @@ export const useCosmos = create<CosmosState>((set, get) => {
         : undefined;
     // Série encore sans carte : ses cadres saison › épisode se posent quand même, en haut à gauche.
     if (arranged.length === 0 && !series) return;
+    const origin =
+      locked.length > 0
+        ? { x: Math.min(...locked.map((f) => f.x), ...sizes.map((b) => b.x)), y: Math.max(...locked.map((f) => f.y + f.height)) + LOCKED_GAP }
+        : sizes.length > 0
+          ? { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) }
+          : { x: 0, y: 0 };
+    // Roman interactif : les scènes ne se lisent pas dans l'ordre du livre. Elles se rangent en arbre selon les
+    // choix (le départ en haut), sans cadre ni fil « puis » ; les autres cartes, dans leurs cadres, en dessous.
+    const tree = (() => {
+      if (kind === "scenario" || !showsInteractive(get().metaKeep, useSettings.getState().experimental)) return null;
+      const free = new Set(arranged.map((n) => n.id));
+      const scenes = interactiveScenes(nodes, plan).filter((sc) => free.has(sc.id));
+      const sizeOf = new Map(arranged.map((n, i) => [n.id, sizes[i]]));
+      return choiceTree(
+        scenes.map((sc) => sc.id),
+        choiceGraph(get().manuscript, interactiveScenes(nodes, plan)),
+        (id) => sizeOf.get(id) ?? { width: 280, height: 160 },
+        origin,
+      );
+    })();
+    const rest = tree ? arranged.filter((n) => !tree.positions.has(n.id)) : arranged;
+    const restSizes = tree ? sizes.filter((_, i) => !tree.positions.has(arranged[i].id)) : sizes;
     const result = organize({
       series,
-      cards: arranged.map((n, i) => ({ id: n.id, type: n.data.type, width: sizes[i].width, height: sizes[i].height })),
-      plan: story,
-      sceneIds: kind === "scenario" ? storyOrder(arranged) : planScenes(arranged),
+      cards: rest.map((n, i) => ({ id: n.id, type: n.data.type, width: restSizes[i].width, height: restSizes[i].height })),
+      // Sans scène à ranger, pas de case ni de chapitre vides (un gabarit posé avant reste dans le plan).
+      plan: tree ? { ...story, template: "libre", chapters: [] } : story,
+      sceneIds: tree ? [] : kind === "scenario" ? storyOrder(arranged) : planScenes(arranged),
       labels: {
         groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
         beat: (key) => beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, story.custom).label,
@@ -1066,14 +1092,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
         seasonUntitled: t.season.seasonUntitled,
         outside: t.season.outside,
       },
-      origin:
-        locked.length > 0
-          ? { x: Math.min(...locked.map((f) => f.x), ...sizes.map((b) => b.x)), y: Math.max(...locked.map((f) => f.y + f.height)) + LOCKED_GAP }
-          : sizes.length > 0
-            ? { x: Math.min(...sizes.map((b) => b.x)), y: Math.min(...sizes.map((b) => b.y)) }
-            : { x: 0, y: 0 },
+      origin: tree && tree.positions.size > 0 ? { x: origin.x, y: origin.y + tree.height + TREE_GAP } : origin,
       newId,
     });
+    if (tree) for (const [id, at] of tree.positions) result.positions.set(id, at);
     before();
     let nextEdges = edges;
     const linked = (a: string, b: string) => nextEdges.some((e) => (e.source === a && e.target === b) || (e.source === b && e.target === a));
@@ -1104,6 +1126,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
    */
   const followStory = () => {
     const { nodes, frames } = get();
+    // Roman interactif : l'ordre du livre n'est pas celui de la lecture ; le canevas (en arbre) ne le suit pas.
+    if (get().kind !== "scenario" && showsInteractive(get().metaKeep, useSettings.getState().experimental)) return;
     // Série : saisons et épisodes posés dans le séquencier ont leurs cadres sur le canevas, même avant la
     // première scène, dès que le canevas est déjà rangé en série ou n'a encore aucun cadre de l'auteur.
     const sp = get().screenplay;

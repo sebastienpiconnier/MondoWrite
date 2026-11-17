@@ -369,3 +369,53 @@ export function layoutChoiceMap(order: readonly string[], edges: readonly Choice
   }
   return out;
 }
+
+// ---------- Le canevas d'un roman interactif ----------
+
+/**
+ * Scènes d'un roman interactif rangées en arbre sur le canevas (« Organiser », novembre 2026) : la première en haut,
+ * puis une rangée par pas de lecture (la scène la plus courte à atteindre décide), les scènes qu'aucun choix
+ * n'atteint sur une dernière rangée. Chaque rangée est centrée. Rend les places (coin haut gauche) et la hauteur.
+ */
+export function choiceTree(
+  order: readonly string[],
+  edges: readonly ChoiceEdge[],
+  size: (id: string) => { width: number; height: number },
+  origin: { x: number; y: number },
+  gap = { x: 48, y: 120 },
+): { positions: Map<string, { x: number; y: number }>; height: number; width: number } {
+  const positions = new Map<string, { x: number; y: number }>();
+  if (order.length === 0) return { positions, height: 0, width: 0 };
+  const known = new Set(order);
+  const next = new Map<string, string[]>();
+  for (const e of edges) if (e.to && e.to !== END_TARGET && e.to !== e.from && known.has(e.to)) next.set(e.from, [...(next.get(e.from) ?? []), e.to]);
+  const depth = new Map<string, number>([[order[0], 0]]);
+  const queue = [order[0]];
+  while (queue.length) {
+    const id = queue.shift()!;
+    for (const to of next.get(id) ?? []) {
+      if (depth.has(to)) continue;
+      depth.set(to, depth.get(id)! + 1);
+      queue.push(to);
+    }
+  }
+  const rows: string[][] = [];
+  // Dans une rangée, l'ordre de découverte (celui des choix) : les branches restent sous leur scène.
+  for (const id of [...depth.keys()]) (rows[depth.get(id)!] ??= []).push(id);
+  const loose = order.filter((id) => !depth.has(id));
+  if (loose.length) rows.push(loose);
+  const widths = rows.map((row) => row.reduce((w, id) => w + size(id).width, 0) + gap.x * (row.length - 1));
+  const width = Math.max(...widths);
+  let y = origin.y;
+  rows.forEach((row, i) => {
+    let x = origin.x + (width - widths[i]) / 2;
+    let tallest = 0;
+    for (const id of row) {
+      positions.set(id, { x, y });
+      x += size(id).width + gap.x;
+      tallest = Math.max(tallest, size(id).height);
+    }
+    y += tallest + gap.y;
+  });
+  return { positions, height: y - gap.y - origin.y, width };
+}

@@ -2241,6 +2241,17 @@ const scenarios = [
       await page.getByRole("menuitem", { name: /^Vérifier/ }).click();
       await until(() => page.getByText("Une scène qu’aucun choix n’atteint").first().isVisible(), "« Vérifier » ne signale pas la scène inaccessible");
 
+      // « Organiser » range les scènes en arbre selon les choix : départ en haut, sans cadre « Scènes » ni chapitre.
+      await h.view(1);
+      await page.getByRole("button", { name: "Organiser le canevas" }).first().click();
+      await h.wait(800);
+      const tops = await page.locator(".react-flow__node-card").evaluateAll((els) =>
+        Object.fromEntries(els.map((e) => [e.querySelector(".card-title")?.value ?? "", e.getBoundingClientRect().top])),
+      );
+      assert(tops["La cour"] < tops["Le puits"] && tops["Le puits"] === tops["La maison"] && tops["La maison"] < tops["Oubliée"], `scènes pas en arbre : ${JSON.stringify(tops)}`);
+      const frameTitles = await page.locator(".frame-title").evaluateAll((els) => els.map((e) => e.value));
+      assert(!frameTitles.includes("Scènes"), `cadre « Scènes » dans un roman interactif : ${frameTitles.join(", ")}`);
+
       // Exports.
       const exportFile = async (label) => {
         await page.getByRole("button", { name: "Exporter", exact: true }).click();

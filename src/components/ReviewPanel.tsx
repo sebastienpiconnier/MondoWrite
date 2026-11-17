@@ -96,6 +96,7 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
         return fmt(t.items.verifyScene, { scene: f.text });
       case "factNeverGiven":
       case "factTooLate":
+      case "notPrinted":
         return fmt(t.items.verifyFact, { scene: f.text, fact: f.names?.[0] ?? "" });
       case "beatDrift":
         return fmt(t.items.beatDrift, { beat: beats[f.text as PlanBeat]?.label ?? f.text, at: f.counts![0], target: f.counts![1] });

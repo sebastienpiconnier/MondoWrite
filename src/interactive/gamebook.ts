@@ -6,7 +6,8 @@
 import { htmlToBlocks, type Block, type Chapter, type ExportDoc, type Run } from "../export/doc";
 import { quote } from "../typoRules";
 import { choicesIn, END_TARGET, resolveTarget, type SceneRef } from "./choices";
-import { factLabel, simpleCond, simpleEffect } from "./facts";
+import { factLabel } from "./facts";
+import { condPhrase, effectPhrase } from "./conditions";
 import type { BookDoc, BookSection } from "../export/paperback";
 
 /** Textes du livre, dans la langue de l'interface (gabarits à variables `{…}`). */
@@ -27,14 +28,22 @@ export interface GamebookTexts {
   goTo: string;
   /** Section sans choix. */
   end: string;
-  /** « Si vous avez noté {fact}, » */
-  ifHas: string;
-  ifNot: string;
-  /** « Si vous êtes déjà passé par le {n}, » */
-  ifVisited: string;
-  ifNotVisited: string;
-  /** Effets : « notez {fact} », « ajoutez {n} à {fact} », « retirez {n} à {fact} » */
+  /** Conditions : « Si {conds}, » et ses morceaux (conditions.ts). */
+  cond: string;
+  has: string;
+  hasNot: string;
+  visited: string;
+  notVisited: string;
+  atLeast: string;
+  atMost: string;
+  exactly: string;
+  notExactly: string;
+  and: string;
+  or: string;
+  /** Effets : « notez {fact} », « rayez {fact} », « inscrivez {n} pour {fact} », « ajoutez {n} à {fact} », « retirez {n} à {fact} » */
   note: string;
+  unnote: string;
+  set: string;
   add: string;
   remove: string;
 }
@@ -133,17 +142,9 @@ const around = (template: string, vars: Record<string, string>): [string, string
 /** Lettre capitale en tête (« Si vous… » après une condition, sinon le libellé tel quel). */
 const capital = (s: string) => s.charAt(0).toLocaleUpperCase() + s.slice(1);
 
-/** Effet lu pour le lecteur : fait noté, compteur augmenté ou diminué ; un effet plus complexe n'est pas écrit. */
+/** Effet lu pour le lecteur : fait noté ou rayé, compteur posé, augmenté ou diminué ; null s'il ne se dit pas. */
 function effectText(effect: string, input: GamebookInput): string | null {
-  const { texts, lang, factLabels } = input;
-  const fact = (name: string) => quote(factLabel(name, factLabels), lang);
-  const given = simpleEffect(effect);
-  if (given) return fill(texts.note, { fact: fact(given) });
-  const m = /^([\p{L}_][\p{L}\p{N}_]*)\s*(?:(\+|-)=\s*(\d+)|=\s*\1\s*(\+|-)\s*(\d+))$/u.exec(effect.trim());
-  if (!m) return null;
-  const sign = m[2] ?? m[4];
-  const n = m[3] ?? m[5];
-  return fill(sign === "+" ? texts.add : texts.remove, { n, fact: fact(m[1]) });
+  return effectPhrase(effect, input.texts, (name) => quote(factLabel(name, input.factLabels), input.lang));
 }
 
 /**
@@ -158,15 +159,15 @@ export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: S
   const link = (id: string): Run => ({ text: String(numberOf.get(id)), chapter: numberOf.get(id)! });
   const usesFacts = sections.some((s) => choicesIn(input.manuscript[s.id]).some((l) => l.kind === "choice" && (l.cond?.trim() || l.effects?.length)));
 
-  const condText = (cond: string | undefined): string => {
-    if (!cond?.trim()) return "";
-    const simple = simpleCond(cond);
-    if (!simple) return "";
-    const scene = resolveTarget(simple.name, input.slugs);
-    if (scene && scene !== END_TARGET && numberOf.has(scene))
-      return fill(simple.not ? texts.ifNotVisited : texts.ifVisited, { n: String(numberOf.get(scene)) });
-    return fill(simple.not ? texts.ifNot : texts.ifHas, { fact: quote(factLabel(simple.name, input.factLabels), lang) });
+  const names = {
+    section: (name: string) => {
+      const scene = resolveTarget(name, input.slugs);
+      return scene && scene !== END_TARGET ? (numberOf.get(scene) ?? null) : null;
+    },
+    fact: (name: string) => quote(factLabel(name, input.factLabels), lang),
   };
+  // Une condition que le livre ne sait pas dire : le choix s'imprime sans elle (le vérificateur le signale).
+  const condText = (cond: string | undefined): string => condPhrase(cond, texts, names) ?? "";
 
   const chapters: Chapter[] = [
     {

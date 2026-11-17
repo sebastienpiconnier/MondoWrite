@@ -78,6 +78,18 @@ function store(interactive: boolean) {
     },
     log: (target: string) => void state.journal.push(target),
     interactive: () => (interactive ? ix() : null),
+    keepVersion: async () => "v1",
+    linkCards: () => {},
+    addTitledCard: () => {
+      const id = `n${scenes.length + 1}`;
+      scenes.push({ n: scenes.length + 1, id, title: "" });
+      return id;
+    },
+    updateCard: (id: string, patch: { title?: string }) => {
+      const sc = scenes.find((x) => x.id === id);
+      if (sc && patch.title) sc.title = patch.title;
+    },
+    startChapterAt: () => "ch1",
   } as unknown as McpStore;
   return { state, store: s };
 }
@@ -130,5 +142,78 @@ describe("outil set_choices", () => {
     state.labels.cle = "a trouvé la clé";
     const got = choiceFromRequest({ text: "Ouvrir", to: "2", only_if: "A trouvé la clé" }, s.interactive!()!, () => ({ id: "b" }));
     expect(got).toEqual({ line: { kind: "choice", label: "Ouvrir", target: "la_cour", cond: "cle" } });
+  });
+});
+
+describe("retours du « Puits » (novembre 2026)", () => {
+  it("set_choices : compteurs et conditions combinées, lus avant d'être écrits", async () => {
+    const { state, store: s } = store(true);
+    const ok = await applyMcpRequest(
+      {
+        id: "1",
+        tool: "set_choices",
+        args: {
+          scene: "1",
+          choices: [
+            { text: "Prendre la lanterne", to: "2", effects: ["lanterne = true", "flamme = 3"] },
+            { text: "Lever la lanterne", to: "end", condition: "not nom_donne and ourdas and flamme > 0", effects: ["flamme -= 1"] },
+          ],
+        },
+      },
+      s,
+      fr,
+    );
+    expect(ok.ok).toBe(true);
+    expect(choicesIn(state.manuscript.a)).toEqual([
+      { kind: "choice", label: "Prendre la lanterne", target: "la_cour", effects: ["lanterne = true", "flamme = 3"] },
+      { kind: "choice", label: "Lever la lanterne", target: "END", cond: "not nom_donne and ourdas and flamme > 0", effects: ["flamme -= 1"] },
+    ]);
+    for (const bad of [{ condition: "RANDOM(1, 6) > 3" }, { effects: ["flamme = RANDOM(1,6)"] }, { effects: ["la_cour = true"] }]) {
+      const res = await applyMcpRequest({ id: "2", tool: "set_choices", args: { scene: "2", choices: [{ text: "x", to: "end", ...bad }] } }, s, fr);
+      expect(res.ok).toBe(false);
+    }
+    expect(state.manuscript.b).toBe("");
+  });
+
+  it("write_scene garde les choix de la scène, et signale ceux qu'il écrit mal", async () => {
+    const { state, store: s } = store(true);
+    state.manuscript.a = `<p>Avant.</p>${choicesHtml("* [Entrer] -> la_cour")}`;
+    const res = await applyMcpRequest({ id: "1", tool: "write_scene", args: { scene: "1", mode: "replace", text: "Après." } }, s, fr);
+    expect(res.text).toMatch(/choix sont gardés/);
+    expect(state.manuscript.a).toMatch(/Après\./);
+    expect(choicesIn(state.manuscript.a).map((l) => (l.kind === "choice" ? l.label : ""))).toEqual(["Entrer"]);
+    // Ajout de texte : le bloc reste en fin de scène.
+    await applyMcpRequest({ id: "2", tool: "write_scene", args: { scene: "1", text: "Encore." } }, s, fr);
+    expect(state.manuscript.a.indexOf("Encore.")).toBeLessThan(state.manuscript.a.indexOf("data-choices"));
+    // Un bloc écrit à la main remplace l'ancien ; une destination inconnue est signalée.
+    const raw = await applyMcpRequest({ id: "3", tool: "write_scene", args: { scene: "1", mode: "replace", text: "Neuf.\n\n```choix\n* [Monter] -> le_grenier\n```" } }, s, fr);
+    expect(raw.ok).toBe(true);
+    expect(raw.text).toMatch(/le_grenier/);
+    expect(choicesIn(state.manuscript.a).map((l) => (l.kind === "choice" ? l.target : ""))).toEqual(["le_grenier"]);
+  });
+
+  it("un bloc de choix hors d'un roman interactif est refusé", async () => {
+    const { state, store: s } = store(false);
+    const res = await applyMcpRequest({ id: "1", tool: "write_scene", args: { scene: "1", text: "```choix\n* [x] -> END\n```" } }, s, fr);
+    expect(res.ok).toBe(false);
+    expect(state.manuscript.a).toBe("<p>Devant la grille.</p>");
+  });
+
+  it("pas de chapitre dans un roman interactif", async () => {
+    const { store: s } = store(true);
+    const res = await applyMcpRequest({ id: "1", tool: "create_chapter", args: { scene: "1", title: "La ferme" } }, s, fr);
+    expect(res.ok).toBe(false);
+    expect(res.text).toMatch(/pas de chapitres/);
+  });
+
+  it("create_scene pose aussi ses choix et donne son nom", async () => {
+    const { state, store: s } = store(true);
+    const res = await applyMcpRequest({ id: "1", tool: "create_scene", args: { title: "Le grenier", text: "Il fait noir.", choices: [{ text: "Redescendre", to: "1" }] } }, s, fr);
+    expect(res.ok).toBe(true);
+    expect(res.text).toMatch(/`le_grenier`/);
+    expect(choicesIn(state.manuscript.n3)).toEqual([{ kind: "choice", label: "Redescendre", target: "la_grille" }]);
+    // Un « Continuer » sans texte, donné exprès ; un texte oublié est refusé.
+    expect((await applyMcpRequest({ id: "2", tool: "set_choices", args: { scene: "2", choices: [{ text: "", to: "1" }] } }, s, fr)).ok).toBe(true);
+    expect((await applyMcpRequest({ id: "3", tool: "set_choices", args: { scene: "2", choices: [{ to: "1" }] } }, s, fr)).ok).toBe(false);
   });
 });

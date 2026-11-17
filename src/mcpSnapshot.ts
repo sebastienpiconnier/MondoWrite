@@ -291,7 +291,8 @@ export function buildMcpSnapshot(s: McpSource, t: Messages, now: Date, app: stri
     project: {
       title: s.title.trim() || t.pitch.untitled,
       kind: s.kind,
-      kindLabel: t.kinds[s.kind],
+      // Un roman interactif le dit dès la liste des projets : l'assistant écrit ses choix autrement (set_choices).
+      kindLabel: interactive ? t.interactive.settingLabel : t.kinds[s.kind],
       access: s.access ?? "read",
       ...(logline ? { logline } : {}),
       ...(resume ? { resume } : {}),

@@ -5,9 +5,10 @@
 // sans tenir compte des conditions : une scène est « atteignable » s'il existe un chemin, même s'il demande un fait.
 
 import { END_TARGET, choicesIn, resolveTarget, sceneSlugs, type SceneRef } from "./choices";
-import { factLabel, simpleCond } from "./facts";
+import { factLabel } from "./facts";
+import { condPhrase, effectPhrase, parseCond, type Cond, type CondTexts, type EffectTexts } from "./conditions";
 
-export type VerifyRule = "unreachableScene" | "brokenChoice" | "noEnding" | "lockedScene" | "factNeverGiven" | "factTooLate" | "implicitEnd";
+export type VerifyRule = "unreachableScene" | "brokenChoice" | "noEnding" | "lockedScene" | "factNeverGiven" | "factTooLate" | "implicitEnd" | "notPrinted";
 
 export interface VerifyPoint {
   rule: VerifyRule;
@@ -20,13 +21,14 @@ export interface VerifyPoint {
 }
 
 /** Ordre d'affichage : ce qui empêche de lire d'abord. */
-export const VERIFY_ORDER: readonly VerifyRule[] = ["noEnding", "unreachableScene", "brokenChoice", "lockedScene", "factNeverGiven", "factTooLate", "implicitEnd"];
+export const VERIFY_ORDER: readonly VerifyRule[] = ["noEnding", "unreachableScene", "brokenChoice", "lockedScene", "factNeverGiven", "factTooLate", "implicitEnd", "notPrinted"];
 
 const DIVERT_RE = /^\s*->\s*([\p{L}\p{N}_]+)\s*$/u;
 const ASSIGN_RE = /^([\p{L}_][\p{L}\p{N}_]*)\s*(?:\+=|-=|=|\+\+|--)/u;
 
 interface Exit {
   to: string | null;
+  label?: string;
   cond?: string;
   effects: string[];
   divert: boolean;
@@ -39,7 +41,7 @@ function exitsOf(scenes: readonly SceneRef[], manuscript: Readonly<Record<string
   for (const s of scenes) {
     const list: Exit[] = [];
     for (const line of choicesIn(manuscript[s.id])) {
-      if (line.kind === "choice") list.push({ to: resolveTarget(line.target, slugs), cond: line.cond, effects: line.effects ?? [], divert: false });
+      if (line.kind === "choice") list.push({ to: resolveTarget(line.target, slugs), label: line.label, cond: line.cond, effects: line.effects ?? [], divert: false });
       else {
         const m = DIVERT_RE.exec(line.text);
         if (m) list.push({ to: resolveTarget(m[1], slugs), effects: [], divert: true });
@@ -108,23 +110,55 @@ export function verifyStory(scenes: readonly SceneRef[], manuscript: Readonly<Re
   const sceneNames = new Set(sceneSlugs(scenes).values());
   const seenFact = new Set<string>();
   for (const s of scenes)
+    for (const e of exits.get(s.id) ?? [])
+      for (const name of requiredNames(e.cond)) {
+        const key = `${name}:${s.id}`;
+        if (seenFact.has(key)) continue;
+        seenFact.add(key);
+        const label = factLabel(name, labels);
+        // Une condition qui nomme une scène (« a lu cette scène ») n'est pas un fait.
+        if (sceneNames.has(name)) continue;
+        const from = givers.get(name) ?? [];
+        if (from.length === 0) out.push({ rule: "factNeverGiven", scene: s.id, name, label });
+        else if (!from.some((g) => reachable.has(g.from) && g.to && g.to !== END_TARGET && reaches(g.to, s.id)))
+          out.push({ rule: "factTooLate", scene: s.id, name, label });
+      }
+
+  // Le livre-jeu imprimé : un choix dont la condition ou un effet ne se dit pas en une phrase s'imprimerait sans.
+  for (const s of scenes)
     for (const e of exits.get(s.id) ?? []) {
-      const c = simpleCond(e.cond);
-      if (!c || c.not) continue;
-      const key = `${c.name}:${s.id}`;
-      if (seenFact.has(key)) continue;
-      seenFact.add(key);
-      const label = factLabel(c.name, labels);
-      // Une condition qui nomme une scène (« a lu cette scène ») n'est pas un fait.
-      if (sceneNames.has(c.name)) continue;
-      const from = givers.get(c.name) ?? [];
-      if (from.length === 0) out.push({ rule: "factNeverGiven", scene: s.id, name: c.name, label });
-      else if (!from.some((g) => reachable.has(g.from) && g.to && g.to !== END_TARGET && reaches(g.to, s.id)))
-        out.push({ rule: "factTooLate", scene: s.id, name: c.name, label });
+      if (e.divert) continue;
+      const condOk = condPhrase(e.cond, PROBE_COND, PROBE_NAMES) !== null;
+      const effectsOk = e.effects.every((x) => effectPhrase(x, PROBE_EFFECT, (n) => n) !== null);
+      if (!condOk || !effectsOk) out.push({ rule: "notPrinted", scene: s.id, name: e.label?.trim() || "…", label: e.label?.trim() || "…" });
     }
 
   const rank = new Map(scenes.map((s, i) => [s.id, i]));
   return out.sort((a, b) => VERIFY_ORDER.indexOf(a.rule) - VERIFY_ORDER.indexOf(b.rule) || (rank.get(a.scene ?? "") ?? 0) - (rank.get(b.scene ?? "") ?? 0));
+}
+
+// Gabarits neutres : seule compte la question « cela se dit-il ? ».
+const PROBE_COND: CondTexts = { cond: "{conds}", has: "{fact}", hasNot: "{fact}", visited: "{n}", notVisited: "{n}", atLeast: "{fact}", atMost: "{fact}", exactly: "{fact}", notExactly: "{fact}", and: "&", or: "|" };
+const PROBE_EFFECT: EffectTexts = { note: "{fact}", unnote: "{fact}", set: "{fact}", add: "{fact}", remove: "{fact}" };
+const PROBE_NAMES = { section: () => null, fact: (n: string) => n };
+
+/**
+ * Faits qu'une condition demande à coup sûr : un fait seul, un compteur qui doit être au-dessus de zéro, ou chacun des
+ * termes d'un « et ». Un « ou » laisse le choix : rien n'y est exigé.
+ */
+function requiredNames(src: string | undefined): string[] {
+  if (!src?.trim()) return [];
+  const cond = parseCond(src);
+  if (!cond) return [];
+  const one = (c: Cond): string[] => {
+    if (c.k === "name") return [c.name];
+    if (c.k === "cmp") {
+      if (c.value === true && c.op === "==") return [c.name];
+      if (typeof c.value === "number" && ((c.op === ">" && c.value >= 0) || (c.op === ">=" && c.value > 0) || (c.op === "==" && c.value > 0))) return [c.name];
+    }
+    return [];
+  };
+  return cond.k === "and" ? cond.list.flatMap(one) : one(cond);
 }
 
 /** Clé stable d'un point (pour « Ignorer » pendant la session). */

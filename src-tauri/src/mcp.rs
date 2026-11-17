@@ -409,6 +409,11 @@ impl Server {
     let (_, v) = self.project(args)?;
     let p = &v["project"];
     let mut out = format!("# {}\n\n{}", str_of(p, "/title"), str_of(p, "/kindLabel"));
+    let interactive = p.get("interactive").and_then(Value::as_bool) == Some(true);
+    if interactive {
+      // En tête, pour qu'un assistant ne le prenne pas pour un roman ordinaire (retours du « Puits », novembre 2026).
+      out.push_str(&format!("\n\n{INTERACTIVE_RULES}"));
+    }
     for key in ["author", "logline", "resume"] {
       let text = str_of(p, &format!("/{key}"));
       if !text.is_empty() {
@@ -416,13 +421,16 @@ impl Server {
         out.push_str(&format!("\n\n**{label}** : {text}"));
       }
     }
-    if p.get("interactive").and_then(Value::as_bool) == Some(true) {
-      out.push_str("\n\n**Roman interactif / Interactive novel** : le lecteur choisit la suite à la fin des scènes (choix ci-dessous, `read_scene` pour le détail, `set_choices` pour les écrire, `review` pour vérifier le chemin). Pas de système de jeu (ni dés, ni combats) : seulement des faits que le lecteur acquiert.");
+    if interactive {
       let facts = p.get("facts").and_then(Value::as_array).cloned().unwrap_or_default();
       if !facts.is_empty() {
         let list: Vec<String> = facts
           .iter()
-          .map(|f| if str_of(f, "/kind") == "int" { format!("{} (compteur/counter)", str_of(f, "/label")) } else { str_of(f, "/label").to_string() })
+          .map(|f| {
+            let (label, name) = (str_of(f, "/label"), str_of(f, "/name"));
+            let shown = if name.is_empty() || name == label { format!("`{name}`") } else { format!("{label} (`{name}`)") };
+            if str_of(f, "/kind") == "int" { format!("{shown}, compteur/counter") } else { shown }
+          })
           .collect();
         out.push_str(&format!("\n\n**Faits / Facts** : {}", list.join(", ")));
       }
@@ -794,8 +802,8 @@ impl Server {
       },
       {
         "name": "create_scene",
-        "description": "Crée une scène à la fin du récit (roman : titre libre ; scénario : en-tête « INT. LIEU - JOUR »), avec synopsis et texte facultatifs. / Creates a scene at the end of the story.",
-        "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "synopsis": { "type": "string" }, "text": { "type": "string", "description": "Markdown (roman, [[Titre]] cite une carte) ou Fountain sans en-tête (scénario)." }, "page": { "type": "string", "description": "Roman : page hors récit (titre, copyright, dedicace, epigraphe, prologue, epilogue, remerciements, auteur) au lieu d'une scène." } } }
+        "description": "Crée une scène à la fin du récit (roman : titre libre ; scénario : en-tête « INT. LIEU - JOUR »), avec synopsis et texte facultatifs. Roman interactif : `choices` pose aussi ses choix (comme set_choices) ; la réponse donne le nom de la scène dans les choix. / Creates a scene at the end of the story.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "synopsis": { "type": "string" }, "text": { "type": "string", "description": "Markdown (roman, [[Titre]] cite une carte) ou Fountain sans en-tête (scénario)." }, "page": { "type": "string", "description": "Roman : page hors récit (titre, copyright, dedicace, epigraphe, prologue, epilogue, remerciements, auteur) au lieu d'une scène. Jamais de choix ni de mode d'emploi du livre-jeu sur une page." }, "choices": { "type": "array", "description": "Roman interactif : choix de fin de scène, même forme que dans set_choices.", "items": { "type": "object" } } } }
       },
       {
         "name": "set_scene_synopsis",
@@ -813,7 +821,7 @@ impl Server {
       },
       {
         "name": "write_scene",
-        "description": "Écrit le texte d'une scène : ajout à la fin ou remplacement. Roman : Markdown ([[Titre]] cite une carte) ; scénario : Fountain sans en-tête de scène. Le texte de l'IA reste marqué jusqu'à ce que l'auteur le reprenne ; avant un remplacement dans un roman, MondoWrite garde une version de la scène. / Writes a scene's text (append or replace), marked as AI.",
+        "description": "Écrit le texte d'une scène : ajout à la fin ou remplacement. Roman : Markdown ([[Titre]] cite une carte) ; scénario : Fountain sans en-tête de scène. Le texte de l'IA reste marqué jusqu'à ce que l'auteur le reprenne ; avant un remplacement dans un roman, MondoWrite garde une version de la scène. Roman interactif : les choix de la scène sont gardés ; pour les changer, set_choices. / Writes a scene's text (append or replace), marked as AI; an interactive scene keeps its choices.",
         "inputSchema": { "type": "object", "properties": {
           "project": project,
           "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
@@ -833,7 +841,7 @@ impl Server {
       },
       {
         "name": "create_chapter",
-        "description": "Roman : commence un nouveau chapitre à cette scène (elle et les suivantes du chapitre en cours y passent), avec un titre facultatif. Les chapitres sont renumérotés. / Novel: starts a new chapter at this scene.",
+        "description": "Roman : commence un nouveau chapitre à cette scène (elle et les suivantes du chapitre en cours y passent), avec un titre facultatif. Les chapitres sont renumérotés. Refusé dans un roman interactif. / Novel: starts a new chapter at this scene.",
         "inputSchema": { "type": "object", "properties": { "project": project, "scene": { "type": "string", "description": "Première scène du chapitre : numéro, identifiant ou titre." }, "title": { "type": "string" } }, "required": ["scene"] }
       },
       {
@@ -852,7 +860,16 @@ impl Server {
         "inputSchema": { "type": "object", "properties": { "project": project, "chapter": { "type": "string" } }, "required": ["chapter"] }
       }
     ]);
-    // En deux listes : une seule dépasserait la profondeur permise à la macro `json!`.
+    // En deux listes : une seule dépasserait la profondeur permise à la macro `json!` (un choix de set_choices, à part).
+    let choice_item = json!({ "type": "object", "properties": {
+      "text": { "type": "string" },
+      "to": { "type": "string", "description": "Scène visée (numéro, titre, identifiant) ou « end »." },
+      "only_if": { "type": "string", "description": "Libellé d'un fait (« a trouvé la clé »)." },
+      "only_if_not": { "type": "string" },
+      "gives": { "type": "string", "description": "Libellé du fait acquis." },
+      "condition": { "type": "string", "description": "Condition par les noms des faits et compteurs : « ourdas and reconnu and flamme > 0 »." },
+      "effects": { "type": "array", "items": { "type": "string" }, "description": "« flamme = 3 », « flamme -= 1 », « cle = true »…" }
+    }, "required": ["text", "to"] });
     let more = json!([
       {
         "name": "add_comment",
@@ -956,7 +973,7 @@ impl Server {
       },
       {
         "name": "organize_canvas",
-        "description": "Range tout le canevas : un cadre par type de carte, par case du gabarit, par chapitre ou épisode. Une seule annulation le défait. / Tidies the whole canvas.",
+        "description": "Range tout le canevas : un cadre par type de carte, par case du gabarit, par chapitre ou épisode. Roman interactif : les scènes en arbre selon les choix (départ en haut), les autres cartes dessous. Une seule annulation le défait. / Tidies the whole canvas.",
         "inputSchema": { "type": "object", "properties": { "project": project } }
       },
       {
@@ -991,17 +1008,11 @@ impl Server {
       },
       {
         "name": "set_choices",
-        "description": "Roman interactif seulement : pose les choix proposés au lecteur à la fin d'une scène (remplace ceux qui y sont, ou les ajoute avec mode « append » ; une liste vide fait de la scène une fin). Chaque choix : `text` (ce que lit le lecteur), `to` (scène visée : numéro, titre ou identifiant ; « end » pour finir l'histoire), et au besoin `only_if` ou `only_if_not` (un fait que le lecteur doit avoir, ou ne pas avoir) et `gives` (le fait qu'il acquiert, créé s'il n'existe pas). Pas de dés ni de combats. Journalisé, annulable. / Interactive novels only: sets a scene's reader choices.",
+        "description": "Roman interactif seulement : pose les choix proposés au lecteur à la fin d'une scène (remplace ceux qui y sont, ou les ajoute avec mode « append » ; une liste vide fait de la scène une fin). Chaque choix : `text` (ce que lit le lecteur), `to` (scène visée : numéro, titre ou identifiant ; « end » pour finir l'histoire), et au besoin `only_if` ou `only_if_not` (un fait que le lecteur doit avoir, ou ne pas avoir) et `gives` (le fait qu'il acquiert, créé s'il n'existe pas). Un `text` vide fait un simple « Continuer ». Plus riche : `condition` (noms de faits et de compteurs, nombres, and, or, not, ==, !=, <, <=, >, >=, parenthèses : « not nom_donne and flamme > 0 ») et `effects` (« lanterne = true », « flamme = 3 », « flamme -= 1 »). Pas de dés ni de combats. Journalisé, annulable. / Interactive novels only: sets a scene's reader choices (facts, counters, conditions).",
         "inputSchema": { "type": "object", "properties": {
           "project": project,
           "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
-          "choices": { "type": "array", "items": { "type": "object", "properties": {
-            "text": { "type": "string" },
-            "to": { "type": "string", "description": "Scène visée (numéro, titre, identifiant) ou « end »." },
-            "only_if": { "type": "string", "description": "Libellé d'un fait (« a trouvé la clé »)." },
-            "only_if_not": { "type": "string" },
-            "gives": { "type": "string", "description": "Libellé du fait acquis." }
-          }, "required": ["text", "to"] } },
+          "choices": { "type": "array", "items": choice_item },
           "mode": { "type": "string", "enum": ["replace", "append"], "description": "replace par défaut." }
         }, "required": ["scene", "choices"] }
       },
@@ -1107,8 +1118,11 @@ impl Server {
   }
 }
 
+/// Ce qu'un assistant doit savoir d'un roman interactif avant d'y écrire (en tête de `project_overview`).
+const INTERACTIVE_RULES: &str = "**Roman interactif / Interactive novel.** Le lecteur choisit la suite à la fin de chaque scène ; l'ordre du livre ne compte pas (la première scène est le départ). Règles : écris les choix avec `set_choices` (ou `choices` de `create_scene`), jamais en texte (« va à… », « rendez-vous au 12 ») ; MondoWrite numérote les scènes et écrit le mode d'emploi du livre-jeu à l'export, n'en écris pas ; pas de chapitres ; ce que le lecteur obtient ou perd se dit par des faits et des compteurs (`gives`, `effects`, `condition`), jamais par des consignes au lecteur (« note… », « retire 1 à… ») ; pas de système de jeu livré (dés, combats, caractéristiques) ; vérifie le chemin avec `review`. / Write choices with set_choices, never as prose; no chapters, no hand-written numbers; facts and counters instead of reader instructions.";
+
 /// Consignes prêtes à l'emploi (menu des consignes du client) : elles reprennent l'esprit de l'IA de MondoWrite.
-const PROMPTS: [(&str, &str, &str, &str); 5] = [
+const PROMPTS: [(&str, &str, &str, &str); 6] = [
   (
     "relecture_beta",
     "Relecture bêta / Beta read",
@@ -1132,6 +1146,12 @@ const PROMPTS: [(&str, &str, &str, &str); 5] = [
     "Interroger un personnage / Interview a character",
     "Le personnage répond, en restant dans ce que l'auteur a écrit. / The character answers from what the author wrote.",
     "Lis la fiche de {character} dans le projet MondoWrite {project} (read_card) et les scènes où il paraît. Réponds ensuite aux questions de l'auteur à la première personne, comme ce personnage, seulement avec ce que l'auteur a écrit. Ce que le texte ne dit pas, le personnage ne le sait pas ou ne veut pas le dire : dis-le plutôt que d'inventer. Si l'auteur veut garder une réponse, demande-lui avant de l'écrire dans la fiche. Réponds dans la langue de l'auteur.",
+  ),
+  (
+    "histoire_interactive",
+    "Écrire une histoire à choix / Write a branching story",
+    "Des scènes reliées par des choix, des faits et des compteurs, dans un roman interactif. / Scenes linked by choices, facts and counters.",
+    "Travaille sur le roman interactif MondoWrite {project}. Commence par project_overview et suis ses règles. Pour chaque scène : create_scene (titre, synopsis, texte, et `choices`), ou write_scene pour le texte puis set_choices pour les choix. Les destinations se donnent par titre ou numéro ; « end » pour une fin. Ce que le lecteur obtient se dit par `gives` ou `effects`, ce qu'il doit avoir par `only_if` ou `condition`. N'écris ni numéros de renvoi, ni « va à », ni mode d'emploi, ni chapitres : MondoWrite les fabrique. Écris au « tu » sans fixer le genre du lecteur. Termine par review et corrige ce qu'il signale (scène inaccessible, choix sans destination, fait jamais donné, choix que le livre imprimé ne sait pas écrire). Réponds dans la langue de l'auteur.",
   ),
   (
     "point_du_projet",
@@ -1364,6 +1384,9 @@ mod tests {
     let s = Server::new(dir);
     let (text, _) = call(&s, "project_overview", json!({}));
     assert!(text.contains("Roman interactif") && text.contains("a trouvé la clé") && text.contains("→ 2. La tempête, Fin / End"));
+    // Les règles en tête, avant le reste ; le nom de chaque fait, pour les conditions.
+    assert!(text.find("set_choices").unwrap() < text.find("## Scènes").unwrap());
+    assert!(text.contains("a trouvé la clé (`cle`)"));
     let (text, _) = call(&s, "read_scene", json!({ "scenes": "1" }));
     assert!(text.contains("« Monter » → 2. La tempête · donne / gives : a trouvé la clé"));
     assert!(text.contains("« Partir » → Fin / End · seulement si / only if : not: a trouvé la clé"));
