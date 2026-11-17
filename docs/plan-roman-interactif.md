@@ -32,7 +32,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 5. Vérificateur | Sans fin, inaccessibles, blocages, faits (fait) ; parties automatiques à décider |
 | 6. Assistant IA interactif | Outils MCP (fait) |
 | 7. Export web | HTML autonome (fait) |
-| 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF |
+| 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF (fait) |
 | 9. Import | Twee 3 et Ink |
 | 10. Storylets | Option, à décider après retours |
 
@@ -202,3 +202,21 @@ chaque choix tapé dans le texte apparaît sur la carte.
 - Le moteur et sa licence sont lus en texte par un chemin relatif (`../../node_modules/inkjs/dist/ink.js?raw`) :
   un alias de paquet était préchargé par Vite en mode développement et devenait un module.
 - Reste possible plus tard : gras et italique dans la lecture, choix de la police, couverture en tête de page.
+
+## Lot 8 · Export livre-jeu (fait sur la branche `roman-interactif`)
+
+- **Menu Exporter** : « Livre-jeu (EPUB) » et « Livre-jeu (PDF) » (roman interactif seulement, aussi sur téléphone),
+  sans fenêtre de réglages.
+- **Sections** (`gamebook.ts`, pur, testé) : la première scène est le 1, les autres sont mélangées par une graine
+  tirée des identifiants des scènes (`seedOf`) : même projet, mêmes numéros d'un export à l'autre tant qu'aucune
+  scène n'est ajoutée ou retirée. Parmi 24 mélanges, celui où le moins de choix mènent à la section juste en dessous
+  (`numberSections`).
+- **Texte** : une section d'ouverture (« Avant de commencer », et la phrase sur les choses à noter s'il y a des
+  conditions ou des effets), puis le texte de chaque scène et ses choix : « Pousser la grille : rendez-vous au 12. »,
+  « … : notez « La clé », puis rendez-vous au 12. », « Si vous avez noté « La clé », … », « Si vous êtes déjà passé
+  par le 7, … » (condition qui nomme une scène), « ajoutez 2 à « Pièces » » (`+=`, `= x + n`), fin de l'histoire.
+  Un effet ou une condition plus complexe n'est pas écrit. Guillemets de la langue par `quote`.
+- **Liens** : `Run.chapter` (export/doc.ts) fait du numéro un lien vers sa section dans l'EPUB (`ch<n>.xhtml`) et
+  la page web (`#ch-<n>`) ; Word, Markdown et PDF l'écrivent en texte.
+- Le PDF passe par le PDF du manuscrit (Courier, interligne simple). Reste possible : mise en page du livre broché,
+  feuille d'aventure à imprimer, réglages (garder l'ordre, numéro de départ).

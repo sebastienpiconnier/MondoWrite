@@ -206,12 +206,18 @@ export function ExportMenu() {
     }
   };
   const webItem = { key: "ms-web", label: all.interactive.web.menu, build: webFile };
+  // Lot 8 : le livre-jeu, sections mélangées et numérotées.
+  const gamebookItems = (["epub", "pdf"] as const).map((f) => ({
+    key: `ms-gamebook-${f}`,
+    label: all.interactive.gamebook[f],
+    build: async () => (await import("../interactive/gamebookExport")).gamebookFile(f, info().title, info().author),
+  }));
 
   type Group = { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] };
   const phoneGroups: Group[] = [
     kind === "scenario"
       ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
-      : { title: x.manuscript, items: [...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })), ...(interactive ? [webItem, inkItem] : [])] },
+      : { title: x.manuscript, items: [...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })), ...(interactive ? [webItem, ...gamebookItems, inkItem] : [])] },
     { title: x.bible, empty: x.emptyBible, items: (["docx", "md", "html"] as const).map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
   ];
@@ -231,7 +237,7 @@ export function ExportMenu() {
             ...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })),
             // Livre broché : une fenêtre de réglages, qui enregistre elle-même ses deux PDF.
             { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") },
-            ...(interactive ? [webItem, inkItem] : []),
+            ...(interactive ? [webItem, ...gamebookItems, inkItem] : []),
           ],
         },
     // La Bible a sa fenêtre (pour qui, parties, rendu, aperçu, PDF, Word ou Markdown).

@@ -21,6 +21,8 @@ export interface Run {
    * Un format qui ne connaît pas les notes écrit le numéro tel quel.
    */
   footnote?: string;
+  /** Renvoi vers un chapitre du même document (rang à partir de 0) : un lien dans l'EPUB et la page web. */
+  chapter?: number;
 }
 
 export type Block =

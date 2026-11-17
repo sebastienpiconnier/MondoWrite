@@ -262,7 +262,10 @@ export function toDocx(doc: ExportDoc): Uint8Array {
 
 // ---------- EPUB 3 ----------
 
-const htmlRuns = (runs: Run[]) =>
+/** Adresse d'un chapitre du document (EPUB : son fichier ; page web : son ancre). */
+type ChapterHref = (index: number) => string;
+
+const htmlRuns = (runs: Run[], chapterHref?: ChapterHref) =>
   runs
     .map((run) => {
       // Appel de note : lien vers la note, en fin de chapitre (les liseuses l'ouvrent en fenêtre).
@@ -270,12 +273,14 @@ const htmlRuns = (runs: Run[]) =>
       let text = xml(run.text).replace(/\n/g, "<br/>");
       if (run.italic) text = `<em>${text}</em>`;
       if (run.bold) text = `<strong>${text}</strong>`;
+      // Renvoi vers un chapitre (livre-jeu : « rendez-vous au 12 »).
+      if (run.chapter !== undefined && chapterHref) text = `<a href="${xml(chapterHref(run.chapter))}">${text}</a>`;
       return text;
     })
     .join("");
 
 /** Corps XHTML d'un chapitre : les listes et les citations retrouvent leurs balises. */
-export function chapterXhtml(blocks: Block[], image?: (name: string) => string | null): string {
+export function chapterXhtml(blocks: Block[], image?: (name: string) => string | null, chapterHref?: ChapterHref): string {
   const out: string[] = [];
   let open: "" | "ul" | "ol" = "";
   const close = () => {
@@ -294,7 +299,7 @@ export function chapterXhtml(blocks: Block[], image?: (name: string) => string |
     }
     if (block.kind === "heading") {
       close();
-      out.push(`<h2>${htmlRuns(block.runs)}</h2>`);
+      out.push(`<h2>${htmlRuns(block.runs, chapterHref)}</h2>`);
     } else if (block.list) {
       const tag = block.list === "number" ? "ol" : "ul";
       if (open !== tag) {
@@ -302,10 +307,10 @@ export function chapterXhtml(blocks: Block[], image?: (name: string) => string |
         out.push(`<${tag}>`);
         open = tag;
       }
-      out.push(`<li>${htmlRuns(block.runs)}</li>`);
+      out.push(`<li>${htmlRuns(block.runs, chapterHref)}</li>`);
     } else {
       close();
-      out.push(block.quote ? `<blockquote><p>${htmlRuns(block.runs)}</p></blockquote>` : `<p>${htmlRuns(block.runs)}</p>`);
+      out.push(block.quote ? `<blockquote><p>${htmlRuns(block.runs, chapterHref)}</p></blockquote>` : `<p>${htmlRuns(block.runs, chapterHref)}</p>`);
     }
   }
   close();
@@ -345,7 +350,7 @@ export function toEpub(doc: ExportDoc, meta: EpubMeta): Uint8Array {
     id: `ch${i + 1}`,
     href: `ch${i + 1}.xhtml`,
     title: chapter.title,
-    data: page(doc.lang, chapter.title, `<h1>${xml(chapter.title)}</h1>\n${chapterXhtml(chapter.blocks, pictureOf)}`),
+    data: page(doc.lang, chapter.title, `<h1>${xml(chapter.title)}</h1>\n${chapterXhtml(chapter.blocks, pictureOf, (k) => `ch${k + 1}.xhtml`)}`),
   }));
   const cover = page(doc.lang, doc.title, `<div class="cover"><h1>${xml(doc.title)}</h1>${doc.author ? `<p>${xml(doc.author)}</p>` : ""}</div>`);
   const nav = page(
@@ -417,7 +422,7 @@ export function toHtml(doc: ExportDoc, options: HtmlOptions): string {
   };
   const chapters = doc.chapters.map(
     (chapter, i) =>
-      `<section class="chapter" id="ch-${i + 1}">\n<h2 class="chapter-title">${xml(chapter.title)}</h2>\n${chapterXhtml(chapter.blocks, image)}\n</section>`,
+      `<section class="chapter" id="ch-${i + 1}">\n<h2 class="chapter-title">${xml(chapter.title)}</h2>\n${chapterXhtml(chapter.blocks, image, (k) => `#ch-${k + 1}`)}\n</section>`,
   );
   const toc =
     doc.chapters.length > 1
