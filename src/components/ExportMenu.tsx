@@ -47,6 +47,9 @@ async function canvasViewport(): Promise<HTMLElement | null> {
   return document.querySelector<HTMLElement>(".toile .react-flow__viewport");
 }
 
+/** Échec déjà annoncé par son propre message (histoire qui ne se compile pas). */
+class CompileReported extends Error {}
+
 export function ExportMenu() {
   const { t: all, kind } = useVocab();
   const t = all.screenplay.export;
@@ -97,6 +100,7 @@ export function ExportMenu() {
       setMessage(saved ? t.done : "");
       if (saved) setOpen(false);
     } catch (err) {
+      if (err instanceof CompileReported) return;
       console.error(err);
       setMessage(t.failed);
     } finally {
@@ -188,12 +192,26 @@ export function ExportMenu() {
     return { name: `${fileName(info().title, "mondowrite")}.ink`, extension: "ink", mime: "text/plain", data: new TextEncoder().encode(ink) };
   };
   const inkItem = { key: "ms-ink", label: all.interactive.play.exportInk, build: inkFile };
+  // Lot 7 : une page web autonome où l'histoire se lit et se joue.
+  const webFile = async (): Promise<ExportedFile | null> => {
+    const { storyWebFile, StoryCompileError } = await import("../interactive/webExport");
+    try {
+      return await storyWebFile(info().title, info().author);
+    } catch (err) {
+      if (err instanceof StoryCompileError) {
+        setMessage(all.interactive.web.compileFailed);
+        throw new CompileReported();
+      }
+      throw err;
+    }
+  };
+  const webItem = { key: "ms-web", label: all.interactive.web.menu, build: webFile };
 
   type Group = { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] };
   const phoneGroups: Group[] = [
     kind === "scenario"
       ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
-      : { title: x.manuscript, items: [...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })), ...(interactive ? [inkItem] : [])] },
+      : { title: x.manuscript, items: [...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })), ...(interactive ? [webItem, inkItem] : [])] },
     { title: x.bible, empty: x.emptyBible, items: (["docx", "md", "html"] as const).map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
   ];
@@ -213,7 +231,7 @@ export function ExportMenu() {
             ...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })),
             // Livre broché : une fenêtre de réglages, qui enregistre elle-même ses deux PDF.
             { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") },
-            ...(interactive ? [inkItem] : []),
+            ...(interactive ? [webItem, inkItem] : []),
           ],
         },
     // La Bible a sa fenêtre (pour qui, parties, rendu, aperçu, PDF, Word ou Markdown).
@@ -221,7 +239,7 @@ export function ExportMenu() {
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
     { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, label: canvasLabels[f], build: canvasFile(f) })) },
   ] as Group[];
-  const failed = message === t.failed || message === x.emptyManuscript || message === x.emptyCanvas || message === x.emptyBible;
+  const failed = message === t.failed || message === all.interactive.web.compileFailed || message === x.emptyManuscript || message === x.emptyCanvas || message === x.emptyBible;
 
   return (
     <div className="settings export-menu" ref={rootRef}>

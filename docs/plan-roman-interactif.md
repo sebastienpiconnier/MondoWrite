@@ -31,7 +31,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 4. Variables | Faits et compteurs, « Seulement si » et « Donne » sur les choix (fait) |
 | 5. Vérificateur | Sans fin, inaccessibles, blocages, faits (fait) ; parties automatiques à décider |
 | 6. Assistant IA interactif | Outils MCP (fait) |
-| 7. Export web | HTML autonome |
+| 7. Export web | HTML autonome (fait) |
 | 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF |
 | 9. Import | Twee 3 et Ink |
 | 10. Storylets | Option, à décider après retours |
@@ -182,3 +182,23 @@ chaque choix tapé dans le texte apparaît sur la carte.
   ne retire que les choix, les lignes écrites à la main restent ; une liste vide retire le bloc. Une étape
   d'annulation, journal ; le texte des choix n'est pas marqué « IA » (le bloc n'a pas de marque par ligne).
 - **Vérifier** : `review` (lecture faite par l'app) ajoute les points du vérificateur (lot 5).
+
+## Lot 7 · Export web (fait sur la branche `roman-interactif`)
+
+- **Menu Exporter** : « Page web jouable (.html) » (roman interactif seulement, avant « Ink (.ink) », aussi sur
+  téléphone). Une seule page, sans serveur ni connexion : elle s'ouvre dans tout navigateur, se met en ligne
+  telle quelle (itch.io, site personnel) ou s'envoie par courriel.
+- **Contenu** (`webPage.ts`, pur, testé ; `webExport.ts` charge le reste à l'export) : l'histoire compilée par
+  inkjs (JSON d'Ink), le moteur d'inkjs tel que publié (`dist/ink.js`, MIT, sa licence recopiée en commentaire),
+  les images de l'histoire en `data:` (JPEG réduit, `loadImages`), les faits et leurs libellés, les textes de
+  l'interface dans la langue du moment. Thème clair ou sombre selon le lecteur.
+- **Lecteur** : texte, images, choix numérotés (touches 1 à 9), « Revenir au choix précédent », « Recommencer »,
+  « Ce que sait le lecteur », fin. Progression gardée par le navigateur du lecteur (`localStorage`, clé propre au
+  titre et à l'histoire, `progressKey`) : il reprend là où il s'était arrêté. Ce qui a été lu est gardé en liste
+  (`{ k, v }`) et toujours redessiné par `textContent`, jamais par `innerHTML`.
+- **Sûreté de la page** : données en `<script type="application/json">` échappées (`jsonForScript`), moteur passé
+  par `scriptSafe` ; noms d'images vérifiés (`storyImageNames`, `isMediaName`).
+- **Histoire qui ne se compile pas** : message propre (« ouvre Lire l'histoire »), pas d'échec muet.
+- Le moteur et sa licence sont lus en texte par un chemin relatif (`../../node_modules/inkjs/dist/ink.js?raw`) :
+  un alias de paquet était préchargé par Vite en mode développement et devenait un module.
+- Reste possible plus tard : gras et italique dans la lecture, choix de la police, couverture en tête de page.

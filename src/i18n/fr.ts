@@ -3739,6 +3739,14 @@ export const fr = {
       exportInk: "Ink (.ink)",
       exportInkHint: "Le texte de l’histoire au format Ink, pour Inky et les autres outils",
     },
+    web: {
+      menu: "Page web jouable (.html)",
+      untitled: "Histoire sans titre",
+      noScript: "Cette histoire se lit dans un navigateur où JavaScript est activé.",
+      failed: "Cette histoire n’a pas pu être chargée.",
+      madeWith: "Écrit avec MondoWrite",
+      compileFailed: "L’histoire ne se compile pas encore : ouvre « Lire l’histoire » pour voir les points à corriger.",
+    },
     map: {
       unreachable: "Inaccessible",
       locked: "Peut bloquer",

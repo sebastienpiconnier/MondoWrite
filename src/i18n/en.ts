@@ -3683,6 +3683,14 @@ export const en: Messages = {
       exportInk: "Ink (.ink)",
       exportInkHint: "The story’s text in Ink format, for Inky and other tools",
     },
+    web: {
+      menu: "Playable web page (.html)",
+      untitled: "Untitled story",
+      noScript: "This story needs a browser with JavaScript turned on.",
+      failed: "This story could not be loaded.",
+      madeWith: "Written with MondoWrite",
+      compileFailed: "The story doesn’t compile yet: open “Read the story” to see what to fix.",
+    },
     map: {
       unreachable: "Unreachable",
       locked: "Can get stuck",
