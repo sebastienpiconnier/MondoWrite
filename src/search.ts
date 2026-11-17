@@ -46,6 +46,40 @@ function computePlainText(html: string): string {
     .trim();
 }
 
+/**
+ * Texte replié caractère par caractère, sans changer sa longueur : une position du texte replié est celle du texte
+ * d'origine (le `fold` ordinaire allonge le texte en NFD). Les espaces, insécables comprises, deviennent des espaces.
+ */
+function foldSameLength(s: string): string {
+  let out = "";
+  for (const c of s.split("")) {
+    if (/\s/.test(c)) {
+      out += " ";
+      continue;
+    }
+    const f = fold(c);
+    out += f.length === 1 ? f : c;
+  }
+  return out;
+}
+
+/**
+ * Où la recherche par les mots a trouvé `query` dans `text` (#85) : la saisie entière, sinon le
+ * premier de ses mots que le texte contient. Sans casse ni accents, comme `searchCards` ; position et longueur dans
+ * le texte d'origine, pour que la vue d'écriture sélectionne ce qui a été trouvé. `wholeOnly` : la saisie entière seulement.
+ */
+export function findInText(text: string, query: string, wholeOnly = false): { at: number; length: number } | null {
+  const whole = foldSameLength(query.trim()).replace(/ +/g, " ");
+  if (!whole) return null;
+  const hay = foldSameLength(text);
+  const words = whole.split(" ").filter(Boolean);
+  for (const needle of words.length > 1 && !wholeOnly ? [whole, ...words] : [whole]) {
+    const at = hay.indexOf(needle);
+    if (at >= 0) return { at, length: needle.length };
+  }
+  return null;
+}
+
 const EXCERPT = 90;
 
 function excerptAround(text: string, at: number, length: number): string {

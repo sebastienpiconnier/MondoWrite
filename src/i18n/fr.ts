@@ -1364,7 +1364,7 @@ export const fr = {
     position: "Scène {n} sur {total}",
     cited: "Cités dans le texte",
     inScene: "Dans cette scène",
-    nothingDetected: "Les personnages et les lieux cités dans le texte apparaîtront ici.",
+    nothingDetected: "Les personnages, les lieux et les objets cités dans le texte apparaîtront ici.",
     show: "Voir la carte « {title} » sur le canevas",
     synopsis: "Synopsis",
     orphans: "Textes sans carte",

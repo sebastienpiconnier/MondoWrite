@@ -314,6 +314,19 @@ const scenarios = [
     },
   },
   {
+    name: "recherche (#85) : un mot du texte d'une scène, tapé sans accent ni majuscule, est sélectionné dans le Manuscrit",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("DEVORA");
+      await until(() => page.locator(".search-result").first().isVisible(), "aucun résultat pour « DEVORA »");
+      await page.locator(".search-input").press("Enter");
+      await until(() => page.locator(".ProseMirror").first().isVisible(), "le Manuscrit ne s'ouvre pas");
+      await until(async () => (await page.evaluate(() => String(window.getSelection()))) === "dévora", "le mot trouvé n'est pas sélectionné dans le Manuscrit");
+    },
+  },
+  {
     name: "suivre les fils (#81) : fils masqués, « Relié à » estompe ce qui n'est pas relié, « Tout revoir » le fait revenir",
     async run(h) {
       const { page } = h;
@@ -755,6 +768,27 @@ const scenarios = [
       assert(has("personnage", "Inès"), `pas de carte Personnage : ${JSON.stringify(cards)}`);
       assert(cards.length === 3, `3 cartes attendues : ${JSON.stringify(cards)}`);
       await h.saved((f) => /INT\. PHARE – NUIT \[\[cosmos:/.test(f["scenario.fountain"] ?? ""), "le scénario n'a pas été enregistré avec le lien de sa scène");
+    },
+  },
+  {
+    name: "recherche dans un scénario (#85) : le mot trouvé dans l'action d'une scène y est sélectionné",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("INT. PHARE – NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne. Inès écoute la tempête.");
+      await page.keyboard.press("Enter");
+      await h.wait(500);
+      await h.view(1);
+      await until(async () => (await h.cardList()).some((c) => c.type === "scene"), "pas de carte Scène sur le canevas");
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("tempete");
+      await until(() => page.locator(".search-result").first().isVisible(), "aucun résultat pour « tempete »");
+      await page.locator(".search-input").press("Enter");
+      await until(async () => (await page.evaluate(() => String(window.getSelection()))) === "tempête", "le mot trouvé n'est pas sélectionné dans le Scénario");
     },
   },
   {

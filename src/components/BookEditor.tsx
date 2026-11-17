@@ -31,6 +31,7 @@ import { useSettings } from "../settings";
 import { getT, useT } from "../i18n";
 import type { CardData } from "../types";
 import type { Plan } from "../plan";
+import { findInText } from "../search";
 
 /** Page du manuscrit à l'écran, en em : format livre (2:3), environ 250 mots par page. */
 export const PAGE = { width: 34, height: 51, marginTop: 5, marginBottom: 5, lineHeight: 1.6 };
@@ -436,29 +437,39 @@ export function BookEditor({
         if (!ed || ed.isDestroyed || !needle) return false;
         const g = sceneGroups(ed.state.doc).find((x) => x.id === id);
         if (!g) return false;
-        let found: { from: number; to: number } | null = null;
-        // Paragraphe par paragraphe : le texte d'un bloc, puis sa position dans le document.
-        ed.state.doc.nodesBetween(g.markerPos, g.end, (node, pos) => {
-          if (found || !node.isTextblock) return !found;
-          // Espaces insécables (typographie française) comparées comme des espaces : même longueur, mêmes positions.
-          const at = node.textContent.replace(/\s/g, " ").indexOf(needle.replace(/\s/g, " "));
-          if (at >= 0) {
-            // Position dans le document d'un caractère du bloc (le texte peut être coupé par une mise en forme).
-            const map = (target: number) => {
-              let seen = 0;
-              let result = -1;
-              node.forEach((child, childOffset) => {
-                if (result >= 0) return;
-                const len = child.textContent.length;
-                if (child.isText && target <= seen + len) result = pos + 1 + childOffset + (target - seen);
-                seen += len;
-              });
-              return result >= 0 ? result : pos + 1 + target;
-            };
-            found = { from: map(at), to: map(at + needle.length) };
-          }
-          return false;
-        });
+        // Le passage tel quel (citation, recherche par le sens), sinon sans casse ni accents (recherche par les mots, #85).
+        const exact = (text: string) => {
+          const at = text.indexOf(needle.replace(/\s/g, " "));
+          return at >= 0 ? { at, length: needle.length } : null;
+        };
+        const find = (match: (text: string) => { at: number; length: number } | null) => {
+          let found: { from: number; to: number } | null = null;
+          // Paragraphe par paragraphe : le texte d'un bloc, puis sa position dans le document.
+          ed.state.doc.nodesBetween(g.markerPos, g.end, (node, pos) => {
+            if (found || !node.isTextblock) return !found;
+            // Espaces insécables (typographie française) comparées comme des espaces : même longueur, mêmes positions.
+            const hit = match(node.textContent.replace(/\s/g, " "));
+            if (hit) {
+              // Position dans le document d'un caractère du bloc (le texte peut être coupé par une mise en forme).
+              const map = (target: number) => {
+                let seen = 0;
+                let result = -1;
+                node.forEach((child, childOffset) => {
+                  if (result >= 0) return;
+                  const len = child.textContent.length;
+                  if (child.isText && target <= seen + len) result = pos + 1 + childOffset + (target - seen);
+                  seen += len;
+                });
+                return result >= 0 ? result : pos + 1 + target;
+              };
+              found = { from: map(hit.at), to: map(hit.at + hit.length) };
+            }
+            return false;
+          });
+          return found as { from: number; to: number } | null;
+        };
+        // Plusieurs mots : la saisie entière dans toute la scène avant le premier mot trouvé.
+        const found = find(exact) ?? find((text) => findInText(text, needle, true)) ?? find((text) => findInText(text, needle));
         if (!found) return false;
         const { from, to } = found;
         ed.chain().focus().setTextSelection({ from, to }).scrollIntoView().run();

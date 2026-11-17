@@ -105,8 +105,9 @@ export function Search() {
   const choose = (id: string) => {
     close(false);
     // Trouvé dans le texte d'une scène : on ouvre ce texte (vue Manuscrit ou Scénario) sur cette scène.
+    // La saisie suit (#85) : la vue d'écriture sélectionne le mot trouvé, au lieu du haut de la scène.
     if (results.find((r) => r.id === id)?.inText) {
-      useCosmos.getState().openInManuscript(id);
+      useCosmos.getState().openInManuscript(id, query.trim());
       return;
     }
     revealCard(id);

@@ -1535,7 +1535,7 @@ export const es = {
     position: "Escena {n} de {total}",
     cited: "Citados en el texto",
     inScene: "En esta escena",
-    nothingDetected: "Aquí aparecerán los personajes y lugares citados en el texto.",
+    nothingDetected: "Aquí aparecerán los personajes, lugares y objetos citados en el texto.",
     show: "Ver la tarjeta «{title}» en el lienzo",
     synopsis: "Sinopsis",
     orphans: "Textos sin tarjeta",

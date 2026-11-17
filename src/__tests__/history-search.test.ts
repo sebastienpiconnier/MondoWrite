@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
-import { plainText, searchCards } from "../search";
+import { findInText, plainText, searchCards } from "../search";
 import { serialize } from "../screenplay/serialize";
 import type { CardData } from "../types";
 
@@ -285,5 +285,31 @@ describe("recherche", () => {
     state().revealCard("inconnue");
     expect(state().focusId).toBe(a);
     expect(b).not.toBe(a);
+  });
+});
+
+describe("mot trouvé dans le texte d'une scène (#85)", () => {
+  it("sans casse ni accents, à la position du texte d'origine", () => {
+    const text = "Le jeune Edmond Dantès revint à Marseille.";
+    expect(findInText(text, "dantes")).toEqual({ at: text.indexOf("Dantès"), length: 6 });
+    expect(findInText(text, "MARSEILLE")).toEqual({ at: text.indexOf("Marseille"), length: 9 });
+  });
+
+  it("plusieurs mots : la saisie entière, sinon le premier mot trouvé", () => {
+    const text = "Mercédès attend. Plus tard, Edmond Dantès revient.";
+    expect(findInText(text, "edmond  dantes")).toEqual({ at: text.indexOf("Edmond"), length: 13 });
+    expect(findInText(text, "dantes mercedes")).toEqual({ at: text.indexOf("Dantès"), length: 6 });
+    expect(findInText(text, "dantes mercedes", true)).toBeNull();
+  });
+
+  it("une espace insécable vaut une espace ; une lettre décomposée garde sa place", () => {
+    const text = "Il dit\u00a0: « Abbe\u0301 Faria ».";
+    expect(findInText(text, "dit :")).toEqual({ at: 3, length: 5 });
+    expect(findInText(text, "faria")?.at).toBe(text.indexOf("Faria"));
+  });
+
+  it("rien à chercher ou rien trouvé : null", () => {
+    expect(findInText("Texte", "   ")).toBeNull();
+    expect(findInText("Texte", "absent")).toBeNull();
   });
 });

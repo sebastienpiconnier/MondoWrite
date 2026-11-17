@@ -47,7 +47,7 @@ import { sceneAt, sceneGroups } from "../bookDoc";
 import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
-import { countWords, detectCards, orphanTexts } from "../manuscript";
+import { citedCards, countWords, orphanTexts } from "../manuscript";
 import { Chutier } from "./Chutier";
 import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
 import { FOCUS_COLUMN_EM } from "../focusText";
@@ -297,7 +297,8 @@ export function Manuscript() {
 
   // Arrivée depuis « À faire » : la bonne scène.
   useEffect(() => {
-    if (!target) return;
+    // Cible déjà prise (l'effet rejoué par le mode strict de React) : ne pas défiler loin du passage choisi (#85).
+    if (!target || useCosmos.getState().manuscriptTarget !== target) return;
     const { manuscriptNeedle: needle, manuscriptCaret: caret } = useCosmos.getState();
     useCosmos.getState().clearManuscriptTarget();
     setChosen(target);
@@ -557,7 +558,7 @@ export function Manuscript() {
   const prevId = order.slice(0, Math.max(at, 0)).reverse().find((id) => !povOn || told.has(id)) ?? null;
   const nextId = order.slice(at + 1).find((id) => !povOn || told.has(id)) ?? null;
   const title = card.title.trim() || m.untitled;
-  const detected = detectCards(manuscript[current], cards);
+  const detected = citedCards(manuscript[current], cards);
   const chapter = chapterOf(plan, current);
   // La scène ouvre son chapitre : le titre du chapitre s'affiche au-dessus, comme dans un livre.
   const opensChapter = !pageKind && !!chapter && (at === 0 || chapterOf(plan, order[at - 1])?.id !== chapter.id);

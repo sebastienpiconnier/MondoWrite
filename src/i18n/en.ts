@@ -1407,7 +1407,7 @@ export const en: Messages = {
     position: "Scene {n} of {total}",
     cited: "Named in the text",
     inScene: "In this scene",
-    nothingDetected: "Characters and places mentioned in the text will show up here.",
+    nothingDetected: "Characters, places and objects mentioned in the text will show up here.",
     show: "Show the card “{title}” on the canvas",
     synopsis: "Synopsis",
     orphans: "Texts without a card",
