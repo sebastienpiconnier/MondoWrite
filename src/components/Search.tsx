@@ -5,7 +5,7 @@
 // Avec un service d'IA local, un second mode « Par le sens » (SemanticSearch.tsx) trouve les passages
 // qui parlent de la même chose, avec d'autres mots.
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useCommand } from "../commands";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -140,8 +140,6 @@ export function Search() {
     if (!open) return;
     inputRef.current?.focus();
     inputRef.current?.select();
-    // Manuscrit et Scénario : la recherche rouverte se place sur le passage qui suit le dernier choisi (#85).
-    setActive(mode === "words" && inWriting ? nextIndex(passages, query) : 0);
     const onDown = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -182,6 +180,12 @@ export function Search() {
     if (inWriting) goToHit(hit);
     else if (hit.chunk.cardId) showCard(hit.chunk.cardId);
   };
+  // Manuscrit et Scénario : la recherche rouverte se place sur le passage qui suit le dernier choisi (#85). Avant
+  // le premier affichage (useLayoutEffect) : sinon la liste paraît un instant sur le premier passage, et une
+  // Entrée tapée aussitôt y menait.
+  useLayoutEffect(() => {
+    if (open) setActive(mode === "words" && inWriting ? nextIndex(passages, query) : 0);
+  }, [open]);
   // Le résultat choisi reste visible dans la liste (flèches, ou passage suivant à la réouverture).
   useEffect(() => {
     if (open) document.getElementById(`${ids.list}-${active}`)?.scrollIntoView({ block: "nearest" });
