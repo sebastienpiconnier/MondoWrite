@@ -314,7 +314,34 @@ const scenarios = [
     },
   },
   {
-    name: "recherche (#85) : un mot du texte d'une scène, tapé sans accent ni majuscule, est sélectionné dans le Manuscrit",
+    name: "recherche dans le Manuscrit (#85) : un mot tapé sans accent ni majuscule, sélectionné au milieu de l'écran, sans changer de vue",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      await until(() => page.locator(".manuscript .ProseMirror").first().isVisible(), "le Manuscrit ne s'ouvre pas");
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("DEVORA");
+      await until(() => page.locator(".search-result").first().isVisible(), "aucun passage pour « DEVORA »");
+      await page.locator(".search-input").press("Enter");
+      await until(async () => (await page.evaluate(() => String(window.getSelection()))) === "dévora", "le mot trouvé n'est pas sélectionné dans le Manuscrit");
+      assert(await page.locator(".manuscript").isVisible(), "la recherche a quitté le Manuscrit");
+      // Le mot est au milieu de la colonne qui défile, pas en bas de l'écran.
+      const off = await until(() =>
+        page.evaluate(() => {
+          const sel = window.getSelection();
+          if (!sel || !sel.rangeCount) return null;
+          const top = sel.getRangeAt(0).getBoundingClientRect().top;
+          let box = sel.anchorNode?.parentElement ?? null;
+          while (box && !(/(auto|scroll)/.test(getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+          const r = box ? box.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+          return { off: Math.abs(top - (r.top + r.height / 2)), height: r.height };
+        }), "pas de sélection");
+      assert(off.off < off.height * 0.15, `le mot n'est pas au milieu de l'écran (écart ${Math.round(off.off)} px sur ${Math.round(off.height)})`);
+    },
+  },
+  {
+    name: "recherche sur le canevas (#85) : un mot du texte d'une scène met sa carte en avant, sans quitter le canevas",
     async run(h) {
       const { page } = h;
       await h.example();
@@ -322,8 +349,31 @@ const scenarios = [
       await page.locator(".search-input").fill("DEVORA");
       await until(() => page.locator(".search-result").first().isVisible(), "aucun résultat pour « DEVORA »");
       await page.locator(".search-input").press("Enter");
-      await until(() => page.locator(".ProseMirror").first().isVisible(), "le Manuscrit ne s'ouvre pas");
-      await until(async () => (await page.evaluate(() => String(window.getSelection()))) === "dévora", "le mot trouvé n'est pas sélectionné dans le Manuscrit");
+      await until(() => page.locator(".react-flow__node.is-spotlit").first().isVisible(), "la carte de la scène n'est pas mise en avant");
+      assert((await page.locator(".manuscript").count()) === 0, "la recherche a ouvert le Manuscrit");
+    },
+  },
+  {
+    name: "recherche dans le Plan et la Bible (#85) : la scène ou la fiche trouvée, dans la même vue",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(2);
+      await until(() => page.locator(".sequencer .sq-scene").first().isVisible(), "le Plan ne montre pas de scène");
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("devora");
+      await until(() => page.locator(".search-result").first().isVisible(), "aucune scène pour « devora »");
+      await page.locator(".search-input").press("Enter");
+      await until(() => page.locator(".sequencer .sq-scene.is-found").first().isVisible(), "la scène trouvée n'est pas marquée dans le Plan");
+      await h.view(3);
+      await until(() => page.locator(".bible, .bible-main").first().isVisible(), "la Bible ne s'affiche pas");
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("chevillette");
+      await until(() => page.locator(".search-result").first().isVisible(), "aucune fiche pour « chevillette »");
+      await page.locator(".search-input").press("Enter");
+      await h.wait(400);
+      assert(await page.locator(".bible, .bible-main").first().isVisible(), "la recherche a quitté la Bible");
+      assert((await page.locator(".react-flow").count()) === 0, "la recherche est allée sur le canevas");
     },
   },
   {
@@ -771,7 +821,7 @@ const scenarios = [
     },
   },
   {
-    name: "recherche dans un scénario (#85) : le mot trouvé dans l'action d'une scène y est sélectionné",
+    name: "recherche dans le Scénario (#85) : le mot trouvé dans l'action d'une scène y est sélectionné",
     async run(h) {
       const { page } = h;
       await h.create("Le Phare", "scenario");
@@ -782,8 +832,6 @@ const scenarios = [
       await page.keyboard.type("La lanterne tourne. Inès écoute la tempête.");
       await page.keyboard.press("Enter");
       await h.wait(500);
-      await h.view(1);
-      await until(async () => (await h.cardList()).some((c) => c.type === "scene"), "pas de carte Scène sur le canevas");
       await page.keyboard.press("Control+f");
       await page.locator(".search-input").fill("tempete");
       await until(() => page.locator(".search-result").first().isVisible(), "aucun résultat pour « tempete »");
@@ -1239,11 +1287,10 @@ const scenarios = [
       await page.keyboard.press("Enter");
       await page.keyboard.type("Inès trouva une enveloppe glissée sous la porte, sans timbre ni adresse, avec seulement son prénom écrit à l'encre bleue d'une main qui tremblait un peu.");
       await h.wait(900);
-      await h.view(1);
-      await h.pane();
+      // La recherche suit la vue (#85) : depuis le Manuscrit, les passages du texte, et on y reste.
       await page.keyboard.press("Control+f");
       await page.getByRole("button", { name: "Par le sens" }).click();
-      const field = page.getByRole("combobox", { name: "Rechercher une carte" });
+      const field = page.getByRole("combobox", { name: "Rechercher dans le texte" });
       await field.fill("Où ai-je parlé du courrier ?");
       await field.press("Enter");
       const results = page.getByRole("listbox", { name: "Passages trouvés" }).getByRole("option");

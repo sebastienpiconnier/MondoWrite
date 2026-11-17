@@ -299,7 +299,7 @@ export function Manuscript() {
   useEffect(() => {
     // Cible déjà prise (l'effet rejoué par le mode strict de React) : ne pas défiler loin du passage choisi (#85).
     if (!target || useCosmos.getState().manuscriptTarget !== target) return;
-    const { manuscriptNeedle: needle, manuscriptCaret: caret } = useCosmos.getState();
+    const { manuscriptNeedle: needle, manuscriptCaret: caret, manuscriptNth: nth } = useCosmos.getState();
     useCosmos.getState().clearManuscriptTarget();
     setChosen(target);
     // « Reprendre là où j'en étais » (#27) : le curseur à sa place (au redessin si le livre n'est pas encore là).
@@ -307,9 +307,12 @@ export function Manuscript() {
       window.requestAnimationFrame(() => bookApi.current?.focusScene(target, Math.max(caret.offset, 2)));
       return;
     }
-    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée, et au passage cherché s'il y en a un.
+    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée, et au passage cherché s'il y en a un
+    // (recherche : sa `nth` occurrence dans la scène, #85).
     window.requestAnimationFrame(() => {
-      if (!needle || !bookApi.current?.selectText(target, needle)) bookApi.current?.scrollToScene(target);
+      const api = bookApi.current;
+      if (needle && nth !== null && api?.selectMatch(target, needle, nth)) return;
+      if (!needle || !api?.selectText(target, needle)) api?.scrollToScene(target);
     });
   }, [target]);
 

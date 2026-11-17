@@ -97,6 +97,13 @@ export const es = {
     results: "Tarjetas encontradas",
     prompt: "Busca en los títulos y el texto de las tarjetas.",
     empty: "Ninguna tarjeta coincide.",
+    buttonText: "Buscar en el texto",
+    resultsText: "Pasajes encontrados",
+    promptText: "Busca en el texto de las escenas.",
+    emptyText: "Ningún pasaje coincide.",
+    promptBible: "Busca en las fichas de la Biblia.",
+    promptPlan: "Busca en los títulos, las sinopsis y el texto de las escenas.",
+    emptyScenes: "Ninguna escena coincide.",
   },
   home: {
     loading: {

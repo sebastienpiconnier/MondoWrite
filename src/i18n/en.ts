@@ -67,6 +67,13 @@ export const en: Messages = {
     results: "Cards found",
     prompt: "Searches card titles and text.",
     empty: "No card matches.",
+    buttonText: "Search the text",
+    resultsText: "Passages found",
+    promptText: "Searches the text of the scenes.",
+    emptyText: "No passage matches.",
+    promptBible: "Searches the Bible’s sheets.",
+    promptPlan: "Searches scene titles, synopses and text.",
+    emptyScenes: "No scene matches.",
   },
 
   // Home screen: choose the project to work on.

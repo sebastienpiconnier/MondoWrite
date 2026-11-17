@@ -50,7 +50,7 @@ function computePlainText(html: string): string {
  * Texte replié caractère par caractère, sans changer sa longueur : une position du texte replié est celle du texte
  * d'origine (le `fold` ordinaire allonge le texte en NFD). Les espaces, insécables comprises, deviennent des espaces.
  */
-function foldSameLength(s: string): string {
+export function foldSameLength(s: string): string {
   let out = "";
   for (const c of s.split("")) {
     if (/\s/.test(c)) {
@@ -88,6 +88,69 @@ function excerptAround(text: string, at: number, length: number): string {
   const end = Math.min(text.length, Math.max(start + EXCERPT, at + length));
   return `${start > 0 ? "…" : ""}${text.slice(start, end).trim()}${end < text.length ? "…" : ""}`;
 }
+
+/** Saisie repliée comme le texte (`foldSameLength`), espaces réduites : ce que cherchent les vues d'écriture. */
+const foldQuery = (query: string) => foldSameLength(query.trim()).replace(/ +/g, " ");
+
+/** Débuts de chaque occurrence de la saisie entière dans `text`, sans casse ni accents, sans chevauchement. */
+export function matchesIn(text: string, query: string): number[] {
+  const needle = foldQuery(query);
+  if (!needle) return [];
+  const hay = foldSameLength(text);
+  const out: number[] = [];
+  for (let at = hay.indexOf(needle); at >= 0; at = hay.indexOf(needle, at + needle.length)) out.push(at);
+  return out;
+}
+
+/** Une scène où chercher dans les vues d'écriture : où aller, son titre, ses paragraphes (ou éléments) dans l'ordre. */
+export interface TextUnit {
+  target: string;
+  title: string;
+  texts: string[];
+}
+
+/** Un passage trouvé : la scène, l'extrait autour du mot et son rang dans la scène (pour y aller, `nthMatch`). */
+export interface Passage {
+  target: string;
+  title: string;
+  excerpt: string;
+  nth: number;
+}
+
+/**
+ * Recherche des vues Manuscrit et Scénario (#85) : chaque occurrence de la saisie entière, dans l'ordre du livre,
+ * un résultat par passage (au plus `limit`). Les paragraphes sont ceux que l'éditeur affiche, comptés de la même
+ * façon que `nthMatch` les retrouve.
+ */
+export function findPassages(units: TextUnit[], query: string, limit = 50): Passage[] {
+  const length = foldQuery(query).length;
+  if (!length) return [];
+  const out: Passage[] = [];
+  for (const unit of units) {
+    let nth = 0;
+    for (const text of unit.texts) {
+      for (const at of matchesIn(text, query)) {
+        out.push({ target: unit.target, title: unit.title, excerpt: excerptAround(text, at, length), nth: nth++ });
+        if (out.length >= limit) return out;
+      }
+    }
+  }
+  return out;
+}
+
+/** La `nth` occurrence de la saisie dans ces textes : rang du texte, position et longueur ; null si elle n'y est plus. */
+export function nthMatch(texts: string[], query: string, nth: number): { index: number; at: number; length: number } | null {
+  const length = foldQuery(query).length;
+  if (!length || nth < 0) return null;
+  let seen = 0;
+  for (let index = 0; index < texts.length; index++) {
+    for (const at of matchesIn(texts[index], query)) {
+      if (seen++ === nth) return { index, at, length };
+    }
+  }
+  return null;
+}
+
 
 /**
  * Cartes qui contiennent tous les mots cherchés. Celles dont le titre correspond passent devant,

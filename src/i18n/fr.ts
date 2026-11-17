@@ -69,6 +69,15 @@ export const fr = {
     results: "Cartes trouvées",
     prompt: "Cherche dans les titres et le texte des cartes.",
     empty: "Aucune carte ne correspond.",
+    // La recherche suit la vue (#85) : texte des scènes dans le Manuscrit et le Scénario, fiches dans la Bible,
+    // scènes dans le Plan.
+    buttonText: "Rechercher dans le texte",
+    resultsText: "Passages trouvés",
+    promptText: "Cherche dans le texte des scènes.",
+    emptyText: "Aucun passage ne correspond.",
+    promptBible: "Cherche dans les fiches de la Bible.",
+    promptPlan: "Cherche dans les titres, les synopsis et le texte des scènes.",
+    emptyScenes: "Aucune scène ne correspond.",
   },
 
   // Écran d'accueil : choisir le projet sur lequel travailler.
