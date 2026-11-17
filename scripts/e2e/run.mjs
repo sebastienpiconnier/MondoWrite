@@ -2078,6 +2078,155 @@ const scenarios = [
       assert(!(await page.locator(".toile-hint").isVisible()), "la consigne apprise est encore affichée");
     },
   },
+  {
+    name: "roman interactif (lots 0 à 3) : option des Réglages, création, carte des choix, choix écrit dans le Manuscrit, lecture, relu après rechargement",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      assert((await page.locator('.home-kinds input[value="interactive"]').count()) === 0, "« Un roman interactif » est proposé alors que l'option est coupée");
+      await openSettings(page);
+      if (await page.getByRole("tab", { name: "Général", exact: true }).count()) await page.getByRole("tab", { name: "Général", exact: true }).click();
+      await page.getByRole("checkbox", { name: "Roman interactif" }).check();
+      await page.keyboard.press("Escape");
+      const radio = page.locator('.home-kinds input[value="interactive"]');
+      await until(() => radio.isVisible(), "l'option cochée, « Un roman interactif » n'apparaît pas à la création");
+      await page.locator(".home-form input[type=text]").fill("Le Puits");
+      await radio.check();
+      await page.locator(".home-create").click();
+      await h.canvas();
+      await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").interactive === true, "le projet n'est pas enregistré en roman interactif");
+
+      // Carte des choix : une première scène, une scène après elle (avec son choix), puis une fin.
+      await h.view(2);
+      await page.getByRole("button", { name: "Carte des choix" }).click();
+      await page.locator(".choice-map").getByRole("button", { name: "Nouvelle scène" }).click();
+      const scenes = page.locator(".choice-scene");
+      await until(async () => (await scenes.count()) === 1, "« Nouvelle scène » n'a pas créé de scène sur la carte");
+      await scenes.nth(0).getByRole("button", { name: /^Actions de/ }).click();
+      await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
+      await until(async () => (await scenes.count()) === 2, "« Nouvelle scène après celle-ci » n'a pas créé de seconde scène");
+      await until(async () => (await page.locator(".choice-map .react-flow__edge").count()) >= 1, "pas de flèche entre les deux scènes");
+      const second = await scenes.nth(1).evaluate((el) => el.closest(".react-flow__node")?.dataset.id);
+      await scenes.nth(1).getByRole("button", { name: /^Actions de/ }).click();
+      await page.getByRole("menuitem", { name: "Ajouter un choix « Fin »" }).click();
+      await h.saved((f) => {
+        const blocks = Object.entries(f).filter(([k]) => k.startsWith("manuscrit/")).map(([, v]) => v);
+        return blocks.length === 2 && blocks.every((v) => v.includes("```choix")) && (f[`manuscrit/${second}.md`] ?? "").includes("-> END");
+      }, "les choix ne sont pas enregistrés en bloc ```choix (avec -> END pour la fin)");
+
+      // Lecture depuis la carte : « Continuer » puis la fin.
+      await page.getByRole("button", { name: "Lire l’histoire" }).click();
+      const play = page.locator(".play-panel");
+      await until(async () => (await play.locator(".play-choices button").count()) === 1, "la lecture ne propose pas le choix de la première scène");
+      await page.keyboard.press("1");
+      await until(async () => (await play.locator(".play-chose").count()) === 1, "la touche 1 n'a pas choisi");
+      await play.locator(".play-choices button").first().click();
+      await until(() => play.getByText("Fin de l’histoire.").isVisible(), "la lecture n'arrive pas à la fin");
+      await play.getByRole("button", { name: "Revenir au choix précédent" }).click();
+      await until(async () => (await play.locator(".play-choices button").count()) === 1, "« Revenir au choix précédent » ne rend pas le choix");
+      await page.keyboard.press("Escape");
+
+      // Manuscrit : le texte du choix se tape dans l'encadré, il est enregistré, puis relu.
+      await h.view(4);
+      const label = page.getByRole("textbox", { name: "Texte du choix 1" }).first();
+      await until(() => label.isVisible(), "pas d'encadré des choix dans le Manuscrit");
+      await label.fill("Descendre au puits");
+      await label.press("Tab");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("[Descendre au puits]")), "le texte du choix n'est pas enregistré");
+      await h.reloadAndOpen();
+      await h.view(4);
+      await until(async () => (await page.getByRole("textbox", { name: "Texte du choix 1" }).first().inputValue()) === "Descendre au puits", "après rechargement, le texte du choix a changé");
+
+      // Un roman ordinaire ne voit rien de tout cela.
+      await page.locator(".topbar .tb-back").click();
+      await page.locator(".home-form input[type=text]").fill("Roman ordinaire");
+      await page.locator('.home-kinds input[value="roman"]').check();
+      await page.locator(".home-create").click();
+      await h.canvas();
+      await h.view(2);
+      await h.wait(300);
+      assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "un roman ordinaire montre la carte des choix");
+    },
+  },
+  {
+    name: "roman interactif (lots 5, 7, 8 et 9) : import Twee, lecture, « Vérifier », page web jouable, livre-jeu EPUB et PDF, Ink",
+    async run(h) {
+      const { page } = h;
+      const fs = await import("node:fs");
+      await page.addInitScript(() => {
+        const key = "cosmos:reglages";
+        const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+        if (!saved.experimental?.interactive) localStorage.setItem(key, JSON.stringify({ ...saved, lang: "fr", experimental: { interactive: true } }));
+      });
+      const twee = [
+        ":: StoryTitle\nLe Puits\n",
+        ':: StoryData\n{"start": "La cour"}\n',
+        ":: La cour\nIl fait nuit dans la cour.\n[[Descendre au puits->Le puits]]\n[[Rentrer->La maison]]\n",
+        ":: Le puits\nL’eau est noire.\n[[Remonter->La cour]]\n",
+        ":: La maison\nTu t’endors.\n",
+        ":: Oubliée\nPersonne ne vient ici.\n",
+      ].join("\n");
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…", exact: true }).click();
+      await (await chooser).setFiles({ name: "puits.twee", mimeType: "text/plain", buffer: Buffer.from(twee) });
+      // Un import ouvre le Manuscrit.
+      await page.locator(".topbar").waitFor({ timeout: 20_000 });
+      await h.saved((f) => {
+        const meta = JSON.parse(f["cosmos.json"] ?? "{}");
+        const texts = Object.entries(f).filter(([k]) => k.startsWith("manuscrit/")).map(([, v]) => v).join("\n");
+        return meta.interactive === true && meta.title === "Le Puits" && /\[Descendre au puits\] -> /.test(texts) && /Personne ne vient ici/.test(texts);
+      }, "le fichier Twee n'est pas devenu un roman interactif avec ses choix");
+
+      // Lecture : choix au clavier et à la souris, jusqu'à la fin.
+      await h.view(2);
+      await page.getByRole("button", { name: "Carte des choix" }).click();
+      await until(async () => (await page.locator(".choice-scene").count()) === 4, "la carte des choix n'a pas les quatre scènes");
+      await page.getByRole("button", { name: "Lire l’histoire" }).click();
+      const play = page.locator(".play-panel");
+      await until(() => play.getByText("Il fait nuit dans la cour.").isVisible(), "la lecture ne commence pas par la scène de départ");
+      await page.keyboard.press("1");
+      await until(() => play.getByText("L’eau est noire.").isVisible(), "la touche 1 ne mène pas au puits");
+      await play.getByRole("button", { name: /Remonter/ }).click();
+      await play.getByRole("button", { name: /Rentrer/ }).last().click();
+      await until(() => play.getByText("Fin de l’histoire.").isVisible(), "la lecture n'arrive pas à la fin");
+      await page.keyboard.press("Escape");
+
+      // « Vérifier » signale la scène que rien n'atteint.
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: /^Vérifier/ }).click();
+      await until(() => page.getByText("Une scène qu’aucun choix n’atteint").first().isVisible(), "« Vérifier » ne signale pas la scène inaccessible");
+
+      // Exports.
+      const exportFile = async (label) => {
+        await page.getByRole("button", { name: "Exporter", exact: true }).click();
+        const download = page.waitForEvent("download", { timeout: 30_000 });
+        await page.locator(".export-panel").getByRole("button", { name: label }).click();
+        const file = await download;
+        return { name: file.suggestedFilename(), data: fs.readFileSync(await file.path()) };
+      };
+      const web = await exportFile("Page web jouable (.html)");
+      assert(web.name.endsWith(".html"), `nom de la page web : ${web.name}`);
+      const reader = await page.context().newPage();
+      await reader.route("http://127.0.0.1:9/puits.html", (r) => r.fulfill({ body: web.data, contentType: "text/html; charset=utf-8" }));
+      await reader.goto("http://127.0.0.1:9/puits.html");
+      await until(() => reader.getByText("Il fait nuit dans la cour.").isVisible(), "la page web ne montre pas la première scène");
+      await reader.getByRole("button", { name: /Descendre au puits/ }).click();
+      await until(() => reader.getByText("L’eau est noire.").isVisible(), "dans la page web, le choix ne mène pas au puits");
+      await reader.reload();
+      await until(() => reader.getByText("L’eau est noire.").isVisible(), "après rechargement, la page web n'a pas gardé la lecture");
+      await reader.close();
+      const epub = await exportFile("Livre-jeu (EPUB)");
+      assert(epub.name.endsWith(".epub") && epub.data.subarray(0, 2).toString() === "PK" && epub.data.includes("mimetype"), `EPUB du livre-jeu : ${epub.name}, ${epub.data.length} octets`);
+      assert(epub.data.includes("rendez-vous au"), "le livre-jeu EPUB n'écrit pas « rendez-vous au »");
+      const pdf = await exportFile("Livre-jeu (PDF)");
+      assert(pdf.name.endsWith(".pdf") && pdf.data.subarray(0, 4).toString() === "%PDF" && pdf.data.length > 2000, `PDF du livre-jeu : ${pdf.name}, ${pdf.data.length} octets`);
+      const ink = await exportFile("Ink (.ink)");
+      const inkText = ink.data.toString("utf8");
+      assert(ink.name.endsWith(".ink") && /^=== la_cour ===$/m.test(inkText) && inkText.includes("Descendre au puits"), `fichier Ink : ${ink.name}\n${inkText.slice(0, 300)}`);
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------

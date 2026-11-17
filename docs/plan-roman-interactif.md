@@ -243,3 +243,12 @@ chaque choix tapé dans le texte apparaît sur la carte.
 - **Choix collants** : l'Ink composé par MondoWrite écrit désormais ses choix en `+` (toujours proposés quand on
   revient dans une scène, comme un lien de Twine ou un livre-jeu) ; le bloc ```choix garde l'écriture `*`.
 - Pas encore : archive HTML publiée par Twine, mise en forme du texte (gras, italique) et logique en ligne.
+
+## Tests de bout en bout (17 novembre 2026)
+
+`npm run e2e -- "roman interactif"` rejoue l'essentiel de la recette dans Chromium, en deux scénarios :
+
+- [x] Option des Réglages (proposée seulement cochée), création d'un roman interactif (`interactive: true`), carte des choix (nouvelle scène, scène après, choix « Fin »), bloc ```choix enregistré, lecture (touche 1, souris, « Revenir au choix précédent », fin), texte d'un choix tapé dans le Manuscrit et relu après rechargement, roman ordinaire sans carte des choix.
+- [x] Import Twee (titre, départ, choix), lecture jusqu'à la fin, « Vérifier » (scène inaccessible), page web jouable (choix, lecture reprise après rechargement), livre-jeu EPUB (« rendez-vous au ») et PDF, Ink.
+
+Pas couverts : images dans le texte, faits et conditions dans l'interface, assistant externe (MCP), import Ink, doigt, anglais, mode sombre. Ils restent à la recette manuelle.
