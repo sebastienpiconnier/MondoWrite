@@ -12,6 +12,8 @@ import { loadPaperback } from "../export";
 import { KDP_MAX_PAGES, KDP_MIN_PAGES, KDP_TRIMS, PAPER_IDS, TRIM_IDS, type PaperId, type TrimId } from "../export/printOptions";
 import { fileName, type ExportedFile } from "../screenplay/export";
 import type { PreparedPaperback } from "../export/paperbackPdf";
+import { bookImageNames, type BookDoc } from "../export/paperback";
+import type { DocImage } from "../export/doc";
 import { FullCoverSection } from "./FullCoverSection";
 import { useInteractive } from "../interactive/useInteractive";
 
@@ -34,9 +36,18 @@ export function PaperbackPanel() {
   const title = () => useCosmos.getState().title.trim() || t.home.untitled;
   // Roman interactif : l'intérieur est le livre-jeu (sections numérotées à la suite), pas le texte dans l'ordre du livre.
   const interactive = useInteractive();
-  const book = async () => {
+  // Images du livre, gardées d'une mise en page à l'autre (on ne relit que celles qui manquent).
+  const images = useRef<Record<string, DocImage>>({});
+  const book = async (): Promise<BookDoc> => {
     const base = bookOf(useCosmos.getState(), { t, lang, author: useSettings.getState().author }, new Date().getFullYear());
-    return interactive ? (await import("../interactive/gamebookExport")).gamebookPaperback(base) : base;
+    const doc = interactive ? (await import("../interactive/gamebookExport")).gamebookPaperback(base) : base;
+    const names = bookImageNames(doc);
+    const missing = names.filter((n) => !(n in images.current));
+    if (missing.length > 0) {
+      const { loadImages, PRINT_SIDE } = await import("../export/images");
+      Object.assign(images.current, await loadImages(missing, (n) => storage.mediaUrl(n), PRINT_SIDE));
+    }
+    return names.length > 0 ? { ...doc, images: Object.fromEntries(names.flatMap((n) => (images.current[n] ? [[n, images.current[n]]] : []))) } : doc;
   };
 
   // Mise en page à l'ouverture et à chaque réglage (un court délai pendant la frappe).

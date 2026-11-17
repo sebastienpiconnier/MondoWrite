@@ -30,7 +30,7 @@ export type Block =
   | { kind: "heading"; runs: Run[]; anchor?: string }
   | { kind: "paragraph"; runs: Run[]; quote?: boolean; list?: "bullet" | "number"; index?: number }
   /** Image d'une carte (nom d'un fichier de medias/) ; ses octets sont dans `ExportDoc.images`. */
-  | { kind: "image"; name: string; alt?: string };
+  | { kind: "image"; name: string; alt?: string; place?: "page" | "chapter" };
 
 /** Image prête à l'export : JPEG réduit et ses dimensions en pixels. */
 export interface DocImage {
@@ -155,7 +155,9 @@ export function htmlToBlocks(html: string | undefined): Block[] {
       // Image dans le texte d'une scène (#84, lot 1) : un bloc image, avec sa description.
       else if (tag === "IMG") {
         const name = child.getAttribute("data-media");
-        if (isMediaName(name)) blocks.push({ kind: "image", name, ...(child.getAttribute("alt") ? { alt: child.getAttribute("alt")! } : {}) });
+        const place = child.getAttribute("data-place");
+        if (isMediaName(name))
+          blocks.push({ kind: "image", name, ...(child.getAttribute("alt") ? { alt: child.getAttribute("alt")! } : {}), ...(place === "page" || place === "chapter" ? { place } : {}) });
       }
       else if (tag === "BLOCKQUOTE") walk(child, { ...context, quote: true });
       else if (/^H[1-6]$/.test(tag)) {

@@ -7,7 +7,7 @@
 // récit, titres courants et folios aux coins extérieurs, césure, veuves et orphelines, page de copyright,
 // mot au lecteur et « Du même auteur ».
 
-import type { Block, Run } from "./doc";
+import type { Block, DocImage, Run } from "./doc";
 import { SCENE_BREAK, endnotes, runsText } from "./doc";
 import type { PageKind } from "../book";
 import { isSceneBreak } from "../import/manuscript";
@@ -21,6 +21,10 @@ const TOP = 0.7;
 const BOTTOM = 0.75;
 const LEADING = 1.42;
 const INDENT = 1.5;
+/** Image dans le texte : au plus cette part de la hauteur du texte. */
+const INLINE_MAX = 0.6;
+/** Une image n'est pas agrandie au-delà de sa taille à cette résolution (points par pouce). */
+const MIN_DPI = 150;
 
 
 // ---------------------------------------------------------------------------------------------------------
@@ -44,6 +48,8 @@ export interface BookDoc {
   lang: string;
   year: number;
   sections: BookSection[];
+  /** Images citées par les blocs `image` (octets et taille en pixels), chargées avant la mise en page. Une image absente est ignorée. */
+  images?: Record<string, DocImage>;
 }
 
 /** Textes des pages ajoutées, dans la langue de l'interface. */
@@ -88,6 +94,15 @@ export interface PrintText {
 
 export type PageRole = "front" | "story" | "back" | "blank";
 
+/** Une image posée sur une page : `y` est son bord haut, depuis le haut de la page (points). */
+export interface PrintImage {
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface PrintPage {
   recto: boolean;
   role: PageRole;
@@ -95,6 +110,9 @@ export interface PrintPage {
   opening?: boolean;
   folio?: number;
   texts: PrintText[];
+  images?: PrintImage[];
+  /** Page d'illustration (image en pleine page) : ni titre courant ni folio imprimé. */
+  plate?: boolean;
 }
 
 export interface BookEntry {
@@ -164,6 +182,9 @@ export function hyphenateBook(book: BookDoc, hy: (word: string) => string): Book
     sections: book.sections.map((s) => (s.kind === "chapter" || PROSE_PAGES.has(s.page) ? { ...s, blocks: blocks(s.blocks) } : s)),
   };
 }
+
+/** Noms des images citées par le livre, sans doublon. */
+export const bookImageNames = (book: BookDoc) => [...new Set(book.sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === "image" ? [b.name] : []))))];
 
 // ---------------------------------------------------------------------------------------------------------
 // Lignes
@@ -384,13 +405,28 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
   let y = 0;
 
   const left = (p: PrintPage) => (p.recto ? g.inside : g.outside);
-  const newPage = (role: PageRole, opening = false) => {
+  const pushPage = (role: PageRole, opening = false) => {
     page = { recto: pages.length % 2 === 0, role, ...(opening ? { opening } : {}), texts: [] };
     pages.push(page);
     y = 0;
   };
+  // Images en pleine page : posées sur la page qui suit celle où elles sont citées, le texte continue sans blanc.
+  const plates: { name: string; caption: Run[]; role: PageRole }[] = [];
+  const flushPlates = () => {
+    while (plates.length > 0) {
+      const plate = plates.shift()!;
+      pushPage(plate.role);
+      page.plate = true;
+      drawPlate(plate.name, plate.caption);
+    }
+  };
+  const newPage = (role: PageRole, opening = false) => {
+    flushPlates();
+    pushPage(role, opening);
+  };
   /** Nouvelle belle page (page de droite), précédée d'une page blanche si besoin. */
   const recto = (role: PageRole, opening = false) => {
+    flushPlates();
     if (pages.length % 2 === 1) newPage("blank");
     newPage(role, opening);
   };
@@ -480,12 +516,66 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
     y += leading / 2;
   };
 
+  /** Taille d'une image dans une boîte, proportions gardées, sans l'agrandir au-delà de 150 points par pouce. */
+  const fit = (name: string, maxWidth: number, maxHeight: number) => {
+    const img = book.images![name];
+    const natural = (INCH / MIN_DPI) * Math.max(img.width, 1);
+    const scale = Math.min(maxWidth, natural) / Math.max(img.width, 1);
+    let w = img.width * scale;
+    let h = img.height * scale;
+    if (h > maxHeight) {
+      w *= maxHeight / h;
+      h = maxHeight;
+    }
+    return { w, h };
+  };
+
+  /** Image dans le texte : centrée, sur la largeur du texte au plus ; sur la page suivante si elle ne tient plus. */
+  const inlineImage = (name: string, role: PageRole) => {
+    const { w, h } = fit(name, g.measure, g.textHeight * INLINE_MAX);
+    const gap = leading / 2;
+    if (y > 0 && y + gap + h > g.textHeight + 0.01) newPage(role);
+    if (y > 0) y += gap;
+    (page.images ??= []).push({ name, x: left(page) + (g.measure - w) / 2, y: g.top + y, width: w, height: h });
+    y += h + gap;
+  };
+
+  /** Illustration en pleine page : l'image au milieu du bloc de texte, sa légende dessous. */
+  const drawPlate = (name: string, caption: Run[]) => {
+    const sz = size * 0.9;
+    const lead = sz * 1.3;
+    const lineCount = caption.length > 0 ? wordsOf(caption, false).reduce((n, words) => n + breakLines(words, sz, measure, () => ({ width: g.measure, offset: 0 })).length, 0) : 0;
+    const captionHeight = lineCount > 0 ? leading * 0.6 + lineCount * lead : 0;
+    const { w, h } = fit(name, g.measure, g.textHeight - captionHeight);
+    y = Math.max(0, (g.textHeight - h - captionHeight) / 2);
+    (page.images ??= []).push({ name, x: left(page) + (g.measure - w) / 2, y: g.top + y, width: w, height: h });
+    y += h;
+    if (lineCount > 0) {
+      y += leading * 0.6;
+      paragraph(caption, { align: "center", sz, lead, role: page.role });
+    }
+  };
+
   /** Prose d'un chapitre ou d'une page de fin. */
-  const prose = (blocks: Block[], o: { opening: boolean; role: PageRole; flush?: boolean }) => {
+  const prose = (blocks: Block[], o: { opening: boolean; role: PageRole; flush?: boolean; section?: number }) => {
     let fresh = true;
     let first = o.opening;
     for (const block of blocks) {
-      if (block.kind === "image") continue;
+      if (block.kind === "image") {
+        if (!book.images?.[block.name]) continue;
+        if (block.place === "page") {
+          // Légende d'une illustration : le numéro de la section (livre-jeu) puis la description de l'image.
+          const caption: Run[] = [
+            ...(o.section !== undefined ? [{ text: block.alt ? `${o.section} ` : String(o.section), bold: true }] : []),
+            ...(block.alt ? [{ text: block.alt, italic: true }] : []),
+          ];
+          plates.push({ name: block.name, caption, role: o.role });
+        } else {
+          inlineImage(block.name, o.role);
+          fresh = true;
+        }
+        continue;
+      }
       if (block.kind === "heading") {
         if (roomLines() < 4) newPage(o.role);
         if (y > 0) y += leading;
@@ -642,7 +732,7 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
       marks.push({ page: pages.length - 1, n: section });
       centered(String(section), "bold", sz, sz * 1.3);
       y += leading * 0.4;
-      prose(s.blocks, { opening: false, role: "story" });
+      prose(s.blocks, { opening: false, role: "story", section });
       inSections = true;
       continue;
     }
@@ -654,6 +744,7 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
     else chapterHead("", s.title);
     prose(s.blocks, { opening: true, role: "story" });
   }
+  flushPlates();
   // Livre-jeu : en haut de chaque page, les numéros des sections qu'on y lit (celle qui continue, puis celles qui
   // y commencent), comme dans les livres-jeux imprimés, pour s'y retrouver en feuilletant.
   const sectionRange = new Map<number, string>();
@@ -661,6 +752,7 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
     let current = -1;
     let at = 0;
     for (let i = marks[0].page; i < pages.length && pages[i].role === "story"; i++) {
+      if (pages[i].plate) continue;
       const started: number[] = [];
       while (at < marks.length && marks[at].page === i) started.push(marks[at++].n);
       const shown = [...(current >= 0 && !(started.length && pages[i].texts.length && startsWithSection(pages[i], started[0])) ? [current] : []), ...started];
@@ -709,6 +801,7 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
   }
 
   // Nombre de pages pair : le livre finit sur une page de gauche.
+  flushPlates();
   if (pages.length % 2 === 1) newPage("blank");
 
   // Titres courants (auteur à gauche, titre à droite) et folios aux coins extérieurs.
@@ -721,6 +814,8 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
     }
     if (firstStory >= 0 && i >= firstStory && (p.role === "story" || p.role === "back")) {
       p.folio = i - firstStory + 1;
+      // Une illustration compte dans la pagination, sans numéro ni titre courant imprimés.
+      if (p.plate) return;
       const label = String(p.folio);
       const w = measure(label, "regular", folioSize);
       const by = g.height - BOTTOM * INCH + 0.2 * INCH + folioSize * 0.8;

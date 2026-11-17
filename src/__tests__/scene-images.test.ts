@@ -66,6 +66,11 @@ describe("exports", () => {
     expect(blocks[1]).toEqual({ kind: "image", name: "a.jpg", alt: "Le phare" });
   });
 
+  it("garde la place de l'image (pleine page, tête de chapitre) pour le livre broché", () => {
+    const blocks = htmlToBlocks('<img data-media="a.jpg" data-place="page"><img data-media="b.jpg" data-place="chapter"><img data-media="c.jpg" data-place="ailleurs">');
+    expect(blocks.map((b) => (b.kind === "image" ? b.place : null))).toEqual(["page", "chapter", undefined]);
+  });
+
   it("EPUB et page web : la description devient le texte alternatif", () => {
     const xhtml = chapterXhtml([{ kind: "image", name: "a.jpg", alt: "Le \"phare\"" }], () => "images/img1.jpg");
     expect(xhtml).toContain('<img src="images/img1.jpg" alt="Le &quot;phare&quot;"/>');

@@ -110,8 +110,21 @@ export async function preparePaperback(book: BookDoc, options: PrintOptions, str
     {
       const ink = rgb(0, 0, 0);
       const muted = rgb(0.2, 0.2, 0.2);
+      // Chaque image n'est intégrée qu'une fois, même posée sur plusieurs pages.
+      const embedded = new Map<string, Awaited<ReturnType<typeof pdf.embedJpg>> | null>();
+      const imageOf = async (name: string) => {
+        if (!embedded.has(name)) {
+          const data = book.images?.[name]?.data;
+          embedded.set(name, data ? await pdf.embedJpg(data).catch(() => null) : null);
+        }
+        return embedded.get(name) ?? null;
+      };
       for (const sheet of layout.pages) {
         const page = pdf.addPage([layout.width, layout.height]);
+        for (const im of sheet.images ?? []) {
+          const image = await imageOf(im.name);
+          if (image) page.drawImage(image, { x: im.x, y: layout.height - im.y - im.height, width: im.width, height: im.height });
+        }
         for (const t of sheet.texts) {
           const draw = () => page.drawText(noThinSpace(t.text), { x: t.x, y: layout.height - t.y, size: t.size, font: fonts[t.font], color: t.muted ? muted : ink });
           if (t.spacing) {
