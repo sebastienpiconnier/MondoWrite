@@ -252,3 +252,12 @@ chaque choix tapé dans le texte apparaît sur la carte.
 - [x] Import Twee (titre, départ, choix), lecture jusqu'à la fin, « Vérifier » (scène inaccessible), page web jouable (choix, lecture reprise après rechargement), livre-jeu EPUB (« rendez-vous au ») et PDF, Ink.
 
 Pas couverts : images dans le texte, faits et conditions dans l'interface, assistant externe (MCP), import Ink, doigt, anglais, mode sombre. Ils restent à la recette manuelle.
+
+## Retours de la recette (17 novembre 2026)
+
+- [x] Images absentes des exports du manuscrit (PDF, Word, EPUB, page web) : elles n'étaient pas chargées.
+- [x] « En tête de chapitre » remonte l'image au début de sa scène ; la lettrine reste au premier paragraphe.
+- [x] Manuscrit d'un roman interactif : rang et titre de chaque scène au-dessus d'elle.
+- [x] Import Ink : un choix suivi de texte devient une scène de passage (avant : lignes brutes).
+- [ ] Livre broché : images pas encore (partie 2 du lot 1).
+- [ ] Textes sans carte qui s'accumulent : à décider.

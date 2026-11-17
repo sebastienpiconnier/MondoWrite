@@ -12,6 +12,19 @@ import { useCosmos } from "../store";
 import { fmt, getT } from "../i18n";
 import { QUIET_PAGES, isPageKind } from "../book";
 import { SCENE_MARK, sceneAt, sceneGroups } from "../bookDoc";
+import { showsInteractive } from "../interactive";
+import { interactiveScenes } from "../interactive/scenes";
+import { useSettings } from "../settings";
+
+/** Roman interactif (#84) : « 2. Le puits », le rang et le titre de la scène, comme dans la liste des destinations
+ *  des choix. Vide pour un roman ordinaire (rien ne change pour lui). */
+function sceneLabel(id: string): string {
+  const { metaKeep, kind, nodes, plan } = useCosmos.getState();
+  if (kind === "scenario" || !showsInteractive(metaKeep, useSettings.getState().experimental)) return "";
+  const scenes = interactiveScenes(nodes, plan);
+  const at = scenes.findIndex((sc) => sc.id === id);
+  return at < 0 ? "" : `${at + 1}. ${scenes[at].title.trim() || getT().interactive.map.untitled}`;
+}
 
 /** Ce que le chapitrage demande à l'écran (la logique, qui touche au plan et aux cartes, vit dans Manuscript). */
 export interface BookHandlers {
@@ -53,6 +66,17 @@ export const SceneMark = Node.create({
       const dom = document.createElement("div");
       dom.contentEditable = "false";
       let unsubscribe: (() => void) | null = null;
+      // Repère d'une scène d'un roman interactif : suit les titres et l'ordre des scènes.
+      const label = document.createElement("div");
+      label.className = "scene-mark-label";
+      const showLabel = () => {
+        label.textContent = sceneLabel(String(current.attrs.id));
+        if (label.textContent && !label.isConnected) dom.append(label);
+        else if (!label.textContent) label.remove();
+      };
+      const unwatch = useCosmos.subscribe((st, prev) => {
+        if (st.nodes !== prev.nodes || st.plan !== prev.plan || st.metaKeep !== prev.metaKeep) showLabel();
+      });
 
       const chapterTitle = (chapterId: string) => useCosmos.getState().plan.chapters?.find((c) => c.id === chapterId)?.title ?? "";
       const render = () => {
@@ -99,6 +123,7 @@ export const SceneMark = Node.create({
           stars.textContent = "* * *";
           dom.append(stars);
         }
+        showLabel();
       };
       render();
       return {
@@ -111,7 +136,10 @@ export const SceneMark = Node.create({
         },
         stopEvent: (event) => event.target instanceof HTMLElement && !!event.target.closest("input, button"),
         ignoreMutation: () => true,
-        destroy: () => unsubscribe?.(),
+        destroy: () => {
+          unsubscribe?.();
+          unwatch();
+        },
       };
     };
   },
@@ -131,6 +159,9 @@ function decorate(state: EditorState, focused: boolean): DecorationSet {
       first = true;
       return;
     }
+    // Une image en tête de scène (#84) ne prend pas la place du premier paragraphe : la lettrine et le premier
+    // paragraphe sans alinéa restent au texte qui la suit.
+    if (first && node.type.name === "sceneImage") return;
     const classes: string[] = [];
     const page = mark?.attrs.page;
     if (first) classes.push("scene-first");

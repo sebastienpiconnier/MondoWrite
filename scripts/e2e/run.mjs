@@ -2130,6 +2130,8 @@ const scenarios = [
       await h.view(4);
       const label = page.getByRole("textbox", { name: "Texte du choix 1" }).first();
       await until(() => label.isVisible(), "pas d'encadré des choix dans le Manuscrit");
+      const marks = await page.locator(".scene-mark-label").allTextContents();
+      assert(marks.length === 2 && marks[0].startsWith("1. ") && marks[1].startsWith("2. "), `repères des scènes dans le Manuscrit : ${marks.join(" | ")}`);
       await label.fill("Descendre au puits");
       await label.press("Tab");
       await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("[Descendre au puits]")), "le texte du choix n'est pas enregistré");
@@ -2146,6 +2148,11 @@ const scenarios = [
       await h.view(2);
       await h.wait(300);
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "un roman ordinaire montre la carte des choix");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByRole("button", { name: "Créer la scène" }).click();
+      await until(() => page.locator(".ms-page .ProseMirror").isVisible(), "pas d'éditeur dans le Manuscrit");
+      assert((await page.locator(".scene-mark-label").count()) === 0, "un roman ordinaire montre le repère des scènes");
     },
   },
   {

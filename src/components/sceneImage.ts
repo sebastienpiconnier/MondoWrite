@@ -144,7 +144,21 @@ export const SceneImage = Node.create({
           editor.commands.focus();
         }
       });
-      place.addEventListener("change", () => setAttrs({ place: isImagePlace(place.value) ? place.value : "inline" }));
+      place.addEventListener("change", () => {
+        const next: ImagePlace = isImagePlace(place.value) ? place.value : "inline";
+        const pos = typeof getPos === "function" ? getPos() : undefined;
+        if (next !== "chapter" || pos === undefined) return setAttrs({ place: next });
+        // En tête de chapitre : l'image monte au début de sa scène (juste après son repère dans le livre).
+        const { state } = editor.view;
+        let start = 0;
+        state.doc.forEach((child, offset) => {
+          if (child.type.name === SCENE_MARK && offset < pos) start = offset + child.nodeSize;
+        });
+        let tr = state.tr.setNodeMarkup(pos, undefined, { ...current.attrs, place: next });
+        const moved = tr.doc.nodeAt(pos);
+        if (moved && pos > start) tr = tr.delete(pos, pos + moved.nodeSize).insert(start, moved);
+        editor.view.dispatch(tr.scrollIntoView());
+      });
       remove.addEventListener("click", () => {
         const pos = typeof getPos === "function" ? getPos() : undefined;
         if (pos === undefined) return;

@@ -102,22 +102,24 @@ describe("import Ink", () => {
     expect(source.skipped).toBe(1);
     expect(source.scenes.map((s) => [s.name, s.title])).toEqual([
       ["la_grille", "La grille"],
+      ["la_grille__1", "Rentrer."],
       ["la_cour", "La cour"],
       ["la_cour.porte", "La cour, porte"],
     ]);
-    const [grille, cour, porte] = source.scenes;
+    const [grille, rentrer, cour, porte] = source.scenes;
     expect(grille.paragraphs).toEqual(["La grille est entrouverte."]);
     expect(grille.choices[0]).toEqual({ kind: "choice", label: "Pousser la grille", target: "la_cour", effects: ["cle = true"] });
     expect(grille.choices[1]).toEqual({ kind: "choice", label: "Payer", target: "la_cour.porte", cond: "pieces > 0" });
-    // Un choix qui écrit du texte après lui reste en Ink.
-    expect(grille.choices.slice(2).every((c) => c.kind === "raw")).toBe(true);
+    // Un choix qui écrit du texte après lui mène à une scène de passage, qui porte ce texte.
+    expect(grille.choices[2]).toEqual({ kind: "choice", label: "Rentrer.", target: "la_grille__1" });
+    expect(rentrer).toMatchObject({ paragraphs: ["Rentrer au village.", "Tu fais demi-tour."], choices: [{ kind: "choice", label: "", target: "END" }] });
     expect(cour.choices).toEqual([{ kind: "raw", text: "- -> porte" }]);
     expect(porte.choices[0]).toEqual({ kind: "choice", label: "Ouvrir", target: "DONE", cond: "cle" });
   });
 
   it("réécrit les renvois vers les noms des scènes du projet", () => {
     const project = storyToProject(parseInk(INK, "Ouverture")!, { fileName: "grille.ink", newId });
-    const [grille, cour, porte] = project.cards;
+    const [grille, , cour, porte] = project.cards;
     const slugs = sceneSlugs(project.cards.map((c) => ({ id: c.id, title: c.title })));
     expect(slugs.get(porte.id)).toBe("la_cour_porte");
     const g = choicesIn(project.manuscript![grille.id]);
@@ -153,6 +155,26 @@ describe("import Ink", () => {
     const source = parseInk("Il pleut.\n* [Entrer] -> salle\n=== salle ===\nUne salle.", "Ouverture")!;
     expect(source.start).toBe("__opening");
     expect(source.scenes[0]).toMatchObject({ title: "Ouverture", paragraphs: ["Il pleut."] });
+  });
+
+  it("fait du texte écrit sous un choix une scène de passage, avec ses effets sur le choix", () => {
+    const source = parseInk(
+      "Une porte.\n* [Chercher une clé]\n    Vous fouillez.\n    ~ temp cle = true\n    -> porte\n* [Partir] Vous partez.\n    -> END\n=== porte ===\nElle s'ouvre.\n-> END",
+      "Ouverture",
+    )!;
+    expect(source.scenes.map((s) => s.title)).toEqual(["Ouverture", "Chercher une clé", "Partir", "Porte"]);
+    expect(source.scenes[0].choices).toEqual([
+      { kind: "choice", label: "Chercher une clé", target: "__opening__1", effects: ["cle = true"] },
+      { kind: "choice", label: "Partir", target: "__opening__2" },
+    ]);
+    expect(source.scenes[1]).toMatchObject({ paragraphs: ["Vous fouillez."], choices: [{ kind: "choice", label: "", target: "porte" }] });
+    expect(source.scenes[2]).toMatchObject({ paragraphs: ["Vous partez."], choices: [{ kind: "choice", label: "", target: "END" }] });
+    const project = storyToProject(source, { fileName: "porte.ink", newId });
+    const scenes = project.cards.map((c) => ({ id: c.id, title: c.title }));
+    const story = new Compiler(projectToInk(scenes, sceneSlugs(scenes), project.manuscript!, {}).ink).Compile();
+    story.ContinueMaximally();
+    story.ChooseChoiceIndex(0);
+    expect(story.ContinueMaximally()).toContain("Vous fouillez.");
   });
 
   it("donne un titre lisible au nom d'un knot", () => {

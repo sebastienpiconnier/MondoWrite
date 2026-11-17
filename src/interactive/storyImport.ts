@@ -148,12 +148,21 @@ export function parseInk(text: string, openingTitle: string): StorySource | null
     current = { name, title, paragraphs: [], choices: [], knot };
     scenes.push(current);
   };
-  // Choix en cours de lecture (ses lignes `~` et son renvoi peuvent suivre).
-  let pending: { choice: Extract<ChoiceLine, { kind: "choice" }>; raw: string[]; plain: boolean } | null = null;
+  // Choix en cours de lecture (son texte, ses lignes `~` et son renvoi peuvent suivre).
+  let pending: { choice: Extract<ChoiceLine, { kind: "choice" }>; raw: string[]; plain: boolean; body: string[]; echo: string } | null = null;
+  // Texte écrit sous un choix : une scène de passage (titre du choix, ce texte, puis « Continuer » vers le renvoi),
+  // rangée après la scène du choix. Le choix y mène, avec ses effets.
+  const passages: { after: Scene; scene: Scene }[] = [];
   const flush = () => {
     if (!pending || !current) return (pending = null);
     const scene: Scene = current;
-    if (pending.plain && pending.choice.target) scene.choices.push(pending.choice);
+    const { choice, body } = pending;
+    if (pending.plain && choice.target && body.length) {
+      const name = `${scene.name}__${passages.filter((p) => p.after === scene).length + 1}`;
+      const title = choice.label || openingTitle;
+      passages.push({ after: scene, scene: { name, title, paragraphs: body, choices: [{ kind: "choice", label: "", target: choice.target }], knot: scene.knot } });
+      scene.choices.push({ ...choice, target: name });
+    } else if (pending.plain && choice.target) scene.choices.push(choice);
     else for (const r of pending.raw) scene.choices.push({ kind: "raw", text: r });
     pending = null;
   };
@@ -220,11 +229,16 @@ export function parseInk(text: string, openingTitle: string): StorySource | null
       const bracket = /^([^[\]]*)\[([^\]]*)\]([^[\]]*)$/.exec(body);
       const label = inkText(bracket ? bracket[1] + bracket[2] : body);
       const after = bracket ? bracket[3].trim() : "";
-      const plain = !nested && !after && conds.every((c) => !/[{}]/.test(c));
+      const plain = !nested && conds.every((c) => !/[{}]/.test(c));
+      // Ce que le lecteur lit une fois le choix fait (`a[b]c` : « ac »). Il n'ouvre une scène de passage que si le
+      // choix a du texte après ses crochets ou des lignes sous lui (sinon chaque choix ferait une scène).
+      const echo = inkText(bracket ? bracket[1] + bracket[3] : body);
       pending = {
         choice: { kind: "choice", label: cleanLabel(label), target: divert?.[1] ?? "", ...(conds.length ? { cond: conds.join(" and ") } : {}) },
         raw: [code],
         plain,
+        body: after && echo ? [echo] : [],
+        echo,
       };
       continue;
     }
@@ -232,7 +246,8 @@ export function parseInk(text: string, openingTitle: string): StorySource | null
       const d = DIVERT_RE.exec(code);
       if (code.startsWith("~")) {
         pending.raw.push(`  ${code}`);
-        pending.choice.effects = [...(pending.choice.effects ?? []), code.replace(/^~\s*/, "")];
+        // `~ temp x = …` : variable de passage en Ink, un fait comme un autre ici.
+        pending.choice.effects = [...(pending.choice.effects ?? []), code.replace(/^~\s*(temp\s+)?/, "")];
         continue;
       }
       if (d && !pending.choice.target) {
@@ -240,7 +255,15 @@ export function parseInk(text: string, openingTitle: string): StorySource | null
         pending.choice.target = d[1];
         continue;
       }
-      // Autre chose sous le choix (texte, sous-choix, rassemblement) : le choix reste en Ink brut.
+      // Texte simple sous le choix, avant son renvoi : le texte de sa scène de passage.
+      const t = inkText(code);
+      if (!pending.choice.target && t && !/^[*+\-{<]/.test(code) && !code.includes("->") && !/[{}]/.test(code)) {
+        pending.raw.push(rawLine.replace(/\s+$/, ""));
+        if (!pending.body.length && pending.echo) pending.body.push(pending.echo);
+        pending.body.push(t);
+        continue;
+      }
+      // Autre chose sous le choix (sous-choix, rassemblement, logique) : le choix reste en Ink brut.
       if (/^\s/.test(rawLine) || !pending.choice.target) {
         pending.raw.push(rawLine.replace(/\s+$/, ""));
         pending.plain = false;
@@ -257,6 +280,12 @@ export function parseInk(text: string, openingTitle: string): StorySource | null
   }
   flush();
   if (scenes.length === 0) return null;
+  // Scènes de passage : chacune après la scène de son choix (et après les passages précédents de ce choix).
+  for (const p of passages) {
+    let at = scenes.indexOf(p.after) + 1;
+    while (at < scenes.length && scenes[at].name.startsWith(`${p.after.name}__`)) at++;
+    scenes.splice(at, 0, p.scene);
+  }
   const opening = scenes.find((s) => s.name === "__opening");
   const start = opening ? opening.name : topStart && scenes.some((s) => s.name === topStart) ? topStart : scenes[0].name;
   return { scenes, start, factLabels, skipped };

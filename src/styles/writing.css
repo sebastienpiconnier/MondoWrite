@@ -709,6 +709,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Repère de scène : invisible, ou « * * * » entre deux scènes, ou ouverture d'un chapitre (numéro et titre). */
 .ms-editor .scene-mark { display: block; user-select: none; scroll-margin-top: 5.5rem; }
 .ms-editor .scene-mark:empty { height: 0; }
+/* Roman interactif (#84) : rang et titre de la scène au-dessus d'elle, pour savoir où l'on est (les choix y renvoient). */
+.ms-editor .scene-mark-label { padding: 0 0 0.9em; font: 600 0.62em/1.3 var(--font-ui); letter-spacing: 0.02em; color: var(--muted); text-align: center; text-indent: 0; overflow-wrap: anywhere; }
 .ms-editor .scene-break { padding: 0.8em 0; text-align: center; letter-spacing: 0.2em; line-height: 1.6; color: var(--ink-2); }
 .ms-chapter-flow { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.1em; padding: 0.3em 0 1.8em; }
 .ms-page .ms-chapter-flow .ms-chapter-heading { margin: 0; font-size: 0.62em; }
