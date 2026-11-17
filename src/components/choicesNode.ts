@@ -42,6 +42,15 @@ function sceneEnd(doc: PMNode, pos: number): { end: number; block: { pos: number
   return { end, block: block ? { pos: block.at, node: block.node } : null };
 }
 
+// Mode code (recette du 17 novembre 2026) : tous les blocs montrent leur texte tel qu'il est écrit dans le fichier,
+// modifiable. État d'affichage de la session, commun à tous les blocs, jamais enregistré.
+let codeMode = false;
+const codeListeners = new Set<() => void>();
+function setCodeMode(on: boolean) {
+  codeMode = on;
+  for (const listener of codeListeners) listener();
+}
+
 export const SceneChoices = Node.create({
   name: "sceneChoices",
   group: "block",
@@ -97,13 +106,65 @@ export const SceneChoices = Node.create({
       const dom = document.createElement("div");
       dom.className = "scene-choices";
       dom.contentEditable = "false";
+      const bar = document.createElement("div");
+      bar.className = "scene-choices-head";
       const head = document.createElement("p");
       head.className = "scene-choices-title";
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "ghost-button scene-choices-toggle";
+      toggle.addEventListener("click", () => setCodeMode(!codeMode));
+      bar.append(head, toggle);
       const list = document.createElement("ol");
       const add = document.createElement("button");
       add.type = "button";
       add.className = "ghost-button scene-choices-add";
-      dom.append(head, list, add);
+      const codeBox = document.createElement("div");
+      codeBox.className = "scene-choices-code";
+      const code = document.createElement("textarea");
+      code.spellcheck = false;
+      code.rows = 3;
+      const codeHint = document.createElement("p");
+      codeHint.className = "scene-choices-hint";
+      codeBox.append(code, codeHint);
+      dom.append(bar, list, add, codeBox);
+
+      // Texte tapé dans le code : écrit 400 ms après la dernière frappe, et en quittant le champ.
+      let codeTimer = 0;
+      // Seul un texte tapé dans le code s'écrit (jamais le champ vide d'un bloc resté en mode choix).
+      let codeDirty = false;
+      const fitCode = () => {
+        code.style.height = "auto";
+        code.style.height = `${code.scrollHeight + 2}px`;
+      };
+      const commitCode = () => {
+        window.clearTimeout(codeTimer);
+        if (!codeDirty) return;
+        codeDirty = false;
+        const pos = typeof getPos === "function" ? getPos() : undefined;
+        if (pos === undefined) return;
+        const text = code.value.replace(/\s+$/, "");
+        if (text === current.attrs.text) return;
+        if (!text.trim()) {
+          editor.chain().deleteRange({ from: pos, to: pos + current.nodeSize }).run();
+          return;
+        }
+        editor.view.dispatch(editor.view.state.tr.setNodeMarkup(pos, undefined, { text }));
+      };
+      code.addEventListener("input", () => {
+        codeDirty = true;
+        fitCode();
+        window.clearTimeout(codeTimer);
+        codeTimer = window.setTimeout(commitCode, 400);
+      });
+      code.addEventListener("blur", commitCode);
+      code.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          commitCode();
+          editor.commands.focus();
+        }
+      });
 
       const lines = (): ChoiceLine[] => parseChoices(String(current.attrs.text ?? ""));
       const write = (next: ChoiceLine[]) => {
@@ -128,6 +189,20 @@ export const SceneChoices = Node.create({
         const t = getT().interactive.choices;
         head.textContent = t.title;
         add.textContent = `+ ${t.add}`;
+        toggle.textContent = codeMode ? t.showChoices : t.showCode;
+        toggle.setAttribute("aria-pressed", String(codeMode));
+        list.hidden = codeMode;
+        add.hidden = codeMode;
+        codeBox.hidden = !codeMode;
+        if (codeMode) {
+          code.setAttribute("aria-label", t.codeAria);
+          codeHint.textContent = t.codeHint;
+          if (document.activeElement !== code) {
+            code.value = String(current.attrs.text ?? "");
+            requestAnimationFrame(fitCode);
+          }
+          return;
+        }
         const { nodes, plan } = useCosmos.getState();
         const scenes = interactiveScenes(nodes, plan);
         const slugs = interactiveSlugs(nodes, plan);
@@ -204,6 +279,7 @@ export const SceneChoices = Node.create({
         list.replaceChildren(...rows);
       };
       render();
+      codeListeners.add(render);
       // Les titres des scènes changent ailleurs : la liste des destinations suit.
       const unsubscribe = useCosmos.subscribe((s, prev) => {
         if (s.nodes !== prev.nodes || s.plan !== prev.plan) render();
@@ -226,7 +302,11 @@ export const SceneChoices = Node.create({
         deselectNode: () => dom.classList.remove("is-selected"),
         stopEvent: (event) => dom.contains(event.target as globalThis.Node) && event.target !== dom,
         ignoreMutation: () => true,
-        destroy: () => unsubscribe(),
+        destroy: () => {
+          window.clearTimeout(codeTimer);
+          codeListeners.delete(render);
+          unsubscribe();
+        },
       };
     };
   },

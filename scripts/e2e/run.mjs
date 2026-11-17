@@ -2138,6 +2138,13 @@ const scenarios = [
       await h.reloadAndOpen();
       await h.view(4);
       await until(async () => (await page.getByRole("textbox", { name: "Texte du choix 1" }).first().inputValue()) === "Descendre au puits", "après rechargement, le texte du choix a changé");
+      // Mode code : le bloc tel qu'il est écrit, modifiable ; « Voir les choix » montre le changement.
+      await page.getByRole("button", { name: "Voir le code" }).first().click();
+      const code = page.getByRole("textbox", { name: "Code des choix de la scène" }).first();
+      await until(async () => (await code.inputValue()).includes("[Descendre au puits]"), "le code du bloc ne montre pas le choix");
+      await code.fill((await code.inputValue()).replace("[Descendre au puits]", "[Descendre au fond]"));
+      await page.getByRole("button", { name: "Voir les choix" }).first().click();
+      await until(async () => (await page.getByRole("textbox", { name: "Texte du choix 1" }).first().inputValue()) === "Descendre au fond", "le choix modifié dans le code n'est pas repris");
 
       // Un roman ordinaire ne voit rien de tout cela.
       await page.locator(".topbar .tb-back").click();

@@ -151,7 +151,8 @@ export function Manuscript() {
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
   // Tout le livre : pages de début, récit dans l'ordre du Plan, pages de fin.
   const order = useMemo(() => bookOrder(nodes, plan), [nodes, plan]);
-  const orphans = useMemo(() => orphanTexts(manuscript, order), [manuscript, order]);
+  const trash = useCosmos((s) => s.trash);
+  const orphans = useMemo(() => orphanTexts(manuscript, order, trash.map((c) => c.id)), [manuscript, order, trash]);
   // Point de vue (1.13.0) : « Ses scènes en point de vue » ne garde dans le volet que les scènes d'un narrateur
   // (les autres repliées en une ligne) et les flèches passent de l'une à l'autre. État d'affichage, rien d'écrit.
   const narrators = useMemo(() => {

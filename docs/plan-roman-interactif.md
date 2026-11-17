@@ -260,4 +260,7 @@ Pas couverts : images dans le texte, faits et conditions dans l'interface, assis
 - [x] Manuscrit d'un roman interactif : rang et titre de chaque scène au-dessus d'elle.
 - [x] Import Ink : un choix suivi de texte devient une scène de passage (avant : lignes brutes).
 - [ ] Livre broché : images pas encore (partie 2 du lot 1).
-- [ ] Textes sans carte qui s'accumulent : à décider.
+- [x] Textes sans carte : ceux dont la carte est dans la corbeille ne sont plus listés (choix 1 de l'auteur).
+- [x] « Voir le code » sur chaque bloc de choix : le bloc tel qu'écrit, modifiable (pour tous les blocs, le temps de la session).
+- [x] Carte des choix : un `-> END` écrit dans le bloc (Ink importé) compte comme une fin.
+- [x] Exemple à importer : `docs/exemples/le-puits.ink` (scènes, faits, condition, compteur, scène de passage).

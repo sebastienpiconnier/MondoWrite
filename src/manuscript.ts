@@ -114,8 +114,12 @@ export function bookWords(manuscript: Manuscript, cards: readonly Pick<CardData,
   return cards.reduce((sum, c) => (c.type === "scene" && manuscript[c.id] ? sum + countWords(manuscript[c.id]) : sum), 0);
 }
 
-/** Textes dont la carte Scène n'existe plus : ils restent dans le projet, jamais effacés par l'app. */
-export function orphanTexts(manuscript: Manuscript, sceneIds: string[]): string[] {
-  const scenes = new Set(sceneIds);
-  return Object.keys(manuscript).filter((id) => !scenes.has(id) && !isBlank(manuscript[id]));
+/**
+ * Textes dont la carte Scène n'existe plus : ils restent dans le projet, jamais effacés par l'app. Ceux dont la
+ * carte est à la corbeille (`trashed`) n'y sont pas : la corbeille les rend avec leur carte, et la liste
+ * s'encombrait de chaque scène supprimée.
+ */
+export function orphanTexts(manuscript: Manuscript, sceneIds: string[], trashed: Iterable<string> = []): string[] {
+  const hidden = new Set([...sceneIds, ...trashed]);
+  return Object.keys(manuscript).filter((id) => !hidden.has(id) && !isBlank(manuscript[id]));
 }

@@ -144,6 +144,8 @@ describe("manuscrit dans le projet", () => {
     expect(files[`manuscrit/${a}.md`]).toBe("Inès arrive au phare.\n");
     expect(files[`corbeille/${a}.md`]).toContain("corbeille: {");
     expect(orphanTexts(state().manuscript, planScenes(state().nodes))).toEqual([a]);
+    // La carte est à la corbeille : la liste des textes sans carte ne la montre pas (la corbeille la rend).
+    expect(orphanTexts(state().manuscript, planScenes(state().nodes), state().trash.map((c) => c.id))).toEqual([]);
 
     state().restoreScene(a);
     expect(state().nodes.find((n) => n.id === a)!.data).toMatchObject({ type: "scene", title });

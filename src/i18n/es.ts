@@ -1539,7 +1539,7 @@ export const es = {
     show: "Ver la tarjeta «{title}» en el lienzo",
     synopsis: "Sinopsis",
     orphans: "Textos sin tarjeta",
-    orphansHint: "La tarjeta de estas escenas se eliminó. Su texto sigue en el proyecto.",
+    orphansHint: "La tarjeta de estas escenas se eliminó y la papelera se vació después. Su texto sigue en el proyecto.",
     restore: "Volver a crear la tarjeta",
     sceneHint: "Arrastra una escena para moverla",
     sceneDrag: "Arrastra la escena para moverla (Alt + ↑ ↓ con el teclado)",

@@ -214,6 +214,11 @@ export function choiceGraph(manuscript: Readonly<Record<string, string>>, scenes
   return edges;
 }
 
+/** La scène finit l'histoire par un renvoi écrit en Ink (`-> END` ou `-> DONE` sur sa ligne), sans bouton à toucher. */
+export function endsByDivert(html: string | undefined): boolean {
+  return choicesIn(html).some((l) => l.kind === "raw" && /^->\s*(END|DONE)\s*$/.test(l.text.trim()));
+}
+
 /** Remplace le choix de rang `index` (parmi les choix) d'une liste de lignes, ou le retire si `next` est null. */
 export function editChoice(lines: readonly ChoiceLine[], index: number, next: Omit<Choice, "kind"> | null): ChoiceLine[] {
   let rank = -1;

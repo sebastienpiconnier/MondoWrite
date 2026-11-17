@@ -27,7 +27,7 @@ import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { plainText } from "../search";
-import { END_TARGET, choiceGraph, layoutChoiceMap, readChoiceMap, type ChoiceEdge, type MapPositions } from "../interactive/choices";
+import { END_TARGET, choiceGraph, endsByDivert, layoutChoiceMap, readChoiceMap, type ChoiceEdge, type MapPositions } from "../interactive/choices";
 import { interactiveScenes } from "../interactive/scenes";
 import { MoreMenu } from "./MoreMenu";
 import { openPlay } from "../interactive/playState";
@@ -127,8 +127,9 @@ function ChoiceFlow() {
             rank: i + 1,
             excerpt: excerptOf(manuscript[s.id]),
             start: i === 0,
-            ending: out.some((e) => e.to === END_TARGET),
-            deadEnd: out.length === 0,
+            // Un « -> END » écrit dans le bloc (fichier Ink importé) finit aussi l'histoire.
+            ending: out.some((e) => e.to === END_TARGET) || endsByDivert(manuscript[s.id]),
+            deadEnd: out.length === 0 && !endsByDivert(manuscript[s.id]),
             broken: out.filter((e) => e.to === null).length,
             unreachable: points.some((p) => p.rule === "unreachableScene" && p.scene === s.id),
             locked: points.some((p) => p.rule === "lockedScene" && p.scene === s.id),
