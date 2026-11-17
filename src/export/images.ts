@@ -7,11 +7,11 @@ import { docImageNames, type DocImage, type ExportDoc } from "./doc";
 
 const EXPORT_SIDE = 1600;
 
-function toJpeg(url: string): Promise<DocImage> {
+function toJpeg(url: string, side = EXPORT_SIDE): Promise<DocImage> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const { width, height } = fitWithin(img.naturalWidth, img.naturalHeight, EXPORT_SIDE);
+      const { width, height } = fitWithin(img.naturalWidth, img.naturalHeight, side);
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -29,14 +29,17 @@ function toJpeg(url: string): Promise<DocImage> {
   });
 }
 
+/** Plus grand côté d'une image du livre broché : de quoi imprimer la largeur du texte à 300 points par pouce. */
+export const PRINT_SIDE = 2400;
+
 /** Images lues dans medias/ et réencodées en JPEG ; une image manquante ou illisible est absente du résultat. */
-export async function loadImages(names: Iterable<string>, mediaUrl: (name: string) => Promise<string | null>): Promise<Record<string, DocImage>> {
+export async function loadImages(names: Iterable<string>, mediaUrl: (name: string) => Promise<string | null>, side = EXPORT_SIDE): Promise<Record<string, DocImage>> {
   const images: Record<string, DocImage> = {};
   for (const name of new Set(names)) {
     const url = await mediaUrl(name).catch(() => null);
     if (!url) continue;
     try {
-      images[name] = await toJpeg(url);
+      images[name] = await toJpeg(url, side);
     } catch {
       // ignorée
     } finally {

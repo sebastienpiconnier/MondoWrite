@@ -229,3 +229,52 @@ describe("gabarit de couverture", () => {
     expect(cover.barcode.x + cover.barcode.width).toBeCloseTo(cover.back.x + cover.back.width - 0.25 * INCH);
   });
 });
+describe("images du livre broché", () => {
+  const img = (width: number, height: number) => ({ data: new Uint8Array(), width, height });
+  const withImage = (image: Block, images = { a: img(1600, 1200) }): BookDoc => {
+    const b = book(1, 6);
+    const chapter = b.sections[1] as Extract<BookDoc["sections"][number], { kind: "chapter" }>;
+    return { ...b, images, sections: [b.sections[0], { ...chapter, blocks: [para(3), image, ...chapter.blocks] }, b.sections[2]] };
+  };
+  const placed = (layout: ReturnType<typeof layoutPaperback>) => layout.pages.flatMap((p, i) => (p.images ?? []).map((im) => ({ ...im, page: i, plate: !!p.plate })));
+
+  it("image dans le texte : sur la largeur du texte au plus, proportions gardées", () => {
+    const layout = layoutPaperback(withImage({ kind: "image", name: "a" }), options(), strings, metrics);
+    const [im] = placed(layout);
+    expect(im).toBeDefined();
+    expect(im.plate).toBe(false);
+    expect(im.width / im.height).toBeCloseTo(4 / 3, 3);
+    // Pas plus large qu'une ligne pleine du texte.
+    const lines = layout.pages[im.page].texts.filter((x) => x.y > INCH);
+    const right = Math.max(...lines.map((x) => x.x + metrics.width(x.text, x.font, x.size)));
+    expect(im.x).toBeGreaterThanOrEqual(Math.min(...lines.map((x) => x.x)) - 0.01);
+    expect(im.x + im.width).toBeLessThanOrEqual(right + 0.5);
+    // Le texte qui suit passe sous l'image.
+    const below = layout.pages[im.page].texts.filter((x) => x.y > im.y + im.height);
+    expect(below.length).toBeGreaterThan(0);
+  });
+
+  it("une petite image n'est pas agrandie au-delà de 150 points par pouce", () => {
+    const layout = layoutPaperback(withImage({ kind: "image", name: "a" }, { a: img(150, 150) }), options(), strings, metrics);
+    expect(placed(layout)[0].width).toBeCloseTo(INCH, 3);
+  });
+
+  it("image en pleine page : la page suivante, sans folio ni titre courant, avec sa légende", () => {
+    const layout = layoutPaperback(withImage({ kind: "image", name: "a", alt: "Le phare sous l’orage", place: "page" }), options(), strings, metrics);
+    const [im] = placed(layout);
+    expect(im.plate).toBe(true);
+    const plate = layout.pages[im.page];
+    expect(plate.texts.every((x) => x.y > im.y)).toBe(true);
+    expect(plate.texts.map((x) => x.text).join(" ")).toContain("phare");
+    expect(plate.folio).toBeGreaterThan(0);
+    // Le texte cité avant l'image continue sur la page d'avant, sans blanc : la page précédente est pleine.
+    const before = layout.pages[im.page - 1];
+    expect(before.role).toBe("story");
+    expect(Math.max(...before.texts.map((x) => x.y))).toBeGreaterThan(KDP_TRIMS[DEFAULT_PRINT.trim].height * INCH * 0.8);
+  });
+
+  it("une image absente est ignorée", () => {
+    const layout = layoutPaperback(withImage({ kind: "image", name: "b" }), options(), strings, metrics);
+    expect(placed(layout)).toHaveLength(0);
+  });
+});

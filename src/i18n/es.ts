@@ -3119,6 +3119,7 @@ export const es = {
     find: "Buscar…",
     findNext: "Buscar siguiente",
     findPrev: "Buscar anterior",
+    insertImage: "Insertar una imagen…",
     replace: "Buscar y reemplazar…",
     keepVersion: "Conservar una versión de la escena…",
     synonyms: "Sinónimos de la palabra…",
@@ -4242,5 +4243,15 @@ export const es = {
     writeHint: "Con escritura, el asistente puede crear y modificar tarjetas, hilos, preguntas y el texto de las escenas, solo mientras el proyecto está abierto aquí. Todo lo que escribe queda marcado como IA, anotado en el diario de la IA y se puede deshacer; antes de reescribir una escena, MondoWrite guarda una versión.",
     versionTitle: "Antes del asistente externo",
     projectHint: "El asistente lee las escenas y la Biblia tal como están guardadas. «Ninguno» le retira el acceso al instante.",
+  },
+  textImage: {
+    insert: "Insertar una imagen…",
+    photosTitle: "Una imagen en el texto",
+    altLabel: "Descripción de la imagen",
+    altPlaceholder: "Describe la imagen en una frase (la leen los lectores de pantalla)",
+    placeLabel: "Lugar de la imagen",
+    places: { inline: "En el texto", page: "Sola en su página", chapter: "Al principio del capítulo" },
+    remove: "Quitar la imagen",
+    missing: "Imagen no encontrada en la carpeta medias del proyecto",
   },
 } satisfies Translation;

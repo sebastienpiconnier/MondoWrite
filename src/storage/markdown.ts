@@ -31,6 +31,7 @@ import { isIaId, readIaFields } from "../atelier";
 import { isCommentId } from "../comments";
 import { cleanNote, putFootnotes, readFootnotes, takeFootnotes } from "../footnotes";
 import { iaImagesOf, readIaImages } from "../ai/imageGen";
+import { cleanAlt, imageMarkdown, isImagePlace, mediaFromSrc } from "../sceneImages";
 
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", emDelimiter: "*" });
 // Une mention s'écrit comme un lien Markdown vers la carte citée.
@@ -61,6 +62,16 @@ turndown.addRule("ia", {
 turndown.addRule("comment", {
   filter: (node) => node.nodeName === "SPAN" && isCommentId((node as HTMLElement).getAttribute("data-comment")),
   replacement: (content, node) => (content ? `<span data-comment="${(node as HTMLElement).getAttribute("data-comment")}">${content}</span>` : ""),
+});
+
+// Image dans le texte d'une scène (sceneImages.ts) : `![description](../medias/nom "place")`, seule sur sa ligne.
+turndown.addRule("sceneImage", {
+  filter: (node) => node.nodeName === "IMG" && isMediaName((node as HTMLElement).getAttribute("data-media")),
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const place = el.getAttribute("data-place");
+    return `\n\n${imageMarkdown(el.getAttribute("data-media")!, el.getAttribute("alt") ?? "", isImagePlace(place) ? place : "inline")}\n\n`;
+  },
 });
 
 export function htmlToMarkdown(html: string): string {
@@ -141,6 +152,22 @@ export function sanitizeHtml(html: string): string {
         for (const attr of Array.from(child.attributes)) if (attr.name !== "data-comment") child.removeAttribute(attr.name);
         continue;
       }
+      // Image d'une scène : seulement un fichier de medias/ (jamais une adresse web ni un chemin), sa description et
+      // sa place ; tout autre <img> disparaît.
+      if (child.tagName === "IMG") {
+        const name = mediaFromSrc(child.getAttribute("src")) ?? (isMediaName(child.getAttribute("data-media")) ? child.getAttribute("data-media") : null);
+        if (!name) {
+          child.remove();
+          continue;
+        }
+        const place = child.getAttribute("data-place") ?? child.getAttribute("title");
+        const img = doc.createElement("img");
+        img.setAttribute("data-media", name);
+        img.setAttribute("alt", cleanAlt(child.getAttribute("alt")));
+        if (isImagePlace(place) && place !== "inline") img.setAttribute("data-place", place);
+        child.replaceWith(img);
+        continue;
+      }
       // Les anciens passages `<span data-rev>` (1.23.0, retirés ensuite) perdent leur balise et gardent leur texte.
       if (!ALLOWED.has(child.tagName)) {
         child.replaceWith(...Array.from(child.childNodes));
@@ -152,6 +179,11 @@ export function sanitizeHtml(html: string): string {
     }
   };
   clean(doc.body);
+  // Une image seule dans son paragraphe (ce que donne marked) devient un bloc à part entière.
+  for (const p of Array.from(doc.body.querySelectorAll("p"))) {
+    const only = p.children.length === 1 && p.firstElementChild?.tagName === "IMG" && !p.textContent?.trim();
+    if (only) p.replaceWith(p.firstElementChild!);
+  }
   return doc.body.innerHTML;
 }
 

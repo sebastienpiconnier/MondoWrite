@@ -984,6 +984,7 @@ export const fr = {
       backups: "restaurer copie",
       replace: "renommer",
       todos: "taches cases questions",
+      "insert-image": "image photo illustration",
       "merge-next": "joindre reunir",
       "omit-scene": "omis supprimer numero verrouille",
       review: "relire repetitions",
@@ -2677,6 +2678,7 @@ export const fr = {
     revisit: "Marquer « à reprendre »",
     trash: "Corbeille…",
     backups: "Sauvegardes…",
+    insertImage: "Insérer une image…",
     mergeNext: "Fusionner avec la scène suivante",
     omitScene: "Omettre la scène",
     source: "MondoWrite sur GitHub",
@@ -3665,6 +3667,16 @@ export const fr = {
       busy: "Le modèle d’Apple est occupé. Réessaie dans un instant.",
       other: "Le modèle d’Apple n’a pas pu répondre.",
     },
+  },
+  textImage: {
+    insert: "Insérer une image…",
+    photosTitle: "Une image dans le texte",
+    altLabel: "Description de l’image",
+    altPlaceholder: "Décris l’image en une phrase (lue par les lecteurs d’écran)",
+    placeLabel: "Place de l’image",
+    places: { inline: "Dans le texte", page: "Seule sur sa page", chapter: "En tête de chapitre" },
+    remove: "Retirer l’image",
+    missing: "Image introuvable dans le dossier medias du projet",
   },
 };
 

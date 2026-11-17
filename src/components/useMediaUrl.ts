@@ -24,6 +24,20 @@ export const forgetMediaUrls = () => {
   cache.clear();
 };
 
+/** Adresse d'une image hors de React (vue d'une image dans le texte), par le même cache que le hook. */
+export function loadMediaUrl(name: string): Promise<string | null> {
+  let pending = cache.get(name);
+  if (!pending) {
+    pending = storage.mediaUrl(name).catch(() => null);
+    cache.set(name, pending);
+  }
+  const asked = pending;
+  void asked.then((url) => {
+    if (url === null && cache.get(name) === asked) cache.delete(name);
+  });
+  return asked;
+}
+
 export function useMediaUrl(name: string | undefined): string | null {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
