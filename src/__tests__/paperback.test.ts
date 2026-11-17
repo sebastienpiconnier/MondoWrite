@@ -229,3 +229,58 @@ describe("gabarit de couverture", () => {
     expect(cover.barcode.x + cover.barcode.width).toBeCloseTo(cover.back.x + cover.back.width - 0.25 * INCH);
   });
 });
+
+describe("livre broché d'un livre-jeu (sections à la suite)", () => {
+  const gamebook = (count: number, paras: number): BookDoc => ({
+    title: "Le Puits",
+    author: "Inès Morvan",
+    lang: "fr",
+    year: 2026,
+    sections: [
+      { kind: "chapter", label: "", title: "Avant de commencer", toc: "Avant de commencer", blocks: [para()] },
+      ...Array.from({ length: count }, (_, i) => ({
+        kind: "chapter" as const,
+        label: "",
+        title: String(i + 1),
+        toc: String(i + 1),
+        section: i + 1,
+        blocks: [...Array.from({ length: paras }, () => para()), { kind: "paragraph" as const, runs: [{ text: `Si tu descends : rendez-vous au ${((i + 1) % count) + 1}.` }] }],
+      })),
+    ],
+  });
+  const options: PrintOptions = { ...DEFAULT_PRINT, toc: true };
+
+  it("fait suivre les sections sur la page, chacune sous son numéro en gras", () => {
+    const layout = layoutPaperback(gamebook(12, 1), options, strings, metrics);
+    const opening = layout.pages.findIndex((p) => p.texts.some((t) => t.text === "1" && t.font === "bold" && t.size > 12));
+    expect(opening).toBeGreaterThan(0);
+    // Plusieurs sections sur la même page : pas une belle page par section.
+    const numbersOn = (i: number) => layout.pages[i].texts.filter((t) => t.font === "bold" && /^\d+$/.test(t.text) && t.y > INCH).map((t) => t.text);
+    expect(numbersOn(opening).length).toBeGreaterThan(1);
+    // Douze sections courtes tiennent dans bien moins de douze pages.
+    const storyPages = layout.pages.filter((p) => p.role === "story").length;
+    expect(storyPages).toBeLessThan(12);
+  });
+
+  it("rappelle en haut de page les numéros des sections qu'on y lit", () => {
+    const layout = layoutPaperback(gamebook(12, 1), options, strings, metrics);
+    const heads = layout.pages.map((p) => p.texts.find((t) => t.y < INCH && t.font === "bold")?.text).filter(Boolean);
+    expect(heads.length).toBeGreaterThan(0);
+    expect(heads[0]).toMatch(/^1(–\d+)?$/);
+  });
+
+  it("une section longue sur deux pages : la page suivante commence par son numéro", () => {
+    const layout = layoutPaperback(gamebook(3, 14), options, strings, metrics);
+    const heads = layout.pages.map((p) => p.texts.find((t) => t.y < INCH && t.font === "bold")?.text).filter(Boolean);
+    expect(heads).toContain("1");
+    expect(heads.some((h) => /^1–2$/.test(h!))).toBe(true);
+  });
+
+  it("le sommaire ne liste pas les sections numérotées", () => {
+    const layout = layoutPaperback(gamebook(5, 1), options, strings, metrics);
+    const tocPage = layout.pages.find((p) => p.texts.some((t) => t.text.startsWith("TABLE")));
+    const lines = tocPage?.texts.map((t) => t.text) ?? [];
+    expect(lines).toContain("Avant");
+    expect(lines.filter((x) => x === "4" || x === "5")).toHaveLength(0);
+  });
+});

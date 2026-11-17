@@ -209,7 +209,8 @@ export function ExportMenu() {
   };
   const webItem = { key: "ms-web", label: all.interactive.web.menu, build: webFile };
   // Lot 8 : le livre-jeu, sections mélangées et numérotées.
-  const gamebookItems = (["epub", "pdf"] as const).map((f) => ({
+  // Le livre-jeu imprimé passe par le livre broché (même typographie, formats KDP) : ici, l'EPUB seulement.
+  const gamebookItems = (["epub"] as const).map((f) => ({
     key: `ms-gamebook-${f}`,
     label: all.interactive.gamebook[f],
     build: async () => (await import("../interactive/gamebookExport")).gamebookFile(f, info().title, info().author),

@@ -101,3 +101,23 @@ describe("livre-jeu", () => {
     expect(lines(gamebookDoc(plain).doc, 0)).toHaveLength(1);
   });
 });
+
+describe("gamebookBook (livre broché d'un livre-jeu)", () => {
+  it("garde les pages du livre sauf l'épilogue, puis l'ouverture et les sections numérotées", async () => {
+    const { gamebookBook } = await import("../interactive/gamebook");
+    const base = {
+      title: "T",
+      author: "A",
+      lang: "fr",
+      year: 2026,
+      sections: [
+        { kind: "page" as const, page: "dedicace" as const, title: "Dédicace", blocks: [] },
+        { kind: "chapter" as const, label: "", title: "Scène", toc: "Scène", blocks: [] },
+        { kind: "page" as const, page: "epilogue" as const, title: "Épilogue", blocks: [] },
+      ],
+    };
+    const doc = { title: "T", author: "A", lang: "fr", chapters: [{ title: "Avant de commencer", blocks: [] }, { title: "1", blocks: [] }, { title: "2", blocks: [] }] };
+    const out = gamebookBook(base, doc);
+    expect(out.sections.map((s) => (s.kind === "page" ? s.page : `${s.title}:${s.section ?? "-"}`))).toEqual(["dedicace", "Avant de commencer:-", "1:1", "2:2"]);
+  });
+});

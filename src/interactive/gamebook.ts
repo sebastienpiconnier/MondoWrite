@@ -7,6 +7,7 @@ import { htmlToBlocks, type Block, type Chapter, type ExportDoc, type Run } from
 import { quote } from "../typoRules";
 import { choicesIn, END_TARGET, resolveTarget, type SceneRef } from "./choices";
 import { factLabel, simpleCond, simpleEffect } from "./facts";
+import type { BookDoc, BookSection } from "../export/paperback";
 
 /** Textes du livre, dans la langue de l'interface (gabarits à variables `{…}`). */
 export interface GamebookTexts {
@@ -193,8 +194,15 @@ export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: S
       ends = false;
       const id = resolveTarget(line.target, input.slugs);
       const cond = condText(line.cond);
-      const label = line.label.trim() || "…";
-      const lead = cond ? `${cond} ${label.charAt(0).toLocaleLowerCase()}${label.slice(1)}` : label;
+      const label = line.label.trim();
+      // Un choix sans texte (« Continuer ») : « Rendez-vous au 6. », sans libellé devant.
+      if (!label && !cond && id && id !== END_TARGET && !line.effects?.length) {
+        const [before, after] = around(texts.goTo, {});
+        lines.push([{ text: before }, link(id), { text: after }]);
+        continue;
+      }
+      const shown = label || "…";
+      const lead = cond ? `${cond} ${shown.charAt(0).toLocaleLowerCase()}${shown.slice(1)}` : shown;
       if (!id || id === END_TARGET) {
         // Destination introuvable : on écrit le choix comme une fin, le vérificateur l'a déjà signalé.
         lines.push([{ text: capital(fill(texts.choiceEnd, { label: lead })) }]);
@@ -209,4 +217,20 @@ export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: S
     chapters.push({ title: String(s.n), blocks });
   }
   return { doc: { title: input.title, author: input.author, lang, chapters }, sections };
+}
+
+/**
+ * Le livre broché d'un livre-jeu (lot B, novembre 2026) : les pages du livre de l'auteur (titre, copyright,
+ * dédicace, épigraphe, prologue, remerciements, l'auteur), puis « Avant de commencer » et les sections numérotées,
+ * que la mise en page fait se suivre (`section`). Un épilogue n'a pas de place dans un livre qui finit à plusieurs
+ * endroits : il n'y est pas.
+ */
+export function gamebookBook(base: BookDoc, doc: ExportDoc): BookDoc {
+  const pages = base.sections.filter((s) => s.kind === "page" && s.page !== "epilogue");
+  const [intro, ...rest] = doc.chapters;
+  const story: BookSection[] = [
+    ...(intro ? [{ kind: "chapter" as const, label: "", title: intro.title, toc: intro.title, blocks: intro.blocks }] : []),
+    ...rest.map((c) => ({ kind: "chapter" as const, label: "", title: c.title, toc: c.title, blocks: c.blocks, section: Number(c.title) })),
+  ];
+  return { ...base, sections: [...pages, ...story] };
 }

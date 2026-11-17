@@ -29,8 +29,12 @@ const INDENT = 1.5;
 export type BookSection =
   /** Page du livre (dédicace, prologue, remerciements…), sous son nom (`title`). */
   | { kind: "page"; page: PageKind; title: string; blocks: Block[] }
-  /** Chapitre : « Chapitre 3 » (`label`, vide si non numéroté), son titre, et sa ligne de sommaire. */
-  | { kind: "chapter"; label: string; title: string; toc: string; blocks: Block[] };
+  /**
+   * Chapitre : « Chapitre 3 » (`label`, vide si non numéroté), son titre, et sa ligne de sommaire. Section d'un
+   * livre-jeu (roman interactif) : `section` porte son numéro ; les sections se suivent sur la page, chacune sous
+   * son numéro, sans belle page ni ligne de sommaire.
+   */
+  | { kind: "chapter"; label: string; title: string; toc: string; blocks: Block[]; section?: number };
 
 export interface BookDoc {
   title: string;
@@ -595,7 +599,8 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
   const hasNote = options.thanks || !!options.website || !!options.newsletter;
   const alsoBy = options.alsoBy.split("\n").map((l) => l.trim()).filter(Boolean);
   const titleOf = (s: BookSection) => (s.kind === "chapter" ? s.toc : s.title);
-  const tocTitles = [...story.map(titleOf), ...(hasNote ? [strings.thanksTitle] : []), ...backOwn.map(titleOf), ...(alsoBy.length > 0 ? [strings.alsoBy] : [])];
+  const tocStory = story.filter((s) => !(s.kind === "chapter" && s.section !== undefined));
+  const tocTitles = [...tocStory.map(titleOf), ...(hasNote ? [strings.thanksTitle] : []), ...backOwn.map(titleOf), ...(alsoBy.length > 0 ? [strings.alsoBy] : [])];
   if (options.toc && tocTitles.length > 0) {
     recto("front");
     y = 0.6 * INCH;
@@ -618,15 +623,50 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
     });
   }
 
-  // Le récit : chaque partie en belle page ; la première est la page 1.
+  // Le récit : chaque partie en belle page ; la première est la page 1. Les sections d'un livre-jeu se suivent :
+  // la première en belle page, les autres sous la précédente, jamais leur numéro seul en bas de page.
   let firstStory = -1;
+  const marks: { page: number; n: number }[] = [];
+  let inSections = false;
   for (const s of story) {
+    const section = s.kind === "chapter" ? s.section : undefined;
+    if (section !== undefined) {
+      // Le numéro garde au moins deux lignes de sa section avec lui (sinon il passe à la page suivante).
+      const sz = size * 1.3;
+      const gap = y > 0 ? leading * 1.2 : 0;
+      if (!inSections) recto("story", true);
+      else if (g.textHeight - y < gap + sz * 1.3 + leading * 0.4 + leading * 2 - 0.01) newPage("story");
+      else y += gap;
+      if (firstStory < 0) firstStory = pages.length - 1;
+      entries.push({ title: titleOf(s), page: pages.length - 1 });
+      marks.push({ page: pages.length - 1, n: section });
+      centered(String(section), "bold", sz, sz * 1.3);
+      y += leading * 0.4;
+      prose(s.blocks, { opening: false, role: "story" });
+      inSections = true;
+      continue;
+    }
+    inSections = false;
     recto("story", true);
     if (firstStory < 0) firstStory = pages.length - 1;
     entries.push({ title: titleOf(s), page: pages.length - 1 });
     if (s.kind === "chapter") chapterHead(s.label, s.title);
     else chapterHead("", s.title);
     prose(s.blocks, { opening: true, role: "story" });
+  }
+  // Livre-jeu : en haut de chaque page, les numéros des sections qu'on y lit (celle qui continue, puis celles qui
+  // y commencent), comme dans les livres-jeux imprimés, pour s'y retrouver en feuilletant.
+  const sectionRange = new Map<number, string>();
+  if (marks.length > 0) {
+    let current = -1;
+    let at = 0;
+    for (let i = marks[0].page; i < pages.length && pages[i].role === "story"; i++) {
+      const started: number[] = [];
+      while (at < marks.length && marks[at].page === i) started.push(marks[at++].n);
+      const shown = [...(current >= 0 && !(started.length && pages[i].texts.length && startsWithSection(pages[i], started[0])) ? [current] : []), ...started];
+      if (started.length) current = started[started.length - 1];
+      if (shown.length) sectionRange.set(i, shown.length > 1 ? `${shown[0]}\u2013${shown[shown.length - 1]}` : String(shown[0]));
+    }
   }
 
   // Les pages de fin : la première en belle page, les suivantes à la suite.
@@ -686,6 +726,12 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
       const by = g.height - BOTTOM * INCH + 0.2 * INCH + folioSize * 0.8;
       p.texts.push({ x: p.recto ? g.width - g.outside - w : g.outside, y: by, text: label, font: "regular", size: folioSize, muted: true });
     }
+    const range = sectionRange.get(i);
+    if (range) {
+      const w = measure(range, "bold", headSize * 1.15);
+      p.texts.push({ x: left(p) + Math.max(0, (g.measure - w) / 2), y: g.top - 0.18 * INCH, text: range, font: "bold", size: headSize * 1.15 });
+      return;
+    }
     if (p.role === "story" && !p.opening) {
       const head = upper((p.recto ? book.title : book.author || book.title).trim(), book.lang);
       const spacing = headSize * 0.16;
@@ -695,6 +741,12 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
   });
 
   return { width: g.width, height: g.height, gutter, pages, entries };
+}
+
+/** La page commence-t-elle par le numéro de la section `n` (sinon, elle commence par la suite de la précédente) ? */
+function startsWithSection(page: PrintPage, n: number): boolean {
+  const top = [...page.texts].sort((a, b) => a.y - b.y)[0];
+  return !!top && top.font === "bold" && top.text === String(n);
 }
 
 /**

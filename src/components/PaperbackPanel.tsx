@@ -13,6 +13,7 @@ import { KDP_MAX_PAGES, KDP_MIN_PAGES, KDP_TRIMS, PAPER_IDS, TRIM_IDS, type Pape
 import { fileName, type ExportedFile } from "../screenplay/export";
 import type { PreparedPaperback } from "../export/paperbackPdf";
 import { FullCoverSection } from "./FullCoverSection";
+import { useInteractive } from "../interactive/useInteractive";
 
 type State = { kind: "busy" } | { kind: "empty" } | { kind: "failed" } | { kind: "ready"; prepared: PreparedPaperback };
 
@@ -31,14 +32,19 @@ export function PaperbackPanel() {
   const run = useRef(0);
 
   const title = () => useCosmos.getState().title.trim() || t.home.untitled;
-  const book = () => bookOf(useCosmos.getState(), { t, lang, author: useSettings.getState().author }, new Date().getFullYear());
+  // Roman interactif : l'intérieur est le livre-jeu (sections numérotées à la suite), pas le texte dans l'ordre du livre.
+  const interactive = useInteractive();
+  const book = async () => {
+    const base = bookOf(useCosmos.getState(), { t, lang, author: useSettings.getState().author }, new Date().getFullYear());
+    return interactive ? (await import("../interactive/gamebookExport")).gamebookPaperback(base) : base;
+  };
 
   // Mise en page à l'ouverture et à chaque réglage (un court délai pendant la frappe).
   useEffect(() => {
     const id = ++run.current;
     setState({ kind: "busy" });
     const timer = setTimeout(async () => {
-      const doc = book();
+      const doc = await book();
       if (!doc.sections.some((s) => s.kind === "chapter" || s.page === "prologue" || s.page === "epilogue")) {
         if (id === run.current) setState({ kind: "empty" });
         return;
@@ -53,7 +59,7 @@ export function PaperbackPanel() {
     }, 350);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [print, lang]);
+  }, [print, lang, interactive]);
 
   const save = async (which: "interior" | "cover") => {
     if (state.kind !== "ready" || saving) return;

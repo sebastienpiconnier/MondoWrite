@@ -269,4 +269,5 @@ Pas couverts : images dans le texte, faits et conditions dans l'interface, assis
 
 Lot A, fait : outils du roman linéaire masqués dans un roman interactif (chronologie, gabarit et « Ranger » en plan libre, chapitres, fusion, ruban, courbe du récit), « Continuer » posé à la coupure d'une scène et retiré à son annulation, exports regroupés (« Histoire interactive », puis « Texte suivi (pour relire) »), lecture à voix haute sans le bloc de choix, aide « la première scène est le départ ».
 
-- [ ] Lot B : livre broché KDP au format livre-jeu (sections à la suite, numéro centré, numéros des sections en haut de page) ; le livre-jeu PDF en Courier quitte alors le menu.
+- [x] Lot B : livre broché KDP au format livre-jeu (sections à la suite, numéro centré en gras, numéros des sections en haut de page, sommaire sans les sections) ; le livre-jeu PDF en Courier a quitté le menu.
+- [ ] Pas encore : images dans le livre broché ; choix imprimés autrement que des paragraphes (retrait, italique ?).

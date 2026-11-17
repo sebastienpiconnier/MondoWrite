@@ -2192,7 +2192,7 @@ const scenarios = [
     },
   },
   {
-    name: "roman interactif (lots 5, 7, 8 et 9) : import Twee, lecture, « Vérifier », page web jouable, livre-jeu EPUB et PDF, Ink",
+    name: "roman interactif (lots 5, 7, 8 et 9) : import Twee, lecture, « Vérifier », page web jouable, livre-jeu EPUB et livre broché, Ink",
     async run(h) {
       const { page } = h;
       const fs = await import("node:fs");
@@ -2263,8 +2263,17 @@ const scenarios = [
       const epub = await exportFile("Livre-jeu (EPUB)");
       assert(epub.name.endsWith(".epub") && epub.data.subarray(0, 2).toString() === "PK" && epub.data.includes("mimetype"), `EPUB du livre-jeu : ${epub.name}, ${epub.data.length} octets`);
       assert(epub.data.includes("rendez-vous au"), "le livre-jeu EPUB n'écrit pas « rendez-vous au »");
-      const pdf = await exportFile("Livre-jeu (PDF)");
-      assert(pdf.name.endsWith(".pdf") && pdf.data.subarray(0, 4).toString() === "%PDF" && pdf.data.length > 2000, `PDF du livre-jeu : ${pdf.name}, ${pdf.data.length} octets`);
+      // Livre-jeu imprimé : le livre broché (KDP) d'un roman interactif compose les sections à la suite.
+      await page.getByRole("button", { name: "Exporter", exact: true }).click();
+      assert((await page.locator(".export-panel").getByRole("button", { name: "Livre-jeu (PDF)" }).count()) === 0, "le livre-jeu en PDF Courier est encore proposé");
+      await page.locator(".export-panel").getByRole("button", { name: "Livre broché (KDP)…" }).click();
+      const interior = page.getByRole("button", { name: "Enregistrer l’intérieur (PDF)" });
+      await until(() => interior.isEnabled(), "le livre broché du livre-jeu ne se compose pas", 20_000);
+      const bookDownload = page.waitForEvent("download", { timeout: 30_000 });
+      await interior.click();
+      const bookFile = fs.readFileSync(await (await bookDownload).path());
+      assert(bookFile.subarray(0, 4).toString() === "%PDF" && bookFile.length > 5000, `intérieur du livre-jeu : ${bookFile.length} octets`);
+      await page.keyboard.press("Escape");
       const ink = await exportFile("Ink (.ink)");
       const inkText = ink.data.toString("utf8");
       assert(ink.name.endsWith(".ink") && /^=== la_cour ===$/m.test(inkText) && inkText.includes("Descendre au puits"), `fichier Ink : ${ink.name}\n${inkText.slice(0, 300)}`);
