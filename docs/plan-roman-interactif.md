@@ -264,3 +264,9 @@ Pas couverts : images dans le texte, faits et conditions dans l'interface, assis
 - [x] « Voir le code » sur chaque bloc de choix : le bloc tel qu'écrit, modifiable (pour tous les blocs, le temps de la session).
 - [x] Carte des choix : un `-> END` écrit dans le bloc (Ink importé) compte comme une fin.
 - [x] Exemple à importer : `docs/exemples/le-puits.ink` (scènes, faits, condition, compteur, scène de passage).
+
+## Simplification du roman interactif (17 novembre 2026)
+
+Lot A, fait : outils du roman linéaire masqués dans un roman interactif (chronologie, gabarit et « Ranger » en plan libre, chapitres, fusion, ruban, courbe du récit), « Continuer » posé à la coupure d'une scène et retiré à son annulation, exports regroupés (« Histoire interactive », puis « Texte suivi (pour relire) »), lecture à voix haute sans le bloc de choix, aide « la première scène est le départ ».
+
+- [ ] Lot B : livre broché KDP au format livre-jeu (sections à la suite, numéro centré, numéros des sections en haut de page) ; le livre-jeu PDF en Courier quitte alors le menu.

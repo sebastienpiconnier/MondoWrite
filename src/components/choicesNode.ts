@@ -42,6 +42,27 @@ function sceneEnd(doc: PMNode, pos: number): { end: number; block: { pos: number
   return { end, block: block ? { pos: block.at, node: block.node } : null };
 }
 
+/**
+ * Ajoute une ligne de choix à la fin de la scène `sceneId` du livre (dans son bloc, ou dans un bloc neuf). Sert à la
+ * coupure d'une scène d'un roman interactif : la scène coupée reçoit « Continuer » vers la nouvelle.
+ */
+export function appendChoiceRow(editor: { state: import("@tiptap/pm/state").EditorState; view: { dispatch: (tr: import("@tiptap/pm/state").Transaction) => void } }, sceneId: string, row: string): boolean {
+  const { state } = editor;
+  let markerPos = -1;
+  state.doc.forEach((node, at) => {
+    if (node.type.name === SCENE_MARK && String(node.attrs.id) === sceneId) markerPos = at;
+  });
+  if (markerPos < 0) return false;
+  const { end, block } = sceneEnd(state.doc, markerPos);
+  if (block) {
+    const text = String(block.node.attrs.text ?? "");
+    editor.view.dispatch(state.tr.setNodeMarkup(block.pos, undefined, { text: text ? `${text}\n${row}` : row }));
+  } else {
+    editor.view.dispatch(state.tr.insert(end, state.schema.nodes.sceneChoices.create({ text: row })));
+  }
+  return true;
+}
+
 // Mode code (recette du 17 novembre 2026) : tous les blocs montrent leur texte tel qu'il est écrit dans le fichier,
 // modifiable. État d'affichage de la session, commun à tous les blocs, jamais enregistré.
 let codeMode = false;

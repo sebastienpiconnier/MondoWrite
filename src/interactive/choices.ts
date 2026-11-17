@@ -214,6 +214,21 @@ export function choiceGraph(manuscript: Readonly<Record<string, string>>, scenes
   return edges;
 }
 
+/**
+ * Retire d'une scène les choix sans texte qui mènent à `target` (le « Continuer » posé par une coupure qu'on annule)
+ * et range tous ses choix restants dans un seul bloc, en fin de scène : après une fusion, le texte de la scène
+ * rejointe et son bloc suivent le bloc de la première. Rend le même texte quand rien ne change.
+ */
+export function dropContinueTo(html: string | undefined, target: string): string {
+  const current = html ?? "";
+  if (!current.includes("data-choices")) return current;
+  const all = choicesIn(current);
+  const kept = all.filter((l) => !(l.kind === "choice" && l.target === target && !l.label));
+  if (kept.length === all.length && (current.match(BLOCK_RE) ?? []).length < 2) return current;
+  const stripped = current.replace(BLOCK_RE, "");
+  return withChoices(stripped, kept);
+}
+
 /** La scène finit l'histoire par un renvoi écrit en Ink (`-> END` ou `-> DONE` sur sa ligne), sans bouton à toucher. */
 export function endsByDivert(html: string | undefined): boolean {
   return choicesIn(html).some((l) => l.kind === "raw" && /^->\s*(END|DONE)\s*$/.test(l.text.trim()));

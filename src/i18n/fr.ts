@@ -3676,6 +3676,13 @@ export const fr = {
   },
   interactive: {
     kind: "Un roman interactif",
+    exports: {
+      story: "Histoire interactive",
+      linear: "Texte suivi (pour relire)",
+    },
+    plan: {
+      startHint: "La première scène de la liste est le départ de l’histoire. L’ordre des autres ne compte que pour leurs numéros.",
+    },
     kindHint: "Des scènes reliées par des choix, à lire à l’écran ou à imprimer en livre-jeu. Expérimental.",
     settingsTitle: "Fonctions expérimentales",
     settingLabel: "Roman interactif",

@@ -62,17 +62,17 @@ export function PlanHeader({ title, timeline, onTimeline, map = false, onMap, mo
             {sq[m]}
           </button>
         ))}
+        {/* La chronologie suit l'ordre du livre : pas dans un roman interactif (qui a la carte des choix). */}
+        {!onMap && (
         <button
           type="button"
           className="plan-timeline-tab"
-          aria-pressed={timeline && !map}
-          onClick={() => {
-            onTimeline(true);
-            onMap?.(false);
-          }}
+          aria-pressed={timeline}
+          onClick={() => onTimeline(true)}
         >
           {t.plan.timeline}
         </button>
+        )}
         {onMap && (
           <button type="button" className="plan-map-tab" aria-pressed={map} onClick={() => onMap(true)}>
             {t.interactive.map.tab}

@@ -136,7 +136,8 @@ export function sentences(text: string, lang: string): string[] {
 /** Roman : le narrateur lit chaque paragraphe (titres compris), phrase par phrase, à partir du bloc `from`. */
 export function proseUtterances(nodes: ReadNode[], from: number, lang = "fr"): Utterance[] {
   return nodes.flatMap((node, index) =>
-    index >= from && node.text.trim() && node.type !== "sceneMark" ? sentences(node.text, lang).map((text) => ({ index, speaker: null, text })) : [],
+    // Ni les repères de scène ni le bloc de choix d'un roman interactif (« Lire l'histoire » suit les choix).
+    index >= from && node.text.trim() && node.type !== "sceneMark" && node.type !== "sceneChoices" ? sentences(node.text, lang).map((text) => ({ index, speaker: null, text })) : [],
   );
 }
 

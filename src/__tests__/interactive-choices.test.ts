@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  dropContinueTo,
   choiceGraph,
   choiceLine,
   choiceMapValue,
@@ -155,5 +156,23 @@ describe("places sur la carte", () => {
     // Une scène nouvelle se pose à côté de celle d'où part son choix, même si les autres ont des places à elles.
     const grown = layoutChoiceMap(["a", "b", "c", "e"], [...edges, { from: "c", index: 0, label: "", target: "", to: "e" }], { a: { x: 500, y: 40 }, b: { x: 900, y: 40 }, c: { x: 900, y: 400 } });
     expect(grown.e).toEqual({ x: 1280, y: 400 });
+  });
+});
+
+describe("dropContinueTo (annuler une coupure d'un roman interactif)", () => {
+  it("retire le « Continuer » vers la scène rejointe et range les choix restants en fin de scène", () => {
+    const html = `<p>Début.</p>${choicesHtml("* [] -> suite")}<p>Suite.</p>${choicesHtml("* [Partir] -> le_puits")}`;
+    const out = dropContinueTo(html, "suite");
+    expect(out).toBe(`<p>Début.</p><p>Suite.</p>${choicesHtml("* [Partir] -> le_puits")}`);
+  });
+
+  it("garde un choix écrit vers la même scène, et ne change rien sans bloc", () => {
+    const html = `<p>A</p>${choicesHtml("* [Aller voir] -> suite")}`;
+    expect(dropContinueTo(html, "suite")).toBe(html);
+    expect(dropContinueTo("<p>A</p>", "suite")).toBe("<p>A</p>");
+  });
+
+  it("retire le bloc quand il ne restait que « Continuer »", () => {
+    expect(dropContinueTo(`<p>A</p>${choicesHtml("* [] -> suite")}`, "suite")).toBe("<p>A</p>");
   });
 });

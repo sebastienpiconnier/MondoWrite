@@ -11,6 +11,9 @@
 
 import { useInteractive } from "../interactive/useInteractive";
 import { openPlay } from "../interactive/playState";
+import { interactiveSlugs } from "../interactive/scenes";
+import { dropContinueTo } from "../interactive/choices";
+import { appendChoiceRow } from "./choicesNode";
 import { requestTextImage } from "./sceneImage";
 import { useTouchGestures } from "./useTouchGestures";
 import { panelAfterSwipe } from "../touchGestures";
@@ -435,7 +438,7 @@ export function Manuscript() {
   };
   // « Fusionner avec la scène suivante » (#23, menu ⋯ et Édition du Mac) : le message « Annuler » est celui du store.
   const mergeNext = () => {
-    if (!current || isPageKind(card?.page)) return;
+    if (!current || isPageKind(card?.page) || interactive) return;
     if (useCosmos.getState().mergeWithNext(current)) {
       setChosen(current);
       bookApi.current?.focusScene(current, -1);
@@ -443,10 +446,24 @@ export function Manuscript() {
     }
   };
   mergeNextRef.current = mergeNext;
+  // Retire le « Continuer » vers une scène rejointe, et range les choix restants en fin de scène.
+  const unContinue = (id: string, slug: string) => {
+    const html = useCosmos.getState().manuscript[id];
+    const fixed = dropContinueTo(html, slug);
+    if (fixed !== (html ?? "")) useCosmos.getState().setManuscriptText(id, fixed);
+  };
   handlers.current = {
     onSceneBreak: (id, rest) => {
       const next = splitScene(id, rest);
       if (!next) return false;
+      // Roman interactif : la scène coupée mène à la nouvelle par « Continuer » (sinon elle deviendrait une impasse).
+      // Ses choix sont partis avec la suite du texte : ils finissent maintenant la nouvelle scène.
+      const slug = interactive ? (interactiveSlugs(useCosmos.getState().nodes, useCosmos.getState().plan).get(next) ?? "") : "";
+      if (slug)
+        setTimeout(() => {
+          const editor = bookApi.current?.editor();
+          if (editor) appendChoiceRow(editor, id, `* [] -> ${slug}`);
+        }, 0);
       setFresh({ id: next, from: id });
       setChosen(next);
       bookApi.current?.focusScene(next);
@@ -455,6 +472,7 @@ export function Manuscript() {
         text: b.newScene,
         undo: () => {
           useCosmos.getState().joinScenes(next, id);
+          if (slug) unContinue(id, slug);
           setFresh(null);
           setChosen(id);
           bookApi.current?.focusScene(id, -1);
@@ -464,7 +482,7 @@ export function Manuscript() {
       return true;
     },
     onChapterBreak: (id) => {
-      if (fresh?.id !== id) return false;
+      if (fresh?.id !== id || interactive) return false;
       const chapter = startChapterAt(id);
       setFresh(null);
       setSaid(b.newChapter);
@@ -509,9 +527,14 @@ export function Manuscript() {
       if (!a || !z || isPageKind(a.page) || isPageKind(z.page)) return false;
       // Une scène qui ouvre un chapitre ne se fond pas dans la précédente (sauf vide : c'est l'annulation d'une coupure).
       const opens = chapterOf(plan, from)?.id !== chapterOf(plan, into)?.id;
-      if (opens && plainText(useCosmos.getState().manuscript[from] ?? "") !== "") return false;
+      const hasText = plainText(useCosmos.getState().manuscript[from] ?? "") !== "";
+      if (opens && hasText) return false;
+      // Roman interactif : on ne rejoint qu'une scène vide (l'annulation d'une coupure), et son « Continuer » part avec.
+      if (interactive && hasText) return false;
+      const fromSlug = interactive ? (interactiveSlugs(useCosmos.getState().nodes, useCosmos.getState().plan).get(from) ?? "") : "";
       const undo = useCosmos.getState().joinScenes(from, into);
       if (!undo) return false;
+      if (fromSlug) unContinue(into, fromSlug);
       // L'étape d'historique de la fusion : « Annuler » ne défait qu'elle, jamais un geste fait depuis.
       undo.step = useCosmos.getState().past.at(-1) ?? null;
       setFresh(null);
@@ -816,7 +839,7 @@ export function Manuscript() {
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             {/* Ruban du récit, en tête de la barre (il reste en vue en défilant) : chaque case du gabarit à la place
                 que ses scènes prennent. */}
-            <StoryRibbon currentId={current} onGo={go} />
+            {!interactive && <StoryRibbon currentId={current} onGo={go} />}
             <button type="button" className="icon-button" disabled={!prevId} aria-label={m.previous} title={m.previous} onClick={() => prevId && go(prevId)}>
               <span aria-hidden="true">←</span>
             </button>
@@ -858,9 +881,10 @@ export function Manuscript() {
               items={[
                 { label: t.focus.enter, hint: key("Mod", "Shift", "F"), onSelect: () => setFocusMode(true) },
                 ...readerItems,
-                !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
+                // Pas de chapitre ni de fusion dans un roman interactif : l'ordre du livre n'y est pas celui de la lecture.
+                !interactive && !pageKind && !opensChapter && { label: b.startChapter, onSelect: () => startChapterAt(current) },
                 // Fusionner (#23) : la scène suivante du même chapitre rejoint celle-ci ; sa carte part à la corbeille.
-                !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
+                !interactive && !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
                 { label: t.textImage.insert, onSelect: () => insertImage() },
                 // Roman interactif (lot 2) : un choix en fin de la scène du curseur.
                 interactive && !pageKind && { label: t.interactive.play.openHere, onSelect: () => openPlay(current) },

@@ -3620,6 +3620,13 @@ export const en: Messages = {
   },
   interactive: {
     kind: "An interactive novel",
+    exports: {
+      story: "Interactive story",
+      linear: "Running text (for proofreading)",
+    },
+    plan: {
+      startHint: "The first scene in the list is where the story starts. The order of the others only sets their numbers.",
+    },
     kindHint: "Scenes linked by choices, to read on screen or print as a gamebook. Experimental.",
     settingsTitle: "Experimental features",
     settingLabel: "Interactive novel",

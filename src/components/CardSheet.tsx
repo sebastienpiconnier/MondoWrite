@@ -9,6 +9,7 @@ import { BufferedInput, BufferedTextarea } from "./BufferedField";
 import { IaFieldNote } from "./Atelier";
 import { useEffect, useId, useState } from "react";
 import { useCosmos } from "../store";
+import { useInteractive } from "../interactive/useInteractive";
 import { fmt, useT } from "../i18n";
 import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isCardRefField, isChoiceField, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
@@ -25,7 +26,10 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   const title = all.fiche.titles[card.type as keyof typeof all.fiche.titles] ?? t.sheet;
   // Les champs montrés ailleurs (moteur et arc d'un personnage) ne sont pas répétés ici.
   const band = bandFields(card);
-  const fields = sheetFields(card.type).filter((key) => !band.has(key));
+  // Roman interactif : pas de courbe du récit (« Pour le héros, la scène finit… » se lit sur un seul chemin), sauf
+  // si l'auteur l'a déjà remplie.
+  const interactive = useInteractive();
+  const fields = sheetFields(card.type).filter((key) => !band.has(key) && !(interactive && key === "issue" && !card.fiche?.issue));
   const setFiche = useCosmos((s) => s.setFiche);
   // Épisode : le personnage pivot se choisit parmi les cartes Personnage (la fiche garde son identifiant).
   const nodes = useCosmos((s) => (card.type === "episode" ? s.nodes : null));

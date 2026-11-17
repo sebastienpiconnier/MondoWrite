@@ -216,32 +216,42 @@ export function ExportMenu() {
   }));
 
   type Group = { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] };
+  // Roman interactif : l'histoire d'abord (page web, livre-jeu, livre broché, Ink), puis le texte à la suite, qui
+  // ne sert qu'à relire (il n'a pas les choix).
+  const linearItems = MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) }));
+  const paperbackItem = { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") };
+  const storyGroups = (withPaperback: boolean): Group[] => [
+    { title: all.interactive.exports.story, items: [webItem, ...gamebookItems, ...(withPaperback ? [paperbackItem] : []), inkItem] },
+    { title: all.interactive.exports.linear, items: linearItems },
+  ];
   const phoneGroups: Group[] = [
-    kind === "scenario"
-      ? { title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }
-      : { title: x.manuscript, items: [...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })), ...(interactive ? [webItem, ...gamebookItems, inkItem] : [])] },
+    ...(kind === "scenario"
+      ? [{ title: x.screenplay, items: EXPORT_FORMATS.map((f) => ({ key: `sp-${f}`, label: t[f], build: screenplayFile(f) })) }]
+      : interactive
+        ? storyGroups(false)
+        : [{ title: x.manuscript, items: linearItems }]),
     { title: x.bible, empty: x.emptyBible, items: (["docx", "md", "html"] as const).map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
   ];
 
   const groups = phone ? phoneGroups : [
-    kind === "scenario"
-      ? {
+    ...(kind === "scenario"
+      ? [{
           title: x.screenplay,
           // Le PDF a sa fenêtre (contenu, en-tête, filigrane…), qui enregistre elle-même le fichier.
           items: EXPORT_FORMATS.map((f) =>
             f === "pdf" ? { key: "sp-pdf", label: t.pdfMenu, open: () => useCosmos.getState().setDialog("scriptPdf") } : { key: `sp-${f}`, label: t[f], build: screenplayFile(f) },
           ),
-        }
-      : {
-          title: x.manuscript,
-          items: [
-            ...MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) })),
-            // Livre broché : une fenêtre de réglages, qui enregistre elle-même ses deux PDF.
-            { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") },
-            ...(interactive ? [webItem, ...gamebookItems, inkItem] : []),
-          ],
-        },
+        }]
+      : interactive
+        ? storyGroups(true)
+        : [
+            {
+              title: x.manuscript,
+              // Livre broché : une fenêtre de réglages, qui enregistre elle-même ses deux PDF.
+              items: [...linearItems, paperbackItem],
+            },
+          ]),
     // La Bible a sa fenêtre (pour qui, parties, rendu, aperçu, PDF, Word ou Markdown).
     { title: x.bible, items: [{ key: "bible", label: all.bibleExport.menu, open: () => useCosmos.getState().setDialog("bibleExport") }] },
     { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },

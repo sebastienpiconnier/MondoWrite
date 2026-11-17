@@ -2102,6 +2102,7 @@ const scenarios = [
       await page.locator(".choice-map").getByRole("button", { name: "Nouvelle scène" }).click();
       const scenes = page.locator(".choice-scene");
       await until(async () => (await scenes.count()) === 1, "« Nouvelle scène » n'a pas créé de scène sur la carte");
+      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 0, "la chronologie est proposée dans un roman interactif");
       await scenes.nth(0).getByRole("button", { name: /^Actions de/ }).click();
       await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
       await until(async () => (await scenes.count()) === 2, "« Nouvelle scène après celle-ci » n'a pas créé de seconde scène");
@@ -2145,6 +2146,33 @@ const scenarios = [
       await code.fill((await code.inputValue()).replace("[Descendre au puits]", "[Descendre au fond]"));
       await page.getByRole("button", { name: "Voir les choix" }).first().click();
       await until(async () => (await page.getByRole("textbox", { name: "Texte du choix 1" }).first().inputValue()) === "Descendre au fond", "le choix modifié dans le code n'est pas repris");
+      await page.getByRole("button", { name: "Voir les choix" }).first().click().catch(() => {});
+
+      // Outils du roman linéaire masqués : ni chapitre ni fusion dans le menu, ni ruban.
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      assert((await page.getByRole("menuitem", { name: /Nouveau chapitre/ }).count()) === 0, "« Nouveau chapitre » est proposé dans un roman interactif");
+      assert((await page.getByRole("menuitem", { name: /Fusionner/ }).count()) === 0, "« Fusionner » est proposé dans un roman interactif");
+      await page.keyboard.press("Escape");
+      assert((await page.locator("nav.ribbon").count()) === 0, "le ruban du récit est affiché dans un roman interactif");
+
+      // Couper une scène (Entrée deux fois) : la scène coupée mène à la nouvelle par « Continuer ».
+      const scenesBefore = Object.keys(await h.files()).filter((k) => k.startsWith("cartes/")).length;
+      await page.locator(".ms-page .ProseMirror p").first().click();
+      await page.keyboard.type("Avant la coupure.");
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Après la coupure.");
+      await h.saved((f) => {
+        const cards = Object.keys(f).filter((k) => k.startsWith("cartes/"));
+        const before = Object.values(f).find((v) => v.includes("Avant la coupure.") && v.includes("```choix"));
+        return cards.length === scenesBefore + 1 && !!before && /\* \[\] -> \S+/.test(before);
+      }, "la scène coupée n'a pas de « Continuer » vers la nouvelle");
+      await page.getByRole("button", { name: "Annuler", exact: true }).first().click();
+      await h.saved((f) => {
+        const cards = Object.keys(f).filter((k) => k.startsWith("cartes/"));
+        const text = Object.values(f).find((v) => v.includes("Avant la coupure."));
+        return cards.length === scenesBefore && !!text && text.includes("Après la coupure.") && !/\* \[\] -> /.test(text);
+      }, "annuler la coupure laisse un « Continuer » ou une scène de trop");
 
       // Un roman ordinaire ne voit rien de tout cela.
       await page.locator(".topbar .tb-back").click();
@@ -2154,6 +2182,7 @@ const scenarios = [
       await h.canvas();
       await h.view(2);
       await h.wait(300);
+      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 1, "un roman ordinaire n'a plus la chronologie");
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "un roman ordinaire montre la carte des choix");
       await h.view(4);
       await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");

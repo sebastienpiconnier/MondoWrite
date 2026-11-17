@@ -79,6 +79,8 @@ export function Plan() {
   const choiceMap = useChoiceMapView((s) => s.open);
   const setChoiceMap = setChoiceMapOpen;
   const showMap = interactive && choiceMap;
+  // Pas de chronologie dans un roman interactif : ses colonnes suivent l'ordre du livre.
+  const showTimeline = timeline && !interactive;
   // La scène dont « Ranger » est ouvert (chapitre et case) : un affichage, une seule à la fois.
   const [arranging, setArranging] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -159,7 +161,8 @@ export function Plan() {
     const text = card.html ? plainText(card.html) : "";
     const at = order.indexOf(id);
     // Chapitre (scène rangée) ou case du gabarit : de quoi la ranger, derrière le bouton « Ranger ».
-    const canArrange = beat !== null || !free;
+    // Roman interactif : ni chapitre ni case en plan libre (l'ordre de lecture n'y est pas celui du livre).
+    const canArrange = interactive ? !free : beat !== null || !free;
     return (
       <li
         key={id}
@@ -223,7 +226,7 @@ export function Plan() {
             </div>
             {canArrange && arranging === id && (
             <div className="plan-meta" id={`arrange-${id}`}>
-              {beat !== null && (
+              {beat !== null && !interactive && (
                 <label className="plan-to">
                   <span className="sr-only">{fmt(c.chooseFor, { title })}</span>
                   <span aria-hidden="true">{c.short}</span>
@@ -274,7 +277,7 @@ export function Plan() {
           label={fmt(t.app.moreActionsFor, { title })}
           items={[
             { label: t.bible.seeOnCanvas, title: fmt(p.show, { title }), onSelect: () => revealCard(id) },
-            !!useCosmos.getState().nextMergeable(id) && { label: t.merge.menuShort, onSelect: () => useCosmos.getState().mergeWithNext(id) },
+            !interactive && !!useCosmos.getState().nextMergeable(id) && { label: t.merge.menuShort, onSelect: () => useCosmos.getState().mergeWithNext(id) },
             { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().deleteCard(id) },
           ]}
         />
@@ -285,10 +288,10 @@ export function Plan() {
 
   return (
     <div className="sequencer" ref={rootRef}>
-      <div className={`sq-inner${asCards || timeline || showMap ? " is-cards" : ""}${showMap ? " is-map" : ""}`}>
+      <div className={`sq-inner${asCards || showTimeline || showMap ? " is-cards" : ""}${showMap ? " is-map" : ""}`}>
         <PlanHeader
           title={p.title}
-          timeline={timeline}
+          timeline={showTimeline}
           onTimeline={setTimeline}
           map={showMap}
           onMap={interactive ? setChoiceMap : undefined}
@@ -307,18 +310,20 @@ export function Plan() {
             )
           }
           template={
+            interactive && free ? undefined : (
             <TemplatePicker
               value={plan.template}
               options={NOVEL_TEMPLATES.includes(plan.template as (typeof NOVEL_TEMPLATES)[number]) || plan.template === "perso" ? NOVEL_TEMPLATES : ([...NOVEL_TEMPLATES, plan.template] as PlanTemplate[])}
               custom={plan.custom}
               onBuiltin={(key) => key && isPlanTemplate(key) && setPlanTemplate(key)}
             />
+            )
           }
-          about={p.templateAbout[plan.template]}
+          about={interactive && free ? t.interactive.plan.startHint : p.templateAbout[plan.template]}
         />
         {showMap ? (
           <ChoiceMap />
-        ) : timeline ? (
+        ) : showTimeline ? (
           <Timeline order={[...order, ...arranged.unplaced]} />
         ) : (
           <>
