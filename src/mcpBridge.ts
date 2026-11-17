@@ -13,6 +13,9 @@ import { canvasCenter } from "./canvasCenter";
 import { buildMcpSnapshot } from "./mcpSnapshot";
 import { bookOrder } from "./book";
 import { chapterNumbers } from "./plan";
+import { showsInteractive } from "./interactive";
+import { interactiveSlugs } from "./interactive/scenes";
+import { projectFacts } from "./interactive/projectFacts";
 import { applyMcpRequest, type McpAnswer, type McpRequest, type McpStore } from "./mcpWrite";
 
 const s = () => useCosmos.getState();
@@ -52,6 +55,11 @@ function mcpStore(): McpStore {
     screenplay: () => s().screenplay,
     manuscript: () => s().manuscript,
     scenes: snapshotScenes,
+    interactive: () => {
+      const st = s();
+      if (st.kind === "scenario" || !showsInteractive(st.metaKeep, useSettings.getState().experimental)) return null;
+      return { slugs: interactiveSlugs(st.nodes, st.plan), facts: projectFacts(st), createFact: (label) => s().createFact(label) };
+    },
     batch: (fn) => s().externalEdit(fn),
     addTitledCard: (type, title) => s().addTitledCard(type, title),
     updateCard: (id, patch) => s().updateCard(id, patch),
@@ -178,6 +186,10 @@ function liveSource(): LiveSource {
     journal: st.journal,
     order: bookOrder(st.nodes, st.plan),
     scenes: snapshotScenes(),
+    interactive: st.kind !== "scenario" && showsInteractive(st.metaKeep, useSettings.getState().experimental),
+    nodes: st.nodes,
+    plan: st.plan,
+    metaKeep: st.metaKeep,
     readVersions: (cardId) => storage.readVersions(cardId),
   };
 }

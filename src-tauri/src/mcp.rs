@@ -36,13 +36,14 @@ const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
 const ANSWER_MS: u64 = 20_000;
 /// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
-const WRITE_TOOLS: [&str; 35] = [
+const WRITE_TOOLS: [&str; 36] = [
   "create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene",
   "move_scene", "create_chapter", "rename_chapter", "move_chapter", "delete_chapter",
   "add_comment", "resolve_comment", "keep_version", "create_episode", "update_episode", "place_scene", "set_template",
   "merge_scenes", "split_scene", "trash_card", "unlink_cards", "rename_everywhere", "replace_text", "set_cover",
   "create_frame", "organize_canvas", "set_scene_fields",
   "update_link", "restore_card", "replace_passage", "add_character_question", "update_frame", "set_project",
+  "set_choices",
 ];
 /// Lectures faites par l'app ouverte (calculées sur le projet tel qu'il est à l'écran) : accès en lecture suffit.
 const LIVE_TOOLS: [&str; 6] = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"];
@@ -82,6 +83,17 @@ fn write_safely(path: &Path, text: &str) -> std::io::Result<()> {
     let _ = std::fs::remove_file(&tmp);
     std::fs::write(path, text)
   })
+}
+
+/// Destination d'un choix pour l'IA : « 3. La cour », « Fin / End », ou le nom introuvable signalé.
+fn choice_target(c: &Value) -> String {
+  if c.get("end").and_then(Value::as_bool) == Some(true) {
+    return "Fin / End".into();
+  }
+  match c.get("to").and_then(Value::as_u64) {
+    Some(n) => format!("{n}. {}", str_of(c, "/target")),
+    None => format!("« {} » (introuvable / missing)", str_of(c, "/target")),
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -404,6 +416,17 @@ impl Server {
         out.push_str(&format!("\n\n**{label}** : {text}"));
       }
     }
+    if p.get("interactive").and_then(Value::as_bool) == Some(true) {
+      out.push_str("\n\n**Roman interactif / Interactive novel** : le lecteur choisit la suite à la fin des scènes (choix ci-dessous, `read_scene` pour le détail, `set_choices` pour les écrire, `review` pour vérifier le chemin). Pas de système de jeu (ni dés, ni combats) : seulement des faits que le lecteur acquiert.");
+      let facts = p.get("facts").and_then(Value::as_array).cloned().unwrap_or_default();
+      if !facts.is_empty() {
+        let list: Vec<String> = facts
+          .iter()
+          .map(|f| if str_of(f, "/kind") == "int" { format!("{} (compteur/counter)", str_of(f, "/label")) } else { str_of(f, "/label").to_string() })
+          .collect();
+        out.push_str(&format!("\n\n**Faits / Facts** : {}", list.join(", ")));
+      }
+    }
     let scenes = v.get("scenes").and_then(Value::as_array).cloned().unwrap_or_default();
     let words: u64 = scenes.iter().filter_map(|s| s.get("words").and_then(Value::as_u64)).sum();
     out.push_str(&format!("\n\n{} scènes/scenes, {} mots/words.\n\n## Scènes / Scenes\n", scenes.len(), words));
@@ -431,6 +454,10 @@ impl Server {
       let syn = str_of(s, "/synopsis");
       if !syn.is_empty() {
         out.push_str(&format!(" : {syn}"));
+      }
+      if let Some(choices) = s.get("choices").and_then(Value::as_array) {
+        let to: Vec<String> = choices.iter().map(choice_target).collect();
+        out.push_str(&format!(" → {}", to.join(", ")));
       }
       out.push('\n');
     }
@@ -497,6 +524,28 @@ impl Server {
       out.push('\n');
       out.push_str(if text.trim().is_empty() { "(scène encore vide / empty scene)" } else { text });
       out.push_str("\n\n");
+      if let Some(choices) = s.get("choices").and_then(Value::as_array) {
+        out.push_str("**Choix du lecteur / Reader's choices**\n");
+        for c in choices {
+          out.push_str(&format!("- « {} » → {}", str_of(c, "/label"), choice_target(c)));
+          let cond = str_of(c, "/if");
+          if !cond.is_empty() {
+            out.push_str(&format!(" · seulement si / only if : {cond}"));
+          }
+          let gives = str_of(c, "/gives");
+          if !gives.is_empty() {
+            out.push_str(&format!(" · donne / gives : {gives}"));
+          }
+          if let Some(effects) = c.get("effects").and_then(Value::as_array) {
+            let list: Vec<&str> = effects.iter().filter_map(Value::as_str).collect();
+            if !list.is_empty() {
+              out.push_str(&format!(" · ~ {}", list.join(", ")));
+            }
+          }
+          out.push('\n');
+        }
+        out.push('\n');
+      }
       if out.len() > MAX_CHARS {
         break;
       }
@@ -941,6 +990,22 @@ impl Server {
         "inputSchema": { "type": "object", "properties": { "project": project, "title": { "type": "string" }, "goals": { "type": "object", "properties": { "daily": { "type": "integer" }, "total": { "type": "integer" }, "deadline": { "type": "string" }, "session": { "type": "integer" }, "scene": { "type": "integer" }, "chapter": { "type": "integer" } } } } }
       },
       {
+        "name": "set_choices",
+        "description": "Roman interactif seulement : pose les choix proposés au lecteur à la fin d'une scène (remplace ceux qui y sont, ou les ajoute avec mode « append » ; une liste vide fait de la scène une fin). Chaque choix : `text` (ce que lit le lecteur), `to` (scène visée : numéro, titre ou identifiant ; « end » pour finir l'histoire), et au besoin `only_if` ou `only_if_not` (un fait que le lecteur doit avoir, ou ne pas avoir) et `gives` (le fait qu'il acquiert, créé s'il n'existe pas). Pas de dés ni de combats. Journalisé, annulable. / Interactive novels only: sets a scene's reader choices.",
+        "inputSchema": { "type": "object", "properties": {
+          "project": project,
+          "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
+          "choices": { "type": "array", "items": { "type": "object", "properties": {
+            "text": { "type": "string" },
+            "to": { "type": "string", "description": "Scène visée (numéro, titre, identifiant) ou « end »." },
+            "only_if": { "type": "string", "description": "Libellé d'un fait (« a trouvé la clé »)." },
+            "only_if_not": { "type": "string" },
+            "gives": { "type": "string", "description": "Libellé du fait acquis." }
+          }, "required": ["text", "to"] } },
+          "mode": { "type": "string", "enum": ["replace", "append"], "description": "replace par défaut." }
+        }, "required": ["scene", "choices"] }
+      },
+      {
         "name": "todo_list",
         "description": "Ce qui reste à faire, comme dans « À faire » : cases non cochées, passages à reprendre, questions « À creuser », commentaires ouverts, textes de l'IA pas encore repris. Projet ouvert dans MondoWrite. / The author's to-do list.",
         "inputSchema": { "type": "object", "properties": { "project": project } },
@@ -1282,6 +1347,26 @@ mod tests {
     assert!(text.contains("escalier du phare"));
     let (_, err) = call(&s, "read_card", json!({ "project": "Autre", "card": "x" }));
     assert!(err);
+  }
+
+  #[test]
+  fn roman_interactif_choix_et_faits() {
+    let dir = std::env::temp_dir().join(format!("mondowrite-mcp-test-ix-{}-{}", std::process::id(), rand_suffix()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut snap = snapshot();
+    snap["project"]["interactive"] = json!(true);
+    snap["project"]["facts"] = json!([{ "name": "cle", "label": "a trouvé la clé", "kind": "bool" }]);
+    snap["scenes"][0]["choices"] = json!([
+      { "label": "Monter", "to": 2, "target": "La tempête", "gives": "a trouvé la clé" },
+      { "label": "Partir", "target": "END", "end": true, "if": "not: a trouvé la clé" }
+    ]);
+    std::fs::write(dir.join("p0000000aaaaaaa.json"), snap.to_string()).unwrap();
+    let s = Server::new(dir);
+    let (text, _) = call(&s, "project_overview", json!({}));
+    assert!(text.contains("Roman interactif") && text.contains("a trouvé la clé") && text.contains("→ 2. La tempête, Fin / End"));
+    let (text, _) = call(&s, "read_scene", json!({ "scenes": "1" }));
+    assert!(text.contains("« Monter » → 2. La tempête · donne / gives : a trouvé la clé"));
+    assert!(text.contains("« Partir » → Fin / End · seulement si / only if : not: a trouvé la clé"));
   }
 
   #[test]

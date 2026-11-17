@@ -23,6 +23,9 @@ import { plainText } from "./search";
 import { foldName } from "./names";
 import type { Pitch } from "./pitch";
 import type { McpAccess } from "./mcp";
+import { END_TARGET, choicesIn, resolveTarget, withoutChoices } from "./interactive/choices";
+import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
+import { condValue, factLabel, givenFact, otherEffects, readFactLabels, storyFacts } from "./interactive/facts";
 export { DEFAULT_MCP, mcpAllows, mcpWritable, readMcp, type McpAccess, type McpSettings } from "./mcp";
 
 /** Version du format lu par le serveur (`format` de l'instantané). Le serveur ignore un autre numéro. */
@@ -43,6 +46,29 @@ export interface McpScene {
   words: number;
   /** Markdown (roman) ou Fountain (scénario), sans les notes internes de MondoWrite. */
   text: string;
+  /** Roman interactif (#84, lot 6) : les choix proposés au lecteur à la fin de la scène. */
+  choices?: McpChoice[];
+}
+
+export interface McpChoice {
+  label: string;
+  /** Rang de la scène visée, ou absent pour la fin de l'histoire. */
+  to?: number;
+  /** Titre de la scène visée, « END » pour la fin, ou le nom introuvable tel qu'écrit. */
+  target: string;
+  end?: boolean;
+  broken?: boolean;
+  /** Condition en clair : un fait (« a trouvé la clé »), « pas : … », ou telle qu'écrite. */
+  if?: string;
+  /** Fait que le choix donne, et effets écrits à la main. */
+  gives?: string;
+  effects?: string[];
+}
+
+export interface McpFact {
+  name: string;
+  label: string;
+  kind: "bool" | "int";
 }
 
 export interface McpCard {
@@ -63,7 +89,7 @@ export interface McpSnapshot {
   format: typeof MCP_FORMAT;
   app: string;
   savedAt: string;
-  project: { title: string; kind: ProjectKind; kindLabel: string; access: McpAccess; logline?: string; resume?: string; labels: { logline: string; resume: string } };
+  project: { title: string; kind: ProjectKind; kindLabel: string; access: McpAccess; logline?: string; resume?: string; labels: { logline: string; resume: string }; interactive?: boolean; facts?: McpFact[] };
   scenes: McpScene[];
   cards: McpCard[];
 }
@@ -80,6 +106,9 @@ export interface McpSource {
   pitch: Pitch;
   /** Accès accordé par l'auteur sur cet appareil (lecture par défaut) : le serveur refuse d'écrire sans « write ». */
   access?: McpAccess;
+  /** Roman interactif montré à l'auteur (`showsInteractive`) : choix et faits partent avec les scènes. */
+  interactive?: boolean;
+  metaKeep?: Record<string, unknown>;
 }
 
 /** Mention d'une carte (`[@Titre](cosmos:id)`) écrite « @Titre » ; images de medias/ retirées. */
@@ -150,7 +179,7 @@ function novelScenes(s: McpSource, t: Messages, cards: CardData[]): McpScene[] {
       ...(part ? { part } : {}),
       ...sceneMeta(card, cards, t),
       words: countWords(html),
-      text: cleanMarkdown(htmlToMarkdown(html)),
+      text: cleanMarkdown(htmlToMarkdown(s.interactive ? withoutChoices(html) : html)),
     });
   }
   return out;
@@ -211,6 +240,7 @@ function screenplayScenes(sp: Screenplay | null, t: Messages, cards: CardData[])
 export function buildMcpSnapshot(s: McpSource, t: Messages, now: Date, app: string): McpSnapshot {
   const cards = s.nodes.map((n) => n.data);
   const scenes = s.kind === "scenario" ? screenplayScenes(s.screenplay, t, cards) : novelScenes(s, t, cards);
+  const interactive = s.interactive && s.kind !== "scenario" ? interactivePart(s, scenes) : null;
   const types = vocab(t, s.kind).types;
   const byId = new Map(cards.map((c) => [c.id, c]));
   // Texte des scènes replié une fois, pour relever qui y est nommé.
@@ -266,8 +296,41 @@ export function buildMcpSnapshot(s: McpSource, t: Messages, now: Date, app: stri
       ...(logline ? { logline } : {}),
       ...(resume ? { resume } : {}),
       labels: { logline: t.pitch.fields.logline, resume: t.pitch.fields.resume },
+      ...(interactive ? { interactive: true, facts: interactive.facts } : {}),
     },
     scenes,
     cards: out,
   };
+}
+
+/** Roman interactif : choix de chaque scène (posés dans `scenes`) et faits du livre. */
+function interactivePart(s: McpSource, scenes: McpScene[]): { facts: McpFact[] } {
+  const refs = interactiveScenes(s.nodes, s.plan);
+  const slugs = interactiveSlugs(s.nodes, s.plan);
+  const labels = readFactLabels(s.metaKeep);
+  const facts = storyFacts(s.manuscript, refs.map((r) => r.id), new Set(slugs.values()), labels);
+  const byId = new Map(scenes.map((sc) => [sc.id, sc]));
+  const labelOf = (name: string) => facts.find((f) => f.name === name)?.label ?? factLabel(name, labels);
+  for (const scene of scenes) {
+    const list: McpChoice[] = [];
+    for (const line of choicesIn(s.manuscript[scene.id])) {
+      if (line.kind !== "choice") continue;
+      const to = resolveTarget(line.target, slugs);
+      const target = to && to !== END_TARGET ? byId.get(to) : undefined;
+      const cv = condValue(line.cond);
+      const m = /^(has|not):(.+)$/.exec(cv);
+      const cond = m ? (m[1] === "not" ? `not: ${labelOf(m[2])}` : labelOf(m[2])) : line.cond?.trim();
+      const given = givenFact(line.effects);
+      const others = otherEffects(line.effects);
+      list.push({
+        label: line.label,
+        ...(target ? { to: target.n, target: target.title } : to === END_TARGET ? { target: "END", end: true } : { target: line.target, broken: true }),
+        ...(cond ? { if: cond } : {}),
+        ...(given ? { gives: labelOf(given) } : {}),
+        ...(others.length ? { effects: others } : {}),
+      });
+    }
+    if (list.length) scene.choices = list;
+  }
+  return { facts: facts.map((f) => ({ name: f.name, label: f.label, kind: f.kind })) };
 }

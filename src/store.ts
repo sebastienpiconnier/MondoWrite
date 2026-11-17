@@ -80,7 +80,7 @@ import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
-import { isInteractiveMeta } from "./interactive";
+import { isInteractiveMeta, showsInteractive } from "./interactive";
 import { CHOICE_MAP_KEY, END_TARGET, choiceMapValue, choicesAfterUndo, choicesIn, cleanLabel, editChoice, readChoiceMap, renameTargets, sceneSlugs, withChoices, type ChoiceLine, type MapPositions } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { FACTS_KEY, cleanFactLabel, isFactName, newFactName, readFactLabels, storyFacts } from "./interactive/facts";
@@ -4215,7 +4215,8 @@ export function publishOpenProject(now = false) {
       const s = useCosmos.getState();
       // Accès retiré entre-temps : rien ne part (l'instantané vient d'être effacé).
       if (s.screen !== "project" || storage.current?.() !== id || !mcpAllows(useSettings.getState().mcp, id)) return null;
-      return { title: s.title, kind: s.kind, nodes: s.nodes, edges: s.edges, plan: s.plan, manuscript: s.manuscript, screenplay: s.screenplay, pitch: s.pitch, access: useSettings.getState().mcp.projects[id] };
+      const interactive = s.kind !== "scenario" && showsInteractive(s.metaKeep, useSettings.getState().experimental);
+      return { title: s.title, kind: s.kind, nodes: s.nodes, edges: s.edges, plan: s.plan, manuscript: s.manuscript, screenplay: s.screenplay, pitch: s.pitch, access: useSettings.getState().mcp.projects[id], interactive, metaKeep: s.metaKeep };
     },
     now,
   );

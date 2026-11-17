@@ -29,6 +29,8 @@ import { readGoals, type Goals } from "./stats";
 import type { ReplaceRequest } from "./replace";
 import { foldName } from "./names";
 import { countWords } from "./manuscript";
+import { END_TARGET, choicesIn, cleanLabel, withChoices, type ChoiceLine } from "./interactive/choices";
+import { condFor, effectFor, type Fact } from "./interactive/facts";
 
 /** Une demande du serveur (fichier `req-<id>.json` de la file). */
 export interface McpRequest {
@@ -456,6 +458,62 @@ export interface McpStore {
   setTitle: (title: string) => void;
   goals: () => Goals;
   setGoals: (goals: Goals) => void;
+  /** Roman interactif montré à l'auteur (#84, lot 6) : noms des scènes et faits ; null sinon. */
+  interactive?: () => McpInteractive | null;
+}
+
+export interface McpInteractive {
+  /** Nom de chaque scène dans les choix (`sceneSlugs`). */
+  slugs: ReadonlyMap<string, string>;
+  facts: readonly Fact[];
+  /** Fait au libellé donné : le même s'il existe (libellé ou nom), sinon créé. Rend son nom. */
+  createFact: (label: string) => string | null;
+}
+
+/** Un fait désigné par son libellé ou son nom (sans casse ni accents). */
+function findFact(facts: readonly Fact[], wanted: string): Fact | null {
+  const w = foldName(wanted);
+  return facts.find((f) => foldName(f.label) === w || foldName(f.name) === w) ?? null;
+}
+
+/** Roman interactif : un choix demandé par l'assistant, écrit dans la syntaxe du bloc `choix`. */
+export function choiceFromRequest(
+  raw: unknown,
+  ix: McpInteractive,
+  sceneOf: (wanted: string) => { id: string } | null,
+): { line: Extract<ChoiceLine, { kind: "choice" }> } | { error: string } {
+  if (!raw || typeof raw !== "object") return { error: "Chaque choix est un objet { text, to, only_if?, only_if_not?, gives? }." };
+  const c = raw as Record<string, unknown>;
+  const label = cleanLabel(str(c.text ?? c.label));
+  if (!label) return { error: "Un choix sans texte : donne `text`, ce que lit le lecteur." };
+  const to = str(c.to);
+  let target: string;
+  if (!to || /^(end|fin|END)$/i.test(to)) target = END_TARGET;
+  else {
+    const scene = sceneOf(to);
+    const slug = scene ? ix.slugs.get(scene.id) : undefined;
+    if (!slug) return { error: `Scène visée introuvable : « ${to} ». Donne un numéro, un titre, ou « end ».` };
+    target = slug;
+  }
+  // Un fait demandé : il doit exister (ou se créer) ; jamais une condition écrite à la main.
+  const factName = (wanted: string): string | null => findFact(ix.facts, wanted)?.name ?? ix.createFact(wanted);
+  let cond: string | undefined;
+  const onlyIf = str(c.only_if);
+  const onlyIfNot = str(c.only_if_not);
+  if (onlyIf && onlyIfNot) return { error: "Donne `only_if` ou `only_if_not`, pas les deux." };
+  if (onlyIf || onlyIfNot) {
+    const name = factName(onlyIf || onlyIfNot);
+    if (!name) return { error: `Fait impossible à nommer : « ${onlyIf || onlyIfNot} ».` };
+    cond = condFor(name, !!onlyIfNot);
+  }
+  let effects: string[] | undefined;
+  const gives = str(c.gives);
+  if (gives) {
+    const name = factName(gives);
+    if (!name) return { error: `Fait impossible à nommer : « ${gives} ».` };
+    effects = [effectFor(name)];
+  }
+  return { line: { kind: "choice", label, target, ...(cond ? { cond } : {}), ...(effects ? { effects } : {}) } };
 }
 
 const plainWords = (html: string) => countWords(html);
@@ -1057,6 +1115,37 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
       if (typeof a.title !== "string") return fail("Donne `title` pour le renommer, ou `remove: true` pour le retirer.");
       store.batch(() => store.renameFrame(frame.id, str(a.title)));
       return { ok: true, text: `Cadre renommé « ${str(a.title)} ».` };
+    }
+
+    case "set_choices": {
+      const ix = store.interactive?.() ?? null;
+      if (!ix) return fail("Ce projet n'est pas un roman interactif (ou l'option est coupée dans MondoWrite) : il n'a pas de choix. / Not an interactive novel.");
+      const scene = findScene(store, str(a.scene));
+      if (!scene) return fail(`Scène introuvable : « ${str(a.scene)} ».`);
+      const list = Array.isArray(a.choices) ? a.choices : [];
+      const append = str(a.mode) === "append";
+      if (list.length === 0 && append) return fail("Donne au moins un choix dans `choices`.");
+      if (list.length > 12) return fail("Au plus 12 choix par scène.");
+      return store.batch(() => {
+        const lines: Extract<ChoiceLine, { kind: "choice" }>[] = [];
+        for (const raw of list) {
+          const got = choiceFromRequest(raw, store.interactive?.() ?? ix, (w) => findScene(store, w));
+          if ("error" in got) return fail(got.error);
+          lines.push(got.line);
+        }
+        const html = store.manuscript()[scene.id] ?? "";
+        // Les lignes écrites à la main (renvois, compteurs) restent ; « replace » ne retire que les choix.
+        const kept = choicesIn(html).filter((l) => append || l.kind !== "choice");
+        store.setManuscriptText(scene.id, withChoices(html, [...kept, ...lines]));
+        store.log(scene.title, lines.reduce((n, l) => n + l.label.split(/\s+/).filter(Boolean).length, 0), client);
+        const shown = lines.map((l) => `« ${l.label} »`).join(", ");
+        return {
+          ok: true,
+          text: lines.length
+            ? `Scène ${scene.n} : ${lines.length} choix ${append ? "ajouté(s)" : "posé(s)"} (${shown}). Lis « review » pour vérifier le chemin du lecteur.`
+            : `Scène ${scene.n} : choix retirés (la scène finit l'histoire).`,
+        };
+      });
     }
 
     case "set_project": {

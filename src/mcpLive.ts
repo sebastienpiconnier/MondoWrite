@@ -22,6 +22,11 @@ import { countWords } from "./manuscript";
 import { readVersionFile } from "./versions";
 import type { McpAnswer, McpRequest } from "./mcpWrite";
 import { findCard } from "./mcpWrite";
+import type { Positioned } from "./book";
+import type { Plan } from "./plan";
+import { interactiveScenes } from "./interactive/scenes";
+import { verifyKey, verifyStory } from "./interactive/verify";
+import { readFactLabels } from "./interactive/facts";
 
 /** Le projet ouvert, tel que les lectures le voient. */
 export interface LiveSource {
@@ -40,6 +45,11 @@ export interface LiveSource {
   /** Scènes numérotées comme les voit l'IA (instantané). */
   scenes: { n: number; id: string; title: string }[];
   readVersions: (cardId: string) => Promise<Record<string, string>>;
+  /** Roman interactif montré à l'auteur : le chemin du lecteur entre dans « review ». */
+  interactive?: boolean;
+  nodes?: readonly Positioned[];
+  plan?: Plan;
+  metaKeep?: Record<string, unknown>;
 }
 
 export const LIVE_TOOLS = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"] as const;
@@ -148,12 +158,27 @@ function projectStats(src: LiveSource): McpAnswer {
   return ok(out.join("\n"));
 }
 
+/** Roman interactif (#84, lot 6) : le chemin du lecteur, comme l'onglet « Vérifier » du Manuscrit. */
+function interactivePoints(src: LiveSource): Finding[] {
+  if (!src.interactive || !src.nodes || !src.plan) return [];
+  const scenes = interactiveScenes(src.nodes, src.plan);
+  return verifyStory(scenes, src.manuscript, readFactLabels(src.metaKeep)).map((p) => ({
+    key: verifyKey(p),
+    rule: p.rule,
+    at: -1,
+    scene: 0,
+    sceneId: p.scene,
+    text: "",
+    ...(p.label ? { names: [p.label] } : {}),
+  }));
+}
+
 function review(src: LiveSource, t: Messages): McpAnswer {
   const sp = src.screenplay;
   const found: Finding[] =
     src.kind === "scenario" ? (sp ? checkScreenplay(sp.elements, LAYOUTS[src.paper], src.cards, src.lang) : []) : checkManuscript(src.manuscript, src.order, src.cards, src.lang);
   const story = checkStory(src.cards, characterRows(src), src.kind, src.pitch);
-  const all = [...story, ...found];
+  const all = [...interactivePoints(src), ...story, ...found];
   if (all.length === 0) return ok("Rien à signaler dans « Vérifier ».");
   const rules = t.review.rules as Record<string, string>;
   const byRule = new Map<string, Finding[]>();

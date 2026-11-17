@@ -30,7 +30,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 3. Lecture et compilation | Ink par inkjs, Mode Lecture, « Lire à partir d'ici », export .ink (fait) |
 | 4. Variables | Faits et compteurs, « Seulement si » et « Donne » sur les choix (fait) |
 | 5. Vérificateur | Sans fin, inaccessibles, blocages, faits (fait) ; parties automatiques à décider |
-| 6. Assistant IA interactif | Outils MCP |
+| 6. Assistant IA interactif | Outils MCP (fait) |
 | 7. Export web | HTML autonome |
 | 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF |
 | 9. Import | Twee 3 et Ink |
@@ -167,3 +167,18 @@ chaque choix tapé dans le texte apparaît sur la carte.
   des choix » l'ouvre sur la scène, choisie et centrée.
 - **Mise en page automatique** : « Réorganiser la carte » (lot 2) suffit pour l'instant.
 - **Reste** : « parties automatiques » (regrouper les scènes en branches ou en parties) à préciser avec l'auteur.
+
+## Lot 6 · Assistant IA interactif (fait sur la branche `roman-interactif`)
+
+- **Lecture** : l'instantané (`mcpSnapshot.ts`, `interactivePart`) porte, seulement pour un roman interactif montré
+  à l'auteur (`showsInteractive`), `project.interactive`, `project.facts` (nom, libellé, booléen ou compteur) et les
+  choix de chaque scène en clair (`choices` : texte, rang et titre de la scène visée, fin, destination introuvable,
+  condition et fait donné en libellés). Le texte d'une scène part sans son bloc de choix. Champs facultatifs :
+  `MCP_FORMAT` ne change pas, un serveur d'avant les ignore. Le serveur (`mcp.rs`) les montre dans
+  `project_overview` (ligne « Roman interactif », faits, « → 2. La cour, Fin » après chaque scène) et `read_scene`.
+- **Écriture** : outil `set_choices` (scène, liste de `{ text, to, only_if?, only_if_not?, gives? }`, mode
+  `replace` par défaut ou `append`), refusé si le projet n'est pas un roman interactif montré. Un fait est retrouvé
+  par son libellé ou son nom, sinon créé (`createFact`) ; jamais de condition écrite à la main par l'IA. `replace`
+  ne retire que les choix, les lignes écrites à la main restent ; une liste vide retire le bloc. Une étape
+  d'annulation, journal ; le texte des choix n'est pas marqué « IA » (le bloc n'a pas de marque par ligne).
+- **Vérifier** : `review` (lecture faite par l'app) ajoute les points du vérificateur (lot 5).

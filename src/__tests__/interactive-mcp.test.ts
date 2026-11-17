@@ -1,0 +1,134 @@
+// @vitest-environment happy-dom
+// Roman interactif et assistant externe (#84, lot 6) : choix et faits dans l'instantané, outil `set_choices`.
+
+import { describe, expect, it } from "vitest";
+import { fr } from "../i18n/fr";
+import { EMPTY_PLAN } from "../plan";
+import type { CardData } from "../types";
+import type { CardNode } from "../projectState";
+import { buildMcpSnapshot, type McpSource } from "../mcpSnapshot";
+import { choicesHtml, choicesIn, sceneSlugs } from "../interactive/choices";
+import { storyFacts } from "../interactive/facts";
+import { applyMcpRequest, choiceFromRequest, type McpInteractive, type McpStore } from "../mcpWrite";
+
+const node = (data: Partial<CardData> & Pick<CardData, "id" | "type">, y = 0): CardNode =>
+  ({ id: data.id, type: "card", position: { x: 0, y }, data: { title: "", html: "", ...data } }) as CardNode;
+
+const source = (interactive: boolean): McpSource => ({
+  title: "La grille",
+  kind: "roman",
+  nodes: [node({ id: "a", type: "scene", title: "La grille" }, 0), node({ id: "b", type: "scene", title: "La cour" }, 100)],
+  edges: [],
+  plan: EMPTY_PLAN,
+  manuscript: {
+    a: `<p>Devant la grille.</p>${choicesHtml("* [Entrer] -> la_cour\n  ~ cle = true\n* { not cle } [Fuir] -> END\n* [Ailleurs] -> nulle_part")}`,
+    b: "<p>Une cour.</p>",
+  },
+  screenplay: null,
+  pitch: {},
+  interactive,
+  metaKeep: { interactive: true, storyFacts: { cle: "a trouvé la clé" } },
+});
+
+describe("instantané d'un roman interactif", () => {
+  it("choix en clair, faits, texte sans le bloc", () => {
+    const snap = buildMcpSnapshot(source(true), fr, new Date(0), "");
+    expect(snap.project.interactive).toBe(true);
+    expect(snap.project.facts).toEqual([{ name: "cle", label: "a trouvé la clé", kind: "bool" }]);
+    expect(snap.scenes[0].text).toBe("Devant la grille.");
+    expect(snap.scenes[0].choices).toEqual([
+      { label: "Entrer", to: 2, target: "La cour", gives: "a trouvé la clé" },
+      { label: "Fuir", target: "END", end: true, if: "not: a trouvé la clé" },
+      { label: "Ailleurs", target: "nulle_part", broken: true },
+    ]);
+    expect(snap.scenes[1].choices).toBeUndefined();
+  });
+
+  it("option coupée : un roman ordinaire, rien de plus", () => {
+    const snap = buildMcpSnapshot(source(false), fr, new Date(0), "");
+    expect(snap.project.interactive).toBeUndefined();
+    expect(snap.scenes[0].choices).toBeUndefined();
+  });
+});
+
+function store(interactive: boolean) {
+  const scenes = [
+    { n: 1, id: "a", title: "La grille" },
+    { n: 2, id: "b", title: "La cour" },
+  ];
+  const state = { manuscript: { a: "<p>Devant la grille.</p>", b: "" } as Record<string, string>, labels: {} as Record<string, string>, journal: [] as string[], batches: 0 };
+  const ix = (): McpInteractive => ({
+    slugs: sceneSlugs(scenes),
+    facts: storyFacts(state.manuscript, ["a", "b"], new Set(sceneSlugs(scenes).values()), state.labels),
+    createFact: (label) => {
+      const name = label.toLowerCase().replace(/[^a-z]+/g, "_").replace(/^_|_$/g, "");
+      state.labels[name] = label;
+      return name;
+    },
+  });
+  const s = {
+    kind: "roman",
+    cards: () => [],
+    scenes: () => scenes,
+    manuscript: () => state.manuscript,
+    setManuscriptText: (id: string, html: string) => void (state.manuscript = { ...state.manuscript, [id]: html }),
+    batch: <T,>(fn: () => T) => {
+      state.batches++;
+      return fn();
+    },
+    log: (target: string) => void state.journal.push(target),
+    interactive: () => (interactive ? ix() : null),
+  } as unknown as McpStore;
+  return { state, store: s };
+}
+
+describe("outil set_choices", () => {
+  it("pose les choix d'une scène, crée les faits, une étape, journal", async () => {
+    const { state, store: s } = store(true);
+    const res = await applyMcpRequest(
+      {
+        id: "1",
+        tool: "set_choices",
+        args: { scene: "1", choices: [{ text: "Entrer", to: "La cour", gives: "a trouvé la clé" }, { text: "Fuir", to: "end", only_if_not: "a trouvé la clé" }] },
+      },
+      s,
+      fr,
+    );
+    expect(res.ok).toBe(true);
+    expect(state.batches).toBe(1);
+    expect(state.journal).toEqual(["La grille"]);
+    expect(state.labels).toEqual({ a_trouv_la_cl: "a trouvé la clé" });
+    expect(choicesIn(state.manuscript.a)).toEqual([
+      { kind: "choice", label: "Entrer", target: "la_cour", effects: ["a_trouv_la_cl = true"] },
+      { kind: "choice", label: "Fuir", target: "END", cond: "not a_trouv_la_cl" },
+    ]);
+    expect(state.manuscript.a.startsWith("<p>Devant la grille.</p>")).toBe(true);
+  });
+
+  it("append garde les choix ; replace garde les lignes écrites à la main ; liste vide retire le bloc", async () => {
+    const { state, store: s } = store(true);
+    state.manuscript.a = `<p>x</p>${choicesHtml("* [Rester] -> END\n-> la_cour")}`;
+    await applyMcpRequest({ id: "1", tool: "set_choices", args: { scene: "1", mode: "append", choices: [{ text: "Entrer", to: "2" }] } }, s, fr);
+    expect(choicesIn(state.manuscript.a).map((l) => (l.kind === "choice" ? l.label : l.text))).toEqual(["Rester", "-> la_cour", "Entrer"]);
+    await applyMcpRequest({ id: "2", tool: "set_choices", args: { scene: "1", choices: [{ text: "Partir", to: "end" }] } }, s, fr);
+    expect(choicesIn(state.manuscript.a).map((l) => (l.kind === "choice" ? l.label : l.text))).toEqual(["-> la_cour", "Partir"]);
+    await applyMcpRequest({ id: "3", tool: "set_choices", args: { scene: "2", choices: [] } }, s, fr);
+    expect(state.manuscript.b).toBe("");
+  });
+
+  it("refus : projet ordinaire, scène visée introuvable, rien n'est écrit", async () => {
+    const plain = store(false);
+    expect((await applyMcpRequest({ id: "1", tool: "set_choices", args: { scene: "1", choices: [{ text: "x", to: "end" }] } }, plain.store, fr)).ok).toBe(false);
+    const { state, store: s } = store(true);
+    const res = await applyMcpRequest({ id: "1", tool: "set_choices", args: { scene: "1", choices: [{ text: "x", to: "Le grenier" }] } }, s, fr);
+    expect(res.ok).toBe(false);
+    expect(state.manuscript.a).toBe("<p>Devant la grille.</p>");
+  });
+
+  it("un fait existant est retrouvé par son libellé", () => {
+    const { state, store: s } = store(true);
+    state.labels.cle = "a trouvé la clé";
+    const got = choiceFromRequest({ text: "Ouvrir", to: "2", only_if: "A trouvé la clé" }, s.interactive!()!, () => ({ id: "b" }));
+    expect(got).toEqual({ line: { kind: "choice", label: "Ouvrir", target: "la_cour", cond: "cle" } });
+  });
+});
