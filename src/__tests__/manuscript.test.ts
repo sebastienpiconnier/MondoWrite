@@ -6,7 +6,7 @@ import { useCosmos, planScenes } from "../store";
 import { useSettings } from "../settings";
 import { deserialize, serialize, storage } from "../storage";
 import { EMPTY_PLAN, planOrder } from "../plan";
-import { countWords, detectCards, isBlank, orphanTexts, totalWords } from "../manuscript";
+import { citedCards, countWords, detectCards, isBlank, orphanTexts, totalWords } from "../manuscript";
 import type { CardData } from "../types";
 
 const card = (id: string, type: CardData["type"], title: string): CardData => ({ id, type, title, html: "" });
@@ -172,5 +172,29 @@ describe("noms cités : jamais un article pris pour un prénom", () => {
     expect(detectCards("<p>The wolf ran to the house.</p>", [mother])).toEqual([]);
     expect(detectCards("<p>The Mother waits.</p>", [mother])).toEqual([mother]);
     expect(detectCards("<p>Inès monte au phare.</p>", [ines])).toEqual([ines]);
+  });
+});
+
+describe("cités dans le texte (#85)", () => {
+  const cards = [
+    card("p1", "personnage", "Edmond Dantès"),
+    card("l1", "lieu", "Château d’If"),
+    card("o1", "objet", "Trésor de Spada"),
+    card("o2", "objet", "La"),
+    card("e1", "evenement", "L’évasion"),
+    card("s1", "secret", "Le trésor"),
+  ];
+  const ids = (html: string) => citedCards(html, cards).map((c) => c.id);
+
+  it("personnages, lieux et objets nommés par leur titre entier, sans casse ni accents", () => {
+    expect(ids("<p>Edmond pense au tresor de spada depuis le Château d’If.</p>")).toEqual(["p1", "l1", "o1"]);
+  });
+
+  it("un objet n'est pas cité par un seul de ses mots, ni un titre trop court ; jamais un événement ni un secret", () => {
+    expect(ids("<p>La nuit de l’évasion, le trésor l’attend.</p>")).toEqual([]);
+  });
+
+  it("detectCards ne change pas : personnages et lieux seulement", () => {
+    expect(detectCards("<p>Le trésor de Spada.</p>", cards)).toEqual([]);
   });
 });

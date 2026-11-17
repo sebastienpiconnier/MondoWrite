@@ -317,13 +317,15 @@ export interface CosmosState {
   cardMenu: string | null;
   setCardMenu: (id: string | null) => void;
   /** Ouvre une scène dans le manuscrit (ou le scénario) : identifiant de sa carte, ou `SCENE_AT` + rang de son en-tête. */
-  openInManuscript: (id: string, needle?: string, caret?: { el?: number; offset: number }) => void;
+  openInManuscript: (id: string, needle?: string, caret?: { el?: number; offset: number }, nth?: number) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
   manuscriptTarget: string | null;
   /** Passage à sélectionner dans cette scène (recherche par le sens) ; null : le haut de la scène. */
   manuscriptNeedle: string | null;
   /** Place du curseur dans cette scène (« Reprendre là où j'en étais », #27) : élément et caractère. */
   manuscriptCaret: { el?: number; offset: number } | null;
+  /** Recherche des vues d'écriture (#85) : rang de l'occurrence de `manuscriptNeedle` à sélectionner dans la scène. */
+  manuscriptNth: number | null;
   clearManuscriptTarget: () => void;
   /** Coche ou décoche la n-ième case d'une carte ou d'une scène du manuscrit. */
   toggleTodo: (id: string, where: "card" | "manuscript", index: number) => void;
@@ -2124,16 +2126,17 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     focusFrame: null,
     clearFocusFrame: () => set({ focusFrame: null }),
-    openInManuscript: (id, needle, caret) => {
+    openInManuscript: (id, needle, caret, nth) => {
       // Série : la scène est dans un autre épisode, on ouvre d'abord celui-ci.
       const full = get().screenplay;
       const episode = id.startsWith(SCENE_AT) ? episodeAt(full, Number(id.slice(SCENE_AT.length))) : episodeOfCard(full, id);
-      set({ view: "manuscrit", manuscriptTarget: id, manuscriptNeedle: needle || null, manuscriptCaret: caret ?? null, ...(episode ? { currentEpisode: episode } : {}) });
+      set({ view: "manuscrit", manuscriptTarget: id, manuscriptNeedle: needle || null, manuscriptCaret: caret ?? null, manuscriptNth: nth ?? null, ...(episode ? { currentEpisode: episode } : {}) });
     },
     manuscriptTarget: null,
     manuscriptNeedle: null,
     manuscriptCaret: null,
-    clearManuscriptTarget: () => set({ manuscriptTarget: null, manuscriptNeedle: null, manuscriptCaret: null }),
+    manuscriptNth: null,
+    clearManuscriptTarget: () => set({ manuscriptTarget: null, manuscriptNeedle: null, manuscriptCaret: null, manuscriptNth: null }),
     toggleTodo: (id, where, index) => {
       if (where === "manuscript") {
         const html = get().manuscript[id];

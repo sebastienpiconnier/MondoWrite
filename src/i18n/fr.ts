@@ -69,6 +69,15 @@ export const fr = {
     results: "Cartes trouvées",
     prompt: "Cherche dans les titres et le texte des cartes.",
     empty: "Aucune carte ne correspond.",
+    // La recherche suit la vue (#85) : texte des scènes dans le Manuscrit et le Scénario, fiches dans la Bible,
+    // scènes dans le Plan.
+    buttonText: "Rechercher dans le texte",
+    resultsText: "Passages trouvés",
+    promptText: "Cherche dans le texte des scènes.",
+    emptyText: "Aucun passage ne correspond.",
+    promptBible: "Cherche dans les fiches de la Bible.",
+    promptPlan: "Cherche dans les titres, les synopsis et le texte des scènes.",
+    emptyScenes: "Aucune scène ne correspond.",
   },
 
   // Écran d'accueil : choisir le projet sur lequel travailler.
@@ -1364,7 +1373,7 @@ export const fr = {
     position: "Scène {n} sur {total}",
     cited: "Cités dans le texte",
     inScene: "Dans cette scène",
-    nothingDetected: "Les personnages et les lieux cités dans le texte apparaîtront ici.",
+    nothingDetected: "Les personnages, les lieux et les objets cités dans le texte apparaîtront ici.",
     show: "Voir la carte « {title} » sur le canevas",
     synopsis: "Synopsis",
     orphans: "Textes sans carte",
@@ -2545,6 +2554,8 @@ export const fr = {
     items: {
       help: "Cette liste",
       commands: "Palette de commandes",
+      findNext: "Passage suivant de la recherche (sur Mac : Cmd + Alt + G)",
+      findPrev: "Passage précédent de la recherche (sur Mac : Maj + Cmd + Alt + G)",
       keepVersion: "Garder une version de la scène",
       synonyms: "Synonymes du mot",
       comment: "Commenter le passage sélectionné",
@@ -2617,6 +2628,8 @@ export const fr = {
     exportMenu: "Exporter…",
     save: "Enregistrer",
     find: "Rechercher…",
+    findNext: "Occurrence suivante",
+    findPrev: "Occurrence précédente",
     replace: "Rechercher et remplacer…",
     keepVersion: "Garder une version de la scène…",
     synonyms: "Synonymes du mot…",

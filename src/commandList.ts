@@ -19,6 +19,7 @@ import { vocab } from "./vocab";
 import { quitApp } from "./closing";
 import { unlearnAll } from "./learn";
 import { nextHighlight } from "./focusText";
+import { findOrSearch } from "./writingFind";
 import type { View } from "./projectState";
 import type { ProjectKind } from "./types";
 
@@ -98,6 +99,9 @@ export const COMMANDS: AppCommandItem[] = [
   // Cartes choisies sur le canevas (Copier et Coller, éléments du système, copient aussi les cartes).
   { id: "duplicate", group: "edit", label: (t) => t.appMenu.duplicate, accelerator: "CmdOrCtrl+D", enabled: onCanvas, run: () => replayShortcut("d", "KeyD") },
   { id: "find", group: "edit", label: (t) => t.appMenu.find, accelerator: "CmdOrCtrl+F", enabled: inProject, run: () => replayShortcut("f", "KeyF") },
+  // Occurrence suivante ou précédente de la recherche (#85) : Manuscrit et Scénario ; F3 et Maj + F3 aussi.
+  { id: "find-next", group: "edit", label: (t) => t.appMenu.findNext, accelerator: "CmdOrCtrl+Alt+G", enabled: writing, run: () => findOrSearch(1) },
+  { id: "find-prev", group: "edit", label: (t) => t.appMenu.findPrev, accelerator: "CmdOrCtrl+Alt+Shift+G", enabled: writing, run: () => findOrSearch(-1) },
   { id: "replace", group: "edit", label: (t) => t.appMenu.replace, accelerator: "CmdOrCtrl+Shift+H", enabled: inProject, run: () => replayShortcut("H", "KeyH", true) },
   // Aller à une page, une scène, un chapitre (fenêtre « Aller à »).
   { id: "goto", group: "edit", label: (t) => t.appMenu.goto, accelerator: "CmdOrCtrl+G", enabled: inProject, run: () => s().setDialog("goto") },
