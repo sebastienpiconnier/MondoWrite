@@ -6,7 +6,8 @@ import { useEffect, useRef } from "react";
 import { useCosmos } from "../store";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
-import { TOUR_STEPS, nextStep, prevStep, stepText } from "../tour";
+import { STORY_TOUR_STEPS, TOUR_STEPS, nextStep, prevStep, stepText } from "../tour";
+import { useInteractive } from "../interactive/useInteractive";
 import { usePhone } from "./usePhone";
 
 export function Tour() {
@@ -17,6 +18,9 @@ export function Tour() {
   const nextRef = useRef<HTMLButtonElement>(null);
   // Sur téléphone, pas de visite : ses étapes montrent le canevas et le Plan, absents de l'écran.
   const phone = usePhone();
+  // Dans un roman interactif, la visite parle des choix (exemple « Le Puits ») ; ailleurs, de l'app.
+  const story = useInteractive();
+  const steps = story ? STORY_TOUR_STEPS : TOUR_STEPS;
 
   useEffect(() => {
     if (phone && step !== null) setTour(null);
@@ -25,9 +29,14 @@ export function Tour() {
   // Chaque étape montre sa vue.
   useEffect(() => {
     if (step === null || phone) return;
-    setView(TOUR_STEPS[step].view);
+    const shown = steps[step];
+    if (!shown) {
+      setTour(null);
+      return;
+    }
+    setView(shown.view);
     nextRef.current?.focus();
-  }, [step, phone, setView]);
+  }, [step, phone, steps, setView, setTour]);
 
   useEffect(() => {
     if (step === null) return;
@@ -38,15 +47,15 @@ export function Tour() {
     return () => window.removeEventListener("keydown", onKey);
   }, [step, setTour]);
 
-  if (step === null || phone) return null;
-  const current = TOUR_STEPS[step];
-  const text = stepText(t.tour.steps, t.tour.scenario, current.key, kind);
-  const next = nextStep(step);
+  if (step === null || phone || !steps[step]) return null;
+  const current = steps[step];
+  const text = story ? t.interactive.tour.steps[(current as (typeof STORY_TOUR_STEPS)[number]).key] : stepText(t.tour.steps, t.tour.scenario, (current as (typeof TOUR_STEPS)[number]).key, kind);
+  const next = nextStep(step, steps.length);
   return (
     <section className="tour" role="dialog" aria-modal="false" aria-labelledby="tour-title">
       <div className="tour-head">
         <span className="eyebrow">
-          {fmt(t.tour.progress, { n: step + 1, total: TOUR_STEPS.length })} · {views[current.view]}
+          {fmt(t.tour.progress, { n: step + 1, total: steps.length })} · {views[current.view]}
         </span>
         <button type="button" className="icon-button" aria-label={t.tour.close} title={t.tour.close} onClick={() => setTour(null)}>
           <span aria-hidden="true">×</span>
@@ -61,7 +70,7 @@ export function Tour() {
           </button>
         )}
         <button ref={nextRef} type="button" className="home-create" onClick={() => setTour(next)}>
-          {next === null ? t.tour.done : t.tour.next}
+          {next === null ? (story ? t.interactive.tour.done : t.tour.done) : t.tour.next}
         </button>
       </div>
     </section>

@@ -613,6 +613,8 @@ export interface CosmosState {
   importNotice: "taken" | "empty" | "scrivener" | "scrivenerOld" | null;
   /** Nouveau projet rempli avec l'exemple, pour découvrir l'app. */
   tryExample: () => Promise<void>;
+  /** Exemple de roman interactif « Le Puits » (réglage expérimental) : nouveau projet, ouvert sur sa visite. */
+  tryStoryExample: () => Promise<void>;
   /** Visite guidée : étape affichée (0 à n-1), ou null. État d'affichage, jamais enregistré. */
   tour: number | null;
   setTour: (step: number | null) => void;
@@ -3277,6 +3279,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Le projet d'exemple s'ouvre sur la visite guidée : c'est là qu'on découvre l'app. Pas sur téléphone :
       // elle passe par le canevas et le Plan, que le téléphone n'a pas.
       if (get().screen === "project" && !isPhone()) get().setTour(0);
+    },
+    tryStoryExample: async () => {
+      // Les fichiers du projet (cosmos.json, cartes/, manuscrit/), chargés à la demande : hors du paquet de démarrage.
+      // Anglais quand l'interface l'est, sinon français (seules ces deux langues ont l'exemple).
+      const { puitsExample } = await import("./interactive/example");
+      const example = await puitsExample(useSettings.getState().lang);
+      if (!(await storage.create(example.title, { auto: true }))) return;
+      // Créé d'office : un dossier qui contiendrait déjà un projet n'est jamais écrasé.
+      if (await storage.readAll().catch(() => null)) {
+        storage.forget();
+        set({ importNotice: "taken" });
+        return;
+      }
+      await storage.write(example.files, []);
+      await get().load();
+      if (get().screen !== "project") return;
+      set({ view: "toile" });
+      if (!isPhone()) get().setTour(0);
     },
     tour: null,
     setTour: (tour) => set({ tour }),

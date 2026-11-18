@@ -3704,6 +3704,18 @@ export const fr = {
   },
   interactive: {
     kind: "Un roman interactif",
+    example: "Essayer « Le Puits », un roman interactif",
+    tour: {
+      done: "À toi de jouer",
+      steps: {
+        map: { title: "Le canevas est la carte de l’histoire", body: "Chaque carte Scène est une section du livre, chaque flèche un choix du lecteur. Touche une pilule pour modifier le choix. Tire une flèche d’une scène à une autre pour ajouter un choix ; lâche-la dans le vide pour créer la scène suivante. « Organiser » range l’histoire en arbre, départ en haut." },
+        choices: { title: "Les choix se lisent en fin de scène", body: "Sous le texte de chaque scène, le bloc des choix : ce que le lecteur peut faire, et la section où cela le mène. Un choix « Fin » termine l’histoire ; marque-la bonne ou mauvaise. « Voir le code » montre les blocs tels qu’ils sont écrits dans le fichier." },
+        facts: { title: "Le livre se souvient", body: "Un choix peut donner un fait au lecteur (la lanterne, une clé), un autre ne s’ouvrir que s’il l’a. Ici, la lanterne prise dans l’atelier éclaire la descente. Les faits se règlent sous chaque choix, sans rien déclarer à part." },
+        sections: { title: "Les sections du livre", body: "Le Plan liste les sections dans l’ordre de leur numéro imprimé. Le départ est toujours le 1 ; les autres sont mélangés pour qu’on ne lise pas la suite par hasard. Un cadenas garde un numéro ; « Renuméroter » refait le mélange sans le toucher." },
+        check: { title: "Vérifier avant d’imprimer", body: "L’onglet « Vérifier » cherche les sections qu’on ne peut pas atteindre, les impasses, les faits jamais donnés ou donnés trop tard, deux sections liées sur la même double page. Chaque point mène à la scène." },
+        play: { title: "Lire, puis publier", body: "« Lire l’histoire » la joue comme un lecteur, en notant ce qui cloche ; tes notes deviennent des commentaires. Le menu Exporter en fait un livre-jeu broché pour KDP, un EPUB ou une page web à partager." },
+      },
+    },
     exports: {
       story: "Histoire interactive",
       linear: "Texte suivi (pour relire)",

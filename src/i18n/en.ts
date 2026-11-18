@@ -3646,6 +3646,18 @@ export const en: Messages = {
   },
   interactive: {
     kind: "An interactive novel",
+    example: "Try “The Well”, an interactive novel",
+    tour: {
+      done: "Your turn to play",
+      steps: {
+        map: { title: "The canvas is the story map", body: "Each Scene card is a section of the book, each arrow a reader’s choice. Tap a pill to edit the choice. Drag an arrow from one scene to another to add a choice; drop it on empty space to create the next scene. “Organize” lays the story out as a tree, with the start at the top." },
+        choices: { title: "Choices sit at the end of each scene", body: "Below each scene’s text is its choice block: what the reader can do, and which section it leads to. An “End” choice finishes the story; mark it as a good or bad ending. “Show the code” displays the blocks as they are written in the file." },
+        facts: { title: "The book remembers", body: "A choice can give the reader a fact (the lantern, a key), and another can open only if they have it. Here, the lantern taken from the workshop lights the way down. Facts are set under each choice, with nothing to declare elsewhere." },
+        sections: { title: "The sections of the book", body: "The Plan lists sections in the order of their printed number. The start is always 1; the others are shuffled so nobody reads ahead by accident. A padlock keeps a number; “Renumber” reshuffles without touching it." },
+        check: { title: "Check before printing", body: "The “Check” tab looks for sections no one can reach, dead ends, facts never given or given too late, and linked sections on the same spread. Each point takes you to the scene." },
+        play: { title: "Read, then publish", body: "“Read the story” plays it as a reader would, letting you note what feels off; your notes become comments. The Export menu turns it into a KDP paperback gamebook, an EPUB or a web page to share." },
+      },
+    },
     exports: {
       story: "Interactive story",
       linear: "Running text (for proofreading)",

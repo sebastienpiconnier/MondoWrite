@@ -36,7 +36,7 @@ export function Home() {
   const openError = useCosmos((s) => s.openError);
   const notice = useCosmos((s) => s.homeNotice);
   const importNotice = useCosmos((s) => s.importNotice);
-  const { openProject, openFolder, createProject, tryExample, hideProject, showProject, deleteProject, importFile, chooseCloudFolder, leaveCloudFolder, gatherStrayProjects } = useCosmos.getState();
+  const { openProject, openFolder, createProject, tryExample, tryStoryExample, hideProject, showProject, deleteProject, importFile, chooseCloudFolder, leaveCloudFolder, gatherStrayProjects } = useCosmos.getState();
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ProjectKind>("roman");
@@ -425,6 +425,11 @@ export function Home() {
                 <button type="button" className="ghost-button" disabled={busy} onClick={() => run(tryExample)}>
                   {h.example}
                 </button>
+                {offerInteractive && (
+                  <button type="button" className="ghost-button" disabled={busy} onClick={() => run(tryStoryExample)}>
+                    {t.interactive.example}
+                  </button>
+                )}
                 {/* Les parcours du guide (architecte, jardinier, dossier…) : pour savoir par quoi commencer. */}
                 <button type="button" className="link-button" title={h.pathsHint} onClick={() => void openGuide("paths")}>
                   {h.paths}

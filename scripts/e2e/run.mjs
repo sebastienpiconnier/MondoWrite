@@ -2381,6 +2381,24 @@ const scenarios = [
     },
   },
   {
+    name: "roman interactif : l'exemple « Le Puits » s'ouvre sur sa visite et sa carte des choix",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        const key = "cosmos:reglages";
+        const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+        if (!saved.experimental?.interactive) localStorage.setItem(key, JSON.stringify({ ...saved, lang: "fr", experimental: { interactive: true } }));
+      });
+      await h.home();
+      await page.getByRole("button", { name: "Essayer « Le Puits », un roman interactif" }).click();
+      await page.getByRole("heading", { name: "Le canevas est la carte de l’histoire" }).waitFor({ timeout: 20_000 });
+      await until(async () => (await page.locator(".react-flow__node").count()) > 20, "les scènes du Puits ne sont pas sur le canevas");
+      await page.getByRole("button", { name: "Suivant", exact: true }).click();
+      await page.getByRole("heading", { name: "Les choix se lisent en fin de scène" }).waitFor();
+      await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").interactive === true && !Object.values(f).some((v) => v.includes("data-ia")));
+    },
+  },
+  {
     name: "roman interactif (lots 5, 7, 8 et 9) : import Twee, lecture, « Vérifier », page web jouable, livre-jeu EPUB et livre broché, Ink",
     async run(h) {
       const { page } = h;

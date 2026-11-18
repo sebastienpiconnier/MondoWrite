@@ -375,6 +375,22 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
   l'auteur seul ; neutre, « Fin. » comme avant.
 - **Vérifier** : `noGoodEnding`, dès qu'une fin est marquée et qu'aucune bonne fin n'est atteignable.
 
+## Exemple « Le Puits » et visite (en cours sur la branche `roman-interactif`)
+
+L'histoire écrite par l'assistant IA (MCP) devient l'exemple intégré, à côté du Petit Chaperon rouge, proposé
+seulement quand l'option expérimentale est allumée (« Essayer « Le Puits », un roman interactif » sur la page des
+projets). Fichiers fabriqués par `scripts/examples/build-puits.mjs` depuis le projet décompressé, dans
+`src/assets/examples/puits.fr.json` (96 Ko, chargé à la demande par `interactive/example.ts`) : marques de l'IA
+retirées, sans journal, corbeille, versions ni textes sans carte ; fins marquées (Le matin bonne ; L'eau noire, La
+voix volée, La maison mauvaises ; L'échange et Le nom sans type). Ouvert sur le canevas avec sa visite
+(`STORY_TOUR_STEPS`, six étapes : carte, choix, faits, sections, « Vérifier », lecture et exports), qui remplace la
+visite ordinaire dans tout roman interactif.
+
+- [x] Données, chargement, bouton de la page des projets, visite, tests (Vitest et e2e)
+- [ ] Images (prompts dans `docs/exemple-puits-images.md`, à générer par l'auteur), placées dans les scènes
+- [ ] Version anglaise (`puits.en.json`, traduction relue par l'auteur)
+- [ ] Chapitre « Roman interactif » du guide (fr, en, es) avec des captures du Puits
+
 ## Décisions du 18 novembre 2026 (manuel de LibroGameCreator)
 
 Étude du manuel de LibroGameCreator 3.4 (outil de livres-jeux imprimés, Matteo Poropat). La plupart de ses outils
