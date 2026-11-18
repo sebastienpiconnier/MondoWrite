@@ -5,9 +5,18 @@
 // Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
-import { setChoiceMapOpen, useChoiceMapView } from "../interactive/mapView";
 import { useInteractive } from "../interactive/useInteractive";
-import { ChoiceMap } from "./ChoiceMap";
+import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { choiceGraph } from "../interactive/choices";
+import { verifyStory } from "../interactive/verify";
+import { readFactLabels } from "../interactive/facts";
+import { numberSections } from "../interactive/gamebook";
+import { sceneMarks, scenesKey } from "../interactive/storyMap";
+import { openPlay } from "../interactive/playState";
+import { FactsPanel } from "./ChoiceRules";
+import { projectFacts } from "../interactive/projectFacts";
+import type { Fact } from "../interactive/facts";
+import { MarksTags } from "./StoryChoices";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { MoreMenu } from "./MoreMenu";
@@ -31,6 +40,7 @@ const UNPLACED = "";
 /** Valeurs du menu « Chapitre » : aucun, ou un nouveau qui commence à cette scène. */
 const NO_CHAPTER = "";
 const NEW_CHAPTER = "+";
+const NO_FACTS: Fact[] = [];
 
 /** Téléphone : le plan se lit en liste seulement (les fiches n\u2019y tiennent pas). */
 const phoneSq = () => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches;
@@ -57,11 +67,32 @@ export function Plan() {
   const organizeCanvas = useCosmos((s) => s.organizeCanvas);
   const c = t.chapters;
 
+  // Roman interactif (lot 11, #91) : la carte des choix est le canevas ; le Plan montre les sections du livre.
+  const interactive = useInteractive();
   const sceneIds = useMemo(() => planScenes(nodes), [nodes]);
   const arranged = useMemo(() => arrange(plan, sceneIds), [plan, sceneIds]);
   const cards = useMemo(() => new Map(nodes.map((n) => [n.id, n.data])), [nodes]);
   const free = plan.template === "libre";
   const placed = sceneIds.length - arranged.unplaced.length;
+  // Sections du livre : numéro imprimé (le mélange du livre-jeu, le départ au 1) et repères de chaque scène.
+  const manuscript = useCosmos((s) => s.manuscript);
+  const metaKeep = useCosmos((s) => s.metaKeep);
+  const storyScenes = interactive ? interactiveScenes(nodes, plan) : null;
+  const storyKey = storyScenes ? scenesKey(storyScenes) : "";
+  const book = useMemo(() => {
+    if (!storyScenes) return null;
+    const slugs = interactiveSlugs(nodes, plan);
+    const numbers = new Map(numberSections({ scenes: storyScenes, slugs, manuscript }).map((sec) => [sec.id, sec.n]));
+    const graph = choiceGraph(manuscript, storyScenes);
+    const marks = sceneMarks(storyScenes, graph, manuscript, verifyStory(storyScenes, manuscript, readFactLabels(metaKeep)));
+    return { numbers, marks };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyKey, manuscript, metaKeep]);
+  // Plan libre d'un roman interactif : les scènes dans l'ordre d'impression, sans flèches ni glisser (l'ordre de la
+  // liste ne compte que pour le départ, qu'on choisit par le menu ⋯).
+  const bySection = interactive && free && !!book;
+  const facts = useCosmos((s) => (interactive ? projectFacts(s) : NO_FACTS));
+  const [showFacts, setShowFacts] = useState(false);
 
   // Scène en cours de glissement : la ref sert au dépôt (lu tout de suite), l'état à l'affichage.
   const draggedRef = useRef<string | null>(null);
@@ -74,11 +105,6 @@ export function Plan() {
   const [announce, setAnnounce] = useState("");
   // Chronologie par intrigue : une troisième lecture du plan, non mémorisée.
   const [timeline, setTimeline] = useState(false);
-  // Carte des choix (roman interactif, lot 2) : quatrième lecture du plan, non mémorisée.
-  const interactive = useInteractive();
-  const choiceMap = useChoiceMapView((s) => s.open);
-  const setChoiceMap = setChoiceMapOpen;
-  const showMap = interactive && choiceMap;
   // Pas de chronologie dans un roman interactif : ses colonnes suivent l'ordre du livre.
   const showTimeline = timeline && !interactive;
   // La scène dont « Ranger » est ouvert (chapitre et case) : un affichage, une seule à la fois.
@@ -168,7 +194,7 @@ export function Plan() {
         key={id}
         data-scene={id}
         className={`sq-scene plan-scene${dragged === id ? " is-dragged" : ""}${over === id && dragged !== id ? " is-over" : ""}`}
-        draggable
+        draggable={!bySection}
         onDragStart={(e) => {
           // Pas en tirant dans un champ : on y sélectionne du texte.
           if ((e.target as HTMLElement).closest("input, select, textarea")) return e.preventDefault();
@@ -183,7 +209,12 @@ export function Plan() {
         // Déposer sur une scène rangée : juste avant elle. Sur une scène à placer : on sort du plan.
         {...dropOn(id, beat, beat === null ? undefined : index)}
       >
-        {beat !== null && (
+        {bySection && (
+          <span className="plan-section-number" aria-label={fmt(t.interactive.plan.sectionAria, { n: book.numbers.get(id) ?? 0 })}>
+            {book.numbers.get(id) ?? "·"}
+          </span>
+        )}
+        {beat !== null && !bySection && (
           <div className="sq-moves">
             <button type="button" className="icon-button" data-move="up" disabled={at <= 0} aria-label={fmt(p.moveUp, { title })} onClick={() => step(id, "up")}>
               <span aria-hidden="true">{asCards ? "←" : "↑"}</span>
@@ -224,6 +255,7 @@ export function Plan() {
               <SceneStatusPicker card={card} />
               <PovPicker card={card} />
             </div>
+            {book && <MarksTags marks={book.marks.get(id)} />}
             {canArrange && arranging === id && (
             <div className="plan-meta" id={`arrange-${id}`}>
               {beat !== null && !interactive && (
@@ -277,6 +309,8 @@ export function Plan() {
           label={fmt(t.app.moreActionsFor, { title })}
           items={[
             { label: t.bible.seeOnCanvas, title: fmt(p.show, { title }), onSelect: () => revealCard(id) },
+            bySection && beat !== null && !book.marks.get(id)?.start && { label: t.interactive.plan.makeStart, onSelect: () => place(id, beat, 0) },
+            book && { label: t.interactive.play.openHere, onSelect: () => openPlay(id) },
             !interactive && !!useCosmos.getState().nextMergeable(id) && { label: t.merge.menuShort, onSelect: () => useCosmos.getState().mergeWithNext(id) },
             { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().deleteCard(id) },
           ]}
@@ -288,18 +322,32 @@ export function Plan() {
 
   return (
     <div className="sequencer" ref={rootRef}>
-      <div className={`sq-inner${asCards || showTimeline || showMap ? " is-cards" : ""}${showMap ? " is-map" : ""}`}>
+      <div className={`sq-inner${asCards || showTimeline ? " is-cards" : ""}`}>
         <PlanHeader
-          title={p.title}
+          title={interactive ? t.interactive.plan.sectionsTitle : p.title}
           timeline={showTimeline}
           onTimeline={setTimeline}
-          map={showMap}
-          onMap={interactive ? setChoiceMap : undefined}
+          noTimeline={interactive}
           modeAria={p.modeAria}
           actions={
-            <button type="button" className="ghost-button plan-organize" title={t.organize.hint} onClick={organizeCanvas}>
-              {t.organize.button}
-            </button>
+            <>
+              <button type="button" className="ghost-button plan-organize" title={t.organize.hint} onClick={organizeCanvas}>
+                {t.organize.button}
+              </button>
+              {interactive && (
+                <>
+                  <button type="button" className="ghost-button" onClick={() => openPlay()}>
+                    {t.interactive.play.open}
+                  </button>
+                  <span className="plan-facts">
+                    <button type="button" className={`ghost-button${showFacts ? " is-on" : ""}`} aria-expanded={showFacts} onClick={() => setShowFacts((v) => !v)}>
+                      {fmt(t.interactive.facts.button, { n: facts.length })}
+                    </button>
+                    {showFacts && <FactsPanel onClose={() => setShowFacts(false)} />}
+                  </span>
+                </>
+              )}
+            </>
           }
           total={
             sceneIds.length > 0 && (
@@ -321,13 +369,12 @@ export function Plan() {
           }
           about={interactive && free ? t.interactive.plan.startHint : p.templateAbout[plan.template]}
         />
-        {showMap ? (
-          <ChoiceMap />
-        ) : showTimeline ? (
+        {showTimeline ? (
           <Timeline order={[...order, ...arranged.unplaced]} />
         ) : (
           <>
-        <p className="sp-empty">{sceneIds.length === 0 ? p.empty : p.hint}</p>
+        {/* Sections du livre : ni case où glisser ni flèches, l'aide du Plan ne s'y applique pas. */}
+        {(sceneIds.length === 0 || !bySection) && <p className="sp-empty">{sceneIds.length === 0 ? p.empty : p.hint}</p>}
         {/* Le cercle de Dan Harmon se lit en cercle : ses huit étapes, et les trous. */}
         {plan.template === "cercleHarmon" && (
           <StoryCircle
@@ -344,11 +391,13 @@ export function Plan() {
               <span className="beat-title">{beatLabel(beat.key)}</span>
               {beat.ids.length > 0 && <span className="plan-count">{beat.ids.length}</span>}
             </h2>
-            {beatInfo(beat.key).hint && <p className="plan-beat-hint">{beatInfo(beat.key).hint}</p>}
+            {beatInfo(beat.key).hint && !bySection && <p className="plan-beat-hint">{beatInfo(beat.key).hint}</p>}
             {/* Case vide d'un gabarit (IA branchée) : une question sur mesure, à garder en carte Question. */}
             {!free && beat.ids.length === 0 && <BeatQuestion beatKey={beat.key} />}
             {groupByChapter(plan, beat.ids).map((group) => {
-              const list = <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{group.ids.map((id) => scene(id, beat.key, beat.ids.indexOf(id)))}</ol>;
+              // Sections du livre : dans l'ordre de leurs numéros.
+              const ids = bySection ? [...group.ids].sort((a, b) => (book.numbers.get(a) ?? 0) - (book.numbers.get(b) ?? 0)) : group.ids;
+              const list = <ol className={`sq-list${asCards ? " is-cards" : ""}`}>{ids.map((id) => scene(id, beat.key, beat.ids.indexOf(id)))}</ol>;
               if (!group.chapter) return <div key={`loose-${group.ids[0]}`}>{list}</div>;
               const ch = group.chapter;
               const name = chapterName(ch);

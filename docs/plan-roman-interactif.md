@@ -26,7 +26,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | --- | --- |
 | 0. Isolation | Ce document ; voir ci-dessous |
 | 1. Images (cœur) | `medias/`, insertion, texte alternatif, exports (partie 1 faite) |
-| 2. Carte des choix | Présentation du Plan, flèches de choix, scène créée par une flèche, bloc `choix` (fait) |
+| 2. Carte des choix | Flèches de choix, scène créée par une flèche, bloc `choix` (fait ; sur le canevas depuis le lot 11) |
 | 3. Lecture et compilation | Ink par inkjs, Mode Lecture, « Lire à partir d'ici », export .ink (fait) |
 | 4. Variables | Faits et compteurs, « Seulement si » et « Donne » sur les choix (fait) |
 | 5. Vérificateur | Sans fin, inaccessibles, blocages, faits (fait) ; parties automatiques à décider |
@@ -35,7 +35,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF (fait) |
 | 9. Import | Twee 3 et Ink (fait) |
 | 10. Storylets | Option, à décider après retours |
-| 11. Canevas = carte des choix | Flèches de choix sur le canevas, Plan en « Sections du livre » (#91) |
+| 11. Canevas = carte des choix | Flèches de choix sur le canevas, Plan en « Sections du livre » (#91, fait) |
 | 12. Numéros figés | Numérotation figée, cadenas par section, renvois cachés (#92) |
 | 13. Double page | « Vérifier » et mélange : pas de suite révélée sur la même double page (#93) |
 | 14. Types de fin | Bonne fin, mauvaise fin (#94) |
@@ -294,6 +294,27 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
 - [x] Un nom gravé en capitales (OURDAS, ÉTIENNE ou ETIENNE pour « Étienne ») n'est plus pris pour une variante dans un roman ; le scénario garde sa règle (INES et INÈS).
 - [x] L'assistant ne savait pas quel champ attend un secret révélé : « Révélé dans » et quelques autres noms désignent `revelation`, un champ refusé donne la liste des champs du type, et `review` dit comment répondre (`MCP_FIX` de mcpLive.ts) en plus de l'explication de la règle.
 - [x] Un fait laissé par un brouillon restait dans la liste : outil `remove_fact` (refusé tant qu'un choix l'emploie). Dans l'app, la fenêtre des faits avait déjà « Oublier ».
+
+## Lot 11 · Le canevas est la carte des choix (fait sur la branche `roman-interactif`, #91)
+
+- **Une seule carte des scènes** : la présentation « Carte des choix » du Plan et `ChoiceMap.tsx` sont retirés. Sur le
+  canevas d'un roman interactif, chaque choix est une flèche entre deux cartes Scène (`useStoryMap`), lue dans les blocs
+  ` ```choix ` et jamais enregistrée comme un fil : pointillé si le choix a une condition, étiquette « si … », « + … »,
+  flèches aller et retour décalées de côté. Elles restent visibles quand les fils sont masqués.
+- **Gestes** : tirer une flèche d'une scène vers une autre (un choix), la lâcher dans le vide (nouvelle scène et son
+  choix, posée là) ; menu ⋯ d'une carte Scène (Écrire la scène, Lire à partir d'ici, Ajouter un choix vers…, Nouvelle
+  scène après celle-ci, posée à droite, Ajouter un choix « Fin ») ; flèche choisie : bandeau en bas (texte,
+  « Seulement si », « Donne », « Retirer ce choix »), Suppr la retire. Entre une scène et un personnage, un lieu ou un
+  objet, un fil reste un fil.
+- **Repères** sur les cartes Scène : Départ, Fin, Sans choix, choix sans destination, Inaccessible, Peut bloquer, Fait
+  manquant. « Voir sur le canevas » (onglet « Vérifier ») montre la scène et la met en avant.
+- **Plan = « Sections du livre »** : en plan libre, les scènes dans l'ordre de leur numéro imprimé (aperçu du mélange
+  du livre-jeu), sans flèches ni glisser ; repères sous chaque scène ; « En faire le départ » (menu ⋯) ; « Lire
+  l'histoire » et « Faits · N » dans l'en-tête.
+- **`choiceMap`** n'est plus lu ni écrit (rien n'était publié : pas de reprise des places). « Organiser » range
+  toujours les scènes en arbre (`choiceTree`).
+- **Reste** : vérifier sur iPad et iPhone (toucher une flèche, la tirer au doigt) ; un gros livre-jeu (300 à 400
+  scènes) sur le canevas.
 
 ## Décisions du 18 novembre 2026 (manuel de LibroGameCreator)
 

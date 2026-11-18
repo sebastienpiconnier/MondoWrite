@@ -1,15 +1,10 @@
-// Carte des choix ouverte ou non dans le Plan (lot 5) : état d'affichage de la session, jamais enregistré. Il survit
-// à un passage par une autre vue, et « Voir sur la carte des choix » (onglet « Vérifier ») l'ouvre sur une scène.
+// « Voir sur la carte des choix » (onglet « Vérifier », lot 5) : depuis le lot 11 (#91), la carte des choix est le
+// canevas. La scène y est montrée et mise en avant ; sans scène, le canevas s'ouvre.
 
-import { create } from "zustand";
 import { useCosmos } from "../store";
 
-export const useChoiceMapView = create<{ open: boolean; focus: string | null }>(() => ({ open: false, focus: null }));
-
-export const setChoiceMapOpen = (open: boolean) => useChoiceMapView.setState({ open });
-
-/** Ouvre le Plan sur la carte des choix, la scène `focus` au centre. */
 export function showOnChoiceMap(focus: string | null = null) {
-  useChoiceMapView.setState({ open: true, focus });
-  useCosmos.getState().setView("plan");
+  const store = useCosmos.getState();
+  if (focus && store.nodes.some((n) => n.id === focus)) store.revealCard(focus);
+  else store.setView("toile");
 }

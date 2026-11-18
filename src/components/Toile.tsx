@@ -11,6 +11,7 @@ import {
   ConnectionMode,
   Controls,
   MiniMap,
+  Panel,
   ReactFlow,
   SelectionMode,
   useNodesInitialized,
@@ -39,6 +40,10 @@ import { documentExtension, imageExtension } from "../media";
 import { TEXT_FILE_RE, clipFromText } from "../clip";
 import { attachCanvasWheel } from "../canvasWheel";
 import { setCanvasCenter } from "../canvasCenter";
+import { useStoryMap } from "../interactive/useStoryMap";
+import { isChoiceEdgeId, readChoiceEdgeId } from "../interactive/storyMap";
+import { END_TARGET } from "../interactive/choices";
+import { EdgeEditor, STORY_CHOICE_EVENT, TargetPicker, type StoryChoiceAsk } from "./StoryChoices";
 
 /** Fichiers qui deviennent une carte quand on les dépose ou les colle sur le canevas. */
 const isIncomingFile = (f: File) =>
@@ -178,11 +183,48 @@ export function Toile() {
       }),
     ];
   }, [frames, shownFrames, nodes, hidden, spotlightId, lit]);
-  const shownEdges = useMemo(() => {
+  const wireEdges = useMemo(() => {
     if (hidden.size === 0 && !hideWires) return edges;
     const lit = new Set(wiresShown);
     return edges.map((e) => (hidden.has(e.source) || hidden.has(e.target) || !wireShown(e, hideWires, lit) ? { ...e, hidden: true } : e));
   }, [edges, hidden, hideWires, wiresShown]);
+  // Roman interactif (lot 11, #91) : le canevas est la carte des choix. Les flèches de choix se lisent dans les blocs
+  // de choix des scènes et s'ajoutent aux fils le temps de l'affichage ; elles ne sont jamais enregistrées comme des fils.
+  // Elles restent visibles quand les fils sont masqués (ce sont les chemins de l'histoire), pas quand le filtre cache
+  // une de leurs scènes.
+  const story = useStoryMap();
+  const [choiceSel, setChoiceSel] = useState<string | null>(null);
+  const shownEdges = useMemo(() => {
+    if (!story || story.edges.length === 0) return wireEdges;
+    const choices = story.edges.map((e) => {
+      const off = hidden.has(e.source) || hidden.has(e.target);
+      const on = e.id === choiceSel;
+      return off || on ? { ...e, ...(off ? { hidden: true } : {}), ...(on ? { selected: true } : {}) } : e;
+    });
+    return [...wireEdges, ...choices];
+  }, [wireEdges, story, hidden, choiceSel]);
+  const chosenChoice = useMemo(() => {
+    const at = choiceSel ? readChoiceEdgeId(choiceSel) : null;
+    return at && story ? (story.graph.find((e) => e.from === at.from && e.index === at.index) ?? null) : null;
+  }, [choiceSel, story]);
+  // Un choix retiré ailleurs (texte, annulation) : son bandeau se ferme.
+  useEffect(() => {
+    if (choiceSel && !chosenChoice) setChoiceSel(null);
+  }, [choiceSel, chosenChoice]);
+  // « Ajouter un choix vers… », « Nouvelle scène après celle-ci », « Fin » : menu ⋯ d'une carte Scène.
+  const [picking, setPicking] = useState<string | null>(null);
+  useEffect(() => {
+    const on = (e: Event) => {
+      const { kind, id } = (e as CustomEvent<StoryChoiceAsk>).detail;
+      const store = useCosmos.getState();
+      if (kind === "pick") setPicking(id);
+      else if (kind === "end") store.addChoiceTo(id, END_TARGET);
+      else store.addSceneAfter(id);
+    };
+    window.addEventListener(STORY_CHOICE_EVENT, on);
+    return () => window.removeEventListener(STORY_CHOICE_EVENT, on);
+  }, []);
+  const isStoryScene = (id: string | null | undefined) => !!id && !!story?.scenes.some((sc) => sc.id === id);
   const canUndo = useCosmos((s) => s.past.length > 0);
   const canRedo = useCosmos((s) => s.future.length > 0);
   const { screenToFlowPosition, fitView, getViewport, setViewport, setCenter, getInternalNode } = useReactFlow();
@@ -695,14 +737,40 @@ export function Toile() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+        onEdgesChange={(changes) => {
+          // Flèches de choix : choisies ici, retirées du bloc de choix de leur scène ; le reste va aux fils.
+          const wires = changes.filter((c) => !("id" in c) || !isChoiceEdgeId(c.id));
+          const removed: { from: string; index: number }[] = [];
+          for (const c of changes) {
+            if (!("id" in c) || !isChoiceEdgeId(c.id)) continue;
+            if (c.type === "select") setChoiceSel((cur) => (c.selected ? c.id : cur === c.id ? null : cur));
+            else if (c.type === "remove") {
+              // Suppr sur une carte Scène : React Flow retire d'abord ses flèches. La scène part à la corbeille, ses
+              // choix et ceux qui y mènent restent écrits (le vérificateur les signale), comme son texte.
+              const edge = story?.edges.find((e) => e.id === c.id);
+              const goes = useCosmos.getState().nodes.some((n) => n.selected && (n.id === edge?.source || n.id === edge?.target));
+              const at = readChoiceEdgeId(c.id);
+              if (at && !goes) removed.push(at);
+            }
+          }
+          // Du plus haut rang au plus bas : retirer un choix ne décale pas ceux qui restent à retirer.
+          removed.sort((a, b) => b.index - a.index);
+          for (const at of removed) useCosmos.getState().editChoiceAt(at.from, at.index, null);
+          if (removed.length) setChoiceSel(null);
+          if (wires.length) onEdgesChange(wires);
+        }}
         onConnectStart={() => (edgeCountBeforeConnect.current = useCosmos.getState().edges.length)}
-        onConnect={onConnect}
+        // Roman interactif : entre deux scènes de l'histoire, une flèche tirée est un choix, jamais un fil.
+        onConnect={(c) => {
+          if (c.source && c.target && c.source !== c.target && isStoryScene(c.source) && isStoryScene(c.target)) useCosmos.getState().addChoiceTo(c.source, c.target);
+          else onConnect(c);
+        }}
         // Un clic sur le fond rend tout le canevas : fin de la mise en avant, menu de carte fermé.
         onPaneClick={() => {
           const s = useCosmos.getState();
           if (s.spotlightId) s.setSpotlight(null);
           if (s.cardMenu) s.setCardMenu(null);
+          setChoiceSel(null);
         }}
         // Clic droit sur une carte, hors de son texte (le menu du navigateur y reste, pour l'orthographe) : son menu.
         onNodeContextMenu={(event, node) => {
@@ -715,7 +783,14 @@ export function Toile() {
           event.preventDefault();
           createAt(event.clientX, event.clientY);
         }}
-        onConnectEnd={(event) => {
+        onConnectEnd={(event, state) => {
+          // Roman interactif : une flèche partie d'une scène et lâchée dans le vide crée la scène suivante et son choix.
+          if (!state.isValid && !state.toNode && state.fromNode && isStoryScene(state.fromNode.id)) {
+            const p = "changedTouches" in event ? event.changedTouches[0] : event;
+            const at = screenToFlowPosition({ x: p.clientX, y: p.clientY });
+            useCosmos.getState().addSceneAfter(state.fromNode.id, { x: at.x, y: at.y - 40 });
+            return;
+          }
           // Un fil vient d'être créé : on propose tout de suite de l'étiqueter.
           const all = useCosmos.getState().edges;
           if (all.length > edgeCountBeforeConnect.current) {
@@ -725,10 +800,11 @@ export function Toile() {
         }}
         onEdgeDoubleClick={(e, edge) => {
           e.stopPropagation();
-          openLabelEditor(edge, e.clientX, e.clientY);
+          if (isChoiceEdgeId(edge.id)) setChoiceSel(edge.id);
+          else openLabelEditor(edge, e.clientX, e.clientY);
         }}
-        // Un clic (ou un appui) sur un fil ouvre son étiquette et le bouton « Délier ».
-        onEdgeClick={(e, edge) => openLabelEditor(edge, e.clientX, e.clientY)}
+        // Un clic (ou un appui) sur un fil ouvre son étiquette et le bouton « Délier » ; sur un choix, son bandeau.
+        onEdgeClick={(e, edge) => (isChoiceEdgeId(edge.id) ? setChoiceSel(edge.id) : openLabelEditor(edge, e.clientX, e.clientY))}
         colorMode={theme}
         connectionMode={ConnectionMode.Loose}
         zoomOnDoubleClick={false}
@@ -760,6 +836,11 @@ export function Toile() {
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} />
         <FrameLabels hidden={hiddenFrameIds} />
         <Controls showInteractive={false} position="bottom-right" />
+        {chosenChoice && (
+          <Panel position="bottom-center" className="choice-map-edge">
+            <EdgeEditor key={choiceSel} edge={chosenChoice} onDone={() => setChoiceSel(null)} />
+          </Panel>
+        )}
         <MiniMap
           position="top-right"
           pannable
@@ -768,6 +849,15 @@ export function Toile() {
           nodeClassName={(n) => (n.type === "frame" ? "minimap-frame" : `minimap-node type-${(n.data as CardData).type}`)}
         />
       </ReactFlow>
+
+      {picking && story && (
+        <TargetPicker
+          from={picking}
+          title={story.scenes.find((sc) => sc.id === picking)?.title.trim() || t.interactive.map.untitled}
+          scenes={story.scenes.map((sc, i) => ({ ...sc, rank: i + 1 })).filter((sc) => sc.id !== picking)}
+          onClose={() => setPicking(null)}
+        />
+      )}
 
       {labelEditor && (
         <div className="label-editor" style={{ left: labelEditor.x, top: labelEditor.y }}>

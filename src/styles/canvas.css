@@ -233,6 +233,13 @@
    au bout, qui se déplie au toucher ; fils masqués, la liste est dépliée (c'est le seul repère) et « Relié à »
    rallume les fils de la carte. */
 .card-links { display: block; width: calc(100% - 24px); margin: 0 12px 10px; padding: 0; border: 0; background: transparent; color: var(--muted); font: 500 12px/1.5 var(--font-ui); text-align: left; }
+/* Roman interactif (lot 11, #91) : repères d'une carte Scène et flèches de choix sur le canevas. */
+.card .card-story-marks { margin: 0 12px 10px 16px; font-family: var(--font-ui); }
+.toile .react-flow__edge.choice-edge.selected .react-flow__edge-path { stroke-width: 3 !important; }
+.toile .react-flow__edge.choice-edge.is-unnamed .react-flow__edge-text { fill: var(--muted) !important; font-style: italic; }
+/* Bandeau d'une flèche choisie : en bas, au-dessus de la rangée d'outils, pour ne pas cacher la scène d'où elle part. */
+.toile .react-flow__panel.choice-map-edge { margin-bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px)); max-width: calc(100% - 24px); }
+.toile .choice-picker { position: absolute; }
 .card-links-line { min-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .card-links-label { margin-right: 2px; }
 .card-links.is-open { color: var(--ink-2); }

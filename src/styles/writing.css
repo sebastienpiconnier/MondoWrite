@@ -280,6 +280,13 @@ span.tl-cell.is-pov { cursor: default; }
   .sq-list:not(.is-cards) .plan-scene .plan-detail { grid-column: 1 / -1; grid-row: 2; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; }
   .sq-list:not(.is-cards) .plan-detail .sq-desc { margin: 2px 0 0; }
 }
+/* Sections du livre (roman interactif, lot 11, #91) : le numéro imprimé à la place des flèches. */
+.plan-section-number { flex-shrink: 0; display: inline-grid; place-items: center; min-width: 2.6rem; height: 2rem; padding: 0 0.4rem; border-radius: 8px; border: 1px solid var(--line-2); color: var(--ink); font: 600 0.9375rem/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+@media (min-width: 700px) { .sq-list:not(.is-cards) .plan-scene .plan-section-number { grid-column: 1; grid-row: 1; } }
+.plan-scene .choice-scene-tags { margin: 2px 0 0; }
+.plan-facts { position: relative; display: inline-flex; }
+.plan-facts .facts-panel { top: calc(100% + 6px); right: auto; left: 0; width: min(22rem, calc(100vw - 2rem)); max-height: min(70vh, 32rem); }
+.plan-facts .ghost-button.is-on { border-color: var(--accent); color: var(--accent); }
 /* Flèches de déplacement toujours visibles, comme dans le séquencier (#55). */
 @media (min-width: 700px) and (pointer: fine) { .sq-list:not(.is-cards) .plan-scene .sq-moves .icon-button { width: 32px; height: 32px; } }
 @media (pointer: coarse) { .plan-meta .plan-to select { min-height: 44px; } .plan-actions .icon-button, .plan-scene .plan-actions .icon-button { width: 44px; height: 44px; } }
@@ -1418,30 +1425,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
   .scene-choices .choice-remove { min-width: 44px; }
 }
 
-/* Carte des choix (roman interactif, lot 2, ChoiceMap.tsx) : quatrième présentation du Plan. */
-.sq-inner.is-map { max-width: none; }
-.choice-map { position: relative; height: max(420px, calc(100vh - 230px)); height: max(420px, calc(100dvh - 230px)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--ground); }
-.choice-map.is-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem; height: auto; min-height: 240px; padding: 2rem; }
-.choice-map .react-flow, .choice-map .react-flow.dark {
-  background: var(--ground);
-  --xy-background-color-default: var(--ground);
-  --xy-edge-stroke-default: var(--ink-2);
-  --xy-edge-stroke-selected-default: var(--accent);
-  --xy-edge-label-background-color-default: var(--surface);
-  --xy-edge-label-color-default: var(--ink);
-  --xy-handle-background-color-default: var(--accent);
-  --xy-handle-border-color-default: var(--surface);
-  --xy-connectionline-stroke-default: var(--accent);
-}
-.choice-map .react-flow__edge.selected .react-flow__edge-path { stroke: var(--accent) !important; stroke-width: 2.5 !important; }
-.choice-map .react-flow__edge.is-unnamed .react-flow__edge-text { fill: var(--muted) !important; font-style: italic; }
-.choice-map-hint { max-width: min(30rem, 60%); margin: 10px; padding: 0.4rem 0.7rem; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 0.8rem; line-height: 1.35; }
-.choice-scene { width: 240px; padding: 10px 12px 10px 14px; border: 1px solid var(--line-2); border-left: 4px solid var(--type-scene); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 13px; line-height: 1.35; box-shadow: var(--shadow-card); }
-.choice-scene.is-selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.choice-scene.is-start { border-left-color: var(--accent); }
-.choice-scene-head { display: flex; align-items: flex-start; gap: 6px; }
-.choice-scene-title { flex: 1; font-weight: 600; word-break: break-word; }
-.choice-scene-text { margin: 6px 0 0; color: var(--ink-2); font-size: 12px; overflow-wrap: anywhere; }
+/* Choix d'un roman interactif sur le canevas (lot 11, Toile.tsx, StoryChoices.tsx) : repères des scènes, bandeau
+   d'une flèche, « Ajouter un choix vers… ». Aussi dans le Plan (Sections du livre). */
 .choice-scene-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; }
 .choice-scene-tags:empty { display: none; }
 .choice-tag { padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 11px; color: var(--ink-2); }
@@ -1449,8 +1434,6 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .choice-tag.is-end { border-color: var(--status-done); color: var(--status-done); }
 .choice-tag.is-dead { color: var(--muted); border-style: dashed; }
 .choice-tag.is-broken { border-color: var(--danger); color: var(--danger); }
-.choice-handle { width: 12px; height: 12px; }
-.choice-map-edge { margin-top: 14px; }
 .choice-edge-editor { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.6rem; padding: 0.6rem 0.8rem; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop); font-size: 0.85rem; }
 .choice-edge-editor label { display: grid; gap: 0.2rem; color: var(--ink-2); }
 .choice-edge-editor input { min-width: 16rem; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.3em 0.6em; }
@@ -1474,7 +1457,6 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .facts-row .ghost-button { justify-self: start; }
 .facts-add { display: flex; gap: 0.4rem; }
 .facts-add input { flex: 1; min-width: 0; }
-.choice-map-actions .ghost-button.is-on { border-color: var(--accent); color: var(--accent); }
 .play-known { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.8rem; color: var(--muted); }
 .play-known .choice-tag { color: var(--ink-2); }
 .choice-picker-hint { margin: 0.3rem 0 0.6rem; color: var(--muted); font-size: 0.85rem; }
@@ -1484,10 +1466,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
   .choice-picker li button:hover { background: var(--hover); }
 }
 @media (pointer: coarse) {
-  .choice-handle { width: 22px; height: 22px; }
   .choice-picker li button, .choice-edge-editor input, .choice-edge-editor select, .facts-row input, .facts-add input, .facts-panel button { min-height: 44px; }
 }
-.choice-scene-rank { color: var(--muted); font-weight: 500; }
 
 /* Mode Lecture d'un roman interactif (lot 3, PlayDialog.tsx) : l'histoire comme la lira le lecteur. */
 .app-dialog.is-play { width: min(760px, calc(100vw - 32px)); }
@@ -1509,4 +1489,3 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .play-problems { padding: 0.7rem 0.9rem; border: 1px solid var(--danger); border-radius: 10px; font-size: 0.9rem; }
 .play-problems ul { margin: 0.4rem 0 0; padding-left: 1.1rem; display: grid; gap: 0.4rem; }
 .play-problems li .ghost-button { margin-left: 0.5rem; }
-.choice-map-actions { display: flex; gap: 0.5rem; }

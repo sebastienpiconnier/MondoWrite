@@ -81,7 +81,7 @@ import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
 import { interactiveOffered, isInteractiveMeta, showsInteractive } from "./interactive";
-import { CHOICE_MAP_KEY, END_TARGET, choiceMapValue, choicesAfterUndo, choicesIn, cleanLabel, editChoice, readChoiceMap, renameTargets, sceneSlugs, withChoices, type ChoiceLine, type MapPositions } from "./interactive/choices";
+import { END_TARGET, choicesAfterUndo, choicesIn, cleanLabel, editChoice, renameTargets, sceneSlugs, withChoices, type ChoiceLine } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { choiceGraph, choiceTree } from "./interactive/choices";
 import { FACTS_KEY, cleanFactLabel, isFactName, newFactName, readFactLabels, storyFacts } from "./interactive/facts";
@@ -165,10 +165,8 @@ export interface CosmosState {
   createFact: (label: string) => string | null;
   /** Libellé d'un fait (gardé dans `storyFacts` de cosmos.json, hors historique) ; null l'oublie. */
   setFactLabel: (name: string, label: string | null) => void;
-  /** Nouvelle scène après `from` (même case, même chapitre) et le choix qui y mène ; posée à `at` sur la carte des choix. */
+  /** Nouvelle scène après `from` (même case, même chapitre) et le choix qui y mène ; posée près de `at` sur le canevas. */
   addSceneAfter: (from: string, at?: { x: number; y: number }, label?: string) => string | null;
-  /** Places de la carte des choix (cosmos.json, `choiceMap`), hors historique comme la vue du canevas. */
-  setChoiceMapPositions: (positions: MapPositions) => void;
   /** Coupe le récit : un nouveau chapitre commence à cette scène. Rend son identifiant. */
   startChapterAt: (sceneId: string) => string | null;
   /** Défait une coupure de scène : le texte de `fromId` revient à la fin de `intoId`, et sa carte part. */
@@ -2622,10 +2620,24 @@ export const useCosmos = create<CosmosState>((set, get) => {
     addSceneAfter: (from, at, label = "") => {
       const id = get().splitScene(from, "");
       if (!id) return null;
+      // Sur le canevas (la carte des choix, lot 11), la suite se pose à droite de la scène d'où part le choix :
+      // assez loin pour que la flèche et son texte se lisent. Une flèche lâchée dans le vide la pose là (plus bas).
+      if (!at) {
+        const source = get().nodes.find((n) => n.id === from);
+        if (source) {
+          const [box] = boxes([source]);
+          at = { x: box.x + box.width + 160, y: box.y };
+        }
+      }
       const title = getT().interactive.map.newSceneTitle;
       set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, title } } : n)) });
       get().addChoiceTo(from, id, label);
-      if (at) get().setChoiceMapPositions({ ...readChoiceMap(get().metaKeep), [id]: at });
+      // Flèche lâchée dans le vide (canevas, lot 11) : la scène naît là, sans chevaucher une carte ni un cadre.
+      if (at) {
+        const others = get().nodes.filter((n) => n.id !== id);
+        const spot = placeCard(at, occupied(others), { width: CARD_SIZE.width, height: CARD_SIZE.height });
+        set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, position: spot } : n)) });
+      }
       return id;
     },
     createFact: (label) => {
@@ -2654,12 +2666,6 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (Object.keys(labels).length) next[FACTS_KEY] = labels;
       else delete next[FACTS_KEY];
       set({ metaKeep: next });
-      touch();
-    },
-    setChoiceMapPositions: (positions) => {
-      const { metaKeep, nodes, plan } = get();
-      const keep = new Set(interactiveScenes(nodes, plan).map((s) => s.id));
-      set({ metaKeep: { ...metaKeep, [CHOICE_MAP_KEY]: choiceMapValue(positions, keep) } });
       touch();
     },
     joinScenes: (fromId, intoId) => {

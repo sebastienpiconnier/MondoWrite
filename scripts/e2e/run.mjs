@@ -2096,26 +2096,47 @@ const scenarios = [
       await h.canvas();
       await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").interactive === true, "le projet n'est pas enregistré en roman interactif");
 
-      // Carte des choix : une première scène, une scène après elle (avec son choix), puis une fin.
+      // Sections du livre (Plan) : une première scène ; ni chronologie ni carte des choix à part (lot 11).
       await h.view(2);
-      await page.getByRole("button", { name: "Carte des choix" }).click();
-      await page.locator(".choice-map").getByRole("button", { name: "Nouvelle scène" }).click();
-      const scenes = page.locator(".choice-scene");
-      await until(async () => (await scenes.count()) === 1, "« Nouvelle scène » n'a pas créé de scène sur la carte");
+      await until(() => page.getByRole("heading", { name: "Sections du livre" }).isVisible(), "le Plan d'un roman interactif ne s'appelle pas « Sections du livre »");
       assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 0, "la chronologie est proposée dans un roman interactif");
-      await scenes.nth(0).getByRole("button", { name: /^Actions de/ }).click();
+      assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "la carte des choix est encore une présentation du Plan");
+      await page.getByPlaceholder("Nouvelle scène…").fill("La cour");
+      await page.getByPlaceholder("Nouvelle scène…").press("Enter");
+      await until(async () => (await page.locator(".plan-section-number").count()) === 1, "la scène n'a pas son numéro de section");
+
+      // Le canevas est la carte des choix : une scène après la première (avec son choix), puis une fin.
+      await h.view(1);
+      const sceneCards = page.locator(".react-flow__node-card:has(.card.type-scene)");
+      await until(async () => (await sceneCards.count()) === 1, "la scène n'est pas sur le canevas");
+      await until(() => sceneCards.first().locator(".choice-tag.is-start").isVisible(), "la première scène n'est pas marquée « Départ » sur le canevas");
+      await sceneCards.first().getByRole("button", { name: "Plus d’actions" }).click();
       await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
-      await until(async () => (await scenes.count()) === 2, "« Nouvelle scène après celle-ci » n'a pas créé de seconde scène");
-      await until(async () => (await page.locator(".choice-map .react-flow__edge").count()) >= 1, "pas de flèche entre les deux scènes");
-      const second = await scenes.nth(1).evaluate((el) => el.closest(".react-flow__node")?.dataset.id);
-      await scenes.nth(1).getByRole("button", { name: /^Actions de/ }).click();
+      await until(async () => (await sceneCards.count()) === 2, "« Nouvelle scène après celle-ci » n'a pas créé de seconde scène");
+      const arrows = page.locator(".react-flow__edge.choice-edge");
+      await until(async () => (await arrows.count()) === 1, "pas de flèche de choix entre les deux scènes");
+      const first = await sceneCards.first().getAttribute("data-id");
+      const second = (await sceneCards.evaluateAll((els) => els.map((e) => e.dataset.id))).find((id) => id !== first);
+      const secondCard = page.locator(`.react-flow__node-card[data-id="${second}"]`);
+      await secondCard.getByRole("button", { name: "Plus d’actions" }).click();
       await page.getByRole("menuitem", { name: "Ajouter un choix « Fin »" }).click();
+      await until(() => secondCard.locator(".choice-tag.is-end").isVisible(), "la seconde scène n'est pas marquée « Fin »");
       await h.saved((f) => {
         const blocks = Object.entries(f).filter(([k]) => k.startsWith("manuscrit/")).map(([, v]) => v);
-        return blocks.length === 2 && blocks.every((v) => v.includes("```choix")) && (f[`manuscrit/${second}.md`] ?? "").includes("-> END");
-      }, "les choix ne sont pas enregistrés en bloc ```choix (avec -> END pour la fin)");
+        const meta = JSON.parse(f["cosmos.json"] ?? "{}");
+        const wires = (meta.links ?? []).length;
+        return blocks.length === 2 && blocks.every((v) => v.includes("```choix")) && (f[`manuscrit/${second}.md`] ?? "").includes("-> END") && wires === 0 && !meta.choiceMap;
+      }, "les choix ne sont pas enregistrés en bloc ```choix (avec -> END pour la fin), ou une flèche est devenue un fil");
+      // Une flèche choisie : son bandeau, dont le texte s'écrit dans le bloc de la scène.
+      await arrows.first().dispatchEvent("click");
+      const edgeText = page.locator(".choice-edge-editor").getByRole("textbox", { name: "Texte du choix", exact: true });
+      await until(() => edgeText.isVisible(), "choisir une flèche n'ouvre pas son bandeau");
+      await edgeText.fill("Avancer");
+      await edgeText.press("Enter");
+      await h.saved((f) => (f[`manuscrit/${first}.md`] ?? "").includes("[Avancer]"), "le texte du choix tapé sur le canevas n'est pas enregistré");
+      await h.view(2);
 
-      // Lecture depuis la carte : « Continuer » puis la fin.
+      // Lecture depuis les sections du livre : le choix puis la fin.
       await page.getByRole("button", { name: "Lire l’histoire" }).click();
       const play = page.locator(".play-panel");
       await until(async () => (await play.locator(".play-choices button").count()) === 1, "la lecture ne propose pas le choix de la première scène");
@@ -2223,8 +2244,9 @@ const scenarios = [
 
       // Lecture : choix au clavier et à la souris, jusqu'à la fin.
       await h.view(2);
-      await page.getByRole("button", { name: "Carte des choix" }).click();
-      await until(async () => (await page.locator(".choice-scene").count()) === 4, "la carte des choix n'a pas les quatre scènes");
+      await until(async () => (await page.locator(".plan-section-number").count()) === 4, "les sections du livre ne sont pas quatre");
+      const numbers = await page.locator(".plan-section-number").allTextContents();
+      assert(numbers.join(",") === "1,2,3,4", `sections pas dans l'ordre de leurs numéros : ${numbers.join(",")}`);
       await page.getByRole("button", { name: "Lire l’histoire" }).click();
       const play = page.locator(".play-panel");
       await until(() => play.getByText("Il fait nuit dans la cour.").isVisible(), "la lecture ne commence pas par la scène de départ");

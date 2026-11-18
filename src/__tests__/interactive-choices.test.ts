@@ -6,15 +6,12 @@ import {
   dropContinueTo,
   choiceGraph,
   choiceLine,
-  choiceMapValue,
   choicesAfterUndo,
   choicesHtml,
   choicesIn,
   choicesTextIn,
   editChoice,
-  layoutChoiceMap,
   parseChoices,
-  readChoiceMap,
   renameTargets,
   resolveTarget,
   sceneSlugs,
@@ -132,30 +129,6 @@ describe("graphe, modification, renommage, annulation", () => {
     expect(back.s1).toBe(withChoices("<p>x et plus</p>", choicesIn(manuscript.s1)));
     expect(back.s3).toBeUndefined();
     expect(choicesAfterUndo(manuscript, manuscript)).toBe(manuscript);
-  });
-});
-
-describe("places sur la carte", () => {
-  it("relues avec prudence, écrites arrondies pour les scènes encore là", () => {
-    const pos = readChoiceMap({ choiceMap: { pos: { a: [1.4, 2], b: ["x", 1], "../c": [1, 1], d: [Infinity, 0] } } });
-    expect(pos).toEqual({ a: { x: 1.4, y: 2 } });
-    expect(choiceMapValue({ a: { x: 1.4, y: 2.6 }, z: { x: 0, y: 0 } }, new Set(["a"]))).toEqual({ pos: { a: [1, 3] } });
-  });
-
-  it("à droite de la scène d'où part le choix ; les scènes isolées dessous ; les places connues ne bougent pas", () => {
-    const edges = [
-      { from: "a", index: 0, label: "", target: "", to: "b" },
-      { from: "a", index: 1, label: "", target: "", to: "c" },
-    ];
-    const pos = layoutChoiceMap(["a", "b", "c", "d"], edges, {});
-    expect(pos.a).toEqual({ x: 0, y: 0 });
-    expect(pos.b).toEqual({ x: 380, y: 0 });
-    expect(pos.c).toEqual({ x: 380, y: 200 });
-    expect(pos.d.y).toBeGreaterThan(pos.c.y);
-    expect(layoutChoiceMap(["a"], [], { a: { x: 9, y: 9 } })).toEqual({ a: { x: 9, y: 9 } });
-    // Une scène nouvelle se pose à côté de celle d'où part son choix, même si les autres ont des places à elles.
-    const grown = layoutChoiceMap(["a", "b", "c", "e"], [...edges, { from: "c", index: 0, label: "", target: "", to: "e" }], { a: { x: 500, y: 40 }, b: { x: 900, y: 40 }, c: { x: 900, y: 400 } });
-    expect(grown.e).toEqual({ x: 1280, y: 400 });
   });
 });
 

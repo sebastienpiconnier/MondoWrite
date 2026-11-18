@@ -6,6 +6,9 @@ import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "rea
 import { useT } from "../i18n";
 import { useCosmos } from "../store";
 import { openNamesForCard } from "../namesState";
+import { useStoryMarks } from "../interactive/useStoryMap";
+import { openPlay } from "../interactive/playState";
+import { askStoryChoice } from "./StoryChoices";
 
 export function CardActions({ id, hasImage, title = "", isCharacter = false }: { id: string; hasImage: boolean; title?: string; isCharacter?: boolean }) {
   const all = useT();
@@ -29,7 +32,20 @@ export function CardActions({ id, hasImage, title = "", isCharacter = false }: {
     setCardMenu(null);
     action();
   };
+  // Scène d'un roman interactif (lot 11) : les gestes de la carte des choix, au clavier et au doigt.
+  const story = useStoryMarks((s) => id in s.byId);
+  const m = all.interactive.map;
+  const storyItems: [string, () => void][] = story
+    ? [
+        [m.write, () => useCosmos.getState().openInManuscript(id)],
+        [all.interactive.play.openHere, () => openPlay(id)],
+        [m.addChoice, () => askStoryChoice({ kind: "pick", id })],
+        [m.sceneAfter, () => askStoryChoice({ kind: "after", id })],
+        [m.endHere, () => askStoryChoice({ kind: "end", id })],
+      ]
+    : [];
   const items: [string, () => void, boolean?][] = [
+    ...storyItems,
     // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
     [hasImage ? t.changeImage : t.addImage, () => useCosmos.getState().openPhotos({ kind: "card", id })],
     [t.filterHere, () => useCosmos.getState().setFilterCard(id)],

@@ -13,9 +13,8 @@ interface Props {
   /** Chronologie affichée (état de la vue). */
   timeline: boolean;
   onTimeline: (on: boolean) => void;
-  /** Carte des choix (roman interactif, lot 2) : présentée seulement si `onMap` est donné. */
-  map?: boolean;
-  onMap?: (on: boolean) => void;
+  /** Pas de chronologie (roman interactif : l'ordre du livre n'y est pas celui de la lecture). */
+  noTimeline?: boolean;
   /** Libellé du groupe des présentations. */
   modeAria: string;
   /** Boutons d'action après les présentations (Organiser le canevas, Nouvel épisode…). */
@@ -39,7 +38,7 @@ export function ArrangeToggle({ open, title, onToggle }: { open: boolean; title:
   );
 }
 
-export function PlanHeader({ title, timeline, onTimeline, map = false, onMap, modeAria, actions, total, template, about }: Props) {
+export function PlanHeader({ title, timeline, onTimeline, noTimeline = false, modeAria, actions, total, template, about }: Props) {
   const t = useT();
   const sq = t.screenplay.sequencer;
   const mode = useSettings((s) => s.sequencerMode);
@@ -52,18 +51,17 @@ export function PlanHeader({ title, timeline, onTimeline, map = false, onMap, mo
           <button
             key={m}
             type="button"
-            aria-pressed={!timeline && !map && mode === m}
+            aria-pressed={!timeline && mode === m}
             onClick={() => {
               setMode(m);
               onTimeline(false);
-              onMap?.(false);
             }}
           >
             {sq[m]}
           </button>
         ))}
-        {/* La chronologie suit l'ordre du livre : pas dans un roman interactif (qui a la carte des choix). */}
-        {!onMap && (
+        {/* La chronologie suit l'ordre du livre : pas dans un roman interactif. */}
+        {!noTimeline && (
         <button
           type="button"
           className="plan-timeline-tab"
@@ -72,11 +70,6 @@ export function PlanHeader({ title, timeline, onTimeline, map = false, onMap, mo
         >
           {t.plan.timeline}
         </button>
-        )}
-        {onMap && (
-          <button type="button" className="plan-map-tab" aria-pressed={map} onClick={() => onMap(true)}>
-            {t.interactive.map.tab}
-          </button>
         )}
       </div>
       {actions}

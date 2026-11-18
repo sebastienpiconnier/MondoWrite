@@ -27,6 +27,7 @@ import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { CardActions } from "./CardActions";
 import { CardLinks } from "./CardLinks";
+import { StoryMarks } from "./StoryChoices";
 import { SceneCardBody } from "./SceneDraft";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { useMediaUrl } from "./useMediaUrl";
@@ -618,6 +619,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       )}
 
       {/* À quoi la carte est reliée : lisible même fils masqués. */}
+      {/* Roman interactif (lot 11) : départ, fin, scène inaccessible… Rien pour les autres cartes. */}
+      {data.type === "scene" && <StoryMarks id={id} />}
       <CardLinks id={id} />
 
       {mention && mentionCount > 0 && !slash && (

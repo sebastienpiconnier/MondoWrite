@@ -15,6 +15,7 @@ import { useCosmos } from "../store";
 import { fmt, getT, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { countWords } from "../manuscript";
+import { withoutChoices } from "../interactive/choices";
 import { plainText } from "../search";
 import type { CardData } from "../types";
 import { headingOf, sceneBody, sceneText } from "../screenplay/sceneText";
@@ -44,7 +45,8 @@ export function useSceneText(card: CardData): { text: string; synopsis: string }
   const html = useCosmos((s) => s.manuscript[card.id]);
   const elements = useCosmos((s) => s.screenplay?.elements);
   return useMemo(() => {
-    if (!scenario) return { text: plainText(html ?? ""), synopsis: card.fiche?.synopsis?.trim() ?? "" };
+    // Roman interactif : le bloc de choix n'est pas du texte (ni aperçu, ni mots) ; la carte montre ses flèches.
+    if (!scenario) return { text: plainText(withoutChoices(html ?? "")), synopsis: card.fiche?.synopsis?.trim() ?? "" };
     if (!elements) return { text: "", synopsis: "" };
     const at = headingOf(elements, card.id);
     return at < 0 ? { text: "", synopsis: "" } : { text: sceneText(sceneBody(elements, at), lang), synopsis: sceneSynopsis(elements, at) };

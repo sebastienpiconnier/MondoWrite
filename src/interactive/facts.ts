@@ -8,7 +8,7 @@
 // Rien n'est déclaré à part : les variables se lisent dans les choix. Seul le libellé lisible d'un fait est gardé, dans
 // `storyFacts` de cosmos.json (gardé par `metaKeep`, comme `interactive`).
 
-import { CHOICE_MAP_KEY, END_TARGET, choicesIn, slugOf, type ChoiceLine } from "./choices";
+import { END_TARGET, choicesIn, slugOf, type ChoiceLine } from "./choices";
 
 /** Clé de cosmos.json qui garde les libellés des faits : `{ "cle": "a trouvé la clé" }`. */
 export const FACTS_KEY = "storyFacts";
@@ -91,7 +91,7 @@ export const factLabel = (name: string, labels: Readonly<Record<string, string>>
 export function newFactName(label: string, taken: ReadonlySet<string>): string {
   let base = slugOf(label);
   if (base === "scene") base = "fait";
-  if (INK_WORDS.has(base) || CHOICE_MAP_KEY === base || base === END_TARGET.toLowerCase()) base = `${base}_fait`;
+  if (INK_WORDS.has(base) || base === END_TARGET.toLowerCase()) base = `${base}_fait`;
   let name = base;
   for (let n = 2; taken.has(name) || INK_WORDS.has(name); n++) name = `${base}_${n}`;
   return name;
