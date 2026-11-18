@@ -58,15 +58,33 @@ export function smartType(before: string, typed: string, mode: TypographyMode): 
   if (typed === "." && before.endsWith("..")) return { remove: 2, insert: "…" };
   // Deux traits d'union : le tiret de la langue (cadratin ou demi-cadratin), aussi tiret de dialogue.
   if (typed === "-" && before.endsWith("-") && !before.endsWith("--")) return { remove: 1, insert: rules.dash };
+  // Ponctuation ouvrante en espagnol (RAE) : ?? -> ¿ et !! -> ¡ en début de phrase ou après une espace/un tiret.
+  if (mode === "es" && (typed === "?" || typed === "!") && before.endsWith(typed)) {
+    const prev = before.slice(0, -1);
+    if (opensBefore(prev, rules)) {
+      return { remove: 1, insert: typed === "?" ? "¿" : "¡" };
+    }
+  }
   // Apostrophe typographique ; en anglais, guillemet simple ouvrant en début de mot.
   if (typed === "'") return { remove: 0, insert: opensBefore(before, rules) ? rules.wordStartQuote : "’" };
 
   // Guillemets doubles : ceux de premier niveau, sauf là où ils sont simples (anglais britannique ‘ ’),
   // où le " tapé donne les doubles “ ” du second niveau.
   const [open, close] = rules.quotes[0] === "‘" ? rules.inner : rules.quotes;
+  const [innerOpen, innerClose] = rules.inner;
   const space = rules.quoteSpace;
   if (typed === '"') {
+    // 1. Si des guillemets de second niveau (« “ ») sont ouverts, on les ferme avec (« ” »).
+    if (innerOpen !== open && unclosed(before, innerOpen, innerClose)) {
+      return { remove: 0, insert: innerClose };
+    }
+    // 2. Si des guillemets de premier niveau (« « ») sont ouverts :
     if (unclosed(before, open, close)) {
+      // Juste après un guillemet ouvrant (ex. «"" -> «“), on ouvre le second niveau (« “ »).
+      // Après une espace (ex. «oui "), on ferme le premier niveau comme attendu par l'éditeur.
+      if (innerOpen !== open && before.endsWith(`${open}${space}`)) {
+        return { remove: 0, insert: innerOpen };
+      }
       const spaces = space ? before.match(/[ \u00a0\u202f]*$/)![0].length : 0;
       return { remove: spaces, insert: `${space}${close}` };
     }

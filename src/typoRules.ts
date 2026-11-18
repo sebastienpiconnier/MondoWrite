@@ -5,13 +5,13 @@
 //   d'interface de chaque langue suivent ses règles ;
 // - les exports (césure du livre broché, CSV des statistiques) et quelques textes composés dans le code.
 // Données pures, sans dépendance. Sources : usages décrits par l'Imprimerie nationale (français), le
-// Chicago Manual of Style et New Hart's Rules (anglais), le Duden (allemand), la RAE (espagnol), et le
-// tableau « Quotation mark » de Wikipédia pour les autres langues.
+// Chicago Manual of Style et New Hart's Rules (anglais), le Duden (allemand), la RAE (espagnol),
+// l'IEC (catalan), et le tableau « Quotation mark » de Wikipédia pour les autres langues.
 
 /** Espace insécable (avant « : » et dans les guillemets français). */
-export const NBSP = " ";
+export const NBSP = "\u00A0";
 /** Espace fine insécable (avant ; ! ? en français). */
-export const NNBSP = " ";
+export const NNBSP = "\u202F";
 
 export type HighPunct = ";" | ":" | "!" | "?";
 
@@ -29,7 +29,7 @@ export interface TypoRules {
   /** Apostrophe tapée en début de mot : guillemet simple ouvrant en anglais, apostrophe ailleurs. */
   wordStartQuote: string;
   /** Motifs de césure du paquet `hyphen` déjà vérifiés et cités dans THIRD-PARTY-NOTICES.md. */
-  hyphen?: "fr" | "en-us" | "en-gb";
+  hyphen?: "fr" | "en-us" | "en-gb" | "es" | "ca";
   /** Virgule décimale : un tableau CSV prend « ; » pour séparateur. */
   decimalComma: boolean;
 }
@@ -74,11 +74,29 @@ export const TYPO_RULES: Record<string, TypoRules> = {
   "en-gb": plain(ENGLISH_SINGLE, ENGLISH, { wordStartQuote: "‘", dash: "–", hyphen: "en-gb", decimalComma: false }),
   de: plain(LOW_HIGH, LOW_HIGH_SINGLE, { dash: "–" }),
   "de-ch": plain(GUILLEMETS, ["‹", "›"], { dash: "–" }),
-  es: plain(GUILLEMETS, ENGLISH),
+  es: {
+    quotes: GUILLEMETS,
+    inner: ENGLISH,
+    quoteSpace: "",
+    before: {},
+    dash: "—",
+    wordStartQuote: "’",
+    hyphen: "es",
+    decimalComma: true,
+  },
   it: plain(GUILLEMETS, ENGLISH),
   pt: plain(GUILLEMETS, ENGLISH),
   "pt-br": plain(ENGLISH, ENGLISH_SINGLE),
-  ca: plain(GUILLEMETS, ENGLISH),
+  ca: {
+    quotes: GUILLEMETS,
+    inner: ENGLISH,
+    quoteSpace: "",
+    before: {},
+    dash: "—",
+    wordStartQuote: "’",
+    hyphen: "ca",
+    decimalComma: true,
+  },
   nl: plain(ENGLISH, ENGLISH_SINGLE, { dash: "–" }),
   sv: plain(SWEDISH, SWEDISH_SINGLE, { dash: "–" }),
   fi: plain(SWEDISH, SWEDISH_SINGLE, { dash: "–" }),

@@ -12,6 +12,7 @@ import { fr, type Messages } from "./fr";
 import { en } from "./en";
 import { allStrings, complete, FREE_LISTS, missingPaths, translatedShare } from "./coverage";
 import { es } from "./es";
+import { ca } from "./ca";
 // i18n:imports (ligne repère pour scripts/i18n.mjs, ne pas retirer)
 
 export { allStrings, complete, FREE_LISTS };
@@ -33,6 +34,7 @@ export type Translation = DeepPartial<Messages> & {
 const COMMUNITY = {
   // i18n:community (ligne repère pour scripts/i18n.mjs, ne pas retirer)
   es,
+  ca,
 } as const satisfies Record<string, Translation>;
 
 /** Chaînes encore en anglais dans une traduction (chemins), voir coverage.ts. */

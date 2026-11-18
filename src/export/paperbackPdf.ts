@@ -61,9 +61,11 @@ const HYPHEN_PATTERNS = {
   fr: () => import("hyphen/fr"),
   "en-us": () => import("hyphen/en-us"),
   "en-gb": () => import("hyphen/en-gb"),
+  es: () => import("hyphen/es"),
+  ca: () => import("hyphen/ca"),
 } as const;
 
-/** Césure de la langue du livre (français, anglais) ; aucune pour une langue dont les motifs ne sont pas livrés. */
+/** Césure de la langue du livre (français, anglais, espagnol, catalan) ; aucune pour une langue dont les motifs ne sont pas livrés. */
 async function hyphenator(lang: string): Promise<((word: string) => string) | null> {
   const code = lang.toLowerCase();
   const patterns = code === "en-au" ? "en-gb" : typoRules(code).hyphen;
