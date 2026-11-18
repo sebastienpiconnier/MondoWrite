@@ -98,7 +98,7 @@ export function readChoiceEdgeId(id: string): { from: string; index: number } | 
 export const scenesKey = (scenes: readonly SceneRef[]) => scenes.map((s) => `${s.id}\u0001${s.title}`).join("\u0002");
 
 /** Écart entre deux flèches qui relient les deux mêmes scènes (pixels du canevas). */
-export const PARALLEL_GAP = 30;
+export const PARALLEL_GAP = 40;
 
 /**
  * Décalage de côté de chaque flèche quand plusieurs relient les deux mêmes scènes (dans un sens ou l'autre) : clé
@@ -118,6 +118,47 @@ export function parallelOffsets(edges: readonly { from: string; index: number; t
       const along = (k - (list.length - 1) / 2) * gap;
       // Le côté gauche d'une flèche retournée est le côté droit de l'autre sens.
       out.set(e.key, e.forward ? along : -along);
+    });
+  }
+  return out;
+}
+
+/** Place de l'étiquette le long d'une flèche de choix, de 0 (départ) à 1 (arrivée). */
+export const LABEL_NEAR_SOURCE = 0.3;
+export const LABEL_NEAR_TARGET = 0.7;
+
+/**
+ * Place de l'étiquette de chaque flèche de choix (clé `de:rang`) : plusieurs choix qui partent d'une même scène
+ * s'écartent les uns des autres en allant vers leurs destinations, donc leurs étiquettes se posent près de
+ * l'arrivée ; plusieurs choix qui arrivent sur une même scène, près du départ. Au milieu sinon. Plusieurs flèches
+ * entre les deux mêmes scènes (aller et retour, deux choix vers la même suite) : leurs étiquettes s'échelonnent le
+ * long du chemin, sinon elles se recouvrent malgré le décalage de côté.
+ */
+export function labelPlaces(edges: readonly { from: string; index: number; to: string }[]): Map<string, number> {
+  const out = new Map<string, number>();
+  const leaving = new Map<string, number>();
+  const arriving = new Map<string, number>();
+  for (const e of edges) {
+    leaving.set(e.from, (leaving.get(e.from) ?? 0) + 1);
+    arriving.set(e.to, (arriving.get(e.to) ?? 0) + 1);
+  }
+  for (const e of edges) {
+    const out_ = leaving.get(e.from) ?? 1;
+    const in_ = arriving.get(e.to) ?? 1;
+    out.set(`${e.from}:${e.index}`, out_ > in_ ? LABEL_NEAR_TARGET : in_ > out_ ? LABEL_NEAR_SOURCE : 0.5);
+  }
+  const pairs = new Map<string, { key: string; forward: boolean }[]>();
+  for (const e of edges) {
+    const forward = e.from < e.to;
+    const pair = forward ? `${e.from}\u0001${e.to}` : `${e.to}\u0001${e.from}`;
+    pairs.set(pair, [...(pairs.get(pair) ?? []), { key: `${e.from}:${e.index}`, forward }]);
+  }
+  for (const list of pairs.values()) {
+    if (list.length < 2) continue;
+    list.forEach((e, k) => {
+      // Place dans le sens de la paire, de 0,25 à 0,75, puis rapportée au sens de la flèche.
+      const along = LABEL_NEAR_SOURCE - 0.05 + (0.5 * k) / (list.length - 1);
+      out.set(e.key, e.forward ? along : 1 - along);
     });
   }
   return out;

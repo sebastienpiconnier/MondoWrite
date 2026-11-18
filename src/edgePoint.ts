@@ -1,0 +1,28 @@
+// Point d'une courbe de React Flow (`getBezierPath`, même calcul des points de contrôle) à une place donnée,
+// pour poser une étiquette ailleurs qu'au milieu du fil (fonctions pures).
+
+export type Side = "top" | "right" | "bottom" | "left";
+
+const controlOffset = (distance: number, curvature: number) => (distance >= 0 ? 0.5 * distance : curvature * 25 * Math.sqrt(-distance));
+
+function control(side: Side, x1: number, y1: number, x2: number, y2: number, c: number): [number, number] {
+  switch (side) {
+    case "left":
+      return [x1 - controlOffset(x1 - x2, c), y1];
+    case "right":
+      return [x1 + controlOffset(x2 - x1, c), y1];
+    case "top":
+      return [x1, y1 - controlOffset(y1 - y2, c)];
+    case "bottom":
+      return [x1, y1 + controlOffset(y2 - y1, c)];
+  }
+}
+
+/** Point de la courbe entre `a` (côté `as`) et `b` (côté `bs`), à la place `t` (0 = `a`, 1 = `b`). */
+export function bezierPoint(a: { x: number; y: number }, as: Side, b: { x: number; y: number }, bs: Side, t: number, curvature = 0.25): { x: number; y: number } {
+  const [c1x, c1y] = control(as, a.x, a.y, b.x, b.y, curvature);
+  const [c2x, c2y] = control(bs, b.x, b.y, a.x, a.y, curvature);
+  const u = 1 - t;
+  const k0 = u * u * u, k1 = 3 * u * u * t, k2 = 3 * u * t * t, k3 = t * t * t;
+  return { x: k0 * a.x + k1 * c1x + k2 * c2x + k3 * b.x, y: k0 * a.y + k1 * c1y + k2 * c2y + k3 * b.y };
+}

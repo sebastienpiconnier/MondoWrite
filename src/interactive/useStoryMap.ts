@@ -11,15 +11,18 @@ import { useInteractive } from "./useInteractive";
 import { interactiveScenes } from "./scenes";
 import { END_TARGET, choiceGraph, type ChoiceEdge, type SceneRef } from "./choices";
 import { verifyStory } from "./verify";
-import { choiceEdgeId, marksKey, parallelOffsets, sceneMarks, scenesKey } from "./storyMap";
+import { choiceEdgeId, labelPlaces, marksKey, parallelOffsets, sceneMarks, scenesKey } from "./storyMap";
+import { numberSections } from "./gamebook";
+import { interactiveSlugs } from "./scenes";
 import { ruleSummary } from "../components/ChoiceRules";
 import { projectFacts } from "./projectFacts";
 import { readFactLabels, type Fact } from "./facts";
 
 /** Repères des cartes Scène (chaînes de `marksKey`), par identifiant. État d'affichage. */
-export const useStoryMarks = create<{ byId: Record<string, string> }>(() => ({ byId: {} }));
+export const useStoryMarks = create<{ byId: Record<string, string>; numbers: Record<string, number> }>(() => ({ byId: {}, numbers: {} }));
 
 const NO_MARKS: Record<string, string> = {};
+const NO_NUMBERS: Record<string, number> = {};
 const NO_FACTS: Fact[] = [];
 
 export interface StoryMap {
@@ -50,21 +53,26 @@ export function useStoryMap(): StoryMap | null {
 
   useEffect(() => {
     if (!interactive) {
-      if (useStoryMarks.getState().byId !== NO_MARKS) useStoryMarks.setState({ byId: NO_MARKS });
+      if (useStoryMarks.getState().byId !== NO_MARKS) useStoryMarks.setState({ byId: NO_MARKS, numbers: NO_NUMBERS });
       return;
     }
     const byId: Record<string, string> = {};
     for (const [id, marks] of sceneMarks(scenes, graph, manuscript, points)) byId[id] = marksKey(marks);
-    useStoryMarks.setState({ byId });
+    // Numéro de chaque scène dans le livre-jeu imprimé (le départ au 1), le même que dans le Plan.
+    const numbers: Record<string, number> = {};
+    const { nodes: all, plan: p } = useCosmos.getState();
+    for (const sec of numberSections({ scenes, slugs: interactiveSlugs(all, p), manuscript })) numbers[sec.id] = sec.n;
+    useStoryMarks.setState({ byId, numbers });
   }, [interactive, scenes, graph, manuscript, points]);
   // Le canevas se ferme (autre vue, autre projet) : plus de repères.
-  useEffect(() => () => useStoryMarks.setState({ byId: NO_MARKS }), []);
+  useEffect(() => () => useStoryMarks.setState({ byId: NO_MARKS, numbers: NO_NUMBERS }), []);
 
   const edges = useMemo<Edge[]>(() => {
     if (!interactive) return [];
     const titleOf = (id: string) => scenes.find((s) => s.id === id)?.title.trim() || m.untitled;
     const drawn = graph.filter((e): e is ChoiceEdge & { to: string } => !!e.to && e.to !== END_TARGET && e.to !== e.from);
     const offsets = parallelOffsets(drawn);
+    const places = labelPlaces(drawn);
     return drawn
       .map((e) => {
         // Un choix soumis à un fait, ou qui en donne un, le dit sur sa flèche.
@@ -80,10 +88,16 @@ export function useStoryMap(): StoryMap | null {
           markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "var(--accent)" },
           // Choix soumis à une condition : flèche en pointillé.
           style: { stroke: "var(--accent)", strokeWidth: 1.8, ...(e.cond ? { strokeDasharray: "6 4" } : {}) },
-          labelStyle: { fill: "var(--ink)", fontWeight: 500, fontSize: 12 },
-          labelBgStyle: { fill: "var(--surface)", stroke: "var(--accent)" },
           interactionWidth: 32,
-          data: { choice: true, offset: offsets.get(`${e.from}:${e.index}`) ?? 0 },
+          // Étiquette en pilule, posée loin des choix voisins (`labelPlaces`) ; son nom dit d'où à où va le choix.
+          data: {
+            choice: true,
+            pill: true,
+            pillClass: e.label ? "" : "is-unnamed",
+            pillTitle: fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }),
+            offset: offsets.get(`${e.from}:${e.index}`) ?? 0,
+            labelAt: places.get(`${e.from}:${e.index}`) ?? 0.5,
+          },
         } satisfies Edge;
       });
     // Les textes suivent la langue : `t` change avec elle.

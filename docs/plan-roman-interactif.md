@@ -313,6 +313,9 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
   l'histoire » et « Faits · N » dans l'en-tête.
 - **`choiceMap`** n'est plus lu ni écrit (rien n'était publié : pas de reprise des places). « Organiser » range
   toujours les scènes en arbre (`choiceTree`).
+- **Retours du 18 novembre 2026** : étiquettes des choix en pilule (coupées à 180 px, texte entier en infobulle,
+  un toucher ouvre le bandeau), posées loin de leurs voisines le long de la courbe (`labelPlaces`) ; numéro du
+  livre-jeu sur chaque carte Scène, après son type ; arbre d'« Organiser » plus aéré (140 × 220 px).
 - **Reste** : vérifier sur iPad et iPhone (toucher une flèche, la tirer au doigt) ; un gros livre-jeu (300 à 400
   scènes) sur le canevas.
 

@@ -27,7 +27,7 @@ import { InboxMenu } from "./InboxMenu";
 import { CardNode } from "./CardNode";
 import { FrameNode } from "./FrameNode";
 import { FrameLabels } from "./FrameLabels";
-import { FloatingEdge } from "./FloatingEdge";
+import { EDGE_PILL_EVENT, FloatingEdge } from "./FloatingEdge";
 import { litCards, wireShown } from "../cardLinks";
 import { NewCardMenu } from "./NewCardMenu";
 import type { CardData, CardType } from "../types";
@@ -207,6 +207,15 @@ export function Toile() {
     const at = choiceSel ? readChoiceEdgeId(choiceSel) : null;
     return at && story ? (story.graph.find((e) => e.from === at.from && e.index === at.index) ?? null) : null;
   }, [choiceSel, story]);
+  // L'étiquette en pilule d'une flèche (FloatingEdge) est du HTML posé au-dessus du fil : son clic arrive ici.
+  useEffect(() => {
+    const pick = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (isChoiceEdgeId(id)) setChoiceSel(id);
+    };
+    window.addEventListener(EDGE_PILL_EVENT, pick);
+    return () => window.removeEventListener(EDGE_PILL_EVENT, pick);
+  }, []);
   // Un choix retiré ailleurs (texte, annulation) : son bandeau se ferme.
   useEffect(() => {
     if (choiceSel && !chosenChoice) setChoiceSel(null);

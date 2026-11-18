@@ -1,7 +1,7 @@
 // Roman interactif, lot 11 (#91) : ce que le canevas montre de l'histoire (repères des scènes, flèches de choix).
 
 import { describe, expect, it } from "vitest";
-import { choiceEdgeId, isChoiceEdgeId, marksKey, parallelOffsets, readChoiceEdgeId, readMarksKey, sceneMarks, scenesKey } from "../interactive/storyMap";
+import { PARALLEL_GAP, choiceEdgeId, isChoiceEdgeId, marksKey, parallelOffsets, readChoiceEdgeId, readMarksKey, sceneMarks, scenesKey } from "../interactive/storyMap";
 import { choiceGraph, withChoices, parseChoices } from "../interactive/choices";
 import { verifyStory } from "../interactive/verify";
 
@@ -66,8 +66,8 @@ describe("flèches qui relient les deux mêmes scènes", () => {
       { from: "b", index: 0, to: "a" },
     ]);
     // Mesuré à gauche de chaque flèche : même valeur, donc des côtés opposés une fois les sens retournés.
-    expect(off.get("a:0")).toBe(-15);
-    expect(off.get("b:0")).toBe(-15);
+    expect(off.get("a:0")).toBe(-PARALLEL_GAP / 2);
+    expect(off.get("b:0")).toBe(-PARALLEL_GAP / 2);
   });
 
   it("deux choix vers la même scène se séparent", () => {
@@ -76,8 +76,53 @@ describe("flèches qui relient les deux mêmes scènes", () => {
       { from: "a", index: 1, to: "b" },
       { from: "a", index: 2, to: "c" },
     ]);
-    expect(off.get("a:0")).toBe(-15);
-    expect(off.get("a:1")).toBe(15);
+    expect(off.get("a:0")).toBe(-PARALLEL_GAP / 2);
+    expect(off.get("a:1")).toBe(PARALLEL_GAP / 2);
     expect(off.has("a:2")).toBe(false);
+  });
+});
+
+describe("étiquettes des choix sur le canevas", () => {
+  it("loin du départ quand plusieurs choix partent d'une scène, loin de l'arrivée quand plusieurs y arrivent", async () => {
+    const { labelPlaces, LABEL_NEAR_SOURCE, LABEL_NEAR_TARGET } = await import("../interactive/storyMap");
+    const places = labelPlaces([
+      { from: "a", index: 0, to: "b" },
+      { from: "a", index: 1, to: "c" },
+      { from: "a", index: 2, to: "d" },
+      { from: "b", index: 0, to: "z" },
+      { from: "c", index: 0, to: "z" },
+      { from: "d", index: 0, to: "z" },
+      { from: "z", index: 0, to: "y" },
+    ]);
+    expect(places.get("a:0")).toBe(LABEL_NEAR_TARGET);
+    expect(places.get("b:0")).toBe(LABEL_NEAR_SOURCE);
+    expect(places.get("z:0")).toBe(0.5);
+  });
+
+  it("le point de la courbe suit le calcul de React Flow (milieu identique)", async () => {
+    const { getBezierPath, Position } = await import("@xyflow/react");
+    const { bezierPoint } = await import("../edgePoint");
+    const a = { x: 10, y: 20 }, b = { x: 300, y: 400 };
+    const [, lx, ly] = getBezierPath({ sourceX: a.x, sourceY: a.y, sourcePosition: Position.Bottom, targetX: b.x, targetY: b.y, targetPosition: Position.Top });
+    const mid = bezierPoint(a, "bottom", b, "top", 0.5);
+    expect(mid.x).toBeCloseTo(lx, 5);
+    expect(mid.y).toBeCloseTo(ly, 5);
+    expect(bezierPoint(a, "bottom", b, "top", 0)).toEqual(a);
+    const end = bezierPoint(a, "bottom", b, "top", 1);
+    expect(end.x).toBeCloseTo(b.x, 5);
+    expect(end.y).toBeCloseTo(b.y, 5);
+  });
+});
+
+describe("étiquettes de deux flèches entre les mêmes scènes", () => {
+  it("s'échelonnent le long du chemin, aller et retour compris", async () => {
+    const { labelPlaces } = await import("../interactive/storyMap");
+    const places = labelPlaces([
+      { from: "a", index: 0, to: "b" },
+      { from: "b", index: 0, to: "a" },
+    ]);
+    // Mesurées depuis la même scène « a » : l'une près de a, l'autre près de b.
+    const fromA = [places.get("a:0")!, 1 - places.get("b:0")!].sort();
+    expect(fromA[1] - fromA[0]).toBeGreaterThan(0.4);
   });
 });

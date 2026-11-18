@@ -307,13 +307,14 @@ export function choicesAfterUndo(current: Readonly<Record<string, string>>, targ
  * Scènes d'un roman interactif rangées en arbre sur le canevas (« Organiser », novembre 2026) : la première en haut,
  * puis une rangée par pas de lecture (la scène la plus courte à atteindre décide), les scènes qu'aucun choix
  * n'atteint sur une dernière rangée. Chaque rangée est centrée. Rend les places (coin haut gauche) et la hauteur.
+ * Écarts larges : les étiquettes des choix (pilules de 180 px au plus) tiennent entre les scènes sans se toucher.
  */
 export function choiceTree(
   order: readonly string[],
   edges: readonly ChoiceEdge[],
   size: (id: string) => { width: number; height: number },
   origin: { x: number; y: number },
-  gap = { x: 48, y: 120 },
+  gap = { x: 140, y: 220 },
 ): { positions: Map<string, { x: number; y: number }>; height: number; width: number } {
   const positions = new Map<string, { x: number; y: number }>();
   if (order.length === 0) return { positions, height: 0, width: 0 };

@@ -27,7 +27,7 @@ import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { CardActions } from "./CardActions";
 import { CardLinks } from "./CardLinks";
-import { StoryMarks } from "./StoryChoices";
+import { StoryMarks, StorySection } from "./StoryChoices";
 import { SceneCardBody } from "./SceneDraft";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { useMediaUrl } from "./useMediaUrl";
@@ -483,6 +483,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           <span className="card-dot" />
           {types[data.type].label}
         </button>
+        {data.type === "scene" && <StorySection id={id} />}
         {/* Fiche dans la Bible : toutes les cartes typées en ont une (les idées en vrac n'y sont qu'une liste). */}
         {data.type !== "idee" && (
           <button

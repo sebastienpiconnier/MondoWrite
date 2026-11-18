@@ -1,7 +1,11 @@
 // Fil "flottant" : il part du bord de la carte le plus proche de l'autre carte,
 // au lieu d'un point fixe. Les cartes peuvent bouger, le fil suit naturellement.
 
-import { BaseEdge, getBezierPath, Position, useInternalNode, type EdgeProps, type InternalNode } from "@xyflow/react";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, Position, useInternalNode, type EdgeProps, type InternalNode } from "@xyflow/react";
+import { bezierPoint, type Side } from "../edgePoint";
+
+/** Clic sur l'étiquette en pilule d'une flèche (roman interactif) : `Toile` la choisit. Détail : l'identifiant du fil. */
+export const EDGE_PILL_EVENT = "edge-pill";
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -25,7 +29,7 @@ function borderPoint(a: Rect, b: Rect) {
 }
 
 export function FloatingEdge(props: EdgeProps) {
-  const { id, source, target, markerEnd, style, interactionWidth, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius } = props;
+  const { id, source, target, markerEnd, style, selected, interactionWidth, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius } = props;
   const s = useInternalNode(source);
   const t = useInternalNode(target);
   if (!s || !t) return null;
@@ -35,7 +39,8 @@ export function FloatingEdge(props: EdgeProps) {
   const p2 = borderPoint(b, a);
   // Plusieurs flèches entre les deux mêmes cartes (choix aller et retour d'un roman interactif) : chacune est
   // décalée de côté, sinon elles et leurs étiquettes se recouvrent.
-  const offset = Number((props.data as { offset?: number } | undefined)?.offset ?? 0);
+  const data = props.data as { offset?: number; labelAt?: number; pill?: boolean; pillClass?: string; pillTitle?: string } | undefined;
+  const offset = Number(data?.offset ?? 0);
   if (offset) {
     const dx = p2.x - p1.x, dy = p2.y - p1.y;
     const len = Math.hypot(dx, dy) || 1;
@@ -50,6 +55,33 @@ export function FloatingEdge(props: EdgeProps) {
     targetY: p2.y,
     targetPosition: p2.pos,
   });
+
+  // Étiquette en pilule (choix d'un roman interactif) : du HTML au-dessus du fil, coupée si elle est longue (le texte
+  // entier en infobulle), posée à la place voulue le long de la courbe pour que les choix voisins ne se recouvrent pas.
+  if (data?.pill && label) {
+    const at = data.labelAt ?? 0.5;
+    const point = at === 0.5 ? { x: labelX, y: labelY } : bezierPoint(p1, p1.pos as Side, p2, p2.pos as Side, at);
+    return (
+      <>
+        <BaseEdge id={id} path={path} markerEnd={markerEnd} style={style} interactionWidth={interactionWidth} />
+        <EdgeLabelRenderer>
+          <button
+            type="button"
+            className={`edge-pill nodrag nopan ${data.pillClass ?? ""} ${selected ? "is-selected" : ""}`.trim()}
+            style={{ transform: `translate(-50%, -50%) translate(${point.x}px, ${point.y}px)` }}
+            title={data.pillTitle ?? String(label)}
+            aria-label={data.pillTitle ?? String(label)}
+            onClick={(e) => {
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent(EDGE_PILL_EVENT, { detail: id }));
+            }}
+          >
+            {label}
+          </button>
+        </EdgeLabelRenderer>
+      </>
+    );
+  }
 
   return (
     <BaseEdge

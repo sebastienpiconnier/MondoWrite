@@ -2629,7 +2629,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         const source = get().nodes.find((n) => n.id === from);
         if (source) {
           const [box] = boxes([source]);
-          at = { x: box.x + box.width + 160, y: box.y };
+          at = { x: box.x + box.width + 240, y: box.y };
         }
       }
       const title = getT().interactive.map.newSceneTitle;

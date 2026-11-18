@@ -119,3 +119,15 @@ export function StoryMarks({ id }: { id: string }) {
   const key = useStoryMarks((s) => s.byId[id] ?? "");
   return <MarksTags marks={readMarksKey(key)} className="card-story-marks" />;
 }
+
+/** Numéro de la scène dans le livre-jeu imprimé, en pastille dans l'en-tête de sa carte (roman interactif). */
+export function StorySection({ id }: { id: string }) {
+  const t = useT();
+  const n = useStoryMarks((s) => s.numbers[id]);
+  if (n === undefined) return null;
+  return (
+    <span className="card-section" aria-label={fmt(t.interactive.plan.sectionAria, { n })} title={fmt(t.interactive.plan.sectionAria, { n })}>
+      {n}
+    </span>
+  );
+}

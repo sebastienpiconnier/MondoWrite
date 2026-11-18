@@ -236,7 +236,25 @@
 /* Roman interactif (lot 11, #91) : repères d'une carte Scène et flèches de choix sur le canevas. */
 .card .card-story-marks { margin: 0 12px 10px 16px; font-family: var(--font-ui); }
 .toile .react-flow__edge.choice-edge.selected .react-flow__edge-path { stroke-width: 3 !important; }
-.toile .react-flow__edge.choice-edge.is-unnamed .react-flow__edge-text { fill: var(--muted) !important; font-style: italic; }
+/* Étiquette d'un choix en pilule (FloatingEdge) : coupée au-delà de 180 px, le texte entier en infobulle. */
+.edge-pill {
+  position: absolute; pointer-events: all; max-width: 180px; padding: 3px 11px; overflow: hidden;
+  border: 1.5px solid var(--accent); border-radius: 999px; background: var(--surface); color: var(--ink);
+  font: 500 12px/1.4 var(--font-ui); white-space: nowrap; text-overflow: ellipsis; cursor: pointer;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+.edge-pill.is-unnamed { color: var(--muted); font-style: italic; border-style: dashed; }
+.edge-pill.is-selected { background: var(--accent); color: var(--surface); font-style: normal; }
+.edge-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (any-hover: hover) { .edge-pill:not(.is-selected):hover { background: var(--accent-soft); } }
+@media (pointer: coarse) { .edge-pill { padding: 6px 13px; } }
+/* Numéro de la scène dans le livre-jeu imprimé, juste après son type. */
+.card-handle > .card-type:has(+ .card-section) { margin-right: 0; }
+.card-section {
+  display: inline-grid; place-items: center; min-width: 28px; height: 22px; margin: 0 auto 0 4px; padding: 0 8px;
+  border: 1.5px solid var(--accent); border-radius: 999px; color: var(--accent-ink); background: var(--surface);
+  font: 700 12px/1 var(--font-ui); font-variant-numeric: tabular-nums;
+}
 /* Bandeau d'une flèche choisie : en bas, au-dessus de la rangée d'outils, pour ne pas cacher la scène d'où elle part. */
 .toile .react-flow__panel.choice-map-edge { margin-bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px)); max-width: calc(100% - 24px); }
 .toile .choice-picker { position: absolute; }

@@ -2269,6 +2269,7 @@ const scenarios = [
       const sceneCards = page.locator(".react-flow__node-card:has(.card.type-scene)");
       await until(async () => (await sceneCards.count()) === 1, "la scène n'est pas sur le canevas");
       await until(() => sceneCards.first().locator(".choice-tag.is-start").isVisible(), "la première scène n'est pas marquée « Départ » sur le canevas");
+      await until(async () => (await sceneCards.first().locator(".card-section").textContent()) === "1", "la première scène n'a pas le numéro 1 sur sa carte");
       await sceneCards.first().getByRole("button", { name: "Plus d’actions" }).click();
       await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
       await until(async () => (await sceneCards.count()) === 2, "« Nouvelle scène après celle-ci » n'a pas créé de seconde scène");
@@ -2286,13 +2287,16 @@ const scenarios = [
         const wires = (meta.links ?? []).length;
         return blocks.length === 2 && blocks.every((v) => v.includes("```choix")) && (f[`manuscrit/${second}.md`] ?? "").includes("-> END") && wires === 0 && !meta.choiceMap;
       }, "les choix ne sont pas enregistrés en bloc ```choix (avec -> END pour la fin), ou une flèche est devenue un fil");
-      // Une flèche choisie : son bandeau, dont le texte s'écrit dans le bloc de la scène.
-      await arrows.first().dispatchEvent("click");
+      // Une flèche choisie par son étiquette en pilule : son bandeau, dont le texte s'écrit dans le bloc de la scène.
+      const pill = page.locator(".edge-pill");
+      await until(async () => (await pill.count()) === 1, "l'étiquette du choix n'est pas une pilule");
+      await pill.first().click();
       const edgeText = page.locator(".choice-edge-editor").getByRole("textbox", { name: "Texte du choix", exact: true });
       await until(() => edgeText.isVisible(), "choisir une flèche n'ouvre pas son bandeau");
       await edgeText.fill("Avancer");
       await edgeText.press("Enter");
       await h.saved((f) => (f[`manuscrit/${first}.md`] ?? "").includes("[Avancer]"), "le texte du choix tapé sur le canevas n'est pas enregistré");
+      await until(async () => (await pill.first().textContent()) === "Avancer", "la pilule ne montre pas le texte du choix");
       await h.view(2);
 
       // Lecture depuis les sections du livre : le choix puis la fin.
