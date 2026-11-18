@@ -39,7 +39,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 12. Numéros figés | Numérotation figée, cadenas par section, renvois cachés (#92) : fait |
 | 13. Double page | « Vérifier » et mélange : pas de suite révélée sur la même double page (#93) : fait |
 | 14. Types de fin | Bonne fin, mauvaise fin (#94) : fait |
-| 15. Parcours annoté | Mode Lecture enregistré et annoté, notes en commentaires (#95) |
+| 15. Parcours annoté | Mode Lecture enregistré et annoté, notes en commentaires (#95) : fait |
 
 ## Lot 0 · Isolation (fait sur la branche `roman-interactif`)
 
@@ -336,6 +336,16 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
   pointillée grise et pilule « caché » sur le canevas ; compte pour le chemin du lecteur. « Vérifier » : section visée
   dont le numéro n'est pas gardé (`hiddenUnlocked`), renvoi absent de la lecture à l'écran (`hiddenNotPlayable`).
 - **Reste** : essayer une vraie énigme jusqu'au livre broché ; dire dans le guide comment écrire la consigne au lecteur.
+
+## Lot 15 · Parcours de lecture annoté (fait sur la branche `roman-interactif`, #95)
+
+- Le mode Lecture garde, le temps de la lecture, le chemin suivi : en tête, « Parcours : 1 → 34 → 112 » (numéros du
+  livre-jeu, `pathLine`), et sous chaque passage un lien « Noter » (une note par étape, Entrée ou Échap pour finir).
+  « Revenir au choix précédent » retire aussi les notes des passages retirés ; « Recommencer » vide le parcours.
+- « Garder les notes (N) » : chaque note devient un commentaire de sa scène (« Parcours de lecture : … »), ancré sur
+  ses premiers mots (`openingWords`, `markQuoteInHtml`) ; une scène encore vide ne peut pas en porter (dit en clair).
+- « Exporter le parcours » : un Markdown (titre, chemin, chaque étape avec son choix et sa note, `pathMarkdown`).
+- Rien d'autre n'est enregistré : le parcours est un état de la fenêtre.
 
 ## Lot 13 · Pas de suite sur la même double page (fait sur la branche `roman-interactif`, #93)
 

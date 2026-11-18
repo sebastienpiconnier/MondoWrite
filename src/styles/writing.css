@@ -1482,6 +1482,16 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .facts-add { display: flex; gap: 0.4rem; }
 .facts-add input { flex: 1; min-width: 0; }
 .play-known { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.8rem; color: var(--muted); }
+/* Parcours de lecture annoté (lot 15). */
+.play-path { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; margin: 0.4rem 0; font-size: 0.875rem; }
+.play-path-line { flex-basis: 100%; margin: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+.play-path-line span { color: var(--ink-2); }
+.play-path-message { color: var(--ink-2); }
+.play-note-add { display: block; margin: 0.1em 0 0 auto; padding: 0.2em 0.5em; font: inherit; font-size: 0.8125rem; color: var(--ink-2); background: none; border: 0; border-radius: 4px; text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; cursor: pointer; }
+@media (any-hover: hover) { .play-note-add:hover { color: var(--ink); text-decoration-color: currentColor; } }
+.play-note { display: block; width: 100%; text-align: left; font: inherit; font-style: italic; color: var(--ink); background: var(--accent-soft); border: 0; border-left: 3px solid var(--accent); border-radius: 4px; padding: 0.35em 0.6em; margin-top: 0.3em; cursor: text; }
+.play-note-field { display: block; width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 0.4em 0.6em; margin-top: 0.3em; resize: vertical; }
+@media (pointer: coarse) { .play-path button, .play-note-add { min-height: 44px; } }
 .play-known .choice-tag { color: var(--ink-2); }
 .choice-picker-hint { margin: 0.3rem 0 0.6rem; color: var(--muted); font-size: 0.85rem; }
 .choice-picker ul { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 4px; }

@@ -14,10 +14,18 @@ import { readFactLabels, shownValue } from "../interactive/facts";
 import { projectFacts } from "../interactive/projectFacts";
 import { useMediaUrl } from "./useMediaUrl";
 import { usePlay } from "../interactive/playState";
+import { openingWords, pathLine, pathMarkdown, pathNotes, type PathStep } from "../interactive/readingPath";
+import { projectSections } from "../interactive/projectSections";
+import { markQuoteInHtml } from "../mcpWrite";
+import { newId } from "../projectState";
+import { storage } from "../storage";
+import { fileName } from "../screenplay/export";
 
 interface Passage {
   /** Ce que le lecteur a choisi pour arriver ici (rien au départ). */
   chose?: string;
+  /** Scène où l'on est arrivé (lot 15 : parcours de lecture). */
+  scene?: string | null;
   lines: { text: string; images: string[] }[];
 }
 
@@ -50,7 +58,12 @@ export function PlayDialog() {
   const [passages, setPassages] = useState<Passage[]>([]);
   const [choices, setChoices] = useState<{ text: string; index: number }[]>([]);
   const [current, setCurrent] = useState<string | null>(null);
+  const currentRef = useRef<string | null>(null);
   const history = useRef<Step[]>([]);
+  // Parcours annoté (lot 15) : une note par étape, gardée le temps de la lecture.
+  const [notes, setNotes] = useState<Record<number, string>>({});
+  const [noting, setNoting] = useState<number | null>(null);
+  const [message, setMessage] = useState("");
   // Faits et compteurs (lot 4) : relus après chaque pas, montrés quand le lecteur les a.
   const facts = useMemo(() => projectFacts(useCosmos.getState()), []);
   const [known, setKnown] = useState<{ label: string; value: string }[]>([]);
@@ -90,14 +103,17 @@ export function PlayDialog() {
         const images = imagesOfTags(s.currentTags).filter(isMediaName);
         if (text || images.length) lines.push({ text, images });
       }
-      setPassages((all) => [...all, { ...(chose !== undefined ? { chose } : {}), lines }]);
-      setChoices(s.currentChoices.map((c) => ({ text: c.text, index: c.index })));
-      readKnown(s);
       // La scène lue en dernier ; à défaut (scène sans texte), celle qu'on vient de visiter.
       const after = visits(s);
       const entered = [...after].filter(([id, n]) => n > (before.get(id) ?? 0)).map(([id]) => id);
       const scene = sceneOfPath(path, source.knots) ?? (entered.length === 1 ? entered[0] : null);
-      if (scene) setCurrent(scene);
+      if (scene) {
+        currentRef.current = scene;
+        setCurrent(scene);
+      }
+      setPassages((all) => [...all, { ...(chose !== undefined ? { chose } : {}), scene: scene ?? currentRef.current, lines }]);
+      setChoices(s.currentChoices.map((c) => ({ text: c.text, index: c.index })));
+      readKnown(s);
     },
     [source, visits, readKnown],
   );
@@ -107,6 +123,10 @@ export function PlayDialog() {
       s.ResetState();
       history.current = [];
       setPassages([]);
+      setNotes({});
+      setNoting(null);
+      setMessage("");
+      currentRef.current = from;
       setCurrent(from);
       if (from && source.knots.get(from)) s.ChoosePathString(source.knots.get(from)!);
       advance(s);
@@ -150,6 +170,7 @@ export function PlayDialog() {
     if (!story || !last) return;
     story.state.LoadJson(last.state);
     setPassages((all) => all.slice(0, last.passages));
+    setNotes((all) => Object.fromEntries(Object.entries(all).filter(([k]) => Number(k) < last.passages)));
     setChoices(story.currentChoices.map((c) => ({ text: c.text, index: c.index })));
     readKnown(story);
   };
@@ -171,6 +192,43 @@ export function PlayDialog() {
   };
   const ended = !!story && choices.length === 0 && !story.canContinue;
 
+  // Parcours de lecture (lot 15) : chemin en numéros du livre-jeu, notes gardées en commentaires, export Markdown.
+  const steps: PathStep[] = passages.map((pa, i) => ({ scene: pa.scene ?? null, ...(pa.chose !== undefined ? { chose: pa.chose } : {}), ...(notes[i]?.trim() ? { note: notes[i] } : {}) }));
+  const numbers = projectSections(useCosmos.getState()).numbers;
+  const path = pathLine(steps, numbers);
+  const toKeep = pathNotes(steps);
+  const keepNotes = () => {
+    const st = useCosmos.getState();
+    let kept = 0;
+    for (const { scene, note } of toKeep) {
+      const html = st.manuscript[scene];
+      // Le commentaire s'ancre sur les premiers mots de la scène (une scène sans texte ne peut pas en porter).
+      const quote = openingWords(html);
+      const commentId = newId();
+      const marked = quote ? markQuoteInHtml(html ?? "", quote, commentId) : null;
+      if (!quote || !marked) continue;
+      st.setManuscriptText(scene, marked);
+      st.addComment(scene, commentId, quote);
+      st.editComment(scene, commentId, fmt(p.commentText, { note }));
+      kept++;
+    }
+    st.setCommentFocus(null);
+    const skipped = toKeep.length - kept;
+    setNotes({});
+    setMessage([kept ? fmt(p.notesKept, { n: kept }) : "", skipped ? fmt(p.notesSkipped, { n: skipped }) : ""].filter(Boolean).join(" "));
+  };
+  const exportPath = async () => {
+    const name = fmt(p.pathFile, { title: title.trim() || t.home.untitled });
+    const text = pathMarkdown(steps, numbers, new Map(scenes.map((sc) => [sc.id, sc.title])), {
+      title: fmt(p.pathTitle, { title: title.trim() || t.home.untitled }),
+      choice: p.pathChoice,
+      note: p.pathNote,
+      untitled: t.interactive.map.untitled,
+    });
+    const saved = await storage.saveAs({ name: `${fileName(name, "mondowrite")}.md`, extension: "md", mime: "text/markdown", data: new TextEncoder().encode(text) }, p.exportPath);
+    if (saved) setMessage(p.pathSaved);
+  };
+
   return (
     <div className="play-panel" onKeyDown={onKeyDown}>
       <button type="button" className="expanded-close" aria-label={t.gallery.close} title={t.gallery.close} onClick={close}>
@@ -191,6 +249,27 @@ export function PlayDialog() {
           {current ? fmt(p.write, { title: titleOf(current) }) : p.writeNone}
         </button>
       </div>
+
+      {passages.length > 0 && (
+        <div className="play-path">
+          {path && (
+            <p className="play-path-line">
+              <span>{p.path}</span> {path}
+            </p>
+          )}
+          <button type="button" className="ghost-button" disabled={toKeep.length === 0} onClick={keepNotes} title={p.keepNotesHint}>
+            {fmt(p.keepNotes, { n: toKeep.length })}
+          </button>
+          <button type="button" className="ghost-button" onClick={() => void exportPath()}>
+            {p.exportPath}
+          </button>
+          {message && (
+            <span className="play-path-message" role="status">
+              {message}
+            </span>
+          )}
+        </div>
+      )}
 
       {known.length > 0 && (
         <p className="play-known">
@@ -234,6 +313,33 @@ export function PlayDialog() {
                 {line.text && <p>{line.text}</p>}
               </div>
             ))}
+            {noting === i ? (
+              <textarea
+                className="play-note-field"
+                autoFocus
+                rows={2}
+                value={notes[i] ?? ""}
+                placeholder={p.notePlaceholder}
+                aria-label={fmt(p.noteAria, { title: titleOf(passage.scene) })}
+                onChange={(e) => setNotes((all) => ({ ...all, [i]: e.target.value }))}
+                onBlur={() => setNoting(null)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape" || (e.key === "Enter" && !e.shiftKey)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setNoting(null);
+                  }
+                }}
+              />
+            ) : notes[i]?.trim() ? (
+              <button type="button" className="play-note" aria-label={fmt(p.noteAria, { title: titleOf(passage.scene) })} onClick={() => setNoting(i)}>
+                {notes[i]}
+              </button>
+            ) : (
+              <button type="button" className="play-note-add" aria-label={fmt(p.noteAria, { title: titleOf(passage.scene) })} onClick={() => setNoting(i)}>
+                {p.note}
+              </button>
+            )}
           </section>
         ))}
         {story && choices.length > 0 && (

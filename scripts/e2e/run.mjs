@@ -2444,6 +2444,15 @@ const scenarios = [
       await play.getByRole("button", { name: /Remonter/ }).click();
       await play.getByRole("button", { name: /Rentrer/ }).last().click();
       await until(() => play.getByText("Fin de l’histoire.").isVisible(), "la lecture n'arrive pas à la fin");
+      // Lot 15 : parcours annoté. Le chemin en numéros, une note gardée en commentaire de sa scène.
+      await until(async () => /^Parcours\u00a0: 1 → \d+/.test((await play.locator(".play-path-line").textContent()) ?? ""), "le parcours de lecture n'est pas écrit en numéros");
+      await play.locator(".play-note-add").nth(1).click();
+      const noteField = play.locator(".play-note-field");
+      await noteField.fill("trop facile");
+      await noteField.press("Enter");
+      await play.getByRole("button", { name: "Garder les notes (1)" }).click();
+      await until(() => play.getByText("1 note(s) gardée(s) en commentaires.").isVisible(), "la note du parcours n'est pas gardée");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("commentaires/") && v.includes("Parcours de lecture\u00a0: trop facile")), "la note du parcours n'est pas enregistrée en commentaire");
       await page.keyboard.press("Escape");
 
       // « Vérifier » signale la scène que rien n'atteint.
