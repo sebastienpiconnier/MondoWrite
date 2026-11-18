@@ -68,7 +68,7 @@ Un projet est un **roman** ou un **scénario** (`kind` dans `cosmos.json`, absen
 
 ## Multilingue (règle du projet)
 
-Langues : **français** (référence) et **anglais**, tenues complètes par le projet, et les **langues de la communauté** (espagnol depuis novembre 2026 ; partielles, complétées par l'anglais, guide des traducteurs : `TRANSLATING.md`). Système maison, sans dépendance (`src/i18n/`).
+Langues : **français** (référence) et **anglais**, tenues complètes par le projet, et les **langues de la communauté** (espagnol et catalan depuis novembre 2026 ; partielles, complétées par l'anglais, guide des traducteurs : `TRANSLATING.md`). Système maison, sans dépendance (`src/i18n/`).
 
 1. **Aucun texte d'interface en dur** dans les composants, y compris `aria-label`, `placeholder`, `title` et messages d'erreur affichés.
 2. Une nouvelle chaîne s'ajoute d'abord dans `src/i18n/fr.ts`. TypeScript refuse alors de compiler tant que `en.ts` ne la traduit pas.
