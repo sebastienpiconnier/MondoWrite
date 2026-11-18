@@ -62,8 +62,11 @@ export const effectFor = (name: string) => `${name} = true`;
 
 /** Remplace le fait donné simplement par un choix (ou le retire) ; les effets écrits à la main restent. */
 export function withGiven(effects: readonly string[] | undefined, name: string | null): string[] {
-  const kept = (effects ?? []).filter((e) => !simpleEffect(e));
-  return name ? [effectFor(name), ...kept] : kept;
+  // Seul le premier fait donné simplement est celui de « Donne » : un second (la corde et la clé) reste.
+  const list = [...(effects ?? [])];
+  const at = list.findIndex((e) => simpleEffect(e));
+  if (at >= 0) list.splice(at, 1);
+  return name ? [effectFor(name), ...list] : list;
 }
 
 /** Libellés gardés dans cosmos.json : seulement des textes, sous des noms de variable valides. */
@@ -191,5 +194,14 @@ export const givenFact = (effects: readonly string[] | undefined): string | null
   return null;
 };
 
-/** Effets écrits à la main (tout sauf le fait donné simplement). */
-export const otherEffects = (effects: readonly string[] | undefined): string[] => (effects ?? []).filter((e) => !simpleEffect(e));
+/**
+ * Effets écrits à la main : tout sauf le fait donné simplement (`givenFact`, le premier). Un second fait donné par le
+ * même choix reste ici : l'assistant le lisait mal, la clé de la scène 3 du « Puits » n'apparaissait plus.
+ */
+export const otherEffects = (effects: readonly string[] | undefined): string[] => {
+  let skipped = false;
+  return (effects ?? []).filter((e) => {
+    if (!skipped && simpleEffect(e)) return !(skipped = true);
+    return true;
+  });
+};

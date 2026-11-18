@@ -65,6 +65,14 @@ describe("réglages simples", () => {
     expect(withGiven(effects, "lampe")).toEqual(["lampe = true", "pieces += 1"]);
     expect(withGiven(effects, null)).toEqual(["pieces += 1"]);
   });
+
+  it("un second fait donné par le même choix n'est ni caché ni effacé", () => {
+    const effects = ["corde = true", "cle = true"];
+    expect(givenFact(effects)).toBe("corde");
+    expect(otherEffects(effects)).toEqual(["cle = true"]);
+    expect(withGiven(effects, "lampe")).toEqual(["lampe = true", "cle = true"]);
+    expect(withGiven(effects, null)).toEqual(["cle = true"]);
+  });
 });
 
 describe("faits du livre", () => {
