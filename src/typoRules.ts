@@ -29,7 +29,7 @@ export interface TypoRules {
   /** Apostrophe tapée en début de mot : guillemet simple ouvrant en anglais, apostrophe ailleurs. */
   wordStartQuote: string;
   /** Motifs de césure du paquet `hyphen` déjà vérifiés et cités dans THIRD-PARTY-NOTICES.md. */
-  hyphen?: "fr" | "en-us" | "en-gb" | "es" | "ca";
+  hyphen?: "fr" | "en-us" | "en-gb" | "es";
   /** Virgule décimale : un tableau CSV prend « ; » pour séparateur. */
   decimalComma: boolean;
 }
@@ -74,29 +74,11 @@ export const TYPO_RULES: Record<string, TypoRules> = {
   "en-gb": plain(ENGLISH_SINGLE, ENGLISH, { wordStartQuote: "‘", dash: "–", hyphen: "en-gb", decimalComma: false }),
   de: plain(LOW_HIGH, LOW_HIGH_SINGLE, { dash: "–" }),
   "de-ch": plain(GUILLEMETS, ["‹", "›"], { dash: "–" }),
-  es: {
-    quotes: GUILLEMETS,
-    inner: ENGLISH,
-    quoteSpace: "",
-    before: {},
-    dash: "—",
-    wordStartQuote: "’",
-    hyphen: "es",
-    decimalComma: true,
-  },
+  es: plain(GUILLEMETS, ENGLISH, { hyphen: "es" }),
   it: plain(GUILLEMETS, ENGLISH),
   pt: plain(GUILLEMETS, ENGLISH),
   "pt-br": plain(ENGLISH, ENGLISH_SINGLE),
-  ca: {
-    quotes: GUILLEMETS,
-    inner: ENGLISH,
-    quoteSpace: "",
-    before: {},
-    dash: "—",
-    wordStartQuote: "’",
-    hyphen: "ca",
-    decimalComma: true,
-  },
+  ca: plain(GUILLEMETS, ENGLISH),
   nl: plain(ENGLISH, ENGLISH_SINGLE, { dash: "–" }),
   sv: plain(SWEDISH, SWEDISH_SINGLE, { dash: "–" }),
   fi: plain(SWEDISH, SWEDISH_SINGLE, { dash: "–" }),

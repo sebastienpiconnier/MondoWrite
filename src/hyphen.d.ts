@@ -11,3 +11,7 @@ declare module "hyphen/en-gb" {
   const hyphenator: { hyphenateSync: (text: string, options?: { hyphenChar?: string; minWordLength?: number }) => string };
   export default hyphenator;
 }
+declare module "hyphen/es" {
+  const hyphenator: { hyphenateSync: (text: string, options?: { hyphenChar?: string; minWordLength?: number }) => string };
+  export default hyphenator;
+}

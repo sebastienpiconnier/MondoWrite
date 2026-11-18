@@ -58,9 +58,9 @@ Some feature ideas (writing goals, book pages, highlighted passages, Bible sheet
 
 ## 2. hyphen et motifs de césure / hyphen and hyphenation patterns
 
-La césure du livre broché utilise le paquet npm [`hyphen`](https://github.com/ytiurin/hyphen) (version 1.14) et ses motifs français, anglais américain et anglais britannique, portés depuis les motifs de TeX (projet [hyph-utf8](https://www.hyphenation.org/tex)).
+La césure du livre broché utilise le paquet npm [`hyphen`](https://github.com/ytiurin/hyphen) (version 1.14) et ses motifs français, anglais américain, anglais britannique et espagnol, portés depuis les motifs de TeX (projet [hyph-utf8](https://www.hyphenation.org/tex)).
 
-Paperback hyphenation uses the [`hyphen`](https://github.com/ytiurin/hyphen) npm package and its French, US English and UK English patterns, ported from the TeX patterns (hyph-utf8 project).
+Paperback hyphenation uses the [`hyphen`](https://github.com/ytiurin/hyphen) npm package and its French, US English, UK English and Spanish patterns, ported from the TeX patterns (hyph-utf8 project).
 
 ### Paquet hyphen / hyphen package
 
@@ -105,6 +105,30 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
 BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
 ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### Motifs espagnols / Spanish patterns (`hyph-es.tex`)
+
+Copyright (C) 1993, 1997 Javier Bezos, 2001-2019 Javier Bezos, CervanTeX. Licence MIT :
+
+```
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
