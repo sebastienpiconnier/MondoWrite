@@ -59,8 +59,17 @@ const retarget = (text) =>
 // Les numéros de section cités dans les fiches (« 14 · La niche ») ne suivent pas la renumérotation : retirés.
 const unnumber = (text) => text.replace(/révélé au \d+ · /g, "révélé dans ").replace(/La fin \d+ · ([^;]+?) rejoue/g, "La fin « $1 » rejoue").replace(/la fin \d+ · (.+?) la répare/g, "la fin « $1 » la répare").replace(/\b\d+ · /g, "");
 
+// Une Idée sans titre ni texte n'apporte rien à l'exemple : retirée, avec sa place et son cadre s'il reste vide.
+const isEmptyCard = (id) => {
+  const text = read(`cartes/${id}.md`);
+  return /^title: ""$/m.test(text) && !text.split(/^---$/m)[2]?.trim();
+};
+const dropped = new Set([...cardIds].filter(isEmptyCard));
+for (const id of dropped) cardIds.delete(id);
+
 const files = {};
 for (const f of list("cartes")) {
+  if (dropped.has(f.slice(0, -3))) continue;
   let text = stripIa(read(`cartes/${f}`))
     .split("\n")
     .filter((l) => !/^(ia|iaImages):/.test(l))
@@ -70,6 +79,8 @@ for (const f of list("cartes")) {
   const lettre = [...cardIds].find((id) => titleOf(id) === "La lettre d'Odile");
   if (odile && lettre) text = text.replace(`l'enterrement d'[@La lettre d'Odile](cosmos:${lettre})`, `l'enterrement d'[@Odile](cosmos:${odile})`);
   if (typeOf(f.slice(0, -3)) !== "scene") text = unnumber(retarget(text));
+  // Règles du jeu : aucun chemin ne mène à L'eau noire par les marques.
+  text = text.replace(" Lanterne allumée et flamme à 0 aux marques : L'eau noire.", "");
   files[`cartes/${f}`] = text;
 }
 for (const f of list("manuscrit")) {
@@ -81,10 +92,14 @@ for (const f of list("manuscrit")) {
   files[`manuscrit/${f}`] = text;
 }
 
+meta.layout = (meta.layout ?? []).filter((n) => !dropped.has(n.id));
+meta.links = (meta.links ?? []).filter((l) => !dropped.has(l.source) && !dropped.has(l.target));
+if (dropped.size && !list("cartes").some((f) => typeOf(f.slice(0, -3)) === "idee" && !dropped.has(f.slice(0, -3))))
+  meta.frames = (meta.frames ?? []).filter((fr) => fr.title !== "Idées en vrac");
 delete meta.choiceMap;
 delete meta.progress;
-if (meta.pitch?.visuel) delete meta.pitch.visuel;
-if (meta.pitch && Object.keys(meta.pitch).length === 0) delete meta.pitch;
+// Couverture du projet (le visuel est posé par puits-images.mjs).
+meta.pitch = JSON.parse(fs.readFileSync(path.join("scripts", "examples", `puits-pitch.${lang}.json`), "utf8"));
 files["cosmos.json"] = `${JSON.stringify(meta, null, 2)}\n`;
 Object.assign(files, withImages(files, lang));
 

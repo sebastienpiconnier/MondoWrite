@@ -46,6 +46,7 @@ if (missing.length) throw new Error(`Sans traduction : ${missing.join(", ")}`);
 const cosmos = JSON.parse(fr.files["cosmos.json"]);
 cosmos.title = meta.title;
 cosmos.storyFacts = meta.storyFacts;
+cosmos.pitch = JSON.parse(fs.readFileSync(path.join("scripts", "examples", "puits-pitch.en.json"), "utf8"));
 for (const frame of cosmos.frames ?? []) {
   if (!(frame.title in meta.frames)) throw new Error(`Cadre sans traduction : ${frame.title}`);
   frame.title = meta.frames[frame.title];
