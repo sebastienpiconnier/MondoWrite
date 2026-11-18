@@ -389,7 +389,7 @@ visite ordinaire dans tout roman interactif.
 - [x] Données, chargement, bouton de la page des projets, visite, tests (Vitest et e2e)
 - [x] Images : dix gravures (`src/assets/examples/puits/`, JPEG en niveaux de gris sauf la couverture, 5,3 Mo chargés seulement à la création de l'exemple, `exampleMedia.ts`), posées par `scripts/examples/puits-images.mjs` dans les scènes (trois places du livre broché), sur dix fiches de la Bible et en couverture
 - [x] Version anglaise « The Well » (`scripts/examples/puits-en/`, `build-puits-en.mjs` : textes, titres, faits et destinations en anglais ; proposée dans toute langue autre que le français). Reste : relecture par l'auteur
-- [ ] Chapitre « Roman interactif » du guide (fr, en, es) avec des captures du Puits
+- [x] Chapitre 10 « Le roman interactif » du guide (fr, en, es ; l'espagnol cite les libellés anglais, la fonction n'étant pas traduite), quatre captures du Puits (`shots.mjs`, option expérimentale posée avant l'ouverture), PDF refaits
 
 ## Décisions du 18 novembre 2026 (manuel de LibroGameCreator)
 

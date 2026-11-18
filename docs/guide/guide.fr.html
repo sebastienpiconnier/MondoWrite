@@ -713,7 +713,63 @@
 <figure class="medium"><img src="images/fr/carte-agrandie-scenario.jpg"><figcaption>La scène « EXT. BOIS - JOUR » écrite dans sa carte.</figcaption></figure>
 
 <!-- ===================================================================================== -->
-<h2 id="ia"><span class="num">Chapitre 10</span>L’IA, facultative</h2>
+<h2 id="roman-interactif"><span class="num">Chapitre 10</span>Le roman interactif</h2>
+
+<p class="lead">Un roman interactif est un roman dont le lecteur choisit la suite : à la fin de chaque scène, quelques choix mènent chacun à une autre scène. MondoWrite l’écrit avec les mêmes vues qu’un roman (canevas, Bible, Plan, Manuscrit) et le publie en livre-jeu imprimé, en EPUB ou en page web jouable.</p>
+
+<div class="note" data-label="Expérimental"><p>Coche <span class="ui">Roman interactif</span> dans <span class="ui">Réglages</span> › <span class="ui">Général</span> › <span class="ui">Fonctions expérimentales</span>. Tant que la case est décochée, rien ne change : tes romans et tes scénarios ne voient aucun des outils de ce chapitre.</div>
+
+<h3>Commencer</h3>
+<p>La case cochée, la page des projets propose <span class="ui">Un roman interactif</span> à côté du roman et du scénario, et <span class="ui">Essayer « Le Puits », un roman interactif</span>. L’exemple est une courte histoire fantastique de 29 sections et six fins, illustrée de gravures : le soir de l’enterrement de sa grand-mère, le lecteur trouve ouvert le puits où son petit frère a disparu vingt-trois ans plus tôt. Il s’ouvre sur une visite guidée en six étapes, qui montre tout ce que décrit ce chapitre. Une histoire écrite dans Twine (Twee) ou dans Inky (Ink) s’importe aussi par <span class="ui">Importer…</span>.</p>
+
+<h3>La carte des choix</h3>
+<p>Sur le canevas, chaque carte Scène est une section du livre et chaque flèche un choix du lecteur, avec son texte dans une pilule. <span class="ui">Organiser</span> range l’histoire en arbre, le départ en haut. Sous le type de chaque scène, des repères : <span class="ui">Départ</span>, <span class="ui">Fin</span>, <span class="ui">Bonne fin</span>, <span class="ui">Mauvaise fin</span>, <span class="ui">Inaccessible</span> (aucun choix n’y mène), <span class="ui">Sans choix</span>.</p>
+<figure><img src="images/fr/puits-carte.jpg"><figcaption>« Le Puits » sur le canevas : chaque flèche est un choix.</figcaption></figure>
+<ul>
+  <li><strong>Ajouter un choix</strong> : tire une flèche d’une scène à une autre. Lâchée dans le vide, elle crée la scène suivante.</li>
+  <li><strong>Modifier un choix</strong> : touche sa pilule ; un bandeau en bas du canevas permet d’en changer le texte ou la destination. <kbd>Suppr</kbd> retire le choix choisi.</li>
+  <li><strong>Sans glisser</strong> : le menu <span class="ui">⋯</span> d’une carte Scène propose <span class="ui">Écrire la scène</span>, <span class="ui">Lire à partir d’ici</span>, <span class="ui">Ajouter un choix vers…</span>, <span class="ui">Nouvelle scène après celle-ci</span> et <span class="ui">Ajouter un choix « Fin »</span>.</li>
+</ul>
+
+<h3>Les choix dans le Manuscrit</h3>
+<p>Dans le Manuscrit, les choix d’une scène se lisent sous son texte, dans un bloc <span class="ui">Choix</span> : le texte de chaque choix et, dans <span class="ui">Mène à</span>, la scène où il conduit ou <span class="ui">Fin de l’histoire</span>. Une fin peut être marquée <span class="ui">Bonne fin</span> ou <span class="ui">Mauvaise fin</span> (le livre-jeu imprime alors « Votre aventure s’arrête ici. »). <span class="ui">Renvoi caché</span> fait d’un choix une énigme : il n’est pas imprimé, c’est le texte de la scène qui dit au lecteur comment trouver le numéro. Chaque scène porte son numéro de section au-dessus de son titre.</p>
+<figure><img src="images/fr/puits-choix.jpg"><figcaption>Les choix de « La cour », sous son texte.</figcaption></figure>
+<p>Dans le fichier de la scène, le bloc est du texte lisible, à la fin de <code>manuscrit/&lt;scène&gt;.md</code> : une ligne par choix, <code>* [Prendre la lanterne] -&gt; prendre_la_lanterne</code>. <span class="ui">Voir le code</span> le montre tel quel, et on peut l’écrire à la main ; c’est la syntaxe d’Ink, que lisent Inky et les autres outils.</p>
+
+<h3>Ce que sait le lecteur</h3>
+<p>Un choix peut donner un <strong>fait</strong> au lecteur, un autre ne s’ouvrir que s’il l’a. Sous un choix, <span class="ui">Donne</span> puis <span class="ui">Nouveau fait…</span> crée un fait (« La lanterne ») ; <span class="ui">Seulement si</span> le demande, ou demande qu’il manque. Un fait peut aussi être un compteur : dans « Le Puits », la flamme de la lanterne vaut 3 au départ et baisse à chaque épreuve, et la meilleure fin demande qu’elle brûle encore. Les faits ne se déclarent nulle part : ils naissent des choix. <span class="ui">Faits · N</span>, en tête du Plan, les liste avec les choix qui les donnent et ceux qui les demandent.</p>
+
+<h3>Les sections du livre</h3>
+<p>Dans un roman interactif, le Plan devient <span class="ui">Sections du livre</span> : les scènes dans l’ordre de leur numéro imprimé. Le départ est toujours le 1 ; les autres numéros sont mélangés, comme dans un livre-jeu, pour qu’on ne lise pas la suite par hasard, et pour qu’aucun choix ne mène à la section voisine.</p>
+<figure><img src="images/fr/puits-sections.jpg"><figcaption>Les sections du « Puits », dans l’ordre de leurs numéros.</figcaption></figure>
+<ul>
+  <li>Un numéro touché se change ; il est alors <strong>gardé</strong> (un cadenas), même quand on renumérote. <span class="ui">Libérer ce numéro</span> le rend au mélange.</li>
+  <li><span class="ui">Renuméroter</span> refait le mélange, sans trou, et dit combien de choix mènent encore à une section voisine.</li>
+  <li><span class="ui">En faire le départ</span> (menu <span class="ui">⋯</span> d’une scène) change la première section.</li>
+  <li>L’en-tête compte les fins : bonnes, mauvaises et neutres.</li>
+</ul>
+<p>Les outils du roman qui suit un seul ordre (gabarits, chapitres, chronologie, ruban du récit) n’y sont pas proposés : dans un livre-jeu, l’ordre du livre n’est pas celui de la lecture.</p>
+
+<h3>Vérifier</h3>
+<p>L’onglet <span class="ui">Vérifier</span> du Manuscrit commence par les points propres à l’histoire, en suivant tous les chemins depuis le départ : aucune fin atteignable, aucune bonne fin atteignable, une scène qu’aucun choix n’atteint, un choix sans destination, une scène qui peut bloquer (tous ses choix demandent un fait qui peut manquer), un fait que rien ne donne ou donné trop tard, un numéro qu’aucune section ne porte, un choix que le livre imprimé ne sait pas écrire. Après la composition du livre broché, il signale aussi une section dont la suite se lit sur la même double page. Un point mène à la scène.</p>
+
+<h3>Lire l’histoire</h3>
+<p><span class="ui">Lire l’histoire</span> (en tête du Plan, ou <span class="ui">Lire à partir d’ici</span> sur une scène) la joue comme un lecteur : le texte, puis les choix ; <span class="ui">Revenir au choix précédent</span> et <span class="ui">Recommencer</span> permettent d’essayer chaque branche. <span class="ui">Noter</span>, sous un passage, garde ce que tu remarques (« trop facile », « pas clair »). En fin de lecture, <span class="ui">Garder les notes</span> fait de chaque note un commentaire de sa scène (onglet <span class="ui">Commentaires</span>, « À faire ») et <span class="ui">Exporter le parcours</span> écrit le chemin suivi, choix et notes compris, dans un fichier Markdown, à envoyer à un relecteur.</p>
+<figure><img src="images/fr/puits-lecture.jpg"><figcaption>« Le Puits » lu à l’écran, avec une note.</figcaption></figure>
+
+<h3>Publier</h3>
+<p>Le menu <span class="ui">Exporter</span> d’un roman interactif a deux parties. <span class="ui">Histoire interactive</span> :</p>
+<ul>
+  <li><span class="ui">Page web jouable (.html)</span> : un seul fichier, qui se lit dans n’importe quel navigateur, images comprises, et garde la progression du lecteur ;</li>
+  <li><span class="ui">Livre-jeu (EPUB)</span> : des sections numérotées, chaque choix est un lien vers sa section ;</li>
+  <li><span class="ui">Livre broché (KDP)…</span> : le livre-jeu imprimé, composé comme un livre (pages de début, « Avant de commencer », sections qui se suivent sous leur numéro, numéros des sections en haut de page). Les faits et les conditions s’y écrivent en phrases (« Si vous avez noté La lanterne, … ») ;</li>
+  <li><span class="ui">Ink (.ink)</span> : le texte de l’histoire pour Inky et les moteurs de jeu.</li>
+</ul>
+<p><span class="ui">Texte suivi (pour relire)</span> propose les exports ordinaires du manuscrit (PDF, Word, EPUB, Markdown), sans les choix, pour relire le texte d’un bout à l’autre. Les images posées dans les scènes (voir le Manuscrit) suivent dans la page web et dans l’EPUB.</p>
+<p>L’assistant IA (voir « L’IA, facultative ») sait lui aussi lire et écrire les choix et les faits d’un roman interactif.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="ia"><span class="num">Chapitre 11</span>L’IA, facultative</h2>
 
 <p class="lead">MondoWrite fonctionne entièrement sans IA. Si tu en branches une, elle pose des questions et fait des propositions ; elle n’écrit jamais ton texte, et rien ne change sans ton accord.</p>
 
@@ -801,7 +857,7 @@
 <p>Dans Claude Desktop, le bouton « + » propose aussi cinq consignes de MondoWrite : <span class="ui">Relecture bêta</span> (les réactions d’un lecteur, sans réécriture), <span class="ui">Cohérence</span> (les contradictions entre les scènes et la Bible, posées en questions), <span class="ui">Dépouillement</span> (accessoires, costumes, figurants… scène par scène), <span class="ui">Interroger un personnage</span> (il répond seulement avec ce que tu as écrit) et <span class="ui">Point du projet</span> (où tu en es, ce qui reste).</p>
 
 <!-- ===================================================================================== -->
-<h2 id="exporter"><span class="num">Chapitre 11</span>Exporter et publier</h2>
+<h2 id="exporter"><span class="num">Chapitre 12</span>Exporter et publier</h2>
 
 <p class="lead">Le bouton <span class="ui">Exporter</span> fabrique tes fichiers dans l’app, sans aucun outil externe. Choisis le format : le fichier est enregistré là où tu le décides.</p>
 <figure class="small"><img src="images/fr/exporter.jpg"><figcaption>Le menu Exporter d’un roman.</figcaption></figure>
@@ -877,7 +933,7 @@
 <p>Le <strong>canevas</strong> s’exporte en image PNG de tout le tableau, en PDF standard (A4, à envoyer) ou grand format (A1, à imprimer et afficher au mur), ou en texte des cartes (Word, Markdown), un cadre par partie.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="fichiers"><span class="num">Chapitre 12</span>Tes fichiers</h2>
+<h2 id="fichiers"><span class="num">Chapitre 13</span>Tes fichiers</h2>
 
 <p class="lead">Un projet MondoWrite est un dossier ordinaire, rempli de fichiers texte que tu peux ouvrir, copier, sauvegarder ou versionner comme tu veux.</p>
 
@@ -929,7 +985,7 @@
 <div class="tip" data-label="Sauvegardes"><p>Les sauvegardes automatiques restent sur l’appareil : place aussi tes projets dans un dossier synchronisé (iCloud Drive, Dropbox, OneDrive) ou copie-les ailleurs de temps en temps. Comme ce sont des fichiers texte, ils prennent très peu de place.</p></div>
 
 <!-- ===================================================================================== -->
-<h2 id="reglages"><span class="num">Chapitre 13</span>Réglages et apparence</h2>
+<h2 id="reglages"><span class="num">Chapitre 14</span>Réglages et apparence</h2>
 
 <p>Le bouton <span class="ui">Réglages</span> (les curseurs, en haut à droite) ouvre d’abord le menu de l’app, le même sur ordinateur, iPad et iPhone : <span class="ui">Réglages…</span>, <span class="ui">Corbeille (n)</span> (projet ouvert), <span class="ui">Sauvegardes…</span> (app installée), <span class="ui">Commandes…</span> (la palette), puis <span class="ui">Visite guidée</span>, <span class="ui">Guide de l’utilisateur</span>, <span class="ui">Raccourcis clavier</span> et <span class="ui">À propos de MondoWrite</span>. <span class="ui">Réglages…</span> (<kbd>Ctrl</kbd> <kbd>,</kbd>) ouvre quatre onglets, qui ne contiennent que des réglages : <span class="ui">Ce projet</span> (quand un projet est ouvert), <span class="ui">Général</span>, <span class="ui">Écriture</span> et <span class="ui">IA</span>.</p>
 <figure><img src="images/fr/reglages.jpg"><figcaption>Les réglages.</figcaption></figure>
@@ -967,7 +1023,7 @@
 <p>Les notes prises avec le Carnet d’une version précédente restent des cartes « à ranger » : <span class="ui">À ranger · N</span>, sur le canevas, les liste, avec un pointillé autour de chacune ; dès que tu en déplaces une ou que tu la relies à une autre carte, elle quitte la liste.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="raccourcis"><span class="num">Chapitre 14</span>Raccourcis clavier</h2>
+<h2 id="raccourcis"><span class="num">Chapitre 15</span>Raccourcis clavier</h2>
 <p>La liste complète s’ouvre à tout moment avec <kbd>Ctrl</kbd> <kbd>/</kbd>. Sur Mac, <kbd>Ctrl</kbd> devient <kbd>⌘</kbd>, <kbd>Alt</kbd> devient <kbd>⌥</kbd>.</p>
 
 <h3>Partout</h3>
@@ -1029,7 +1085,7 @@
 </table>
 
 <!-- ===================================================================================== -->
-<h2 id="faq"><span class="num">Chapitre 15</span>Questions fréquentes</h2>
+<h2 id="faq"><span class="num">Chapitre 16</span>Questions fréquentes</h2>
 
 <h4>Où sont enregistrés mes textes ?</h4>
 <p>Dans le dossier que tu as choisi en créant le projet. Le chemin n’est pas affiché dans l’app : retrouve-le avec <span class="ui">Ouvrir un dossier…</span>, ou cherche le fichier <code>cosmos.json</code> sur ton ordinateur.</p>

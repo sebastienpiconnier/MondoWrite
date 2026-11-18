@@ -726,6 +726,46 @@ await step("canevas scénario", async () => {
 await page.close();
 
 // ---------------------------------------------------------------------------------------------------
+// Roman interactif (fonction expérimentale) : l'exemple « Le Puits » (en anglais dans l'interface espagnole).
+await open();
+await page.addInitScript(() => {
+  const key = "cosmos:reglages";
+  const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+  if (!saved.experimental?.interactive) localStorage.setItem(key, JSON.stringify({ ...saved, experimental: { interactive: true } }));
+});
+await page.goto(URL);
+await wait(800);
+await step("roman interactif", async () => {
+  await page.getByRole("button", { name: T("Essayer «\u00a0Le Puits\u00a0», un roman interactif", "Try “The Well”, an interactive novel", "Try “The Well”, an interactive novel") }).click();
+  await wait(2500);
+  await closeTour();
+  await fit();
+  // Le haut de l'arbre, assez près pour lire les pilules des choix.
+  await zoomAt(560, 140, 4);
+  await shot("puits-carte");
+  await view(T("Manuscrit", "Manuscript", "Manuscrito"));
+  await wait(800);
+  const block = page.locator(".ms-page .scene-choices").first();
+  await block.scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 120);
+  await wait(500);
+  await shot("puits-choix", { clip: await union([block], 120) });
+  await view(T("Plan", "Outline", "Esquema"));
+  await wait(800);
+  await shot("puits-sections");
+  await page.getByRole("button", { name: T("Lire l’histoire", "Read the story", "Read the story") }).first().click();
+  await wait(1500);
+  await page.locator(".play-choices button").first().click();
+  await wait(600);
+  await page.locator(".play-note-add").last().click();
+  await page.keyboard.type(T("La lanterne arrive trop vite ?", "Does the lantern come too soon?", "Does the lantern come too soon?"));
+  await page.keyboard.press("Enter");
+  await wait(400);
+  await shot("puits-lecture");
+});
+await page.close();
+
+// ---------------------------------------------------------------------------------------------------
 // Sombre, téléphone
 await open({ scheme: "dark" });
 await startExample();

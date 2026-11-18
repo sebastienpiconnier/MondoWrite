@@ -713,7 +713,63 @@
 <figure class="medium"><img src="images/es/carte-agrandie-scenario.jpg"><figcaption>La escena «EXT. BOSQUE - DÍA» escrita en su tarjeta.</figcaption></figure>
 
 <!-- ===================================================================================== -->
-<h2 id="ia"><span class="num">Capítulo 10</span>La IA, opcional</h2>
+<h2 id="novela-interactiva"><span class="num">Capítulo 10</span>La novela interactiva</h2>
+
+<p class="lead">Una novela interactiva es una novela cuyo lector elige cómo sigue: al final de cada escena, unas cuantas opciones llevan cada una a otra escena. MondoWrite la escribe con las mismas vistas que una novela (lienzo, Biblia, Esquema, Manuscrito) y la publica como librojuego impreso, en EPUB o como página web jugable.</p>
+
+<div class="note" data-label="Experimental"><p>Marca <span class="ui">Interactive novel</span> en <span class="ui">Ajustes</span> › <span class="ui">General</span> › <span class="ui">Experimental features</span>. Mientras la casilla esté desmarcada, nada cambia: tus novelas y tus guiones no ven ninguna de las herramientas de este capítulo. Esta función aún no está traducida al español: sus botones aparecen en inglés, con los nombres que se citan aquí, y el ejemplo se abre en inglés.</p></div>
+
+<h3>Empezar</h3>
+<p>Con la casilla marcada, la página de proyectos propone <span class="ui">An interactive novel</span> junto a la novela y el guion, y <span class="ui">Try “The Well”, an interactive novel</span>. El ejemplo es una breve historia fantástica de 29 secciones y seis finales, ilustrada con grabados: la noche del entierro de su abuela, el lector encuentra abierto el pozo donde su hermano pequeño desapareció veintitrés años antes. Se abre con una visita guiada de seis pasos que muestra todo lo que describe este capítulo. Una historia escrita en Twine (Twee) o en Inky (Ink) también se importa con <span class="ui">Importar…</span>.</p>
+
+<h3>El mapa de las opciones</h3>
+<p>En el lienzo, cada tarjeta Escena es una sección del libro y cada flecha una opción del lector, con su texto en una píldora. <span class="ui">Organizar</span> coloca la historia en árbol, con el comienzo arriba. Bajo el tipo de cada escena, unas marcas: <span class="ui">Start</span> (comienzo), <span class="ui">End</span> (final), <span class="ui">Good ending</span>, <span class="ui">Bad ending</span>, <span class="ui">Unreachable</span> (ninguna opción lleva a ella), <span class="ui">No choice</span>.</p>
+<figure><img src="images/es/puits-carte.jpg"><figcaption>«The Well» en el lienzo: cada flecha es una opción.</figcaption></figure>
+<ul>
+  <li><strong>Añadir una opción</strong>: tira una flecha de una escena a otra. Soltada en el vacío, crea la escena siguiente.</li>
+  <li><strong>Modificar una opción</strong>: toca su píldora; una franja al pie del lienzo permite cambiar su texto o su destino. <kbd>Supr</kbd> quita la opción elegida.</li>
+  <li><strong>Sin arrastrar</strong>: el menú <span class="ui">⋯</span> de una tarjeta Escena propone <span class="ui">Write the scene</span>, <span class="ui">Read from here</span>, <span class="ui">Add a choice to…</span>, <span class="ui">New scene after this one</span> y <span class="ui">Add an “End” choice</span>.</li>
+</ul>
+
+<h3>Las opciones en el Manuscrito</h3>
+<p>En el Manuscrito, las opciones de una escena se leen bajo su texto, en un bloque <span class="ui">Choices</span>: el texto de cada opción y, en <span class="ui">Leads to</span>, la escena a la que lleva o <span class="ui">End of the story</span>. Un final puede marcarse <span class="ui">Good ending</span> o <span class="ui">Bad ending</span> (el librojuego imprime entonces que la aventura termina aquí). <span class="ui">Hidden jump</span> convierte una opción en un enigma: no se imprime, y es el texto de la escena el que dice al lector cómo encontrar el número. Cada escena lleva su número de sección encima de su título.</p>
+<figure><img src="images/es/puits-choix.jpg"><figcaption>Las opciones de «The Yard», bajo su texto.</figcaption></figure>
+<p>En el archivo de la escena, el bloque es texto legible al final de <code>manuscrit/&lt;escena&gt;.md</code>: una línea por opción, <code>* [Take the lantern] -&gt; taking_the_lantern</code>. <span class="ui">Show the code</span> lo muestra tal cual, y puede escribirse a mano; es la sintaxis de Ink, que leen Inky y las demás herramientas.</p>
+
+<h3>Lo que sabe el lector</h3>
+<p>Una opción puede dar un <strong>hecho</strong> al lector, y otra abrirse solo si lo tiene. Bajo una opción, <span class="ui">Gives</span> y luego <span class="ui">New fact…</span> crea un hecho («The lantern»); <span class="ui">Only if</span> lo pide, o pide que falte. Un hecho también puede ser un contador: en «The Well», la llama del farol vale 3 al principio y baja con cada prueba, y el mejor final exige que siga ardiendo. Los hechos no se declaran en ninguna parte: nacen de las opciones. <span class="ui">Facts · N</span>, en la cabecera del Esquema, los enumera con las opciones que los dan y las que los piden.</p>
+
+<h3>Las secciones del libro</h3>
+<p>En una novela interactiva, el Esquema se convierte en <span class="ui">Book sections</span>: las escenas en el orden de su número impreso. El comienzo es siempre el 1; los demás números se mezclan, como en un librojuego, para que nadie lea la continuación por casualidad y para que ninguna opción lleve a la sección vecina.</p>
+<figure><img src="images/es/puits-sections.jpg"><figcaption>Las secciones de «The Well», en el orden de sus números.</figcaption></figure>
+<ul>
+  <li>Un número tocado se cambia; queda entonces <strong>fijado</strong> (un candado), incluso al renumerar. <span class="ui">Release this number</span> lo devuelve a la mezcla.</li>
+  <li><span class="ui">Renumber</span> rehace la mezcla, sin huecos, y dice cuántas opciones llevan todavía a una sección vecina.</li>
+  <li><span class="ui">Make it the start</span> (menú <span class="ui">⋯</span> de una escena) cambia la primera sección.</li>
+  <li>La cabecera cuenta los finales: buenos, malos y neutros.</li>
+</ul>
+<p>Las herramientas de la novela que se lee en un solo orden (plantillas, capítulos, cronología, cinta del relato) no se proponen: en un librojuego, el orden del libro no es el de la lectura.</p>
+
+<h3>Revisar</h3>
+<p>La pestaña <span class="ui">Revisar</span> del Manuscrito empieza por los puntos propios de la historia, siguiendo todos los caminos desde el comienzo: ningún final alcanzable, ningún buen final alcanzable, una escena a la que no llega ninguna opción, una opción sin destino, una escena que puede bloquear (todas sus opciones piden un hecho que puede faltar), un hecho que nada da o que se da demasiado tarde, un número que ninguna sección lleva, una opción que el libro impreso no sabe escribir. Tras componer el libro en rústica, también señala una sección cuya continuación se lee en la misma doble página. Cada punto lleva a la escena.</p>
+
+<h3>Leer la historia</h3>
+<p><span class="ui">Read the story</span> (en la cabecera del Esquema, o <span class="ui">Read from here</span> en una escena) la juega como un lector: el texto y luego las opciones; <span class="ui">Back to the previous choice</span> y <span class="ui">Start over</span> permiten probar cada rama. <span class="ui">Note</span>, bajo un pasaje, guarda lo que observas («demasiado fácil», «poco claro»). Al final de la lectura, <span class="ui">Keep the notes</span> convierte cada nota en un comentario de su escena (pestaña <span class="ui">Comentarios</span>, «Pendientes») y <span class="ui">Export the path</span> escribe el camino seguido, opciones y notas incluidas, en un archivo Markdown que puedes enviar a un lector.</p>
+<figure><img src="images/es/puits-lecture.jpg"><figcaption>«The Well» leído en pantalla, con una nota.</figcaption></figure>
+
+<h3>Publicar</h3>
+<p>El menú <span class="ui">Exportar</span> de una novela interactiva tiene dos partes. <span class="ui">Interactive story</span>:</p>
+<ul>
+  <li><span class="ui">Playable web page (.html)</span>: un solo archivo que se abre en cualquier navegador, imágenes incluidas, y recuerda el progreso del lector;</li>
+  <li><span class="ui">Gamebook (EPUB)</span>: secciones numeradas, cada opción es un enlace a su sección;</li>
+  <li><span class="ui">Libro en rústica (KDP)…</span>: el librojuego impreso, compuesto como un libro (páginas iniciales, «Before you begin», secciones seguidas bajo su número, números de las secciones en lo alto de cada página). Los hechos y las condiciones se escriben en frases;</li>
+  <li><span class="ui">Ink (.ink)</span>: el texto de la historia para Inky y los motores de juego.</li>
+</ul>
+<p><span class="ui">Running text (for proofreading)</span> propone las exportaciones habituales del manuscrito (PDF, Word, EPUB, Markdown), sin las opciones, para releer el texto de principio a fin. Las imágenes colocadas en las escenas (ver el Manuscrito) pasan a la página web y al EPUB.</p>
+<p>El asistente IA (ver «La IA, opcional») también sabe leer y escribir las opciones y los hechos de una novela interactiva.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="ia"><span class="num">Capítulo 11</span>La IA, opcional</h2>
 
 <p class="lead">MondoWrite funciona por completo sin IA. Si conectas una, hace preguntas y propuestas; nunca escribe tu texto, y nada cambia sin tu decisión.</p>
 
@@ -801,7 +857,7 @@
 <p>En Claude Desktop, el botón «+» ofrece también cinco instrucciones de MondoWrite: relectura beta (las reacciones de un lector, sin reescribir), coherencia (las contradicciones entre las escenas y la Biblia, en forma de preguntas), desglose (accesorios, vestuario, figurantes… escena por escena), interrogar a un personaje (que solo responde con lo que escribiste) y punto del proyecto (dónde estás, qué falta).</p>
 
 <!-- ===================================================================================== -->
-<h2 id="exportar"><span class="num">Capítulo 11</span>Exportar y publicar</h2>
+<h2 id="exportar"><span class="num">Capítulo 12</span>Exportar y publicar</h2>
 
 <p class="lead">El botón <span class="ui">Exportar</span> fabrica tus archivos dentro de la app, sin herramienta externa. Elige el formato: el archivo se guarda donde decidas.</p>
 <figure class="small"><img src="images/es/exporter.jpg"><figcaption>El menú Exportar de una novela.</figcaption></figure>
@@ -877,7 +933,7 @@
 <p>El <strong>lienzo</strong> se exporta como imagen PNG de toda la pizarra, en PDF normal (A4, para enviar) o en gran formato (A1, para imprimir y colgar en la pared), o como texto de las tarjetas (Word, Markdown), una parte por marco.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="archivos"><span class="num">Capítulo 12</span>Tus archivos</h2>
+<h2 id="archivos"><span class="num">Capítulo 13</span>Tus archivos</h2>
 
 <p class="lead">Un proyecto de MondoWrite es una carpeta normal, llena de archivos de texto que puedes abrir, copiar, respaldar o versionar a tu gusto.</p>
 
@@ -929,7 +985,7 @@
 <div class="tip" data-label="Copias de seguridad"><p>Las copias automáticas se quedan en el dispositivo: guarda también tus proyectos en una carpeta sincronizada (iCloud Drive, Dropbox, OneDrive) o cópialos en otro sitio de vez en cuando. Como son archivos de texto, ocupan muy poco espacio.</p></div>
 
 <!-- ===================================================================================== -->
-<h2 id="ajustes"><span class="num">Capítulo 13</span>Ajustes y apariencia</h2>
+<h2 id="ajustes"><span class="num">Capítulo 14</span>Ajustes y apariencia</h2>
 
 <p>El botón <span class="ui">Ajustes</span> (los controles deslizantes, arriba a la derecha) abre primero el menú de la app, el mismo en computadora, iPad e iPhone: <span class="ui">Ajustes…</span>, <span class="ui">Papelera (n)</span> (proyecto abierto), <span class="ui">Copias de seguridad…</span> (app instalada), <span class="ui">Comandos…</span> (la paleta), luego <span class="ui">Visita guiada</span>, <span class="ui">Guía del usuario</span>, <span class="ui">Atajos de teclado</span> y <span class="ui">Acerca de MondoWrite</span>. <span class="ui">Ajustes…</span> (<kbd>Ctrl</kbd> <kbd>,</kbd>) abre cuatro pestañas, que solo contienen ajustes: <span class="ui">Este proyecto</span> (cuando hay un proyecto abierto), <span class="ui">General</span>, <span class="ui">Escritura</span> e <span class="ui">IA</span>.</p>
 <figure><img src="images/es/reglages.jpg"><figcaption>Los Ajustes.</figcaption></figure>
@@ -967,7 +1023,7 @@
 <p>Las notas tomadas con la Libreta de una versión anterior siguen siendo tarjetas «por ordenar»: <span class="ui">Por ordenar · N</span>, en el lienzo, las lista, con un punteado alrededor de cada una; en cuanto mueves una o la unes a otra tarjeta, sale de la lista.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="atajos"><span class="num">Capítulo 14</span>Atajos de teclado</h2>
+<h2 id="atajos"><span class="num">Capítulo 15</span>Atajos de teclado</h2>
 <p>La lista completa se abre en cualquier momento con <kbd>Ctrl</kbd> <kbd>/</kbd>. En un Mac, <kbd>Ctrl</kbd> se convierte en <kbd>⌘</kbd> y <kbd>Alt</kbd> en <kbd>⌥</kbd>.</p>
 
 <h3>En todas partes</h3>
@@ -1029,7 +1085,7 @@
 </table>
 
 <!-- ===================================================================================== -->
-<h2 id="preguntas-frecuentes"><span class="num">Capítulo 15</span>Preguntas frecuentes</h2>
+<h2 id="preguntas-frecuentes"><span class="num">Capítulo 16</span>Preguntas frecuentes</h2>
 
 <h4>¿Dónde se guardan mis textos?</h4>
 <p>En la carpeta que elegiste al crear el proyecto. La ruta no se muestra en la app: encuéntrala con <span class="ui">Abrir una carpeta…</span>, o busca en tu computadora el archivo <code>cosmos.json</code>.</p>

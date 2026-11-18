@@ -713,7 +713,63 @@
 <figure class="medium"><img src="images/en/carte-agrandie-scenario.jpg"><figcaption>The scene “EXT. WOODS - DAY” written in its card.</figcaption></figure>
 
 <!-- ===================================================================================== -->
-<h2 id="ai"><span class="num">Chapter 10</span>AI, optional</h2>
+<h2 id="interactive-novel"><span class="num">Chapter 10</span>The interactive novel</h2>
+
+<p class="lead">An interactive novel is a novel whose reader chooses what happens next: at the end of each scene, a few choices each lead to another scene. MondoWrite writes it with the same views as a novel (canvas, Bible, Outline, Manuscript) and publishes it as a printed gamebook, an EPUB or a playable web page.</p>
+
+<div class="note" data-label="Experimental"><p>Check <span class="ui">Interactive novel</span> in <span class="ui">Settings</span> › <span class="ui">General</span> › <span class="ui">Experimental features</span>. While the box is unchecked, nothing changes: your novels and screenplays see none of the tools in this chapter.</p></div>
+
+<h3>Getting started</h3>
+<p>With the box checked, the projects page offers <span class="ui">An interactive novel</span> next to the novel and the screenplay, and <span class="ui">Try “The Well”, an interactive novel</span>. The example is a short supernatural story of 29 sections and six endings, illustrated with engravings: on the evening of their grandmother’s funeral, the reader finds open the well where their little brother vanished twenty-three years ago. It opens on a six-step guided tour that shows everything this chapter describes. A story written in Twine (Twee) or Inky (Ink) can also be brought in with <span class="ui">Import…</span>.</p>
+
+<h3>The story map</h3>
+<p>On the canvas, each Scene card is a section of the book and each arrow a reader’s choice, with its text in a pill. <span class="ui">Organize</span> lays the story out as a tree, with the start at the top. Under each scene’s type, markers: <span class="ui">Start</span>, <span class="ui">End</span>, <span class="ui">Good ending</span>, <span class="ui">Bad ending</span>, <span class="ui">Unreachable</span> (no choice leads there), <span class="ui">No choice</span>.</p>
+<figure><img src="images/en/puits-carte.jpg"><figcaption>“The Well” on the canvas: each arrow is a choice.</figcaption></figure>
+<ul>
+  <li><strong>Add a choice</strong>: drag an arrow from one scene to another. Dropped on empty space, it creates the next scene.</li>
+  <li><strong>Edit a choice</strong>: tap its pill; a strip at the bottom of the canvas lets you change its text or destination. <kbd>Delete</kbd> removes the selected choice.</li>
+  <li><strong>Without dragging</strong>: the <span class="ui">⋯</span> menu of a Scene card offers <span class="ui">Write the scene</span>, <span class="ui">Read from here</span>, <span class="ui">Add a choice to…</span>, <span class="ui">New scene after this one</span> and <span class="ui">Add an “End” choice</span>.</li>
+</ul>
+
+<h3>Choices in the Manuscript</h3>
+<p>In the Manuscript, a scene’s choices sit below its text, in a <span class="ui">Choices</span> block: the text of each choice and, under <span class="ui">Leads to</span>, the scene it takes the reader to, or <span class="ui">End of the story</span>. An ending can be marked <span class="ui">Good ending</span> or <span class="ui">Bad ending</span> (the gamebook then prints “Your adventure ends here.”). <span class="ui">Hidden jump</span> turns a choice into a puzzle: it is not printed, and the scene’s text tells the reader how to find the number. Each scene shows its section number above its title.</p>
+<figure><img src="images/en/puits-choix.jpg"><figcaption>The choices of “The Yard”, below its text.</figcaption></figure>
+<p>In the scene’s file, the block is readable text at the end of <code>manuscrit/&lt;scene&gt;.md</code>: one line per choice, <code>* [Take the lantern] -&gt; taking_the_lantern</code>. <span class="ui">Show the code</span> displays it as it is, and you can type it by hand; it is Ink syntax, read by Inky and other tools.</p>
+
+<h3>What the reader knows</h3>
+<p>A choice can give the reader a <strong>fact</strong>, and another can open only if they have it. Under a choice, <span class="ui">Gives</span> then <span class="ui">New fact…</span> creates a fact (“The lantern”); <span class="ui">Only if</span> asks for it, or asks that it be missing. A fact can also be a counter: in “The Well”, the lantern’s flame is worth 3 at the start and drops with each ordeal, and the best ending needs it still burning. Facts are never declared anywhere: they are born from the choices. <span class="ui">Facts · N</span>, at the top of the Outline, lists them with the choices that give them and those that ask for them.</p>
+
+<h3>The book sections</h3>
+<p>In an interactive novel, the Outline becomes <span class="ui">Book sections</span>: the scenes in the order of their printed number. The start is always 1; the other numbers are shuffled, as in a gamebook, so nobody reads ahead by accident, and so no choice leads to the next section.</p>
+<figure><img src="images/en/puits-sections.jpg"><figcaption>The sections of “The Well”, in number order.</figcaption></figure>
+<ul>
+  <li>Tap a number to change it; it is then <strong>kept</strong> (a padlock), even when you renumber. <span class="ui">Release this number</span> returns it to the shuffle.</li>
+  <li><span class="ui">Renumber</span> reshuffles without gaps, and says how many choices still lead to a neighbouring section.</li>
+  <li><span class="ui">Make it the start</span> (a scene’s <span class="ui">⋯</span> menu) changes the first section.</li>
+  <li>The header counts the endings: good, bad and neutral.</li>
+</ul>
+<p>The tools of a novel read in a single order (templates, chapters, timeline, story ribbon) are not offered: in a gamebook, the order of the book is not the order of reading.</p>
+
+<h3>Check</h3>
+<p>The Manuscript’s <span class="ui">Check</span> tab starts with points specific to the story, following every path from the start: no reachable ending, no reachable good ending, a scene no choice reaches, a choice with no destination, a scene that can block (all its choices need a fact that may be missing), a fact nothing gives or that is given too late, a number no section carries, a choice the printed book cannot write. Once the paperback has been laid out, it also flags a section whose next step can be read on the same spread. Each point takes you to the scene.</p>
+
+<h3>Read the story</h3>
+<p><span class="ui">Read the story</span> (at the top of the Outline, or <span class="ui">Read from here</span> on a scene) plays it as a reader would: the text, then the choices; <span class="ui">Back to the previous choice</span> and <span class="ui">Start over</span> let you try every branch. <span class="ui">Note</span>, under a passage, keeps what you notice (“too easy”, “unclear”). At the end of the read, <span class="ui">Keep the notes</span> turns each note into a comment on its scene (<span class="ui">Comments</span> tab, “To do”), and <span class="ui">Export the path</span> writes the path taken, choices and notes included, to a Markdown file you can send to a reader.</p>
+<figure><img src="images/en/puits-lecture.jpg"><figcaption>“The Well” read on screen, with a note.</figcaption></figure>
+
+<h3>Publish</h3>
+<p>The <span class="ui">Export</span> menu of an interactive novel has two parts. <span class="ui">Interactive story</span>:</p>
+<ul>
+  <li><span class="ui">Playable web page (.html)</span>: a single file that opens in any browser, images included, and remembers the reader’s progress;</li>
+  <li><span class="ui">Gamebook (EPUB)</span>: numbered sections, each choice a link to its section;</li>
+  <li><span class="ui">Paperback (KDP)…</span>: the printed gamebook, laid out like a book (front pages, “Before you begin”, sections running on under their number, section numbers at the top of each page). Facts and conditions are written as sentences (“If you have noted The lantern, …”);</li>
+  <li><span class="ui">Ink (.ink)</span>: the text of the story for Inky and game engines.</li>
+</ul>
+<p><span class="ui">Running text (for proofreading)</span> offers the usual manuscript exports (PDF, Word, EPUB, Markdown), without the choices, to proofread the text from start to finish. Images placed in the scenes (see the Manuscript) are carried into the web page and the EPUB.</p>
+<p>The AI assistant (see “AI, optional”) can also read and write the choices and facts of an interactive novel.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="ai"><span class="num">Chapter 11</span>AI, optional</h2>
 
 <p class="lead">MondoWrite works entirely without AI. If you plug one in, it asks questions and makes suggestions; it never writes your text, and nothing changes without your say.</p>
 
@@ -801,7 +857,7 @@
 <p>In Claude Desktop, the “+” button also offers five MondoWrite prompts: <span class="ui">Beta read</span> (a reader’s reactions, no rewriting), <span class="ui">Consistency check</span> (contradictions between the scenes and the Bible, as questions), <span class="ui">Breakdown</span> (props, costumes, extras… scene by scene), <span class="ui">Interview a character</span> (who answers only with what you wrote) and <span class="ui">Project status</span> (where you stand, what’s left).</p>
 
 <!-- ===================================================================================== -->
-<h2 id="export"><span class="num">Chapter 11</span>Export and publish</h2>
+<h2 id="export"><span class="num">Chapter 12</span>Export and publish</h2>
 
 <p class="lead">The <span class="ui">Export</span> button makes your files inside the app, with no external tool. Choose the format: the file is saved wherever you decide.</p>
 <figure class="small"><img src="images/en/exporter.jpg"><figcaption>The Export menu of a novel.</figcaption></figure>
@@ -877,7 +933,7 @@
 <p>The <strong>canvas</strong> exports to a PNG image of the whole board, a standard PDF (A4, to send) or a large-format one (A1, to print and pin on the wall), or as card text (Word, Markdown), one part per frame.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="files"><span class="num">Chapter 12</span>Your files</h2>
+<h2 id="files"><span class="num">Chapter 13</span>Your files</h2>
 
 <p class="lead">A MondoWrite project is an ordinary folder, full of text files you can open, copy, back up or version as you like.</p>
 
@@ -929,7 +985,7 @@
 <div class="tip" data-label="Backups"><p>Automatic backups stay on the device: also keep your projects in a synced folder (iCloud Drive, Dropbox, OneDrive) or copy them elsewhere from time to time. Since they are text files, they take up very little space.</p></div>
 
 <!-- ===================================================================================== -->
-<h2 id="settings"><span class="num">Chapter 13</span>Settings and appearance</h2>
+<h2 id="settings"><span class="num">Chapter 14</span>Settings and appearance</h2>
 
 <p>The <span class="ui">Settings</span> button (the sliders, at the top right) first opens the app menu, the same on computer, iPad and iPhone: <span class="ui">Settings…</span>, <span class="ui">Trash (n)</span> (project open), <span class="ui">Backups…</span> (installed app), <span class="ui">Commands…</span> (the palette), then <span class="ui">Guided tour</span>, <span class="ui">User guide</span>, <span class="ui">Keyboard shortcuts</span> and <span class="ui">About MondoWrite</span>. <span class="ui">Settings…</span> (<kbd>Ctrl</kbd> <kbd>,</kbd>) opens four tabs, which hold settings only: <span class="ui">This project</span> (when a project is open), <span class="ui">General</span>, <span class="ui">Writing</span> and <span class="ui">AI</span>.</p>
 <figure><img src="images/en/reglages.jpg"><figcaption>Settings.</figcaption></figure>
@@ -967,7 +1023,7 @@
 <p>Notes taken with the Notebook of an earlier version remain cards “to sort”: <span class="ui">To sort · N</span>, on the canvas, lists them, with a dotted outline around each; as soon as you move one or link it to another card, it leaves the list.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="shortcuts"><span class="num">Chapter 14</span>Keyboard shortcuts</h2>
+<h2 id="shortcuts"><span class="num">Chapter 15</span>Keyboard shortcuts</h2>
 <p>The full list opens at any time with <kbd>Ctrl</kbd> <kbd>/</kbd>. On a Mac, <kbd>Ctrl</kbd> becomes <kbd>⌘</kbd> and <kbd>Alt</kbd> becomes <kbd>⌥</kbd>.</p>
 
 <h3>Everywhere</h3>
@@ -1029,7 +1085,7 @@
 </table>
 
 <!-- ===================================================================================== -->
-<h2 id="faq"><span class="num">Chapter 15</span>Frequently asked questions</h2>
+<h2 id="faq"><span class="num">Chapter 16</span>Frequently asked questions</h2>
 
 <h4>Where are my texts saved?</h4>
 <p>In the folder you chose when creating the project. The path isn’t shown in the app: find it with <span class="ui">Open folder…</span>, or search your computer for the <code>cosmos.json</code> file.</p>
