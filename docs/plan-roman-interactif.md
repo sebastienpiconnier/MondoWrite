@@ -13,8 +13,8 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
   interactif », « fiction interactive ». Rien de l'univers ni du texte des règles des Défis fantastiques.
 - **Langage Ink** (inkle, MIT) comme format compilé ; les scènes restent en Markdown, les choix dans un bloc
   ` ```choix ` en fin de scène (syntaxe Ink réduite : `*`, `->`, `~`, `{ }`).
-- **Le canevas construit l'arborescence** dans une vue à part, « Carte des choix », synchronisée avec le texte
-  dans les deux sens ; le canevas actuel et son fichier ne sont jamais touchés.
+- ~~**Le canevas construit l'arborescence** dans une vue à part, « Carte des choix »~~ : remplacé le 18 novembre
+  2026, le canevas devient la carte des choix (lot 11).
 - **Images dans le récit** : fonction du cœur, utile aussi aux romans classiques (lot 1).
 - **Export web d'abord**, livre-jeu imprimé ensuite (EPUB, PDF, sections mélangées et numérotées).
 - **Assistant externe (MCP)** : outils propres aux projets interactifs (lot 6).
@@ -35,6 +35,11 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF (fait) |
 | 9. Import | Twee 3 et Ink (fait) |
 | 10. Storylets | Option, à décider après retours |
+| 11. Canevas = carte des choix | Flèches de choix sur le canevas, Plan en « Sections du livre » (#91) |
+| 12. Numéros figés | Numérotation figée, cadenas par section, renvois cachés (#92) |
+| 13. Double page | « Vérifier » et mélange : pas de suite révélée sur la même double page (#93) |
+| 14. Types de fin | Bonne fin, mauvaise fin (#94) |
+| 15. Parcours annoté | Mode Lecture enregistré et annoté, notes en commentaires (#95) |
 
 ## Lot 0 · Isolation (fait sur la branche `roman-interactif`)
 
@@ -289,3 +294,25 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
 - [x] Un nom gravé en capitales (OURDAS, ÉTIENNE ou ETIENNE pour « Étienne ») n'est plus pris pour une variante dans un roman ; le scénario garde sa règle (INES et INÈS).
 - [x] L'assistant ne savait pas quel champ attend un secret révélé : « Révélé dans » et quelques autres noms désignent `revelation`, un champ refusé donne la liste des champs du type, et `review` dit comment répondre (`MCP_FIX` de mcpLive.ts) en plus de l'explication de la règle.
 - [x] Un fait laissé par un brouillon restait dans la liste : outil `remove_fact` (refusé tant qu'un choix l'emploie). Dans l'app, la fenêtre des faits avait déjà « Oublier ».
+
+## Décisions du 18 novembre 2026 (manuel de LibroGameCreator)
+
+Étude du manuel de LibroGameCreator 3.4 (outil de livres-jeux imprimés, Matteo Poropat). La plupart de ses outils
+sont déjà dans les lots 2 à 9. Décisions de l'auteur :
+
+- **Objectif : le roman papier et électronique** (livre broché, EPUB). La page web reste un export parmi d'autres.
+- **Une seule carte des scènes : le canevas** (lot 11, #91). Une scène n'a plus deux places (canevas et `choiceMap`).
+  Les choix sont des flèches entre cartes Scène, lues dans les blocs ` ```choix `, jamais enregistrées comme des
+  fils ; gestes, menu ⋯, bandeau des règles et pastilles du vérificateur passent de `ChoiceMap.tsx` au canevas
+  (sous `useInteractive()`). Le filtre « Scènes seulement » donne la vue épurée.
+- **La Carte des choix quitte le Plan tout de suite** : jamais deux cartes en même temps. Le Plan d'un roman
+  interactif devient « Sections du livre » : ordre d'impression, numéros (aperçu du mélange), état de chaque section.
+- **`choiceMap` n'est plus lu**, sans reprise des places : rien n'est publié. « Organiser » range déjà en arbre.
+- **Retenu de LibroGameCreator** : numéros figés et cadenas par section, renvois cachés pour les énigmes (lot 12,
+  #92) ; contrôle de la double page, plus juste que l'écart de numéros de LibroGameCreator (lot 13, #93) ; types de
+  fin (lot 14, #94) ; parcours de lecture annoté (lot 15, #95).
+- **Écarté** : variables de remplacement (`@nom`), étiquettes libres, carte en images, styles RTF et CSS, Graphviz,
+  SQLite, ChoiceScript et Squiffy (Twee et Ink suffisent), titres à la place des numéros.
+- **Peut-être plus tard** : mélange par parties (un cadre = une plage de numéros, réponse possible aux « parties
+  automatiques » du lot 5), import d'un livre-jeu numéroté écrit en Word ou en texte (« rendez-vous au 104 »).
+
