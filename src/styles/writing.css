@@ -1426,6 +1426,9 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .scene-choices .choice-arrow { color: var(--muted); }
 .scene-choices .choice-cond { flex-basis: 100%; color: var(--muted); font-style: italic; }
 .scene-choices li.is-broken select { border-color: var(--danger); color: var(--danger); }
+.scene-choices select.choice-ending { flex: 0 1 10em; }
+.scene-choices li.is-good select.choice-ending { border-color: var(--status-done); }
+.scene-choices li.is-bad select.choice-ending { border-color: var(--danger); }
 .scene-choices li.is-raw code { font-size: 0.95em; color: var(--muted); }
 .scene-choices .choice-remove { min-width: 32px; min-height: 32px; }
 .scene-choices-add { margin-top: 0.5em; }
@@ -1447,7 +1450,10 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .choice-scene-tags:empty { display: none; }
 .choice-tag { padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 11px; color: var(--ink-2); }
 .choice-tag.is-start { border-color: var(--accent); color: var(--accent); }
-.choice-tag.is-end { border-color: var(--status-done); color: var(--status-done); }
+.choice-tag.is-end { border-color: var(--ink-2); color: var(--ink-2); }
+/* Types de fin (lot 14) : la couleur et le mot, jamais la couleur seule. */
+.choice-tag.is-end.is-good { border-color: var(--status-done); color: var(--status-done); font-weight: 600; }
+.choice-tag.is-end.is-bad { border-color: var(--danger); color: var(--danger); font-weight: 600; border-style: double; border-width: 3px; padding: 0 5px; }
 .choice-tag.is-dead { color: var(--muted); border-style: dashed; }
 .choice-tag.is-broken { border-color: var(--danger); color: var(--danger); }
 .choice-edge-editor { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.6rem; padding: 0.6rem 0.8rem; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop); font-size: 0.85rem; }

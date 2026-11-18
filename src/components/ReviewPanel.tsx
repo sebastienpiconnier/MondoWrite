@@ -89,6 +89,7 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
       case "objectOnce":
         return fmt(t.items.objectOnce, { name: f.names![0] });
       case "noEnding":
+      case "noGoodEnding":
       case "unreachableScene":
       case "brokenChoice":
       case "lockedScene":

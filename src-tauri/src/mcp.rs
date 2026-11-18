@@ -88,7 +88,11 @@ fn write_safely(path: &Path, text: &str) -> std::io::Result<()> {
 /// Destination d'un choix pour l'IA : « 3. La cour », « Fin / End », ou le nom introuvable signalé.
 fn choice_target(c: &Value) -> String {
   if c.get("end").and_then(Value::as_bool) == Some(true) {
-    return "Fin / End".into();
+    return match c.get("ending").and_then(Value::as_str) {
+      Some("good") => "Fin, bonne / Good ending".into(),
+      Some("bad") => "Fin, mauvaise / Bad ending".into(),
+      _ => "Fin / End".into(),
+    };
   }
   match c.get("to").and_then(Value::as_u64) {
     Some(n) => format!("{n}. {}", str_of(c, "/target")),
@@ -532,6 +536,11 @@ impl Server {
       out.push('\n');
       out.push_str(if text.trim().is_empty() { "(scène encore vide / empty scene)" } else { text });
       out.push_str("\n\n");
+      match s.get("ending").and_then(Value::as_str) {
+        Some("good") => out.push_str("**Bonne fin / Good ending**\n"),
+        Some("bad") => out.push_str("**Mauvaise fin / Bad ending**\n"),
+        _ => {}
+      }
       if let Some(choices) = s.get("choices").and_then(Value::as_array) {
         out.push_str("**Choix du lecteur / Reader's choices**\n");
         for c in choices {
@@ -869,7 +878,8 @@ impl Server {
       "gives": { "type": "string", "description": "Libellé du fait acquis." },
       "condition": { "type": "string", "description": "Condition par les noms des faits et compteurs : « ourdas and reconnu and flamme > 0 »." },
       "effects": { "type": "array", "items": { "type": "string" }, "description": "« flamme = 3 », « flamme -= 1 », « cle = true »…" },
-      "hidden": { "type": "boolean", "description": "Renvoi caché d'une énigme : jamais imprimé, le texte de la scène dit comment trouver le numéro. Garde le numéro de la scène visée." }
+      "hidden": { "type": "boolean", "description": "Renvoi caché d'une énigme : jamais imprimé, le texte de la scène dit comment trouver le numéro. Garde le numéro de la scène visée." },
+      "ending": { "type": "string", "enum": ["good", "bad"], "description": "Pour un choix vers « end » : bonne ou mauvaise fin (sans : neutre)." }
     }, "required": ["text", "to"] });
     let more = json!([
       {
@@ -1014,7 +1024,8 @@ impl Server {
           "project": project,
           "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },
           "choices": { "type": "array", "items": choice_item },
-          "mode": { "type": "string", "enum": ["replace", "append"], "description": "replace par défaut." }
+          "mode": { "type": "string", "enum": ["replace", "append"], "description": "replace par défaut." },
+          "ending": { "type": "string", "enum": ["good", "bad", "neutral"], "description": "Type de fin de la scène quand elle finit l'histoire (liste vide, ou choix vers « end ») : bonne, mauvaise ou neutre. / Ending type." }
         }, "required": ["scene", "choices"] }
       },
       {

@@ -6,7 +6,7 @@
 // ne fait que composer le texte, et garde pour chaque ligne la scène d'où elle vient, pour dire où est une erreur.
 
 import { htmlToBlocks, type Block } from "../export/doc";
-import { END_TARGET, choicesIn, type SceneRef } from "./choices";
+import { END_TARGET, choicesIn, inkDivert, type SceneRef } from "./choices";
 import { inkDeclarations, storyFacts } from "./facts";
 
 /** Étiquette Ink d'une image du texte : `# image: nom.jpg` (nom d'un fichier de medias/). */
@@ -88,7 +88,8 @@ export function projectToInk(
     }
     const choices = choicesIn(manuscript[s.id]);
     for (const line of choices) {
-      if (line.kind === "raw") push(line.text, s.id);
+      // Une étiquette de fin (`-> END #bad`, lot 14) n'est pas de l'Ink : retirée.
+      if (line.kind === "raw") push(inkDivert(line.text), s.id);
       // Renvoi caché (lot 12) : il ne se joue pas, le lecteur du livre trouve la suite par le texte.
       else if (line.hidden) continue;
       else {

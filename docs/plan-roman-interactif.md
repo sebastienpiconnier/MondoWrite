@@ -34,11 +34,11 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 7. Export web | HTML autonome (fait) |
 | 8. Export livre-jeu | Mélange, numérotation, « rendez-vous au N », EPUB et PDF (fait) |
 | 9. Import | Twee 3 et Ink (fait) |
-| 10. Storylets | Option, à décider après retours |
+| 10. Storylets | Écarté (18 novembre 2026) : s'éloigne du livre papier |
 | 11. Canevas = carte des choix | Flèches de choix sur le canevas, Plan en « Sections du livre » (#91, fait) |
 | 12. Numéros figés | Numérotation figée, cadenas par section, renvois cachés (#92) : fait |
 | 13. Double page | « Vérifier » et mélange : pas de suite révélée sur la même double page (#93) |
-| 14. Types de fin | Bonne fin, mauvaise fin (#94) |
+| 14. Types de fin | Bonne fin, mauvaise fin (#94) : fait |
 | 15. Parcours annoté | Mode Lecture enregistré et annoté, notes en commentaires (#95) |
 
 ## Lot 0 · Isolation (fait sur la branche `roman-interactif`)
@@ -337,6 +337,21 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
   dont le numéro n'est pas gardé (`hiddenUnlocked`), renvoi absent de la lecture à l'écran (`hiddenNotPlayable`).
 - **Reste** : essayer une vraie énigme jusqu'au livre broché ; dire dans le guide comment écrire la consigne au lecteur.
 
+## Lot 14 · Bonne fin et mauvaise fin (fait sur la branche `roman-interactif`, #94)
+
+- **Écriture** : `#good` ou `#bad` en fin de ligne, sur un choix « Fin » (`* [Sauter] -> END #bad`) ou sur un renvoi
+  seul (`-> END #good`, posé pour une scène qui finit sans choix). Sans étiquette : fin neutre. Comme `#hidden`, ce
+  n'est pas de l'Ink (le compilateur refuse une étiquette après un renvoi) : `projectToInk` la retire (`inkDivert`),
+  la page web et la lecture ne changent pas.
+- **Gestes** : menu ⋯ d'une carte Scène qui finit l'histoire et d'une section du Plan (« En faire une bonne fin »,
+  « … mauvaise fin », « … fin neutre », `setSceneEnding`, `withEnding`) ; liste « Type de fin » sous un choix « Fin de
+  l'histoire » du Manuscrit ; `ending` d'un choix et de `set_choices` par MCP.
+- **Affichage** : pastille « Bonne fin » (vert) ou « Mauvaise fin » (rouge, bord double), le mot toujours écrit ;
+  « Fins : 2 bonne(s), 3 mauvaise(s), 1 neutre(s) » dans l'en-tête des Sections du livre dès qu'une fin est marquée.
+- **Livre-jeu** (EPUB, livre broché) : mauvaise fin, « Votre aventure s'arrête ici. » ; bonne fin, le texte de
+  l'auteur seul ; neutre, « Fin. » comme avant.
+- **Vérifier** : `noGoodEnding`, dès qu'une fin est marquée et qu'aucune bonne fin n'est atteignable.
+
 ## Décisions du 18 novembre 2026 (manuel de LibroGameCreator)
 
 Étude du manuel de LibroGameCreator 3.4 (outil de livres-jeux imprimés, Matteo Poropat). La plupart de ses outils
@@ -355,6 +370,9 @@ sont déjà dans les lots 2 à 9. Décisions de l'auteur :
   fin (lot 14, #94) ; parcours de lecture annoté (lot 15, #95).
 - **Écarté** : variables de remplacement (`@nom`), étiquettes libres, carte en images, styles RTF et CSS, Graphviz,
   SQLite, ChoiceScript et Squiffy (Twee et Ink suffisent), titres à la place des numéros.
+- **Storylets (lot 10) écarté** : des scènes proposées selon ce que le lecteur sait s'éloignent du livre papier.
+- **Avant de fusionner la branche** : un exemple et un didacticiel tirés du « Puits » (histoire écrite par MCP), et
+  le chapitre « Roman interactif » du guide (fr, en, es).
 - **Peut-être plus tard** : mélange par parties (un cadre = une plage de numéros, réponse possible aux « parties
   automatiques » du lot 5), import d'un livre-jeu numéroté écrit en Word ou en texte (« rendez-vous au 104 »).
 

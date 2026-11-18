@@ -8,7 +8,7 @@
 import { useInteractive } from "../interactive/useInteractive";
 import { interactiveScenes } from "../interactive/scenes";
 import { choiceGraph } from "../interactive/choices";
-import { verifyStory } from "../interactive/verify";
+import { endingCounts, verifyStory } from "../interactive/verify";
 import { readFactLabels } from "../interactive/facts";
 import { sceneMarks, scenesKey } from "../interactive/storyMap";
 import { openPlay } from "../interactive/playState";
@@ -85,7 +85,7 @@ export function Plan() {
     if (!storyScenes) return null;
     const graph = choiceGraph(manuscript, storyScenes);
     const marks = sceneMarks(storyScenes, graph, manuscript, verifyStory(storyScenes, manuscript, readFactLabels(metaKeep)));
-    return { numbers: new Map(Object.entries(sections?.numbers ?? {})), locked: new Set(sections?.locked ?? []), marks };
+    return { numbers: new Map(Object.entries(sections?.numbers ?? {})), locked: new Set(sections?.locked ?? []), marks, endings: endingCounts(storyScenes, manuscript) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyKey, manuscript, metaKeep, sections]);
   // Plan libre d'un roman interactif : les scènes dans l'ordre d'impression, sans flèches ni glisser (l'ordre de la
@@ -162,6 +162,21 @@ export function Plan() {
     return chapter.title.trim() ? fmt(c.numberedTitle, { n, title: chapter.title.trim() }) : fmt(c.numbered, { n });
   };
   const chapters = [...(plan.chapters ?? [])].sort((a, b) => (numbers.get(a.id) ?? 0) - (numbers.get(b.id) ?? 0));
+  // Type de fin d'une section qui finit l'histoire (lot 14) : les deux autres types proposés dans son menu ⋯.
+  const endingItems = (id: string) => {
+    const mk = book?.marks.get(id);
+    if (!mk || !(mk.ending || mk.deadEnd)) return [];
+    const m = t.interactive.map;
+    return (
+      [
+        ["good", m.markGood],
+        ["bad", m.markBad],
+        [null, m.markNeutral],
+      ] as const
+    )
+      .filter(([kind]) => kind !== mk.endKind)
+      .map(([kind, label]) => ({ label, onSelect: () => useCosmos.getState().setSceneEnding(id, kind) }));
+  };
   const plural = (n: number) => fmt(new Intl.PluralRules(lang).select(n) === "one" ? p.summaryOne : p.summaryMany, { n });
 
   const dropOn = (key: string, beat: string | null, index?: number) => ({
@@ -307,6 +322,7 @@ export function Plan() {
             { label: t.bible.seeOnCanvas, title: fmt(p.show, { title }), onSelect: () => revealCard(id) },
             bySection && beat !== null && !book.marks.get(id)?.start && { label: t.interactive.plan.makeStart, onSelect: () => place(id, beat, 0) },
             book && { label: t.interactive.play.openHere, onSelect: () => openPlay(id) },
+            ...endingItems(id),
             bySection &&
               !book.marks.get(id)?.start && {
                 label: book.locked.has(id) ? t.interactive.plan.release : t.interactive.plan.keep,
@@ -356,6 +372,7 @@ export function Plan() {
               <p className="sq-total">
                 <strong>{plural(sceneIds.length)}</strong>
                 {!free && <> · {fmt(p.placedOf, { placed, n: sceneIds.length })}</>}
+                {book && (book.endings.good > 0 || book.endings.bad > 0) && <> · {fmt(t.interactive.map.endings, book.endings)}</>}
               </p>
             )
           }

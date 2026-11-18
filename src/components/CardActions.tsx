@@ -7,6 +7,7 @@ import { useT } from "../i18n";
 import { useCosmos } from "../store";
 import { openNamesForCard } from "../namesState";
 import { useStoryMarks } from "../interactive/useStoryMap";
+import { readMarksKey } from "../interactive/storyMap";
 import { openPlay } from "../interactive/playState";
 import { askStoryChoice } from "./StoryChoices";
 
@@ -34,7 +35,20 @@ export function CardActions({ id, hasImage, title = "", isCharacter = false }: {
   };
   // Scène d'un roman interactif (lot 11) : les gestes de la carte des choix, au clavier et au doigt.
   const story = useStoryMarks((s) => id in s.byId);
+  const marksKey = useStoryMarks((s) => s.byId[id] ?? "");
   const m = all.interactive.map;
+  // Une scène qui finit l'histoire (lot 14) : son type de fin, les deux autres proposés.
+  const marks = story ? readMarksKey(marksKey) : null;
+  const endItems: [string, () => void][] =
+    marks && (marks.ending || marks.deadEnd)
+      ? ([
+          ["good", m.markGood],
+          ["bad", m.markBad],
+          [null, m.markNeutral],
+        ] as const)
+          .filter(([kind]) => kind !== marks.endKind)
+          .map(([kind, label]) => [label, () => useCosmos.getState().setSceneEnding(id, kind)])
+      : [];
   const storyItems: [string, () => void][] = story
     ? [
         [m.write, () => useCosmos.getState().openInManuscript(id)],
@@ -42,6 +56,7 @@ export function CardActions({ id, hasImage, title = "", isCharacter = false }: {
         [m.addChoice, () => askStoryChoice({ kind: "pick", id })],
         [m.sceneAfter, () => askStoryChoice({ kind: "after", id })],
         [m.endHere, () => askStoryChoice({ kind: "end", id })],
+        ...endItems,
       ]
     : [];
   const items: [string, () => void, boolean?][] = [

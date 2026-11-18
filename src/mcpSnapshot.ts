@@ -23,7 +23,7 @@ import { plainText } from "./search";
 import { foldName } from "./names";
 import type { Pitch } from "./pitch";
 import type { McpAccess } from "./mcp";
-import { END_TARGET, choicesIn, resolveTarget, withoutChoices } from "./interactive/choices";
+import { END_TARGET, choicesIn, sceneEnding, resolveTarget, withoutChoices } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { condValue, factLabel, givenFact, otherEffects, readFactLabels, storyFacts } from "./interactive/facts";
 export { DEFAULT_MCP, mcpAllows, mcpWritable, readMcp, type McpAccess, type McpSettings } from "./mcp";
@@ -48,6 +48,8 @@ export interface McpScene {
   text: string;
   /** Roman interactif (#84, lot 6) : les choix proposés au lecteur à la fin de la scène. */
   choices?: McpChoice[];
+  /** Roman interactif (lot 14) : la scène finit l'histoire par une fin de ce type. */
+  ending?: "good" | "bad";
 }
 
 export interface McpChoice {
@@ -57,6 +59,8 @@ export interface McpChoice {
   /** Titre de la scène visée, « END » pour la fin, ou le nom introuvable tel qu'écrit. */
   target: string;
   end?: boolean;
+  /** Type de la fin (lot 14) : absent pour une fin neutre. */
+  ending?: "good" | "bad";
   broken?: boolean;
   /** Condition en clair : un fait (« a trouvé la clé »), « pas : … », ou telle qu'écrite. */
   if?: string;
@@ -329,10 +333,13 @@ function interactivePart(s: McpSource, scenes: McpScene[]): { facts: McpFact[] }
         ...(cond ? { if: cond } : {}),
         ...(given ? { gives: labelOf(given) } : {}),
         ...(line.hidden ? { hidden: true } : {}),
+        ...(line.ending ? { ending: line.ending } : {}),
         ...(others.length ? { effects: others } : {}),
       });
     }
     if (list.length) scene.choices = list;
+    const ending = sceneEnding(choicesIn(s.manuscript[scene.id]));
+    if (ending) scene.ending = ending;
   }
   return { facts: facts.map((f) => ({ name: f.name, label: f.label, kind: f.kind })) };
 }

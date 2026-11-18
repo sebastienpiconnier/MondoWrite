@@ -81,7 +81,7 @@ import { fileName } from "./screenplay/export";
 import { claimLock, otherHolder, releaseLock } from "./projectLock";
 import { endLoad, startLoad } from "./loadProgress";
 import { interactiveOffered, isInteractiveMeta, showsInteractive } from "./interactive";
-import { END_TARGET, choicesAfterUndo, choicesIn, cleanLabel, editChoice, renameTargets, sceneSlugs, withChoices, type ChoiceLine } from "./interactive/choices";
+import { END_TARGET, choicesAfterUndo, choicesIn, cleanLabel, editChoice, renameTargets, sceneSlugs, withChoices, withEnding, type ChoiceLine, type EndingKind } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { choiceGraph, choiceTree } from "./interactive/choices";
 import { projectSections } from "./interactive/projectSections";
@@ -160,6 +160,8 @@ export interface CosmosState {
   // ---------- Roman interactif (lot 2, src/interactive/choices.ts) ----------
   /** Pose les choix d'une scène (bloc en fin de son texte ; sans ligne, le bloc part). Une étape d'historique. */
   setSceneChoices: (id: string, lines: ChoiceLine[]) => void;
+  /** Type de la fin d'une scène (lot 14) : bonne, mauvaise, ou neutre (null). Sans effet si elle ne finit pas l'histoire. */
+  setSceneEnding: (id: string, kind: EndingKind | null) => void;
   /** Ajoute un choix de `from` vers une scène (ou `END`). */
   addChoiceTo: (from: string, to: string, label?: string) => void;
   /** Modifie ou retire (null) le choix de rang `index` de la scène. */
@@ -2629,6 +2631,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     editChoiceAt: (from, index, next) => {
       get().setSceneChoices(from, editChoice(choicesIn(get().manuscript[from]), index, next));
+    },
+    setSceneEnding: (id, kind) => {
+      const lines = choicesIn(get().manuscript[id]);
+      const next = withEnding(lines, kind);
+      if (next !== lines) get().setSceneChoices(id, next);
     },
     addSceneAfter: (from, at, label = "") => {
       const id = get().splitScene(from, "");

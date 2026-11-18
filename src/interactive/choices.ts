@@ -11,7 +11,9 @@
 // C'est un sous-ensemble de la syntaxe Ink : un choix `*`, une condition facultative `{ }`, le libellé entre crochets,
 // la destination après `->`. Une ligne qui commence par `~` sous un choix est un de ses effets (lot 4 : `~ cle = true`,
 // le lecteur acquiert un fait ; `~ pieces += 1`, un compteur). Une étiquette `#hidden` en fin de ligne fait un renvoi caché
-// (lot 12) : il n'est pas imprimé, le texte de la scène dit au lecteur comment trouver la suite. Une destination est le nom d'une scène tiré de son titre (`sceneSlugs`), ou `END` pour
+// (lot 12) : il n'est pas imprimé, le texte de la scène dit au lecteur comment trouver la suite. Une fin peut être
+// marquée bonne ou mauvaise (lot 14) : `* [Sauter] -> END #bad`, ou `-> END #good` seul sur sa ligne pour une scène
+// qui finit l'histoire sans bouton. Ink refuse une étiquette après un renvoi : elle est retirée de l'Ink composé. Une destination est le nom d'une scène tiré de son titre (`sceneSlugs`), ou `END` pour
 // une fin. Une ligne qui ne se lit pas comme un choix est gardée telle quelle, jamais perdue.
 //
 // En mémoire (HTML de l'éditeur et du store), le bloc est `<pre data-choices="true">texte</pre>`.
@@ -31,6 +33,8 @@ export interface Choice {
   effects?: string[];
   /** Renvoi caché (lot 12) : jamais imprimé ni joué, compté sur la carte et par « Vérifier ». */
   hidden?: boolean;
+  /** Type d'une fin (lot 14), seulement pour un choix vers `END` ; absent : fin neutre. */
+  ending?: EndingKind;
 }
 export interface RawLine {
   kind: "raw";
@@ -40,7 +44,15 @@ export type ChoiceLine = Choice | RawLine;
 
 /** Étiquette d'un renvoi caché, en fin de ligne (jamais traduite : contrat de format). */
 export const HIDDEN_TAG = "#hidden";
-const CHOICE_RE = /^\*\s*(?:\{\s*([^}]*?)\s*\}\s*)?\[([^\]]*)\]\s*->\s*([\p{L}\p{N}_]+)(\s+#hidden)?\s*$/u;
+/** Type d'une fin (lot 14) : bonne ou mauvaise ; une fin sans étiquette est neutre. */
+export type EndingKind = "good" | "bad";
+export const ENDING_KINDS: readonly EndingKind[] = ["good", "bad"];
+/** Étiquette d'une fin, en fin de ligne (jamais traduite : contrat de format). */
+export const endingTag = (kind: EndingKind) => `#${kind}`;
+const CHOICE_RE = /^\*\s*(?:\{\s*([^}]*?)\s*\}\s*)?\[([^\]]*)\]\s*->\s*([\p{L}\p{N}_]+)((?:\s+#(?:hidden|good|bad))*)\s*$/u;
+/** Renvoi de fin écrit seul sur sa ligne (`-> END`, `-> DONE`), avec son étiquette de type éventuelle. */
+const END_DIVERT_RE = /^->\s*(END|DONE)(?:\s+#(good|bad))?\s*$/;
+const tagsOf = (raw: string | undefined) => new Set((raw ?? "").split(/\s+/).filter(Boolean));
 
 /** Libellé d'un choix : une ligne, sans crochets (ils fermeraient le libellé), au plus 200 caractères. */
 export function cleanLabel(raw: unknown): string {
@@ -56,7 +68,11 @@ export function parseChoices(text: string): ChoiceLine[] {
     if (!trimmed) continue;
     const m = CHOICE_RE.exec(trimmed);
     const last = lines[lines.length - 1];
-    if (m) lines.push({ kind: "choice", label: m[2].trim(), target: m[3], ...(m[1] ? { cond: m[1] } : {}), ...(m[4] ? { hidden: true } : {}) });
+    if (m) {
+      const tags = tagsOf(m[4]);
+      const ending = m[3] === END_TARGET ? ENDING_KINDS.find((k) => tags.has(endingTag(k))) : undefined;
+      lines.push({ kind: "choice", label: m[2].trim(), target: m[3], ...(m[1] ? { cond: m[1] } : {}), ...(tags.has(HIDDEN_TAG) ? { hidden: true } : {}), ...(ending ? { ending } : {}) });
+    }
     else if (trimmed.startsWith("~") && last?.kind === "choice" && trimmed.slice(1).trim()) {
       last.effects = [...(last.effects ?? []), trimmed.slice(1).trim()];
     } else lines.push({ kind: "raw", text: trimmed });
@@ -67,7 +83,8 @@ export function parseChoices(text: string): ChoiceLine[] {
 /** Écrit un choix sur une ligne. */
 export function choiceLine(c: Omit<Choice, "kind">): string {
   const cond = c.cond?.trim() ? `{ ${c.cond.trim()} } ` : "";
-  const head = `* ${cond}[${cleanLabel(c.label)}] -> ${c.target}${c.hidden ? ` ${HIDDEN_TAG}` : ""}`;
+  const ending = c.ending && c.target === END_TARGET ? ` ${endingTag(c.ending)}` : "";
+  const head = `* ${cond}[${cleanLabel(c.label)}] -> ${c.target}${c.hidden ? ` ${HIDDEN_TAG}` : ""}${ending}`;
   const effects = (c.effects ?? []).map(cleanEffect).filter(Boolean);
   return effects.length ? [head, ...effects.map((e) => `  ~ ${e}`)].join("\n") : head;
 }
@@ -196,6 +213,7 @@ export interface ChoiceEdge {
   cond?: string;
   effects?: string[];
   hidden?: boolean;
+  ending?: EndingKind;
 }
 
 /** Tous les choix du livre, scène par scène, dans l'ordre reçu. */
@@ -215,6 +233,7 @@ export function choiceGraph(manuscript: Readonly<Record<string, string>>, scenes
         ...(line.cond ? { cond: line.cond } : {}),
         ...(line.effects?.length ? { effects: line.effects } : {}),
         ...(line.hidden ? { hidden: true } : {}),
+        ...(line.ending ? { ending: line.ending } : {}),
       });
     }
   }
@@ -238,7 +257,66 @@ export function dropContinueTo(html: string | undefined, target: string): string
 
 /** La scène finit l'histoire par un renvoi écrit en Ink (`-> END` ou `-> DONE` sur sa ligne), sans bouton à toucher. */
 export function endsByDivert(html: string | undefined): boolean {
-  return choicesIn(html).some((l) => l.kind === "raw" && /^->\s*(END|DONE)\s*$/.test(l.text.trim()));
+  return choicesIn(html).some((l) => l.kind === "raw" && END_DIVERT_RE.test(l.text.trim()));
+}
+
+/** Une ligne brute est un renvoi de fin (`-> END #bad`) : son type, `null` pour une fin neutre, `undefined` sinon. */
+export function divertEnding(text: string): EndingKind | null | undefined {
+  const m = END_DIVERT_RE.exec(text.trim());
+  if (!m) return undefined;
+  return (m[2] as EndingKind | undefined) ?? null;
+}
+
+/** Une ligne brute de renvoi, sans son étiquette de fin (Ink ne la lit pas après un renvoi). */
+export const inkDivert = (text: string) => (END_DIVERT_RE.test(text.trim()) ? text.trim().replace(/\s+#(good|bad)\s*$/, "") : text);
+
+/**
+ * Type de fin d'une scène (lot 14) : celui de son premier choix « Fin » ou de son renvoi de fin qui en porte un.
+ * `null` : la scène finit l'histoire sans type (neutre) ou ne la finit pas.
+ */
+export function sceneEnding(lines: readonly ChoiceLine[]): EndingKind | null {
+  for (const l of lines) {
+    if (l.kind === "choice" && l.target === END_TARGET && l.ending) return l.ending;
+    if (l.kind === "raw") {
+      const kind = divertEnding(l.text);
+      if (kind) return kind;
+    }
+  }
+  return null;
+}
+
+/** La scène finit l'histoire : sans choix, ou avec un choix « Fin » ou un renvoi de fin. */
+export const isEndingScene = (lines: readonly ChoiceLine[]) =>
+  !lines.some((l) => l.kind === "choice") || lines.some((l) => (l.kind === "choice" && l.target === END_TARGET) || (l.kind === "raw" && divertEnding(l.text) !== undefined));
+
+/**
+ * Donne un type à la fin d'une scène (lot 14) : chacun de ses choix « Fin » et renvois de fin le prend. Une scène sans
+ * choix (fin implicite) reçoit `-> END #bad` ; remise à neutre, ce renvoi reste (la scène finit toujours l'histoire).
+ * Une scène qui ne finit pas l'histoire n'est pas touchée : rend la même liste.
+ */
+export function withEnding(lines: ChoiceLine[], kind: EndingKind | null): ChoiceLine[] {
+  if (!isEndingScene(lines)) return lines;
+  let found = false;
+  let changed = false;
+  const out = lines.map((l): ChoiceLine => {
+    if (l.kind === "choice" && l.target === END_TARGET) {
+      found = true;
+      if ((l.ending ?? null) === kind) return l;
+      changed = true;
+      const { ending: _old, ...rest } = l;
+      return kind ? { ...rest, ending: kind } : rest;
+    }
+    if (l.kind === "raw" && divertEnding(l.text) !== undefined) {
+      found = true;
+      const text = `-> ${END_TARGET}${kind ? ` ${endingTag(kind)}` : ""}`;
+      if (text === l.text.trim()) return l;
+      changed = true;
+      return { kind: "raw", text };
+    }
+    return l;
+  });
+  if (!found) return kind ? [...lines, { kind: "raw", text: `-> ${END_TARGET} ${endingTag(kind)}` }] : lines;
+  return changed ? out : lines;
 }
 
 /** Remplace le choix de rang `index` (parmi les choix) d'une liste de lignes, ou le retire si `next` est null. */
@@ -249,6 +327,8 @@ export function editChoice(lines: readonly ChoiceLine[], index: number, next: Om
     if (l.kind === "choice" && ++rank === index) {
       if (next) {
         const effects = (next.effects ?? []).map(cleanEffect).filter(Boolean);
+        // Sans clé `ending`, le type de la fin est gardé (les bandeaux ne le connaissent pas) ; seule une fin en a un.
+        const ending = next.target === END_TARGET ? ("ending" in next ? next.ending : l.target === END_TARGET ? l.ending : undefined) : undefined;
         out.push({
           kind: "choice",
           label: cleanLabel(next.label),
@@ -256,6 +336,7 @@ export function editChoice(lines: readonly ChoiceLine[], index: number, next: Om
           ...(next.cond?.trim() ? { cond: next.cond.trim() } : {}),
           ...(effects.length ? { effects } : {}),
           ...(next.hidden ? { hidden: true } : {}),
+          ...(ending ? { ending } : {}),
         });
       }
       continue;

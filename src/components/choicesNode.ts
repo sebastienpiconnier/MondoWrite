@@ -301,7 +301,15 @@ export const SceneChoices = Node.create({
           arrow.className = "choice-arrow";
           arrow.setAttribute("aria-hidden", "true");
           arrow.textContent = "→";
-          li.append(label, arrow, target, remove, choiceRules(line, n, facts, (next) => write(editChoice(lines(), n, next))));
+          // Type d'une fin (lot 14) : neutre, bonne ou mauvaise, seulement pour un choix « Fin de l'histoire ».
+          const kind = document.createElement("select");
+          kind.className = "choice-ending";
+          kind.setAttribute("aria-label", fmt(t.endKindAria, { n: n + 1 }));
+          const map = getT().interactive.map;
+          kind.replaceChildren(option("", t.endNeutral, !line.ending), option("good", map.endGood, line.ending === "good"), option("bad", map.endBad, line.ending === "bad"));
+          kind.addEventListener("change", () => write(editChoice(lines(), n, { ...line, ending: kind.value === "good" || kind.value === "bad" ? kind.value : undefined })));
+          if (line.ending) li.classList.add(`is-${line.ending}`);
+          li.append(label, arrow, target, ...(resolved === END_TARGET ? [kind] : []), remove, choiceRules(line, n, facts, (next) => write(editChoice(lines(), n, next))));
           rows.push(li);
         });
         list.replaceChildren(...rows);

@@ -3,13 +3,15 @@
 // flèches de choix. Les flèches se lisent dans les blocs ` ```choix ` ; elles ne sont jamais des fils du projet.
 // Fonctions pures.
 
-import { END_TARGET, endsByDivert, type ChoiceEdge, type SceneRef } from "./choices";
+import { END_TARGET, choicesIn, endsByDivert, sceneEnding, type ChoiceEdge, type EndingKind, type SceneRef } from "./choices";
 import type { VerifyPoint } from "./verify";
 
 /** Repères d'une carte Scène sur le canevas. */
 export interface SceneMarks {
   start: boolean;
   ending: boolean;
+  /** Type de la fin (lot 14) : null pour une fin neutre. */
+  endKind: EndingKind | null;
   deadEnd: boolean;
   broken: number;
   unreachable: boolean;
@@ -35,6 +37,7 @@ export function sceneMarks(
     out.set(s.id, {
       start: i === 0,
       ending: list.some((e) => e.to === END_TARGET) || divert,
+      endKind: sceneEnding(choicesIn(manuscript[s.id])),
       deadEnd: list.length === 0 && !divert,
       broken: list.filter((e) => e.to === null).length,
       unreachable: has(["unreachableScene"], s.id),
@@ -51,6 +54,7 @@ export function marksKey(m: SceneMarks | undefined): string {
   return [
     m.start && "start",
     m.ending && "ending",
+    m.endKind && `end:${m.endKind}`,
     m.deadEnd && "deadEnd",
     m.broken > 0 && `broken:${m.broken}`,
     m.unreachable && "unreachable",
@@ -69,6 +73,7 @@ export function readMarksKey(key: string): SceneMarks | null {
   return {
     start: parts.includes("start"),
     ending: parts.includes("ending"),
+    endKind: parts.includes("end:good") ? "good" : parts.includes("end:bad") ? "bad" : null,
     deadEnd: parts.includes("deadEnd"),
     broken: Number.isFinite(broken) ? broken : 0,
     unreachable: parts.includes("unreachable"),

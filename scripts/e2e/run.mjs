@@ -2281,6 +2281,11 @@ const scenarios = [
       await secondCard.getByRole("button", { name: "Plus d’actions" }).click();
       await page.getByRole("menuitem", { name: "Ajouter un choix « Fin »" }).click();
       await until(() => secondCard.locator(".choice-tag.is-end").isVisible(), "la seconde scène n'est pas marquée « Fin »");
+      // Lot 14 : la fin devient une bonne fin par le menu ⋯ de la carte, écrite `#good` dans le bloc.
+      await secondCard.getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "En faire une bonne fin" }).click();
+      await until(async () => (await secondCard.locator(".choice-tag.is-end.is-good").textContent()) === "Bonne fin", "la seconde scène n'est pas marquée « Bonne fin »");
+      await h.saved((f) => (f[`manuscrit/${second}.md`] ?? "").includes("-> END #good"), "la bonne fin n'est pas écrite #good");
       await h.saved((f) => {
         const blocks = Object.entries(f).filter(([k]) => k.startsWith("manuscrit/")).map(([, v]) => v);
         const meta = JSON.parse(f["cosmos.json"] ?? "{}");

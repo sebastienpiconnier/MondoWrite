@@ -5,7 +5,7 @@
 
 import { htmlToBlocks, type Block, type Chapter, type ExportDoc, type Run } from "../export/doc";
 import { quote } from "../typoRules";
-import { choicesIn, END_TARGET, resolveTarget, type SceneRef } from "./choices";
+import { choicesIn, divertEnding, END_TARGET, resolveTarget, type EndingKind, type SceneRef } from "./choices";
 import { factLabel } from "./facts";
 import { condPhrase, effectPhrase } from "./conditions";
 import type { BookDoc, BookSection } from "../export/paperback";
@@ -25,10 +25,14 @@ export interface GamebookTexts {
   choiceEffects: string;
   /** « {label} : fin de l'histoire. » */
   choiceEnd: string;
+  /** Choix qui mène à une mauvaise fin (lot 14). */
+  choiceEndBad: string;
   /** Renvoi sans libellé : « Rendez-vous au {n}. » */
   goTo: string;
   /** Section sans choix. */
   end: string;
+  /** Fin d'une section qui est une mauvaise fin (lot 14). */
+  endBad: string;
   /** Conditions : « Si {conds}, » et ses morceaux (conditions.ts). */
   cond: string;
   has: string;
@@ -173,6 +177,8 @@ export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: S
   };
   // Une condition que le livre ne sait pas dire : le choix s'imprime sans elle (le vérificateur le signale).
   const condText = (cond: string | undefined): string => condPhrase(cond, texts, names) ?? "";
+  // Phrase de fin selon son type (lot 14) : une bonne fin laisse le texte de l'auteur conclure.
+  const endText = (kind: EndingKind | null) => (kind === "good" ? "" : kind === "bad" ? texts.endBad : texts.end);
 
   const chapters: Chapter[] = [
     {
@@ -186,11 +192,14 @@ export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: S
     let ends = true;
     for (const line of choicesIn(input.manuscript[s.id])) {
       if (line.kind === "raw") {
-        const target = /^\s*->\s*([\p{L}\p{N}_]+)\s*$/u.exec(line.text)?.[1];
+        const target = /^\s*->\s*([\p{L}\p{N}_]+)(?:\s+#(?:good|bad))?\s*$/u.exec(line.text)?.[1];
         const id = target ? resolveTarget(target, input.slugs) : null;
         if (!id) continue;
         ends = false;
-        if (id === END_TARGET) lines.push([{ text: texts.end }]);
+        if (id === END_TARGET) {
+          const close = endText(divertEnding(line.text) ?? null);
+          if (close) lines.push([{ text: close }]);
+        }
         else {
           const [before, after] = around(texts.goTo, {});
           lines.push([{ text: before }, link(id), { text: after }]);
@@ -213,13 +222,14 @@ export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: S
       const lead = cond ? `${cond} ${shown.charAt(0).toLocaleLowerCase()}${shown.slice(1)}` : shown;
       if (!id || id === END_TARGET) {
         // Destination introuvable : on écrit le choix comme une fin, le vérificateur l'a déjà signalé.
-        lines.push([{ text: capital(fill(texts.choiceEnd, { label: lead })) }]);
+        lines.push([{ text: capital(fill(line.ending === "bad" ? texts.choiceEndBad : texts.choiceEnd, { label: lead })) }]);
         continue;
       }
       const effects = (line.effects ?? []).map((e) => effectText(e, input)).filter((e): e is string => !!e);
       const [before, after] = around(effects.length ? texts.choiceEffects : texts.choice, { label: lead, effects: effects.join(", ") });
       lines.push([{ text: capital(before) }, link(id), { text: after }]);
     }
+    // Une scène sans aucun choix finit l'histoire, sans type (un type s'écrit en `-> END #bad`, lu plus haut).
     if (ends) lines.push([{ text: texts.end }]);
     for (const runs of lines) blocks.push({ kind: "paragraph", runs: runs.filter((r) => r.text) });
     chapters.push({ title: String(s.n), blocks });

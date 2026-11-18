@@ -22,6 +22,7 @@ export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepea
 /** Roman interactif (lot 5) : le chemin du lecteur, posé à une scène ; « C'est voulu » les écarte. */
 export const INTERACTIVE_RULES: readonly RuleKey[] = [
   "noEnding",
+  "noGoodEnding",
   "unreachableScene",
   "brokenChoice",
   "lockedScene",

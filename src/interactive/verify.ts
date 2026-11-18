@@ -4,7 +4,7 @@
 // Le chemin du lecteur se suit par les choix (et les renvois `-> nom` écrits à la main), depuis la première scène,
 // sans tenir compte des conditions : une scène est « atteignable » s'il existe un chemin, même s'il demande un fait.
 
-import { END_TARGET, choicesIn, resolveTarget, sceneSlugs, type SceneRef } from "./choices";
+import { END_TARGET, choicesIn, isEndingScene, resolveTarget, sceneEnding, sceneSlugs, type EndingKind, type SceneRef } from "./choices";
 import { factLabel } from "./facts";
 import { condPhrase, effectPhrase, parseCond, type Cond, type CondTexts, type EffectTexts } from "./conditions";
 import { sectionGaps } from "./sections";
@@ -13,6 +13,7 @@ export type VerifyRule =
   | "unreachableScene"
   | "brokenChoice"
   | "noEnding"
+  | "noGoodEnding"
   | "lockedScene"
   | "factNeverGiven"
   | "factTooLate"
@@ -35,6 +36,7 @@ export interface VerifyPoint {
 /** Ordre d'affichage : ce qui empêche de lire d'abord. */
 export const VERIFY_ORDER: readonly VerifyRule[] = [
   "noEnding",
+  "noGoodEnding",
   "unreachableScene",
   "brokenChoice",
   "lockedScene",
@@ -47,7 +49,7 @@ export const VERIFY_ORDER: readonly VerifyRule[] = [
   "hiddenNotPlayable",
 ];
 
-const DIVERT_RE = /^\s*->\s*([\p{L}\p{N}_]+)\s*$/u;
+const DIVERT_RE = /^\s*->\s*([\p{L}\p{N}_]+)(?:\s+#(?:good|bad))?\s*$/u;
 const ASSIGN_RE = /^([\p{L}_][\p{L}\p{N}_]*)\s*(?:\+=|-=|=|\+\+|--)/u;
 
 interface Exit {
@@ -119,6 +121,9 @@ export function verifyStory(
     return list.length === 0 || list.some((e) => e.to === END_TARGET);
   };
   if (![...reachable].some(ends)) out.push({ rule: "noEnding", scene: start });
+  // Types de fin (lot 14) : dès qu'une fin est marquée, le lecteur doit pouvoir atteindre une bonne fin.
+  const kinds = new Map(scenes.map((s) => [s.id, sceneEnding(choicesIn(manuscript[s.id]))]));
+  if ([...kinds.values()].some(Boolean) && ![...reachable].some((id) => kinds.get(id) === "good")) out.push({ rule: "noGoodEnding", scene: start });
 
   for (const s of scenes) {
     const list = exits.get(s.id) ?? [];
@@ -208,3 +213,14 @@ function requiredNames(src: string | undefined): string[] {
 
 /** Clé stable d'un point (pour « Ignorer » pendant la session). */
 export const verifyKey = (p: VerifyPoint) => `${p.rule}:${p.scene ?? ""}:${p.name ?? ""}`;
+
+/** Nombre de fins de chaque type (lot 14) : une scène qui finit l'histoire compte une fois, selon son type. */
+export function endingCounts(scenes: readonly SceneRef[], manuscript: Readonly<Record<string, string>>): Record<EndingKind | "neutral", number> {
+  const out = { good: 0, bad: 0, neutral: 0 };
+  for (const s of scenes) {
+    const lines = choicesIn(manuscript[s.id]);
+    if (!isEndingScene(lines)) continue;
+    out[sceneEnding(lines) ?? "neutral"]++;
+  }
+  return out;
+}

@@ -103,7 +103,11 @@ export function MarksTags({ marks, className = "" }: { marks: SceneMarks | null 
   if (!marks) return null;
   const tags = [
     marks.start && <span key="start" className="choice-tag is-start">{m.start}</span>,
-    marks.ending && <span key="end" className="choice-tag is-end">{m.end}</span>,
+    marks.ending && (
+      <span key="end" className={`choice-tag is-end${marks.endKind ? ` is-${marks.endKind}` : ""}`}>
+        {marks.endKind === "good" ? m.endGood : marks.endKind === "bad" ? m.endBad : m.end}
+      </span>
+    ),
     marks.deadEnd && <span key="dead" className="choice-tag is-dead">{m.deadEnd}</span>,
     marks.broken > 0 && <span key="broken" className="choice-tag is-broken">{fmt(m.broken, { n: marks.broken })}</span>,
     marks.unreachable && <span key="unreachable" className="choice-tag is-broken">{m.unreachable}</span>,

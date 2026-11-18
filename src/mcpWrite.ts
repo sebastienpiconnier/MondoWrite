@@ -29,7 +29,7 @@ import { readGoals, type Goals } from "./stats";
 import type { ReplaceRequest } from "./replace";
 import { foldName } from "./names";
 import { countWords } from "./manuscript";
-import { END_TARGET, choicesIn, cleanLabel, withChoices, withoutChoices, type ChoiceLine } from "./interactive/choices";
+import { END_TARGET, choicesIn, cleanLabel, withChoices, withEnding, withoutChoices, type ChoiceLine } from "./interactive/choices";
 import { condIdentifiers, effectSource, parseCond, parseEffect } from "./interactive/conditions";
 import { condFor, effectFor, isFactName, type Fact } from "./interactive/facts";
 
@@ -556,7 +556,9 @@ export function choiceFromRequest(
   }
   // Renvoi caché (lot 12) : pas imprimé, le texte de la scène dit comment trouver la suite.
   const hidden = c.hidden === true;
-  return { line: { kind: "choice", label, target, ...(cond ? { cond } : {}), ...(effects ? { effects } : {}), ...(hidden ? { hidden: true } : {}) } };
+  // Type de fin (lot 14), seulement pour un choix qui finit l'histoire.
+  const ending = target === END_TARGET && (c.ending === "good" || c.ending === "bad") ? c.ending : undefined;
+  return { line: { kind: "choice", label, target, ...(cond ? { cond } : {}), ...(effects ? { effects } : {}), ...(hidden ? { hidden: true } : {}), ...(ending ? { ending } : {}) } };
 }
 
 /** Choix demandés par l'assistant (set_choices, create_scene) : lus et vérifiés, ou la première erreur. */
@@ -1266,7 +1268,10 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
         const html = store.manuscript()[scene.id] ?? "";
         // Les lignes écrites à la main (renvois, compteurs) restent ; « replace » ne retire que les choix.
         const kept = choicesIn(html).filter((l) => append || l.kind !== "choice");
-        store.setManuscriptText(scene.id, withChoices(html, [...kept, ...lines]));
+        // Type de fin de la scène (lot 14) : posé sur ses choix « Fin » et ses renvois de fin, ou en `-> END #bad`.
+        const endArg = str(a.ending);
+        const all = endArg === "good" || endArg === "bad" || endArg === "neutral" ? withEnding([...kept, ...lines], endArg === "neutral" ? null : endArg) : [...kept, ...lines];
+        store.setManuscriptText(scene.id, withChoices(html, all));
         store.log(scene.title, lines.reduce((n, l) => n + l.label.split(/\s+/).filter(Boolean).length, 0), client);
         const shown = lines.map((l) => `« ${l.label} »`).join(", ");
         return {
