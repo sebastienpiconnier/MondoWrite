@@ -1,0 +1,42 @@
+{
+  "title": "The Well",
+  "storyFacts": { "lantern": "The lantern" },
+  "frames": {
+    "Personnages": "Characters",
+    "Secrets": "Secrets",
+    "Lieux": "Places",
+    "Groupes": "Groups",
+    "Objets": "Objects",
+    "Événements": "Events",
+    "Règles du monde": "Rules of the world",
+    "Thèmes": "Themes",
+    "À creuser": "To dig into",
+    "Idées en vrac": "Loose ideas"
+  },
+  "links": {
+    "puis": "then",
+    "porte sur": "is about",
+    "aîné de": "older sibling of",
+    "grand-mère de": "grandmother of",
+    "retient": "holds",
+    "appartient à": "belongs to",
+    "règne sur": "rules over",
+    "payée en 1903": "paid in 1903",
+    "veille sur": "watches over",
+    "vend": "sells",
+    "au fond de la cour de": "at the far end of the yard of",
+    "creusée dans": "carved into",
+    "ouvre le tiroir du": "opens the drawer of",
+    "révèle le nom d'": "reveals the name of",
+    "ferme": "closes",
+    "appartiennent à": "belong to",
+    "s'est arrêtée sur": "stopped at",
+    "disparition de": "disappearance of",
+    "se répète en": "repeats in",
+    "libère": "frees",
+    "blessure de": "wound of",
+    "règle de": "rule of",
+    "au cœur du": "at the heart of",
+    "caché par": "hidden by"
+  }
+}

@@ -388,7 +388,7 @@ visite ordinaire dans tout roman interactif.
 
 - [x] Données, chargement, bouton de la page des projets, visite, tests (Vitest et e2e)
 - [ ] Images (prompts dans `docs/exemple-puits-images.md`, à générer par l'auteur), placées dans les scènes
-- [ ] Version anglaise (`puits.en.json`, traduction relue par l'auteur)
+- [x] Version anglaise « The Well » (`scripts/examples/puits-en/`, `build-puits-en.mjs` : textes, titres, faits et destinations en anglais ; proposée dans toute langue autre que le français). Reste : relecture par l'auteur
 - [ ] Chapitre « Roman interactif » du guide (fr, en, es) avec des captures du Puits
 
 ## Décisions du 18 novembre 2026 (manuel de LibroGameCreator)

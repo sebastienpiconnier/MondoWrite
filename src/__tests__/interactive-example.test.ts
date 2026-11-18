@@ -9,12 +9,15 @@ import { interactiveScenes } from "../interactive/scenes";
 import { verifyStory, endingCounts } from "../interactive/verify";
 import { readFactLabels } from "../interactive/facts";
 import { projectSections } from "../interactive/projectSections";
+import { Compiler } from "inkjs/full";
+import { projectToInk } from "../interactive/ink";
+import { sceneSlugs } from "../interactive/choices";
 import { STORY_TOUR_STEPS, nextStep } from "../tour";
 import { fr } from "../i18n/fr";
 import { en } from "../i18n/en";
 
-describe("exemple « Le Puits »", async () => {
-  const example = await puitsExample("fr");
+describe.each(["fr", "en"])("exemple « Le Puits » (%s)", async (lang) => {
+  const example = await puitsExample(lang);
 
   it("est un roman interactif sans marque de l'IA ni fichier en trop", () => {
     const paths = Object.keys(example.files);
@@ -39,9 +42,23 @@ describe("exemple « Le Puits »", async () => {
     const found = verifyStory(scenes, state.manuscript, readFactLabels(state.metaKeep), sections);
     // L'exemple montre un livre prêt : ni section inaccessible, ni choix cassé, ni fait jamais donné.
     expect(found.filter((f) => ["unreachableScene", "brokenChoice", "lockedScene", "noEnding", "factNeverGiven"].includes(f.rule))).toEqual([]);
+    // Et se joue : l'Ink composé se compile sans erreur.
+    const ink = projectToInk(scenes, sceneSlugs(scenes), state.manuscript, readFactLabels(state.metaKeep));
+    const compiler = new Compiler(ink.ink);
+    compiler.Compile();
+    expect(compiler.errors).toEqual([]);
     const counts = endingCounts(scenes, state.manuscript);
     expect(counts.good).toBe(1);
     expect(counts.bad).toBe(3);
+  });
+
+  it("est tout entier dans sa langue", () => {
+    const meta = JSON.parse(example.files["cosmos.json"]);
+    expect(meta.title).toBe(lang === "fr" ? "Le puits" : "The Well");
+    const texts = Object.values(example.files).join("\n");
+    // Faits et destinations des choix dans la langue de l'exemple.
+    expect(texts.includes("-> taking_the_lantern")).toBe(lang === "en");
+    expect(texts.includes("~ lanterne = true")).toBe(lang === "fr");
   });
 
   it("a sa visite, dans les deux langues", () => {

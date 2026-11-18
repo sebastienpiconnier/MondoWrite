@@ -8,9 +8,8 @@ export interface StoryExample {
   files: FileMap;
 }
 
-/** Fichiers de l'exemple dans la langue de l'interface (anglais), sinon en français. */
+/** Fichiers de l'exemple dans la langue de l'interface : français pour le français, anglais pour toute autre langue. */
 export async function puitsExample(lang: string): Promise<StoryExample> {
-  void lang; // la version anglaise n'est pas encore là
-  const data = (await import("../assets/examples/puits.fr.json")).default;
+  const data = lang === "fr" ? (await import("../assets/examples/puits.fr.json")).default : (await import("../assets/examples/puits.en.json")).default;
   return { title: data.title, files: data.files as FileMap };
 }

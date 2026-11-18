@@ -48,6 +48,16 @@ const titleOf = (id) => /^title: "(.*)"$/m.exec(read(`cartes/${id}.md`))?.[1];
 // Types de fin (lot 14), par titre de scène.
 const ENDINGS = { "Le matin": "good", "L'eau noire": "bad", "La voix volée": "bad", "La maison": "bad" };
 
+const typeOf = (id) => /^type: (\S+)$/m.exec(read(`cartes/${id}.md`))?.[1];
+// Une mention de fiche qui vise une carte Scène alors qu'une autre carte porte le même titre (le personnage Paul, le
+// lieu Le puits) vise cette autre carte : la fiche parle du personnage ou du lieu, pas de la scène.
+const byTitle = new Map();
+for (const id of cardIds) if (typeOf(id) !== "scene") byTitle.set(titleOf(id), id);
+const retarget = (text) =>
+  text.replace(/\[@([^\]]+)\]\(cosmos:([^)]+)\)/g, (all, label, id) => (typeOf(id) === "scene" && byTitle.has(label) ? `[@${label}](cosmos:${byTitle.get(label)})` : all));
+// Les numéros de section cités dans les fiches (« 14 · La niche ») ne suivent pas la renumérotation : retirés.
+const unnumber = (text) => text.replace(/révélé au \d+ · /g, "révélé dans ").replace(/La fin \d+ · ([^;]+?) rejoue/g, "La fin « $1 » rejoue").replace(/la fin \d+ · (.+?) la répare/g, "la fin « $1 » la répare").replace(/\b\d+ · /g, "");
+
 const files = {};
 for (const f of list("cartes")) {
   let text = stripIa(read(`cartes/${f}`))
@@ -58,6 +68,7 @@ for (const f of list("cartes")) {
   const odile = [...cardIds].find((id) => titleOf(id) === "Odile");
   const lettre = [...cardIds].find((id) => titleOf(id) === "La lettre d'Odile");
   if (odile && lettre) text = text.replace(`l'enterrement d'[@La lettre d'Odile](cosmos:${lettre})`, `l'enterrement d'[@Odile](cosmos:${odile})`);
+  if (typeOf(f.slice(0, -3)) !== "scene") text = unnumber(retarget(text));
   files[`cartes/${f}`] = text;
 }
 for (const f of list("manuscrit")) {
