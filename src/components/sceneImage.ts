@@ -1,4 +1,4 @@
-// Nœud TipTap `sceneImage` (lot 1 de #84, sceneImages.ts) : une image dans le texte d'une scène (éditeurs `prose` :
+// Nœud TipTap `sceneImage` (#87, sceneImages.ts) : une image dans le texte d'une scène (éditeurs `prose` :
 // manuscrit, carte Scène agrandie). Un bloc atome : le fichier est dans medias/, la description et la place sont
 // des attributs. Choisie (clic, toucher, flèches), l'image montre sa description, sa place et « Retirer l'image ».
 // Une image collée ou déposée dans le texte y entre aussi (copiée dans medias/ sous un nom neuf).
@@ -147,14 +147,17 @@ export const SceneImage = Node.create({
       place.addEventListener("change", () => {
         const next: ImagePlace = isImagePlace(place.value) ? place.value : "inline";
         const pos = typeof getPos === "function" ? getPos() : undefined;
-        if (next !== "chapter" || pos === undefined) return setAttrs({ place: next });
+        // La description tapée juste avant part avec la place : sans cela, un changement de place qui arrive
+        // avant que le champ ait rendu sa valeur (pas de « change » au clavier, au doigt) l'effaçait.
+        const alt = cleanAlt(altInput.value);
+        if (next !== "chapter" || pos === undefined) return setAttrs({ place: next, alt });
         // En tête de chapitre : l'image monte au début de sa scène (juste après son repère dans le livre).
         const { state } = editor.view;
         let start = 0;
         state.doc.forEach((child, offset) => {
           if (child.type.name === SCENE_MARK && offset < pos) start = offset + child.nodeSize;
         });
-        let tr = state.tr.setNodeMarkup(pos, undefined, { ...current.attrs, place: next });
+        let tr = state.tr.setNodeMarkup(pos, undefined, { ...current.attrs, place: next, alt });
         const moved = tr.doc.nodeAt(pos);
         if (moved && pos > start) tr = tr.delete(pos, pos + moved.nodeSize).insert(start, moved);
         editor.view.dispatch(tr.scrollIntoView());

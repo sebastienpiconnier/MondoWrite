@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
-import { plainText, searchCards } from "../search";
+import { findInText, findPassages, matchesIn, nthMatch, plainText, searchCards } from "../search";
 import { serialize } from "../screenplay/serialize";
 import type { CardData } from "../types";
 
@@ -285,5 +285,63 @@ describe("recherche", () => {
     state().revealCard("inconnue");
     expect(state().focusId).toBe(a);
     expect(b).not.toBe(a);
+  });
+});
+
+describe("mot trouvé dans le texte d'une scène (#85)", () => {
+  it("sans casse ni accents, à la position du texte d'origine", () => {
+    const text = "Le jeune Edmond Dantès revint à Marseille.";
+    expect(findInText(text, "dantes")).toEqual({ at: text.indexOf("Dantès"), length: 6 });
+    expect(findInText(text, "MARSEILLE")).toEqual({ at: text.indexOf("Marseille"), length: 9 });
+  });
+
+  it("plusieurs mots : la saisie entière, sinon le premier mot trouvé", () => {
+    const text = "Mercédès attend. Plus tard, Edmond Dantès revient.";
+    expect(findInText(text, "edmond  dantes")).toEqual({ at: text.indexOf("Edmond"), length: 13 });
+    expect(findInText(text, "dantes mercedes")).toEqual({ at: text.indexOf("Dantès"), length: 6 });
+    expect(findInText(text, "dantes mercedes", true)).toBeNull();
+  });
+
+  it("une espace insécable vaut une espace ; une lettre décomposée garde sa place", () => {
+    const text = "Il dit\u00a0: « Abbe\u0301 Faria ».";
+    expect(findInText(text, "dit :")).toEqual({ at: 3, length: 5 });
+    expect(findInText(text, "faria")?.at).toBe(text.indexOf("Faria"));
+  });
+
+  it("rien à chercher ou rien trouvé : null", () => {
+    expect(findInText("Texte", "   ")).toBeNull();
+    expect(findInText("Texte", "absent")).toBeNull();
+  });
+});
+
+describe("recherche des vues d'écriture : un résultat par passage (#85)", () => {
+  const units = [
+    { target: "s1", title: "Le château d’If", texts: ["Dantès entre au cachot.", "Dantès creuse, encore et encore."] },
+    { target: "s2", title: "Le trésor", texts: ["L’abbé parle à DANTES du trésor."] },
+  ];
+
+  it("chaque occurrence, sans casse ni accents, dans l'ordre du livre, avec son rang dans la scène", () => {
+    const found = findPassages(units, "dantes");
+    expect(found.map((p) => [p.target, p.nth])).toEqual([["s1", 0], ["s1", 1], ["s2", 0]]);
+    expect(found[1].excerpt).toContain("creuse");
+  });
+
+  it("plusieurs mots : la saisie entière seulement ; limite du nombre de résultats", () => {
+    expect(findPassages(units, "dantes creuse").map((p) => p.target)).toEqual(["s1"]);
+    expect(findPassages(units, "creuse dantes")).toEqual([]);
+    expect(findPassages(units, "dantes", 2)).toHaveLength(2);
+    expect(findPassages(units, "  ")).toEqual([]);
+  });
+
+  it("nthMatch retrouve la même occurrence que la liste, dans le bon paragraphe", () => {
+    const texts = units[0].texts;
+    expect(nthMatch(texts, "DANTÈS", 1)).toEqual({ index: 1, at: 0, length: 6 });
+    expect(nthMatch(texts, "encore", 1)).toEqual({ index: 1, at: texts[1].lastIndexOf("encore"), length: 6 });
+    expect(nthMatch(texts, "dantes", 2)).toBeNull();
+  });
+
+  it("matchesIn : occurrences sans chevauchement", () => {
+    expect(matchesIn("aaaa", "aa")).toEqual([0, 2]);
+    expect(matchesIn("Été, été.", "ete")).toEqual([0, 5]);
   });
 });

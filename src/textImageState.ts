@@ -1,4 +1,4 @@
-// Image à poser dans le texte d'une scène (lot 1 de #84) : l'éditeur qui la demande se déclare ici, la fenêtre
+// Image à poser dans le texte d'une scène (#87) : l'éditeur qui la demande se déclare ici, la fenêtre
 // Photos (ou le choix d'un fichier) rend le nom du fichier copié dans medias/. État d'affichage, rien n'est
 // enregistré : comme `openSynonyms`, un seul éditeur à la fois.
 

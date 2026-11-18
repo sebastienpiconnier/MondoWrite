@@ -260,7 +260,7 @@ export interface CosmosState {
   /** Où va la photo choisie dans la recherche de photos : une nouvelle carte Image, la galerie d'une fiche, ou l'image d'une carte. */
   photoTarget: { kind: "canvas"; at?: { x: number; y: number } } | { kind: "gallery"; id: string } | { kind: "card"; id: string } | { kind: "cover" } | { kind: "text" } | null;
   openPhotos: (target: NonNullable<CosmosState["photoTarget"]>) => void;
-  /** Image dans le texte d'une scène (#84, lot 1) : copiée dans medias/ sous un nom neuf ; rend ce nom, ou null. */
+  /** Image dans le texte d'une scène (#87) : copiée dans medias/ sous un nom neuf ; rend ce nom, ou null. */
   storeTextImage: (file: { name: string; data: Uint8Array }) => Promise<string | null>;
   /** Image de l'appareil posée dans le texte de l'éditeur qui l'attend (textImageState.ts). */
   pickTextImage: () => Promise<boolean>;
@@ -342,13 +342,15 @@ export interface CosmosState {
   cardMenu: string | null;
   setCardMenu: (id: string | null) => void;
   /** Ouvre une scène dans le manuscrit (ou le scénario) : identifiant de sa carte, ou `SCENE_AT` + rang de son en-tête. */
-  openInManuscript: (id: string, needle?: string, caret?: { el?: number; offset: number }) => void;
+  openInManuscript: (id: string, needle?: string, caret?: { el?: number; offset: number }, nth?: number) => void;
   /** Scène à montrer en arrivant dans le manuscrit, puis remise à null. */
   manuscriptTarget: string | null;
   /** Passage à sélectionner dans cette scène (recherche par le sens) ; null : le haut de la scène. */
   manuscriptNeedle: string | null;
   /** Place du curseur dans cette scène (« Reprendre là où j'en étais », #27) : élément et caractère. */
   manuscriptCaret: { el?: number; offset: number } | null;
+  /** Recherche des vues d'écriture (#85) : rang de l'occurrence de `manuscriptNeedle` à sélectionner dans la scène. */
+  manuscriptNth: number | null;
   clearManuscriptTarget: () => void;
   /** Coche ou décoche la n-ième case d'une carte ou d'une scène du manuscrit. */
   toggleTodo: (id: string, where: "card" | "manuscript", index: number) => void;
@@ -2201,16 +2203,17 @@ export const useCosmos = create<CosmosState>((set, get) => {
     },
     focusFrame: null,
     clearFocusFrame: () => set({ focusFrame: null }),
-    openInManuscript: (id, needle, caret) => {
+    openInManuscript: (id, needle, caret, nth) => {
       // Série : la scène est dans un autre épisode, on ouvre d'abord celui-ci.
       const full = get().screenplay;
       const episode = id.startsWith(SCENE_AT) ? episodeAt(full, Number(id.slice(SCENE_AT.length))) : episodeOfCard(full, id);
-      set({ view: "manuscrit", manuscriptTarget: id, manuscriptNeedle: needle || null, manuscriptCaret: caret ?? null, ...(episode ? { currentEpisode: episode } : {}) });
+      set({ view: "manuscrit", manuscriptTarget: id, manuscriptNeedle: needle || null, manuscriptCaret: caret ?? null, manuscriptNth: nth ?? null, ...(episode ? { currentEpisode: episode } : {}) });
     },
     manuscriptTarget: null,
     manuscriptNeedle: null,
     manuscriptCaret: null,
-    clearManuscriptTarget: () => set({ manuscriptTarget: null, manuscriptNeedle: null, manuscriptCaret: null }),
+    manuscriptNth: null,
+    clearManuscriptTarget: () => set({ manuscriptTarget: null, manuscriptNeedle: null, manuscriptCaret: null, manuscriptNth: null }),
     toggleTodo: (id, where, index) => {
       if (where === "manuscript") {
         const html = get().manuscript[id];

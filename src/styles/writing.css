@@ -18,6 +18,8 @@
 .sq-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .sq-scene { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: grab; }
 .sq-scene.is-dragged { opacity: 0.5; }
+/* Scène trouvée par la recherche du Plan (#85, revealRow.ts) : marquée un instant. */
+.sq-scene.is-found { outline: 3px solid var(--accent); outline-offset: 2px; }
 .sq-scene.is-over, .sq-section.is-over { outline: 2px dashed var(--accent); outline-offset: 2px; }
 .sq-moves { display: flex; gap: 4px; flex-shrink: 0; }
 .sq-moves button:disabled { opacity: 0.35; cursor: default; }
@@ -1374,7 +1376,7 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .image-gen-style select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .image-gen-style .settings-hint { margin: 0; }
 
-/* Image dans le texte d'une scène (#84, lot 1, components/sceneImage.ts). Tout en em : la page se mesure ainsi. */
+/* Image dans le texte d'une scène (#87, components/sceneImage.ts). Tout en em : la page se mesure ainsi. */
 .scene-image { margin: 0.8em 0; padding: 0; text-align: center; }
 .scene-image img { display: block; margin: 0 auto; max-width: 100%; max-height: 24em; height: auto; border-radius: 2px; }
 .scene-image[data-place="page"] img { max-height: 36em; }

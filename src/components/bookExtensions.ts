@@ -159,7 +159,7 @@ function decorate(state: EditorState, focused: boolean): DecorationSet {
       first = true;
       return;
     }
-    // Une image en tête de scène (#84) ne prend pas la place du premier paragraphe : la lettrine et le premier
+    // Une image en tête de scène ne prend pas la place du premier paragraphe : la lettrine et le premier
     // paragraphe sans alinéa restent au texte qui la suit.
     if (first && node.type.name === "sceneImage") return;
     const classes: string[] = [];

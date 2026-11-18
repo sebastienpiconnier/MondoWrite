@@ -7,13 +7,13 @@ import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { storage } from "../storage";
+import { bookImageNames, type BookDoc } from "../export/paperback";
+import type { DocImage } from "../export/doc";
 import { bookOf } from "../export/projectDocs";
 import { loadPaperback } from "../export";
 import { KDP_MAX_PAGES, KDP_MIN_PAGES, KDP_TRIMS, PAPER_IDS, TRIM_IDS, type PaperId, type TrimId } from "../export/printOptions";
 import { fileName, type ExportedFile } from "../screenplay/export";
 import type { PreparedPaperback } from "../export/paperbackPdf";
-import { bookImageNames, type BookDoc } from "../export/paperback";
-import type { DocImage } from "../export/doc";
 import { FullCoverSection } from "./FullCoverSection";
 import { useInteractive } from "../interactive/useInteractive";
 

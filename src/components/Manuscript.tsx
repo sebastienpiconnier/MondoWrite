@@ -53,7 +53,7 @@ import { sceneAt, sceneGroups } from "../bookDoc";
 import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
-import { countWords, detectCards, orphanTexts } from "../manuscript";
+import { citedCards, countWords, orphanTexts } from "../manuscript";
 import { Chutier } from "./Chutier";
 import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
 import { FOCUS_COLUMN_EM } from "../focusText";
@@ -205,7 +205,7 @@ export function Manuscript() {
   }, [notice]);
   const handlers = useRef<BookHandlers | null>(null);
   const bookApi = useRef<BookApi | null>(null);
-  /** « Insérer une image… » (#84, lot 1) : au curseur du livre. */
+  /** « Insérer une image… » (#87) : au curseur du livre. */
   const interactive = useInteractive();
   const insertImage = () => {
     const ed = bookApi.current?.editor();
@@ -311,8 +311,9 @@ export function Manuscript() {
 
   // Arrivée depuis « À faire » : la bonne scène.
   useEffect(() => {
-    if (!target) return;
-    const { manuscriptNeedle: needle, manuscriptCaret: caret } = useCosmos.getState();
+    // Cible déjà prise (l'effet rejoué par le mode strict de React) : ne pas défiler loin du passage choisi (#85).
+    if (!target || useCosmos.getState().manuscriptTarget !== target) return;
+    const { manuscriptNeedle: needle, manuscriptCaret: caret, manuscriptNth: nth } = useCosmos.getState();
     useCosmos.getState().clearManuscriptTarget();
     setChosen(target);
     // « Reprendre là où j'en étais » (#27) : le curseur à sa place (au redessin si le livre n'est pas encore là).
@@ -320,9 +321,12 @@ export function Manuscript() {
       window.requestAnimationFrame(() => bookApi.current?.focusScene(target, Math.max(caret.offset, 2)));
       return;
     }
-    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée, et au passage cherché s'il y en a un.
+    // Le livre est déjà dessiné : on y défile jusqu'à la scène demandée, et au passage cherché s'il y en a un
+    // (recherche : sa `nth` occurrence dans la scène, #85).
     window.requestAnimationFrame(() => {
-      if (!needle || !bookApi.current?.selectText(target, needle)) bookApi.current?.scrollToScene(target);
+      const api = bookApi.current;
+      if (needle && nth !== null && api?.selectMatch(target, needle, nth)) return;
+      if (!needle || !api?.selectText(target, needle)) api?.scrollToScene(target);
     });
   }, [target]);
 
@@ -591,7 +595,7 @@ export function Manuscript() {
   const prevId = order.slice(0, Math.max(at, 0)).reverse().find((id) => !povOn || told.has(id)) ?? null;
   const nextId = order.slice(at + 1).find((id) => !povOn || told.has(id)) ?? null;
   const title = card.title.trim() || m.untitled;
-  const detected = detectCards(manuscript[current], cards);
+  const detected = citedCards(manuscript[current], cards);
   const chapter = chapterOf(plan, current);
   // La scène ouvre son chapitre : le titre du chapitre s'affiche au-dessus, comme dans un livre.
   const opensChapter = !pageKind && !!chapter && (at === 0 || chapterOf(plan, order[at - 1])?.id !== chapter.id);

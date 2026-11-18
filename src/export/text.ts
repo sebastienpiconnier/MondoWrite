@@ -343,7 +343,7 @@ export interface EpubMeta {
 }
 
 export function toEpub(doc: ExportDoc, meta: EpubMeta): Uint8Array {
-  // Images du texte (#84, lot 1) : une fois chacune, en JPEG (export/images.ts), dans OEBPS/images/.
+  // Images du texte (#87) : une fois chacune, en JPEG (export/images.ts), dans OEBPS/images/.
   const pictures = Object.keys(doc.images ?? {}).map((name, i) => ({ name, id: `img${i + 1}`, href: `images/img${i + 1}.jpg` }));
   const pictureOf = (name: string) => pictures.find((p) => p.name === name)?.href ?? null;
   const files = doc.chapters.map((chapter, i) => ({

@@ -1,4 +1,4 @@
-// Images dans le texte d'une scène (lot 1 de #84, docs/plan-roman-interactif.md) : fonctions pures.
+// Images dans le texte d'une scène (#87) : fonctions pures.
 //
 // Le fichier est dans medias/, comme les images des cartes (jamais supprimé par l'app). Dans le texte :
 //   en mémoire : <img data-media="k3x9a7.jpg" alt="Le phare au crépuscule" data-place="page">

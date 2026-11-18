@@ -21,6 +21,7 @@ import { showsInteractive } from "./interactive";
 import { openPlay } from "./interactive/playState";
 import { unlearnAll } from "./learn";
 import { nextHighlight } from "./focusText";
+import { findOrSearch } from "./writingFind";
 import type { View } from "./projectState";
 import type { ProjectKind } from "./types";
 
@@ -100,6 +101,9 @@ export const COMMANDS: AppCommandItem[] = [
   // Cartes choisies sur le canevas (Copier et Coller, éléments du système, copient aussi les cartes).
   { id: "duplicate", group: "edit", label: (t) => t.appMenu.duplicate, accelerator: "CmdOrCtrl+D", enabled: onCanvas, run: () => replayShortcut("d", "KeyD") },
   { id: "find", group: "edit", label: (t) => t.appMenu.find, accelerator: "CmdOrCtrl+F", enabled: inProject, run: () => replayShortcut("f", "KeyF") },
+  // Occurrence suivante ou précédente de la recherche (#85) : Manuscrit et Scénario ; F3 et Maj + F3 aussi.
+  { id: "find-next", group: "edit", label: (t) => t.appMenu.findNext, accelerator: "CmdOrCtrl+Alt+G", enabled: writing, run: () => findOrSearch(1) },
+  { id: "find-prev", group: "edit", label: (t) => t.appMenu.findPrev, accelerator: "CmdOrCtrl+Alt+Shift+G", enabled: writing, run: () => findOrSearch(-1) },
   { id: "replace", group: "edit", label: (t) => t.appMenu.replace, accelerator: "CmdOrCtrl+Shift+H", enabled: inProject, run: () => replayShortcut("H", "KeyH", true) },
   // Aller à une page, une scène, un chapitre (fenêtre « Aller à »).
   { id: "goto", group: "edit", label: (t) => t.appMenu.goto, accelerator: "CmdOrCtrl+G", enabled: inProject, run: () => s().setDialog("goto") },
@@ -111,7 +115,7 @@ export const COMMANDS: AppCommandItem[] = [
   { id: "synonyms", group: "edit", label: (t) => t.appMenu.synonyms, accelerator: "CmdOrCtrl+Alt+Y", enabled: writing, run: () => replayShortcut("y", "KeyY", false, true) },
   { id: "comment", group: "edit", label: (t) => t.appMenu.comment, accelerator: "CmdOrCtrl+Alt+M", enabled: writing, run: () => replayShortcut("m", "KeyM", false, true) },
   // Fusionner la scène en cours avec la suivante (#23) : la vue sait quelle scène.
-  // Image dans le texte d'une scène (#84, lot 1) : roman seulement, la vue Manuscrit sait où est le curseur.
+  // Image dans le texte d'une scène (#87) : roman seulement, la vue Manuscrit sait où est le curseur.
   { id: "insert-image", group: "edit", label: (t) => t.appMenu.insertImage, enabled: (c) => writing(c) && c.kind !== "scenario", run: () => sendCommand("insert-image") },
   { id: "merge-next", group: "edit", label: (t) => t.appMenu.mergeNext, enabled: writing, run: () => sendCommand("merge-next") },
   // Omettre la scène en cours (#46) : scénario aux pages verrouillées seulement, la vue sait quelle scène.

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// Images dans le texte d'une scène (#84, lot 1) : format sur disque, nettoyage, exports.
+// Images dans le texte d'une scène (#87) : format sur disque, nettoyage, exports.
 
 import { describe, expect, it } from "vitest";
 import { cleanAlt, imageMarkdown, manuscriptImages, mediaFromSrc, sceneImagesIn } from "../sceneImages";

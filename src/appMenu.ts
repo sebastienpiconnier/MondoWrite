@@ -74,6 +74,8 @@ async function buildMenu() {
       await item("duplicate"),
       await sep(),
       await item("find"),
+      await item("find-next"),
+      await item("find-prev"),
       await item("replace"),
       await item("goto"),
       await item("keep-version"),

@@ -152,7 +152,7 @@ export function htmlToBlocks(html: string | undefined): Block[] {
       // Bloc de choix d'un roman interactif : il ne s'imprime pas dans un texte suivi (le livre-jeu a son export).
       if (tag === "PRE" && child.getAttribute("data-choices") === "true") continue;
       if (tag === "UL" || tag === "OL") walk(child, { ...context, list: tag === "OL" ? "number" : "bullet" });
-      // Image dans le texte d'une scène (#84, lot 1) : un bloc image, avec sa description.
+      // Image dans le texte d'une scène (#87) : un bloc image, avec sa description.
       else if (tag === "IMG") {
         const name = child.getAttribute("data-media");
         const place = child.getAttribute("data-place");

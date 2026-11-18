@@ -76,6 +76,23 @@ describe("frappe selon la langue", () => {
     expect(smartType("-", "-", "es")).toEqual({ remove: 1, insert: "—" });
   });
 
+  it("catalan (IEC) : « » sans espaces, “ ” au second niveau, tiret cadratin, rien avant la ponctuation haute", () => {
+    expect(quote("Far", "ca")).toBe("«Far»");
+    expect(TYPO_RULES.ca.inner).toEqual(["“", "”"]);
+    expect(smartType("Va dir ", '"', "ca")).toEqual({ remove: 0, insert: "«" });
+    expect(smartType("Va dir «sí", '"', "ca")).toEqual({ remove: 0, insert: "»" });
+    expect(smartType("-", "-", "ca")).toEqual({ remove: 1, insert: "—" });
+    expect(smartType("l", "'", "ca")).toEqual({ remove: 0, insert: "’" });
+    expect(smartType("De debò", "?", "ca")).toBeNull();
+    expect(punct(":", "ca")).toBe(":");
+    expect(csvSeparator("ca")).toBe(";");
+  });
+
+  it("césure livrée : français, anglais et espagnol, pas de motifs pour le catalan (licence LPPL)", () => {
+    expect(TYPO_RULES.es.hyphen).toBe("es");
+    expect(TYPO_RULES.ca.hyphen).toBeUndefined();
+  });
+
   it("suédois : même guillemet des deux côtés, par parité", () => {
     expect(smartType("Hon sa ", '"', "sv")).toEqual({ remove: 0, insert: "”" });
     expect(smartType("Hon sa ”ja", '"', "sv")).toEqual({ remove: 0, insert: "”" });

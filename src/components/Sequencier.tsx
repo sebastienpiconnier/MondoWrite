@@ -405,6 +405,7 @@ export function Sequencier() {
             return (
               <li
                 key={`scene-${block.start}`}
+                data-scene={block.cardId || undefined}
                 className={`sq-scene${dragged === i ? " is-dragged" : ""}${dropClass}`}
                 draggable
                 onDragStart={(e) => {

@@ -82,6 +82,8 @@ import {
   type Scene,
 } from "../screenplay/scenes";
 import { ScreenplayAtelier, ScreenplayDirections, screenplaySceneText } from "./Atelier";
+import { findInText, nthMatch } from "../search";
+import { centerSelection } from "./centerSelection";
 import {
   currentElement,
   fromDoc,
@@ -885,7 +887,10 @@ export function ScreenplayView() {
   const goToRef = useRef(goTo);
   goToRef.current = goTo;
   useEffect(() => {
-    if (!target) return;
+    // Cible déjà prise (l'effet rejoué par le mode strict de React) : ne pas revenir en haut de la scène.
+    if (!target || useCosmos.getState().manuscriptTarget !== target) return;
+    // Curseur et mot cherché lus avant d'être effacés avec la cible (#85 : le curseur était lu après, donc jamais).
+    const { manuscriptCaret: caret, manuscriptNeedle: needle, manuscriptNth: nth } = useCosmos.getState();
     useCosmos.getState().clearManuscriptTarget();
     const state = useCosmos.getState();
     const elements = currentScript(state)?.elements ?? [];
@@ -895,10 +900,53 @@ export function ScreenplayView() {
     const at0 = target.startsWith(SCENE_AT) && at < 0 && elements.length > 0 ? 0 : at;
     const index = at0 >= 0 ? (at0 < elements.length ? at0 : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
     if (index < 0) return;
+    // Arrivée depuis la recherche (#85) : le mot sélectionné dans l'élément de la scène qui le contient.
+    const selectNeedle = () => {
+      if (!needle || editor.isDestroyed) return false;
+      const doc = editor.state.doc;
+      // Les éléments écrits de la scène, jusqu'à l'en-tête suivant, comptés comme la liste des résultats.
+      const blocks: { node: PMNode; i: number }[] = [];
+      for (let i = index; i < doc.childCount; i++) {
+        const node = doc.child(i);
+        if (i > index && node.type.name === "sceneHeading") break;
+        if (node.isTextblock && node.textContent.trim()) blocks.push({ node, i });
+      }
+      const texts = blocks.map((b) => b.node.textContent);
+      // Recherche de la vue (`nth` : la n-ième occurrence), sinon la saisie entière puis le premier mot trouvé.
+      let hit: { index: number; at: number; length: number } | null = nth !== null ? nthMatch(texts, needle, nth) : null;
+      for (const wholeOnly of nth === null ? [true, false] : []) {
+        if (hit) break;
+        for (let k = 0; k < texts.length && !hit; k++) {
+          const found = findInText(texts[k], needle, wholeOnly);
+          if (found) hit = { index: k, ...found };
+        }
+      }
+      if (!hit) return false;
+      const { node, i } = blocks[hit.index];
+      // Position dans le document d'un caractère de l'élément (un nœud en ligne n'a pas toujours de texte).
+      const start = posOf(doc, i) + 1;
+      const map = (target: number) => {
+        let seen = 0;
+        let result = -1;
+        node.forEach((child, offset) => {
+          if (result >= 0) return;
+          const len = child.textContent.length;
+          if (child.isText && target <= seen + len) result = start + offset + (target - seen);
+          seen += len;
+        });
+        return result >= 0 ? result : start + target;
+      };
+      // Au milieu de l'écran (#85), pas au bord où `scrollIntoView` le laissait.
+      editor.chain().focus(undefined, { scrollIntoView: false }).setTextSelection({ from: map(hit.at), to: map(hit.at + hit.length) }).run();
+      track(editor);
+      centerSelection(editor.view);
+      return true;
+    };
     // « Reprendre là où j'en étais » (#27) : l'élément du curseur dans la scène, puis sa place dans l'élément.
-    const caret = state.manuscriptCaret;
     if (!caret) {
-      requestAnimationFrame(() => goToRef.current(index));
+      requestAnimationFrame(() => {
+        if (!selectNeedle()) goToRef.current(index);
+      });
       return;
     }
     const placeCaret = () => {

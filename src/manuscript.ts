@@ -8,7 +8,7 @@ import { plainText } from "./search";
 /** Texte de chaque scène, en HTML (format de travail de l'éditeur), par identifiant de carte. */
 export type Manuscript = Record<string, string>;
 
-/** Scène sans texte : ni mot, ni image dans le texte (#84, lot 1 : une scène faite d'une seule image reste écrite). */
+/** Scène sans texte : ni mot, ni image dans le texte (#87 : une scène faite d'une seule image reste écrite). */
 export const isBlank = (html: string | undefined) => !html || (plainText(html) === "" && !/<img\b[^>]*\bdata-media=/.test(html));
 
 /** Nombre de mots d'un texte (HTML de l'éditeur). Les apostrophes et traits d'union ne coupent pas un mot. */
@@ -51,6 +51,22 @@ export function detectCards(html: string | undefined, cards: CardData[]): CardDa
   const text = foldedText(html);
   if (!text) return [];
   return cards.filter((card) => (card.type === "personnage" || card.type === "lieu") && namesOf(card).some((name) => hasWord(text, name)));
+}
+
+/**
+ * Cartes du panneau « Cités dans le texte » du Manuscrit (#85) : les personnages et les lieux de `detectCards`, puis
+ * les objets nommés par leur titre entier. Les événements et les secrets n'y sont pas : leur titre (« La trahison »)
+ * est rarement écrit tel quel. `detectCards` reste tel quel (frise, images, croisements).
+ */
+export function citedCards(html: string | undefined, cards: CardData[]): CardData[] {
+  const text = foldedText(html);
+  if (!text) return [];
+  return cards.filter((card) => {
+    if (card.type === "personnage" || card.type === "lieu") return namesOf(card).some((name) => hasWord(text, name));
+    if (card.type !== "objet") return false;
+    const title = fold(card.title).trim();
+    return title.length >= 3 && hasWord(text, title);
+  });
 }
 
 /** Les façons dont le texte peut nommer une carte : titre entier, prénom, surnoms (personnage). Repliées. */

@@ -146,7 +146,7 @@ export function ExportMenu() {
     // Format Shunn pour le PDF : « Nom / TITRE / page » en tête, nombre de mots arrondi, « par Untel ».
     const { lang, profile } = useSettings.getState();
     const shunned = format === "pdf" ? withShunn(base, useCosmos.getState().manuscript, all, lang, authorName(profile)) : base;
-    // Images dans le texte des scènes (#84, lot 1) : lues dans medias/ ; le Markdown les cite seulement.
+    // Images dans le texte des scènes (#87) : lues dans medias/ ; le Markdown les cite seulement.
     const doc = format === "md" ? shunned : await (await import("../export/images")).withImages(shunned, (n) => storage.mediaUrl(n));
     return exportDocument(doc, format, { name: doc.title, paper: useCosmos.getState().paper, contents: x.contents });
   };
