@@ -285,6 +285,20 @@ span.tl-cell.is-pov { cursor: default; }
 /* Sections du livre (roman interactif, lot 11, #91) : le numéro imprimé à la place des flèches. */
 .plan-section-number { flex-shrink: 0; display: inline-grid; place-items: center; min-width: 2.6rem; height: 2rem; padding: 0 0.4rem; border-radius: 8px; border: 1px solid var(--line-2); color: var(--ink); font: 600 0.9375rem/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 @media (min-width: 700px) { .sq-list:not(.is-cards) .plan-scene .plan-section-number { grid-column: 1; grid-row: 1; } }
+/* Lot 12 : le numéro se change (bouton, puis champ) ; un numéro gardé porte un cadenas, le départ est au 1. */
+button.plan-section-number { display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem; background: var(--surface); cursor: pointer; }
+.plan-section-number.is-locked { border-color: var(--accent); color: var(--accent-ink); }
+.plan-section-number.is-start { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+input.plan-section-number { width: 3.6rem; text-align: center; background: var(--surface); }
+input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); outline: 2px solid var(--danger); }
+@media (any-hover: hover) { button.plan-section-number:hover { background: var(--hover); } }
+@media (pointer: coarse) { button.plan-section-number, input.plan-section-number { min-height: 44px; min-width: 44px; } }
+.section-lock { flex-shrink: 0; }
+.plan-renumber-ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.875rem; color: var(--ink-2); }
+.choice-hidden { gap: 0.35rem; }
+.choice-hidden input { min-height: 0; width: 1rem; height: 1rem; }
+.choice-edge-editor .choice-rule.choice-hidden { display: flex; align-items: center; align-self: center; gap: 0.4rem; }
+.choice-edge-editor .choice-hidden input { min-width: 0; min-height: 0; width: 1.1rem; height: 1.1rem; padding: 0; }
 .plan-scene .choice-scene-tags { margin: 2px 0 0; }
 .plan-facts { position: relative; display: inline-flex; }
 .plan-facts .facts-panel { top: calc(100% + 6px); right: auto; left: 0; width: min(22rem, calc(100vw - 2rem)); max-height: min(70vh, 32rem); }

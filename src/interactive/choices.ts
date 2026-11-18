@@ -10,7 +10,8 @@
 //
 // C'est un sous-ensemble de la syntaxe Ink : un choix `*`, une condition facultative `{ }`, le libellé entre crochets,
 // la destination après `->`. Une ligne qui commence par `~` sous un choix est un de ses effets (lot 4 : `~ cle = true`,
-// le lecteur acquiert un fait ; `~ pieces += 1`, un compteur). Une destination est le nom d'une scène tiré de son titre (`sceneSlugs`), ou `END` pour
+// le lecteur acquiert un fait ; `~ pieces += 1`, un compteur). Une étiquette `#hidden` en fin de ligne fait un renvoi caché
+// (lot 12) : il n'est pas imprimé, le texte de la scène dit au lecteur comment trouver la suite. Une destination est le nom d'une scène tiré de son titre (`sceneSlugs`), ou `END` pour
 // une fin. Une ligne qui ne se lit pas comme un choix est gardée telle quelle, jamais perdue.
 //
 // En mémoire (HTML de l'éditeur et du store), le bloc est `<pre data-choices="true">texte</pre>`.
@@ -28,6 +29,8 @@ export interface Choice {
   cond?: string;
   /** Effets du choix (lot 4) : affectations Ink sans le `~` (`cle = true`, `pieces += 1`), une par ligne. */
   effects?: string[];
+  /** Renvoi caché (lot 12) : jamais imprimé ni joué, compté sur la carte et par « Vérifier ». */
+  hidden?: boolean;
 }
 export interface RawLine {
   kind: "raw";
@@ -35,7 +38,9 @@ export interface RawLine {
 }
 export type ChoiceLine = Choice | RawLine;
 
-const CHOICE_RE = /^\*\s*(?:\{\s*([^}]*?)\s*\}\s*)?\[([^\]]*)\]\s*->\s*([\p{L}\p{N}_]+)\s*$/u;
+/** Étiquette d'un renvoi caché, en fin de ligne (jamais traduite : contrat de format). */
+export const HIDDEN_TAG = "#hidden";
+const CHOICE_RE = /^\*\s*(?:\{\s*([^}]*?)\s*\}\s*)?\[([^\]]*)\]\s*->\s*([\p{L}\p{N}_]+)(\s+#hidden)?\s*$/u;
 
 /** Libellé d'un choix : une ligne, sans crochets (ils fermeraient le libellé), au plus 200 caractères. */
 export function cleanLabel(raw: unknown): string {
@@ -51,7 +56,7 @@ export function parseChoices(text: string): ChoiceLine[] {
     if (!trimmed) continue;
     const m = CHOICE_RE.exec(trimmed);
     const last = lines[lines.length - 1];
-    if (m) lines.push({ kind: "choice", label: m[2].trim(), target: m[3], ...(m[1] ? { cond: m[1] } : {}) });
+    if (m) lines.push({ kind: "choice", label: m[2].trim(), target: m[3], ...(m[1] ? { cond: m[1] } : {}), ...(m[4] ? { hidden: true } : {}) });
     else if (trimmed.startsWith("~") && last?.kind === "choice" && trimmed.slice(1).trim()) {
       last.effects = [...(last.effects ?? []), trimmed.slice(1).trim()];
     } else lines.push({ kind: "raw", text: trimmed });
@@ -62,7 +67,7 @@ export function parseChoices(text: string): ChoiceLine[] {
 /** Écrit un choix sur une ligne. */
 export function choiceLine(c: Omit<Choice, "kind">): string {
   const cond = c.cond?.trim() ? `{ ${c.cond.trim()} } ` : "";
-  const head = `* ${cond}[${cleanLabel(c.label)}] -> ${c.target}`;
+  const head = `* ${cond}[${cleanLabel(c.label)}] -> ${c.target}${c.hidden ? ` ${HIDDEN_TAG}` : ""}`;
   const effects = (c.effects ?? []).map(cleanEffect).filter(Boolean);
   return effects.length ? [head, ...effects.map((e) => `  ~ ${e}`)].join("\n") : head;
 }
@@ -190,6 +195,7 @@ export interface ChoiceEdge {
   to: string | null;
   cond?: string;
   effects?: string[];
+  hidden?: boolean;
 }
 
 /** Tous les choix du livre, scène par scène, dans l'ordre reçu. */
@@ -208,6 +214,7 @@ export function choiceGraph(manuscript: Readonly<Record<string, string>>, scenes
         to: resolveTarget(line.target, slugs),
         ...(line.cond ? { cond: line.cond } : {}),
         ...(line.effects?.length ? { effects: line.effects } : {}),
+        ...(line.hidden ? { hidden: true } : {}),
       });
     }
   }
@@ -248,6 +255,7 @@ export function editChoice(lines: readonly ChoiceLine[], index: number, next: Om
           target: next.target,
           ...(next.cond?.trim() ? { cond: next.cond.trim() } : {}),
           ...(effects.length ? { effects } : {}),
+          ...(next.hidden ? { hidden: true } : {}),
         });
       }
       continue;

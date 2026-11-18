@@ -20,7 +20,19 @@ import { withoutChoices } from "../interactive/choices";
 export type RuleKey = "similarNames" | "longAction" | "extraSpaces" | "nearRepeat" | "frequentWords" | "headingFormat" | "emptyElement" | "unknownCharacter" | "silentCharacter" | StoryRule | VerifyRule;
 
 /** Roman interactif (lot 5) : le chemin du lecteur, posé à une scène ; « C'est voulu » les écarte. */
-export const INTERACTIVE_RULES: readonly RuleKey[] = ["noEnding", "unreachableScene", "brokenChoice", "lockedScene", "factNeverGiven", "factTooLate", "implicitEnd", "notPrinted"];
+export const INTERACTIVE_RULES: readonly RuleKey[] = [
+  "noEnding",
+  "unreachableScene",
+  "brokenChoice",
+  "lockedScene",
+  "factNeverGiven",
+  "factTooLate",
+  "implicitEnd",
+  "notPrinted",
+  "sectionGap",
+  "hiddenUnlocked",
+  "hiddenNotPlayable",
+];
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
 export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent";

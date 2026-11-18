@@ -9,6 +9,7 @@ import { choicesIn, END_TARGET, resolveTarget, type SceneRef } from "./choices";
 import { factLabel } from "./facts";
 import { condPhrase, effectPhrase } from "./conditions";
 import type { BookDoc, BookSection } from "../export/paperback";
+import { sectionList } from "./sections";
 
 /** Textes du livre, dans la langue de l'interface (gabarits à variables `{…}`). */
 export interface GamebookTexts {
@@ -57,6 +58,8 @@ export interface GamebookInput {
   manuscript: Readonly<Record<string, string>>;
   factLabels: Readonly<Record<string, string>>;
   texts: GamebookTexts;
+  /** Numéros figés (lot 12, projectSections) ; sans eux, le mélange de `numberSections`. */
+  numbers?: Readonly<Record<string, number>>;
 }
 
 /** Une section du livre : sa scène et le numéro imprimé. */
@@ -153,10 +156,12 @@ function effectText(effect: string, input: GamebookInput): string | null {
  */
 export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: Section[] } {
   const { texts, lang } = input;
-  const sections = numberSections(input);
+  const present = new Set(input.scenes.map((s) => s.id));
+  const sections = input.numbers ? sectionList(input.numbers).filter((s) => present.has(s.id)) : numberSections(input);
   const numberOf = new Map(sections.map((s) => [s.id, s.n]));
-  // Section d'ouverture en tête : la section n est le chapitre n du document.
-  const link = (id: string): Run => ({ text: String(numberOf.get(id)), chapter: numberOf.get(id)! });
+  // Section d'ouverture en tête : la k-ième section est le chapitre k du document (un numéro libéré laisse un trou).
+  const chapterOf = new Map(sections.map((s, i) => [s.id, i + 1]));
+  const link = (id: string): Run => ({ text: String(numberOf.get(id)), chapter: chapterOf.get(id)! });
   const usesFacts = sections.some((s) => choicesIn(input.manuscript[s.id]).some((l) => l.kind === "choice" && (l.cond?.trim() || l.effects?.length)));
 
   const names = {
@@ -193,6 +198,8 @@ export function gamebookDoc(input: GamebookInput): { doc: ExportDoc; sections: S
         continue;
       }
       ends = false;
+      // Renvoi caché (lot 12) : jamais imprimé, le texte de la section dit comment trouver la suite.
+      if (line.hidden) continue;
       const id = resolveTarget(line.target, input.slugs);
       const cond = condText(line.cond);
       const label = line.label.trim();

@@ -868,7 +868,8 @@ impl Server {
       "only_if_not": { "type": "string" },
       "gives": { "type": "string", "description": "Libellé du fait acquis." },
       "condition": { "type": "string", "description": "Condition par les noms des faits et compteurs : « ourdas and reconnu and flamme > 0 »." },
-      "effects": { "type": "array", "items": { "type": "string" }, "description": "« flamme = 3 », « flamme -= 1 », « cle = true »…" }
+      "effects": { "type": "array", "items": { "type": "string" }, "description": "« flamme = 3 », « flamme -= 1 », « cle = true »…" },
+      "hidden": { "type": "boolean", "description": "Renvoi caché d'une énigme : jamais imprimé, le texte de la scène dit comment trouver le numéro. Garde le numéro de la scène visée." }
     }, "required": ["text", "to"] });
     let more = json!([
       {

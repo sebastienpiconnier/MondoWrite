@@ -93,10 +93,14 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
       case "brokenChoice":
       case "lockedScene":
       case "implicitEnd":
+      case "hiddenNotPlayable":
         return fmt(t.items.verifyScene, { scene: f.text });
+      case "sectionGap":
+        return fmt(t.items.sectionGap, { n: f.names?.[0] ?? "" });
       case "factNeverGiven":
       case "factTooLate":
       case "notPrinted":
+      case "hiddenUnlocked":
         return fmt(t.items.verifyFact, { scene: f.text, fact: f.names?.[0] ?? "" });
       case "beatDrift":
         return fmt(t.items.beatDrift, { beat: beats[f.text as PlanBeat]?.label ?? f.text, at: f.counts![0], target: f.counts![1] });
@@ -108,6 +112,8 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
   const go = (f: Finding) => {
     if (f.rule === "frequentWords") return findWord(f.names![0]);
     // Roman interactif : on va à la scène, dans le texte (son bloc de choix est à la fin).
+    // Un numéro libre : « Sections du livre », où l'on renumérote.
+    if (f.rule === "sectionGap") return useCosmos.getState().setView("plan");
     if (INTERACTIVE_RULES.includes(f.rule)) return f.sceneId ? useCosmos.getState().openInManuscript(f.sceneId) : showOnChoiceMap();
     if (!STORY_RULES.includes(f.rule)) return onGo(f);
     const s = useCosmos.getState();

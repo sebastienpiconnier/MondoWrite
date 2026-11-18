@@ -12,14 +12,13 @@ import { interactiveScenes } from "./scenes";
 import { END_TARGET, choiceGraph, type ChoiceEdge, type SceneRef } from "./choices";
 import { verifyStory } from "./verify";
 import { choiceEdgeId, labelPlaces, marksKey, parallelOffsets, sceneMarks, scenesKey } from "./storyMap";
-import { numberSections } from "./gamebook";
-import { interactiveSlugs } from "./scenes";
+import { projectSections } from "./projectSections";
 import { ruleSummary } from "../components/ChoiceRules";
 import { projectFacts } from "./projectFacts";
 import { readFactLabels, type Fact } from "./facts";
 
 /** Repères des cartes Scène (chaînes de `marksKey`), par identifiant. État d'affichage. */
-export const useStoryMarks = create<{ byId: Record<string, string>; numbers: Record<string, number> }>(() => ({ byId: {}, numbers: {} }));
+export const useStoryMarks = create<{ byId: Record<string, string>; numbers: Record<string, number>; locked: readonly string[] }>(() => ({ byId: {}, numbers: {}, locked: [] }));
 
 const NO_MARKS: Record<string, string> = {};
 const NO_NUMBERS: Record<string, number> = {};
@@ -53,19 +52,20 @@ export function useStoryMap(): StoryMap | null {
 
   useEffect(() => {
     if (!interactive) {
-      if (useStoryMarks.getState().byId !== NO_MARKS) useStoryMarks.setState({ byId: NO_MARKS, numbers: NO_NUMBERS });
+      if (useStoryMarks.getState().byId !== NO_MARKS) useStoryMarks.setState({ byId: NO_MARKS, numbers: NO_NUMBERS, locked: [] });
       return;
     }
     const byId: Record<string, string> = {};
     for (const [id, marks] of sceneMarks(scenes, graph, manuscript, points)) byId[id] = marksKey(marks);
-    // Numéro de chaque scène dans le livre-jeu imprimé (le départ au 1), le même que dans le Plan.
-    const numbers: Record<string, number> = {};
-    const { nodes: all, plan: p } = useCosmos.getState();
-    for (const sec of numberSections({ scenes, slugs: interactiveSlugs(all, p), manuscript })) numbers[sec.id] = sec.n;
-    useStoryMarks.setState({ byId, numbers });
+    useStoryMarks.setState({ byId });
   }, [interactive, scenes, graph, manuscript, points]);
+  // Numéro de chaque scène dans le livre-jeu imprimé (figé, lot 12), le même que dans le Plan.
+  const sections = useCosmos((s) => (interactive ? projectSections(s) : null));
+  useEffect(() => {
+    if (sections) useStoryMarks.setState({ numbers: sections.numbers, locked: sections.locked });
+  }, [sections]);
   // Le canevas se ferme (autre vue, autre projet) : plus de repères.
-  useEffect(() => () => useStoryMarks.setState({ byId: NO_MARKS, numbers: NO_NUMBERS }), []);
+  useEffect(() => () => useStoryMarks.setState({ byId: NO_MARKS, numbers: NO_NUMBERS, locked: [] }), []);
 
   const edges = useMemo<Edge[]>(() => {
     if (!interactive) return [];
@@ -82,18 +82,21 @@ export function useStoryMap(): StoryMap | null {
           type: "floating",
           source: e.from,
           target: e.to,
-          label: [rules.before, e.label || m.defaultLabel, rules.after].filter(Boolean).join(" · "),
+          label: [e.hidden ? m.edgeHidden : "", rules.before, e.label || m.defaultLabel, rules.after].filter(Boolean).join(" · "),
           ariaLabel: fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }),
-          className: e.label ? "choice-edge" : "choice-edge is-unnamed",
-          markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "var(--accent)" },
+          className: `choice-edge${e.label ? "" : " is-unnamed"}${e.hidden ? " is-hidden" : ""}`,
+          markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: e.hidden ? "var(--muted)" : "var(--accent)" },
           // Choix soumis à une condition : flèche en pointillé.
-          style: { stroke: "var(--accent)", strokeWidth: 1.8, ...(e.cond ? { strokeDasharray: "6 4" } : {}) },
+          // Renvoi caché (lot 12) : flèche pointillée fine, à l'encre discrète.
+          style: e.hidden
+            ? { stroke: "var(--muted)", strokeWidth: 1.6, strokeDasharray: "2 5" }
+            : { stroke: "var(--accent)", strokeWidth: 1.8, ...(e.cond ? { strokeDasharray: "6 4" } : {}) },
           interactionWidth: 32,
           // Étiquette en pilule, posée loin des choix voisins (`labelPlaces`) ; son nom dit d'où à où va le choix.
           data: {
             choice: true,
             pill: true,
-            pillClass: e.label ? "" : "is-unnamed",
+            pillClass: `${e.label ? "" : "is-unnamed"}${e.hidden ? " is-hidden" : ""}`,
             pillTitle: fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }),
             offset: offsets.get(`${e.from}:${e.index}`) ?? 0,
             labelAt: places.get(`${e.from}:${e.index}`) ?? 0.5,

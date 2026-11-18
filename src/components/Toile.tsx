@@ -40,6 +40,7 @@ import { documentExtension, imageExtension } from "../media";
 import { TEXT_FILE_RE, clipFromText } from "../clip";
 import { attachCanvasWheel } from "../canvasWheel";
 import { setCanvasCenter } from "../canvasCenter";
+import { projectSections } from "../interactive/projectSections";
 import { useStoryMap } from "../interactive/useStoryMap";
 import { isChoiceEdgeId, readChoiceEdgeId } from "../interactive/storyMap";
 import { END_TARGET } from "../interactive/choices";
@@ -863,7 +864,14 @@ export function Toile() {
         <TargetPicker
           from={picking}
           title={story.scenes.find((sc) => sc.id === picking)?.title.trim() || t.interactive.map.untitled}
-          scenes={story.scenes.map((sc, i) => ({ ...sc, rank: i + 1 })).filter((sc) => sc.id !== picking)}
+          // Numéros du livre-jeu (lot 12), dans leur ordre : ceux qu'on lit sur les cartes.
+          scenes={(() => {
+            const numbers = projectSections(useCosmos.getState()).numbers;
+            return story.scenes
+              .map((sc, i) => ({ ...sc, rank: numbers[sc.id] ?? i + 1 }))
+              .filter((sc) => sc.id !== picking)
+              .sort((a, b) => a.rank - b.rank);
+          })()}
           onClose={() => setPicking(null)}
         />
       )}

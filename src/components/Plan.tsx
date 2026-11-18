@@ -6,17 +6,17 @@
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
 import { useInteractive } from "../interactive/useInteractive";
-import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { interactiveScenes } from "../interactive/scenes";
 import { choiceGraph } from "../interactive/choices";
 import { verifyStory } from "../interactive/verify";
 import { readFactLabels } from "../interactive/facts";
-import { numberSections } from "../interactive/gamebook";
 import { sceneMarks, scenesKey } from "../interactive/storyMap";
 import { openPlay } from "../interactive/playState";
+import { projectSections } from "../interactive/projectSections";
 import { FactsPanel } from "./ChoiceRules";
 import { projectFacts } from "../interactive/projectFacts";
 import type { Fact } from "../interactive/facts";
-import { MarksTags } from "./StoryChoices";
+import { MarksTags, RenumberButton, SectionNumber } from "./StoryChoices";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { MoreMenu } from "./MoreMenu";
@@ -79,15 +79,15 @@ export function Plan() {
   const metaKeep = useCosmos((s) => s.metaKeep);
   const storyScenes = interactive ? interactiveScenes(nodes, plan) : null;
   const storyKey = storyScenes ? scenesKey(storyScenes) : "";
+  // Numéros figés du livre-jeu (lot 12).
+  const sections = useCosmos((s) => (interactive ? projectSections(s) : null));
   const book = useMemo(() => {
     if (!storyScenes) return null;
-    const slugs = interactiveSlugs(nodes, plan);
-    const numbers = new Map(numberSections({ scenes: storyScenes, slugs, manuscript }).map((sec) => [sec.id, sec.n]));
     const graph = choiceGraph(manuscript, storyScenes);
     const marks = sceneMarks(storyScenes, graph, manuscript, verifyStory(storyScenes, manuscript, readFactLabels(metaKeep)));
-    return { numbers, marks };
+    return { numbers: new Map(Object.entries(sections?.numbers ?? {})), locked: new Set(sections?.locked ?? []), marks };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storyKey, manuscript, metaKeep]);
+  }, [storyKey, manuscript, metaKeep, sections]);
   // Plan libre d'un roman interactif : les scènes dans l'ordre d'impression, sans flèches ni glisser (l'ordre de la
   // liste ne compte que pour le départ, qu'on choisit par le menu ⋯).
   const bySection = interactive && free && !!book;
@@ -209,11 +209,7 @@ export function Plan() {
         // Déposer sur une scène rangée : juste avant elle. Sur une scène à placer : on sort du plan.
         {...dropOn(id, beat, beat === null ? undefined : index)}
       >
-        {bySection && (
-          <span className="plan-section-number" aria-label={fmt(t.interactive.plan.sectionAria, { n: book.numbers.get(id) ?? 0 })}>
-            {book.numbers.get(id) ?? "·"}
-          </span>
-        )}
+        {bySection && <SectionNumber id={id} n={book.numbers.get(id)} title={title} locked={book.locked.has(id)} start={!!book.marks.get(id)?.start} />}
         {beat !== null && !bySection && (
           <div className="sq-moves">
             <button type="button" className="icon-button" data-move="up" disabled={at <= 0} aria-label={fmt(p.moveUp, { title })} onClick={() => step(id, "up")}>
@@ -311,6 +307,11 @@ export function Plan() {
             { label: t.bible.seeOnCanvas, title: fmt(p.show, { title }), onSelect: () => revealCard(id) },
             bySection && beat !== null && !book.marks.get(id)?.start && { label: t.interactive.plan.makeStart, onSelect: () => place(id, beat, 0) },
             book && { label: t.interactive.play.openHere, onSelect: () => openPlay(id) },
+            bySection &&
+              !book.marks.get(id)?.start && {
+                label: book.locked.has(id) ? t.interactive.plan.release : t.interactive.plan.keep,
+                onSelect: () => useCosmos.getState().toggleSectionLock(id),
+              },
             !interactive && !!useCosmos.getState().nextMergeable(id) && { label: t.merge.menuShort, onSelect: () => useCosmos.getState().mergeWithNext(id) },
             { label: t.trash.remove, title: fmt(t.trash.removeAria, { title }), danger: true, onSelect: () => useCosmos.getState().deleteCard(id) },
           ]}
@@ -339,6 +340,7 @@ export function Plan() {
                   <button type="button" className="ghost-button" onClick={() => openPlay()}>
                     {t.interactive.play.open}
                   </button>
+                  {free && <RenumberButton />}
                   <span className="plan-facts">
                     <button type="button" className={`ghost-button${showFacts ? " is-on" : ""}`} aria-expanded={showFacts} onClick={() => setShowFacts((v) => !v)}>
                       {fmt(t.interactive.facts.button, { n: facts.length })}

@@ -84,6 +84,9 @@ import { interactiveOffered, isInteractiveMeta, showsInteractive } from "./inter
 import { END_TARGET, choicesAfterUndo, choicesIn, cleanLabel, editChoice, renameTargets, sceneSlugs, withChoices, type ChoiceLine } from "./interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { choiceGraph, choiceTree } from "./interactive/choices";
+import { projectSections } from "./interactive/projectSections";
+import { renumberSections, setSectionNumber, toggleSectionLock, withSections } from "./interactive/sections";
+import { numberSections } from "./interactive/gamebook";
 import { FACTS_KEY, cleanFactLabel, isFactName, newFactName, readFactLabels, storyFacts } from "./interactive/facts";
 import { IMAGE_EXT, iaImageSource, iaImagesOf, readIaImageSource, type GeneratedImage } from "./ai/imageGen";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, headingRenames, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
@@ -160,11 +163,18 @@ export interface CosmosState {
   /** Ajoute un choix de `from` vers une scène (ou `END`). */
   addChoiceTo: (from: string, to: string, label?: string) => void;
   /** Modifie ou retire (null) le choix de rang `index` de la scène. */
-  editChoiceAt: (from: string, index: number, next: { label: string; target: string; cond?: string; effects?: string[] } | null) => void;
+  editChoiceAt: (from: string, index: number, next: { label: string; target: string; cond?: string; effects?: string[]; hidden?: boolean } | null) => void;
   /** Roman interactif (lot 4) : nouveau fait au libellé donné ; rend son nom (variable Ink), ou null. */
   createFact: (label: string) => string | null;
   /** Libellé d'un fait (gardé dans `storyFacts` de cosmos.json, hors historique) ; null l'oublie. */
   setFactLabel: (name: string, label: string | null) => void;
+  /** Roman interactif, lot 12 : numéros des sections gardés dans cosmos.json (hors historique). */
+  freezeSections: () => void;
+  /** Donne un numéro précis à une section et le garde ; false si c'est refusé (départ, 1, numéro gardé ailleurs). */
+  setSectionNumber: (id: string, n: number) => boolean;
+  toggleSectionLock: (id: string) => void;
+  /** Refait le mélange des numéros (le départ au 1, les numéros gardés restent). */
+  renumberSections: () => void;
   /** Nouvelle scène après `from` (même case, même chapitre) et le choix qui y mène ; posée près de `at` sur le canevas. */
   addSceneAfter: (from: string, at?: { x: number; y: number }, label?: string) => string | null;
   /** Coupe le récit : un nouveau chapitre commence à cette scène. Rend son identifiant. */
@@ -2657,6 +2667,43 @@ export const useCosmos = create<CosmosState>((set, get) => {
       get().setFactLabel(name, clean);
       return name;
     },
+    freezeSections: () => {
+      const s = get();
+      if (s.screen !== "project" || !isInteractiveMeta(s.metaKeep)) return;
+      const next = withSections(s.metaKeep, projectSections(s));
+      if (next === s.metaKeep) return;
+      set({ metaKeep: next });
+      touch();
+    },
+    setSectionNumber: (id, n) => {
+      const s = get();
+      const start = interactiveScenes(s.nodes, s.plan)[0]?.id;
+      if (!start) return false;
+      const next = setSectionNumber(projectSections(s), start, id, n);
+      if (!next) return false;
+      const meta = withSections(s.metaKeep, next);
+      if (meta !== s.metaKeep) {
+        set({ metaKeep: meta });
+        touch();
+      }
+      return true;
+    },
+    toggleSectionLock: (id) => {
+      const s = get();
+      const meta = withSections(s.metaKeep, toggleSectionLock(projectSections(s), id));
+      if (meta === s.metaKeep) return;
+      set({ metaKeep: meta });
+      touch();
+    },
+    renumberSections: () => {
+      const s = get();
+      const scenes = interactiveScenes(s.nodes, s.plan);
+      const shuffle = numberSections({ scenes, slugs: interactiveSlugs(s.nodes, s.plan), manuscript: s.manuscript }).map((x) => x.id);
+      const meta = withSections(s.metaKeep, renumberSections(scenes.map((x) => x.id), projectSections(s), shuffle));
+      if (meta === s.metaKeep) return;
+      set({ metaKeep: meta });
+      touch();
+    },
     setFactLabel: (name, label) => {
       if (!isFactName(name)) return;
       const metaKeep = get().metaKeep;
@@ -4267,4 +4314,14 @@ useCosmos.subscribe((s, prev) => {
   if (!followSceneNames || s.nodes === prev.nodes || s.screen !== "project" || !isInteractiveMeta(s.metaKeep)) return;
   const renamed = renameTargets(s.manuscript, interactiveSlugs(prev.nodes, prev.plan), interactiveSlugs(s.nodes, s.plan));
   if (renamed !== s.manuscript) useCosmos.setState({ manuscript: renamed });
+});
+
+/**
+ * Roman interactif, lot 12 (#92) : les numéros des sections se figent. Une scène ajoutée, retirée ou devenue le
+ * départ : les numéros gardés dans cosmos.json suivent (sections.ts), hors historique.
+ */
+useCosmos.subscribe((s, prev) => {
+  if (!followSceneNames || s.screen !== "project" || !isInteractiveMeta(s.metaKeep)) return;
+  if (s.nodes === prev.nodes && s.plan === prev.plan && s.screen === prev.screen) return;
+  s.freezeSections();
 });

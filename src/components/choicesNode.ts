@@ -8,6 +8,7 @@ import { fmt, getT } from "../i18n";
 import { SCENE_MARK } from "../bookDoc";
 import { END_TARGET, cleanLabel, editChoice, parseChoices, resolveTarget, serializeChoices, type ChoiceLine } from "../interactive/choices";
 import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { projectSections } from "../interactive/projectSections";
 import { condFromValue, condValue, givenFact, otherEffects, withGiven, type Fact } from "../interactive/facts";
 import { projectFacts } from "../interactive/projectFacts";
 import { useCosmos } from "../store";
@@ -206,6 +207,7 @@ export const SceneChoices = Node.create({
       });
 
       let factsKey = "";
+      let sectionsKey = "";
       const render = () => {
         const t = getT().interactive.choices;
         head.textContent = t.title;
@@ -227,6 +229,8 @@ export const SceneChoices = Node.create({
         const { nodes, plan } = useCosmos.getState();
         const scenes = interactiveScenes(nodes, plan);
         const slugs = interactiveSlugs(nodes, plan);
+        const numbers = projectSections(useCosmos.getState()).numbers;
+        sectionsKey = JSON.stringify(numbers);
         const facts = projectFacts(useCosmos.getState());
         factsKey = facts.map((f) => `${f.name}:${f.label}:${f.kind}`).join("|");
         // Un champ en cours d'écriture n'est pas redessiné (le curseur y resterait perdu).
@@ -275,8 +279,11 @@ export const SceneChoices = Node.create({
           };
           const resolved = resolveTarget(line.target, slugs);
           const options = [
-            // Numérotées comme dans le volet des scènes : deux scènes au même titre restent distinctes.
-            ...scenes.map((s, i) => option(slugs.get(s.id)!, `${i + 1}. ${s.title.trim() || getT().interactive.map.untitled}`, resolved === s.id)),
+            // Numérotées comme dans le livre-jeu (lot 12), dans l'ordre des numéros : deux scènes au même titre restent distinctes.
+            ...scenes
+              .map((s, i) => ({ s, n: numbers[s.id] ?? i + 1 }))
+              .sort((a, b) => a.n - b.n)
+              .map(({ s, n: num }) => option(slugs.get(s.id)!, `${num}. ${s.title.trim() || getT().interactive.map.untitled}`, resolved === s.id)),
             option(END_TARGET, t.end, resolved === END_TARGET),
           ];
           if (resolved === null) options.unshift(option(line.target, fmt(t.missing, { name: line.target }), true));
@@ -307,7 +314,7 @@ export const SceneChoices = Node.create({
         // Un fait créé ou renommé ailleurs (autre scène, carte des choix) : les listes suivent.
         else if (s.metaKeep !== prev.metaKeep || s.manuscript !== prev.manuscript) {
           const key = projectFacts(s).map((f) => `${f.name}:${f.label}:${f.kind}`).join("|");
-          if (key !== factsKey) render();
+          if (key !== factsKey || JSON.stringify(projectSections(s).numbers) !== sectionsKey) render();
         }
       });
 
@@ -437,5 +444,18 @@ function choiceRules(line: ChoiceValue, n: number, facts: readonly Fact[], save:
     more.textContent = fmt(t.effects, { effects: others.join(", ") });
     box.append(more);
   }
+  // Renvoi caché (lot 12) : pas imprimé, le texte de la scène dit comment trouver la suite.
+  const hiddenLabel = document.createElement("label");
+  hiddenLabel.className = "choice-rule choice-hidden";
+  hiddenLabel.title = t.hiddenHint;
+  const hidden = document.createElement("input");
+  hidden.type = "checkbox";
+  hidden.checked = !!line.hidden;
+  hidden.setAttribute("aria-label", fmt(t.hiddenAria, { n: n + 1 }));
+  hidden.addEventListener("change", () => save({ ...line, hidden: hidden.checked || undefined }));
+  const hiddenText = document.createElement("span");
+  hiddenText.textContent = t.hidden;
+  hiddenLabel.append(hidden, hiddenText);
+  box.append(hiddenLabel);
   return box;
 }

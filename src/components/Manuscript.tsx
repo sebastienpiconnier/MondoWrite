@@ -10,6 +10,7 @@
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
 import { useInteractive } from "../interactive/useInteractive";
+import { projectSections } from "../interactive/projectSections";
 import { openPlay } from "../interactive/playState";
 import { interactiveSlugs } from "../interactive/scenes";
 import { dropContinueTo } from "../interactive/choices";
@@ -207,6 +208,7 @@ export function Manuscript() {
   const bookApi = useRef<BookApi | null>(null);
   /** « Insérer une image… » (#87) : au curseur du livre. */
   const interactive = useInteractive();
+  const sections = useCosmos((s) => (interactive ? projectSections(s) : null));
   const insertImage = () => {
     const ed = bookApi.current?.editor();
     if (ed) requestTextImage(ed);
@@ -560,7 +562,8 @@ export function Manuscript() {
     },
   };
   const story = order.filter((id) => !isPageKind(cards.find((c) => c.id === id)?.page));
-  const storyNumber = (id: string) => story.indexOf(id) + 1;
+  // Roman interactif (lot 12) : le numéro de la section dans le livre-jeu, celui des cartes et des choix.
+  const storyNumber = (id: string) => sections?.numbers[id] ?? story.indexOf(id) + 1;
   const pageLabel = (id: string) => {
     const kind = cards.find((c) => c.id === id)?.page;
     return isPageKind(kind) ? b.kinds[kind] : null;

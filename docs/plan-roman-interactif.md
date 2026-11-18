@@ -36,7 +36,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 9. Import | Twee 3 et Ink (fait) |
 | 10. Storylets | Option, à décider après retours |
 | 11. Canevas = carte des choix | Flèches de choix sur le canevas, Plan en « Sections du livre » (#91, fait) |
-| 12. Numéros figés | Numérotation figée, cadenas par section, renvois cachés (#92) |
+| 12. Numéros figés | Numérotation figée, cadenas par section, renvois cachés (#92) : fait |
 | 13. Double page | « Vérifier » et mélange : pas de suite révélée sur la même double page (#93) |
 | 14. Types de fin | Bonne fin, mauvaise fin (#94) |
 | 15. Parcours annoté | Mode Lecture enregistré et annoté, notes en commentaires (#95) |
@@ -318,6 +318,24 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
   livre-jeu sur chaque carte Scène, après son type ; arbre d'« Organiser » plus aéré (140 × 220 px).
 - **Reste** : vérifier sur iPad et iPhone (toucher une flèche, la tirer au doigt) ; un gros livre-jeu (300 à 400
   scènes) sur le canevas.
+
+## Lot 12 · Numéros figés et renvois cachés (fait sur la branche `roman-interactif`, #92)
+
+- **Numéros figés** (`interactive/sections.ts`, `projectSections.ts`) : chaque scène garde son numéro dans
+  cosmos.json (`sections`, par identifiant, gardé par `metaKeep`), écrit hors historique par un abonnement du store
+  (`freezeSections`) quand des scènes arrivent ou partent. Le premier mélange est celui d'avant (`numberSections`) ;
+  ensuite une nouvelle scène prend le plus petit numéro libre, une scène retirée laisse un trou (« Vérifier » :
+  `sectionGap`), le départ est toujours le 1 (l'ancien départ prend son numéro).
+- **Changer et garder un numéro** (Sections du livre) : le numéro est un bouton, puis un champ ; le numéro tapé
+  s'échange avec la section qui l'avait et se garde (`sectionLocks`, cadenas). Menu ⋯ : « Garder ce numéro »,
+  « Libérer ce numéro ». « Renuméroter » (confirmé sur place) refait le mélange sans trou, sauf départ et numéros gardés.
+- **Partout le même numéro** : cartes du canevas (avec le cadenas), Plan, repère des scènes et volet du Manuscrit,
+  listes des destinations, « Ajouter un choix vers… », livre-jeu (EPUB, livre broché).
+- **Renvoi caché** : `#hidden` en fin de ligne du bloc de choix (« Renvoi caché » dans le bandeau d'une flèche et
+  sous chaque choix du Manuscrit, `hidden` de `set_choices` par MCP). Jamais imprimé ni joué (Ink, page web) ; flèche
+  pointillée grise et pilule « caché » sur le canevas ; compte pour le chemin du lecteur. « Vérifier » : section visée
+  dont le numéro n'est pas gardé (`hiddenUnlocked`), renvoi absent de la lecture à l'écran (`hiddenNotPlayable`).
+- **Reste** : essayer une vraie énigme jusqu'au livre broché ; dire dans le guide comment écrire la consigne au lecteur.
 
 ## Décisions du 18 novembre 2026 (manuel de LibroGameCreator)
 

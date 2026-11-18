@@ -10,11 +10,13 @@ import { readFactLabels } from "./facts";
 import { gamebookBook, gamebookDoc } from "./gamebook";
 import type { BookDoc } from "../export/paperback";
 import { interactiveScenes, interactiveSlugs } from "./scenes";
+import { projectSections } from "./projectSections";
 
 /** Le livre-jeu du projet ouvert (document commun aux exports), ou null s'il n'y a pas encore de scène. */
 function projectGamebook(title: string, author: string) {
   const t = getT();
-  const { nodes, plan, manuscript, metaKeep } = useCosmos.getState();
+  const state = useCosmos.getState();
+  const { nodes, plan, manuscript, metaKeep } = state;
   const scenes = interactiveScenes(nodes, plan);
   if (scenes.length === 0) return null;
   return gamebookDoc({
@@ -26,6 +28,7 @@ function projectGamebook(title: string, author: string) {
     manuscript,
     factLabels: readFactLabels(metaKeep),
     texts: t.interactive.gamebook,
+    numbers: projectSections(state).numbers,
   }).doc;
 }
 

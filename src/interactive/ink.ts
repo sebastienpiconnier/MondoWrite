@@ -89,6 +89,8 @@ export function projectToInk(
     const choices = choicesIn(manuscript[s.id]);
     for (const line of choices) {
       if (line.kind === "raw") push(line.text, s.id);
+      // Renvoi caché (lot 12) : il ne se joue pas, le lecteur du livre trouve la suite par le texte.
+      else if (line.hidden) continue;
       else {
         // Choix « collant » (`+`) : comme dans un livre-jeu ou un lien de Twine, il reste proposé quand le lecteur
         // revient dans la scène (un `*` d'Ink disparaît une fois choisi).
@@ -102,7 +104,7 @@ export function projectToInk(
       }
     }
     // Sans choix ni renvoi écrit par l'auteur, la scène finit l'histoire.
-    if (!choices.some((l) => l.kind === "choice" || /^\s*->/.test(l.text))) push(`-> ${END_TARGET}`, s.id);
+    if (!choices.some((l) => (l.kind === "choice" && !l.hidden) || (l.kind === "raw" && /^\s*->/.test(l.text)))) push(`-> ${END_TARGET}`, s.id);
   }
   return { ink: `${out.join("\n")}\n`, lines, knots: slugs };
 }

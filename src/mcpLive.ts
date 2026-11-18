@@ -25,6 +25,7 @@ import { findCard } from "./mcpWrite";
 import type { Positioned } from "./book";
 import type { Plan } from "./plan";
 import { interactiveScenes } from "./interactive/scenes";
+import { projectSections } from "./interactive/projectSections";
 import { verifyKey, verifyStory } from "./interactive/verify";
 import { readFactLabels } from "./interactive/facts";
 
@@ -162,7 +163,8 @@ function projectStats(src: LiveSource): McpAnswer {
 function interactivePoints(src: LiveSource): Finding[] {
   if (!src.interactive || !src.nodes || !src.plan) return [];
   const scenes = interactiveScenes(src.nodes, src.plan);
-  return verifyStory(scenes, src.manuscript, readFactLabels(src.metaKeep)).map((p) => ({
+  const sections = projectSections({ nodes: src.nodes, plan: src.plan, manuscript: src.manuscript, metaKeep: src.metaKeep });
+  return verifyStory(scenes, src.manuscript, readFactLabels(src.metaKeep), sections).map((p) => ({
     key: verifyKey(p),
     rule: p.rule,
     at: -1,

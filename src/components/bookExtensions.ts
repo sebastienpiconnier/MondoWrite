@@ -14,16 +14,20 @@ import { QUIET_PAGES, isPageKind } from "../book";
 import { SCENE_MARK, sceneAt, sceneGroups } from "../bookDoc";
 import { showsInteractive } from "../interactive";
 import { interactiveScenes } from "../interactive/scenes";
+import { projectSections } from "../interactive/projectSections";
 import { useSettings } from "../settings";
 
-/** Roman interactif (#84) : « 2. Le puits », le rang et le titre de la scène, comme dans la liste des destinations
- *  des choix. Vide pour un roman ordinaire (rien ne change pour lui). */
+/** Roman interactif (#84) : « 12. Le puits », le numéro de la section dans le livre-jeu (figé, lot 12) et le titre
+ *  de la scène, comme dans la liste des destinations des choix. Vide pour un roman ordinaire (rien ne change pour lui). */
 function sceneLabel(id: string): string {
-  const { metaKeep, kind, nodes, plan } = useCosmos.getState();
+  const state = useCosmos.getState();
+  const { metaKeep, kind, nodes, plan } = state;
   if (kind === "scenario" || !showsInteractive(metaKeep, useSettings.getState().experimental)) return "";
   const scenes = interactiveScenes(nodes, plan);
   const at = scenes.findIndex((sc) => sc.id === id);
-  return at < 0 ? "" : `${at + 1}. ${scenes[at].title.trim() || getT().interactive.map.untitled}`;
+  if (at < 0) return "";
+  const n = projectSections(state).numbers[id] ?? at + 1;
+  return `${n}. ${scenes[at].title.trim() || getT().interactive.map.untitled}`;
 }
 
 /** Ce que le chapitrage demande à l'écran (la logique, qui touche au plan et aux cartes, vit dans Manuscript). */

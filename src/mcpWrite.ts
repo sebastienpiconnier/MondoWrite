@@ -554,7 +554,9 @@ export function choiceFromRequest(
     if (slugNames.has(e.name)) return { error: `« ${e.name} » est le nom d'une scène : un fait ou un compteur doit porter un autre nom.` };
     effects = [...(effects ?? []), effectSource(e)];
   }
-  return { line: { kind: "choice", label, target, ...(cond ? { cond } : {}), ...(effects ? { effects } : {}) } };
+  // Renvoi caché (lot 12) : pas imprimé, le texte de la scène dit comment trouver la suite.
+  const hidden = c.hidden === true;
+  return { line: { kind: "choice", label, target, ...(cond ? { cond } : {}), ...(effects ? { effects } : {}), ...(hidden ? { hidden: true } : {}) } };
 }
 
 /** Choix demandés par l'assistant (set_choices, create_scene) : lus et vérifiés, ou la première erreur. */

@@ -328,6 +328,7 @@ function interactivePart(s: McpSource, scenes: McpScene[]): { facts: McpFact[] }
         ...(target ? { to: target.n, target: target.title } : to === END_TARGET ? { target: "END", end: true } : { target: line.target, broken: true }),
         ...(cond ? { if: cond } : {}),
         ...(given ? { gives: labelOf(given) } : {}),
+        ...(line.hidden ? { hidden: true } : {}),
         ...(others.length ? { effects: others } : {}),
       });
     }

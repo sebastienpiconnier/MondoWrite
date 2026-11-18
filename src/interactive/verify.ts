@@ -7,8 +7,20 @@
 import { END_TARGET, choicesIn, resolveTarget, sceneSlugs, type SceneRef } from "./choices";
 import { factLabel } from "./facts";
 import { condPhrase, effectPhrase, parseCond, type Cond, type CondTexts, type EffectTexts } from "./conditions";
+import { sectionGaps } from "./sections";
 
-export type VerifyRule = "unreachableScene" | "brokenChoice" | "noEnding" | "lockedScene" | "factNeverGiven" | "factTooLate" | "implicitEnd" | "notPrinted";
+export type VerifyRule =
+  | "unreachableScene"
+  | "brokenChoice"
+  | "noEnding"
+  | "lockedScene"
+  | "factNeverGiven"
+  | "factTooLate"
+  | "implicitEnd"
+  | "notPrinted"
+  | "sectionGap"
+  | "hiddenUnlocked"
+  | "hiddenNotPlayable";
 
 export interface VerifyPoint {
   rule: VerifyRule;
@@ -21,7 +33,19 @@ export interface VerifyPoint {
 }
 
 /** Ordre d'affichage : ce qui empêche de lire d'abord. */
-export const VERIFY_ORDER: readonly VerifyRule[] = ["noEnding", "unreachableScene", "brokenChoice", "lockedScene", "factNeverGiven", "factTooLate", "implicitEnd", "notPrinted"];
+export const VERIFY_ORDER: readonly VerifyRule[] = [
+  "noEnding",
+  "unreachableScene",
+  "brokenChoice",
+  "lockedScene",
+  "factNeverGiven",
+  "factTooLate",
+  "implicitEnd",
+  "notPrinted",
+  "sectionGap",
+  "hiddenUnlocked",
+  "hiddenNotPlayable",
+];
 
 const DIVERT_RE = /^\s*->\s*([\p{L}\p{N}_]+)\s*$/u;
 const ASSIGN_RE = /^([\p{L}_][\p{L}\p{N}_]*)\s*(?:\+=|-=|=|\+\+|--)/u;
@@ -32,6 +56,7 @@ interface Exit {
   cond?: string;
   effects: string[];
   divert: boolean;
+  hidden?: boolean;
 }
 
 /** Sorties de chaque scène : ses choix et ses renvois. */
@@ -41,7 +66,8 @@ function exitsOf(scenes: readonly SceneRef[], manuscript: Readonly<Record<string
   for (const s of scenes) {
     const list: Exit[] = [];
     for (const line of choicesIn(manuscript[s.id])) {
-      if (line.kind === "choice") list.push({ to: resolveTarget(line.target, slugs), label: line.label, cond: line.cond, effects: line.effects ?? [], divert: false });
+      if (line.kind === "choice")
+        list.push({ to: resolveTarget(line.target, slugs), label: line.label, cond: line.cond, effects: line.effects ?? [], divert: false, ...(line.hidden ? { hidden: true } : {}) });
       else {
         const m = DIVERT_RE.exec(line.text);
         if (m) list.push({ to: resolveTarget(m[1], slugs), effects: [], divert: true });
@@ -69,7 +95,12 @@ function reachFrom(from: string, exits: ReadonlyMap<string, Exit[]>): Set<string
 /**
  * Points à regarder. `scenes` dans l'ordre du livre (la première est le départ), `labels` les libellés des faits.
  */
-export function verifyStory(scenes: readonly SceneRef[], manuscript: Readonly<Record<string, string>>, labels: Readonly<Record<string, string>> = {}): VerifyPoint[] {
+export function verifyStory(
+  scenes: readonly SceneRef[],
+  manuscript: Readonly<Record<string, string>>,
+  labels: Readonly<Record<string, string>> = {},
+  sections?: { numbers: Readonly<Record<string, number>>; locked: readonly string[] },
+): VerifyPoint[] {
   if (scenes.length === 0) return [];
   const exits = exitsOf(scenes, manuscript);
   const start = scenes[0].id;
@@ -132,6 +163,20 @@ export function verifyStory(scenes: readonly SceneRef[], manuscript: Readonly<Re
       const effectsOk = e.effects.every((x) => effectPhrase(x, PROBE_EFFECT, (n) => n) !== null);
       if (!condOk || !effectsOk) out.push({ rule: "notPrinted", scene: s.id, name: e.label?.trim() || "…", label: e.label?.trim() || "…" });
     }
+
+  // Numéros du livre (lot 12) : un numéro que plus aucune section ne porte laisse un trou dans le livre imprimé.
+  if (sections) for (const n of sectionGaps(sections.numbers)) out.push({ rule: "sectionGap", scene: null, name: String(n), label: String(n) });
+
+  // Renvois cachés (lot 12) : le lecteur calcule le numéro ; la section visée doit le garder. Ils ne se jouent pas
+  // dans la page web ni en Ink (une remarque par scène).
+  for (const s of scenes) {
+    const hidden = (exits.get(s.id) ?? []).filter((e) => e.hidden);
+    if (hidden.length === 0) continue;
+    for (const e of hidden)
+      if (sections && e.to && e.to !== END_TARGET && !sections.locked.includes(e.to) && e.to !== start)
+        out.push({ rule: "hiddenUnlocked", scene: s.id, name: e.label?.trim() || "…", label: e.label?.trim() || "…" });
+    out.push({ rule: "hiddenNotPlayable", scene: s.id });
+  }
 
   const rank = new Map(scenes.map((s, i) => [s.id, i]));
   return out.sort((a, b) => VERIFY_ORDER.indexOf(a.rule) - VERIFY_ORDER.indexOf(b.rule) || (rank.get(a.scene ?? "") ?? 0) - (rank.get(b.scene ?? "") ?? 0));

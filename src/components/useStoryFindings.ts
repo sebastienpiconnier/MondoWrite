@@ -22,6 +22,7 @@ import { useInteractive } from "../interactive/useInteractive";
 import { interactiveScenes } from "../interactive/scenes";
 import { verifyKey, verifyStory } from "../interactive/verify";
 import { readFactLabels } from "../interactive/facts";
+import { projectSections } from "../interactive/projectSections";
 
 export function useStoryFindings(): Finding[] {
   const kind = useCosmos((s) => s.kind);
@@ -44,7 +45,7 @@ export function useStoryFindings(): Finding[] {
     if (!interactive) return [];
     const scenes = interactiveScenes(nodes, plan);
     const titles = new Map(scenes.map((sc) => [sc.id, sc.title.trim() || untitled]));
-    return verifyStory(scenes, manuscript, readFactLabels(metaKeep)).map((p) => ({
+    return verifyStory(scenes, manuscript, readFactLabels(metaKeep), projectSections({ nodes, plan, manuscript, metaKeep })).map((p) => ({
       key: `verify:${verifyKey(p)}`,
       rule: p.rule,
       at: -1,

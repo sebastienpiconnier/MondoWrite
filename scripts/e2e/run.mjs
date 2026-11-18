@@ -2410,6 +2410,26 @@ const scenarios = [
       await until(async () => (await page.locator(".plan-section-number").count()) === 4, "les sections du livre ne sont pas quatre");
       const numbers = await page.locator(".plan-section-number").allTextContents();
       assert(numbers.join(",") === "1,2,3,4", `sections pas dans l'ordre de leurs numéros : ${numbers.join(",")}`);
+      // Lot 12 : les numéros sont figés dans cosmos.json ; on en change un (il est gardé), puis on renumérote.
+      await h.saved((f) => Object.keys(JSON.parse(f["cosmos.json"] ?? "{}").sections ?? {}).length === 4, "les numéros des sections ne sont pas gardés dans cosmos.json");
+      // Le titre d'une scène est un champ : on retrouve sa ligne par sa valeur.
+      const puitsId = await page.locator(".plan-scene").evaluateAll((els) => els.find((e) => [...e.querySelectorAll("input, textarea")].some((f) => f.value === "Le puits"))?.dataset.scene);
+      const puitsRow = page.locator(`.plan-scene[data-scene="${puitsId}"]`);
+      const numberButton = puitsRow.locator("button.plan-section-number");
+      const numberName = (await numberButton.getAttribute("aria-label")) ?? "";
+      assert(/^Numéro de «\s?Le puits/.test(numberName), `nom du bouton du numéro : ${JSON.stringify(numberName)}`);
+      await numberButton.click();
+      const numberField = puitsRow.locator("input.plan-section-number");
+      await numberField.fill("2");
+      await numberField.press("Enter");
+      await h.saved((f) => {
+        const meta = JSON.parse(f["cosmos.json"] ?? "{}");
+        return new Set(Object.values(meta.sections ?? {})).size === 4 && (meta.sectionLocks ?? []).length === 1;
+      }, "le numéro tapé n'est pas gardé");
+      await until(async () => (await puitsRow.locator(".plan-section-number").textContent())?.trim() === "2", "Le puits n'a pas pris le numéro 2");
+      await page.getByRole("button", { name: "Renuméroter", exact: true }).click();
+      await page.getByRole("group", { name: "Refaire le mélange des numéros ?" }).getByRole("button", { name: "Renuméroter" }).click();
+      await until(async () => (await puitsRow.locator(".plan-section-number").textContent())?.trim() === "2", "renuméroter a changé un numéro gardé");
       await page.getByRole("button", { name: "Lire l’histoire" }).click();
       const play = page.locator(".play-panel");
       await until(() => play.getByText("Il fait nuit dans la cour.").isVisible(), "la lecture ne commence pas par la scène de départ");

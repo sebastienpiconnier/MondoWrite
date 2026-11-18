@@ -101,6 +101,10 @@ export function ChoiceRules({ line, n, onChange }: { line: ChoiceValue; n: numbe
       />
       <FactSelect label={c.gives} aria={fmt(c.givesAria, { n })} value={given} options={giveOptions} onPick={(v) => onChange({ ...line, effects: withGiven(line.effects, v || null) })} />
       {others.length > 0 && <code className="choice-effects">{fmt(c.effects, { effects: others.join(", ") })}</code>}
+      <label className="choice-rule choice-hidden" title={c.hiddenHint}>
+        <input type="checkbox" checked={!!line.hidden} aria-label={fmt(c.hiddenAria, { n })} onChange={(e) => onChange({ ...line, hidden: e.target.checked || undefined })} />
+        <span>{c.hidden}</span>
+      </label>
     </div>
   );
 }
