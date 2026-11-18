@@ -262,6 +262,17 @@ describe("livre broché d'un livre-jeu (sections à la suite)", () => {
     expect(storyPages).toBeLessThan(12);
   });
 
+  it("dit sur quelles pages tombe chaque section (lot 13)", () => {
+    const short = layoutPaperback(gamebook(12, 1), options, strings, metrics);
+    const spans = short.sections!;
+    expect(Object.keys(spans).map(Number).sort((x, y) => x - y)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    // Plusieurs sections courtes sur une page : la 1 et la 2 commencent sur la même.
+    expect(spans[2][0]).toBe(spans[1][0]);
+    const long = layoutPaperback(gamebook(3, 14), options, strings, metrics).sections!;
+    expect(long[1][1]).toBeGreaterThan(long[1][0]);
+    expect(long[2][0]).toBeGreaterThanOrEqual(long[1][1]);
+  });
+
   it("rappelle en haut de page les numéros des sections qu'on y lit", () => {
     const layout = layoutPaperback(gamebook(12, 1), options, strings, metrics);
     const heads = layout.pages.map((p) => p.texts.find((t) => t.y < INCH && t.font === "bold")?.text).filter(Boolean);

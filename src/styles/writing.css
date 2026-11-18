@@ -294,6 +294,8 @@ input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); ou
 @media (any-hover: hover) { button.plan-section-number:hover { background: var(--hover); } }
 @media (pointer: coarse) { button.plan-section-number, input.plan-section-number { min-height: 44px; min-width: 44px; } }
 .section-lock { flex-shrink: 0; }
+.plan-renumber-result { flex-basis: 100%; font-size: 0.875rem; color: var(--ink-2); }
+.plan-renumber-result.is-warn { color: var(--danger); }
 .plan-renumber-ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.875rem; color: var(--ink-2); }
 .choice-hidden { gap: 0.35rem; }
 .choice-hidden input { min-height: 0; width: 1rem; height: 1rem; }

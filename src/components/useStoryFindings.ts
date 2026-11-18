@@ -2,6 +2,7 @@
 // avec les statistiques des personnages (mêmes comptes que la fenêtre Statistiques), la longueur du pilote et
 // les scènes qui nomment chaque objet. Rien n'est enregistré.
 
+import { numbersKey, usePaperbackSpreads } from "../interactive/spreads";
 import { useMemo } from "react";
 import { currentScript, useCosmos } from "../store";
 import { useSettings } from "../settings";
@@ -41,11 +42,15 @@ export function useStoryFindings(): Finding[] {
   const metaKeep = useCosmos((s) => s.metaKeep);
   // Roman interactif (lot 5) : le chemin du lecteur.
   const untitled = useT().interactive.map.untitled;
+  const spreads = usePaperbackSpreads();
   const verified = useMemo<Finding[]>(() => {
     if (!interactive) return [];
     const scenes = interactiveScenes(nodes, plan);
     const titles = new Map(scenes.map((sc) => [sc.id, sc.title.trim() || untitled]));
-    return verifyStory(scenes, manuscript, readFactLabels(metaKeep), projectSections({ nodes, plan, manuscript, metaKeep })).map((p) => ({
+    const sections = projectSections({ nodes, plan, manuscript, metaKeep });
+    // Pages du dernier livre broché composé, si les numéros n'ont pas changé depuis (lot 13).
+    const spans = spreads.key === numbersKey(sections.numbers) ? spreads.spans : null;
+    return verifyStory(scenes, manuscript, readFactLabels(metaKeep), sections, spans).map((p) => ({
       key: `verify:${verifyKey(p)}`,
       rule: p.rule,
       at: -1,
@@ -54,7 +59,7 @@ export function useStoryFindings(): Finding[] {
       text: titles.get(p.scene ?? "") ?? "",
       ...(p.label ? { names: [p.label] } : {}),
     }));
-  }, [interactive, nodes, plan, manuscript, metaKeep, untitled]);
+  }, [interactive, nodes, plan, manuscript, metaKeep, untitled, spreads]);
   const story = useMemo(() => {
     const cards = nodes.map((n) => n.data);
     const order = kind === "scenario" ? [] : bookOrder(nodes, plan);

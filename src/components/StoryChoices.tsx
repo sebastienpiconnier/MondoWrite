@@ -225,11 +225,20 @@ export function SectionNumber({ id, n, title, locked, start }: { id: string; n: 
 export function RenumberButton() {
   const p = useT().interactive.plan;
   const [asking, setAsking] = useState(false);
+  // Ce que le mélange a donné (lot 13) : dit une fois, jusqu'au prochain clic.
+  const [result, setResult] = useState<number | null>(null);
   if (!asking)
     return (
-      <button type="button" className="ghost-button" title={p.renumberHint} onClick={() => setAsking(true)}>
-        {p.renumber}
-      </button>
+      <>
+        <button type="button" className="ghost-button" title={p.renumberHint} onClick={() => (setAsking(true), setResult(null))}>
+          {p.renumber}
+        </button>
+        {result !== null && (
+          <span className={`plan-renumber-result${result > 0 ? " is-warn" : ""}`} role="status">
+            {result > 0 ? fmt(p.renumberLeft, { n: result }) : p.renumberDone}
+          </span>
+        )}
+      </>
     );
   return (
     <span className="plan-renumber-ask" role="group" aria-label={p.renumberAsk}>
@@ -239,7 +248,7 @@ export function RenumberButton() {
         className="ghost-button"
         autoFocus
         onClick={() => {
-          useCosmos.getState().renumberSections();
+          setResult(useCosmos.getState().renumberSections());
           setAsking(false);
         }}
       >

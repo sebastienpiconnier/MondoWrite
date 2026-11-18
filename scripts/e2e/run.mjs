@@ -2435,6 +2435,7 @@ const scenarios = [
       await page.getByRole("button", { name: "Renuméroter", exact: true }).click();
       await page.getByRole("group", { name: "Refaire le mélange des numéros ?" }).getByRole("button", { name: "Renuméroter" }).click();
       await until(async () => (await puitsRow.locator(".plan-section-number").textContent())?.trim() === "2", "renuméroter a changé un numéro gardé");
+      await until(() => page.locator(".plan-renumber-result").isVisible(), "renuméroter ne dit pas ce que le mélange a donné");
       await page.getByRole("button", { name: "Lire l’histoire" }).click();
       const play = page.locator(".play-panel");
       await until(() => play.getByText("Il fait nuit dans la cour.").isVisible(), "la lecture ne commence pas par la scène de départ");
@@ -2490,6 +2491,7 @@ const scenarios = [
       await page.locator(".export-panel").getByRole("button", { name: "Livre broché (KDP)…" }).click();
       const interior = page.getByRole("button", { name: "Enregistrer l’intérieur (PDF)" });
       await until(() => interior.isEnabled(), "le livre broché du livre-jeu ne se compose pas", 20_000);
+      await until(() => page.getByText(/^Livre-jeu\u00a0: (aucun choix|\d+ choix montrent)/).isVisible(), "le livre broché ne dit pas si une suite est visible sur la même double page");
       const bookDownload = page.waitForEvent("download", { timeout: 30_000 });
       await interior.click();
       const bookFile = fs.readFileSync(await (await bookDownload).path());

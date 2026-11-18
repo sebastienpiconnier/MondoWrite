@@ -44,7 +44,7 @@ describe("numéros figés", () => {
 
   it("renuméroter garde le départ et les numéros gardés, comble les trous", () => {
     const state = { numbers: { a: 1, b: 5, c: 3, d: 7 }, locked: ["b"] };
-    const next = renumberSections(["a", "b", "c", "d"], state, ["a", "d", "c", "b"]);
+    const { state: next } = renumberSections(["a", "b", "c", "d"], state, new Map(), 7);
     expect(next.numbers.a).toBe(1);
     expect(next.numbers.b).toBe(5);
     expect(new Set([next.numbers.c, next.numbers.d])).toEqual(new Set([2, 3]));

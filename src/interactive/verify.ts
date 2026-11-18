@@ -8,6 +8,7 @@ import { END_TARGET, choicesIn, isEndingScene, resolveTarget, sceneEnding, scene
 import { factLabel } from "./facts";
 import { condPhrase, effectPhrase, parseCond, type Cond, type CondTexts, type EffectTexts } from "./conditions";
 import { sectionGaps } from "./sections";
+import { sameSpread } from "./spreads";
 
 export type VerifyRule =
   | "unreachableScene"
@@ -21,7 +22,8 @@ export type VerifyRule =
   | "notPrinted"
   | "sectionGap"
   | "hiddenUnlocked"
-  | "hiddenNotPlayable";
+  | "hiddenNotPlayable"
+  | "sameSpread";
 
 export interface VerifyPoint {
   rule: VerifyRule;
@@ -47,6 +49,7 @@ export const VERIFY_ORDER: readonly VerifyRule[] = [
   "sectionGap",
   "hiddenUnlocked",
   "hiddenNotPlayable",
+  "sameSpread",
 ];
 
 const DIVERT_RE = /^\s*->\s*([\p{L}\p{N}_]+)(?:\s+#(?:good|bad))?\s*$/u;
@@ -102,6 +105,8 @@ export function verifyStory(
   manuscript: Readonly<Record<string, string>>,
   labels: Readonly<Record<string, string>> = {},
   sections?: { numbers: Readonly<Record<string, number>>; locked: readonly string[] },
+  /** Pages de chaque section dans le dernier livre broché composé avec ces numéros (lot 13). */
+  spans?: Readonly<Record<number, readonly [number, number]>> | null,
 ): VerifyPoint[] {
   if (scenes.length === 0) return [];
   const exits = exitsOf(scenes, manuscript);
@@ -181,6 +186,18 @@ export function verifyStory(
       if (sections && e.to && e.to !== END_TARGET && !sections.locked.includes(e.to) && e.to !== start)
         out.push({ rule: "hiddenUnlocked", scene: s.id, name: e.label?.trim() || "…", label: e.label?.trim() || "…" });
     out.push({ rule: "hiddenNotPlayable", scene: s.id });
+  }
+
+  // Double page du livre broché (lot 13) : la suite d'un choix ne doit pas être sous les yeux du lecteur.
+  if (sections && spans) {
+    const byNumber = new Map(Object.entries(sections.numbers).map(([id, n]) => [n, id]));
+    const links = scenes.flatMap((s) =>
+      (exits.get(s.id) ?? []).flatMap((e) => (e.to && e.to !== END_TARGET && sections.numbers[s.id] && sections.numbers[e.to] ? [{ from: sections.numbers[s.id], to: sections.numbers[e.to] }] : [])),
+    );
+    for (const { from, to } of sameSpread(spans, links)) {
+      const pair = `${from} \u2192 ${to}`;
+      out.push({ rule: "sameSpread", scene: byNumber.get(from) ?? null, name: pair, label: pair });
+    }
   }
 
   const rank = new Map(scenes.map((s, i) => [s.id, i]));

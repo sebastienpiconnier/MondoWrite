@@ -130,6 +130,8 @@ export interface BookLayout {
   pages: PrintPage[];
   /** Sommaire et signets du PDF. */
   entries: BookEntry[];
+  /** Livre-jeu (lot 13) : pages (rang dans `pages`, de la première à la dernière) de chaque section, par numéro. */
+  sections?: Record<number, [number, number]>;
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -835,7 +837,20 @@ function compose(book: BookDoc, options: PrintOptions, strings: BookStrings, met
     }
   });
 
-  return { width: g.width, height: g.height, gutter, pages, entries };
+  // Livre-jeu : les pages de chaque section, pour savoir ce que le lecteur voit sur une double page (lot 13).
+  let spans: Record<number, [number, number]> | undefined;
+  if (marks.length > 0) {
+    spans = {};
+    let lastStory = marks[marks.length - 1].page;
+    while (lastStory + 1 < pages.length && pages[lastStory + 1].role === "story") lastStory++;
+    marks.forEach((m, k) => {
+      const next = marks[k + 1];
+      const end = !next ? lastStory : next.page > m.page && startsWithSection(pages[next.page], next.n) ? next.page - 1 : next.page;
+      spans![m.n] = [m.page, Math.max(m.page, end)];
+    });
+  }
+
+  return { width: g.width, height: g.height, gutter, pages, entries, ...(spans ? { sections: spans } : {}) };
 }
 
 /** La page commence-t-elle par le numéro de la section `n` (sinon, elle commence par la suite de la précédente) ? */

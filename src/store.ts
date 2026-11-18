@@ -86,7 +86,7 @@ import { interactiveScenes, interactiveSlugs } from "./interactive/scenes";
 import { choiceGraph, choiceTree } from "./interactive/choices";
 import { projectSections } from "./interactive/projectSections";
 import { renumberSections, setSectionNumber, toggleSectionLock, withSections } from "./interactive/sections";
-import { numberSections } from "./interactive/gamebook";
+import { seedOf, targetsOf } from "./interactive/gamebook";
 import { FACTS_KEY, cleanFactLabel, isFactName, newFactName, readFactLabels, storyFacts } from "./interactive/facts";
 import { IMAGE_EXT, iaImageSource, iaImagesOf, readIaImageSource, type GeneratedImage } from "./ai/imageGen";
 import { CARD_WIDTH, CardNode, FRAME_PADDING, FRAME_SIZE, FrameNode, SaveStatus, View, boxes, firstScreenplay, frameBox, lockProps, newId, openProject, planScenes, headingRenames, titlesFromHeadings, toFrameNode, toNode, toProject, withHtml } from "./projectState";
@@ -176,7 +176,8 @@ export interface CosmosState {
   setSectionNumber: (id: string, n: number) => boolean;
   toggleSectionLock: (id: string) => void;
   /** Refait le mélange des numéros (le départ au 1, les numéros gardés restent). */
-  renumberSections: () => void;
+  /** Refait le mélange des numéros (lot 13) ; rend le nombre de sections reliées restées voisines. */
+  renumberSections: () => number;
   /** Nouvelle scène après `from` (même case, même chapitre) et le choix qui y mène ; posée près de `at` sur le canevas. */
   addSceneAfter: (from: string, at?: { x: number; y: number }, label?: string) => string | null;
   /** Coupe le récit : un nouveau chapitre commence à cette scène. Rend son identifiant. */
@@ -2705,11 +2706,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
     renumberSections: () => {
       const s = get();
       const scenes = interactiveScenes(s.nodes, s.plan);
-      const shuffle = numberSections({ scenes, slugs: interactiveSlugs(s.nodes, s.plan), manuscript: s.manuscript }).map((x) => x.id);
-      const meta = withSections(s.metaKeep, renumberSections(scenes.map((x) => x.id), projectSections(s), shuffle));
-      if (meta === s.metaKeep) return;
-      set({ metaKeep: meta });
-      touch();
+      const ids = scenes.map((x) => x.id);
+      const links = targetsOf({ scenes, slugs: interactiveSlugs(s.nodes, s.plan), manuscript: s.manuscript });
+      const { state, neighbours } = renumberSections(ids, projectSections(s), links, seedOf(ids));
+      const meta = withSections(s.metaKeep, state);
+      if (meta !== s.metaKeep) {
+        set({ metaKeep: meta });
+        touch();
+      }
+      return neighbours;
     },
     setFactLabel: (name, label) => {
       if (!isFactName(name)) return;

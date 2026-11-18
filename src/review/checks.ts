@@ -33,6 +33,7 @@ export const INTERACTIVE_RULES: readonly RuleKey[] = [
   "sectionGap",
   "hiddenUnlocked",
   "hiddenNotPlayable",
+  "sameSpread",
 ];
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */

@@ -16,6 +16,10 @@ import { fileName, type ExportedFile } from "../screenplay/export";
 import type { PreparedPaperback } from "../export/paperbackPdf";
 import { FullCoverSection } from "./FullCoverSection";
 import { useInteractive } from "../interactive/useInteractive";
+import { numbersKey, sameSpread, usePaperbackSpreads } from "../interactive/spreads";
+import { projectSections } from "../interactive/projectSections";
+import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
+import { targetsOf } from "../interactive/gamebook";
 
 type State = { kind: "busy" } | { kind: "empty" } | { kind: "failed" } | { kind: "ready"; prepared: PreparedPaperback };
 
@@ -62,7 +66,10 @@ export function PaperbackPanel() {
       }
       try {
         const prepared = await (await loadPaperback()).preparePaperback(doc, print, k.book);
-        if (id === run.current) setState({ kind: "ready", prepared });
+        if (id !== run.current) return;
+        setState({ kind: "ready", prepared });
+        // Livre-jeu (lot 13) : les pages de chaque section, lues par « Vérifier » tant que les numéros ne changent pas.
+        if (interactive) usePaperbackSpreads.setState({ key: numbersKey(projectSections(useCosmos.getState()).numbers), spans: prepared.layout.sections ?? null });
       } catch (err) {
         console.error(err);
         if (id === run.current) setState({ kind: "failed" });
@@ -169,6 +176,7 @@ export function PaperbackPanel() {
         {state.kind === "ready" && state.prepared.tooFew && <span className="paperback-warning"> {fmt(k.tooFew, { n: KDP_MIN_PAGES })}</span>}
         {state.kind === "ready" && state.prepared.tooMany && <span className="paperback-warning"> {fmt(k.tooMany, { n: KDP_MAX_PAGES[print.paper] })}</span>}
       </p>
+      {state.kind === "ready" && interactive && <SpreadNote />}
       {message && (
         <p className="replace-count" role="status">
           {message}
@@ -191,5 +199,25 @@ export function PaperbackPanel() {
         </div>
       </div>
     </form>
+  );
+}
+
+/** Livre-jeu (lot 13) : les choix dont la suite est sur la même double page, dans le livre qu'on vient de composer. */
+function SpreadNote() {
+  const k = useT().paperback;
+  const spans = usePaperbackSpreads((s) => s.spans);
+  const nodes = useCosmos((s) => s.nodes);
+  const plan = useCosmos((s) => s.plan);
+  const manuscript = useCosmos((s) => s.manuscript);
+  if (!spans) return null;
+  const numbers = projectSections(useCosmos.getState()).numbers;
+  const scenes = interactiveScenes(nodes, plan);
+  const targets = targetsOf({ scenes, slugs: interactiveSlugs(nodes, plan), manuscript });
+  const links = scenes.flatMap((sc) => (targets.get(sc.id) ?? []).flatMap((to) => (numbers[sc.id] && numbers[to] ? [{ from: numbers[sc.id], to: numbers[to] }] : [])));
+  const found = sameSpread(spans, links);
+  return (
+    <p className={`replace-count${found.length ? " paperback-warning" : ""}`} role="status">
+      {found.length === 0 ? k.spreadsOk : fmt(k.spreadsSome, { n: found.length, list: found.slice(0, 6).map((f) => `${f.from} \u2192 ${f.to}`).join(", ") + (found.length > 6 ? ", …" : "") })}
+    </p>
   );
 }

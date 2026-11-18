@@ -37,7 +37,7 @@ de novembre 2026. Ce plan n'en garde que les décisions et le détail de chaque 
 | 10. Storylets | Écarté (18 novembre 2026) : s'éloigne du livre papier |
 | 11. Canevas = carte des choix | Flèches de choix sur le canevas, Plan en « Sections du livre » (#91, fait) |
 | 12. Numéros figés | Numérotation figée, cadenas par section, renvois cachés (#92) : fait |
-| 13. Double page | « Vérifier » et mélange : pas de suite révélée sur la même double page (#93) |
+| 13. Double page | « Vérifier » et mélange : pas de suite révélée sur la même double page (#93) : fait |
 | 14. Types de fin | Bonne fin, mauvaise fin (#94) : fait |
 | 15. Parcours annoté | Mode Lecture enregistré et annoté, notes en commentaires (#95) |
 
@@ -336,6 +336,19 @@ Un assistant IA a écrit par MCP une histoire de 30 scènes sur le début du « 
   pointillée grise et pilule « caché » sur le canevas ; compte pour le chemin du lecteur. « Vérifier » : section visée
   dont le numéro n'est pas gardé (`hiddenUnlocked`), renvoi absent de la lecture à l'écran (`hiddenNotPlayable`).
 - **Reste** : essayer une vraie énigme jusqu'au livre broché ; dire dans le guide comment écrire la consigne au lecteur.
+
+## Lot 13 · Pas de suite sur la même double page (fait sur la branche `roman-interactif`, #93)
+
+- **Mélange** (`interactive/mix.ts`, `mixSections`) : recherche locale à graine fixe. On part d'un mélange, puis on
+  échange deux sections tant que cela ne coûte rien ; un lien entre deux numéros voisins coûte 9, à deux d'écart 3,
+  à trois 1. Au plus 60 000 échanges (quelques millisecondes pour 400 sections). Départ et numéros gardés ne
+  bougent pas. Sert au premier numérotage (`numberSections`) et à « Renuméroter », qui dit ensuite si des sections
+  reliées sont restées voisines (« il y a trop de liens pour ce nombre de sections »).
+- **Double page** (`interactive/spreads.ts`) : le livre broché composé donne les pages de chaque section
+  (`BookLayout.sections`) ; une page seule ouvre le livre, puis les pages 2-3, 4-5… se voient ensemble. Un choix dont
+  la suite occupe une double page de sa section est signalé dans la fenêtre « Livre broché » et dans « Vérifier »
+  (`sameSpread`), d'après la dernière mise en page de la session tant que les numéros n'ont pas changé
+  (`usePaperbackSpreads`, jamais enregistré) : le résultat dépend du format, du papier et des pages ajoutées.
 
 ## Lot 14 · Bonne fin et mauvaise fin (fait sur la branche `roman-interactif`, #94)
 

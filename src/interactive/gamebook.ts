@@ -10,6 +10,7 @@ import { factLabel } from "./facts";
 import { condPhrase, effectPhrase } from "./conditions";
 import type { BookDoc, BookSection } from "../export/paperback";
 import { sectionList } from "./sections";
+import { mixSections } from "./mix";
 
 /** Textes du livre, dans la langue de l'interface (gabarits à variables `{…}`). */
 export interface GamebookTexts {
@@ -79,20 +80,8 @@ export function seedOf(ids: readonly string[]): number {
   return h;
 }
 
-/** Générateur pseudo-aléatoire (mulberry32), pour un mélange reproductible. */
-function random(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 /** Destinations de chaque scène (choix et renvois écrits à la main), sans la fin. */
-function targetsOf(input: Pick<GamebookInput, "scenes" | "slugs" | "manuscript">): Map<string, string[]> {
+export function targetsOf(input: Pick<GamebookInput, "scenes" | "slugs" | "manuscript">): Map<string, string[]> {
   const out = new Map<string, string[]>();
   for (const s of input.scenes) {
     const to: string[] = [];
@@ -106,35 +95,15 @@ function targetsOf(input: Pick<GamebookInput, "scenes" | "slugs" | "manuscript">
   return out;
 }
 
-/** Choix qui mènent à la section suivante : un livre-jeu évite qu'on lise la réponse juste en dessous. */
-const adjacent = (order: readonly string[], targets: ReadonlyMap<string, string[]>) =>
-  order.reduce((n, id, i) => n + (targets.get(id) ?? []).filter((to) => order[i + 1] === to).length, 0);
-
 /**
- * Numéros des sections : la première scène est le 1, les autres mélangées. Parmi quelques mélanges tirés de la
- * graine, celui où le moins de choix mènent à la section qui suit.
+ * Numéros des sections : la première scène est le 1, les autres mélangées de façon qu'aucune section reliée ne soit
+ * voisine d'une autre, si c'est possible (lot 13, `mixSections`).
  */
-export function numberSections(input: Pick<GamebookInput, "scenes" | "slugs" | "manuscript">, tries = 24): Section[] {
-  const [first, ...rest] = input.scenes.map((s) => s.id);
-  if (!first) return [];
-  const targets = targetsOf(input);
-  const rand = random(seedOf([first, ...rest]));
-  let best: string[] = [first, ...rest];
-  let bestScore = Infinity;
-  for (let k = 0; k < Math.max(1, tries) && bestScore > 0; k++) {
-    const mixed = [...rest];
-    for (let i = mixed.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
-    }
-    const order = [first, ...mixed];
-    const score = adjacent(order, targets);
-    if (score < bestScore) {
-      best = order;
-      bestScore = score;
-    }
-  }
-  return best.map((id, i) => ({ id, n: i + 1 }));
+export function numberSections(input: Pick<GamebookInput, "scenes" | "slugs" | "manuscript">): Section[] {
+  const ids = input.scenes.map((s) => s.id);
+  if (!ids[0]) return [];
+  const { numbers } = mixSections(ids, targetsOf(input), { [ids[0]]: 1 }, seedOf(ids));
+  return ids.map((id) => ({ id, n: numbers[id] })).sort((a, b) => a.n - b.n);
 }
 
 const fill = (template: string, vars: Record<string, string>) => template.replace(/\{(\w+)\}/g, (all, k: string) => vars[k] ?? all);

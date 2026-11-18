@@ -6,6 +6,8 @@
 // sien libre (« Vérifier » signale le trou). « Renuméroter » refait le mélange, sauf pour les scènes dont le numéro
 // est gardé (`sectionLocks`). Le départ est toujours le 1.
 
+import { mixSections } from "./mix";
+
 /** Clés de cosmos.json : jamais traduites (contrat de format). */
 export const SECTIONS_KEY = "sections";
 export const SECTION_LOCKS_KEY = "sectionLocks";
@@ -128,25 +130,23 @@ export function toggleSectionLock(state: SectionState, id: string): SectionState
 
 /**
  * Renumérote : le départ au 1, les scènes gardées à leur numéro, les autres mélangées sur les numéros restants de 1
- * à N (le livre n'a plus de trou). `order` est le mélange proposé pour ces autres scènes (gamebook.ts).
+ * à N (le livre n'a plus de trou), sans sections reliées voisines si possible (`neighbours` : liens qui restent).
  */
-export function renumberSections(ids: readonly string[], state: SectionState, order: readonly string[]): SectionState {
-  if (ids.length === 0) return { numbers: {}, locked: [] };
+export function renumberSections(
+  ids: readonly string[],
+  state: SectionState,
+  links: ReadonlyMap<string, readonly string[]>,
+  seed: number,
+): { state: SectionState; neighbours: number } {
+  if (ids.length === 0) return { state: { numbers: {}, locked: [] }, neighbours: 0 };
   const start = ids[0];
   const present = new Set(ids);
-  const numbers: Record<string, number> = { [start]: 1 };
+  const fixed: Record<string, number> = { [start]: 1 };
   const locked = state.locked.filter((id) => present.has(id) && id !== start && state.numbers[id] !== undefined && state.numbers[id] !== 1);
-  for (const id of locked) numbers[id] = state.numbers[id];
-  const taken = new Set(Object.values(numbers));
-  const rest = order.filter((id) => present.has(id) && numbers[id] === undefined);
-  for (const id of ids) if (numbers[id] === undefined && !rest.includes(id)) rest.push(id);
-  let n = 1;
-  for (const id of rest) {
-    while (taken.has(n)) n++;
-    numbers[id] = n;
-    taken.add(n);
-  }
-  return { numbers, locked };
+  for (const id of locked) fixed[id] = state.numbers[id];
+  // Lot 13 : le mélange cherche un ordre sans sections reliées voisines ; départ et cadenas ne bougent pas.
+  const { numbers, neighbours } = mixSections(ids, links, fixed, seed);
+  return { state: { numbers, locked }, neighbours };
 }
 
 /** Sections dans l'ordre de leurs numéros. */
