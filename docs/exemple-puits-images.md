@@ -1,6 +1,6 @@
 # Le Puits : images de l'exemple
 
-> **Statut : prompts prêts, images à générer par l'auteur (novembre 2026).**
+> **Statut : images générées et posées dans l'exemple (18 novembre 2026).**
 
 Images de l'exemple intégré « Le Puits » (roman interactif). Elles servent au livre broché et à l'EPUB : dessin à
 l'encre noire, sans gris ni couleur, pour une impression nette en noir et blanc.

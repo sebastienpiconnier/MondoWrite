@@ -52,6 +52,15 @@ describe.each(["fr", "en"])("exemple « Le Puits » (%s)", async (lang) => {
     expect(counts.bad).toBe(3);
   });
 
+  it("cite seulement des images qu'il livre", async () => {
+    const { puitsMedia } = await import("../interactive/exampleMedia");
+    const shipped = new Set(puitsMedia().map(([name]) => name));
+    const cited = new Set<string>();
+    for (const text of Object.values(example.files)) for (const m of text.matchAll(/(?:\.\.\/medias\/|^image: |"visuel": ")([\w-]+\.jpg)/gm)) cited.add(m[1]);
+    expect(cited.size).toBe(10);
+    for (const name of cited) expect(shipped.has(name)).toBe(true);
+  });
+
   it("est tout entier dans sa langue", () => {
     const meta = JSON.parse(example.files["cosmos.json"]);
     expect(meta.title).toBe(lang === "fr" ? "Le puits" : "The Well");

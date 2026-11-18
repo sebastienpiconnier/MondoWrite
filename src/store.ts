@@ -3293,6 +3293,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
         return;
       }
       await storage.write(example.files, []);
+      // Les gravures, avant l'ouverture : scènes et fiches les trouvent aussitôt dans medias/. Un échec (quota du
+      // navigateur) laisse seulement l'exemple sans images.
+      try {
+        const { puitsMedia } = await import("./interactive/exampleMedia");
+        for (const [name, data] of puitsMedia()) await storage.writeMedia(name, data);
+      } catch (err) {
+        // Le navigateur (démonstration) garde les images dans localStorage, limité à quelques Mo : les premières seulement.
+        console.warn(err);
+      }
       await get().load();
       if (get().screen !== "project") return;
       set({ view: "toile" });

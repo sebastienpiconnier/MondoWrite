@@ -2396,6 +2396,14 @@ const scenarios = [
       await page.getByRole("button", { name: "Suivant", exact: true }).click();
       await page.getByRole("heading", { name: "Les choix se lisent en fin de scène" }).waitFor();
       await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").interactive === true && !Object.values(f).some((v) => v.includes("data-ia")));
+      // Les gravures sont dans medias/ : la première scène s'ouvre sur la sienne, et la Bible a sa couverture.
+      await page.getByRole("button", { name: "Fermer la visite" }).click();
+      await h.view(4);
+      await until(async () => (await page.locator(".ms-page img").count()) > 0 && (await page.locator(".ms-page img").first().evaluate((img) => img.naturalWidth > 0)), "les images du Puits ne s'affichent pas");
+      await page.screenshot({ path: "scripts/e2e/captures/puits-manuscrit.png" });
+      await h.view(3);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: "scripts/e2e/captures/puits-bible.png" });
     },
   },
   {

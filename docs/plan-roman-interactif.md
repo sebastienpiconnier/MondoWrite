@@ -387,7 +387,7 @@ voix volée, La maison mauvaises ; L'échange et Le nom sans type). Ouvert sur l
 visite ordinaire dans tout roman interactif.
 
 - [x] Données, chargement, bouton de la page des projets, visite, tests (Vitest et e2e)
-- [ ] Images (prompts dans `docs/exemple-puits-images.md`, à générer par l'auteur), placées dans les scènes
+- [x] Images : dix gravures (`src/assets/examples/puits/`, JPEG en niveaux de gris sauf la couverture, 5,3 Mo chargés seulement à la création de l'exemple, `exampleMedia.ts`), posées par `scripts/examples/puits-images.mjs` dans les scènes (trois places du livre broché), sur dix fiches de la Bible et en couverture
 - [x] Version anglaise « The Well » (`scripts/examples/puits-en/`, `build-puits-en.mjs` : textes, titres, faits et destinations en anglais ; proposée dans toute langue autre que le français). Reste : relecture par l'auteur
 - [ ] Chapitre « Roman interactif » du guide (fr, en, es) avec des captures du Puits
 

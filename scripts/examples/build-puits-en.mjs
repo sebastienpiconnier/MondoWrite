@@ -11,6 +11,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { withImages } from "./puits-images.mjs";
 
 const src = path.join("scripts", "examples", "puits-en");
 const fr = JSON.parse(fs.readFileSync(path.join("src", "assets", "examples", "puits.fr.json"), "utf8"));
@@ -55,6 +56,7 @@ for (const link of cosmos.links ?? []) {
   link.label = meta.links[link.label];
 }
 files["cosmos.json"] = `${JSON.stringify(cosmos, null, 2)}\n`;
+Object.assign(files, withImages(files, "en"));
 
 const out = path.join("src", "assets", "examples", "puits.en.json");
 fs.writeFileSync(out, `${JSON.stringify({ title: meta.title, files })}\n`);

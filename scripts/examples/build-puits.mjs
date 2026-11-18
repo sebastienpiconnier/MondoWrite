@@ -11,6 +11,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { withImages } from "./puits-images.mjs";
 
 const [dir, lang = "fr"] = process.argv.slice(2);
 if (!dir) {
@@ -85,6 +86,7 @@ delete meta.progress;
 if (meta.pitch?.visuel) delete meta.pitch.visuel;
 if (meta.pitch && Object.keys(meta.pitch).length === 0) delete meta.pitch;
 files["cosmos.json"] = `${JSON.stringify(meta, null, 2)}\n`;
+Object.assign(files, withImages(files, lang));
 
 const left = Object.values(files).filter((t) => t.includes("data-ia")).length;
 if (left) throw new Error(`${left} fichier(s) gardent une marque de l'IA`);
