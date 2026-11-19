@@ -62,6 +62,7 @@ const HYPHEN_PATTERNS = {
   "en-us": () => import("hyphen/en-us"),
   "en-gb": () => import("hyphen/en-gb"),
   es: () => import("hyphen/es"),
+  ca: () => import("./hyphenCA")
 } as const;
 
 /** Césure de la langue du livre (français, anglais, espagnol) ; aucune pour une langue dont les motifs ne sont pas livrés. */
