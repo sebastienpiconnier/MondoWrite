@@ -11,6 +11,7 @@ import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
 import { projectSections } from "../interactive/projectSections";
 import { condFromValue, condValue, givenFact, otherEffects, withGiven, type Fact } from "../interactive/facts";
 import { projectFacts } from "../interactive/projectFacts";
+import { condWords, readableCond } from "../interactive/conditions";
 import { useCosmos } from "../store";
 
 declare module "@tiptap/react" {
@@ -413,7 +414,7 @@ function choiceRules(line: ChoiceValue, n: number, facts: readonly Fact[], save:
   only.setAttribute("aria-label", fmt(t.onlyAria, { n: n + 1 }));
   const cv = condValue(line.cond);
   const condOptions = [option("", t.always, cv === "")];
-  if (cv === "custom") condOptions.push(option("custom", fmt(t.custom, { cond: line.cond ?? "" }), true));
+  if (cv === "custom") condOptions.push(option("custom", fmt(t.custom, { cond: readableCond(line.cond, facts, condWords(t)) }), true));
   for (const f of bools) condOptions.push(option(`has:${f.name}`, f.label, cv === `has:${f.name}`), option(`not:${f.name}`, fmt(t.notFact, { fact: f.label }), cv === `not:${f.name}`));
   // Un fait demandé qui n'est plus dans la liste (compteur, nom inconnu) reste choisi.
   if (cv && cv !== "custom" && !condOptions.some((o) => o.selected)) condOptions.push(option(cv, line.cond ?? "", true));

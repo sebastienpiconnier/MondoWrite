@@ -4,7 +4,7 @@
 // nombre, `and`, `or`, `not` et parenthèses. Le reste n'est pas une erreur pour l'app (Ink le lit), seulement une
 // condition que le livre imprimé ne sait pas écrire. Fonctions pures, testées.
 
-import { isFactName } from "./facts";
+import { isFactName, type Fact } from "./facts";
 
 export type CmpOp = "==" | "!=" | "<" | "<=" | ">" | ">=";
 
@@ -94,6 +94,50 @@ export function parseCond(src: string | undefined): Cond | null {
 
   const cond = or();
   return cond && i === tokens.length ? cond : null;
+}
+
+/** Mots d'une condition dite en bref : `et`, `ou`, et la négation d'un fait (« pas : {fact} »). */
+export interface CondWords {
+  and: string;
+  or: string;
+  not: string;
+}
+
+const SHORT_OPS: Record<CmpOp, string> = { "==": "=", "!=": "≠", "<": "<", "<=": "≤", ">": ">", ">=": "≥" };
+
+/**
+ * Condition dite en bref avec les libellés des faits, pour l'étiquette d'une flèche et le réglage « Seulement si » :
+ * `not nom_donne and flamme > 0` → « pas : nom donné et flamme > 0 ». Null si la condition ne se lit pas (on montre
+ * alors le texte écrit).
+ */
+export function condShort(src: string | undefined, label: (name: string) => string, words: CondWords): string | null {
+  const cond = parseCond(src);
+  if (!cond) return null;
+  const say = (c: Cond, nested: boolean): string => {
+    switch (c.k) {
+      case "name":
+        return label(c.name);
+      case "not":
+        return words.not.replace("{fact}", say(c.a, true));
+      case "cmp":
+        if (typeof c.value === "boolean") return (c.op === "==") === c.value ? label(c.name) : words.not.replace("{fact}", label(c.name));
+        return `${label(c.name)} ${SHORT_OPS[c.op]} ${c.value}`;
+      default: {
+        const text = c.list.map((x) => say(x, true)).join(` ${c.k === "and" ? words.and : words.or} `);
+        return nested ? `(${text})` : text;
+      }
+    }
+  };
+  return say(cond, false);
+}
+
+/** Mots d'une condition dite en bref, tirés des textes des choix. */
+export const condWords = (c: { condAnd: string; condOr: string; notFact: string }): CondWords => ({ and: c.condAnd, or: c.condOr, not: c.notFact });
+
+/** Condition écrite à la main (ou par l'assistant), dite avec les libellés des faits ; sinon telle qu'écrite. */
+export function readableCond(cond: string | undefined, facts: readonly Fact[], words: CondWords): string {
+  const labelOf = (name: string) => facts.find((f) => f.name === name)?.label ?? name.replace(/_+/g, " ");
+  return condShort(cond, labelOf, words) ?? cond ?? "";
 }
 
 /** Noms lus dans une condition (faits, compteurs, scènes). */

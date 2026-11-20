@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { condIdentifiers, condPhrase, effectPhrase, parseCond, parseEffect } from "../interactive/conditions";
+import { condIdentifiers, condPhrase, condShort, effectPhrase, parseCond, parseEffect, readableCond } from "../interactive/conditions";
 import { verifyStory } from "../interactive/verify";
 import { getT } from "../i18n";
 import { fr } from "../i18n/fr";
@@ -92,5 +92,21 @@ describe("canevas d'un roman interactif en arbre", () => {
     expect(positions.get("a")!.x).toBe(60);
     expect(positions.get("b")!.x).toBe(0);
     expect(positions.get("c")!.x).toBe(120);
+  });
+});
+
+describe("condition dite en bref (étiquettes du canevas)", () => {
+  const words = { and: "et", or: "ou", not: "pas : {fact}" };
+  const labels: Record<string, string> = { nom_donne: "nom donné", ourdas: "connaît Ourdas", flamme: "flamme" };
+  const label = (n: string) => labels[n] ?? n;
+  it("dit la condition avec les libellés des faits", () => {
+    expect(condShort("not nom_donne and ourdas and reconnu and flamme > 0", label, words)).toBe("pas : nom donné et connaît Ourdas et reconnu et flamme > 0");
+    expect(condShort("ourdas or (flamme >= 2 and not nom_donne)", label, words)).toBe("connaît Ourdas ou (flamme ≥ 2 et pas : nom donné)");
+    expect(condShort("ourdas == false", label, words)).toBe("pas : connaît Ourdas");
+    expect(condShort("visit_count(x) > 2", label, words)).toBeNull();
+  });
+  it("retombe sur le texte écrit quand la condition ne se lit pas", () => {
+    expect(readableCond("not nom_donne and reconnu", [], words)).toBe("pas : nom donne et reconnu");
+    expect(readableCond("RANDOM(1, 6) > 3", [], words)).toBe("RANDOM(1, 6) > 3");
   });
 });

@@ -14,6 +14,7 @@ import { verifyStory } from "./verify";
 import { choiceEdgeId, labelPlaces, marksKey, parallelOffsets, sceneMarks, scenesKey } from "./storyMap";
 import { projectSections } from "./projectSections";
 import { ruleSummary } from "../components/ChoiceRules";
+import { condWords, readableCond } from "./conditions";
 import { projectFacts } from "./projectFacts";
 import { readFactLabels, type Fact } from "./facts";
 
@@ -76,13 +77,16 @@ export function useStoryMap(): StoryMap | null {
     return drawn
       .map((e) => {
         // Un choix soumis à un fait, ou qui en donne un, le dit sur sa flèche.
-        const rules = ruleSummary(e, facts, { ifFact: m.edgeIf, ifNot: m.edgeIfNot, gives: m.edgeGives });
+        const rules = ruleSummary(e, facts, { ifFact: m.edgeIf, ifNot: m.edgeIfNot, ifMany: m.edgeIfMany, gives: m.edgeGives, cond: condWords(t.interactive.choices) });
+        // Le texte du choix d'abord (l'étiquette est coupée à 180 px : c'est lui qui distingue deux flèches), puis la
+        // condition et le fait donné ; l'infobulle donne le tout.
+        const pillText = [e.label || m.defaultLabel, e.hidden ? m.edgeHidden : "", rules.before, rules.after].filter(Boolean).join(" · ");
         return {
           id: choiceEdgeId(e.from, e.index),
           type: "floating",
           source: e.from,
           target: e.to,
-          label: [e.hidden ? m.edgeHidden : "", rules.before, e.label || m.defaultLabel, rules.after].filter(Boolean).join(" · "),
+          label: pillText,
           ariaLabel: fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }),
           className: `choice-edge${e.label ? "" : " is-unnamed"}${e.hidden ? " is-hidden" : ""}`,
           markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: e.hidden ? "var(--muted)" : "var(--accent)" },
@@ -97,7 +101,7 @@ export function useStoryMap(): StoryMap | null {
             choice: true,
             pill: true,
             pillClass: `${e.label ? "" : "is-unnamed"}${e.hidden ? " is-hidden" : ""}`,
-            pillTitle: fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }),
+            pillTitle: [fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }), e.cond ? fmt(m.edgeIf, { fact: readableCond(e.cond, facts, condWords(t.interactive.choices)) }) : ""].filter(Boolean).join(" · "),
             offset: offsets.get(`${e.from}:${e.index}`) ?? 0,
             labelAt: places.get(`${e.from}:${e.index}`) ?? 0.5,
           },
