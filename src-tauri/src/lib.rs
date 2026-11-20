@@ -2,6 +2,8 @@
 mod apple_fm;
 
 /// Clés de l'auteur dans le trousseau du système (commandes secret_*, #30).
+#[cfg(desktop)]
+mod chatgpt;
 mod secrets;
 mod fonts;
 
@@ -379,6 +381,25 @@ pub fn run() {
       cloud_restore,
       allow_scriv,
       open_web_url,
+      #[cfg(desktop)]
+      chatgpt::chatgpt_status,
+      #[cfg(desktop)]
+      chatgpt::chatgpt_connect,
+      #[cfg(desktop)]
+      chatgpt::chatgpt_disconnect,
+      #[cfg(desktop)]
+      chatgpt::codex_usage::codex_usage,
+      #[cfg(desktop)]
+      chatgpt::writing::chatgpt_usage,
+      #[cfg(desktop)]
+      chatgpt::writing::chatgpt_models,
+      #[cfg(desktop)]
+      chatgpt::writing::chatgpt_prepare,
+      #[cfg(desktop)]
+      chatgpt::writing::chatgpt_cancel,
+      #[cfg(desktop)]
+      chatgpt::writing::chatgpt_complete,
+
       apple_fm::fm_availability,
       apple_fm::fm_complete,
       apple_fm::fm_cancel,

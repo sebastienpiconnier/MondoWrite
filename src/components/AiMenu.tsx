@@ -1,3 +1,4 @@
+import { ChatGPTUsage } from "./ChatGPTUsage";
 // Bouton « IA » de la barre du haut, présent seulement si l'auteur a branché un service dans les Réglages.
 // Trois actions, qui proposent sans rien changer d'elles-mêmes : « Ranger les idées » (un type pour les
 // idées en vrac), « Vérifier la cohérence » (contradictions possibles, sous forme de questions) et « Ranger
@@ -177,6 +178,7 @@ export function AiMenu() {
       </button>
       {open && (
         <div className="settings-panel ai-panel" id={panelId} role="group" aria-label={t.button}>
+          {config.provider === "chatgpt" && aiSettings.planReady && <ChatGPTUsage menuCard />}
           <div className="eyebrow">{fmt(t.with, { provider: t.providers[config.provider] })}</div>
           <button type="button" className="ghost-button" disabled={busy} onClick={() => void run("tidy")}>
             {t.tidy}

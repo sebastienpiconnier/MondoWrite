@@ -43,6 +43,8 @@ export function readLearned(raw: unknown): LearnedHint[] {
  * Réglage de l'appareil : une clé d'API ne va jamais dans un projet.
  */
 export interface AiSettings {
+  planReady?: boolean;
+  thinking?: { model: string; effort: string };
   provider: AiProvider | null;
   keys: Partial<Record<AiProvider, string>>;
   models: Partial<Record<AiProvider, string>>;
@@ -57,19 +59,21 @@ const NO_AI: AiSettings = { provider: null, keys: {}, models: {}, urls: {}, embe
 
 function readAi(raw: unknown): AiSettings {
   if (!raw || typeof raw !== "object") return NO_AI;
-  const { provider, keys, models, urls, embedModels, imageModels } = raw as Record<string, unknown>;
+  const { provider, keys, models, urls, embedModels, imageModels, thinking } = raw as Record<string, unknown>;
   const strings = (value: unknown) => {
     const out: Partial<Record<AiProvider, string>> = {};
     if (value && typeof value === "object") for (const p of AI_PROVIDERS) if (typeof (value as Record<string, unknown>)[p] === "string") out[p] = (value as Record<string, string>)[p];
     return out;
   };
-  return { provider: isAiProvider(provider) ? provider : null, keys: strings(keys), models: strings(models), urls: strings(urls), embedModels: strings(embedModels), imageModels: strings(imageModels) };
+  const savedThinking = thinking && typeof thinking === "object" && "model" in thinking && typeof thinking.model === "string" && "effort" in thinking && typeof thinking.effort === "string" ? {model: thinking.model, effort: thinking.effort} : undefined;
+  return { thinking: savedThinking, provider: isAiProvider(provider) ? provider : null, keys: strings(keys), models: strings(models), urls: strings(urls), embedModels: strings(embedModels), imageModels: strings(imageModels) };
 }
 
 /** Réglages du service choisi, prêts pour une requête ; null si l'IA est désactivée. */
 export function aiConfig(ai: AiSettings): AiConfig | null {
   const p = ai.provider;
   if (!p) return null;
+  if (p === "chatgpt") return { provider: p, planReady: ai.planReady, effort: ai.thinking && ai.thinking.model === ai.models[p] ? ai.thinking.effort : undefined, key: "", url: "", model: ai.models[p] ?? "" };
   return { provider: p, key: ai.keys[p] ?? "", model: ai.models[p] ?? PROVIDERS[p].model, url: ai.urls[p] ?? "" };
 }
 
@@ -392,7 +396,8 @@ export function initSettings() {
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;
     try {
-      const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
+      const { planReady: _runtimeOnly, ...savedAi } = ai;
+      const stored = keysElsewhere ? { ai: { ...savedAi, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai: savedAi, photos };
       localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
     } catch {
       /* réglage non mémorisé, sans gravité */
