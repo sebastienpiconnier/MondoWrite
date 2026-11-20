@@ -28,6 +28,6 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
    l'import Scrivener
 2. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
 3. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
-4. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`) ;
-   reste #96 import Twine : variables et macros / Twine import: variables and macros
+4. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`),
+   import de la logique de Twine (#96) dans la 1.41.0
 5. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
