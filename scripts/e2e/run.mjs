@@ -2416,6 +2416,9 @@ const scenarios = [
       const pills = page.locator(".edge-pill");
       await until(async () => (await pills.count()) === 3, "les trois choix n'ont pas leur pilule");
       await page.waitForTimeout(300);
+      // Tout le canevas à l'écran.
+      await page.locator(".react-flow__controls-fitview").click();
+      await page.waitForTimeout(500);
       // Chaque pilule est sous le pointeur à sa place (aucune carte ne la couvre) et ouvre le bandeau de son choix.
       for (let i = 0; i < 3; i++) {
         const pill = pills.nth(i);

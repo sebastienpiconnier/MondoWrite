@@ -3753,6 +3753,7 @@ export const en: Messages = {
       writeNone: "Write this scene",
       loading: "Getting the story ready…",
       failed: "The story does not compile.",
+      runtime: "The reading stopped here: {error}",
       problems: "The story can’t be read yet: fix these points, then open the reading again.",
       openScene: "Open the scene",
       end: "The end.",

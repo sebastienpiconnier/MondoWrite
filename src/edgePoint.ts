@@ -34,8 +34,8 @@ export interface Box {
   h: number;
 }
 
-/** Places essayées, dans l'ordre, pour une étiquette qu'une carte recouvre à sa place voulue. */
-const TRIES = [0.5, 0.35, 0.65, 0.22, 0.78, 0.12, 0.88];
+/** Places essayées pour une étiquette qu'une carte recouvre à sa place voulue : la plus proche d'abord. */
+const TRIES = Array.from({ length: 17 }, (_, k) => 0.1 + k * 0.05);
 
 /**
  * Place d'une étiquette le long de la courbe où elle ne tombe sur aucune carte (`obstacles`), la plus proche de la
@@ -51,13 +51,25 @@ export function freeLabelAt(
   size: { w: number; h: number },
   obstacles: readonly Box[],
   margin = 6,
+  /** Obstacles qu'on évite seulement s'il y a la place (pilules voisines) : à défaut, une place hors des seules cartes. */
+  soft: readonly Box[] = [],
 ): number {
-  const clear = (t: number) => {
+  const clearOf = (boxes: readonly Box[]) => (t: number) => {
     const p = bezierPoint(a, as, b, bs, t);
     const x = p.x - size.w / 2 - margin, y = p.y - size.h / 2 - margin, w = size.w + 2 * margin, h = size.h + 2 * margin;
-    return !obstacles.some((o) => x < o.x + o.w && o.x < x + w && y < o.y + o.h && o.y < y + h);
+    return !boxes.some((o) => x < o.x + o.w && o.x < x + w && y < o.y + o.h && o.y < y + h);
   };
-  if (clear(preferred)) return preferred;
-  const tries = [...TRIES].sort((u, v) => Math.abs(u - preferred) - Math.abs(v - preferred));
-  return tries.find(clear) ?? preferred;
+  const tries = [preferred, ...[...TRIES].sort((u, v) => Math.abs(u - preferred) - Math.abs(v - preferred))];
+  const all = clearOf([...obstacles, ...soft]);
+  const cards = clearOf(obstacles);
+  return tries.find(all) ?? tries.find(cards) ?? preferred;
+}
+
+/** La courbe passe-t-elle sur une des cartes (`obstacles`) ? Points pris tous les 5 % du chemin, bouts exclus. */
+export function crossesBoxes(a: { x: number; y: number }, as: Side, b: { x: number; y: number }, bs: Side, obstacles: readonly Box[]): boolean {
+  for (let k = 1; k < 20; k++) {
+    const p = bezierPoint(a, as, b, bs, k / 20);
+    if (obstacles.some((o) => p.x > o.x && p.x < o.x + o.w && p.y > o.y && p.y < o.y + o.h)) return true;
+  }
+  return false;
 }

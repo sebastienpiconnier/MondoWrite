@@ -245,6 +245,8 @@
   /* Au-dessus des cartes : une flèche qui passe derrière une carte garde une pilule qu'on peut toucher. */
   z-index: 1;
 }
+/* Trait d'une flèche de choix qui passe derrière une autre carte, redessiné par-dessus, estompé. */
+.edge-over-card { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; opacity: 0.45; z-index: 1; }
 .edge-pill.is-unnamed { color: var(--muted); font-style: italic; border-style: dashed; }
 .edge-pill.is-hidden { border-style: dotted; border-color: var(--muted); }
 .edge-pill.is-selected { background: var(--accent); color: var(--surface); font-style: normal; }

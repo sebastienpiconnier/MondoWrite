@@ -70,7 +70,12 @@ export function useStoryMap(): StoryMap | null {
 
   const edges = useMemo<Edge[]>(() => {
     if (!interactive) return [];
-    const titleOf = (id: string) => scenes.find((s) => s.id === id)?.title.trim() || m.untitled;
+    // Le numéro de section avant le titre : deux scènes au même titre (« Nouvelle scène ») restent distinctes à l'oreille.
+    const titleOf = (id: string) => {
+      const title = scenes.find((s) => s.id === id)?.title.trim() || m.untitled;
+      const n = sections?.numbers[id];
+      return n ? `${n}. ${title}` : title;
+    };
     const drawn = graph.filter((e): e is ChoiceEdge & { to: string } => !!e.to && e.to !== END_TARGET && e.to !== e.from);
     const offsets = parallelOffsets(drawn);
     const places = labelPlaces(drawn);
@@ -109,7 +114,7 @@ export function useStoryMap(): StoryMap | null {
       });
     // Les textes suivent la langue : `t` change avec elle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, graph, scenes, facts, t]);
+  }, [interactive, graph, scenes, facts, sections, t]);
 
   return interactive ? { scenes, graph, edges } : null;
 }

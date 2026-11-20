@@ -73,3 +73,29 @@ describe("texte Ink du projet", () => {
     }
   });
 });
+
+describe("scène dont tous les choix demandent un fait", () => {
+  it("finit l'histoire quand aucun n'est rempli, au lieu de casser la lecture (deux choix vers la même scène)", () => {
+    const sc = [
+      { id: "s1", title: "La cour" },
+      { id: "s2", title: "Le puits" },
+      { id: "s3", title: "La lettre" },
+    ];
+    const ms = {
+      // Deux choix rejoignent « Le puits » : seul le premier donne la clé.
+      s1: `<p>Cour.</p>${choicesHtml("* [Prendre la clé] -> le_puits\n  ~ cle = true\n* [Aller au puits] -> le_puits")}`,
+      s2: `<p>Puits.</p>${choicesHtml("* { cle } [Ouvrir le coffre] -> la_lettre")}`,
+      s3: "<p>Lettre.</p>",
+    };
+    const src = projectToInk(sc, sceneSlugs(sc), ms);
+    expect(src.ink).toContain("+ -> END");
+    for (const [pick, next] of [[0, ["Ouvrir le coffre"]], [1, []]] as const) {
+      const { story, read } = play(src.ink);
+      read();
+      story.ChooseChoiceIndex(pick);
+      expect(read().map((l) => l.text)).toEqual(["Puits."]);
+      expect(story.currentChoices.map((c) => c.text)).toEqual(next);
+      expect(story.canContinue).toBe(false);
+    }
+  });
+});

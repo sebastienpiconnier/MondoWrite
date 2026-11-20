@@ -84,6 +84,7 @@ export function PlayDialog() {
     [facts],
   );
   const endRef = useRef<HTMLDivElement>(null);
+  const runtimeErrors = useRef<string[]>([]);
 
   /** Passages de chaque scène (nombre de visites), pour savoir où l'on est même dans une scène sans texte. */
   const visits = useCallback(
@@ -143,6 +144,8 @@ export function PlayDialog() {
       try {
         const compiled = compiler.Compile();
         if (!alive) return;
+        // Une erreur d'Ink pendant la lecture ne doit jamais rendre un choix inerte : elle est dite au lecteur.
+        compiled.onError = (msg) => runtimeErrors.current.push(msg);
         setStory(compiled);
         start(compiled);
       } catch {
@@ -162,8 +165,15 @@ export function PlayDialog() {
   const choose = (index: number, text: string) => {
     if (!story) return;
     history.current.push({ state: story.state.ToJson(), passages: passages.length });
-    story.ChooseChoiceIndex(index);
-    advance(story, text || t.interactive.map.defaultLabel);
+    runtimeErrors.current = [];
+    try {
+      story.ChooseChoiceIndex(index);
+      advance(story, text || t.interactive.map.defaultLabel);
+    } catch (e) {
+      runtimeErrors.current.push(e instanceof Error ? e.message : String(e));
+    }
+    const error = runtimeErrors.current[0];
+    if (error) setMessage(fmt(p.runtime, { error: error.replace(/^.*?(RUNTIME ERROR:\s*)?('[^']*'\s*line \d+:\s*)?/, "") }));
   };
   const back = () => {
     const last = history.current.pop();

@@ -3811,6 +3811,7 @@ export const fr = {
       writeNone: "Écrire cette scène",
       loading: "Préparation de l’histoire…",
       failed: "L’histoire ne se compile pas.",
+      runtime: "La lecture s’est arrêtée ici : {error}",
       problems: "L’histoire ne peut pas encore se lire : corrige ces points, puis rouvre la lecture.",
       openScene: "Ouvrir la scène",
       end: "Fin de l’histoire.",
