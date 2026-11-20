@@ -1,8 +1,8 @@
 // Fil "flottant" : il part du bord de la carte le plus proche de l'autre carte,
 // au lieu d'un point fixe. Les cartes peuvent bouger, le fil suit naturellement.
 
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, Position, useInternalNode, type EdgeProps, type InternalNode } from "@xyflow/react";
-import { bezierPoint, type Side } from "../edgePoint";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, Position, useInternalNode, useStore, type EdgeProps, type InternalNode, type ReactFlowState } from "@xyflow/react";
+import { bezierPoint, freeLabelAt, type Box, type Side } from "../edgePoint";
 
 /** Clic sur l'étiquette en pilule d'une flèche (roman interactif) : `Toile` la choisit. Détail : l'identifiant du fil. */
 export const EDGE_PILL_EVENT = "edge-pill";
@@ -28,25 +28,58 @@ function borderPoint(a: Rect, b: Rect) {
   return { x: ax + dx * sy, y: ay + dy * sy, pos: dy > 0 ? Position.Bottom : Position.Top };
 }
 
-export function FloatingEdge(props: EdgeProps) {
-  const { id, source, target, markerEnd, style, selected, interactionWidth, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius } = props;
-  const s = useInternalNode(source);
-  const t = useInternalNode(target);
-  if (!s || !t) return null;
+type EdgeData = { offset?: number; labelAt?: number; pill?: boolean; pillClass?: string; pillTitle?: string } | undefined;
 
+/** Bouts d'une flèche flottante : bords des deux cartes, décalés de côté quand plusieurs flèches les relient. */
+function ends(s: InternalNode, t: InternalNode, offset: number) {
   const a = rectOf(s), b = rectOf(t);
   const p1 = borderPoint(a, b);
   const p2 = borderPoint(b, a);
-  // Plusieurs flèches entre les deux mêmes cartes (choix aller et retour d'un roman interactif) : chacune est
-  // décalée de côté, sinon elles et leurs étiquettes se recouvrent.
-  const data = props.data as { offset?: number; labelAt?: number; pill?: boolean; pillClass?: string; pillTitle?: string } | undefined;
-  const offset = Number(data?.offset ?? 0);
   if (offset) {
     const dx = p2.x - p1.x, dy = p2.y - p1.y;
     const len = Math.hypot(dx, dy) || 1;
     const ox = (-dy / len) * offset, oy = (dx / len) * offset;
     p1.x += ox; p1.y += oy; p2.x += ox; p2.y += oy;
   }
+  return { p1, p2 };
+}
+
+/** Taille d'une pilule, en unités du canevas (estimée : 180 px au plus, comme en CSS). */
+const pillSize = (label: string) => ({ w: Math.min(180, 26 + label.length * 6.6), h: 26 });
+
+/**
+ * Place de la pilule le long de la flèche : la place voulue, ou la plus proche où aucune autre carte ne la couvre.
+ * Calculée dans le sélecteur (un nombre) : la flèche n'est redessinée que si la place change.
+ */
+function usePillAt(source: string, target: string, data: EdgeData, label: string): number {
+  const preferred = data?.labelAt ?? 0.5;
+  const offset = Number(data?.offset ?? 0);
+  return useStore((st: ReactFlowState) => {
+    if (!data?.pill) return preferred;
+    const s = st.nodeLookup.get(source), t = st.nodeLookup.get(target);
+    if (!s || !t) return preferred;
+    const obstacles: Box[] = [];
+    for (const n of st.nodeLookup.values()) {
+      if (n.id === source || n.id === target || n.hidden || n.type === "frame") continue;
+      obstacles.push(rectOf(n));
+    }
+    if (!obstacles.length) return preferred;
+    const { p1, p2 } = ends(s, t, offset);
+    return freeLabelAt(p1, p1.pos as Side, p2, p2.pos as Side, preferred, pillSize(label), obstacles);
+  });
+}
+
+export function FloatingEdge(props: EdgeProps) {
+  const { id, source, target, markerEnd, style, selected, interactionWidth, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius } = props;
+  const s = useInternalNode(source);
+  const t = useInternalNode(target);
+  // Plusieurs flèches entre les deux mêmes cartes (choix aller et retour d'un roman interactif) : chacune est
+  // décalée de côté, sinon elles et leurs étiquettes se recouvrent.
+  const data = props.data as EdgeData;
+  const pillAt = usePillAt(source, target, data, String(label ?? ""));
+  if (!s || !t) return null;
+
+  const { p1, p2 } = ends(s, t, Number(data?.offset ?? 0));
   const [path, labelX, labelY] = getBezierPath({
     sourceX: p1.x,
     sourceY: p1.y,
@@ -59,7 +92,7 @@ export function FloatingEdge(props: EdgeProps) {
   // Étiquette en pilule (choix d'un roman interactif) : du HTML au-dessus du fil, coupée si elle est longue (le texte
   // entier en infobulle), posée à la place voulue le long de la courbe pour que les choix voisins ne se recouvrent pas.
   if (data?.pill && label) {
-    const at = data.labelAt ?? 0.5;
+    const at = pillAt;
     const point = at === 0.5 ? { x: labelX, y: labelY } : bezierPoint(p1, p1.pos as Side, p2, p2.pos as Side, at);
     return (
       <>

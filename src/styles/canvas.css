@@ -242,6 +242,8 @@
   border: 1.5px solid var(--accent); border-radius: 999px; background: var(--surface); color: var(--ink);
   font: 500 12px/1.4 var(--font-ui); white-space: nowrap; text-overflow: ellipsis; cursor: pointer;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  /* Au-dessus des cartes : une flèche qui passe derrière une carte garde une pilule qu'on peut toucher. */
+  z-index: 1;
 }
 .edge-pill.is-unnamed { color: var(--muted); font-style: italic; border-style: dashed; }
 .edge-pill.is-hidden { border-style: dotted; border-color: var(--muted); }

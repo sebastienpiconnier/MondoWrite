@@ -2381,6 +2381,55 @@ const scenarios = [
     },
   },
   {
+    name: "roman interactif : la pilule d'une flèche qui passe derrière une autre scène reste cliquable",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        const key = "cosmos:reglages";
+        const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+        if (!saved.experimental?.interactive) localStorage.setItem(key, JSON.stringify({ ...saved, lang: "fr", experimental: { interactive: true } }));
+      });
+      await h.home();
+      await page.locator(".home-form input[type=text]").fill("Trois scènes");
+      await page.locator('.home-kinds input[value="interactive"]').check();
+      await page.locator(".home-create").click();
+      await h.canvas();
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").fill("A");
+      await page.getByPlaceholder("Nouvelle scène…").press("Enter");
+      await h.view(1);
+      const cards = page.locator(".react-flow__node-card:has(.card.type-scene)");
+      await until(async () => (await cards.count()) === 1, "la scène A n'est pas sur le canevas");
+      const idA = await cards.first().getAttribute("data-id");
+      const cardA = page.locator(`.react-flow__node-card[data-id="${idA}"]`);
+      // A, puis B à sa droite, puis C à droite de B : la flèche A → C passe derrière B.
+      await cardA.getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
+      await until(async () => (await cards.count()) === 2, "pas de scène B");
+      const idB = (await cards.evaluateAll((els) => els.map((e) => e.dataset.id))).find((id) => id !== idA);
+      await page.locator(`.react-flow__node-card[data-id="${idB}"]`).getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
+      await until(async () => (await cards.count()) === 3, "pas de scène C");
+      await cardA.getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Ajouter un choix vers…" }).click();
+      await page.locator(".choice-picker button", { hasText: /^3\./ }).click();
+      const pills = page.locator(".edge-pill");
+      await until(async () => (await pills.count()) === 3, "les trois choix n'ont pas leur pilule");
+      await page.waitForTimeout(300);
+      // Chaque pilule est sous le pointeur à sa place (aucune carte ne la couvre) et ouvre le bandeau de son choix.
+      for (let i = 0; i < 3; i++) {
+        const pill = pills.nth(i);
+        const r = await pill.boundingBox();
+        assert(r, `la pilule ${i + 1} n'est pas dessinée`);
+        const on = await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest(".edge-pill"), [r.x + r.width / 2, r.y + r.height / 2]);
+        assert(on, `la pilule ${i + 1} (${await pill.getAttribute("aria-label")}) est couverte par une carte`);
+        await pill.click();
+        await until(() => page.locator(".choice-edge-editor").isVisible(), `la pilule ${i + 1} n'ouvre pas son bandeau`);
+        await page.keyboard.press("Escape");
+      }
+    },
+  },
+  {
     name: "roman interactif : l'exemple « Le Puits » s'ouvre sur sa visite et sa carte des choix",
     async run(h) {
       const { page } = h;

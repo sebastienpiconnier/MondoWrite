@@ -26,3 +26,38 @@ export function bezierPoint(a: { x: number; y: number }, as: Side, b: { x: numbe
   const k0 = u * u * u, k1 = 3 * u * u * t, k2 = 3 * u * t * t, k3 = t * t * t;
   return { x: k0 * a.x + k1 * c1x + k2 * c2x + k3 * b.x, y: k0 * a.y + k1 * c1y + k2 * c2y + k3 * b.y };
 }
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Places essayées, dans l'ordre, pour une étiquette qu'une carte recouvre à sa place voulue. */
+const TRIES = [0.5, 0.35, 0.65, 0.22, 0.78, 0.12, 0.88];
+
+/**
+ * Place d'une étiquette le long de la courbe où elle ne tombe sur aucune carte (`obstacles`), la plus proche de la
+ * place voulue. Une flèche qui passe derrière une autre carte posait sinon sa pilule dessous, et la carte prenait
+ * le clic. Sans place libre, la place voulue.
+ */
+export function freeLabelAt(
+  a: { x: number; y: number },
+  as: Side,
+  b: { x: number; y: number },
+  bs: Side,
+  preferred: number,
+  size: { w: number; h: number },
+  obstacles: readonly Box[],
+  margin = 6,
+): number {
+  const clear = (t: number) => {
+    const p = bezierPoint(a, as, b, bs, t);
+    const x = p.x - size.w / 2 - margin, y = p.y - size.h / 2 - margin, w = size.w + 2 * margin, h = size.h + 2 * margin;
+    return !obstacles.some((o) => x < o.x + o.w && o.x < x + w && y < o.y + o.h && o.y < y + h);
+  };
+  if (clear(preferred)) return preferred;
+  const tries = [...TRIES].sort((u, v) => Math.abs(u - preferred) - Math.abs(v - preferred));
+  return tries.find(clear) ?? preferred;
+}
