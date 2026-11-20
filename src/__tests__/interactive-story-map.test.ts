@@ -126,3 +126,20 @@ describe("étiquettes de deux flèches entre les mêmes scènes", () => {
     expect(fromA[1] - fromA[0]).toBeGreaterThan(0.4);
   });
 });
+
+describe("place libre d'une pilule", () => {
+  it("garde sa place voulue sans carte dessous, et s'écarte d'une carte qui la couvrirait", async () => {
+    const { freeLabelAt, bezierPoint } = await import("../edgePoint");
+    const a = { x: 0, y: 0 }, b = { x: 1000, y: 0 };
+    const size = { w: 120, h: 26 };
+    expect(freeLabelAt(a, "right", b, "left", 0.5, size, [])).toBe(0.5);
+    // Une carte au milieu du chemin : la pilule va ailleurs, hors de la carte.
+    const card = { x: 400, y: -60, w: 240, h: 160 };
+    const at = freeLabelAt(a, "right", b, "left", 0.5, size, [card]);
+    expect(at).not.toBe(0.5);
+    const p = bezierPoint(a, "right", b, "left", at);
+    expect(p.x + size.w / 2 < card.x || p.x - size.w / 2 > card.x + card.w).toBe(true);
+    // Aucune place libre : la place voulue.
+    expect(freeLabelAt(a, "right", b, "left", 0.3, size, [{ x: -50, y: -100, w: 1100, h: 200 }])).toBe(0.3);
+  });
+});
