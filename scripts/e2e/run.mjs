@@ -2459,6 +2459,58 @@ const scenarios = [
     },
   },
   {
+    name: "roman interactif (#103, #104) : choix fermés montrés en lecture, et lecture reprise après une correction",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        const key = "cosmos:reglages";
+        const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+        if (!saved.experimental?.interactive) localStorage.setItem(key, JSON.stringify({ ...saved, lang: "fr", experimental: { interactive: true } }));
+      });
+      // Deux choix rejoignent « Le puits » ; seul le premier donne la clé, que demande le coffre.
+      const twee = [
+        ":: StoryTitle\nLe coffre\n",
+        ':: StoryData\n{"start": "La cour", "format": "SugarCube"}\n',
+        ":: La cour\nIl fait nuit.\n<<link [[Prendre la clé->Le puits]]>><<set $cle to true>><</link>>\n[[Aller au puits->Le puits]]\n",
+        ":: Le puits\nL’eau est noire.\n<<if $cle>>[[Ouvrir le coffre->La lettre]]<</if>>\n[[Remonter->La cour]]\n",
+        ":: La lettre\nUne lettre.\n",
+      ].join("\n");
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…", exact: true }).click();
+      await (await chooser).setFiles({ name: "coffre.twee", mimeType: "text/plain", buffer: Buffer.from(twee) });
+      await page.locator(".topbar").waitFor({ timeout: 20_000 });
+      await h.saved((f) => Object.values(f).some((v) => /\{ cle \} \[Ouvrir le coffre\]/.test(v)), "le coffre n'est pas un choix à condition");
+      await h.view(2);
+      await page.getByRole("button", { name: "Lire l’histoire" }).click();
+      const play = page.locator(".play-panel");
+      const open = play.locator(".play-choices:not(.is-closed) button");
+      await until(async () => (await open.count()) === 2, "la cour ne propose pas deux choix");
+      await open.filter({ hasText: "Aller au puits" }).click();
+      // Arrivé sans la clé : le coffre est fermé, et la raison est dite.
+      const closed = play.locator(".play-closed");
+      await until(async () => (await closed.count()) === 1, "le choix fermé n'est pas montré");
+      const shown = (await closed.first().textContent()) ?? "";
+      assert(/Ouvrir le coffre/.test(shown) && /avec «\s?cle\s?»/.test(shown), `choix fermé : ${shown}`);
+      // La case le cache, pour lire comme un lecteur.
+      await play.getByRole("checkbox", { name: "Montrer les choix fermés" }).uncheck();
+      await until(async () => (await closed.count()) === 0, "décochée, la case ne cache pas les choix fermés");
+      await play.getByRole("checkbox", { name: "Montrer les choix fermés" }).check();
+      await page.keyboard.press("Escape");
+      // Rouverte, la lecture propose de reprendre : un clic rejoue « Aller au puits ».
+      await page.getByRole("button", { name: "Lire l’histoire" }).click();
+      const resume = play.getByRole("button", { name: "Reprendre là où j’en étais (1 choix)" });
+      await until(() => resume.isVisible(), "la lecture rouverte ne propose pas de reprendre");
+      await resume.click();
+      await until(async () => (await play.locator(".play-chose").allTextContents()).join("|") === "› Aller au puits", "la reprise n'a pas rejoué le choix");
+      await until(async () => (await closed.count()) === 1, "après la reprise, le choix fermé n'est plus montré");
+      assert(!(await resume.isVisible()), "le bouton de reprise reste après la reprise");
+      // « Revenir au choix précédent » marche après une reprise.
+      await play.getByRole("button", { name: "Revenir au choix précédent" }).click();
+      await until(async () => (await open.count()) === 2, "après une reprise, le retour ne rend pas les choix de la cour");
+    },
+  },
+  {
     name: "roman interactif (lots 5, 7, 8 et 9) : import Twee, lecture, « Vérifier », page web jouable, livre-jeu EPUB et livre broché, Ink",
     async run(h) {
       const { page } = h;

@@ -13,7 +13,9 @@ import { interactiveScenes, interactiveSlugs } from "../interactive/scenes";
 import { readFactLabels, shownValue } from "../interactive/facts";
 import { projectFacts } from "../interactive/projectFacts";
 import { useMediaUrl } from "./useMediaUrl";
-import { usePlay } from "../interactive/playState";
+import { playProject, trailFor, usePlay, type Trail } from "../interactive/playState";
+import { closedChoices, matchPick, type Pick } from "../interactive/playTrail";
+import { condWords } from "../interactive/conditions";
 import { openingWords, pathLine, pathMarkdown, pathNotes, type PathStep } from "../interactive/readingPath";
 import { projectSections } from "../interactive/projectSections";
 import { markQuoteInHtml } from "../mcpWrite";
@@ -38,6 +40,9 @@ function PlayImage({ name }: { name: string }) {
   const url = useMediaUrl(name);
   return url ? <img className="play-image" src={url} alt="" /> : null;
 }
+
+/** Réglage de l'appareil : montrer les choix fermés pendant la lecture (#104). */
+const CLOSED_KEY = "mondowrite.play.closed";
 
 export function PlayDialog() {
   const t = useT();
@@ -85,6 +90,19 @@ export function PlayDialog() {
   );
   const endRef = useRef<HTMLDivElement>(null);
   const runtimeErrors = useRef<string[]>([]);
+  // Chemin lu (#103) : les choix faits depuis le départ, gardés pour la séance ; une lecture rouverte après une
+  // correction propose de les rejouer.
+  const picks = useRef<Pick[]>([]);
+  const [offer, setOffer] = useState<Trail | null>(() => trailFor(from));
+  const keepTrail = () => usePlay.setState({ trail: { project: playProject(), from, picks: [...picks.current] } });
+  // Choix fermés (#104) : montrés à l'auteur qui relit, avec leur raison ; réglage de l'appareil.
+  const [showClosed, setShowClosed] = useState(() => {
+    try {
+      return localStorage.getItem(CLOSED_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
 
   /** Passages de chaque scène (nombre de visites), pour savoir où l'on est même dans une scène sans texte. */
   const visits = useCallback(
@@ -123,6 +141,7 @@ export function PlayDialog() {
     (s: Story) => {
       s.ResetState();
       history.current = [];
+      picks.current = [];
       setPassages([]);
       setNotes({});
       setNoting(null);
@@ -166,9 +185,13 @@ export function PlayDialog() {
     if (!story) return;
     history.current.push({ state: story.state.ToJson(), passages: passages.length });
     runtimeErrors.current = [];
+    setOffer(null);
     try {
+      const pick: Pick = { scene: currentRef.current, text, rank: index };
       story.ChooseChoiceIndex(index);
       advance(story, text || t.interactive.map.defaultLabel);
+      picks.current.push(pick);
+      keepTrail();
     } catch (e) {
       runtimeErrors.current.push(e instanceof Error ? e.message : String(e));
     }
@@ -179,11 +202,57 @@ export function PlayDialog() {
     const last = history.current.pop();
     if (!story || !last) return;
     story.state.LoadJson(last.state);
+    picks.current.pop();
+    keepTrail();
     setPassages((all) => all.slice(0, last.passages));
     setNotes((all) => Object.fromEntries(Object.entries(all).filter(([k]) => Number(k) < last.passages)));
     setChoices(story.currentChoices.map((c) => ({ text: c.text, index: c.index })));
     readKnown(story);
   };
+
+  /** Rejoue le chemin lu avant la correction, jusqu'au premier choix qui a changé. */
+  const resume = () => {
+    if (!story || !offer) return;
+    setOffer(null);
+    start(story);
+    runtimeErrors.current = [];
+    let passagesSoFar = 1;
+    let stoppedAt: string | null = null;
+    try {
+      for (const pick of offer.picks) {
+        const open = story.currentChoices.map((c) => ({ text: c.text, index: c.index }));
+        const index = pick.scene && currentRef.current && pick.scene !== currentRef.current ? null : matchPick(open, pick);
+        if (index === null) {
+          stoppedAt = pick.text || t.interactive.map.defaultLabel;
+          break;
+        }
+        history.current.push({ state: story.state.ToJson(), passages: passagesSoFar });
+        story.ChooseChoiceIndex(index);
+        advance(story, pick.text || t.interactive.map.defaultLabel);
+        picks.current.push({ ...pick, rank: index });
+        passagesSoFar++;
+      }
+    } catch (e) {
+      runtimeErrors.current.push(e instanceof Error ? e.message : String(e));
+    }
+    keepTrail();
+    const error = runtimeErrors.current[0];
+    if (error) setMessage(fmt(p.runtime, { error: error.replace(/^.*?(RUNTIME ERROR:\s*)?('[^']*'\s*line \d+:\s*)?/, "") }));
+    else if (stoppedAt !== null) setMessage(fmt(p.resumeStopped, { label: stoppedAt }));
+  };
+  const toggleClosed = (on: boolean) => {
+    setShowClosed(on);
+    try {
+      localStorage.setItem(CLOSED_KEY, on ? "1" : "0");
+    } catch {
+      // Stockage refusé : le choix vaut pour cette fenêtre.
+    }
+  };
+  const m = t.interactive.map;
+  const closed =
+    story && showClosed && current
+      ? closedChoices(manuscript[current], choices.map((c) => c.text), facts, { ifFact: m.edgeIf, ifNot: m.edgeIfNot, ifCond: m.edgeIfCond, cond: condWords(t.interactive.choices) }, m.defaultLabel)
+      : [];
 
   // 1 à 9 choisissent, comme dans un livre qu'on lit au clavier.
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -258,6 +327,15 @@ export function PlayDialog() {
         <button type="button" className="ghost-button" disabled={!current} onClick={() => write(current)}>
           {current ? fmt(p.write, { title: titleOf(current) }) : p.writeNone}
         </button>
+        {story && offer && (
+          <button type="button" className="ghost-button" onClick={resume}>
+            {fmt(p.resume, { n: offer.picks.length })}
+          </button>
+        )}
+        <label className="play-closed-toggle">
+          <input type="checkbox" checked={showClosed} onChange={(e) => toggleClosed(e.target.checked)} />
+          <span>{p.showClosed}</span>
+        </label>
       </div>
 
       {passages.length > 0 && (
@@ -365,6 +443,19 @@ export function PlayDialog() {
               </li>
             ))}
           </ol>
+        )}
+        {closed.length > 0 && (
+          <ul className="play-choices is-closed" aria-label={p.closedTitle}>
+            {closed.map((c, i) => (
+              <li key={i} className="play-closed" aria-disabled="true" aria-label={fmt(p.closedAria, { label: c.label, reason: c.reason })}>
+                <span className="play-key" aria-hidden="true">
+                  ×
+                </span>
+                <span>{c.label}</span>
+                <span className="play-closed-why">{c.reason}</span>
+              </li>
+            ))}
+          </ul>
         )}
         {ended && (
           <div className="play-end">
