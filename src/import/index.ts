@@ -5,6 +5,7 @@
 
 import type { Project } from "../types";
 import type { ScrivenerSource } from "./scrivener/mapping";
+import type { StoryReport } from "../interactive/storyImport";
 import { importFountain, importScreenplayModel, type ImportOptions } from "../screenplay/import";
 import { parse } from "../screenplay/parse";
 import { parseFdx, parseFdxRevisions } from "../screenplay/fdxImport";
@@ -27,7 +28,7 @@ export const looksLikeScreenplay = (text: string) => parse(text).elements.filter
  * Ce qu'un fichier importé donne : un projet et ses médias ; un projet Scrivener lu, dont l'auteur choisit encore
  * les dossiers (`buildScrivener` le convertit) ; rien de lisible ; ou un .zip qui n'est pas de Scrivener.
  */
-export type ImportOutcome = { project: Project; medias: [string, Uint8Array][] } | { scrivener: ScrivenerSource } | null | "project-zip";
+export type ImportOutcome = { project: Project; medias: [string, Uint8Array][]; story?: StoryReport } | { scrivener: ScrivenerSource } | null | "project-zip";
 
 /**
  * Import complet : comme `projectFromFile`, plus les médias à copier dans medias/. Un .zip qui contient un projet
@@ -42,22 +43,32 @@ export async function importFromFile(file: { name: string; data: Uint8Array }, o
     if (read === "not-scrivener") return "project-zip";
     return read ? { scrivener: read } : null;
   }
+  if (STORY_EXTENSIONS.includes(extensionOf(file.name))) {
+    const read = await storyFromFile(file, options);
+    return read ? { project: read.project, medias: [], story: read.report } : null;
+  }
   const project = await projectFromFile(file, options);
   return project ? { project, medias: [] } : null;
+}
+
+/** Histoire Twee ou Ink (#84, lot 9) : le projet et ce que l'import en dit (#96). */
+async function storyFromFile(file: { name: string; data: Uint8Array }, options: ImportOptions): Promise<{ project: Project; report: StoryReport } | null> {
+  // Roman interactif : refusé (rien de lisible) quand la fonction n'est pas proposée sur cet appareil.
+  if (!options.interactive) return null;
+  const story = await import("../interactive/storyImport");
+  const text = new TextDecoder("utf-8").decode(file.data);
+  const source = extensionOf(file.name) === "ink" ? story.parseInk(text, options.interactive.opening) : story.parseTwee(text);
+  if (!source) return null;
+  const project = story.storyToProject(source, { fileName: file.name, newId: options.newId });
+  return project.cards.length > 0 ? { project, report: story.storyReport(source) } : null;
 }
 
 export async function projectFromFile(file: { name: string; data: Uint8Array }, options: ImportOptions): Promise<Project | null> {
   const ext = extensionOf(file.name);
   const text = () => new TextDecoder("utf-8").decode(file.data);
   let project: Project;
-  if (STORY_EXTENSIONS.includes(ext)) {
-    // Roman interactif : refusé (rien de lisible) quand la fonction n'est pas proposée sur cet appareil.
-    if (!options.interactive) return null;
-    const story = await import("../interactive/storyImport");
-    const source = ext === "ink" ? story.parseInk(text(), options.interactive.opening) : story.parseTwee(text());
-    if (!source) return null;
-    project = story.storyToProject(source, { fileName: file.name, newId: options.newId });
-  } else if (ext === "fdx") {
+  if (STORY_EXTENSIONS.includes(ext)) return (await storyFromFile(file, options))?.project ?? null;
+  else if (ext === "fdx") {
     const screenplay = parseFdx(text());
     if (!screenplay) return null;
     project = importScreenplayModel(screenplay, { ...options, revisions: parseFdxRevisions(text()) });

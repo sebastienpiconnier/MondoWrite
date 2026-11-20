@@ -3832,6 +3832,12 @@ export const fr = {
     },
     import: {
       opening: "Ouverture",
+      reportTitle: "Histoire importée :",
+      scenes: ["1 scène", "{n} scènes"],
+      converted: ["1 macro convertie en fait, condition ou choix", "{n} macros converties en faits, conditions ou choix"],
+      kept: ["1 gardée en commentaire du bloc de choix (« Voir le code »)", "{n} gardées en commentaire du bloc de choix (« Voir le code »)"],
+      skipped: ["1 passage technique ignoré", "{n} passages techniques ignorés"],
+      dismiss: "Fermer",
     },
     gamebook: {
       epub: "Livre-jeu (EPUB)",

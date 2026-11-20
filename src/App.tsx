@@ -26,6 +26,7 @@ import { forgetMediaUrls } from "./components/useMediaUrl";
 import { ConflictNotice } from "./components/ConflictNotice";
 import { RetroInvite } from "./components/StructureTools";
 import { ScrivenerReportNotice } from "./components/ScrivenerImport";
+import { StoryImportReport } from "./components/StoryImportReport";
 import { shownView, usePhone } from "./components/usePhone";
 import { toggleFullscreen } from "./fullscreen";
 import { isMobileOS } from "./platform";
@@ -283,6 +284,7 @@ export function App() {
         )}
         <ConflictNotice />
         <ScrivenerReportNotice />
+        <StoryImportReport />
         <RetroInvite />
         <main className="app-main">
           {view === "toile" && <Toile />}

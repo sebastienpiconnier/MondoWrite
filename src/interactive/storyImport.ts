@@ -5,8 +5,9 @@
 // Fonctions pures.
 
 import { cleanLabel, choicesHtml, END_TARGET, sceneSlugs, serializeChoices, type ChoiceLine } from "./choices";
-import { cleanFactLabel, FACTS_KEY, isFactName } from "./facts";
+import { cleanFactLabel, condNames, FACTS_KEY, isFactName } from "./facts";
 import { INTERACTIVE_KEY } from "./index";
+import { rawComment, readPassage, type TweeScene } from "./twine";
 import type { CardData, CardLayout, Project } from "../types";
 
 /** Histoire lue, avant d'être un projet : noms d'origine, texte en paragraphes, choix vers des noms d'origine. */
@@ -19,7 +20,27 @@ export interface StorySource {
   factLabels: Record<string, string>;
   /** Éléments laissés de côté (passages de script, fonctions d'Ink…), pour le dire à l'auteur. */
   skipped: number;
+  /** Twee (#96) : macros converties en faits, conditions et choix, et gardées en commentaire du bloc de choix. */
+  converted?: number;
+  kept?: number;
+  /** Histoire de Twine : ses conditions ne nomment jamais un passage (en Ink, « a lu cette scène »). */
+  twine?: boolean;
 }
+
+/** Ce que l'import dit à l'auteur. */
+export interface StoryReport {
+  scenes: number;
+  converted: number;
+  kept: number;
+  skipped: number;
+}
+
+export const storyReport = (source: StorySource): StoryReport => ({
+  scenes: source.scenes.length,
+  converted: source.converted ?? 0,
+  kept: source.kept ?? 0,
+  skipped: source.skipped,
+});
 
 const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -45,19 +66,14 @@ function readTweeHeader(line: string): { name: string; tags: string[] } {
   return { name: unescapeTwee(rest.trim()), tags };
 }
 
-/** Un lien de Twine : `[[texte->cible]]`, `[[cible<-texte]]`, `[[texte|cible]]`, `[[cible]]` (setter de SugarCube retiré). */
-export function readTweeLink(inner: string): { label: string; target: string } {
-  const body = inner.replace(/\]\[[\s\S]*$/, "");
-  let m = /^([\s\S]*)->([\s\S]+)$/.exec(body);
-  if (m) return { label: m[1].trim(), target: m[2].trim() };
-  m = /^([\s\S]+?)<-([\s\S]*)$/.exec(body);
-  if (m) return { label: m[2].trim(), target: m[1].trim() };
-  m = /^([\s\S]*?)\|([\s\S]+)$/.exec(body);
-  if (m) return { label: m[1].trim(), target: m[2].trim() };
-  return { label: body.trim(), target: body.trim() };
-}
+export { readTweeLink } from "./twine";
 
-const LINK_RE = /\[\[([\s\S]*?)\]\](?!\])/g;
+/** Format de l'histoire (StoryData) : Harlowe lit aussi les macros `(nom: …)`. */
+const isHarlowe = (format: string | undefined, text: string) =>
+  format ? /harlowe/i.test(format) : /\((?:set|put|if|unless|link-?goto|click-?goto|go-?to|link)\s*:/i.test(text);
+
+/** Effet sans conséquence au départ : un fait faux ou un compteur à zéro, valeurs de départ de MondoWrite. */
+const isDefaultEffect = (effect: string) => /^\S+ = (false|0)$/.test(effect);
 
 export function parseTwee(text: string): StorySource | null {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
@@ -69,52 +85,57 @@ export function parseTwee(text: string): StorySource | null {
   if (passages.length === 0) return null;
   let title: string | undefined;
   let start: string | undefined;
-  let skipped = 0;
-  const scenes: StorySource["scenes"] = [];
+  let format: string | undefined;
   for (const p of passages) {
     const body = p.body.join("\n").trim();
-    if (p.name === "StoryTitle") {
-      title = body.split("\n")[0]?.trim() || undefined;
-      continue;
-    }
+    if (p.name === "StoryTitle") title = body.split("\n")[0]?.trim() || undefined;
     if (p.name === "StoryData") {
       try {
-        const data = JSON.parse(body) as { start?: unknown };
+        const data = JSON.parse(body) as { start?: unknown; format?: unknown };
         if (typeof data.start === "string") start = data.start;
+        if (typeof data.format === "string") format = data.format;
       } catch {
-        // métadonnées illisibles : sans départ désigné
+        // métadonnées illisibles : sans départ ni format désignés
       }
-      continue;
     }
+  }
+  const harlowe = isHarlowe(format, text);
+  let skipped = 0;
+  let converted = 0;
+  let kept = 0;
+  const read: (TweeScene & { name: string })[] = [];
+  for (const p of passages) {
+    if (p.name === "StoryTitle" || p.name === "StoryData") continue;
     if (TWEE_SPECIAL.has(p.name) || p.tags.some((t) => TWEE_SKIP_TAGS.has(t))) {
       skipped++;
       continue;
     }
-    const choices: ChoiceLine[] = [];
-    const seen = new Set<string>();
-    const paragraphs: string[] = [];
-    for (const raw of body.split("\n")) {
-      const links = [...raw.matchAll(LINK_RE)].map((m) => readTweeLink(m[1]));
-      for (const l of links) {
-        const key = `${l.label}\u0000${l.target}`;
-        if (seen.has(key) || !l.target) continue;
-        seen.add(key);
-        choices.push({ kind: "choice", label: cleanLabel(l.label), target: l.target });
-      }
-      // Ligne faite seulement de liens (et de séparateurs) : ce sont des choix, pas du texte.
-      const prose = raw.replace(LINK_RE, (_, inner: string) => readTweeLink(inner).label);
-      const withoutLinks = raw.replace(LINK_RE, "").replace(/[\s|•·*\-–—]+/g, "");
-      // Macro de SugarCube seule sur sa ligne (`<<set …>>`) : de la logique, pas du texte.
-      const onlyMacro = /^\s*(<<[\s\S]*?>>\s*)+$/.test(raw);
-      if (links.length > 0 && !withoutLinks) continue;
-      if (onlyMacro) continue;
-      if (prose.trim()) paragraphs.push(prose.trim());
-    }
-    scenes.push({ name: p.name, title: p.name, paragraphs, choices });
+    read.push({ name: p.name, ...readPassage(p.body.join("\n").trim(), harlowe) });
   }
-  if (scenes.length === 0) return null;
-  if (!start || !scenes.some((s) => s.name === start)) start = scenes.find((s) => s.name === "Start")?.name ?? scenes[0].name;
-  return { title, scenes, start, factLabels: {}, skipped };
+  if (read.length === 0) return null;
+  if (!start || !read.some((s) => s.name === start)) start = read.find((s) => s.name === "Start")?.name ?? read[0].name;
+  // Effets posés par un passage : ceux de tous les choix qui y mènent. Au départ, seulement les valeurs de départ
+  // (le premier passage n'a pas de choix d'entrée) ; sinon gardés en commentaire.
+  for (const scene of read) {
+    const incoming = read.flatMap((s) => s.choices).filter((c) => c.target === scene.name);
+    for (const { effects, src } of scene.entry) {
+      const harmless = effects.every(isDefaultEffect);
+      if ((scene.name !== start || harmless) && (incoming.length || harmless)) {
+        for (const c of incoming) c.effects = [...new Set([...(c.effects ?? []), ...effects])];
+        scene.converted++;
+      } else {
+        scene.raw.push(rawComment(src));
+        scene.kept++;
+      }
+    }
+  }
+  const scenes: StorySource["scenes"] = read.map((s) => {
+    converted += s.converted;
+    kept += s.kept;
+    const choices: ChoiceLine[] = [...s.choices, ...s.raw.map((text): ChoiceLine => ({ kind: "raw", text }))];
+    return { name: s.name, title: s.name, paragraphs: s.paragraphs, choices };
+  });
+  return { title, scenes, start, factLabels: {}, skipped, converted, kept, twine: true };
 }
 
 // ---------- Ink ----------
@@ -312,6 +333,29 @@ function renamer(names: ReadonlyMap<string, string>, knotOf: (name: string) => s
   return { target, idents };
 }
 
+/** Renomme dans une condition ou un effet les faits qui portent le nom d'une scène (`village` → `village_fait`). */
+function factRenames(source: StorySource, slugs: ReadonlySet<string>): (text: string) => string {
+  const used = new Set<string>();
+  for (const s of source.scenes)
+    for (const l of s.choices) {
+      if (l.kind !== "choice") continue;
+      if (l.cond) condNames(l.cond).forEach((n) => used.add(n));
+      for (const e of l.effects ?? []) {
+        const m = /^([\p{L}_][\p{L}\p{N}_]*)/u.exec(e);
+        if (m) used.add(m[1]);
+      }
+    }
+  const map = new Map<string, string>();
+  for (const name of used) {
+    if (!slugs.has(name)) continue;
+    let next = `${name}_fait`;
+    for (let n = 2; slugs.has(next) || used.has(next); n++) next = `${name}_fait${n}`;
+    map.set(name, next);
+  }
+  if (map.size === 0) return (text) => text;
+  return (text) => text.replace(/[\p{L}_][\p{L}\p{N}_]*/gu, (w) => map.get(w) ?? w);
+}
+
 /** Le projet : un roman interactif, une carte Scène par scène, le départ en tête du plan. */
 export function storyToProject(source: StorySource, options: { fileName: string; newId: () => string }): Project {
   const ordered = [...source.scenes];
@@ -323,17 +367,20 @@ export function storyToProject(source: StorySource, options: { fileName: string;
   const names = new Map(ordered.map((s, i) => [s.name, slugs.get(ids[i])!]));
   const knotOf = (name: string) => name.split(".")[0];
   const { target, idents } = renamer(names, knotOf);
+  // Twine : une variable au nom d'une scène serait lue par Ink comme « a lu cette scène » ; elle est renommée.
+  const facts = source.twine ? factRenames(source, new Set(names.values())) : null;
 
   const cards: CardData[] = [];
   const layout: CardLayout[] = [];
   const manuscript: Record<string, string> = {};
   ordered.forEach((s, i) => {
     const id = ids[i];
-    const lines: ChoiceLine[] = s.choices.map((l) =>
-      l.kind === "raw"
+    const lines: ChoiceLine[] = s.choices.map((l) => {
+      if (facts) return l.kind === "raw" ? l : { ...l, target: target(l.target, s.name), ...(l.cond ? { cond: facts(l.cond) } : {}), ...(l.effects ? { effects: l.effects.map(facts) } : {}) };
+      return l.kind === "raw"
         ? { kind: "raw", text: idents(l.text, s.name) }
-        : { ...l, target: target(l.target, s.name), ...(l.cond ? { cond: idents(l.cond, s.name) } : {}) },
-    );
+        : { ...l, target: target(l.target, s.name), ...(l.cond ? { cond: idents(l.cond, s.name) } : {}) };
+    });
     const text = s.paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("");
     manuscript[id] = lines.length ? `${text}${choicesHtml(serializeChoices(lines))}` : text;
     cards.push({ id, type: "scene", title: s.title, html: "" });
