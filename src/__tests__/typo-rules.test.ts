@@ -90,7 +90,7 @@ describe("frappe selon la langue", () => {
 
   it("césure livrée : français, anglais et espagnol, pas de motifs pour le catalan (licence LPPL)", () => {
     expect(TYPO_RULES.es.hyphen).toBe("es");
-    expect(TYPO_RULES.ca.hyphen).toBeUndefined();
+    expect(TYPO_RULES.ca.hyphen).toBe("ca");
   });
 
   it("suédois : même guillemet des deux côtés, par parité", () => {

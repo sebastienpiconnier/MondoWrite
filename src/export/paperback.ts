@@ -145,18 +145,20 @@ const stripShy = (s: string) => s.split(SHY).join("");
  * majuscule (un nom), ni à moins de trois lettres d'un bord, ni dans le dernier mot du paragraphe, ni
  * dans un mot de moins de six lettres. `hy` rend le mot avec ses coupures (paquet `hyphen`).
  */
-export function hyphenateRuns(runs: Run[], hy: (word: string) => string): Run[] {
+export function hyphenateRuns(runs: Run[], hy: (word: string) => string, joiner?: string): Run[] {
+  // `joiner` : lettre qui lie deux parties d'un mot (l'ela geminada du catalan, `col·legi`).
+  const wordRe = joiner ? new RegExp(`[\\p{L}\\p{M}]+(?:${joiner.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\p{L}\\p{M}]+)*`, "gu") : /[\p{L}\p{M}]+/gu;
   let lastRun = -1;
   let lastAt = -1;
   runs.forEach((r, i) => {
-    for (const m of r.text.matchAll(/[\p{L}\p{M}]+/gu)) {
+    for (const m of r.text.matchAll(wordRe)) {
       lastRun = i;
       lastAt = m.index ?? 0;
     }
   });
   return runs.map((r, i) => ({
     ...r,
-    text: r.text.replace(/[\p{L}\p{M}]+/gu, (word, at: number) => {
+    text: r.text.replace(wordRe, (word, at: number) => {
       if (word.length < 6 || /^\p{Lu}/u.test(word) || (i === lastRun && at === lastAt)) return word;
       const marked = hy(word);
       let out = "";
@@ -177,8 +179,8 @@ export function hyphenateRuns(runs: Run[], hy: (word: string) => string): Run[] 
 /** Les pages du livre dont la prose se coupe (récit et pages de fin écrites par l'auteur). */
 const PROSE_PAGES: ReadonlySet<PageKind> = new Set(["prologue", "epilogue", "remerciements", "auteur"]);
 
-export function hyphenateBook(book: BookDoc, hy: (word: string) => string): BookDoc {
-  const blocks = (list: Block[]) => list.map((b): Block => (b.kind === "paragraph" && !isSceneBreak(runsText(b.runs)) ? { ...b, runs: hyphenateRuns(b.runs, hy) } : b));
+export function hyphenateBook(book: BookDoc, hy: (word: string) => string, joiner?: string): BookDoc {
+  const blocks = (list: Block[]) => list.map((b): Block => (b.kind === "paragraph" && !isSceneBreak(runsText(b.runs)) ? { ...b, runs: hyphenateRuns(b.runs, hy, joiner) } : b));
   return {
     ...book,
     sections: book.sections.map((s) => (s.kind === "chapter" || PROSE_PAGES.has(s.page) ? { ...s, blocks: blocks(s.blocks) } : s)),
@@ -276,7 +278,9 @@ function splitWord(word: Word, k: number): [Word, Word] | null {
       }
     }
     if (at >= 0) {
-      const head = [...word.pieces.slice(0, pi), { text: `${piece.text.slice(0, at)}-`, font: piece.font }];
+      // Ela geminada coupée (catalan) : le point tombe, le trait d'union le remplace (`col·legi` → `col-` / `legi`).
+      const before = piece.text.slice(0, at);
+      const head = [...word.pieces.slice(0, pi), { text: `${/l·$/.test(before) && piece.text[at + 1] === "l" ? before.slice(0, -1) : before}-`, font: piece.font }];
       const tail = [{ text: piece.text.slice(at + 1), font: piece.font }, ...word.pieces.slice(pi + 1)].filter((p) => p.text !== "");
       return [{ pieces: head }, { pieces: tail }];
     }

@@ -28,8 +28,11 @@ export interface TypoRules {
   dash: "—" | "–";
   /** Apostrophe tapée en début de mot : guillemet simple ouvrant en anglais, apostrophe ailleurs. */
   wordStartQuote: string;
-  /** Motifs de césure du paquet `hyphen` déjà vérifiés et cités dans THIRD-PARTY-NOTICES.md. */
-  hyphen?: "fr" | "en-us" | "en-gb" | "es";
+  /**
+   * Césure du livre broché : motifs du paquet `hyphen` déjà vérifiés et cités dans THIRD-PARTY-NOTICES.md, ou règles
+   * écrites pour MondoWrite (`ca` : export/hyphenRules/ca.ts, les motifs de TeX du catalan étant sous LPPL).
+   */
+  hyphen?: "fr" | "en-us" | "en-gb" | "es" | "ca";
   /** Virgule décimale : un tableau CSV prend « ; » pour séparateur. */
   decimalComma: boolean;
 }
@@ -78,7 +81,7 @@ export const TYPO_RULES: Record<string, TypoRules> = {
   it: plain(GUILLEMETS, ENGLISH),
   pt: plain(GUILLEMETS, ENGLISH),
   "pt-br": plain(ENGLISH, ENGLISH_SINGLE),
-  ca: plain(GUILLEMETS, ENGLISH),
+  ca: plain(GUILLEMETS, ENGLISH, { hyphen: "ca" }),
   nl: plain(ENGLISH, ENGLISH_SINGLE, { dash: "–" }),
   sv: plain(SWEDISH, SWEDISH_SINGLE, { dash: "–" }),
   fi: plain(SWEDISH, SWEDISH_SINGLE, { dash: "–" }),
