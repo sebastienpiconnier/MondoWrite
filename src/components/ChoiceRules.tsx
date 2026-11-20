@@ -7,7 +7,7 @@ import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { condFromValue, condValue, givenFact, otherEffects, withGiven, type Fact } from "../interactive/facts";
 import { projectFacts } from "../interactive/projectFacts";
-import { condWords, readableCond, type CondWords } from "../interactive/conditions";
+import { condWords, parseCond, readableCond, type CondWords } from "../interactive/conditions";
 import type { Choice } from "../interactive/choices";
 
 type ChoiceValue = Omit<Choice, "kind">;
@@ -112,12 +112,24 @@ export function ChoiceRules({ line, n, onChange }: { line: ChoiceValue; n: numbe
   );
 }
 
-/** Court résumé d'un choix pour son étiquette sur la carte : « si … », « + … ». */
-export function ruleSummary(line: ChoiceValue, facts: readonly Fact[], words: { ifFact: string; ifNot: string; gives: string; cond: CondWords }): { before: string; after: string } {
-  const labelOf = (name: string) => facts.find((f) => f.name === name)?.label ?? name;
+/**
+ * Court résumé d'un choix pour son étiquette sur la carte : « si … », « + … ». Une condition à plusieurs termes (ou
+ * que MondoWrite ne relit pas) se dit seulement « sous conditions » : écrite en entier, elle ne tenait pas sur la
+ * pilule et se lisait mal ; le détail est dans le bandeau du choix et l'infobulle.
+ */
+export function ruleSummary(line: ChoiceValue, facts: readonly Fact[], words: { ifFact: string; ifNot: string; ifMany: string; gives: string; cond: CondWords }): { before: string; after: string } {
+  const labelOf = (name: string) => facts.find((f) => f.name === name)?.label ?? name.replace(/_+/g, " ");
   const cv = condValue(line.cond);
   const m = /^(has|not):(.+)$/.exec(cv);
-  const before = m ? fmt(m[1] === "not" ? words.ifNot : words.ifFact, { fact: labelOf(m[2]) }) : cv === "custom" ? fmt(words.ifFact, { fact: readableCond(line.cond, facts, words.cond) }) : "";
+  const parsed = cv === "custom" ? parseCond(line.cond) : null;
+  const single = parsed && parsed.k !== "and" && parsed.k !== "or";
+  const before = m
+    ? fmt(m[1] === "not" ? words.ifNot : words.ifFact, { fact: labelOf(m[2]) })
+    : cv !== "custom"
+      ? ""
+      : single
+        ? fmt(words.ifFact, { fact: readableCond(line.cond, facts, words.cond) })
+        : words.ifMany;
   const given = givenFact(line.effects);
   const after = given ? fmt(words.gives, { fact: labelOf(given) }) : "";
   return { before, after };
