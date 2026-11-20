@@ -3713,6 +3713,8 @@ export const en: Messages = {
       always: "always offered",
       notFact: "not: {fact}",
       custom: "written by hand: {cond}",
+      condAnd: "and",
+      condOr: "or",
       gives: "Gives",
       givesAria: "Fact given by choice {n}",
       nothing: "nothing",

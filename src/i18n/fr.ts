@@ -3771,6 +3771,8 @@ export const fr = {
       always: "toujours proposé",
       notFact: "pas : {fact}",
       custom: "écrite à la main : {cond}",
+      condAnd: "et",
+      condOr: "ou",
       gives: "Donne",
       givesAria: "Fait donné par le choix {n}",
       nothing: "rien",

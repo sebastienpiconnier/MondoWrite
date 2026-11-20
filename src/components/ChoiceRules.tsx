@@ -7,6 +7,7 @@ import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { condFromValue, condValue, givenFact, otherEffects, withGiven, type Fact } from "../interactive/facts";
 import { projectFacts } from "../interactive/projectFacts";
+import { condWords, readableCond, type CondWords } from "../interactive/conditions";
 import type { Choice } from "../interactive/choices";
 
 type ChoiceValue = Omit<Choice, "kind">;
@@ -14,6 +15,7 @@ const NEW = "+new";
 
 /** Faits du projet ouvert (même tableau tant qu'ils ne changent pas). */
 export const useFacts = () => useCosmos((s) => projectFacts(s));
+
 
 /** Une liste, ou le champ qui la remplace le temps de nommer un nouveau fait. */
 function FactSelect({ label, aria, value, options, onPick }: { label: string; aria: string; value: string; options: { value: string; text: string }[]; onPick: (value: string) => void }) {
@@ -80,10 +82,11 @@ function FactSelect({ label, aria, value, options, onPick }: { label: string; ar
 /** « Seulement si » et « Donne » d'un choix. */
 export function ChoiceRules({ line, n, onChange }: { line: ChoiceValue; n: number; onChange: (next: ChoiceValue) => void }) {
   const c = useT().interactive.choices;
-  const bools = useFacts().filter((f) => f.kind === "bool");
+  const facts = useFacts();
+  const bools = facts.filter((f) => f.kind === "bool");
   const cv = condValue(line.cond);
   const condOptions = [{ value: "", text: c.always }];
-  if (cv === "custom") condOptions.push({ value: "custom", text: fmt(c.custom, { cond: line.cond ?? "" }) });
+  if (cv === "custom") condOptions.push({ value: "custom", text: fmt(c.custom, { cond: readableCond(line.cond, facts, condWords(c)) }) });
   for (const f of bools) condOptions.push({ value: `has:${f.name}`, text: f.label }, { value: `not:${f.name}`, text: fmt(c.notFact, { fact: f.label }) });
   if (!condOptions.some((o) => o.value === cv)) condOptions.push({ value: cv, text: line.cond ?? "" });
   const given = givenFact(line.effects) ?? "";
@@ -110,11 +113,11 @@ export function ChoiceRules({ line, n, onChange }: { line: ChoiceValue; n: numbe
 }
 
 /** Court résumé d'un choix pour son étiquette sur la carte : « si … », « + … ». */
-export function ruleSummary(line: ChoiceValue, facts: readonly Fact[], words: { ifFact: string; ifNot: string; gives: string }): { before: string; after: string } {
+export function ruleSummary(line: ChoiceValue, facts: readonly Fact[], words: { ifFact: string; ifNot: string; gives: string; cond: CondWords }): { before: string; after: string } {
   const labelOf = (name: string) => facts.find((f) => f.name === name)?.label ?? name;
   const cv = condValue(line.cond);
   const m = /^(has|not):(.+)$/.exec(cv);
-  const before = m ? fmt(m[1] === "not" ? words.ifNot : words.ifFact, { fact: labelOf(m[2]) }) : cv === "custom" ? fmt(words.ifFact, { fact: line.cond ?? "" }) : "";
+  const before = m ? fmt(m[1] === "not" ? words.ifNot : words.ifFact, { fact: labelOf(m[2]) }) : cv === "custom" ? fmt(words.ifFact, { fact: readableCond(line.cond, facts, words.cond) }) : "";
   const given = givenFact(line.effects);
   const after = given ? fmt(words.gives, { fact: labelOf(given) }) : "";
   return { before, after };
