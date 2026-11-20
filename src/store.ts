@@ -43,6 +43,7 @@ import { mcpAllows, publishMcp } from "./mcp";
 import { bibleOrder } from "./bibleParts";
 import { importExtensions, importFromFile } from "./import";
 import type { ScrivenerReport, ScrivenerSource } from "./import/scrivener/mapping";
+import type { StoryReport } from "./interactive/storyImport";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
 import { documentFiche, documentTitle } from "./documents";
@@ -761,6 +762,9 @@ export interface CosmosState {
   /** Ce que l'import Scrivener a repris et laissé, affiché après l'import. État d'affichage, jamais enregistré. */
   scrivenerReport: ScrivenerReport | null;
   dismissScrivenerReport: () => void;
+  /** Ce que l'import d'une histoire Twee ou Ink a converti et gardé (#96), affiché après l'import. État d'affichage. */
+  storyReport: StoryReport | null;
+  dismissStoryReport: () => void;
   setRetroInvite: (on: boolean) => void;
 }
 
@@ -1300,6 +1304,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       cardMenu: null,
       retroInvite: false,
       scrivenerReport: null,
+      storyReport: null,
       screen: "project",
       view: firstView(),
       focusId: null,
@@ -1547,7 +1552,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
   /** Message de l'accueil après un import manqué : projet Scrivener illisible, trop ancien, ou rien de lisible. */
   const noticeFor = (err: unknown): "scrivener" | "scrivenerOld" | "empty" =>
     err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : err instanceof Error && err.message === "scrivener-old" ? "scrivenerOld" : "empty";
-  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null, versions: [string, string, string][] = []) => {
+  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null, versions: [string, string, string][] = [], story: StoryReport | null = null) => {
     if (!(await storage.create(project.meta.title))) return;
     // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
     if (await storage.readAll().catch(() => null)) {
@@ -1577,6 +1582,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Manuscrit importé : la Bible peut se remplir de ce que le texte dit déjà (rétro-bible).
       retroInvite: true,
       scrivenerReport: report,
+      storyReport: story,
       screen: "project",
       view: "manuscrit",
       focusId: null,
@@ -3153,6 +3159,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         cardMenu: null,
         retroInvite: false,
         scrivenerReport: null,
+        storyReport: null,
         screen: "project",
         view: firstView(),
         focusId: null,
@@ -3260,7 +3267,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ scrivenerChoice: { source: outcome.scrivener, folders: scrivenerFolders(outcome.scrivener.binder) } });
         return;
       }
-      await finishImport(outcome.project, outcome.medias, null);
+      await finishImport(outcome.project, outcome.medias, null, [], outcome.story ?? null);
     },
 
     tryExample: async () => {
@@ -3864,6 +3871,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         cardMenu: null,
         retroInvite: false,
         scrivenerReport: null,
+        storyReport: null,
         loaded: true,
         screen: "project",
         view: firstView(),
@@ -4129,6 +4137,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     scrivenerChoice: null,
     scrivenerReport: null,
     dismissScrivenerReport: () => set({ scrivenerReport: null }),
+    storyReport: null,
+    dismissStoryReport: () => set({ storyReport: null }),
     cancelScrivenerImport: () => set({ scrivenerChoice: null }),
     confirmScrivenerImport: async (exclude) => {
       const choice = get().scrivenerChoice;

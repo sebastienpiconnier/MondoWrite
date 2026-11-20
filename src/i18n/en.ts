@@ -3774,6 +3774,12 @@ export const en: Messages = {
     },
     import: {
       opening: "Opening",
+      reportTitle: "Story imported:",
+      scenes: ["1 scene", "{n} scenes"],
+      converted: ["1 macro converted into a fact, condition or choice", "{n} macros converted into facts, conditions or choices"],
+      kept: ["1 kept as a comment in the choices block (“Show the code”)", "{n} kept as comments in the choices block (“Show the code”)"],
+      skipped: ["1 technical passage skipped", "{n} technical passages skipped"],
+      dismiss: "Close",
     },
     gamebook: {
       epub: "Gamebook (EPUB)",
