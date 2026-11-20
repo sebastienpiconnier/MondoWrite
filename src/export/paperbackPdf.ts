@@ -62,11 +62,18 @@ const HYPHEN_PATTERNS = {
   "en-us": () => import("hyphen/en-us"),
   "en-gb": () => import("hyphen/en-gb"),
   es: () => import("hyphen/es"),
-  ca: () => import("./hyphenRules/ca")
+  // Catalan : règles écrites pour MondoWrite (les motifs de TeX sont sous LPPL, incompatible avec l'AGPL).
+  ca: () => import("./hyphenRules/ca"),
 } as const;
 
-/** Césure de la langue du livre (français, anglais, espagnol) ; aucune pour une langue dont les motifs ne sont pas livrés. */
-async function hyphenator(lang: string): Promise<((word: string) => string) | null> {
+/**
+ * Lettre qui lie deux parties d'un même mot pour la césure : l'ela geminada du catalan (`col·legi`), coupée à la place
+ * du point (`col-` / `legi`). Ailleurs, le point médian sépare des mots, comme avant.
+ */
+const WORD_JOINERS: Partial<Record<keyof typeof HYPHEN_PATTERNS, string>> = { ca: "·" };
+
+/** Césure de la langue du livre (français, anglais, espagnol, catalan) ; aucune pour une langue dont les motifs ne sont pas livrés. */
+async function hyphenator(lang: string): Promise<{ hy: (word: string) => string; joiner?: string } | null> {
   const code = lang.toLowerCase();
   const patterns = code === "en-au" ? "en-gb" : typoRules(code).hyphen;
   const load = patterns && (code.startsWith("en") || typoCode(code) !== "en") ? HYPHEN_PATTERNS[patterns] : null;
@@ -75,7 +82,7 @@ async function hyphenator(lang: string): Promise<((word: string) => string) | nu
     type Hyphenator = { hyphenateSync: (text: string, options?: { hyphenChar?: string; minWordLength?: number }) => string };
     const mod = (await load()) as unknown as { default?: Hyphenator } & Partial<Hyphenator>;
     const hy = (mod.default ?? mod) as Hyphenator;
-    return (word) => hy.hyphenateSync(word, { hyphenChar: SHY, minWordLength: 6 });
+    return { hy: (word) => hy.hyphenateSync(word, { hyphenChar: SHY, minWordLength: 6 }), joiner: patterns ? WORD_JOINERS[patterns] : undefined };
   } catch {
     return null;
   }
@@ -95,7 +102,7 @@ export async function preparePaperback(book: BookDoc, options: PrintOptions, str
   const pdf = await PDFDocument.create();
   const fonts = await embedFonts(pdf);
   const hy = await hyphenator(book.lang);
-  const source = hy ? hyphenateBook(book, hy) : book;
+  const source = hy ? hyphenateBook(book, hy.hy, hy.joiner) : book;
   const layout = layoutPaperback(source, options, strings, { width: (text, font, size) => fonts[font].widthOfTextAtSize(noThinSpace(text), size), capHeight: CAP_HEIGHT });
   const pages = layout.pages.length;
   let saved: Promise<Uint8Array> | null = null;
