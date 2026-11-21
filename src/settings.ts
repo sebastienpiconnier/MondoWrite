@@ -14,6 +14,7 @@ import { authorName, cleanProfile, readProfile, type AuthorProfile } from "./pro
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
 import { readMcp, type McpAccess, type McpSettings } from "./mcp";
 import { readExperimental, type ExperimentalSettings } from "./interactive";
+import { readLt, type LtSettings } from "./languagetool/api";
 
 export type ThemePref = "system" | "light" | "dark";
 export type Theme = "light" | "dark";
@@ -227,6 +228,9 @@ interface SettingsState {
   experimental: ExperimentalSettings;
   setExperimental: (patch: Partial<ExperimentalSettings>) => void;
   setMcpProject: (id: string, access: McpAccess | null) => void;
+  /** Vérification par LanguageTool : service choisi, compte Premium ou serveur personnel ; clé dans le trousseau. */
+  languageTool: LtSettings;
+  setLanguageTool: (patch: Partial<LtSettings>) => void;
 }
 
 /** Un gabarit de l'auteur gardé sur l'appareil : son nom et ses cases (les clés naissent dans chaque projet). */
@@ -280,7 +284,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown; languageTool?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -344,6 +348,8 @@ export const useSettings = create<SettingsState>((set) => ({
   experimental: readExperimental(saved.experimental),
   setExperimental: (patch) => set((s) => ({ experimental: readExperimental({ ...s.experimental, ...patch }) })),
   setMcpEnabled: (enabled) => set((s) => ({ mcp: { ...s.mcp, enabled } })),
+  languageTool: readLt(saved.languageTool),
+  setLanguageTool: (patch) => set((s) => ({ languageTool: readLt({ ...s.languageTool, ...patch }) })),
   setMcpProject: (id, access) =>
     set((s) => {
       const projects = { ...s.mcp.projects };
@@ -377,7 +383,7 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental, languageTool }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -392,7 +398,9 @@ export function initSettings() {
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;
     try {
-      const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
+      const stored = keysElsewhere
+        ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } }, languageTool: { ...languageTool, key: "" } }
+        : { ai, photos, languageTool };
       localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
     } catch {
       /* réglage non mémorisé, sans gravité */

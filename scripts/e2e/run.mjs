@@ -522,6 +522,102 @@ const scenarios = [
     },
   },
   {
+    name: "LanguageTool : réglé dans les Réglages, la scène relue, une faute corrigée d'un clic, une remarque ignorée, un clic rouvre la bulle",
+    async run(h) {
+      const { page } = h;
+      // Le service est simulé (le réseau extérieur est coupé) : une faute sur « aller », une remarque de style sur « très ».
+      const sent = [];
+      await page.route("https://api.languagetool.org/v2/check", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        const text = new URLSearchParams(route.request().postData() ?? "").get("text") ?? "";
+        sent.push(text);
+        const matches = [];
+        const a = text.indexOf("aller");
+        if (a >= 0) matches.push({ message: "Le participe passé convient ici.", offset: a, length: 5, replacements: [{ value: "allé" }], rule: { id: "PP", issueType: "grammar", category: { id: "GRAMMAR" } } });
+        const b = text.indexOf("très");
+        if (b >= 0) matches.push({ message: "Adverbe peu utile.", offset: b, length: 4, replacements: [], rule: { id: "TRES", issueType: "style", category: { id: "STYLE" } } });
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ matches }) });
+      });
+      await h.create("Relecture");
+      await openSettings(page);
+      await page.getByRole("tab", { name: "Écriture", exact: true }).click();
+      await page.getByLabel("Vérification LanguageTool", { exact: true }).selectOption("public");
+      await until(() => page.getByText("Le texte de la scène est envoyé au service choisi", { exact: false }).isVisible(), "l'avertissement d'envoi du texte n'apparaît pas");
+      await page.keyboard.press("Escape");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le port");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Elle est aller au port. Il fait très beau.");
+      await h.wait(300);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier avec LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 2, "les deux remarques ne sont pas soulignées");
+      assert(sent.some((t) => t.includes("Elle est aller au port")), `le texte de la scène n'a pas été envoyé : ${JSON.stringify(sent)}`);
+      // La bulle s'ouvre sur la première remarque, avec le focus (chemin au clavier).
+      const bubble = page.locator(".lt-bubble");
+      await until(() => bubble.isVisible(), "la bulle de la première remarque ne s'ouvre pas");
+      await until(() => page.getByRole("button", { name: "Remplacer par allé" }).evaluate((el) => el === document.activeElement), "la correction proposée n'a pas le focus");
+      await page.keyboard.press("Enter");
+      await until(async () => (await editor.innerText()).includes("Elle est allé au port"), "la correction n'est pas entrée dans le texte");
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "la remarque corrigée est encore soulignée");
+      // La remarque suivante prend la place : sans correction proposée, on l'ignore.
+      await until(() => bubble.getByText("Adverbe peu utile.").isVisible(), "la remarque suivante ne s'affiche pas");
+      await bubble.getByRole("button", { name: "Ignorer", exact: true }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 0, "la remarque ignorée est encore soulignée");
+      await until(async () => !(await bubble.count()), "la bulle reste ouverte sans remarque");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("Elle est allé au port") && !v.includes("lt-issue")), "la correction n'est pas enregistrée (ou un soulignement est entré dans le fichier)");
+      // Un clic sur un passage souligné rouvre sa bulle.
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier avec LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "la seconde vérification ne souligne pas « très »");
+      await until(() => bubble.evaluate((el) => el.contains(document.activeElement)), "la bulle n'a pas le focus après la vérification");
+      await page.keyboard.press("Escape");
+      await until(async () => !(await bubble.count()), "Échap ne ferme pas la bulle");
+      await editor.locator(".lt-issue").click();
+      await until(() => bubble.getByText("Adverbe peu utile.").isVisible(), "un clic sur le passage souligné n'ouvre pas sa bulle");
+    },
+  },
+  {
+    name: "LanguageTool dans le scénario : seuls l'action et le dialogue sont relus",
+    async run(h) {
+      const { page } = h;
+      const sent = [];
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", languageTool: { server: "public" } }));
+      });
+      await page.route("https://api.languagetool.org/v2/check", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        sent.push(new URLSearchParams(route.request().postData() ?? "").get("text") ?? "");
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ matches: [] }) });
+      });
+      await h.create("Le Quai", "scenario");
+      await h.view(4);
+      const editor = page.locator(".sp-editor");
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("INT. QUAI - NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La pluie tombe sur le quai.");
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Tab");
+      await page.keyboard.type("MARC");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("On rentre ?");
+      await h.wait(400);
+      await page.locator(".sp-option").getByRole("button", { name: "Plus d’actions" }).or(page.getByRole("button", { name: "Plus d’actions" }).last()).first().click();
+      await page.getByRole("menuitem", { name: "Vérifier avec LanguageTool" }).click();
+      await until(() => page.getByText("LanguageTool n’a rien relevé dans cette scène.").isVisible(), "la fin de la vérification n'est pas annoncée");
+      const text = sent.at(-1) ?? "";
+      assert(text.includes("La pluie tombe sur le quai."), `l'action n'a pas été envoyée : ${JSON.stringify(text)}`);
+      assert(!text.includes("INT. QUAI") && !text.includes("MARC"), `l'en-tête ou le nom du personnage ont été envoyés : ${JSON.stringify(text)}`);
+    },
+  },
+  {
     name: "synonymes : Ctrl+Alt+Y sur un mot du manuscrit, le dictionnaire se télécharge, un clic remplace le mot",
     async run(h) {
       const { page } = h;

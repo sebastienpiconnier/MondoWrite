@@ -13,6 +13,8 @@ import { setKeysInKeychain, useSettings } from "./settings";
 export interface Secrets {
   ai: Partial<Record<AiProvider, string>>;
   photos: { pixabay: string; unsplash: string };
+  /** Clé d'API d'un compte LanguageTool Premium. */
+  languagetool?: string;
 }
 
 const NONE: Secrets = { ai: {}, photos: { pixabay: "", unsplash: "" } };
@@ -28,8 +30,9 @@ export function readSecrets(text: string | null): Secrets | null {
     return null;
   }
   if (!raw || typeof raw !== "object") return null;
-  const { ai, photos } = raw as { ai?: unknown; photos?: unknown };
+  const { ai, photos, languagetool } = raw as { ai?: unknown; photos?: unknown; languagetool?: unknown };
   const out: Secrets = { ai: {}, photos: { pixabay: "", unsplash: "" } };
+  if (clean(languagetool)) out.languagetool = clean(languagetool);
   if (ai && typeof ai === "object") {
     for (const p of AI_PROVIDERS) {
       const key = clean((ai as Record<string, unknown>)[p]);
@@ -50,15 +53,21 @@ export function writeSecrets(s: Secrets): string {
   const photos: Record<string, string> = {};
   if (s.photos.pixabay) photos.pixabay = s.photos.pixabay;
   if (s.photos.unsplash) photos.unsplash = s.photos.unsplash;
-  return JSON.stringify({ ai, photos });
+  return JSON.stringify(s.languagetool ? { ai, photos, languagetool: s.languagetool } : { ai, photos });
 }
 
 export const hasSecrets = (s: Secrets) => writeSecrets(s) !== writeSecrets(NONE);
 export const sameSecrets = (a: Secrets, b: Secrets) => writeSecrets(a) === writeSecrets(b);
 
 /** Clés que montrent les réglages de l'appareil. */
-export function secretsOf(state: { ai: { keys: Partial<Record<AiProvider, string>> }; photos: { keys: { pixabay: string; unsplash: string } } }): Secrets {
-  return { ai: { ...state.ai.keys }, photos: { ...state.photos.keys } };
+export function secretsOf(state: {
+  ai: { keys: Partial<Record<AiProvider, string>> };
+  photos: { keys: { pixabay: string; unsplash: string } };
+  languageTool?: { key: string };
+}): Secrets {
+  const out: Secrets = { ai: { ...state.ai.keys }, photos: { ...state.photos.keys } };
+  if (state.languageTool?.key) out.languagetool = state.languageTool.key;
+  return out;
 }
 
 /**
@@ -68,7 +77,11 @@ export function secretsOf(state: { ai: { keys: Partial<Record<AiProvider, string
 export function mergeSecrets(stored: Secrets, local: Secrets): Secrets {
   const ai = { ...stored.ai };
   for (const p of AI_PROVIDERS) if (local.ai[p]) ai[p] = local.ai[p];
-  return { ai, photos: { pixabay: local.photos.pixabay || stored.photos.pixabay, unsplash: local.photos.unsplash || stored.photos.unsplash } };
+  return {
+    ai,
+    photos: { pixabay: local.photos.pixabay || stored.photos.pixabay, unsplash: local.photos.unsplash || stored.photos.unsplash },
+    ...(local.languagetool || stored.languagetool ? { languagetool: local.languagetool || stored.languagetool } : {}),
+  };
 }
 
 /** Accès au trousseau : les commandes Tauri dans l'app, un faux trousseau dans les tests. */
@@ -145,5 +158,5 @@ export async function initKeychain(keychain: Keychain = tauriKeychain): Promise<
 function apply(s: Secrets) {
   const state = useSettings.getState();
   if (sameSecrets(secretsOf(state), s)) return;
-  useSettings.setState({ ai: { ...state.ai, keys: { ...s.ai } }, photos: { ...state.photos, keys: { ...s.photos } } });
+  useSettings.setState({ ai: { ...state.ai, keys: { ...s.ai } }, photos: { ...state.photos, keys: { ...s.photos } }, languageTool: { ...state.languageTool, key: s.languagetool ?? "" } });
 }
