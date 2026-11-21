@@ -31,7 +31,7 @@ describe("PROVIDER_LIMITS", () => {
     for (const p of AI_PROVIDERS) expect(PROVIDER_LIMITS[p]).toBeDefined();
     for (const p of AI_PROVIDERS.filter((p) => p !== "apple")) {
       expect(PROVIDER_LIMITS[p].context).toBeNull();
-      expect(PROVIDER_LIMITS[p].refused).toEqual([]);
+      expect(PROVIDER_LIMITS[p].refused).toEqual(p === "chatgpt" ? ["photo"] : []);
     }
     expect(PROVIDER_LIMITS.apple.context).toBe(APPLE_CONTEXT);
     expect(PROVIDER_LIMITS.apple.maxOutput).toBeLessThan(APPLE_CONTEXT / 2);
