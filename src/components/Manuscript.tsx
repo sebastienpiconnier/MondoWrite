@@ -904,6 +904,7 @@ export function Manuscript() {
                 !interactive && !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
                 { label: t.textImage.insert, onSelect: () => insertImage() },
                 lt.available && !pageKind && { label: t.languageTool.menu, onSelect: () => void lt.run() },
+                lt.bulk && { label: t.languageTool.menuBook, onSelect: () => void lt.run("all") },
                 lt.available && lt.hasIssues && { label: t.languageTool.clear, onSelect: lt.clear },
                 // Roman interactif (lot 2) : un choix en fin de la scène du curseur.
                 interactive && !pageKind && { label: t.interactive.play.openHere, onSelect: () => openPlay(current) },

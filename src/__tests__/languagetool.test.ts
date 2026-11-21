@@ -4,9 +4,9 @@
 import { describe, expect, it } from "vitest";
 import { Schema } from "@tiptap/pm/model";
 import { EditorState } from "@tiptap/pm/state";
-import { checkBody, checkText, checkUrl, chunks, kindOf, LtError, ltLeavesDevice, ltMissing, parseMatches, readLt, type LtSettings } from "../languagetool/api";
-import { collectText, toRange } from "../languagetool/textMap";
-import { firstFrom, mapIssues, neighbour, type LtIssue } from "../languagetool/extension";
+import { checkBody, checkText, checkUrl, chunks, kindOf, LtError, ltCanBulk, ltLeavesDevice, ltLive, ltMissing, parseMatches, readLt, type LtSettings } from "../languagetool/api";
+import { collectRanges, collectText, toRange, touchedBlocks } from "../languagetool/textMap";
+import { firstFrom, mapIssues, neighbour, reduceForTest, type LtIssue } from "../languagetool/extension";
 import { readSecrets, writeSecrets, mergeSecrets } from "../secrets";
 
 const schema = new Schema({
@@ -22,13 +22,13 @@ const schema = new Schema({
 });
 const p = (...content: Parameters<typeof schema.text>[0][]) => schema.node("paragraph", null, content.map((c) => schema.text(c)));
 
-const premium: LtSettings = { server: "premium", username: "eddy@example.com", key: "abc", url: "" };
+const premium: LtSettings = { server: "premium", username: "eddy@example.com", key: "abc", url: "", live: false };
 
 describe("réglages LanguageTool", () => {
   it("lit prudemment et reste coupé par défaut", () => {
     expect(readLt(undefined).server).toBe("off");
     expect(readLt({ server: "bidon" }).server).toBe("off");
-    expect(readLt({ server: "premium", username: " a@b.c ", key: 3 })).toEqual({ server: "premium", username: "a@b.c", key: "", url: "" });
+    expect(readLt({ server: "premium", username: " a@b.c ", key: 3 })).toEqual({ server: "premium", username: "a@b.c", key: "", url: "", live: false });
   });
   it("dit ce qui manque", () => {
     expect(ltMissing(readLt({}))).toBe("off");
@@ -183,5 +183,65 @@ describe("suivi des remarques", () => {
     expect(neighbour([], "a", 1)).toBeNull();
     expect(firstFrom(list, 4)?.id).toBe("b");
     expect(firstFrom(list, 50)?.id).toBe("a");
+  });
+});
+
+describe("vérifications automatiques (Premium, serveur personnel)", () => {
+  it("jamais avec l'API publique", () => {
+    expect(ltCanBulk({ ...premium, server: "public" })).toBe(false);
+    expect(ltCanBulk(premium)).toBe(true);
+    expect(ltCanBulk({ ...premium, key: "" })).toBe(false);
+    expect(ltCanBulk({ ...premium, server: "custom", url: "http://localhost:8081" })).toBe(true);
+    expect(ltLive({ ...premium, live: true })).toBe(true);
+    expect(ltLive({ ...premium, server: "public", live: true })).toBe(false);
+    expect(ltLive(premium)).toBe(false);
+    expect(readLt({ server: "premium", live: true }).live).toBe(true);
+  });
+  it("tout le livre : morceaux espacés, avancement annoncé", async () => {
+    const progress: string[] = [];
+    const times: number[] = [];
+    const fake = (async () => {
+      times.push(Date.now());
+      return new Response(JSON.stringify({ matches: [] }), { status: 200 });
+    }) as typeof fetch;
+    const text = `${"a".repeat(30_000)}\n\n${"b".repeat(30_000)}`;
+    await checkText(premium, text, "fr", undefined, fake, { pauseMs: 50, onProgress: (n, total) => progress.push(`${n}/${total}`) });
+    expect(progress).toEqual(["1/2", "2/2"]);
+    expect(times[1] - times[0]).toBeGreaterThanOrEqual(45);
+  });
+  it("plusieurs paragraphes à la suite, positions retrouvées", () => {
+    const doc = schema.node("doc", null, [p("Un aller."), p("Rien."), p("Deux aller.")]);
+    const first = { from: 0, to: doc.child(0).nodeSize };
+    const third = { from: doc.content.size - doc.child(2).nodeSize, to: doc.content.size };
+    const mapped = collectRanges(doc, [third, first]);
+    expect(mapped.text).toBe("Un aller.\n\nDeux aller.");
+    const at = mapped.text.lastIndexOf("aller");
+    const r = toRange(mapped, at, 5)!;
+    expect(r.from).toBeGreaterThan(third.from);
+    expect(doc.textBetween(r.from, r.to)).toBe("aller");
+  });
+  it("les paragraphes touchés par une frappe", () => {
+    const state = EditorState.create({ schema, doc: schema.node("doc", null, [p("Un."), p("Deux."), p("Trois.")]) });
+    const second = state.doc.child(0).nodeSize;
+    const tr = state.tr.insertText("x", second + 2);
+    expect(touchedBlocks(tr)).toEqual([second]);
+    // Un Entrée en fin de paragraphe ne change pas son texte : seul le nouveau paragraphe (vide) est relevé.
+    const split = state.tr.split(second + 1 + "Deux.".length);
+    expect(touchedBlocks(split).map((pos) => split.doc.nodeAt(pos)!.textContent)).toEqual([""]);
+    // Coupé au milieu : les deux moitiés sont à relire.
+    expect(touchedBlocks(state.tr.split(second + 3)).length).toBe(2);
+    // Une lettre effacée en fin de paragraphe : il est à relire.
+    const del = state.tr.delete(second + 5, second + 6);
+    expect(touchedBlocks(del)).toEqual([second]);
+  });
+  it("remplace seulement les remarques des parties relues", () => {
+    const issue = (id: string, from: number, to: number): LtIssue => ({ id, from, to, original: "", message: "", replacements: [], kind: "grammar", rule: "" });
+    const state = { issues: [issue("a", 1, 3), issue("b", 10, 12), issue("c", 20, 22)], active: "c", focus: 0 };
+    const next = reduceForTest(state, { within: [{ from: 9, to: 15 }], add: [issue("d", 11, 13)] });
+    expect(next.issues.map((i) => i.id)).toEqual(["a", "d", "c"]);
+    expect(next.active).toBe("c");
+    expect(next.focus).toBe(0);
+    const gone = reduceForTest(state, { within: [{ from: 19, to: 30 }], add: [] });
+    expect(gone.active).toBeNull();
   });
 });

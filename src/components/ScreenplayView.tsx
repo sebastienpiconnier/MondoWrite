@@ -86,7 +86,7 @@ import { ScreenplayAtelier, ScreenplayDirections, screenplaySceneText } from "./
 import { findInText, nthMatch } from "../search";
 import { centerSelection } from "./centerSelection";
 import { LanguageTool } from "../languagetool/extension";
-import { LanguageToolBubble, LanguageToolStatus, useLanguageTool, type LtScope } from "./LanguageToolBubble";
+import { LanguageToolBubble, LanguageToolLive, LanguageToolStatus, useLanguageTool, type LtScope } from "./LanguageToolBubble";
 import {
   currentElement,
   fromDoc,
@@ -156,8 +156,10 @@ function scriptScope(ed: Editor): LtScope | null {
     if (index === start) from = offset;
     if (index === end - 1) to = offset + node.nodeSize;
   });
-  return to > from ? { from, to, accept: (block) => LT_ELEMENTS.has(block.type.name) } : null;
+  return to > from ? { from, to, accept: ltAccept } : null;
 }
+
+const ltAccept = (block: PMNode) => LT_ELEMENTS.has(block.type.name);
 
 export function ScreenplayView() {
   const { t, types } = useVocab();
@@ -414,7 +416,7 @@ export function ScreenplayView() {
   editorRef.current = editor;
   // LanguageTool (à la demande) : la scène du curseur, sans en-têtes, noms ni transitions (tous seraient soulignés).
   const getScriptEditor = useCallback(() => editorRef.current, []);
-  const lt = useLanguageTool(getScriptEditor, scriptScope);
+  const lt = useLanguageTool(getScriptEditor, scriptScope, ltAccept);
 
   // En quittant la vue, et avant Cmd/Ctrl+S, ce qui attend part tout de suite dans le store.
   useEffect(() => {
@@ -1384,6 +1386,7 @@ export function ScreenplayView() {
               { label: t.book.chutier.title, title: t.format.chutier, hint: key("Mod", "Shift", "K"), onSelect: sendToChutier },
               { label: t.comments.element, hint: key("Mod", "Alt", "M"), onSelect: commentElement },
               lt.available && { label: t.languageTool.menu, onSelect: () => void lt.run() },
+              lt.bulk && { label: t.languageTool.menuScript, onSelect: () => void lt.run("all") },
               lt.available && lt.hasIssues && { label: t.languageTool.clear, onSelect: lt.clear },
               // Fusionner (#23) : la scène suivante (sans section entre elles) rejoint celle-ci.
               !!scene?.cardId && !!useCosmos.getState().nextMergeable(scene.cardId) && { label: t.merge.menu, onSelect: mergeNext },
@@ -1443,6 +1446,7 @@ export function ScreenplayView() {
             {revisionRules && <style>{revisionRules}</style>}
             <EditorContent editor={editor} />
             {editor && <LanguageToolBubble editor={editor} />}
+            {editor && <LanguageToolLive editor={editor} accept={ltAccept} />}
             {veil && (
               <>
                 <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />

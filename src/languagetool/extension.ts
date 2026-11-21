@@ -27,7 +27,10 @@ export interface LtState {
   focus: number;
 }
 
-type LtMeta = { set: LtIssue[]; active?: string | null } | { remove: string; active?: string | null } | { clear: true } | { active: string | null; focus?: boolean };
+type LtMeta =
+  | { set: LtIssue[]; active?: string | null }
+  /** Remarques neuves pour les parties relues (paragraphes, scène) : les anciennes de ces parties s'en vont. */
+  | { within: { from: number; to: number }[]; add: LtIssue[]; active?: string | null } | { remove: string; active?: string | null } | { clear: true } | { active: string | null; focus?: boolean };
 
 export const ltKey = new PluginKey<LtState>("languageTool");
 
@@ -50,10 +53,19 @@ export function mapIssues(issues: LtIssue[], tr: Transaction): LtIssue[] {
 function reduce(state: LtState, meta: LtMeta | undefined): LtState {
   if (!meta) return state;
   if ("clear" in meta) return EMPTY;
+  if ("within" in meta) {
+    const kept = state.issues.filter((i) => !meta.within.some((r) => i.from < r.to && i.to > r.from));
+    const issues = [...kept, ...meta.add].sort((a, b) => a.from - b.from);
+    const active = meta.active !== undefined ? meta.active : issues.some((i) => i.id === state.active) ? state.active : null;
+    return { issues, active, focus: meta.active ? state.focus + 1 : state.focus };
+  }
   if ("set" in meta) return { issues: meta.set, active: meta.active ?? null, focus: meta.active ? state.focus + 1 : state.focus };
   if ("remove" in meta) return { ...state, issues: state.issues.filter((i) => i.id !== meta.remove), active: meta.active ?? null };
   return { ...state, active: meta.active, focus: meta.focus ? state.focus + 1 : state.focus };
 }
+
+/** Pour les tests : le réducteur des remarques. */
+export const reduceForTest = (state: LtState, meta: LtMeta) => reduce(state, meta);
 
 export const ltState = (state: EditorState): LtState => ltKey.getState(state) ?? EMPTY;
 

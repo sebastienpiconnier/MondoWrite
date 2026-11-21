@@ -554,7 +554,7 @@ const scenarios = [
       await page.keyboard.type("Elle est aller au port. Il fait très beau.");
       await h.wait(300);
       await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
-      await page.getByRole("menuitem", { name: "Vérifier avec LanguageTool" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).click();
       await until(async () => (await editor.locator(".lt-issue").count()) === 2, "les deux remarques ne sont pas soulignées");
       assert(sent.some((t) => t.includes("Elle est aller au port")), `le texte de la scène n'a pas été envoyé : ${JSON.stringify(sent)}`);
       // La bulle s'ouvre sur la première remarque, avec le focus (chemin au clavier).
@@ -572,13 +572,90 @@ const scenarios = [
       await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("Elle est allé au port") && !v.includes("lt-issue")), "la correction n'est pas enregistrée (ou un soulignement est entré dans le fichier)");
       // Un clic sur un passage souligné rouvre sa bulle.
       await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
-      await page.getByRole("menuitem", { name: "Vérifier avec LanguageTool" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).click();
       await until(async () => (await editor.locator(".lt-issue").count()) === 1, "la seconde vérification ne souligne pas « très »");
       await until(() => bubble.evaluate((el) => el.contains(document.activeElement)), "la bulle n'a pas le focus après la vérification");
       await page.keyboard.press("Escape");
       await until(async () => !(await bubble.count()), "Échap ne ferme pas la bulle");
       await editor.locator(".lt-issue").click();
       await until(() => bubble.getByText("Adverbe peu utile.").isVisible(), "un clic sur le passage souligné n'ouvre pas sa bulle");
+    },
+  },
+  {
+    name: "LanguageTool Premium : vérification pendant la frappe (paragraphe modifié seulement) et tout le livre ; l'API gratuite ne propose ni l'une ni l'autre",
+    async run(h) {
+      const { page } = h;
+      const sent = [];
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages"))
+          localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", languageTool: { server: "premium", username: "eddy@example.com", key: "cle", live: true } }));
+      });
+      await page.route("https://api.languagetoolplus.com/v2/check", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        const body = new URLSearchParams(route.request().postData() ?? "");
+        const text = body.get("text") ?? "";
+        sent.push({ text, key: body.get("apiKey") });
+        const matches = [];
+        for (const word of ["aller", "pluit"]) {
+          let i = text.indexOf(word);
+          while (i >= 0) {
+            matches.push({ message: "Faute.", offset: i, length: word.length, replacements: [{ value: word === "aller" ? "allé" : "pluie" }], rule: { id: word, issueType: "misspelling" } });
+            i = text.indexOf(word, i + 1);
+          }
+        }
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ matches }) });
+      });
+      await h.create("En direct");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("La pluie");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Premier paragraphe sans souci.");
+      await until(() => sent.length >= 1, "le premier paragraphe n'est pas relu après la pause", 12_000);
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Elle est aller sous la pluit.");
+      // Rien n'est envoyé pendant la frappe ; après la pause, les remarques arrivent seules, sans ouvrir la bulle.
+      await until(async () => (await editor.locator(".lt-issue").count()) === 2, "la vérification pendant la frappe ne souligne rien", 12_000);
+      assert(!(await page.locator(".lt-bubble").count()), "la bulle s'est ouverte toute seule pendant la frappe");
+      assert(sent.every((x) => x.key === "cle"), "la clé du compte Premium n'est pas envoyée");
+      const last = sent.at(-1).text;
+      assert(last.includes("Elle est aller sous la pluit.") && !last.includes("Premier paragraphe"), `seul le paragraphe modifié devait partir : ${JSON.stringify(last)}`);
+      // Corrigé à la main : le soulignement part tout de suite.
+      await editor.locator(".lt-issue").first().click();
+      await until(() => page.locator(".lt-bubble").isVisible(), "un clic n'ouvre pas la bulle");
+      await page.getByRole("button", { name: "Remplacer par allé" }).click();
+      await until(async () => (await editor.innerText()).includes("Elle est allé sous"), "la correction n'est pas entrée");
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "la remarque corrigée reste soulignée");
+      // Tout le livre : une seconde scène, vérifiée avec la première.
+      await page.keyboard.press("Escape");
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Effacer les soulignements de LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 0, "« Effacer les soulignements » n'efface rien");
+      const before = sent.length;
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier tout le livre avec LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "« Vérifier tout le livre » ne souligne pas « pluit »");
+      assert(sent.slice(before).some((x) => x.text.includes("Premier paragraphe") && x.text.includes("pluit")), "tout le livre n'a pas été envoyé");
+      // API gratuite : ni pendant la frappe, ni tout le livre.
+      await page.evaluate(() => {
+        const raw = JSON.parse(localStorage.getItem("cosmos:reglages") ?? "{}");
+        localStorage.setItem("cosmos:reglages", JSON.stringify({ ...raw, languageTool: { server: "public", live: true } }));
+      });
+      await h.reloadAndOpen();
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await until(() => page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).isVisible(), "la vérification de la scène a disparu");
+      assert(!(await page.getByRole("menuitem", { name: "Vérifier tout le livre avec LanguageTool" }).count()), "« tout le livre » est proposé avec l'API gratuite");
+      await page.keyboard.press("Escape");
+      const count = sent.length;
+      await page.locator(".ProseMirror[contenteditable=true]").first().click();
+      await page.keyboard.press("End");
+      await page.keyboard.type(" Encore aller.");
+      await h.wait(3500);
+      assert(sent.length === count, "l'API gratuite a reçu une vérification pendant la frappe");
     },
   },
   {
@@ -610,7 +687,7 @@ const scenarios = [
       await page.keyboard.type("On rentre ?");
       await h.wait(400);
       await page.locator(".sp-option").getByRole("button", { name: "Plus d’actions" }).or(page.getByRole("button", { name: "Plus d’actions" }).last()).first().click();
-      await page.getByRole("menuitem", { name: "Vérifier avec LanguageTool" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).click();
       await until(() => page.getByText("LanguageTool n’a rien relevé dans cette scène.").isVisible(), "la fin de la vérification n'est pas annoncée");
       const text = sent.at(-1) ?? "";
       assert(text.includes("La pluie tombe sur le quai."), `l'action n'a pas été envoyée : ${JSON.stringify(text)}`);

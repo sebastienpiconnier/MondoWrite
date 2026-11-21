@@ -5,6 +5,7 @@
 // ligne devient « \n » ; un atome en ligne (appel de note, image) ne compte pour rien, pour ne pas couper un mot.
 
 import type { Node as PMNode } from "@tiptap/pm/model";
+import type { Transaction } from "@tiptap/pm/state";
 
 /** Un morceau de texte du document : sa place dans le texte envoyé et dans le document. */
 export interface TextSegment {
@@ -69,4 +70,48 @@ export function toRange(mapped: MappedText, offset: number, length: number): { f
   const last = segmentAt(mapped.segments, offset + length - 1);
   if (!first || !last) return null;
   return { from: first.pos + (offset - first.offset), to: last.pos + (offset + length - 1 - last.offset) + 1 };
+}
+
+/** Texte de plusieurs parties du document (paragraphes modifiés), à la suite, séparées par une ligne vide. */
+export function collectRanges(doc: PMNode, ranges: { from: number; to: number }[], accept?: (block: PMNode) => boolean): MappedText {
+  let text = "";
+  const segments: TextSegment[] = [];
+  for (const r of [...ranges].sort((a, b) => a.from - b.from)) {
+    const part = collectText(doc, r.from, r.to, accept);
+    if (!part.text) continue;
+    if (text) text += "\n\n";
+    for (const seg of part.segments) segments.push({ ...seg, offset: seg.offset + text.length });
+    text += part.text;
+  }
+  return { text, segments };
+}
+
+/**
+ * Le texte du bloc est-il celui d'avant ? Un Entrée en fin de paragraphe touche le paragraphe sans changer son texte :
+ * il n'y a rien à relire.
+ */
+function sameText(tr: Transaction, node: PMNode, pos: number): boolean {
+  const at = tr.mapping.invert().map(pos + 1, 1);
+  if (at > tr.before.content.size) return false;
+  const was = tr.before.resolve(at).parent;
+  return was.isTextblock && was.textBetween(0, was.content.size, "\n", "") === node.textBetween(0, node.content.size, "\n", "");
+}
+
+/** Débuts des blocs de texte touchés par une transaction (positions du document d'arrivée). */
+export function touchedBlocks(tr: Transaction): number[] {
+  const out: number[] = [];
+  const doc = tr.doc;
+  tr.mapping.maps.forEach((map, i) => {
+    const rest = tr.mapping.slice(i + 1);
+    map.forEach((_a, _b, start, end) => {
+      const from = Math.max(0, Math.min(rest.map(start, -1), doc.content.size));
+      const to = Math.max(from, Math.min(rest.map(end, 1), doc.content.size));
+      doc.nodesBetween(from, Math.min(to + 1, doc.content.size), (node, pos) => {
+        if (!node.isTextblock) return true;
+        if (!out.includes(pos) && !sameText(tr, node, pos)) out.push(pos);
+        return false;
+      });
+    });
+  });
+  return out;
 }

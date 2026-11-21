@@ -34,7 +34,7 @@ import type { Plan } from "../plan";
 import { findInText, nthMatch } from "../search";
 import { centerSelection } from "./centerSelection";
 import { LanguageTool } from "../languagetool/extension";
-import { LanguageToolBubble } from "./LanguageToolBubble";
+import { LanguageToolBubble, LanguageToolLive } from "./LanguageToolBubble";
 
 /** Page du manuscrit à l'écran, en em : format livre (2:3), environ 250 mots par page. */
 export const PAGE = { width: 34, height: 51, marginTop: 5, marginBottom: 5, lineHeight: 1.6 };
@@ -648,6 +648,7 @@ export function BookEditor({
       )}
       {editor && <FootnotePopover editor={editor} />}
       {editor && <LanguageToolBubble editor={editor} />}
+      {editor && <LanguageToolLive editor={editor} />}
       {editor && <FormatBar editor={editor} atelier={cards.find((c) => c.id === current)?.title ?? ""} onChutier={() => handlers.current?.onChutier()} onComment={() => handlers.current?.onComment()} onCreate={{ name: (state) => selectedName(state, cardsRef.current), run: createFromSelection }} />}
       {veil && (
         <>

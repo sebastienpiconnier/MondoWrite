@@ -24,9 +24,11 @@ export interface LtSettings {
   key: string;
   /** Serveur personnel : son adresse (par exemple http://localhost:8081). */
   url: string;
+  /** Vérifier pendant la frappe (compte Premium et serveur personnel seulement, voir `ltCanLive`). */
+  live: boolean;
 }
 
-export const LT_NONE: LtSettings = { server: "off", username: "", key: "", url: "" };
+export const LT_NONE: LtSettings = { server: "off", username: "", key: "", url: "", live: false };
 export const LT_PUBLIC_URL = "https://api.languagetool.org";
 export const LT_PREMIUM_URL = "https://api.languagetoolplus.com";
 export const LT_CUSTOM_DEFAULT = "http://localhost:8081";
@@ -36,8 +38,16 @@ const line = (v: unknown, max = 200) => (typeof v === "string" ? v.trim().slice(
 /** Réglages lus prudemment (localStorage) : rien de valide, la vérification reste coupée. */
 export function readLt(raw: unknown): LtSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  return { server: isLtServer(r.server) ? r.server : "off", username: line(r.username), key: line(r.key), url: line(r.url, 300) };
+  return { server: isLtServer(r.server) ? r.server : "off", username: line(r.username), key: line(r.key), url: line(r.url, 300), live: r.live === true };
 }
+
+/**
+ * Vérifications automatiques (pendant la frappe, tout le livre) permises ? Pas avec l'API publique, dont les
+ * conditions interdisent les requêtes automatiques ; oui avec un compte Premium ou un serveur personnel.
+ */
+export const ltCanBulk = (s: LtSettings) => (s.server === "premium" || s.server === "custom") && ltMissing(s) === null;
+/** Vérification pendant la frappe : permise et cochée. */
+export const ltLive = (s: LtSettings) => s.live && ltCanBulk(s);
 
 /** Ce qui manque pour vérifier, ou null si tout est prêt. */
 export function ltMissing(s: LtSettings): "off" | "account" | "url" | null {
@@ -171,14 +181,30 @@ async function http(): Promise<typeof fetch> {
  * Vérifie un texte : tous ses morceaux l'un après l'autre (jamais en parallèle, pour rester sous la limite par
  * minute). Positions rendues dans le texte entier. Lève une `LtError`.
  */
-export async function checkText(s: LtSettings, text: string, language: string, signal?: AbortSignal, doFetch?: typeof fetch): Promise<LtMatch[]> {
+export interface CheckOptions {
+  /** Attente entre deux requêtes (vérification de tout le livre), en millisecondes. */
+  pauseMs?: number;
+  /** Avancement : morceau en cours (à partir de 1) et nombre de morceaux. */
+  onProgress?: (done: number, total: number) => void;
+}
+
+const sleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((ok) => {
+    const timer = setTimeout(ok, ms);
+    signal?.addEventListener("abort", () => (clearTimeout(timer), ok()), { once: true });
+  });
+
+export async function checkText(s: LtSettings, text: string, language: string, signal?: AbortSignal, doFetch?: typeof fetch, options: CheckOptions = {}): Promise<LtMatch[]> {
   if (!text.trim()) return [];
   const send = doFetch ?? (await http());
   const url = checkUrl(s);
   const local = s.server === "custom" && !ltLeavesDevice(s);
   const out: LtMatch[] = [];
-  for (const part of chunks(text, chunkLimit(s))) {
-    if (!part.text.trim()) continue;
+  const parts = chunks(text, chunkLimit(s)).filter((x) => x.text.trim());
+  for (const [n, part] of parts.entries()) {
+    if (n > 0 && options.pauseMs) await sleep(options.pauseMs, signal);
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    options.onProgress?.(n + 1, parts.length);
     const controller = new AbortController();
     const stop = () => controller.abort();
     signal?.addEventListener("abort", stop);

@@ -141,7 +141,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -636,6 +636,18 @@ export function Settings({ project = true }: { project?: boolean }) {
               <p className="settings-hint" id={ids.ltKeyHint}>{t.languageTool.keyHint}</p>
             </>
           )}
+          {(languageTool.server === "premium" || languageTool.server === "custom") && (
+            <>
+              <label className="settings-check" htmlFor={ids.ltLive}>
+                <input id={ids.ltLive} type="checkbox" aria-describedby={ids.ltLiveHint} checked={languageTool.live} onChange={(e) => setLanguageTool({ live: e.target.checked })} />
+                {t.languageTool.live}
+              </label>
+              <p className="settings-hint" id={ids.ltLiveHint}>
+                {ltLeavesDevice(languageTool) ? t.languageTool.liveHint : t.languageTool.liveHintLocal}
+              </p>
+            </>
+          )}
+          {languageTool.server === "public" && <p className="settings-hint">{t.languageTool.livePublic}</p>}
           {languageTool.server === "custom" && (
             <>
               <label htmlFor={ids.ltUrl}>{t.languageTool.url}</label>
