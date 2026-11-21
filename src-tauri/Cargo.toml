@@ -46,9 +46,10 @@ tauri-plugin-fs = { version = "2", features = ["watch"] }
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSData", "NSError", "NSFileManager", "NSObject", "NSString", "NSURL"] }
 
-# iPhone et iPad : sélecteur de dossiers de l'app Fichiers (OneDrive, Dropbox, Drive…) et signet d'accès durable.
+# iPhone et iPad : sélecteur de dossiers de l'app Fichiers (OneDrive, Dropbox, Drive…) et signet d'accès durable ;
+# scène de la fenêtre pour la demande de note de l'App Store (UIScene, UIWindowScene).
 [target.'cfg(target_os = "ios")'.dependencies]
-objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "block2", "objc2-uniform-type-identifiers", "UIApplication", "UIDocumentPickerViewController", "UIResponder", "UIViewController", "UIWindow"] }
+objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "block2", "objc2-uniform-type-identifiers", "UIApplication", "UIDocumentPickerViewController", "UIResponder", "UIViewController", "UIWindow", "UIScene", "UIWindowScene"] }
 objc2-uniform-type-identifiers = { version = "0.3", default-features = false, features = ["std", "UTType"] }
 
 

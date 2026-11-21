@@ -240,6 +240,43 @@ mod cloud {
   }
 }
 
+/// Demande de note de l'App Store (iPhone et iPad) : `SKStoreReviewController`, trouvé à l'exécution. StoreKit est
+/// chargé par `dlopen` pour ne rien ajouter au projet Xcode, qui n'est pas versionné (`src-tauri/gen/`). iOS décide
+/// seul d'afficher la fenêtre (trois fois par an au plus) ; sous TestFlight, elle ne s'affiche jamais.
+#[cfg(target_os = "ios")]
+mod review {
+  use objc2::runtime::AnyClass;
+  use objc2::{msg_send, MainThreadMarker};
+  use objc2_ui_kit::UIApplication;
+  use std::ffi::{c_char, c_int, c_void};
+
+  unsafe extern "C" {
+    fn dlopen(path: *const c_char, mode: c_int) -> *mut c_void;
+  }
+  const RTLD_LAZY: c_int = 0x1;
+
+  /// Vrai si la demande a été transmise à iOS (ce qui ne dit pas que la fenêtre s'est affichée). Fil principal.
+  pub fn request(mtm: MainThreadMarker) -> bool {
+    unsafe { dlopen(c"/System/Library/Frameworks/StoreKit.framework/StoreKit".as_ptr(), RTLD_LAZY) };
+    let Some(class) = AnyClass::get(c"SKStoreReviewController") else {
+      return false;
+    };
+    let windows = UIApplication::sharedApplication(mtm).windows();
+    let Some(window) = windows.iter().find(|w| w.isKeyWindow()).or_else(|| windows.firstObject()) else {
+      return false;
+    };
+    let Some(scene) = window.windowScene() else {
+      return false;
+    };
+    // iOS 14 et après (cible minimale de l'app). Remplacé en Swift par `AppStore.requestReview(in:)`, sans équivalent
+    // Objective-C : cette méthode reste celle qu'on peut appeler depuis Rust.
+    unsafe {
+      let _: () = msg_send![class, requestReviewInScene: &*scene];
+    }
+    true
+  }
+}
+
 #[cfg(target_os = "ios")]
 fn to_hex(bytes: &[u8]) -> String {
   bytes.iter().map(|b| format!("{b:02x}")).collect()
@@ -294,6 +331,34 @@ async fn cloud_restore(app: tauri::AppHandle, bookmark: String) -> Option<CloudF
   {
     let _ = (app, bookmark);
     None
+  }
+}
+
+/// La demande de note de l'App Store existe-t-elle ici ? Vrai sur iPhone et iPad seulement : l'app de bureau est
+/// distribuée hors du Mac App Store, ses auteurs n'ont pas de page où noter.
+#[tauri::command]
+fn store_review_supported() -> bool {
+  cfg!(target_os = "ios")
+}
+
+/// Demande à iOS sa fenêtre de note (src/storeReview.ts décide du moment). Vrai si la demande est partie.
+#[tauri::command]
+async fn store_review(app: tauri::AppHandle) -> bool {
+  #[cfg(target_os = "ios")]
+  {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let sent = app.run_on_main_thread(move || {
+      let _ = tx.send(objc2::MainThreadMarker::new().is_some_and(review::request));
+    });
+    if sent.is_err() {
+      return false;
+    }
+    tauri::async_runtime::spawn_blocking(move || rx.recv().unwrap_or(false)).await.unwrap_or(false)
+  }
+  #[cfg(not(target_os = "ios"))]
+  {
+    let _ = app;
+    false
   }
 }
 
@@ -379,6 +444,8 @@ pub fn run() {
       cloud_restore,
       allow_scriv,
       open_web_url,
+      store_review_supported,
+      store_review,
       apple_fm::fm_availability,
       apple_fm::fm_complete,
       apple_fm::fm_cancel,

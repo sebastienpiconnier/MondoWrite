@@ -2753,6 +2753,11 @@ export const en: Messages = {
     credits: "Built with Tauri, React, React Flow, TipTap and pdf-lib. Fonts IBM Plex, Space Grotesk, Playfair Display, Courier Prime and Crimson Text (SIL Open Font License). Manuscript import and the paperback export reuse rules from Hugh Howey’s NEO (MIT license).",
     license: "GNU AGPL 3.0 or later.",
     source: "Source code:",
+    review: {
+      heading: "Enjoying MondoWrite?",
+      intro: "MondoWrite is free and made by one person. A rating or review on the App Store helps other writers find it.",
+      button: "Rate MondoWrite on the App Store",
+    },
     bug: {
       heading: "Something wrong?",
       intro: "“Report a bug” opens a GitHub page with a prefilled message: your MondoWrite version, system, language, project type and the last errors the app noticed. Nothing is sent without you: you read it, add to it, then send it (a free GitHub account is needed). Neither your text nor your keys are included.",

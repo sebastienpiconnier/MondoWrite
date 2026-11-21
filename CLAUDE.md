@@ -212,6 +212,7 @@ src/
   secrets.ts            Clés d'IA et de photos dans le trousseau du système (#30) : une entrée JSON (`readSecrets`, `writeSecrets`), migration depuis les réglages (`mergeSecrets`), écriture relue, repli sur les réglages (`initKeychain`, `setKeysInKeychain`)
   backups.ts            Sauvegardes hors du projet (#14, #15) : clé du projet (`backupKey`), noms datés (`backupName`, `backupDate`), rotation (`backupsToRemove`), rythme (`backupDue`), fiche `projet.json`, images citées (`mediaNamesOf`) (fonctions pures)
   updates.ts            Nouvelles versions (app de bureau) : comparaison des versions, dernière Release GitHub, plugin de mise à jour, état partagé (useUpdates)
+  storeReview.ts        Note sur l'App Store (iPhone et iPad) : jours d'utilisation, moment de la demande (`reviewDue`, pure, testée), commandes `store_review` (lib.rs, StoreKit par dlopen), bouton d'À propos
   greeting.ts           Phrase d'accueil de la page des projets : moment de la journée, prénom, dernier projet (fonction pure)
   examples.ts           Grands exemples sur mondowrite.app : liste exemples.json, téléchargement vérifié (SHA-256), état de l'accueil
   feasibility.ts        Libellés de la couverture selon la forme (pitchLabels) et faisabilité d'un film tirée du scénario

@@ -2732,6 +2732,12 @@ export const fr = {
     credits: "Construit avec Tauri, React, React Flow, TipTap et pdf-lib. Polices IBM Plex, Space Grotesk, Playfair Display, Courier Prime et Crimson Text (licence SIL Open Font). L’import des manuscrits et le livre broché reprennent des règles de NEO, de Hugh Howey (licence MIT).",
     license: "Licence GNU AGPL 3.0 ou ultérieure.",
     source: "Code source :",
+    // iPhone et iPad seulement (src/storeReview.ts) : la page de l'App Store, ouverte sur l'écriture d'un avis.
+    review: {
+      heading: "Tu aimes MondoWrite ?",
+      intro: "MondoWrite est gratuit et fait par une seule personne. Une note ou un avis sur l’App Store aide d’autres auteurs à le trouver.",
+      button: "Noter MondoWrite sur l’App Store",
+    },
     bug: {
       heading: "Un problème ?",
       intro: "« Signaler un bug » ouvre une page de GitHub avec un message prérempli : la version de MondoWrite, ton système, la langue, le type de projet et les dernières erreurs vues par l’app. Rien ne part sans toi : tu relis, tu complètes, puis tu envoies (il faut un compte GitHub, gratuit). Ni ton texte ni tes clés n’y figurent.",
