@@ -2,12 +2,13 @@
 // Ouvertes depuis les Réglages ou au clavier ; <dialog> natif : Échap ferme, le focus est retenu dedans.
 
 import { BrandMark, Wordmark } from "./BrandMark";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { useT } from "../i18n";
 import { SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
 import { isAppleKeyboard, openExternal } from "../platform";
 import { openBugReport } from "../reportBug";
+import { canRateInStore, openStoreReviewPage } from "../storeReview";
 import { version } from "../../package.json";
 import { TrashList } from "./TrashList";
 import { DocumentViewer } from "./DocumentViewer";
@@ -59,6 +60,12 @@ export function Dialogs() {
       closeRef.current?.focus({ preventScroll: true });
       el.scrollTop = 0;
     }
+  }, [dialog]);
+
+  // « Noter MondoWrite » (À propos) : iPhone et iPad seulement, la commande de l'app le dit (src/storeReview.ts).
+  const [canRate, setCanRate] = useState(false);
+  useEffect(() => {
+    if (dialog === "about") void canRateInStore().then(setCanRate);
   }, [dialog]);
 
   // La carte agrandie a disparu (supprimée, annulée) : la fenêtre se ferme.
@@ -154,6 +161,17 @@ export function Dialogs() {
           <p>{t.about.author}</p>
           <p>{t.about.credits}</p>
           <p>{t.about.license}</p>
+          {canRate && (
+            <>
+              <h3>{t.about.review.heading}</h3>
+              <p>{t.about.review.intro}</p>
+              <p>
+                <button type="button" className="ghost-button" onClick={() => void openStoreReviewPage()}>
+                  {t.about.review.button}
+                </button>
+              </p>
+            </>
+          )}
           <h3>{t.about.bug.heading}</h3>
           <p>{t.about.bug.intro}</p>
           <p>

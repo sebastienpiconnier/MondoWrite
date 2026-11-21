@@ -2,7 +2,7 @@
 // ses scènes occupent vraiment (mots d'un roman, pages d'un scénario), avec, en fantôme, la position où cette
 // case commence d'ordinaire (BEAT_TARGETS). Rien n'est enregistré : tout se relit dans le projet. Fonctions pures.
 
-import { BEAT_TARGETS, PLAN_TEMPLATES, arrange, templateBeats, type Plan, type PlanBeat, type PlanTemplate } from "./plan";
+import { BEAT_TARGETS, PLAN_TEMPLATES, arrange, hasSubBeats, templateBeats, type Plan, type PlanBeat, type PlanTemplate } from "./plan";
 import { blocks } from "./screenplay/sequence";
 import { beatOf, screenplayPlan } from "./screenplay/template";
 import type { ScreenplayElement } from "./screenplay/model";
@@ -92,7 +92,9 @@ export function novelGroups(plan: Plan, sceneIds: string[], words: (id: string) 
   const { beats, unplaced } = arrange(plan, sceneIds);
   const scene = (id: string): RibbonScene => ({ id, size: words(id) });
   if (plan.template === "libre") return [{ key: null, scenes: beats[0].ids.map(scene) }];
-  return [...beats.map((b) => ({ key: b.key, scenes: b.ids.map(scene) })), ...(unplaced.length > 0 ? [{ key: null, scenes: unplaced.map(scene) }] : [])];
+  // Un ensemble vide (#111) n'a pas de part : ses sous-cases ont la leur.
+  const shown = beats.filter((b) => b.ids.length > 0 || !hasSubBeats(plan.custom, b.key));
+  return [...shown.map((b) => ({ key: b.key, scenes: b.ids.map(scene) })), ...(unplaced.length > 0 ? [{ key: null, scenes: unplaced.map(scene) }] : [])];
 }
 
 /**
@@ -111,7 +113,7 @@ export function screenplayGroups(elements: ScreenplayElement[], pages: (start: n
     }
     groups[groups.length - 1].scenes.push({ id: b.cardId ?? `@${b.start}`, size: pages(b.start, b.end) });
   }
-  return { template, groups: groups.filter((g, i) => i > 0 || g.scenes.length > 0) };
+  return { template, groups: groups.filter((g, i) => (i > 0 || g.scenes.length > 0) && (g.scenes.length > 0 || !g.key || !hasSubBeats(custom, g.key))) };
 }
 
 /** Un point de la courbe du récit : milieu de la scène (0 à 1) et fortune du héros (−1 à 1). */

@@ -7,7 +7,7 @@
 import type { Screenplay, ScreenplayElement } from "./model";
 import { blocks, moveBlock } from "./sequence";
 import { plainSection } from "./series";
-import { EMPTY_PLAN, PLAN_TEMPLATES, isCustomBeat, type CustomTemplate, type Plan, type PlanTemplate } from "../plan";
+import { EMPTY_PLAN, PLAN_TEMPLATES, cleanLevels, isCustomBeat, type CustomBeat, type CustomTemplate, type Plan, type PlanTemplate } from "../plan";
 
 /** Gabarits proposés pour un scénario, dans l'ordre du menu. */
 export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences", "episode", "voyageHeros", "cercleHarmon", "freytag", "hauge", "septPoints", "kishotenketsu", "romance", "polar"] as const satisfies readonly PlanTemplate[];
@@ -36,13 +36,19 @@ export function currentTemplate(elements: ScreenplayElement[]): ScreenplayTempla
   return null;
 }
 
-/** Gabarit de l'auteur en place : ses cases lues dans les sections (nom de la section = nom de la case). */
+/**
+ * Gabarit de l'auteur en place : ses cases lues dans les sections (nom de la section = nom de la case). Le niveau
+ * d'une case (#111) est la profondeur de sa section, comptée depuis la moins profonde (une case sous un épisode,
+ * `###`, est de niveau 1).
+ */
 export function customOf(elements: ScreenplayElement[]): CustomTemplate | undefined {
-  const beats = elements.flatMap((el) => {
+  const found = elements.flatMap((el) => {
     const key = el.type === "section" ? beatOf(el.text) : null;
-    return key && isCustomBeat(key) ? [{ key, label: sectionLabel(el.text) || key }] : [];
+    return key && isCustomBeat(key) && el.type === "section" ? [{ key, label: sectionLabel(el.text) || key, depth: el.depth ?? 1 }] : [];
   });
-  return beats.length > 0 ? { name: "", beats } : undefined;
+  if (found.length === 0) return undefined;
+  const top = Math.min(...found.map((b) => b.depth));
+  return { name: "", beats: cleanLevels(found.map(({ depth, ...b }) => ({ ...b, level: depth - top + 1 }))) };
 }
 
 /**
@@ -51,7 +57,7 @@ export function customOf(elements: ScreenplayElement[]): CustomTemplate | undefi
  * arrive à la fin. Sinon, comme `applyTemplate` : la première case avant la première scène, les autres à la fin.
  */
 export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from: ReadonlyMap<string, string> = new Map()): Screenplay {
-  const section = (b: { key: string; label: string }): ScreenplayElement => ({ type: "section", depth: 1, text: `${b.label} [[cosmos:beat:${b.key}]]` });
+  const section = (b: CustomBeat): ScreenplayElement => ({ type: "section", depth: b.level ?? 1, text: `${b.label} [[cosmos:beat:${b.key}]]` });
   // Gabarit né d'un autre (`from` : case d'avant → case nouvelle) : chaque section devient la nouvelle sur place,
   // ses scènes restent dessous ; une case retirée perd sa section, une case ajoutée arrive à la fin.
   if (from.size > 0 && currentTemplate(screenplay.elements) !== "perso") {
@@ -65,7 +71,9 @@ export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from
       placed.add(b.key);
       return [section(b)];
     });
-    return { ...screenplay, elements: [...elements, ...custom.beats.filter((b) => !placed.has(b.key)).map(section)] };
+    const next = { ...screenplay, elements: [...elements, ...custom.beats.filter((b) => !placed.has(b.key)).map(section)] };
+    // Une case ajoutée (ou une sous-case, #111) prend ensuite sa place dans l'ordre du gabarit.
+    return reorderCustom(next, custom, section);
   }
   if (currentTemplate(screenplay.elements) !== "perso") {
     const kept = screenplay.elements.filter((el) => !isBeat(el));
@@ -75,26 +83,52 @@ export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from
     const at = first === -1 ? kept.length : first;
     return { ...screenplay, elements: [...kept.slice(0, at), sections[0], ...kept.slice(at), ...sections.slice(1)] };
   }
-  const byKey = new Map(custom.beats.map((b) => [b.key, b]));
-  const present = new Set<string>();
-  let changed = false;
-  const elements = screenplay.elements.flatMap((el) => {
-    const key = el.type === "section" ? beatOf(el.text) : null;
-    if (!key || !isCustomBeat(key)) return [el];
-    const b = byKey.get(key);
-    if (!b) {
-      changed = true;
-      return [];
-    }
-    present.add(key);
+  return reorderCustom(screenplay, custom, section);
+}
+
+/**
+ * Gabarit de l'auteur déjà en place, mis à jour : le texte est découpé en morceaux, un par section de case (la
+ * section et tout ce qui la suit jusqu'à la case suivante), puis remis dans l'ordre du gabarit. Une case renommée
+ * ou changée de niveau garde ses scènes ; une case retirée perd sa section, ses scènes rejoignent la case d'avant ;
+ * une case nouvelle prend sa place dans l'ordre (#111 : une sous-case doit suivre son ensemble). Même objet si
+ * rien ne change.
+ */
+function reorderCustom(screenplay: Screenplay, custom: CustomTemplate, section: (b: CustomBeat) => ScreenplayElement): Screenplay {
+  const elements = screenplay.elements;
+  const isOwn = (el: ScreenplayElement) => el.type === "section" && isCustomBeat(beatOf(el.text) ?? "");
+  const head: ScreenplayElement[] = [];
+  const chunks = new Map<string, ScreenplayElement[]>();
+  let current: ScreenplayElement[] = head;
+  for (const el of elements) {
+    if (isOwn(el)) {
+      const key = beatOf(el.text)!;
+      current = chunks.get(key) ?? [];
+      if (!chunks.has(key)) chunks.set(key, current);
+      current.push(el);
+    } else current.push(el);
+  }
+  const out: ScreenplayElement[] = [...head];
+  const wanted = new Set(custom.beats.map((b) => b.key));
+  // Le contenu d'une case retirée rejoint la case qui la précédait dans le fichier.
+  const orphans = new Map<string, ScreenplayElement[]>();
+  let prevKey: string | null = null;
+  for (const [key, chunk] of chunks) {
+    if (wanted.has(key)) prevKey = key;
+    else if (prevKey) orphans.set(prevKey, [...(orphans.get(prevKey) ?? []), ...chunk.slice(1)]);
+    else out.push(...chunk.slice(1));
+  }
+  for (const b of custom.beats) {
+    const chunk = chunks.get(b.key);
     const next = section(b);
-    if (next.text === el.text) return [el];
-    changed = true;
-    return [{ ...el, text: next.text }];
-  });
-  const added = custom.beats.filter((b) => !present.has(b.key)).map(section);
-  if (!changed && added.length === 0) return screenplay;
-  return { ...screenplay, elements: [...elements, ...added] };
+    if (!chunk) {
+      out.push(next);
+      continue;
+    }
+    const el = chunk[0] as ScreenplayElement & { type: "section" };
+    out.push(el.text === next.text && (el.depth ?? 1) === (next as typeof el).depth ? el : { ...el, text: next.text, depth: (next as typeof el).depth }, ...chunk.slice(1), ...(orphans.get(b.key) ?? []));
+  }
+  if (out.length === elements.length && out.every((el, i) => el === elements[i])) return screenplay;
+  return { ...screenplay, elements: out };
 }
 
 /**

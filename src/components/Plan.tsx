@@ -26,7 +26,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCosmos, planScenes } from "../store";
 import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
-import { NOVEL_TEMPLATES, arrange, chapterNumbers, chapterOf, groupByChapter, isPlanTemplate, type Chapter, type PlanTemplate } from "../plan";
+import { NOVEL_TEMPLATES, arrange, beatLevel, chapterNumbers, chapterOf, groupByChapter, hasSubBeats, isPlanTemplate, leafBeats, type Chapter, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
 import { Timeline } from "./Timeline";
 import { StoryCircle } from "./StoryCircle";
@@ -402,17 +402,28 @@ export function Plan() {
           />
         )}
 
-        {arranged.beats.map((beat, rank) => (
-          <section key={beat.key} className={`plan-beat${free ? "" : " is-beat"}${over === beat.key ? " is-over" : ""}`} aria-labelledby={`plan-${beat.key}`} {...dropOn(beat.key, beat.key)}>
+        {arranged.beats.map((beat) => {
+          // Gabarit imbriqué (#111) : un ensemble (« Acte I ») n'a pas de rang, ses sous-cases sont en retrait.
+          const level = beatLevel(plan.custom, beat.key);
+          const isGroup = hasSubBeats(plan.custom, beat.key);
+          const leaves = leafBeats(plan.template, plan.custom);
+          const rank = leaves.indexOf(beat.key);
+          return (
+          <section
+            key={beat.key}
+            className={`plan-beat${free ? "" : " is-beat"}${isGroup ? " is-group" : ""}${level > 1 ? ` level-${level}` : ""}${over === beat.key ? " is-over" : ""}`}
+            aria-labelledby={`plan-${beat.key}`}
+            {...dropOn(beat.key, beat.key)}
+          >
             {/* Case du gabarit : son rang dans la structure au-dessus d'un grand titre (comme son cadre sur le canevas). */}
-            <h2 id={`plan-${beat.key}`}>
-              {!free && <span className="beat-rank">{fmt(p.beatRank, { n: rank + 1, total: arranged.beats.length })}</span>}
+            <h2 id={`plan-${beat.key}`} {...(level > 1 ? { "aria-level": level + 1 } : {})}>
+              {!free && rank >= 0 && <span className="beat-rank">{fmt(p.beatRank, { n: rank + 1, total: leaves.length })}</span>}
               <span className="beat-title">{beatLabel(beat.key)}</span>
               {beat.ids.length > 0 && <span className="plan-count">{beat.ids.length}</span>}
             </h2>
             {beatInfo(beat.key).hint && !bySection && <p className="plan-beat-hint">{beatInfo(beat.key).hint}</p>}
             {/* Case vide d'un gabarit (IA branchée) : une question sur mesure, à garder en carte Question. */}
-            {!free && beat.ids.length === 0 && <BeatQuestion beatKey={beat.key} />}
+            {!free && !isGroup && beat.ids.length === 0 && <BeatQuestion beatKey={beat.key} />}
             {groupByChapter(plan, beat.ids).map((group) => {
               // Sections du livre : dans l'ordre de leurs numéros.
               const ids = bySection ? [...group.ids].sort((a, b) => (book.numbers.get(a) ?? 0) - (book.numbers.get(b) ?? 0)) : group.ids;
@@ -440,7 +451,8 @@ export function Plan() {
                 </div>
               );
             })}
-            <form
+            {/* Un ensemble reçoit ses scènes dans ses sous-cases : pas de champ « Nouvelle scène » à lui. */}
+            {!isGroup && <form
               className="plan-add"
               onSubmit={(e) => {
                 e.preventDefault();
@@ -456,9 +468,10 @@ export function Plan() {
               <button type="submit" disabled={!(drafts[beat.key] ?? "").trim()}>
                 {p.add}
               </button>
-            </form>
+            </form>}
           </section>
-        ))}
+          );
+        })}
 
         {!free && (
           <section className={`plan-beat is-unplaced${over === "unplaced" ? " is-over" : ""}`} aria-labelledby="plan-unplaced" {...dropOn("unplaced", null)}>

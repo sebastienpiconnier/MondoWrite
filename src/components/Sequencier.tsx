@@ -5,7 +5,7 @@
 
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
-import { templateBeats, type PlanBeat } from "../plan";
+import { leafBeats, type PlanBeat } from "../plan";
 
 /** Gabarits proposés à un épisode : « Épisode de série » d'abord. */
 const EPISODE_TEMPLATES = ["episode", ...SCREENPLAY_TEMPLATES.filter((k) => k !== "episode")] as const;
@@ -110,7 +110,8 @@ export function Sequencier() {
   // Cases du gabarit en place, dans l'ordre : le rang d'une case (« Case 3 sur 15 ») au-dessus de son titre.
   const beatKeys = useMemo(() => {
     const plan = screenplayPlan(screenplay.elements);
-    return plan.template === "libre" ? [] : templateBeats(plan.template, plan.custom);
+    // Seules les cases sans sous-case ont un rang (#111).
+    return plan.template === "libre" ? [] : leafBeats(plan.template, plan.custom);
   }, [screenplay.elements]);
   // Scènes rangées dans chaque case : une case vide reçoit « Une question » (IA branchée).
   const beatScenes = useMemo(() => screenplayPlan(screenplay.elements).beats, [screenplay.elements]);
@@ -152,6 +153,18 @@ export function Sequencier() {
     );
     if (next !== screenplay) setScreenplay(next, true);
   };
+  // Gabarit imbriqué (#111) : niveau d'une case (profondeur de sa section, sous l'épisode dans une série) et
+  // ensemble (la case de gabarit suivante est plus profonde) ; les sous-cases sont en retrait.
+  const nestClass = (start: number): string => {
+    const el = screenplay.elements[start];
+    if (el?.type !== "section" || !beatOf(el.text)) return "";
+    const depthOf = (e: (typeof screenplay.elements)[number]) => (e.type === "section" ? (e.depth ?? 1) : 1);
+    const base = inSeries ? 3 : 1;
+    const level = Math.max(1, depthOf(el) - base + 1);
+    const next = screenplay.elements.slice(start + 1).find((e) => e.type === "section" && !!beatOf(e.text));
+    const group = !!next && depthOf(next) > depthOf(el);
+    return `${level > 1 ? ` level-${Math.min(3, level)}` : ""}${group ? " is-group" : ""}`;
+  };
   // Rang d'une case dans le gabarit de son épisode (« Case 3 sur 6 »), ou dans le gabarit du scénario.
   const rankOf = (start: number): { n: number; total: number } | null => {
     const key = beatOf(screenplay.elements[start]?.text ?? "");
@@ -160,7 +173,7 @@ export function Sequencier() {
     const ep = episodeAt(screenplay, start);
     if (!ep) return null;
     const plan = screenplayPlan(episodeScript(screenplay, ep).elements);
-    const keys = plan.template === "libre" ? [] : templateBeats(plan.template, plan.custom);
+    const keys = plan.template === "libre" ? [] : leafBeats(plan.template, plan.custom);
     return keys.includes(key) ? { n: keys.indexOf(key) + 1, total: keys.length } : null;
   };
   const setTemplate = (value: string) =>
@@ -363,7 +376,7 @@ export function Sequencier() {
 
             if (block.kind === "section") {
               return (
-                <li key={`section-${block.start}`} className={`sq-section${beatOf(block.text) ? " is-beat" : ""}${inSeries && beatOf(block.text) ? " in-episode" : ""}${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
+                <li key={`section-${block.start}`} className={`sq-section${beatOf(block.text) ? " is-beat" : ""}${inSeries && beatOf(block.text) ? " in-episode" : ""}${nestClass(block.start)}${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
                   <span className="sq-section-name">
                     {rankOf(block.start) && <span className="beat-rank">{fmt(t.plan.beatRank, rankOf(block.start)!)}</span>}
                     <span className="beat-title">{labelOf(block.text)}</span>

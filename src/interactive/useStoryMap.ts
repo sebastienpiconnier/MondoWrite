@@ -70,14 +70,19 @@ export function useStoryMap(): StoryMap | null {
 
   const edges = useMemo<Edge[]>(() => {
     if (!interactive) return [];
-    const titleOf = (id: string) => scenes.find((s) => s.id === id)?.title.trim() || m.untitled;
+    // Le numéro de section avant le titre : deux scènes au même titre (« Nouvelle scène ») restent distinctes à l'oreille.
+    const titleOf = (id: string) => {
+      const title = scenes.find((s) => s.id === id)?.title.trim() || m.untitled;
+      const n = sections?.numbers[id];
+      return n ? `${n}. ${title}` : title;
+    };
     const drawn = graph.filter((e): e is ChoiceEdge & { to: string } => !!e.to && e.to !== END_TARGET && e.to !== e.from);
     const offsets = parallelOffsets(drawn);
     const places = labelPlaces(drawn);
     return drawn
       .map((e) => {
         // Un choix soumis à un fait, ou qui en donne un, le dit sur sa flèche.
-        const rules = ruleSummary(e, facts, { ifFact: m.edgeIf, ifNot: m.edgeIfNot, ifMany: m.edgeIfMany, gives: m.edgeGives, cond: condWords(t.interactive.choices) });
+        const rules = ruleSummary(e, facts, { ifFact: m.edgeIf, ifNot: m.edgeIfNot, ifCond: m.edgeIfCond, ifMany: m.edgeIfMany, gives: m.edgeGives, cond: condWords(t.interactive.choices) });
         // Le texte du choix d'abord (l'étiquette est coupée à 180 px : c'est lui qui distingue deux flèches), puis la
         // condition et le fait donné ; l'infobulle donne le tout.
         const pillText = [e.label || m.defaultLabel, e.hidden ? m.edgeHidden : "", rules.before, rules.after].filter(Boolean).join(" · ");
@@ -101,7 +106,7 @@ export function useStoryMap(): StoryMap | null {
             choice: true,
             pill: true,
             pillClass: `${e.label ? "" : "is-unnamed"}${e.hidden ? " is-hidden" : ""}`,
-            pillTitle: [fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }), e.cond ? fmt(m.edgeIf, { fact: readableCond(e.cond, facts, condWords(t.interactive.choices)) }) : ""].filter(Boolean).join(" · "),
+            pillTitle: [fmt(m.edgeAria, { label: e.label || m.defaultLabel, from: titleOf(e.from), to: titleOf(e.to) }), e.cond ? fmt(m.edgeIfCond, { cond: readableCond(e.cond, facts, condWords(t.interactive.choices)) }) : ""].filter(Boolean).join(" · "),
             offset: offsets.get(`${e.from}:${e.index}`) ?? 0,
             labelAt: places.get(`${e.from}:${e.index}`) ?? 0.5,
           },
@@ -109,7 +114,7 @@ export function useStoryMap(): StoryMap | null {
       });
     // Les textes suivent la langue : `t` change avec elle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, graph, scenes, facts, t]);
+  }, [interactive, graph, scenes, facts, sections, t]);
 
   return interactive ? { scenes, graph, edges } : null;
 }

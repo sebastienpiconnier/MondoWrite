@@ -106,6 +106,15 @@ export function projectToInk(
     }
     // Sans choix ni renvoi écrit par l'auteur, la scène finit l'histoire.
     if (!choices.some((l) => (l.kind === "choice" && !l.hidden) || (l.kind === "raw" && /^\s*->/.test(l.text)))) push(`-> ${END_TARGET}`, s.id);
+    // Tous ses choix demandent une condition (règle « Une scène qui peut bloquer » de « Vérifier ») : si aucune
+    // n'est remplie, l'histoire s'arrête là. Sans ce choix de repli invisible d'Ink, la lecture tombait sur une
+    // erreur (« ran out of content ») et le choix qui menait à la scène semblait ne rien faire.
+    else if (
+      choices.every((l) => l.kind === "choice") &&
+      choices.some((l) => l.kind === "choice" && !l.hidden) &&
+      choices.every((l) => l.kind !== "choice" || l.hidden || !!l.cond?.trim())
+    )
+      push(`+ -> ${END_TARGET}`, s.id);
   }
   return { ink: `${out.join("\n")}\n`, lines, knots: slugs };
 }

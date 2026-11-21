@@ -117,7 +117,7 @@ export function ChoiceRules({ line, n, onChange }: { line: ChoiceValue; n: numbe
  * que MondoWrite ne relit pas) se dit seulement « sous conditions » : écrite en entier, elle ne tenait pas sur la
  * pilule et se lisait mal ; le détail est dans le bandeau du choix et l'infobulle.
  */
-export function ruleSummary(line: ChoiceValue, facts: readonly Fact[], words: { ifFact: string; ifNot: string; ifMany: string; gives: string; cond: CondWords }): { before: string; after: string } {
+export function ruleSummary(line: ChoiceValue, facts: readonly Fact[], words: { ifFact: string; ifNot: string; ifCond: string; ifMany: string; gives: string; cond: CondWords }): { before: string; after: string } {
   const labelOf = (name: string) => facts.find((f) => f.name === name)?.label ?? name.replace(/_+/g, " ");
   const cv = condValue(line.cond);
   const m = /^(has|not):(.+)$/.exec(cv);
@@ -128,7 +128,7 @@ export function ruleSummary(line: ChoiceValue, facts: readonly Fact[], words: { 
     : cv !== "custom"
       ? ""
       : single
-        ? fmt(words.ifFact, { fact: readableCond(line.cond, facts, words.cond) })
+        ? fmt(words.ifCond, { cond: readableCond(line.cond, facts, words.cond) })
         : words.ifMany;
   const given = givenFact(line.effects);
   const after = given ? fmt(words.gives, { fact: labelOf(given) }) : "";

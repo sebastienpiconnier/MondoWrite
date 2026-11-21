@@ -24,8 +24,7 @@ import { REPO } from "../updates";
 /** Guide des traducteurs sur GitHub. */
 const TRANSLATE_URL = `https://github.com/${REPO}/blob/main/TRANSLATING.md`;
 import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type Palette, type ThemePref, type WheelMode } from "../settings";
-import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS } from "../focusText";
-import { canFullscreen } from "./FocusBar";
+import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { INTERACTIVE_BUILD, showsInteractive } from "../interactive";
@@ -40,6 +39,7 @@ import { SOURCE_INFO } from "../imageSources";
 import { ImageModelField } from "./ImageGen";
 import { McpAppSettings, McpProjectSetting } from "./McpSettings";
 import { SystemFontField } from "./SystemFontField";
+import { LT_CUSTOM_DEFAULT, LT_SERVERS, isLtServer, ltLeavesDevice, ltLive } from "../languagetool/api";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 /** Valeur du choix « Autre modèle… » de la liste. */
@@ -52,7 +52,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const t = useT();
   const phone = usePhone();
   const key = useKeyHint();
-  const { lang, themePref, palette, setPalette, setLang, setThemePref, author, ai, setAi, photos, writing, setWriting } = useSettings();
+  const { lang, themePref, palette, setPalette, setLang, setThemePref, author, ai, setAi, photos, writing, setWriting, languageTool, setLanguageTool } = useSettings();
   const [models, setModels] = useState<string[]>([]);
   // Modèle saisi à la main (absent de la liste du service).
   const [typing, setTyping] = useState(false);
@@ -142,7 +142,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -482,37 +482,23 @@ export function Settings({ project = true }: { project?: boolean }) {
 
           <section className="settings-col" role="tabpanel" id={`${ids.panel}-writing`} aria-labelledby={`${ids.panel}-tab-writing`} hidden={tab !== "writing"}>
           {/* Écriture : mode focus, zoom, typographie, correcteur. */}
-          {/* Mode focus : réglé ici aussi, car sur téléphone la barre du mode focus ne garde que la sortie. */}
-          <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
-          <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
-            {FOCUS_HIGHLIGHTS.map((h) => (
-              <option key={h} value={h}>
-                {t.focus.highlights[h]}
-              </option>
-            ))}
-          </select>
-          <label className="settings-check" htmlFor={ids.focusTw}>
-            <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
-            {t.settings.focusTypewriter}
-          </label>
-          {/* Sur téléphone, le texte prend toute la largeur : la largeur de colonne n'y change rien. */}
-          {!phone && (
+          {/* Mode focus : réglé dans sa propre barre (FocusBar) ; sur téléphone, cette barre ne garde que la sortie,
+              d'où ces deux réglages ici. La largeur de colonne et le plein écran n'existent pas sur téléphone. */}
+          {phone && (
             <>
-              <label htmlFor={ids.focusCol}>{t.settings.focusColumn}</label>
-              <select id={ids.focusCol} value={writing.column} onChange={(e) => setWriting({ ...writing, column: e.target.value as typeof writing.column })}>
-                {FOCUS_COLUMNS.map((c) => (
-                  <option key={c} value={c}>
-                    {t.focus.columns[c]}
+              <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
+              <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
+                {FOCUS_HIGHLIGHTS.map((h) => (
+                  <option key={h} value={h}>
+                    {t.focus.highlights[h]}
                   </option>
                 ))}
               </select>
+              <label className="settings-check" htmlFor={ids.focusTw}>
+                <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
+                {t.settings.focusTypewriter}
+              </label>
             </>
-          )}
-          {canFullscreen() && (
-            <label className="settings-check" htmlFor={ids.focusFs}>
-              <input id={ids.focusFs} type="checkbox" checked={writing.fullscreen} onChange={(e) => setWriting({ ...writing, fullscreen: e.target.checked })} />
-              {t.settings.focusFullscreen}
-            </label>
           )}
           <label htmlFor={ids.pageZoom}>{t.settings.pageZoom}</label>
           <select id={ids.pageZoom} value={String(writing.zoom)} onChange={(e) => setWriting({ ...writing, zoom: Number(e.target.value) })}>
@@ -609,11 +595,63 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </select>
           <p className="settings-hint" id={ids.spellHint}>{t.settings.spellcheckHint}</p>
+          {writing.spellcheck === "all" && ltLive(languageTool) && <p className="settings-hint">{t.settings.spellcheckByLt}</p>}
           <label className="settings-check" htmlFor={ids.suggestions}>
             <input id={ids.suggestions} type="checkbox" aria-describedby={ids.suggestionsHint} checked={writing.suggestions} onChange={(e) => setWriting({ ...writing, suggestions: e.target.checked })} />
             {t.settings.suggestions}
           </label>
           <p className="settings-hint" id={ids.suggestionsHint}>{t.settings.suggestionsHint}</p>
+          {/* LanguageTool (à la demande, menu ⋯ du manuscrit et du scénario) : service, compte Premium, serveur personnel. */}
+          <label htmlFor={ids.lt}>{t.languageTool.server}</label>
+          <select id={ids.lt} aria-describedby={ids.ltHint} value={languageTool.server} onChange={(e) => isLtServer(e.target.value) && setLanguageTool({ server: e.target.value })}>
+            {LT_SERVERS.map((v) => (
+              <option key={v} value={v}>
+                {t.languageTool.servers[v]}
+              </option>
+            ))}
+          </select>
+          {languageTool.server !== "off" && (
+            <p className="settings-hint" id={ids.ltHint}>
+              {ltLeavesDevice(languageTool) ? t.languageTool.hint : t.languageTool.hintLocal}
+            </p>
+          )}
+          {languageTool.server === "premium" && (
+            <>
+              <label htmlFor={ids.ltUser}>{t.languageTool.username}</label>
+              <input id={ids.ltUser} type="text" inputMode="email" autoComplete="off" spellCheck={false} value={languageTool.username} onChange={(e) => setLanguageTool({ username: e.target.value })} />
+              <label htmlFor={ids.ltKey}>{t.languageTool.key}</label>
+              <input id={ids.ltKey} type="password" autoComplete="off" spellCheck={false} aria-describedby={ids.ltKeyHint} value={languageTool.key} onChange={(e) => setLanguageTool({ key: e.target.value })} />
+              <p className="settings-hint" id={ids.ltKeyHint}>{t.languageTool.keyHint}</p>
+            </>
+          )}
+          {(languageTool.server === "premium" || languageTool.server === "custom") && (
+            <>
+              <label className="settings-check" htmlFor={ids.ltLive}>
+                <input id={ids.ltLive} type="checkbox" aria-describedby={ids.ltLiveHint} checked={languageTool.live} onChange={(e) => setLanguageTool({ live: e.target.checked })} />
+                {t.languageTool.live}
+              </label>
+              <p className="settings-hint" id={ids.ltLiveHint}>
+                {ltLeavesDevice(languageTool) ? t.languageTool.liveHint : t.languageTool.liveHintLocal}
+              </p>
+            </>
+          )}
+          {languageTool.server === "public" && <p className="settings-hint">{t.languageTool.livePublic}</p>}
+          {languageTool.server === "custom" && (
+            <>
+              <label htmlFor={ids.ltUrl}>{t.languageTool.url}</label>
+              <input
+                id={ids.ltUrl}
+                type="url"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={LT_CUSTOM_DEFAULT}
+                aria-describedby={ids.ltUrlHint}
+                value={languageTool.url}
+                onChange={(e) => setLanguageTool({ url: e.target.value })}
+              />
+              <p className="settings-hint" id={ids.ltUrlHint}>{t.languageTool.urlHint}</p>
+            </>
+          )}
           </section>
 
           <section className="settings-col" role="tabpanel" id={`${ids.panel}-ai`} aria-labelledby={`${ids.panel}-tab-ai`} hidden={tab !== "ai"}>

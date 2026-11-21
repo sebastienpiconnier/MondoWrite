@@ -522,6 +522,179 @@ const scenarios = [
     },
   },
   {
+    name: "LanguageTool : réglé dans les Réglages, la scène relue, une faute corrigée d'un clic, une remarque ignorée, un clic rouvre la bulle",
+    async run(h) {
+      const { page } = h;
+      // Le service est simulé (le réseau extérieur est coupé) : une faute sur « aller », une remarque de style sur « très ».
+      const sent = [];
+      await page.route("https://api.languagetool.org/v2/check", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        const text = new URLSearchParams(route.request().postData() ?? "").get("text") ?? "";
+        sent.push(text);
+        const matches = [];
+        const a = text.indexOf("aller");
+        if (a >= 0) matches.push({ message: "Le participe passé convient ici.", offset: a, length: 5, replacements: [{ value: "allé" }], rule: { id: "PP", issueType: "grammar", category: { id: "GRAMMAR" } } });
+        const b = text.indexOf("très");
+        if (b >= 0) matches.push({ message: "Adverbe peu utile.", offset: b, length: 4, replacements: [], rule: { id: "TRES", issueType: "style", category: { id: "STYLE" } } });
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ matches }) });
+      });
+      await h.create("Relecture");
+      await openSettings(page);
+      await page.getByRole("tab", { name: "Écriture", exact: true }).click();
+      await page.getByLabel("Vérification LanguageTool", { exact: true }).selectOption("public");
+      await until(() => page.getByText("Le texte de la scène est envoyé au service choisi", { exact: false }).isVisible(), "l'avertissement d'envoi du texte n'apparaît pas");
+      await page.keyboard.press("Escape");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le port");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Elle est aller au port. Il fait très beau.");
+      await h.wait(300);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 2, "les deux remarques ne sont pas soulignées");
+      assert(sent.some((t) => t.includes("Elle est aller au port")), `le texte de la scène n'a pas été envoyé : ${JSON.stringify(sent)}`);
+      // La bulle s'ouvre sur la première remarque, avec le focus (chemin au clavier).
+      const bubble = page.locator(".lt-bubble");
+      await until(() => bubble.isVisible(), "la bulle de la première remarque ne s'ouvre pas");
+      await until(() => page.getByRole("button", { name: "Remplacer par allé" }).evaluate((el) => el === document.activeElement), "la correction proposée n'a pas le focus");
+      await page.keyboard.press("Enter");
+      await until(async () => (await editor.innerText()).includes("Elle est allé au port"), "la correction n'est pas entrée dans le texte");
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "la remarque corrigée est encore soulignée");
+      // La remarque suivante prend la place : sans correction proposée, on l'ignore.
+      await until(() => bubble.getByText("Adverbe peu utile.").isVisible(), "la remarque suivante ne s'affiche pas");
+      await bubble.getByRole("button", { name: "Ignorer", exact: true }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 0, "la remarque ignorée est encore soulignée");
+      await until(async () => !(await bubble.count()), "la bulle reste ouverte sans remarque");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && v.includes("Elle est allé au port") && !v.includes("lt-issue")), "la correction n'est pas enregistrée (ou un soulignement est entré dans le fichier)");
+      // Un clic sur un passage souligné rouvre sa bulle.
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "la seconde vérification ne souligne pas « très »");
+      await until(() => bubble.evaluate((el) => el.contains(document.activeElement)), "la bulle n'a pas le focus après la vérification");
+      await page.keyboard.press("Escape");
+      await until(async () => !(await bubble.count()), "Échap ne ferme pas la bulle");
+      await editor.locator(".lt-issue").click();
+      await until(() => bubble.getByText("Adverbe peu utile.").isVisible(), "un clic sur le passage souligné n'ouvre pas sa bulle");
+    },
+  },
+  {
+    name: "LanguageTool Premium : vérification pendant la frappe (paragraphe modifié seulement) et tout le livre ; l'API gratuite ne propose ni l'une ni l'autre",
+    async run(h) {
+      const { page } = h;
+      const sent = [];
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages"))
+          localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", languageTool: { server: "premium", username: "eddy@example.com", key: "cle", live: true } }));
+      });
+      await page.route("https://api.languagetoolplus.com/v2/check", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        const body = new URLSearchParams(route.request().postData() ?? "");
+        const text = body.get("text") ?? "";
+        sent.push({ text, key: body.get("apiKey") });
+        const matches = [];
+        for (const word of ["aller", "pluit"]) {
+          let i = text.indexOf(word);
+          while (i >= 0) {
+            matches.push({ message: "Faute.", offset: i, length: word.length, replacements: [{ value: word === "aller" ? "allé" : "pluie" }], rule: { id: word, issueType: "misspelling" } });
+            i = text.indexOf(word, i + 1);
+          }
+        }
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ matches }) });
+      });
+      await h.create("En direct");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("La pluie");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Premier paragraphe sans souci.");
+      await until(() => sent.length >= 1, "le premier paragraphe n'est pas relu après la pause", 12_000);
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Elle est aller sous la pluit.");
+      // Rien n'est envoyé pendant la frappe ; après la pause, les remarques arrivent seules, sans ouvrir la bulle.
+      await until(async () => (await editor.locator(".lt-issue").count()) === 2, "la vérification pendant la frappe ne souligne rien", 12_000);
+      assert(!(await page.locator(".lt-bubble").count()), "la bulle s'est ouverte toute seule pendant la frappe");
+      assert(sent.every((x) => x.key === "cle"), "la clé du compte Premium n'est pas envoyée");
+      const last = sent.at(-1).text;
+      assert(last.includes("Elle est aller sous la pluit.") && !last.includes("Premier paragraphe"), `seul le paragraphe modifié devait partir : ${JSON.stringify(last)}`);
+      // Corrigé à la main : le soulignement part tout de suite.
+      await editor.locator(".lt-issue").first().click();
+      await until(() => page.locator(".lt-bubble").isVisible(), "un clic n'ouvre pas la bulle");
+      await page.getByRole("button", { name: "Remplacer par allé" }).click();
+      await until(async () => (await editor.innerText()).includes("Elle est allé sous"), "la correction n'est pas entrée");
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "la remarque corrigée reste soulignée");
+      // Tout le livre : une seconde scène, vérifiée avec la première.
+      await page.keyboard.press("Escape");
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Effacer les soulignements de LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 0, "« Effacer les soulignements » n'efface rien");
+      const before = sent.length;
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Vérifier tout le livre avec LanguageTool" }).click();
+      await until(async () => (await editor.locator(".lt-issue").count()) === 1, "« Vérifier tout le livre » ne souligne pas « pluit »");
+      assert(sent.slice(before).some((x) => x.text.includes("Premier paragraphe") && x.text.includes("pluit")), "tout le livre n'a pas été envoyé");
+      // API gratuite : ni pendant la frappe, ni tout le livre.
+      await page.evaluate(() => {
+        const raw = JSON.parse(localStorage.getItem("cosmos:reglages") ?? "{}");
+        localStorage.setItem("cosmos:reglages", JSON.stringify({ ...raw, languageTool: { server: "public", live: true } }));
+      });
+      await h.reloadAndOpen();
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
+      await until(() => page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).isVisible(), "la vérification de la scène a disparu");
+      assert(!(await page.getByRole("menuitem", { name: "Vérifier tout le livre avec LanguageTool" }).count()), "« tout le livre » est proposé avec l'API gratuite");
+      await page.keyboard.press("Escape");
+      const count = sent.length;
+      await page.locator(".ProseMirror[contenteditable=true]").first().click();
+      await page.keyboard.press("End");
+      await page.keyboard.type(" Encore aller.");
+      await h.wait(3500);
+      assert(sent.length === count, "l'API gratuite a reçu une vérification pendant la frappe");
+    },
+  },
+  {
+    name: "LanguageTool dans le scénario : seuls l'action et le dialogue sont relus",
+    async run(h) {
+      const { page } = h;
+      const sent = [];
+      await page.addInitScript(() => {
+        if (!localStorage.getItem("cosmos:reglages")) localStorage.setItem("cosmos:reglages", JSON.stringify({ lang: "fr", languageTool: { server: "public" } }));
+      });
+      await page.route("https://api.languagetool.org/v2/check", (route) => {
+        const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
+        if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+        sent.push(new URLSearchParams(route.request().postData() ?? "").get("text") ?? "");
+        return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ matches: [] }) });
+      });
+      await h.create("Le Quai", "scenario");
+      await h.view(4);
+      const editor = page.locator(".sp-editor");
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("INT. QUAI - NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La pluie tombe sur le quai.");
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Tab");
+      await page.keyboard.type("MARC");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("On rentre ?");
+      await h.wait(400);
+      await page.locator(".sp-option").getByRole("button", { name: "Plus d’actions" }).or(page.getByRole("button", { name: "Plus d’actions" }).last()).first().click();
+      await page.getByRole("menuitem", { name: "Vérifier la scène avec LanguageTool" }).click();
+      await until(() => page.getByText("LanguageTool n’a rien relevé dans cette scène.").isVisible(), "la fin de la vérification n'est pas annoncée");
+      const text = sent.at(-1) ?? "";
+      assert(text.includes("La pluie tombe sur le quai."), `l'action n'a pas été envoyée : ${JSON.stringify(text)}`);
+      assert(!text.includes("INT. QUAI") && !text.includes("MARC"), `l'en-tête ou le nom du personnage ont été envoyés : ${JSON.stringify(text)}`);
+    },
+  },
+  {
     name: "synonymes : Ctrl+Alt+Y sur un mot du manuscrit, le dictionnaire se télécharge, un clic remplace le mot",
     async run(h) {
       const { page } = h;
@@ -1961,6 +2134,38 @@ const scenarios = [
     },
   },
   {
+    name: "Plan : gabarit imbriqué (#111), un ensemble et ses sous-cases, décalées dans l'éditeur",
+    async run(h) {
+      const { page } = h;
+      await h.create("Gabarit imbriqué");
+      await h.view(2);
+      const select = page.locator(".plan-template select");
+      await select.waitFor();
+      const chooser = page.waitForEvent("filechooser");
+      await select.selectOption("__import");
+      const md = "# En actes\n\n## Acte I\n\n### Mise en place\n\n### L’appel\n\n## Acte II\n";
+      await (await chooser).setFiles({ name: "actes.md", mimeType: "text/markdown", buffer: Buffer.from(md) });
+      const dialog = page.locator("dialog[open]");
+      await until(() => dialog.locator(".tpl-row.level-2").first().isVisible(), "les sous-cases ne sont pas en retrait dans l'éditeur");
+      // « Acte II » décalé à droite devient une sous-case d'« Acte I » ; le bouton suivant est grisé (au plus un niveau de plus).
+      await dialog.getByRole("button", { name: "Décaler à droite la case « Acte II »" }).click();
+      assert((await dialog.locator(".tpl-row.level-2").count()) === 3, "Acte II n'est pas passé au niveau 2");
+      await dialog.getByRole("button", { name: "Décaler à gauche la case « Acte II »" }).click();
+      await dialog.getByRole("button", { name: "Utiliser dans ce projet" }).click();
+      await h.saved((f) => {
+        const beats = JSON.parse(f["cosmos.json"] ?? "{}").plan?.custom?.beats ?? [];
+        return beats.length === 4 && beats[1].level === 2 && beats[2].level === 2 && !beats[3].level;
+      }, "les niveaux ne sont pas enregistrés dans le plan");
+      // L'ensemble n'a ni rang ni « Nouvelle scène » ; ses sous-cases sont en retrait et numérotées sur trois.
+      const group = page.locator(".plan-beat.is-group").first();
+      await group.waitFor();
+      assert(!(await group.locator(".beat-rank").count()), "un ensemble ne doit pas avoir de rang");
+      assert(!(await group.locator(".plan-add").count()), "un ensemble ne doit pas avoir de champ « Nouvelle scène »");
+      assert((await page.locator(".plan-beat.level-2").count()) === 2, "les sous-cases ne sont pas en retrait dans le Plan");
+      await until(() => page.getByText("Case 3 sur 3").isVisible(), "le rang ne compte pas que les cases du bas");
+    },
+  },
+  {
     name: "Plan : un gabarit importé d'un fichier Markdown se pose, puis s'exporte",
     async run(h) {
       const { page } = h;
@@ -2381,6 +2586,58 @@ const scenarios = [
     },
   },
   {
+    name: "roman interactif : la pilule d'une flèche qui passe derrière une autre scène reste cliquable",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        const key = "cosmos:reglages";
+        const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+        if (!saved.experimental?.interactive) localStorage.setItem(key, JSON.stringify({ ...saved, lang: "fr", experimental: { interactive: true } }));
+      });
+      await h.home();
+      await page.locator(".home-form input[type=text]").fill("Trois scènes");
+      await page.locator('.home-kinds input[value="interactive"]').check();
+      await page.locator(".home-create").click();
+      await h.canvas();
+      await h.view(2);
+      await page.getByPlaceholder("Nouvelle scène…").fill("A");
+      await page.getByPlaceholder("Nouvelle scène…").press("Enter");
+      await h.view(1);
+      const cards = page.locator(".react-flow__node-card:has(.card.type-scene)");
+      await until(async () => (await cards.count()) === 1, "la scène A n'est pas sur le canevas");
+      const idA = await cards.first().getAttribute("data-id");
+      const cardA = page.locator(`.react-flow__node-card[data-id="${idA}"]`);
+      // A, puis B à sa droite, puis C à droite de B : la flèche A → C passe derrière B.
+      await cardA.getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
+      await until(async () => (await cards.count()) === 2, "pas de scène B");
+      const idB = (await cards.evaluateAll((els) => els.map((e) => e.dataset.id))).find((id) => id !== idA);
+      await page.locator(`.react-flow__node-card[data-id="${idB}"]`).getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Nouvelle scène après celle-ci" }).click();
+      await until(async () => (await cards.count()) === 3, "pas de scène C");
+      await cardA.getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Ajouter un choix vers…" }).click();
+      await page.locator(".choice-picker button", { hasText: /^3\./ }).click();
+      const pills = page.locator(".edge-pill");
+      await until(async () => (await pills.count()) === 3, "les trois choix n'ont pas leur pilule");
+      await page.waitForTimeout(300);
+      // Tout le canevas à l'écran.
+      await page.locator(".react-flow__controls-fitview").click();
+      await page.waitForTimeout(500);
+      // Chaque pilule est sous le pointeur à sa place (aucune carte ne la couvre) et ouvre le bandeau de son choix.
+      for (let i = 0; i < 3; i++) {
+        const pill = pills.nth(i);
+        const r = await pill.boundingBox();
+        assert(r, `la pilule ${i + 1} n'est pas dessinée`);
+        const on = await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest(".edge-pill"), [r.x + r.width / 2, r.y + r.height / 2]);
+        assert(on, `la pilule ${i + 1} (${await pill.getAttribute("aria-label")}) est couverte par une carte`);
+        await pill.click();
+        await until(() => page.locator(".choice-edge-editor").isVisible(), `la pilule ${i + 1} n'ouvre pas son bandeau`);
+        await page.keyboard.press("Escape");
+      }
+    },
+  },
+  {
     name: "roman interactif : l'exemple « Le Puits » s'ouvre sur sa visite et sa carte des choix",
     async run(h) {
       const { page } = h;
@@ -2404,6 +2661,58 @@ const scenarios = [
       await h.view(3);
       await page.waitForTimeout(800);
       await page.screenshot({ path: "scripts/e2e/captures/puits-bible.png" });
+    },
+  },
+  {
+    name: "roman interactif (#103, #104) : choix fermés montrés en lecture, et lecture reprise après une correction",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => {
+        const key = "cosmos:reglages";
+        const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+        if (!saved.experimental?.interactive) localStorage.setItem(key, JSON.stringify({ ...saved, lang: "fr", experimental: { interactive: true } }));
+      });
+      // Deux choix rejoignent « Le puits » ; seul le premier donne la clé, que demande le coffre.
+      const twee = [
+        ":: StoryTitle\nLe coffre\n",
+        ':: StoryData\n{"start": "La cour", "format": "SugarCube"}\n',
+        ":: La cour\nIl fait nuit.\n<<link [[Prendre la clé->Le puits]]>><<set $cle to true>><</link>>\n[[Aller au puits->Le puits]]\n",
+        ":: Le puits\nL’eau est noire.\n<<if $cle>>[[Ouvrir le coffre->La lettre]]<</if>>\n[[Remonter->La cour]]\n",
+        ":: La lettre\nUne lettre.\n",
+      ].join("\n");
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…", exact: true }).click();
+      await (await chooser).setFiles({ name: "coffre.twee", mimeType: "text/plain", buffer: Buffer.from(twee) });
+      await page.locator(".topbar").waitFor({ timeout: 20_000 });
+      await h.saved((f) => Object.values(f).some((v) => /\{ cle \} \[Ouvrir le coffre\]/.test(v)), "le coffre n'est pas un choix à condition");
+      await h.view(2);
+      await page.getByRole("button", { name: "Lire l’histoire" }).click();
+      const play = page.locator(".play-panel");
+      const open = play.locator(".play-choices:not(.is-closed) button");
+      await until(async () => (await open.count()) === 2, "la cour ne propose pas deux choix");
+      await open.filter({ hasText: "Aller au puits" }).click();
+      // Arrivé sans la clé : le coffre est fermé, et la raison est dite.
+      const closed = play.locator(".play-closed");
+      await until(async () => (await closed.count()) === 1, "le choix fermé n'est pas montré");
+      const shown = (await closed.first().textContent()) ?? "";
+      assert(/Ouvrir le coffre/.test(shown) && /avec «\s?cle\s?»/.test(shown), `choix fermé : ${shown}`);
+      // La case le cache, pour lire comme un lecteur.
+      await play.getByRole("checkbox", { name: "Montrer les choix fermés" }).uncheck();
+      await until(async () => (await closed.count()) === 0, "décochée, la case ne cache pas les choix fermés");
+      await play.getByRole("checkbox", { name: "Montrer les choix fermés" }).check();
+      await page.keyboard.press("Escape");
+      // Rouverte, la lecture propose de reprendre : un clic rejoue « Aller au puits ».
+      await page.getByRole("button", { name: "Lire l’histoire" }).click();
+      const resume = play.getByRole("button", { name: "Reprendre là où j’en étais (1 choix)" });
+      await until(() => resume.isVisible(), "la lecture rouverte ne propose pas de reprendre");
+      await resume.click();
+      await until(async () => (await play.locator(".play-chose").allTextContents()).join("|") === "› Aller au puits", "la reprise n'a pas rejoué le choix");
+      await until(async () => (await closed.count()) === 1, "après la reprise, le choix fermé n'est plus montré");
+      assert(!(await resume.isVisible()), "le bouton de reprise reste après la reprise");
+      // « Revenir au choix précédent » marche après une reprise.
+      await play.getByRole("button", { name: "Revenir au choix précédent" }).click();
+      await until(async () => (await open.count()) === 2, "après une reprise, le retour ne rend pas les choix de la cour");
     },
   },
   {

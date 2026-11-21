@@ -56,12 +56,20 @@ export const PLAN_TEMPLATES = {
   perso: [],
 } as const satisfies Record<PlanTemplate, readonly string[]>;
 
-/** Une case d'un gabarit de l'auteur : clé stable (`u1`, `u2`…, écrite dans le fichier), nom et aide. */
+/**
+ * Une case d'un gabarit de l'auteur : clé stable (`u1`, `u2`…, écrite dans le fichier), nom, aide et niveau
+ * (#111 : 1 à 3, absent = 1). Une case suivie de cases plus profondes est un ensemble (« Acte I » au-dessus de
+ * ses séquences) ; elle peut garder des scènes, posées avant ses sous-cases, mais on range d'ordinaire dans les
+ * cases du bas. Dans un scénario, le niveau est la profondeur de la section Fountain.
+ */
 export interface CustomBeat {
   key: string;
   label: string;
   hint?: string;
+  level?: BeatLevel;
 }
+export type BeatLevel = 1 | 2 | 3;
+export const MAX_BEAT_LEVEL = 3;
 export interface CustomTemplate {
   name: string;
   beats: CustomBeat[];
@@ -71,6 +79,52 @@ export const isCustomBeat = (key: string) => /^u[1-9]\d{0,2}$/.test(key);
 export const MAX_CUSTOM_BEATS = 40;
 const MAX_LABEL = 120;
 const MAX_HINT = 300;
+
+/** Niveau d'une case du gabarit (1 pour un gabarit livré ou une case sans niveau). */
+export const beatLevel = (custom: CustomTemplate | undefined, key: string): BeatLevel => custom?.beats.find((b) => b.key === key)?.level ?? 1;
+
+/**
+ * Niveaux remis en ordre : la première case au niveau 1, chacune au plus un niveau sous la précédente, trois au
+ * plus. Un gabarit plat reste sans aucune clé `level` (même forme qu'avant le #111).
+ */
+export function cleanLevels<T extends { level?: number }>(beats: readonly T[]): (T & { level?: BeatLevel })[] {
+  let prev = 0;
+  return beats.map((b) => {
+    const wanted = Number.isInteger(b.level) ? (b.level as number) : 1;
+    const level = Math.max(1, Math.min(MAX_BEAT_LEVEL, prev + 1, wanted)) as BeatLevel;
+    prev = level;
+    const { level: _drop, ...rest } = b;
+    return (level > 1 ? { ...rest, level } : rest) as T & { level?: BeatLevel };
+  });
+}
+
+/** Cette case a-t-elle des sous-cases (la case suivante est plus profonde) ? */
+export function hasSubBeats(custom: CustomTemplate | undefined, key: string): boolean {
+  const beats = custom?.beats ?? [];
+  const i = beats.findIndex((b) => b.key === key);
+  return i >= 0 && i + 1 < beats.length && (beats[i + 1].level ?? 1) > (beats[i].level ?? 1);
+}
+
+/** Cases où l'on range d'ordinaire des scènes (sans sous-case) : elles seules comptent dans « Case 3 sur 15 ». */
+export const leafBeats = (template: PlanTemplate, custom?: CustomTemplate): readonly string[] =>
+  template === "perso" ? templateBeats(template, custom).filter((key) => !hasSubBeats(custom, key)) : templateBeats(template, custom);
+
+/** Ensembles qui contiennent cette case, du plus haut au plus proche (« Acte I », « Mise en place »). */
+export function beatParents(custom: CustomTemplate | undefined, key: string): CustomBeat[] {
+  const beats = custom?.beats ?? [];
+  const i = beats.findIndex((b) => b.key === key);
+  if (i < 0) return [];
+  const out: CustomBeat[] = [];
+  let level = beats[i].level ?? 1;
+  for (let j = i - 1; j >= 0 && level > 1; j--) {
+    const l = beats[j].level ?? 1;
+    if (l < level) {
+      out.unshift(beats[j]);
+      level = l;
+    }
+  }
+  return out;
+}
 
 /** Cases du gabarit, dans l'ordre du récit : celles du gabarit, ou celles de l'auteur. */
 export const templateBeats = (template: PlanTemplate, custom?: CustomTemplate): readonly string[] =>
@@ -92,13 +146,18 @@ export function readCustom(raw: unknown): CustomTemplate | undefined {
   const list: CustomBeat[] = [];
   for (const b of beats.slice(0, MAX_CUSTOM_BEATS)) {
     if (!b || typeof b !== "object") continue;
-    const { key, label, hint } = b as { key?: unknown; label?: unknown; hint?: unknown };
+    const { key, label, hint, level } = b as { key?: unknown; label?: unknown; hint?: unknown; level?: unknown };
     if (typeof key !== "string" || !isCustomBeat(key) || seen.has(key) || typeof label !== "string" || !label.trim()) continue;
     seen.add(key);
-    list.push({ key, label: label.trim().slice(0, MAX_LABEL), ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, MAX_HINT) } : {}) });
+    list.push({
+      key,
+      label: label.trim().slice(0, MAX_LABEL),
+      ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, MAX_HINT) } : {}),
+      ...(typeof level === "number" ? { level: level as BeatLevel } : {}),
+    });
   }
   if (list.length === 0) return undefined;
-  return { name: typeof name === "string" ? name.trim().slice(0, MAX_LABEL) : "", beats: list };
+  return { name: typeof name === "string" ? name.trim().slice(0, MAX_LABEL) : "", beats: cleanLevels(list) };
 }
 
 /**
@@ -524,7 +583,7 @@ export function beatText(key: string, dict: Readonly<Record<string, { label: str
  * Cases saisies par l'auteur (éditeur de gabarit) → cases du projet : une case qui avait déjà sa clé la garde
  * (ses scènes la suivent), une case nouvelle en reçoit une jamais prise. Les cases sans nom sont laissées.
  */
-export function withKeys(rows: readonly { key?: string; label: string; hint?: string }[], used: Iterable<string>): CustomBeat[] {
+export function withKeys(rows: readonly { key?: string; label: string; hint?: string; level?: number }[], used: Iterable<string>): CustomBeat[] {
   const taken = new Set(used);
   const out: CustomBeat[] = [];
   for (const row of rows.slice(0, MAX_CUSTOM_BEATS)) {
@@ -535,7 +594,7 @@ export function withKeys(rows: readonly { key?: string; label: string; hint?: st
       key = nextCustomKey([...taken, ...out.map((b) => b.key)]);
     }
     taken.add(key);
-    out.push({ key, label: label.slice(0, 120), ...(row.hint?.trim() ? { hint: row.hint.trim().slice(0, 300) } : {}) });
+    out.push({ key, label: label.slice(0, 120), ...(row.hint?.trim() ? { hint: row.hint.trim().slice(0, 300) } : {}), ...(row.level ? { level: row.level as BeatLevel } : {}) });
   }
-  return out;
+  return cleanLevels(out);
 }

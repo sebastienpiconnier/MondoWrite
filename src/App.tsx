@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { sendCommand } from "./commands";
 import { openPalette } from "./commandList";
 import { captureSpot } from "./resume";
+import { reviewProjectClosed, reviewProjectOpened } from "./storeReview";
 import { nextZoom, useSettings } from "./settings";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useCosmos, type CosmosState } from "./store";
@@ -70,6 +71,18 @@ export function App() {
     () =>
       useCosmos.subscribe((s, prev) => {
         if (s.screen === "project" && prev.screen === "project" && s.view !== prev.view) captureSpot(storage.current?.(), s.view);
+      }),
+    [],
+  );
+
+  // Note sur l'App Store (iPhone et iPad, src/storeReview.ts) : jours d'utilisation comptés à l'ouverture d'un
+  // projet ; la fenêtre d'iOS n'est demandée qu'au retour à l'accueil, une fois l'accueil affiché.
+  useEffect(
+    () =>
+      useCosmos.subscribe((s, prev) => {
+        if (s.screen === prev.screen) return;
+        if (s.screen === "project") void reviewProjectOpened();
+        else if (s.screen === "home" && prev.screen === "project") window.setTimeout(() => void reviewProjectClosed(), 1500);
       }),
     [],
   );

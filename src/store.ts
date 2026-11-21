@@ -136,7 +136,7 @@ export interface CosmosState {
    * avec la clé d'une case déjà là (ses scènes la suivent) ou sans clé pour une case nouvelle. Annulable.
    */
   /** Gabarit de l'auteur posé dans le projet ; série : dans l'épisode `episode` (sinon l'épisode ouvert). */
-  setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[], episode?: string) => void;
+  setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string; level?: number }[], episode?: string) => void;
   /** Range une scène dans une case du gabarit, roman (plan) ou scénario (section du Fountain). Annulable. */
   placeInBeat: (id: string, beat: string, index?: number) => void;
   /** Série : range la scène de cette carte dans un épisode, avec son texte (à la fin sans index). */
@@ -651,6 +651,9 @@ export interface CosmosState {
   addCard: (pos: { x: number; y: number }, type?: CardType, height?: number) => string;
   /** Carte créée depuis une autre vue (Bible, scénario) : posée sur la première place libre, sans prendre le focus. */
   addTitledCard: (type: CardType, title: string) => string;
+  /** Roman et scénario : une carte Scène posée à `at` (sans chevauchement), reliée par un fil depuis la scène `from`,
+   *  titre prêt à écrire ; une seule étape d'annulation. */
+  addLinkedScene: (from: string, at: { x: number; y: number }) => string | null;
   /** Ces cartes sont rangées : elles quittent « À ranger ». */
   fileInbox: (ids: string[]) => void;
 
@@ -3597,6 +3600,25 @@ export const useCosmos = create<CosmosState>((set, get) => {
       for (const scene of scenes) get().updateCard(scene.id, { title: scene.title, html: scene.html });
       touch();
       return made.map((n) => n.id);
+    },
+    addLinkedScene: (from, at) => {
+      if (!get().nodes.some((n) => n.id === from)) return null;
+      record();
+      const card: CardData = { id: newId(), type: "scene", title: "", html: "" };
+      const spot = placeCard(at, occupied(), { width: CARD_SIZE.width, height: CARD_SIZE.height });
+      const node = { ...toNode(card, spot.x, spot.y), selected: true };
+      const edge = { id: newId(), source: from, target: card.id, sourceHandle: null, targetHandle: null, label: "", type: "floating" };
+      // Téléphone : la carte s'ouvre en grand, comme une carte créée au double-toucher (addCard).
+      const phone = isPhone();
+      set({
+        // La carte d'où part le fil a trouvé sa place : elle quitte « À ranger », comme pour tout fil (onConnect).
+        nodes: [...fileCards(get().nodes, new Set([from])).map((n) => (n.selected ? { ...n, selected: false } : n)), node],
+        edges: addEdge(edge, get().edges),
+        pendingFocusId: phone ? null : card.id,
+        ...(phone ? { expandedId: card.id, dialog: "card" as const, cardMenu: null } : {}),
+      });
+      touch();
+      return card.id;
     },
     addTitledCard: (type, title) => {
       record();
