@@ -20,3 +20,6 @@
 .usage-reading { display: inline-flex; align-items: center; gap: 6px; }
 .usage-spinner { width: 11px; height: 11px; box-sizing: border-box; border: 1.5px solid var(--line); border-top-color: currentColor; border-radius: 50%; animation: loading-spin 0.8s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .usage-spinner { animation: none; } }
+@media (pointer: coarse) {
+  .provider-usage .usage-toggle { min-height: 44px; min-width: 44px; }
+}

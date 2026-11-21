@@ -199,7 +199,12 @@ MondoWrite uses the following libraries, bundled in the app. Each license's full
 | nanoid | MIT |
 | serde, serde_json, log (crates Rust / Rust crates) | MIT ou / or Apache-2.0 |
 | swift-rs (crate Rust, compilation du pont Swift d'Apple Intelligence, Copyright The swift-rs contributors / build of the Apple Intelligence Swift bridge) | MIT ou / or Apache-2.0 |
-| jsonwebtoken (Vincent Prouillet), validation des jetons OpenID / OpenID token validation | MIT |
+| base64 (Copyright (c) 2015 Alice Maz), futures-util (Copyright (c) 2016 Alex Crichton), reqwest (Copyright (c) 2016–2025 Sean McArthur), uuid (Copyright (c) 2014 The Rust Project Developers) | MIT ou / or Apache-2.0 |
+| tokio (Copyright (c) Tokio Contributors) | MIT |
+| ring (Brian Smith et autres contributeurs / and other contributors, voir / see the crate’s LICENSE) | Apache-2.0 et / and ISC |
+| nom (Geoffroy Couprie) | MIT |
+| minimal-lexical (Alex Huszagh), wasm-streams (Mattias Buelens) | MIT ou / or Apache-2.0 |
+| jsonwebtoken (Copyright (c) 2015 Vincent Prouillet), validation des jetons OpenID / OpenID token validation | MIT |
 | eventsource-stream (Julian Popescu), lecture des réponses en continu / streaming responses | MIT ou / or Apache-2.0 |
 | keyring (crate Rust, clés dans le trousseau du système, Copyright (c) 2016 keyring Developers / keys in the system keychain), et sous Linux / and on Linux secret-service, zbus | MIT ou / or Apache-2.0 (zbus : MIT) |
 | fontdb (crate Rust, liste des polices de l'ordinateur, Copyright (c) 2020 Yevhenii Reizner / list of the computer's fonts), avec / with fontconfig-parser, roxmltree, memmap2, slotmap, tinyvec | MIT (fontconfig-parser, roxmltree, memmap2 : MIT ou / or Apache-2.0 ; slotmap : Zlib ; tinyvec : Zlib, MIT ou / or Apache-2.0) |

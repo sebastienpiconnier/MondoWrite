@@ -26,13 +26,14 @@ export function ChatGPTUsage({ menuCard = false }: { menuCard?: boolean }) {
   const date = (d: Date) => d.toLocaleString(lang, { dateStyle: "medium", timeStyle: "short" });
   const remaining = (w: UsageWindow) => Math.max(0, Math.min(100, 100 - w.percent));
   const remainingLabel = (w: UsageWindow) => fmt(copy.remaining, { n: remaining(w).toLocaleString(lang) });
-  const local = fmt(copy.requests, { n: requestsToday("chatgpt", now) });
+  const local = fmt(copy.requests, { n: requestsToday("chatgpt", now).toLocaleString(lang) });
   const summary = current.length ? current.map(remainingLabel).join(" · ") : copy.planUsage;
-  return <div className={menuCard ? "provider-usage menu-usage" : "provider-usage"} onMouseEnter={() => setExpanded(true)} onMouseLeave={() => setExpanded(false)}
-    onFocus={() => setExpanded(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setExpanded(false); }}
+  return <div className={menuCard ? "provider-usage menu-usage" : "provider-usage"} onPointerEnter={(e) => { if (e.pointerType === "mouse") setExpanded(true); }}
+    onPointerLeave={(e) => { if (e.pointerType === "mouse" && !e.currentTarget.contains(document.activeElement)) setExpanded(false); }}
+    onFocus={(e) => { if (e.target.matches(":focus-visible")) setExpanded(true); }} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setExpanded(false); }}
     onKeyDown={(e) => { if (e.key === "Escape" && expanded) { e.stopPropagation(); setExpanded(false); } }}>
     <button type="button" className="usage-toggle" aria-label={menuCard && current.length ? copy.planUsage + ", " + remainingLabel(current[0]) : undefined} aria-expanded={expanded} aria-controls={id}
-      onClick={() => setExpanded(true)}>
+      onClick={() => setExpanded((open) => !open)}>
       {menuCard ? <><svg viewBox="0 0 20 16" width="18" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
         <path d="M3 13a8 8 0 1 1 14 0M10 10l4-4" /><circle cx="10" cy="10" r="1" />
       </svg><strong>{copy.planUsage}</strong>{(busy || current.length > 0) && <span className="usage-reading">{busy && <i className="usage-spinner" role="status" aria-label={copy.checkingUsage} />}{current.length > 0 && remainingLabel(current[0])}</span>}</> : summary}

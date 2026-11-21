@@ -530,7 +530,7 @@ pub async fn chatgpt_disconnect(app: AppHandle) -> Result<bool> {
 mod tests {
     use super::*;
     #[tokio::test]
-    async fn nouvelle_connexion_et_annulation_reveillent_la_tentative_en_cours() {
+    async fn replacing_or_cancelling_login_wakes_pending_attempt() {
         let mut first = begin_login();
         let mut second = begin_login();
         assert!(first.changed().await.is_err());
