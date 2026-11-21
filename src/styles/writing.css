@@ -1563,3 +1563,6 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .lt-status { position: fixed; z-index: 70; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px)); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 32px); box-sizing: border-box; padding: 10px 16px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); font-size: 0.9375rem; }
 .lt-status.is-error { border-left: 4px solid var(--danger); }
 .lt-spinner { flex: none; width: 14px; height: 14px; border: 2px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; animation: loading-spin 0.8s linear infinite; }
+/* Mode focus sans couleur : les soulignements de LanguageTool restent, à l'encre du thème. */
+.is-focus .lt-issue { --lt-color: var(--ink-2); }
+.is-focus .lt-issue.is-active { background: none; }
