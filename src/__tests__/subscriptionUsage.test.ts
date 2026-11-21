@@ -4,22 +4,20 @@ import { bindUsageAccount, refreshUsage, useSubscriptionUsage } from "../ai/subs
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
-it("keeps the launch reading during a menu refresh, shares in-flight work, and clears it on sign-out", async () => {
-  const snapshot = (percent: number) => ({ connected: true, workspace: "example", label: "Example", windows: [{ percent, reset: null }] });
-  vi.mocked(invoke).mockResolvedValueOnce(snapshot(25));
+it("keeps the last header reading during refresh and discards pending results on sign-out", async () => {
+  const windows = [{ percent: 25, reset: null }];
   bindUsageAccount("example");
-  await refreshUsage("read");
-  expect(invoke).toHaveBeenCalledTimes(1);
-  let finish!: (value: unknown) => void;
-  vi.mocked(invoke).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
-  const refresh = refreshUsage("read");
-  expect(useSubscriptionUsage.getState()).toMatchObject({ busy: true, codex: snapshot(25) });
-  finish(snapshot(27));
-  await refresh;
-  expect(useSubscriptionUsage.getState()).toMatchObject({ busy: false, codex: snapshot(27) });
-  vi.mocked(invoke).mockRejectedValueOnce("codexError");
-  await refreshUsage("read");
-  expect(useSubscriptionUsage.getState()).toMatchObject({ busy: false, codex: snapshot(27) });
+  vi.mocked(invoke).mockResolvedValueOnce(windows);
+  await refreshUsage(Promise.resolve());
+  expect(invoke).toHaveBeenCalledWith("chatgpt_usage");
+  let finish!: () => void;
+  const discovery = new Promise<void>(resolve => { finish = resolve; });
+  const refresh = refreshUsage(discovery);
+  expect(refreshUsage()).toBe(refresh);
+  expect(useSubscriptionUsage.getState()).toEqual({ busy: true, windows });
   bindUsageAccount(null);
-  expect(useSubscriptionUsage.getState().codex).toBeNull();
+  vi.mocked(invoke).mockResolvedValueOnce(windows);
+  finish();
+  await refresh;
+  expect(useSubscriptionUsage.getState()).toEqual({ busy: false, windows: [] });
 });

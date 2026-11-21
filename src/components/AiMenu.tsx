@@ -1,4 +1,3 @@
-import { ChatGPTUsage } from "./ChatGPTUsage";
 // Bouton « IA » de la barre du haut, présent seulement si l'auteur a branché un service dans les Réglages.
 // Trois actions, qui proposent sans rien changer d'elles-mêmes : « Ranger les idées » (un type pour les
 // idées en vrac), « Vérifier la cohérence » (contradictions possibles, sous forme de questions) et « Ranger
@@ -6,6 +5,7 @@ import { ChatGPTUsage } from "./ChatGPTUsage";
 // Plus le groupe « Relecture par l'IA » (AiReview.tsx), et « Organiser le canevas », qui range ensuite toutes les cartes en cadres (sans IA, annulable).
 // L'auteur applique, ignore, ou garde une question pour plus tard.
 
+import { ChatGPTUsage } from "./ChatGPTUsage";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";

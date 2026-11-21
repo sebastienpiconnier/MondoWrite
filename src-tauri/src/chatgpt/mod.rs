@@ -1,6 +1,4 @@
-//! Desktop-only Sign in with ChatGPT. Only account labels, model names and
-//! completed writing results cross the webview boundary.
-pub mod codex_usage;
+//! Connexion à ChatGPT sur ordinateur. Les jetons restent dans le trousseau.
 mod vault;
 pub mod writing;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
@@ -50,7 +48,7 @@ fn random() -> Result<String> {
 #[derive(Default, Serialize, Deserialize)]
 struct Account {
     #[serde(default)]
-    usage_workspace: Option<String>,
+    session: String,
     host: String,
     client: String,
     subject: String,
@@ -63,7 +61,7 @@ struct Account {
 }
 impl Account {
     fn clear(&mut self) {
-        self.usage_workspace = None;
+        self.session = Uuid::new_v4().to_string();
         self.access.clear();
         self.refresh.clear();
         self.id_token.clear();
@@ -147,7 +145,7 @@ fn expired_grant(err: &serde_json::Value) -> bool {
     )
 }
 pub(super) async fn access(app: &AppHandle) -> Result<String> {
-    // A cancelled writing request must not interrupt an already rotating refresh token.
+    // Le renouvellement du jeton doit aboutir même si la requête est annulée.
     let app = app.clone();
     tauri::async_runtime::spawn(async move { renew(&app).await })
         .await
@@ -293,13 +291,17 @@ fn callback(target: &str, state: &str, known_client: &str) -> Result<(String, St
     }
     Ok((code.to_string(), client.into()))
 }
-async fn receive(listener: TcpListener, state: &str, client: &str) -> Result<(String, String)> {
+async fn receive(
+    listener: TcpListener,
+    state: &str,
+    client: &str,
+    body: &str,
+) -> Result<(String, String)> {
     loop {
         let (mut socket, _) = listener.accept().await.map_err(|_| "callback")?;
         let mut line = Vec::new();
         let read = async {
-            // Drain the entire HTTP header before closing. On macOS an unread
-            // header can reset the TCP connection while the browser reads the reply.
+            // Lire tous les en-têtes évite que macOS coupe la connexion avant la réponse.
             let mut reader = BufReader::new((&mut socket).take(32 * 1024));
             reader.read_until(b'\n', &mut line).await?;
             let mut header = Vec::new();
@@ -329,10 +331,9 @@ async fn receive(listener: TcpListener, state: &str, client: &str) -> Result<(St
         } else {
             "400 Bad Request"
         };
-        let body = "Return to MondoWrite.";
         let length = body.len();
         let response = format!(
-            "HTTP/1.1 {msg}\r\nContent-Type: text/plain\r\nContent-Length: {length}\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nConnection: close\r\n\r\n{body}"
+            "HTTP/1.1 {msg}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {length}\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nConnection: close\r\n\r\n{body}"
         );
         let _ = socket.write_all(response.as_bytes()).await;
         let _ = socket.shutdown().await;
@@ -340,20 +341,61 @@ async fn receive(listener: TcpListener, state: &str, client: &str) -> Result<(St
     }
 }
 
-#[tauri::command]
-pub async fn chatgpt_connect(app: AppHandle, different: bool) -> Result<Status> {
-    writing::clear_usage();
-    timeout(Duration::from_secs(900), connect(app, different))
-        .await
-        .map_err(|_| "timeout")?
+// Remplacer ou retirer l’émetteur réveille la tentative précédente.
+static LOGIN: std::sync::Mutex<Option<tokio::sync::watch::Sender<()>>> =
+    std::sync::Mutex::new(None);
+
+fn begin_login() -> tokio::sync::watch::Receiver<()> {
+    let (sender, receiver) = tokio::sync::watch::channel(());
+    *LOGIN.lock().unwrap() = Some(sender);
+    receiver
 }
-async fn connect(app: AppHandle, different: bool) -> Result<Status> {
+
+#[tauri::command]
+pub fn chatgpt_cancel_connect() {
+    LOGIN.lock().unwrap().take();
+}
+
+#[tauri::command]
+pub async fn chatgpt_connect(
+    app: AppHandle,
+    different: bool,
+    return_message: String,
+) -> Result<Status> {
+    let mut cancelled = begin_login();
+    let a = {
+        let _lock = vault::lock(&app).await?;
+        let mut a = vault::load().await?.unwrap_or_default();
+        if a.host.is_empty() {
+            a.host = format!("urn:uuid:{}", Uuid::new_v4());
+            vault::save(&a).await?;
+        }
+        a
+    };
+    let session = a.session.clone();
+    let a = tokio::select! {
+        _ = cancelled.changed() => return Err("cancelled".into()),
+        result = timeout(Duration::from_secs(900), connect(app.clone(), a, different, &return_message)) =>
+            result.map_err(|_| "timeout")??,
+    };
     let _lock = vault::lock(&app).await?;
-    let mut a = vault::load().await?.unwrap_or_default();
-    if a.host.is_empty() {
-        a.host = format!("urn:uuid:{}", Uuid::new_v4());
-        vault::save(&a).await?;
+    // Une autre instance peut avoir changé de compte pendant le passage dans le navigateur.
+    let current = vault::load().await?;
+    if current.is_none_or(|current| current.session != session) || cancelled.has_changed().is_err()
+    {
+        return Err("cancelled".into());
     }
+    vault::save(&a).await?;
+    writing::clear_usage();
+    Ok(status(Some(a)))
+}
+
+async fn connect(
+    app: AppHandle,
+    mut a: Account,
+    different: bool,
+    return_message: &str,
+) -> Result<Account> {
     if different {
         if !a.access.is_empty() {
             return Err("auth".into());
@@ -405,7 +447,7 @@ async fn connect(app: AppHandle, different: bool) -> Result<Status> {
     super::open_web_url(app, url.to_string())
         .await
         .map_err(|_| "browser")?;
-    let (code, client) = receive(listener, &state, &a.client).await?;
+    let (code, client) = receive(listener, &state, &a.client, return_message).await?;
     let http = http()?;
     let tokens: Tokens = http
         .post(TOKEN)
@@ -436,13 +478,13 @@ async fn connect(app: AppHandle, different: bool) -> Result<Status> {
     a.id_token = jwt.into();
     a.client = client;
     tokens.apply(&mut a)?;
-    vault::save(&a).await?;
-    Ok(status(Some(a)))
+    Ok(a)
 }
 
 #[tauri::command]
 pub async fn chatgpt_disconnect(app: AppHandle) -> Result<bool> {
     let _lock = vault::lock(&app).await?;
+    chatgpt_cancel_connect();
     writing::cancel_all();
     writing::clear_usage();
     let Some(mut a) = vault::load().await? else {
@@ -487,6 +529,15 @@ pub async fn chatgpt_disconnect(app: AppHandle) -> Result<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn nouvelle_connexion_et_annulation_reveillent_la_tentative_en_cours() {
+        let mut first = begin_login();
+        let mut second = begin_login();
+        assert!(first.changed().await.is_err());
+        assert!(!second.has_changed().unwrap());
+        chatgpt_cancel_connect();
+        assert!(second.changed().await.is_err());
+    }
     #[test]
     fn callback_binds_state_code_and_registration() {
         let first = "/auth/callback?state=abc&code=one&client_id=issued";
@@ -505,7 +556,12 @@ mod tests {
     async fn browser_can_return_through_the_bound_loopback_port() {
         let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
         let address = listener.local_addr().unwrap();
-        let callback_task = tokio::spawn(receive(listener, "attempt", ""));
+        let callback_task = tokio::spawn(receive(
+            listener,
+            "attempt",
+            "",
+            "Tu peux revenir dans MondoWrite.",
+        ));
         let reply = reqwest::Client::builder()
             .no_proxy()
             .build()
@@ -517,7 +573,10 @@ mod tests {
             .await
             .unwrap();
         assert!(reply.status().is_success());
-        assert_eq!(reply.text().await.unwrap(), "Return to MondoWrite.");
+        assert_eq!(
+            reply.text().await.unwrap(),
+            "Tu peux revenir dans MondoWrite."
+        );
         assert_eq!(
             callback_task.await.unwrap().unwrap(),
             ("test-code".into(), "test-client".into())

@@ -19,6 +19,6 @@ export function countRequest(provider: AiProvider, now = new Date()) {
     localStorage.setItem(counterKey(provider), JSON.stringify({ day: now.toDateString(), count }));
     window.dispatchEvent(new Event("mondowrite-usage"));
   } catch {
-    // Storage can be unavailable while the writing service still works.
+    // Le stockage local peut être indisponible même si le service d’écriture répond.
   }
 }

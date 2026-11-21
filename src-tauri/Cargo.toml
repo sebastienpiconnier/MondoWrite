@@ -40,7 +40,7 @@ futures-util = "0.3"
 jsonwebtoken = { version = "9", default-features = false }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
 ring = "0.17"
-tokio = { version = "1", features = ["io-util", "net", "process", "sync", "time", "macros"] }
+tokio = { version = "1", features = ["io-util", "net", "sync", "time", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 # Polices installées sur l'ordinateur, pour « Une police de l'ordinateur » (Réglages › Écriture). MIT.
 fontdb = "0.24"

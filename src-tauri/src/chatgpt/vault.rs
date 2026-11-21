@@ -1,5 +1,5 @@
-//! The head entry commits a complete generation of chunks. Windows Credential
-//! Manager limits each credential blob to 2560 bytes.
+//! Windows limite chaque entrée du trousseau à 2 560 octets. L’entrée de tête
+//! désigne le dernier jeu de fragments enregistré en entier.
 use super::{Account, Result};
 use keyring::Entry;
 use serde::{Deserialize, Serialize};

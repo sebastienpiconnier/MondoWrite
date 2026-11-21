@@ -1,9 +1,10 @@
 /// Apple Foundation Models : modèle d'Apple Intelligence sur l'appareil (commandes fm_*, pont Swift sur Apple).
 mod apple_fm;
 
-/// Clés de l'auteur dans le trousseau du système (commandes secret_*, #30).
 #[cfg(desktop)]
 mod chatgpt;
+
+/// Clés de l'auteur dans le trousseau du système (commandes secret_*, #30).
 mod secrets;
 mod fonts;
 
@@ -388,7 +389,7 @@ pub fn run() {
       #[cfg(desktop)]
       chatgpt::chatgpt_disconnect,
       #[cfg(desktop)]
-      chatgpt::codex_usage::codex_usage,
+      chatgpt::chatgpt_cancel_connect,
       #[cfg(desktop)]
       chatgpt::writing::chatgpt_usage,
       #[cfg(desktop)]
