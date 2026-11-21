@@ -10,7 +10,8 @@ import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { newId } from "../projectState";
-import { beatText, templateBeats, type CustomTemplate, type PlanTemplate } from "../plan";
+import { MAX_BEAT_LEVEL, beatLevel, beatText, cleanLevels, templateBeats, type CustomTemplate, type PlanTemplate } from "../plan";
+import { isAppleKeyboard } from "../platform";
 import { storage } from "../storage";
 import { MoreMenu } from "./MoreMenu";
 import { type SavedTemplate } from "../settings";
@@ -39,6 +40,8 @@ interface Row {
   from?: string;
   label: string;
   hint: string;
+  /** Niveau de la case (#111) : 1 à 3, une case plus profonde que la précédente en est une sous-case. */
+  level?: number;
   /** Identifiant de la ligne pour React (une case nouvelle n'a pas encore de clé). */
   id: string;
 }
@@ -91,11 +94,12 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     template
       ? templateBeats(template, custom).map((key) => {
           const { label, hint } = beatText(key, dict, custom);
-          return { ...(withKey ? { key } : { from: key }), label, hint, id: newId() };
+          const level = template === "perso" ? beatLevel(custom, key) : 1;
+          return { ...(withKey ? { key } : { from: key }), label, hint, ...(level > 1 ? { level } : {}), id: newId() };
         })
       : [];
 
-  const apply = (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[]) => useCosmos.getState().setCustomTemplate(name, rows, episode);
+  const apply = (name: string, rows: { key?: string; from?: string; label: string; hint?: string; level?: number }[]) => useCosmos.getState().setCustomTemplate(name, rows, episode);
 
   const exportTemplate = async (tpl: TemplateFile) => {
     try {
@@ -113,7 +117,7 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     const tpl = parseTemplateText(file.text, file.name);
     if (!tpl) return setNotice({ text: p.importFailed, error: true });
     setNotice(null);
-    setEditing({ name: tpl.name, rows: tpl.beats.map((b) => ({ label: b.label, hint: b.hint ?? "", id: newId() })), keep: true, imported: file.name });
+    setEditing({ name: tpl.name, rows: tpl.beats.map((b) => ({ label: b.label, hint: b.hint ?? "", ...(b.level && b.level > 1 ? { level: b.level } : {}), id: newId() })), keep: true, imported: file.name });
   };
 
   const forget = (tpl: SavedTemplate) => {
@@ -163,7 +167,7 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     if (v === EXPORT) {
       if (!value || value === "libre") return;
       const name = value === "perso" ? custom?.name || p.templates.perso : p.templates[value];
-      return void exportTemplate({ name, beats: rowsOf(value, true).map((r) => ({ label: r.label, ...(r.hint ? { hint: r.hint } : {}) })) });
+      return void exportTemplate({ name, beats: rowsOf(value, true).map((r) => ({ label: r.label, ...(r.hint ? { hint: r.hint } : {}), ...(r.level ? { level: r.level } : {}) })) });
     }
     if (v === NEW) {
       const base = value && value !== "libre" ? rowsOf(value, false) : [];
@@ -199,15 +203,26 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
       const j = i + by;
       if (j < 0 || j >= rows.length) return ed;
       [rows[i], rows[j]] = [rows[j], rows[i]];
-      return { ...ed, rows };
+      return { ...ed, rows: cleanLevels(rows) };
     });
+  // Décaler une case (#111) : au plus un niveau sous la précédente, trois niveaux au plus ; les cases qui la
+  // suivent gardent le leur tant qu'il reste possible (cleanLevels).
+  const shift = (i: number, by: 1 | -1) =>
+    setEditing((ed) => {
+      if (!ed) return ed;
+      const rows = ed.rows.map((r, k) => (k === i ? { ...r, level: (r.level ?? 1) + by } : r));
+      return { ...ed, rows: cleanLevels(rows) };
+    });
+  const canIndent = (i: number) => !!editing && i > 0 && (editing.rows[i].level ?? 1) < Math.min(MAX_BEAT_LEVEL, (editing.rows[i - 1].level ?? 1) + 1);
+  const canOutdent = (i: number) => !!editing && (editing.rows[i].level ?? 1) > 1;
+  const mod = isAppleKeyboard() ? "Cmd" : "Ctrl";
   const named = editing?.rows.filter((r) => r.label.trim()) ?? [];
 
   const save = () => {
     if (!editing || named.length === 0) return;
     const name = editing.name.trim() || e.namePlaceholder;
-    if (editing.keep) useSettings.getState().saveTemplate({ id: newId(), name, beats: named.map((r) => ({ label: r.label.trim(), ...(r.hint.trim() ? { hint: r.hint.trim() } : {}) })) });
-    apply(name, named.map((r) => ({ key: r.key, from: r.from, label: r.label, hint: r.hint })));
+    if (editing.keep) useSettings.getState().saveTemplate({ id: newId(), name, beats: cleanLevels(named.map((r) => ({ label: r.label.trim(), ...(r.hint.trim() ? { hint: r.hint.trim() } : {}), ...(r.level ? { level: r.level } : {}) }))) });
+    apply(name, named.map((r) => ({ key: r.key, from: r.from, label: r.label, hint: r.hint, level: r.level })));
     close();
   };
 
@@ -275,15 +290,39 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
             <input type="text" value={editing.name} placeholder={e.namePlaceholder} autoFocus onChange={(ev) => setEditing({ ...editing, name: ev.target.value })} />
           </label>
           <h3 className="tpl-beats-title">{e.beats}</h3>
+          <p className="tpl-file-hint">{fmt(e.levelsHint, { mod })}</p>
           <ol className="tpl-rows">
             {editing.rows.map((r, i) => (
-              <li key={r.id} className="tpl-row">
+              <li key={r.id} className={`tpl-row level-${r.level ?? 1}`} aria-label={(r.level ?? 1) > 1 ? fmt(e.levelOf, { n: r.level ?? 1 }) : undefined}>
                 <span className="tpl-num" aria-hidden="true">
                   {i + 1}
                 </span>
-                <input type="text" value={r.label} placeholder={e.labelPlaceholder} aria-label={fmt(e.label, { n: i + 1 })} onChange={(ev) => update(r.id, { label: ev.target.value })} />
+                <input
+                  type="text"
+                  value={r.label}
+                  placeholder={e.labelPlaceholder}
+                  aria-label={fmt(e.label, { n: i + 1 })}
+                  onChange={(ev) => update(r.id, { label: ev.target.value })}
+                  onKeyDown={(ev) => {
+                    // Cmd/Ctrl + ] et [ décalent la case (Tab reste au clavier pour passer d'un champ à l'autre).
+                    if (!(ev.metaKey || ev.ctrlKey) || ev.altKey) return;
+                    if (ev.code === "BracketRight" && canIndent(i)) {
+                      ev.preventDefault();
+                      shift(i, 1);
+                    } else if (ev.code === "BracketLeft" && canOutdent(i)) {
+                      ev.preventDefault();
+                      shift(i, -1);
+                    }
+                  }}
+                />
                 <input type="text" className="tpl-hint" value={r.hint} placeholder={e.hintPlaceholder} aria-label={fmt(e.hint, { n: i + 1 })} onChange={(ev) => update(r.id, { hint: ev.target.value })} />
                 <span className="tpl-row-actions">
+                  <button type="button" className="icon-button" disabled={!canOutdent(i)} aria-label={fmt(e.outdent, { label: r.label || i + 1 })} onClick={() => shift(i, -1)}>
+                    <span aria-hidden="true">←</span>
+                  </button>
+                  <button type="button" className="icon-button" disabled={!canIndent(i)} aria-label={fmt(e.indent, { label: r.label || i + 1 })} onClick={() => shift(i, 1)}>
+                    <span aria-hidden="true">→</span>
+                  </button>
                   <button type="button" className="icon-button" disabled={i === 0} aria-label={fmt(e.up, { label: r.label || i + 1 })} onClick={() => move(i, -1)}>
                     <span aria-hidden="true">↑</span>
                   </button>
@@ -294,7 +333,7 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
                     type="button"
                     className="icon-button"
                     aria-label={fmt(e.remove, { label: r.label || i + 1 })}
-                    onClick={() => setEditing({ ...editing, rows: editing.rows.filter((x) => x.id !== r.id) })}
+                    onClick={() => setEditing({ ...editing, rows: cleanLevels(editing.rows.filter((x) => x.id !== r.id)) })}
                   >
                     <span aria-hidden="true">×</span>
                   </button>

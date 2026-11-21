@@ -1,6 +1,7 @@
 // Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
+import { cleanLevels, type BeatLevel } from "./plan";
 import { readReading, type ReadingSettings } from "./reading";
 import { applyWritingAids, isSpellcheckMode, type SpellcheckMode } from "./writingAids";
 import { isTypographySetting, type TypographySetting } from "./typography";
@@ -237,7 +238,7 @@ interface SettingsState {
 export interface SavedTemplate {
   id: string;
   name: string;
-  beats: { label: string; hint?: string }[];
+  beats: { label: string; hint?: string; level?: BeatLevel }[];
 }
 
 const MAX_TEMPLATES = 30;
@@ -250,10 +251,12 @@ export function readTemplates(raw: unknown): SavedTemplate[] {
     const { id, name, beats } = item as { id?: unknown; name?: unknown; beats?: unknown };
     if (typeof id !== "string" || !id || out.some((t) => t.id === id) || !Array.isArray(beats)) continue;
     const list = beats.flatMap((b) => {
-      const { label, hint } = (b ?? {}) as { label?: unknown; hint?: unknown };
-      return typeof label === "string" && label.trim() ? [{ label: label.trim().slice(0, 120), ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, 300) } : {}) }] : [];
+      const { label, hint, level } = (b ?? {}) as { label?: unknown; hint?: unknown; level?: unknown };
+      return typeof label === "string" && label.trim()
+        ? [{ label: label.trim().slice(0, 120), ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, 300) } : {}), ...(typeof level === "number" ? { level } : {}) }]
+        : [];
     });
-    if (list.length > 0) out.push({ id, name: typeof name === "string" ? name.trim().slice(0, 120) : "", beats: list.slice(0, 40) });
+    if (list.length > 0) out.push({ id, name: typeof name === "string" ? name.trim().slice(0, 120) : "", beats: cleanLevels(list.slice(0, 40)) });
   }
   return out;
 }

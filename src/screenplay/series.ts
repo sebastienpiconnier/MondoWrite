@@ -351,8 +351,14 @@ export function withEpisodeTemplate(sp: Screenplay, episodeId: string, apply: (s
   return inEpisode(sp, episodeId, (script) => {
     const next = apply(script);
     if (next === script) return script;
-    // Une case posée par le gabarit est d'un niveau sous l'épisode (## épisode, ### case).
-    return { ...next, elements: next.elements.map((el) => (el.type === "section" && el.depth !== 3 && / \[\[cosmos:beat:/.test(el.text) ? { ...el, depth: 3 } : el)) };
+    // Une case posée par le gabarit est d'un niveau sous l'épisode (## épisode, ### case) ; un gabarit de l'auteur
+    // imbriqué (#111) descend d'autant : ses niveaux 1 à 3 deviennent ###, #### et #####.
+    const isBeat = (el: ScreenplayElement) => el.type === "section" && / \[\[cosmos:beat:/.test(el.text);
+    const depths = next.elements.filter(isBeat).map((el) => (el.type === "section" ? (el.depth ?? 1) : 1));
+    if (depths.length === 0) return next;
+    const shift = 3 - Math.min(...depths);
+    if (shift === 0) return next;
+    return { ...next, elements: next.elements.map((el) => (el.type === "section" && isBeat(el) ? { ...el, depth: (el.depth ?? 1) + shift } : el)) };
   });
 }
 

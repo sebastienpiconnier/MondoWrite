@@ -136,7 +136,7 @@ export interface CosmosState {
    * avec la clé d'une case déjà là (ses scènes la suivent) ou sans clé pour une case nouvelle. Annulable.
    */
   /** Gabarit de l'auteur posé dans le projet ; série : dans l'épisode `episode` (sinon l'épisode ouvert). */
-  setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string }[], episode?: string) => void;
+  setCustomTemplate: (name: string, rows: { key?: string; from?: string; label: string; hint?: string; level?: number }[], episode?: string) => void;
   /** Range une scène dans une case du gabarit, roman (plan) ou scénario (section du Fountain). Annulable. */
   placeInBeat: (id: string, beat: string, index?: number) => void;
   /** Série : range la scène de cette carte dans un épisode, avec son texte (à la fin sans index). */

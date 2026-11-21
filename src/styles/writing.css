@@ -240,6 +240,13 @@ span.tl-cell.is-pov { cursor: default; }
    que sur le canevas : case > chapitre (ou section de l'auteur) > scène. */
 .plan-beat.is-beat { border-top: 4px solid var(--accent); }
 .plan-beat.is-beat h2 { font-weight: 700; font-size: 1.625rem; }
+/* Gabarit imbriqué (#111) : un ensemble est un intertitre au-dessus de ses sous-cases, qui sont en retrait. */
+.plan-beat.is-group { padding: 10px 0 0; border: none; border-top: 2px solid var(--line-2); border-radius: 0; background: none; }
+.plan-beat.level-2 { margin-left: 24px; }
+.plan-beat.level-3 { margin-left: 48px; }
+.plan-beat.is-beat.level-2 h2 { font-size: 1.375rem; }
+.plan-beat.is-beat.level-3 h2 { font-size: 1.1875rem; }
+@media (max-width: 720px) { .plan-beat.level-2 { margin-left: 12px; } .plan-beat.level-3 { margin-left: 24px; } }
 .beat-rank { flex-basis: 100%; color: var(--accent-ink); font: 600 0.75rem/1.3 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
 .beat-title { min-width: 0; overflow-wrap: break-word; }
 .plan-beat-hint, .plan-beat-empty { margin: 0; font-size: 0.8125rem; line-height: 1.45; color: var(--ink-2); }
@@ -365,6 +372,11 @@ input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); ou
 .sq-list > .sq-section.is-beat:first-child { margin-top: 4px; }
 .sq-section.is-beat { align-items: flex-end; justify-content: space-between; }
 .sq-section.is-beat .sq-section-length { padding-bottom: 2px; }
+/* Gabarit imbriqué (#111) : sous-cases en retrait, un ensemble plus discret que ses cases. */
+.sq-section.is-beat.level-2 { margin-left: 24px; font-size: 1.375rem; }
+.sq-section.is-beat.level-3 { margin-left: 48px; font-size: 1.1875rem; }
+.sq-section.is-beat.is-group { border-top-color: var(--line-2); }
+@media (max-width: 720px) { .sq-section.is-beat.level-2 { margin-left: 12px; } .sq-section.is-beat.level-3 { margin-left: 24px; } }
 
 @media (max-width: 900px) {
   /* Petit écran : les scènes et les infos du scénario sont des tiroirs posés sur la feuille (poignées sur les bords). */
@@ -1053,6 +1065,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .tpl-row { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) minmax(0, 1.4fr) auto; align-items: center; gap: 6px; }
 .tpl-num { color: var(--muted); font-size: 0.8125rem; text-align: right; }
 .tpl-row-actions { display: flex; gap: 2px; }
+.tpl-row.level-2 { padding-left: 1.5em; }
+.tpl-row.level-3 { padding-left: 3em; }
 .tpl-add { margin: 4px 0 12px; }
 .tpl-keep { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.875rem; }
 .tpl-library { margin-bottom: 12px; font-size: 0.875rem; }
