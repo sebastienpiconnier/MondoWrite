@@ -13,7 +13,7 @@
 // Les scènes sont reliées dans l'ordre du récit (un fil « puis » entre deux scènes qui se suivent).
 
 import type { CardType, Frame } from "./types";
-import { arrange, chapterNumbers, groupByChapter, templateBeats, type Plan } from "./plan";
+import { arrange, beatLevel, chapterNumbers, groupByChapter, templateBeats, type Plan } from "./plan";
 
 export interface OrganizeCard {
   id: string;
@@ -267,12 +267,32 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
   } else {
     // Toutes les cases, même vides : le canevas montre la structure entière, trous compris, et l'on dépose
     // une scène dans une case vide. Une case vide compte pour une scène dans la rangée.
-    const placed = beats.map((b) => {
+    const leaf = (b: (typeof beats)[number]) => {
       const inner = chaptered(b.ids);
       const item: Item = { kind: "frame", title: labels.beat(b.key), beat: b.key, body: { items: inner.map((g) => g.item), columns: Math.max(1, inner.length), gap: GROUP_GAP } };
       return { item, count: Math.max(1, b.ids.length) };
-    });
-    story = inRows(placed);
+    };
+    // Gabarit imbriqué (#111) : un ensemble est un cadre qui contient ceux de ses sous-cases (de gauche à droite,
+    // en rangées), ses propres scènes d'abord. Les cases d'un même niveau se suivent comme des cases ordinaires.
+    type Node = { b: (typeof beats)[number]; level: number; children: Node[] };
+    const roots: Node[] = [];
+    const stack: Node[] = [];
+    for (const b of beats) {
+      const node: Node = { b, level: plan.template === "perso" ? beatLevel(plan.custom, b.key) : 1, children: [] };
+      while (stack.length > 0 && stack[stack.length - 1].level >= node.level) stack.pop();
+      (stack.length > 0 ? stack[stack.length - 1].children : roots).push(node);
+      stack.push(node);
+    }
+    const placedOf = (node: Node): { item: Item; count: number } => {
+      if (node.children.length === 0) return leaf(node.b);
+      const own = chaptered(node.b.ids);
+      const kids = node.children.map(placedOf);
+      const count = node.b.ids.length + kids.reduce((a, k) => a + k.count, 0);
+      const rows = count > perRow ? inRows(kids) : [{ kind: "box" as const, body: { items: kids.map((k) => k.item), columns: kids.length, gap: GROUP_GAP } }];
+      const items: Item[] = [...(own.length > 0 ? [{ kind: "box" as const, body: { items: own.map((g) => g.item), columns: own.length, gap: GROUP_GAP } }] : []), ...rows];
+      return { item: { kind: "frame", title: labels.beat(node.b.key), beat: node.b.key, body: { items, columns: 1, gap: GROUP_GAP } }, count };
+    };
+    story = inRows(roots.map(placedOf));
     if (unplaced.length > 0) {
       story.push({ kind: "frame", title: labels.unplaced, body: { items: unplaced.flatMap(cardItem), columns: sceneColumns(unplaced.length), gap: GAP } });
     }

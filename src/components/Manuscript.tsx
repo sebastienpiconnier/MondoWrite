@@ -30,7 +30,7 @@ import { SynopsisField } from "./SynopsisField";
 import { DirectionsSuggest, novelSceneText } from "./Atelier";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { usePhone } from "./usePhone";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSettled } from "./useSettled";
 import { setCaretSource } from "../resume";
 import { useCosmos } from "../store";
@@ -51,6 +51,7 @@ import { StoryRibbon } from "./StoryRibbon";
 import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
+import { LanguageToolStatus, useLanguageTool } from "./LanguageToolBubble";
 import { typeColor } from "../types";
 import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
@@ -213,6 +214,14 @@ export function Manuscript() {
     const ed = bookApi.current?.editor();
     if (ed) requestTextImage(ed);
   };
+  // LanguageTool (à la demande) : la scène en cours (celle de la barre), sinon celle du curseur.
+  const getBookEditor = useCallback(() => bookApi.current?.editor(), []);
+  const ltScope = useCallback((ed: Editor) => {
+    const groups = sceneGroups(ed.state.doc);
+    const scene = groups.find((x) => x.id === currentRef.current) ?? sceneAt(groups, ed.state.selection.from);
+    return scene ? { from: scene.markerPos, to: scene.end } : null;
+  }, []);
+  const lt = useLanguageTool(getBookEditor, ltScope);
 
   // Onglet « Vérifier » : points à regarder dans le texte (rien n'est corrigé tout seul).
   const [sideTab, setSideTab] = useState<SideTab>("scene");
@@ -615,12 +624,13 @@ export function Manuscript() {
         : sceneWords;
 
   return (
-    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       style={focusMode ? { ["--focus-col" as string]: FOCUS_COLUMN_EM[writing.column] } : undefined}
     >
       {focusMode && <FocusBar />}
       {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
+      <LanguageToolStatus status={lt.status} />
       <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
@@ -893,6 +903,9 @@ export function Manuscript() {
                 // Fusionner (#23) : la scène suivante du même chapitre rejoint celle-ci ; sa carte part à la corbeille.
                 !interactive && !pageKind && !!useCosmos.getState().nextMergeable(current) && { label: t.merge.menu, onSelect: () => mergeNext() },
                 { label: t.textImage.insert, onSelect: () => insertImage() },
+                lt.available && !pageKind && { label: t.languageTool.menu, onSelect: () => void lt.run() },
+                lt.bulk && { label: t.languageTool.menuBook, onSelect: () => void lt.run("all") },
+                lt.available && lt.hasIssues && { label: t.languageTool.clear, onSelect: lt.clear },
                 // Roman interactif (lot 2) : un choix en fin de la scène du curseur.
                 interactive && !pageKind && { label: t.interactive.play.openHere, onSelect: () => openPlay(current) },
                 interactive && !pageKind && { label: t.interactive.choices.add, onSelect: () => bookApi.current?.editor()?.chain().focus().addChoice().run() },

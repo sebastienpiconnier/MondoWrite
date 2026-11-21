@@ -1,6 +1,7 @@
 // Réglages de l'appareil (pas du projet) : langue de l'interface, apparence, nom d'auteur, service d'IA.
 // Mémorisés dans le stockage local du navigateur ou de la fenêtre Tauri.
 
+import { cleanLevels, type BeatLevel } from "./plan";
 import { readReading, type ReadingSettings } from "./reading";
 import { applyWritingAids, isSpellcheckMode, type SpellcheckMode } from "./writingAids";
 import { isTypographySetting, type TypographySetting } from "./typography";
@@ -14,6 +15,7 @@ import { authorName, cleanProfile, readProfile, type AuthorProfile } from "./pro
 import { AI_PROVIDERS, PROVIDERS, isAiProvider, type AiConfig, type AiProvider } from "./ai/providers";
 import { readMcp, type McpAccess, type McpSettings } from "./mcp";
 import { readExperimental, type ExperimentalSettings } from "./interactive";
+import { readLt, type LtSettings } from "./languagetool/api";
 
 export type ThemePref = "system" | "light" | "dark";
 export type Theme = "light" | "dark";
@@ -227,13 +229,16 @@ interface SettingsState {
   experimental: ExperimentalSettings;
   setExperimental: (patch: Partial<ExperimentalSettings>) => void;
   setMcpProject: (id: string, access: McpAccess | null) => void;
+  /** Vérification par LanguageTool : service choisi, compte Premium ou serveur personnel ; clé dans le trousseau. */
+  languageTool: LtSettings;
+  setLanguageTool: (patch: Partial<LtSettings>) => void;
 }
 
 /** Un gabarit de l'auteur gardé sur l'appareil : son nom et ses cases (les clés naissent dans chaque projet). */
 export interface SavedTemplate {
   id: string;
   name: string;
-  beats: { label: string; hint?: string }[];
+  beats: { label: string; hint?: string; level?: BeatLevel }[];
 }
 
 const MAX_TEMPLATES = 30;
@@ -246,10 +251,12 @@ export function readTemplates(raw: unknown): SavedTemplate[] {
     const { id, name, beats } = item as { id?: unknown; name?: unknown; beats?: unknown };
     if (typeof id !== "string" || !id || out.some((t) => t.id === id) || !Array.isArray(beats)) continue;
     const list = beats.flatMap((b) => {
-      const { label, hint } = (b ?? {}) as { label?: unknown; hint?: unknown };
-      return typeof label === "string" && label.trim() ? [{ label: label.trim().slice(0, 120), ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, 300) } : {}) }] : [];
+      const { label, hint, level } = (b ?? {}) as { label?: unknown; hint?: unknown; level?: unknown };
+      return typeof label === "string" && label.trim()
+        ? [{ label: label.trim().slice(0, 120), ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, 300) } : {}), ...(typeof level === "number" ? { level } : {}) }]
+        : [];
     });
-    if (list.length > 0) out.push({ id, name: typeof name === "string" ? name.trim().slice(0, 120) : "", beats: list.slice(0, 40) });
+    if (list.length > 0) out.push({ id, name: typeof name === "string" ? name.trim().slice(0, 120) : "", beats: cleanLevels(list.slice(0, 40)) });
   }
   return out;
 }
@@ -280,7 +287,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown; languageTool?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -344,6 +351,8 @@ export const useSettings = create<SettingsState>((set) => ({
   experimental: readExperimental(saved.experimental),
   setExperimental: (patch) => set((s) => ({ experimental: readExperimental({ ...s.experimental, ...patch }) })),
   setMcpEnabled: (enabled) => set((s) => ({ mcp: { ...s.mcp, enabled } })),
+  languageTool: readLt(saved.languageTool),
+  setLanguageTool: (patch) => set((s) => ({ languageTool: readLt({ ...s.languageTool, ...patch }) })),
   setMcpProject: (id, access) =>
     set((s) => {
       const projects = { ...s.mcp.projects };
@@ -377,7 +386,7 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental, languageTool }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -392,7 +401,9 @@ export function initSettings() {
     if (writing.zoom > 1) root.dataset.pageZoomed = "";
     else delete root.dataset.pageZoomed;
     try {
-      const stored = keysElsewhere ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } } } : { ai, photos };
+      const stored = keysElsewhere
+        ? { ai: { ...ai, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } }, languageTool: { ...languageTool, key: "" } }
+        : { ai, photos, languageTool };
       localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
     } catch {
       /* réglage non mémorisé, sans gravité */

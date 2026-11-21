@@ -63,6 +63,7 @@ import { useSettings } from "../settings";
 import { fmt, getT, useT } from "../i18n";
 import { foldName } from "../review/names";
 import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
+import { FOCUS_SCRIPT_CH } from "../focusText";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { colorFor, currentSet, setOf } from "../screenplay/revisions";
 import { revisionName, revisionVar } from "../revisionsText";
@@ -84,6 +85,8 @@ import {
 import { ScreenplayAtelier, ScreenplayDirections, screenplaySceneText } from "./Atelier";
 import { findInText, nthMatch } from "../search";
 import { centerSelection } from "./centerSelection";
+import { LanguageTool } from "../languagetool/extension";
+import { LanguageToolBubble, LanguageToolLive, LanguageToolStatus, useLanguageTool, type LtScope } from "./LanguageToolBubble";
 import {
   currentElement,
   fromDoc,
@@ -132,6 +135,31 @@ function placeStart(editor: Editor) {
     if (!(editor.state.selection instanceof GapCursor)) editor.view.dispatch(editor.state.tr.setSelection(new GapCursor(again)));
   }
 }
+
+/** Éléments relus par LanguageTool : l'action et le dialogue (avec ses didascalies), pas les en-têtes ni les noms. */
+const LT_ELEMENTS = new Set(["action", "dialogue", "parenthetical", "centered"]);
+
+/** La scène du curseur : de son en-tête au suivant (ou tout ce qui précède le premier en-tête). */
+function scriptScope(ed: Editor): LtScope | null {
+  const doc = ed.state.doc;
+  const at = ed.state.selection.$from.index(0);
+  let start = 0;
+  let end = doc.childCount;
+  doc.forEach((node, _offset, index) => {
+    if (node.type.name !== "sceneHeading") return;
+    if (index <= at) start = index;
+    else if (index < end) end = index;
+  });
+  let from = 0;
+  let to = 0;
+  doc.forEach((node, offset, index) => {
+    if (index === start) from = offset;
+    if (index === end - 1) to = offset + node.nodeSize;
+  });
+  return to > from ? { from, to, accept: ltAccept } : null;
+}
+
+const ltAccept = (block: PMNode) => LT_ELEMENTS.has(block.type.name);
 
 export function ScreenplayView() {
   const { t, types } = useVocab();
@@ -292,8 +320,8 @@ export function ScreenplayView() {
   };
 
   const extensions = useMemo(
-    () =>
-      screenplayExtensions({
+    () => [
+      ...screenplayExtensions({
         locale: () => useSettings.getState().lang,
         placeholder: (type) => getT().screenplay.placeholders[type],
         // Tab est pris par l'éditeur : Échap rend la main au clavier, sur la barre d'éléments.
@@ -327,6 +355,9 @@ export function ScreenplayView() {
           typewriter: () => useCosmos.getState().focusMode && useSettings.getState().writing.typewriter,
         },
       }),
+      // Remarques de LanguageTool (à la demande, menu ⋯) : des décorations, rien n'entre dans le Fountain.
+      LanguageTool,
+    ],
     [setFocusMode],
   );
 
@@ -383,6 +414,9 @@ export function ScreenplayView() {
   });
 
   editorRef.current = editor;
+  // LanguageTool (à la demande) : la scène du curseur, sans en-têtes, noms ni transitions (tous seraient soulignés).
+  const getScriptEditor = useCallback(() => editorRef.current, []);
+  const lt = useLanguageTool(getScriptEditor, scriptScope, ltAccept);
 
   // En quittant la vue, et avant Cmd/Ctrl+S, ce qui attend part tout de suite dans le store.
   useEffect(() => {
@@ -1112,9 +1146,13 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
+      // Largeur de la colonne du mode focus, comme dans le Manuscrit : la taille du texte ne change pas, la colonne
+      // s'élargit (réglage de l'appareil, en caractères).
+      style={focusMode ? { ["--focus-sp" as string]: FOCUS_SCRIPT_CH[writing.column] } : undefined}
     >
+      <LanguageToolStatus status={lt.status} />
       {focusMode && <FocusBar />}
       {focusMode && (
         <FocusCounter
@@ -1347,6 +1385,9 @@ export function ScreenplayView() {
               ...readerItems,
               { label: t.book.chutier.title, title: t.format.chutier, hint: key("Mod", "Shift", "K"), onSelect: sendToChutier },
               { label: t.comments.element, hint: key("Mod", "Alt", "M"), onSelect: commentElement },
+              lt.available && { label: t.languageTool.menu, onSelect: () => void lt.run() },
+              lt.bulk && { label: t.languageTool.menuScript, onSelect: () => void lt.run("all") },
+              lt.available && lt.hasIssues && { label: t.languageTool.clear, onSelect: lt.clear },
               // Fusionner (#23) : la scène suivante (sans section entre elles) rejoint celle-ci.
               !!scene?.cardId && !!useCosmos.getState().nextMergeable(scene.cardId) && { label: t.merge.menu, onSelect: mergeNext },
               { label: t.revisions.menu, onSelect: () => useCosmos.getState().setDialog("revisions") },
@@ -1404,6 +1445,8 @@ export function ScreenplayView() {
           >
             {revisionRules && <style>{revisionRules}</style>}
             <EditorContent editor={editor} />
+            {editor && <LanguageToolBubble editor={editor} />}
+            {editor && <LanguageToolLive editor={editor} accept={ltAccept} />}
             {veil && (
               <>
                 <div className="ms-veil" aria-hidden="true" style={{ top: 0, height: Math.max(0, veil.top) }} />

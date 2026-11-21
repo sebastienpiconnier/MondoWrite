@@ -12,7 +12,7 @@ import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { frameBox } from "../projectState";
 import { fitBoost, frameDepth, frameLevel, titleBoost, titleSize } from "../frameLevels";
-import { templateBeats } from "../plan";
+import { leafBeats, templateBeats } from "../plan";
 import { screenplayPlan } from "../screenplay/template";
 import type { ScreenplayElement } from "../screenplay/model";
 
@@ -31,14 +31,15 @@ export function beatKeys(s: CosmosState): readonly string[] {
     if (template !== "perso") return templateBeats(template);
     if (!custom) return NO_BEATS;
     let keys = customKeys.get(custom);
-    if (!keys) customKeys.set(custom, (keys = templateBeats(template, custom)));
+    // Rang « Case 3 sur 15 » : seules les cases sans sous-case comptent (#111), un ensemble n'a pas de rang.
+    if (!keys) customKeys.set(custom, (keys = leafBeats(template, custom)));
     return keys;
   }
   const elements = s.screenplay?.elements ?? [];
   let keys = screenplayKeys.get(elements);
   if (!keys) {
     const plan = screenplayPlan(elements);
-    keys = plan.template === "libre" ? NO_BEATS : templateBeats(plan.template, plan.custom);
+    keys = plan.template === "libre" ? NO_BEATS : leafBeats(plan.template, plan.custom);
     screenplayKeys.set(elements, keys);
   }
   return keys;
