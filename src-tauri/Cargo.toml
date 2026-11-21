@@ -44,7 +44,7 @@ tauri-plugin-fs = { version = "2", features = ["watch"] }
 # iPhone, iPad et Mac : conteneur iCloud de l'app (son chemin, téléchargement des fichiers distants).
 [target.'cfg(any(target_os = "ios", target_os = "macos"))'.dependencies]
 objc2 = "0.6"
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSData", "NSError", "NSFileManager", "NSObject", "NSString", "NSURL"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSData", "NSError", "NSFileManager", "NSObject", "NSString", "NSURL", "NSUserDefaults"] }
 
 # iPhone et iPad : sélecteur de dossiers de l'app Fichiers (OneDrive, Dropbox, Drive…) et signet d'accès durable ;
 # scène de la fenêtre pour la demande de note de l'App Store (UIScene, UIWindowScene).

@@ -356,8 +356,6 @@ export const ca = {
     authorNone: "Encara sense nom.",
     focusHighlight: "Mode concentració: ressaltat",
     focusTypewriter: "Mode concentració: màquina d’escriure",
-    focusColumn: "Mode concentració: amplada de columna",
-    focusFullscreen: "Mode concentració: pantalla completa",
     icloud: "Sincronitza els projectes amb iCloud Drive",
     icloudHint: "Els projectes es desen a iCloud Drive (Fitxers > iCloud Drive > MondoWrite) i es troben als altres dispositius. Si ho desactives, es queden a iCloud i s’atura la sincronització d’aquest dispositiu.",
     icloudOff: "iCloud Drive no està activat en aquest dispositiu: els projectes es queden a l’iPhone o l’iPad, sense sincronitzar-se. Activa’l a Configuració › el teu nom › iCloud › iCloud Drive per trobar-los als altres dispositius, o tria una carpeta de Dropbox a la pàgina de projectes.",
@@ -3244,6 +3242,7 @@ export const ca = {
     aria: "Mode concentració",
     exit: "Surt (Esc)",
     typewriter: "Màquina d’escriure",
+    fullscreen: "Pantalla completa",
     highlight: "Ressaltat",
     highlights: {
       off: "Tot el text",

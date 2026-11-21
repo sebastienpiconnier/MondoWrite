@@ -434,8 +434,21 @@ async fn allow_scriv(app: tauri::AppHandle, path: String) -> bool {
   is_scriv && dir.is_dir() && app.fs_scope().allow_directory(dir, true).is_ok()
 }
 
+/// Correcteur orthographique du Mac (novembre 2026) : WKWebView ne souligne les fautes que si la préférence
+/// `WebContinuousSpellCheckingEnabled` de l'app vaut oui. Safari la pose par son menu « Vérifier l'orthographe
+/// pendant la saisie » ; une app sans ce menu ne l'a jamais, et l'attribut `spellcheck` ne soulignait rien, même
+/// réglé sur « Partout ». On la pose avant de créer la fenêtre ; c'est l'attribut `spellcheck` (Réglages ›
+/// Écriture) qui décide ensuite où le correcteur s'applique.
+#[cfg(target_os = "macos")]
+fn enable_mac_spellcheck() {
+  use objc2_foundation::{ns_string, NSUserDefaults};
+  NSUserDefaults::standardUserDefaults().setBool_forKey(true, ns_string!("WebContinuousSpellCheckingEnabled"));
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  #[cfg(target_os = "macos")]
+  enable_mac_spellcheck();
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       icloud_container,

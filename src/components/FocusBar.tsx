@@ -167,7 +167,8 @@ function useFullscreen(focusMode: boolean) {
   }, [focusMode, wanted]);
 }
 
-/** Barre du mode focus : mise en valeur et largeur de colonne (font défiler leurs choix), machine à écrire, sortie. */
+/** Barre du mode focus : mise en valeur et largeur de colonne (font défiler leurs choix), machine à écrire, plein écran, sortie.
+ * Seul endroit où se règle le mode focus sur ordinateur et tablette : réglages de l'appareil, gardés d'un projet à l'autre. */
 export function FocusBar() {
   const t = useT();
   const writing = useSettings((s) => s.writing);
@@ -191,6 +192,11 @@ export function FocusBar() {
         <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
           {t.focus.typewriter}
         </button>
+        {canFullscreen() && (
+          <button type="button" aria-pressed={writing.fullscreen} onClick={() => setWriting({ ...writing, fullscreen: !writing.fullscreen })}>
+            {t.focus.fullscreen}
+          </button>
+        )}
       </div>
       <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => setFocusMode(false)}>
         <span className="focus-exit-text">{t.focus.exit}</span>

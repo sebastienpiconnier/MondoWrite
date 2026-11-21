@@ -23,8 +23,7 @@ import { REPO } from "../updates";
 /** Guide des traducteurs sur GitHub. */
 const TRANSLATE_URL = `https://github.com/${REPO}/blob/main/TRANSLATING.md`;
 import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type Palette, type ThemePref, type WheelMode } from "../settings";
-import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS } from "../focusText";
-import { canFullscreen } from "./FocusBar";
+import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
 import { INTERACTIVE_BUILD, showsInteractive } from "../interactive";
@@ -141,7 +140,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), focusCol: useId(), focusFs: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -481,37 +480,23 @@ export function Settings({ project = true }: { project?: boolean }) {
 
           <section className="settings-col" role="tabpanel" id={`${ids.panel}-writing`} aria-labelledby={`${ids.panel}-tab-writing`} hidden={tab !== "writing"}>
           {/* Écriture : mode focus, zoom, typographie, correcteur. */}
-          {/* Mode focus : réglé ici aussi, car sur téléphone la barre du mode focus ne garde que la sortie. */}
-          <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
-          <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
-            {FOCUS_HIGHLIGHTS.map((h) => (
-              <option key={h} value={h}>
-                {t.focus.highlights[h]}
-              </option>
-            ))}
-          </select>
-          <label className="settings-check" htmlFor={ids.focusTw}>
-            <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
-            {t.settings.focusTypewriter}
-          </label>
-          {/* Sur téléphone, le texte prend toute la largeur : la largeur de colonne n'y change rien. */}
-          {!phone && (
+          {/* Mode focus : réglé dans sa propre barre (FocusBar) ; sur téléphone, cette barre ne garde que la sortie,
+              d'où ces deux réglages ici. La largeur de colonne et le plein écran n'existent pas sur téléphone. */}
+          {phone && (
             <>
-              <label htmlFor={ids.focusCol}>{t.settings.focusColumn}</label>
-              <select id={ids.focusCol} value={writing.column} onChange={(e) => setWriting({ ...writing, column: e.target.value as typeof writing.column })}>
-                {FOCUS_COLUMNS.map((c) => (
-                  <option key={c} value={c}>
-                    {t.focus.columns[c]}
+              <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
+              <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
+                {FOCUS_HIGHLIGHTS.map((h) => (
+                  <option key={h} value={h}>
+                    {t.focus.highlights[h]}
                   </option>
                 ))}
               </select>
+              <label className="settings-check" htmlFor={ids.focusTw}>
+                <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
+                {t.settings.focusTypewriter}
+              </label>
             </>
-          )}
-          {canFullscreen() && (
-            <label className="settings-check" htmlFor={ids.focusFs}>
-              <input id={ids.focusFs} type="checkbox" checked={writing.fullscreen} onChange={(e) => setWriting({ ...writing, fullscreen: e.target.checked })} />
-              {t.settings.focusFullscreen}
-            </label>
           )}
           <label htmlFor={ids.pageZoom}>{t.settings.pageZoom}</label>
           <select id={ids.pageZoom} value={String(writing.zoom)} onChange={(e) => setWriting({ ...writing, zoom: Number(e.target.value) })}>

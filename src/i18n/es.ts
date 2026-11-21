@@ -374,8 +374,6 @@ export const es = {
     authorNone: "Aún no hay nombre.",
     focusHighlight: "Modo concentración: resaltado",
     focusTypewriter: "Modo concentración: máquina de escribir",
-    focusColumn: "Modo concentración: ancho de la columna",
-    focusFullscreen: "Modo concentración: pasar a pantalla completa",
     icloud: "Sincronizar los proyectos con iCloud Drive",
     icloudHint: "Los proyectos se guardan en iCloud Drive (Archivos > iCloud Drive > MondoWrite) y los encuentras en tus otros dispositivos. Si lo desactivas, se quedan en iCloud y los de este dispositivo dejan de sincronizarse.",
     icloudOff: "iCloud Drive no está activado en este dispositivo: tus proyectos se quedan en el iPhone o el iPad, sin sincronizar. Actívalo en Ajustes › tu nombre › iCloud › iCloud Drive para encontrarlos en tus otros dispositivos, o elige una carpeta de Dropbox en la página de proyectos.",
@@ -3222,6 +3220,7 @@ export const es = {
     aria: "Modo concentración",
     exit: "Salir (Esc)",
     typewriter: "Máquina de escribir",
+    fullscreen: "Pantalla completa",
     highlight: "Resaltar",
     highlights: {
       off: "Todo el texto",

@@ -798,6 +798,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .is-focus .is-reading { background: none; box-shadow: none; }
 .is-focus .ia-mark, .is-focus [data-ia] { text-decoration: none; }
 .is-focus .scene-choices { border-color: var(--line); background: none; }
+/* Roman interactif en mode focus : les embranchements disparaissent (focusChoices.ts tient le curseur à l'écart),
+   le numéro et le nom des scènes restent, en gris et sans graisse. */
+.manuscript.is-focus .ms-editor .scene-choices { display: none; }
+.manuscript.is-focus .ms-editor .scene-mark-label, .manuscript.is-focus .ms-editor .scene-mark-label * { color: var(--muted) !important; font-weight: 400; }
 .is-focus .ProseMirror-selectednode { outline-color: var(--line-2) !important; }
 /* Mode focus : juste le texte. Les images d'une scène (et leurs réglages) sont cachées, rien n'est retiré du texte. */
 .manuscript.is-focus .scene-image { display: none; }
