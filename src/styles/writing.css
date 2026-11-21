@@ -799,6 +799,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .is-focus .ia-mark, .is-focus [data-ia] { text-decoration: none; }
 .is-focus .scene-choices { border-color: var(--line); background: none; }
 .is-focus .ProseMirror-selectednode { outline-color: var(--line-2) !important; }
+/* Mode focus : juste le texte. Les images d'une scène (et leurs réglages) sont cachées, rien n'est retiré du texte. */
+.manuscript.is-focus .scene-image { display: none; }
 .manuscript.is-focus .ms-chapter-flow { transition: opacity 0.4s; }
 .manuscript.is-focus.is-typing .ms-chapter-flow { opacity: 0.3; }
 .ms-focus-count { position: fixed; z-index: 30; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)); transform: translateX(-50%); margin: 0; padding: 4px 12px; border-radius: 999px; background: var(--ground); box-shadow: 0 0 14px 10px var(--ground); color: var(--ink-2); font: 0.8125rem/1.4 var(--font-ui); white-space: nowrap; pointer-events: none; user-select: none; transition: opacity 0.4s; }

@@ -88,9 +88,15 @@
 .screenplay.is-focus .sp-editor { line-height: 1.5; }
 /* Le compteur du mode focus (FocusBar.tsx) remplace le pied de page. */
 .screenplay.is-focus .sp-footer { display: none; }
-/* Largeur de la colonne (réglage de l'appareil, --focus-col posé par la vue comme dans le Manuscrit) : la feuille garde
-   ses 60 caractères, la taille du texte suit (13, 16 ou 20 px), toujours bornée par la place disponible. */
-.screenplay.is-focus .sp-page { font-size: calc(min(calc(16px + (var(--focus-col, 29) - 29) * 1px), calc(100cqw / var(--sp-width))) * var(--page-zoom, 1)); }
+/* Largeur de la colonne, comme dans le Manuscrit (réglage de l'appareil, --focus-sp posé par la vue, en caractères) :
+   la taille du texte ne change pas, c'est la colonne qui s'élargit ; plus de marges de page, retraits proportionnels
+   (comme la feuille continue du téléphone), bornée par la place disponible. */
+.screenplay.is-focus .sp-page { width: min(100%, calc(var(--focus-sp, 72) * 0.6em)); font-size: calc(16px * var(--page-zoom, 1)); }
+.screenplay.is-focus .sp-editor, .screenplay.is-focus .sp-editor:focus-visible { padding: 4em 0 0; }
+.screenplay.is-focus .sp-character { margin-left: 34%; max-width: none; }
+.screenplay.is-focus .sp-parenthetical { margin-left: 24%; margin-right: 14%; max-width: none; }
+.screenplay.is-focus .sp-dialogue { margin-left: 13%; margin-right: 9%; max-width: none; }
+.screenplay.is-focus .sp-page[data-numbers] .sp-sceneHeading::after { position: static; margin: 0 0 0 2ch; color: var(--muted); }
 /* Aucune couleur en focus : cases du gabarit, saisons, épisodes et synopsis à l'encre du thème, sans fond ni trait
    d'accent ; le libellé reste pour savoir où l'on est. */
 .screenplay.is-focus .sp-preserved { background: none; border-left-color: var(--line); color: var(--ink-2); }
