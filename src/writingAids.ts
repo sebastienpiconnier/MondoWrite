@@ -11,8 +11,12 @@ export type SpellcheckMode = "all" | "notes" | "off";
 export const SPELLCHECK_MODES: readonly SpellcheckMode[] = ["notes", "all", "off"];
 export const isSpellcheckMode = (v: unknown): v is SpellcheckMode => SPELLCHECK_MODES.includes(v as SpellcheckMode);
 
-/** Le correcteur est-il actif à l'ouverture du manuscrit et du scénario ? */
-export const spellOnInPages = (mode: SpellcheckMode) => mode === "all";
+/**
+ * Le correcteur du système corrige-t-il le texte des scènes (Manuscrit, Scénario, carte Scène agrandie) ?
+ * Seulement avec « Partout », et pas quand LanguageTool vérifie déjà pendant la frappe (`ltLive`) : une faute
+ * serait soulignée deux fois. Les cartes, la Bible et les champs gardent le correcteur du système.
+ */
+export const spellOnInPages = (mode: SpellcheckMode, ltLiveOn = false) => mode === "all" && !ltLiveOn;
 
 const MARK = "data-aids-off";
 const TEXT_FIELD = "input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), textarea, [contenteditable='true']";

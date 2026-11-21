@@ -393,6 +393,7 @@ export const es = {
       off: "En ninguna parte",
     },
     spellcheckHint: "El corrector del sistema subraya los errores. «Salvo manuscrito y guion» deja el texto de tus escenas sin subrayados mientras escribes.",
+    spellcheckByLt: "LanguageTool ya revisa tu texto mientras escribes: el corrector del sistema se detiene en las páginas del Manuscrito y del Guion, y sigue en todo lo demás.",
     suggestions: "Sugerencias y corrección automática del teclado",
     suggestionsHint: "Palabras propuestas mientras escribes y palabras corregidas solas (iPad, iPhone, Mac). Desmarcado, nada cambia tu texto por ti.",
   },

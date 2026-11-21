@@ -349,6 +349,7 @@ export const en: Messages = {
       off: "Nowhere",
     },
     spellcheckHint: "The system’s spell checker underlines mistakes. “Except manuscript and screenplay” keeps your scenes’ text free of underlines while you write.",
+    spellcheckByLt: "LanguageTool already checks your text as you type: the system’s spell checker stops in the Manuscript and Screenplay pages, and keeps working everywhere else.",
     suggestions: "Keyboard suggestions and autocorrect",
     suggestionsHint: "Words suggested as you type and words corrected on their own (iPad, iPhone, Mac). Unchecked, nothing changes your text for you.",
   },

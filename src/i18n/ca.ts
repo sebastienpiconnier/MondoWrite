@@ -375,6 +375,7 @@ export const ca = {
       off: "Enlloc",
     },
     spellcheckHint: "El corrector del sistema subratlla les faltes. «Excepte manuscrit i guió» manté el text de les escenes sense subratllats mentre escrius.",
+    spellcheckByLt: "LanguageTool ja revisa el text mentre escrius: el corrector del sistema s’atura a les pàgines del Manuscrit i del Guió, i continua a tot arreu més.",
     suggestions: "Suggeriments del teclat i autocorrecció",
     suggestionsHint: "Paraules suggerides mentre escrius i paraules corregides soles (iPad, iPhone, Mac). Si està desmarcat, no es modifica res del teu text automàticament.",
   },

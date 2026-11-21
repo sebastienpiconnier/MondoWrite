@@ -357,6 +357,7 @@ export const fr = {
       off: "Nulle part",
     },
     spellcheckHint: "Le correcteur du système souligne les fautes. « Sauf manuscrit et scénario » laisse le texte de tes scènes sans soulignement pendant que tu écris.",
+    spellcheckByLt: "LanguageTool vérifie déjà ton texte pendant la frappe : le correcteur du système s’arrête dans les pages du Manuscrit et du Scénario, et continue partout ailleurs.",
     suggestions: "Suggestions et correction automatique du clavier",
     suggestionsHint: "Mots proposés pendant la frappe et mots corrigés tout seuls (iPad, iPhone, Mac). Décoché, rien ne change ton texte à ta place.",
   },

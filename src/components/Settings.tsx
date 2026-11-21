@@ -38,7 +38,7 @@ import { SOURCE_INFO } from "../imageSources";
 import { ImageModelField } from "./ImageGen";
 import { McpAppSettings, McpProjectSetting } from "./McpSettings";
 import { SystemFontField } from "./SystemFontField";
-import { LT_CUSTOM_DEFAULT, LT_SERVERS, isLtServer, ltLeavesDevice } from "../languagetool/api";
+import { LT_CUSTOM_DEFAULT, LT_SERVERS, isLtServer, ltLeavesDevice, ltLive } from "../languagetool/api";
 
 /** `project` : afficher aussi les réglages du projet ouvert (faux à l'accueil). */
 /** Valeur du choix « Autre modèle… » de la liste. */
@@ -593,6 +593,7 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </select>
           <p className="settings-hint" id={ids.spellHint}>{t.settings.spellcheckHint}</p>
+          {writing.spellcheck === "all" && ltLive(languageTool) && <p className="settings-hint">{t.settings.spellcheckByLt}</p>}
           <label className="settings-check" htmlFor={ids.suggestions}>
             <input id={ids.suggestions} type="checkbox" aria-describedby={ids.suggestionsHint} checked={writing.suggestions} onChange={(e) => setWriting({ ...writing, suggestions: e.target.checked })} />
             {t.settings.suggestions}
