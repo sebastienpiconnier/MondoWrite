@@ -63,6 +63,7 @@ import { useSettings } from "../settings";
 import { fmt, getT, useT } from "../i18n";
 import { foldName } from "../review/names";
 import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
+import { FOCUS_COLUMN_EM } from "../focusText";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { colorFor, currentSet, setOf } from "../screenplay/revisions";
 import { revisionName, revisionVar } from "../revisionsText";
@@ -1112,8 +1113,11 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
+      // Largeur de la colonne du mode focus, comme dans le Manuscrit : la feuille garde ses 60 caractères, c'est la
+      // taille du texte qui suit (réglage de l'appareil).
+      style={focusMode ? { ["--focus-col" as string]: FOCUS_COLUMN_EM[writing.column] } : undefined}
     >
       {focusMode && <FocusBar />}
       {focusMode && (

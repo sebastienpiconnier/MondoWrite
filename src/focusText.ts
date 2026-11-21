@@ -15,6 +15,7 @@ export const nextHighlight = (h: FocusHighlight): FocusHighlight => FOCUS_HIGHLI
 export type FocusColumn = "narrow" | "medium" | "wide";
 export const FOCUS_COLUMNS: FocusColumn[] = ["narrow", "medium", "wide"];
 export const FOCUS_COLUMN_EM: Record<FocusColumn, number> = { narrow: 26, medium: 29, wide: 33 };
+export const nextColumn = (c: FocusColumn): FocusColumn => FOCUS_COLUMNS[(FOCUS_COLUMNS.indexOf(c) + 1) % FOCUS_COLUMNS.length];
 export const isFocusColumn = (v: unknown): v is FocusColumn => FOCUS_COLUMNS.includes(v as FocusColumn);
 
 /** Mots écrits pendant la séance (depuis l'entrée en mode focus), signés : « +120 » ou « −35 ». */

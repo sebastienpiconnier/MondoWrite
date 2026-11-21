@@ -615,7 +615,7 @@ export function Manuscript() {
         : sceneWords;
 
   return (
-    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}`}
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       style={focusMode ? { ["--focus-col" as string]: FOCUS_COLUMN_EM[writing.column] } : undefined}
     >

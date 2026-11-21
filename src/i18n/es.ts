@@ -374,7 +374,7 @@ export const es = {
     authorNone: "Aún no hay nombre.",
     focusHighlight: "Modo concentración: resaltado",
     focusTypewriter: "Modo concentración: máquina de escribir",
-    focusColumn: "Modo concentración: ancho de la columna (manuscrito)",
+    focusColumn: "Modo concentración: ancho de la columna",
     focusFullscreen: "Modo concentración: pasar a pantalla completa",
     icloud: "Sincronizar los proyectos con iCloud Drive",
     icloudHint: "Los proyectos se guardan en iCloud Drive (Archivos > iCloud Drive > MondoWrite) y los encuentras en tus otros dispositivos. Si lo desactivas, se quedan en iCloud y los de este dispositivo dejan de sincronizarse.",
@@ -3230,6 +3230,7 @@ export const es = {
       paragraph: "El párrafo",
     },
     highlightButton: "Resaltado: {mode}",
+    columnButton: "Columna: {width}",
     highlightKey: "Cambiar el resaltado ({mod} + Mayús + E)",
     session: "{n} en esta sesión",
     columns: {

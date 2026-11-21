@@ -88,6 +88,15 @@
 .screenplay.is-focus .sp-editor { line-height: 1.5; }
 /* Le compteur du mode focus (FocusBar.tsx) remplace le pied de page. */
 .screenplay.is-focus .sp-footer { display: none; }
+/* Largeur de la colonne (réglage de l'appareil, --focus-col posé par la vue comme dans le Manuscrit) : la feuille garde
+   ses 60 caractères, la taille du texte suit (13, 16 ou 20 px), toujours bornée par la place disponible. */
+.screenplay.is-focus .sp-page { font-size: calc(min(calc(16px + (var(--focus-col, 29) - 29) * 1px), calc(100cqw / var(--sp-width))) * var(--page-zoom, 1)); }
+/* Aucune couleur en focus : cases du gabarit, saisons, épisodes et synopsis à l'encre du thème, sans fond ni trait
+   d'accent ; le libellé reste pour savoir où l'on est. */
+.screenplay.is-focus .sp-preserved { background: none; border-left-color: var(--line); color: var(--ink-2); }
+.screenplay.is-focus .sp-preserved[data-series="season"], .screenplay.is-focus .sp-preserved[data-series="episode"] { border-left-color: var(--line); }
+.screenplay.is-focus .sp-preserved[data-preserved="section"] { color: var(--ink); }
+.screenplay.is-focus .sp-editor .is-filter-lit { background: none; box-shadow: none; }
 .sp-bar-hint kbd { padding: 1px 5px; border: 1px solid var(--line-2); border-radius: 4px; font: inherit; }
 
 /* La feuille : Courier 12 points, 10 caractères par pouce. 1ch = un caractère, donc

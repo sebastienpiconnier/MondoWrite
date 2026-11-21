@@ -356,7 +356,7 @@ export const ca = {
     authorNone: "Encara sense nom.",
     focusHighlight: "Mode concentració: ressaltat",
     focusTypewriter: "Mode concentració: màquina d’escriure",
-    focusColumn: "Mode concentració: amplada de columna (manuscrit)",
+    focusColumn: "Mode concentració: amplada de columna",
     focusFullscreen: "Mode concentració: pantalla completa",
     icloud: "Sincronitza els projectes amb iCloud Drive",
     icloudHint: "Els projectes es desen a iCloud Drive (Fitxers > iCloud Drive > MondoWrite) i es troben als altres dispositius. Si ho desactives, es queden a iCloud i s’atura la sincronització d’aquest dispositiu.",
@@ -3252,6 +3252,7 @@ export const ca = {
       paragraph: "El paràgraf",
     },
     highlightButton: "Ressaltat: {mode}",
+    columnButton: "Columna: {width}",
     highlightKey: "Canvia el ressaltat ({mod} + Maj + E)",
     session: "{n} en aquesta sessió",
     columns: {

@@ -43,6 +43,7 @@ import { setCanvasCenter } from "../canvasCenter";
 import { projectSections } from "../interactive/projectSections";
 import { useStoryMap } from "../interactive/useStoryMap";
 import { isChoiceEdgeId, readChoiceEdgeId } from "../interactive/storyMap";
+import { sceneIdsKey, withSceneArrows } from "../sceneArrows";
 import { END_TARGET } from "../interactive/choices";
 import { EdgeEditor, STORY_CHOICE_EVENT, TargetPicker, type StoryChoiceAsk } from "./StoryChoices";
 
@@ -195,15 +196,19 @@ export function Toile() {
   // une de leurs scènes.
   const story = useStoryMap();
   const [choiceSel, setChoiceSel] = useState<string | null>(null);
+  // Roman et scénario : un fil entre deux scènes se dessine en flèche, comme un choix du roman interactif.
+  const sceneKey = useMemo(() => (story ? "" : sceneIdsKey(nodes)), [story, nodes]);
+  const sceneIds = useMemo(() => new Set(sceneKey ? sceneKey.split(" ") : []), [sceneKey]);
+  const arrowEdges = useMemo(() => withSceneArrows(wireEdges, sceneIds), [wireEdges, sceneIds]);
   const shownEdges = useMemo(() => {
-    if (!story || story.edges.length === 0) return wireEdges;
+    if (!story || story.edges.length === 0) return arrowEdges;
     const choices = story.edges.map((e) => {
       const off = hidden.has(e.source) || hidden.has(e.target);
       const on = e.id === choiceSel;
       return off || on ? { ...e, ...(off ? { hidden: true } : {}), ...(on ? { selected: true } : {}) } : e;
     });
     return [...wireEdges, ...choices];
-  }, [wireEdges, story, hidden, choiceSel]);
+  }, [wireEdges, arrowEdges, story, hidden, choiceSel]);
   const chosenChoice = useMemo(() => {
     const at = choiceSel ? readChoiceEdgeId(choiceSel) : null;
     return at && story ? (story.graph.find((e) => e.from === at.from && e.index === at.index) ?? null) : null;
@@ -799,6 +804,13 @@ export function Toile() {
             const p = "changedTouches" in event ? event.changedTouches[0] : event;
             const at = screenToFlowPosition({ x: p.clientX, y: p.clientY });
             useCosmos.getState().addSceneAfter(state.fromNode.id, { x: at.x, y: at.y - 40 });
+            return;
+          }
+          // Roman et scénario : un fil parti d'une carte Scène et lâché dans le vide crée la scène suivante, déjà reliée.
+          if (!story && !state.isValid && !state.toNode && state.fromNode && sceneIds.has(state.fromNode.id)) {
+            const p = "changedTouches" in event ? event.changedTouches[0] : event;
+            const at = screenToFlowPosition({ x: p.clientX, y: p.clientY });
+            useCosmos.getState().addLinkedScene(state.fromNode.id, { x: at.x, y: at.y - 40 });
             return;
           }
           // Un fil vient d'être créé : on propose tout de suite de l'étiqueter.

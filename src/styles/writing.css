@@ -425,7 +425,7 @@ input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); ou
 .ms-focus-bar:focus-within { opacity: 1; }
 @media (any-hover: hover) { .ms-focus-bar:hover { opacity: 1; } }
 .ms-focus-bar button, .ms-focus-bar select { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.8125rem; cursor: pointer; }
-.ms-focus-bar button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: transparent; }
+.ms-focus-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); border-color: transparent; }
 .ms-focus-bar .focus-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ms-focus-bar .focus-exit-x { display: none; }
 .ms-focus-bar label { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--ink-2); }
@@ -789,7 +789,16 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Pendant la frappe : la barre et le pointeur s'effacent (la souris qui bouge les ramène), le compteur et le
    bandeau du chapitre aussi (ils reviennent à la pause). */
 .is-focus.is-quiet .ms-focus-bar { opacity: 0; pointer-events: none; }
-.is-focus.is-quiet, .is-focus.is-quiet .ProseMirror { cursor: none; }
+/* Le pointeur se cache à la frappe et revient dès que la souris bouge (la barre, elle, ne revient qu'en haut). */
+.is-focus.is-pointer-off, .is-focus.is-pointer-off .ProseMirror { cursor: none; }
+/* Mode focus sans aucune couleur (Manuscrit et Scénario) : commentaires, « à reprendre », lecture à voix haute, marques
+   de l'IA, choix d'un roman interactif et cases du gabarit restent lisibles mais à l'encre du thème. */
+.is-focus .ProseMirror mark { background: none; color: inherit; }
+.is-focus .comment-mark[data-comment], .is-focus [data-comments] { background: none !important; border: none !important; box-shadow: none !important; }
+.is-focus .is-reading { background: none; box-shadow: none; }
+.is-focus .ia-mark, .is-focus [data-ia] { text-decoration: none; }
+.is-focus .scene-choices { border-color: var(--line); background: none; }
+.is-focus .ProseMirror-selectednode { outline-color: var(--line-2) !important; }
 .manuscript.is-focus .ms-chapter-flow { transition: opacity 0.4s; }
 .manuscript.is-focus.is-typing .ms-chapter-flow { opacity: 0.3; }
 .ms-focus-count { position: fixed; z-index: 30; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)); transform: translateX(-50%); margin: 0; padding: 4px 12px; border-radius: 999px; background: var(--ground); box-shadow: 0 0 14px 10px var(--ground); color: var(--ink-2); font: 0.8125rem/1.4 var(--font-ui); white-space: nowrap; pointer-events: none; user-select: none; transition: opacity 0.4s; }
