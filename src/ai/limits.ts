@@ -45,6 +45,7 @@ export const APPLE_CONTEXT = 4096;
 export const PROVIDER_LIMITS: Record<AiProvider, ProviderLimits> = {
   anthropic: OPEN,
   openai: OPEN,
+  chatgpt: { ...OPEN, refused: ["photo"] },
   openrouter: OPEN,
   ollama: OPEN,
   lmstudio: OPEN,

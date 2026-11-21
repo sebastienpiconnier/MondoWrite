@@ -8,6 +8,7 @@ import { SPELLCHECK_MODES, isSpellcheckMode } from "../writingAids";
 import { openGuide } from "../help";
 import { isTypographySetting } from "../typography";
 import { typoOptions } from "../typoRules";
+import { offersChatGPT, useChatGPTSettings } from "./ChatGPTSettings";
 import { UpdateSettings } from "./Updates";
 import { usePhone } from "./usePhone";
 import { storage } from "../storage";
@@ -126,6 +127,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   const interactiveProject = showsInteractive(metaKeep, experimental);
   const setSceneNumbers = useCosmos((s) => s.setSceneNumbers);
   const [open, setOpen] = useState(false);
+  const chatgptControls = useChatGPTSettings(provider === "chatgpt", open);
   // Barre des menus du Mac (Réglages…) et Cmd/Ctrl + virgule : ouvrir.
   useCommand("settings", () => setOpen(true));
   const wheelMode = useSettings((s) => s.wheelMode);
@@ -666,7 +668,7 @@ export function Settings({ project = true }: { project?: boolean }) {
             }}
           >
             <option value="">{t.ai.none}</option>
-            {AI_PROVIDERS.filter((p) => p !== "apple" || p === provider || (apple !== null && isOffered(apple))).map((p) =>
+            {AI_PROVIDERS.filter((p) => p !== "chatgpt" || offersChatGPT()).filter((p) => p !== "apple" || p === provider || (apple !== null && isOffered(apple))).map((p) =>
               p === "apple" && apple !== "available" ? (
                 // Proposé grisé (raison sous la liste) ; gardé s'il est déjà choisi, pour pouvoir en changer.
                 <option key={p} value={p} disabled={p !== provider}>
@@ -680,7 +682,7 @@ export function Settings({ project = true }: { project?: boolean }) {
             )}
           </select>
           <p className="settings-hint" id={ids.aiHint}>
-            {!provider ? t.ai.hintNone : PROVIDERS[provider].device ? t.apple.hint : !PROVIDERS[provider].local ? t.ai.hintCloud : isLoopback(config?.url ?? "") ? t.ai.hintLocal : t.ai.hintRemote}
+            {!provider ? t.ai.hintNone : provider === "chatgpt" ? t.ai.chatgpt.hint : PROVIDERS[provider].device ? t.apple.hint : !PROVIDERS[provider].local ? t.ai.hintCloud : isLoopback(config?.url ?? "") ? t.ai.hintLocal : t.ai.hintRemote}
           </p>
           {/* Apple Intelligence proposé grisé : la raison, et de quoi vérifier de nouveau. */}
           {provider !== "apple" && apple !== null && isOffered(apple) && apple !== "available" && (
@@ -705,7 +707,8 @@ export function Settings({ project = true }: { project?: boolean }) {
               <p className="settings-hint">{t.apple.noSemantic}</p>
             </>
           )}
-          {provider && config && !PROVIDERS[provider].device && (
+          {provider === "chatgpt" && chatgptControls}
+          {provider && provider !== "chatgpt" && config && !PROVIDERS[provider].device && (
             <>
               {PROVIDERS[provider].local ? (
                 <>

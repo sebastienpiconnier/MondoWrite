@@ -5,6 +5,7 @@
 // Plus le groupe « Relecture par l'IA » (AiReview.tsx), et « Organiser le canevas », qui range ensuite toutes les cartes en cadres (sans IA, annulable).
 // L'auteur applique, ignore, ou garde une question pour plus tard.
 
+import { ChatGPTUsage } from "./ChatGPTUsage";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -177,6 +178,7 @@ export function AiMenu() {
       </button>
       {open && (
         <div className="settings-panel ai-panel" id={panelId} role="group" aria-label={t.button}>
+          {config.provider === "chatgpt" && aiSettings.planReady && <ChatGPTUsage menuCard />}
           <div className="eyebrow">{fmt(t.with, { provider: t.providers[config.provider] })}</div>
           <button type="button" className="ghost-button" disabled={busy} onClick={() => void run("tidy")}>
             {t.tidy}
