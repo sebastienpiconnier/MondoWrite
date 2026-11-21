@@ -68,7 +68,10 @@ describe("requête", () => {
     expect(b.get("apiKey")).toBe("abc");
     expect(b.get("language")).toBe("fr");
     expect(checkBody({ ...premium, server: "public" }, "Texte", "auto").get("apiKey")).toBeNull();
-    expect(checkBody({ ...premium, server: "public" }, "Texte", "auto").get("preferredVariants")).toContain("fr");
+    // Seulement des langues à variantes : « fr » seul fait refuser la requête par LanguageTool.
+    const variants = checkBody({ ...premium, server: "public" }, "Texte", "auto").get("preferredVariants")!.split(",");
+    for (const v of variants) expect(v).toMatch(/^[a-z]{2}-[A-Z]{2}$/);
+    expect(checkBody(premium, "Texte", "fr").get("preferredVariants")).toBeNull();
   });
   it("coupe un long texte entre deux paragraphes, sans rien perdre", () => {
     const text = `${"a".repeat(60)}\n\n${"b".repeat(60)}\n\n${"c".repeat(30)}`;
@@ -115,6 +118,8 @@ describe("requête", () => {
     await expect(checkText(premium, "Texte", "fr", undefined, answer(403))).rejects.toMatchObject({ code: "auth" });
     await expect(checkText(premium, "Texte", "fr", undefined, answer(429))).rejects.toMatchObject({ code: "limit" });
     await expect(checkText(premium, "Texte", "fr", undefined, answer(500))).rejects.toMatchObject({ code: "server" });
+    const refused = (async () => new Response("Error: Invalid request\nmore", { status: 400 })) as typeof fetch;
+    await expect(checkText(premium, "Texte", "fr", undefined, refused)).rejects.toMatchObject({ code: "server", detail: "400 : Error: Invalid request more" });
     const down = (async () => {
       throw new TypeError("fetch failed");
     }) as typeof fetch;

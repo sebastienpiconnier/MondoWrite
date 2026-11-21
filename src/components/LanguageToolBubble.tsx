@@ -95,7 +95,8 @@ export function useLanguageTool(getEditor: () => Editor | null | undefined, scop
       setStatus({ text: issues.length === 0 ? t.none : issues.length === 1 ? t.foundOne : fmt(t.found, { n: issues.length }) });
     } catch (e) {
       if (controller.signal.aborted) return;
-      setStatus({ text: t.errors[e instanceof LtError ? e.code : "network"], error: true });
+      const text = t.errors[e instanceof LtError ? e.code : "network"];
+      setStatus({ text: e instanceof LtError && e.detail ? `${text} (${e.detail})` : text, error: true });
     } finally {
       if (abort.current === controller) abort.current = null;
     }

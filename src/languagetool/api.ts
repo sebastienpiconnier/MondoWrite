@@ -62,12 +62,16 @@ export function checkUrl(s: LtSettings): string {
 /** Caractères par requête : sous les limites documentées, avec de la marge (20 Ko public, 60 000 Premium). */
 export const chunkLimit = (s: LtSettings) => (s.server === "public" ? 15_000 : 50_000);
 
+/** Variante retenue quand la langue est détectée (anglais américain, allemand d'Allemagne…). */
+export const AUTO_VARIANTS = "en-US,de-DE,pt-PT,ca-ES";
+
 /** Corps de la requête (formulaire). La langue : un code (fr, en-US…) ou `auto`. */
 export function checkBody(s: LtSettings, text: string, language: string): URLSearchParams {
   const body = new URLSearchParams();
   body.set("text", text);
   body.set("language", language || "auto");
-  if (language === "auto") body.set("preferredVariants", "fr,en-US,de-DE,es,pt-PT,ca-ES");
+  // Seulement des langues à variantes : « fr » ou « es » y font refuser la requête (erreur 400).
+  if (language === "auto") body.set("preferredVariants", AUTO_VARIANTS);
   if (s.server === "premium") {
     body.set("username", s.username);
     body.set("apiKey", s.key);
@@ -139,9 +143,19 @@ export function parseMatches(json: unknown, offset = 0): LtMatch[] {
 export type LtErrorCode = "network" | "auth" | "limit" | "server";
 
 export class LtError extends Error {
-  constructor(public code: LtErrorCode) {
+  /** Ce que le service a répondu (code HTTP et début du message), affiché avec l'erreur pour aider l'auteur. */
+  constructor(
+    public code: LtErrorCode,
+    public detail = "",
+  ) {
     super(code);
   }
+}
+
+/** Détail lisible d'une réponse refusée : le code HTTP et la première ligne du message du service. */
+export function errorDetail(status: number, body: string): string {
+  const line = body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+  return line ? `${status} : ${line}` : String(status);
 }
 
 /** Code d'erreur d'une réponse HTTP refusée. */
@@ -184,7 +198,10 @@ export async function checkText(s: LtSettings, text: string, language: string, s
       clearTimeout(timer);
       signal?.removeEventListener("abort", stop);
     }
-    if (!response.ok) throw new LtError(errorOf(response.status));
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new LtError(errorOf(response.status), errorDetail(response.status, text));
+    }
     let json: unknown;
     try {
       json = await response.json();
