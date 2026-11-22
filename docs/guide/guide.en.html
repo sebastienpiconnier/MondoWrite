@@ -857,6 +857,14 @@
   <li>Each request is <strong>a single undo step</strong>. A banner at the top of the screen says “Claude just changed your project” (or how many changes) with <span class="ui">Undo</span>, as long as you haven’t done anything since: your own work is never undone.</li>
   <li>Before rewriting a scene or replacing a passage, MondoWrite keeps a <strong>version</strong> of it (“Before the external assistant”), found under <span class="ui">Scene versions…</span>.</li>
 </ul>
+<h4>Images, with your approval</h4>
+<p>If you check <span class="ui">Let the assistant request images</span> (<span class="ui">Settings</span> › <span class="ui">AI</span>, under the external assistant), it can ask for a cover, a character portrait, a view of a place or an illustration for a scene of a novel. It only describes the image and where it goes: MondoWrite generates it, with the image service set up in the app (OpenAI or OpenRouter). Your key never leaves the app.</p>
+<ul>
+  <li>Nothing goes out without you: a panel shows each requested image (where it will go, its description, its reference images) and the service that will bill it. <span class="ui">Generate</span> runs the whole batch, <span class="ui">Decline</span> drops it.</li>
+  <li>Portraits first: once a character or a place has its image, the assistant can cite it as a reference to keep the same faces from one illustration to the next. Character names are never sent to the service; they are described by their sheet.</li>
+  <li>A card that already has an image gets the new one in its gallery, unless replacing is explicitly requested; the old one then stays in the gallery. A cover is never replaced without that request.</li>
+  <li>Each image is logged in the AI log. On the cover or a card, it is marked AI and can be undone like everything else; in a scene, you remove it like an image you had put there yourself.</li>
+</ul>
 <h4>Ready-made prompts</h4>
 <p>In Claude Desktop, the “+” button also offers five MondoWrite prompts: <span class="ui">Beta read</span> (a reader’s reactions, no rewriting), <span class="ui">Consistency check</span> (contradictions between the scenes and the Bible, as questions), <span class="ui">Breakdown</span> (props, costumes, extras… scene by scene), <span class="ui">Interview a character</span> (who answers only with what you wrote) and <span class="ui">Project status</span> (where you stand, what’s left).</p>
 

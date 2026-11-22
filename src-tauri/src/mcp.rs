@@ -36,17 +36,17 @@ const LIVE_MS: u128 = 8_000;
 /// Attente d'une réponse de l'app au plus.
 const ANSWER_MS: u64 = 20_000;
 /// Outils d'écriture : transmis à l'app ouverte, qui les applique avec ses règles (marque « IA », journal, annulation).
-const WRITE_TOOLS: [&str; 37] = [
+const WRITE_TOOLS: [&str; 39] = [
   "create_card", "update_card", "link_cards", "add_question", "create_scene", "set_scene_synopsis", "write_scene",
   "move_scene", "create_chapter", "rename_chapter", "move_chapter", "delete_chapter",
   "add_comment", "resolve_comment", "keep_version", "create_episode", "update_episode", "place_scene", "set_template",
   "merge_scenes", "split_scene", "trash_card", "unlink_cards", "rename_everywhere", "replace_text", "set_cover",
   "create_frame", "organize_canvas", "set_scene_fields",
   "update_link", "restore_card", "replace_passage", "add_character_question", "update_frame", "set_project",
-  "set_choices", "remove_fact",
+  "set_choices", "remove_fact", "generate_image", "generate_images",
 ];
 /// Lectures faites par l'app ouverte (calculées sur le projet tel qu'il est à l'écran) : accès en lecture suffit.
-const LIVE_TOOLS: [&str; 6] = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"];
+const LIVE_TOOLS: [&str; 7] = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal", "image_status"];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Chemins
@@ -1070,7 +1070,47 @@ impl Server {
         "annotations": { "readOnlyHint": true }
       }
     ]);
+    // Images demandées par l'assistant : générées par l'app avec le service d'images de l'auteur (la clé ne quitte
+    // jamais l'app), après son accord ; tâches asynchrones suivies par image_status.
+    let image_props = json!({
+      "prompt": { "type": "string", "description": "Ce que montre l'image (sujet, cadrage, lumière, style). Les noms de personnages sont retirés par MondoWrite : décris-les." },
+      "target": { "type": "string", "enum": ["cover", "card", "scene"], "description": "cover : couverture du projet ; card : carte de la Bible (personnage, lieu, objet…) ; scene : texte d'une scène de roman." },
+      "card": { "type": "string", "description": "Carte visée (titre ou identifiant), si target = card." },
+      "slot": { "type": "string", "enum": ["portrait", "gallery"], "description": "card : image principale (portrait, vue d'un lieu) ou galerie. Une carte qui a déjà son image reçoit la nouvelle en galerie, sauf replace." },
+      "scene": { "type": "string", "description": "Scène visée (numéro, titre ou identifiant), si target = scene." },
+      "position": { "type": "string", "enum": ["top", "end"], "description": "scene : en tête de scène (défaut) ou à la fin, avant les choix." },
+      "references": { "type": "array", "items": { "type": "string" }, "description": "Cartes dont l'image sert de référence (mêmes visages, mêmes lieux), au plus 6." },
+      "alt": { "type": "string", "description": "Texte alternatif : ce que montre l'image, en une phrase." },
+      "quality": { "type": "string", "enum": ["flare", "sunburst"], "description": "Modèle d'image : flare (rapide) ou sunburst (plus soigné, garde mieux les visages). Défaut : celui des réglages." },
+      "replace": { "type": "boolean", "description": "Remplacer l'image actuelle (couverture, image principale d'une carte). L'ancienne reste dans le projet." }
+    });
+    let image_one = json!({ "type": "object", "properties": image_props.clone(), "required": ["prompt", "target", "alt"] });
+    let mut image_single = image_props.clone();
+    if let Some(o) = image_single.as_object_mut() {
+      o.insert("project".into(), project.clone());
+    }
+    let images = json!([
+      {
+        "name": "generate_image",
+        "description": "Demande une image à MondoWrite, qui la génère avec le service d'images de l'auteur après son accord (clé jamais transmise), puis la pose : couverture, carte de la Bible (portrait, galerie) ou scène d'un roman. Asynchrone : rend un identifiant de tâche à suivre par image_status. Marquée IA, journalisée, annulable. / Asks MondoWrite for an image, generated with the author's service after their approval; async, follow with image_status.",
+        "inputSchema": { "type": "object", "properties": image_single, "required": ["prompt", "target", "alt"] }
+      },
+      {
+        "name": "generate_images",
+        "description": "Comme generate_image, pour plusieurs images d'un coup : une seule demande d'accord à l'auteur. Commence par les portraits et les lieux, puis cite-les dans `references` pour les scènes. / Several images, one approval.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "images": { "type": "array", "items": image_one, "maxItems": 12 } }, "required": ["images"] }
+      },
+      {
+        "name": "image_status",
+        "description": "État des images demandées (en attente de l'accord de l'auteur, en cours, posée, refusée, erreur). Sans `job`, toutes les tâches de la séance. / Status of requested images.",
+        "inputSchema": { "type": "object", "properties": { "project": project, "job": { "type": "string" } } },
+        "annotations": { "readOnlyHint": true }
+      }
+    ]);
     if let (Some(list), Value::Array(extra)) = (tools.as_array_mut(), more) {
+      list.extend(extra);
+    }
+    if let (Some(list), Value::Array(extra)) = (tools.as_array_mut(), images) {
       list.extend(extra);
     }
     tools

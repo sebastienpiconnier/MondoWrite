@@ -127,6 +127,14 @@ Chaque outil prend `project` (titre ou identifiant) ; s'il n'y a qu'un projet ou
 - [x] message dans l'app quand l'assistant vient d'écrire (`assistantNotice.ts`, `AssistantNotice`, en haut de
       l'écran) : écritures regroupées sur 10 s, « Annuler » seulement si ses étapes sont encore au sommet de l'historique
 - [x] pastille du lot 2 (l'assistant a lu le projet récemment)
+- [x] images demandées par l'assistant (novembre 2026) : `generate_image`, `generate_images` (écriture) et
+      `image_status` (lecture). L'assistant décrit l'image et sa place (couverture, carte : image principale ou
+      galerie, scène d'un roman : en tête ou à la fin), MondoWrite la génère avec le service d'images de l'appareil
+      (la clé ne quitte jamais l'app), après l'accord de l'auteur pour toute la demande. Tâches asynchrones de la
+      séance (`assistantImages.ts`, pur et testé ; `assistantImagesRun.ts`, `AssistantImages.tsx`). Réglage de
+      l'appareil `mcp.images`, coupé par défaut
+- [ ] à suivre : style des illustrations par cible (champ de projet), champ « Apparence » des personnages et des
+      lieux, portrait signalé par `read_card` et `list_cards`
 
 ## Pièges
 

@@ -15,9 +15,10 @@ export function McpAppSettings() {
   const t = useT();
   const mcp = useSettings((s) => s.mcp);
   const setEnabled = useSettings((s) => s.setMcpEnabled);
+  const setImages = useSettings((s) => s.setMcpImages);
   const [claude, setClaude] = useState<ClaudeState>(null);
   const [status, setStatus] = useState("");
-  const ids = { on: useId(), hint: useId() };
+  const ids = { on: useId(), hint: useId(), images: useId(), imagesHint: useId() };
 
   useEffect(() => {
     if (!mcp.enabled || !mcpAvailable()) return;
@@ -78,6 +79,13 @@ export function McpAppSettings() {
           <button type="button" className="ghost-button" onClick={copy}>
             {t.mcp.copy}
           </button>
+          <label className="settings-check" htmlFor={ids.images}>
+            <input id={ids.images} type="checkbox" checked={mcp.images} aria-describedby={ids.imagesHint} onChange={(e) => setImages(e.target.checked)} />
+            {t.mcp.imagesEnable}
+          </label>
+          <p className="settings-hint" id={ids.imagesHint}>
+            {t.mcp.imagesHint}
+          </p>
           <p className="settings-hint" role="status">
             {status}
           </p>
