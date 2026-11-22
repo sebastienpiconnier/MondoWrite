@@ -10,6 +10,20 @@ import { useLifted } from "../lifted";
 import { boxes, frameBox } from "../projectState";
 import { frameDepth, frameLevel, titleBoost } from "../frameLevels";
 import { beatKeys, zoomStep } from "./FrameLabels";
+import { beatText, type CustomTemplate } from "../plan";
+import { customOf } from "../screenplay/template";
+import type { CosmosState } from "../store";
+
+/** Cases de l'auteur d'un scénario, relues une fois par texte et par aides (chaque cadre de case les lit à chaque changement du store). */
+let scriptCustom: { elements: object; extra: object | undefined; custom: CustomTemplate | undefined } | null = null;
+function customFor(s: CosmosState): CustomTemplate | undefined {
+  if (s.kind !== "scenario") return s.plan.custom;
+  const elements = s.screenplay?.elements;
+  if (!elements) return undefined;
+  const extra = s.plan.scriptBeats;
+  if (scriptCustom?.elements !== elements || scriptCustom.extra !== extra) scriptCustom = { elements, extra, custom: customOf(elements, extra) };
+  return scriptCustom.custom;
+}
 
 function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const t = useT().toile;
@@ -20,6 +34,10 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   // Case du gabarit : sa place dans la structure (« Case 3 sur 15 »), 0 si la clé n'est plus dans le gabarit.
   const rank = useCosmos((s) => (data.beat ? beatKeys(s).indexOf(data.beat) + 1 : 0));
   const total = useCosmos((s) => (data.beat ? beatKeys(s).length : 0));
+  // Ce qu'on met dans la case (aide d'un gabarit livré, ou texte écrit par l'auteur dans « Mes gabarits ») : la
+  // description du cadre. Une chaîne : le cadre ne se redessine que si elle change.
+  const beatsDict = useT().plan.beats as Record<string, { label: string; hint: string }>;
+  const hint = useCosmos((s) => (data.beat ? beatText(data.beat, beatsDict, customFor(s)).hint.trim() : ""));
   const updateFrame = useCosmos((s) => s.updateFrame);
   const deleteFrame = useCosmos((s) => s.deleteFrame);
   const toggleFrameLock = useCosmos((s) => s.toggleFrameLock);
@@ -91,6 +109,11 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
         )}
       </div>
       {/* Case du gabarit encore vide : on voit le trou dans la structure, et où déposer une scène. */}
+      {hint && (
+        <p className="frame-hint" title={hint}>
+          {hint}
+        </p>
+      )}
       {empty && <p className="frame-empty">{data.episode ? t.episodeEmpty : t.beatEmpty}</p>}
     </div>
   );

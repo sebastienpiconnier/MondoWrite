@@ -10,7 +10,7 @@ import { leafBeats, type PlanBeat } from "../plan";
 /** Gabarits proposés à un épisode : « Épisode de série » d'abord. */
 const EPISODE_TEMPLATES = ["episode", ...SCREENPLAY_TEMPLATES.filter((k) => k !== "episode")] as const;
 import { MoreMenu } from "./MoreMenu";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, cloneElement, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { SCENE_AT, useCosmos } from "../store";
 import { useEpisodeLabel } from "./EpisodePicker";
 import { episodeAt, episodeScript, isSeries, seriesMark, withEpisodeTemplate, seriesOf, type Episode, type Season } from "../screenplay/series";
@@ -54,6 +54,8 @@ export function Sequencier() {
   const anyPov = useMemo(() => nodes.some((n) => n.data.type === "scene" && n.data.fiche?.pov), [nodes]);
   const setScreenplay = useCosmos((s) => s.setScreenplay);
   const revealCard = useCosmos((s) => s.revealCard);
+  // Aides et nom des gabarits de l'auteur (cosmos.json) : le Fountain n'a que le nom des cases.
+  const scriptBeats = useCosmos((s) => s.plan.scriptBeats);
   const pagination = usePagination(true);
   const episodeLabel = useEpisodeLabel();
   // Saisons et épisodes repliés : un affichage, jamais enregistré.
@@ -75,6 +77,8 @@ export function Sequencier() {
   const [timeline, setTimeline] = useState(false);
   // La scène dont « Ranger » est ouvert (rang de son en-tête) : un affichage, une seule à la fois (#55).
   const [arranging, setArranging] = useState<number | null>(null);
+  // Titres tapés dans « Nouvelle scène… » de chaque case (comme le Plan d'un roman), par rang de la section.
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
   // Après un déplacement au clavier, le focus suit la scène.
   const listRef = useRef<HTMLOListElement>(null);
   const refocus = useRef<{ index: number; way: "up" | "down" } | null>(null);
@@ -82,7 +86,7 @@ export function Sequencier() {
     const target = refocus.current;
     if (!target) return;
     refocus.current = null;
-    const row = listRef.current?.children[target.index];
+    const row = listRef.current?.querySelector(`:scope > [data-row="${target.index}"]`);
     const button =
       row?.querySelector<HTMLButtonElement>(`button[data-move="${target.way}"]:not(:disabled)`) ??
       row?.querySelector<HTMLButtonElement>("button[data-move]:not(:disabled)");
@@ -164,6 +168,54 @@ export function Sequencier() {
     const next = screenplay.elements.slice(start + 1).find((e) => e.type === "section" && !!beatOf(e.text));
     const group = !!next && depthOf(next) > depthOf(el);
     return `${level > 1 ? ` level-${Math.min(3, level)}` : ""}${group ? " is-group" : ""}`;
+  };
+  // « Nouvelle scène… » au bout de chaque case de gabarit qui reçoit des scènes (pas un ensemble, #111) : après le
+  // dernier bloc qui la suit, avant la case, la saison ou l'épisode suivants (une section de l'auteur est enjambée).
+  const addAfter = new Map<number, number>();
+  list.forEach((b, i) => {
+    if (b.kind !== "section" || !beatOf(b.text) || nestClass(b.start).includes("is-group")) return;
+    let k = i + 1;
+    while (k < list.length && !(list[k].kind === "section" && (beatOf(list[k].text) || seriesMark(screenplay.elements[list[k].start])))) k++;
+    addAfter.set(k - 1, i);
+  });
+  const addScene = (section: number) => {
+    const title = (drafts[section] ?? "").trim();
+    const key = beatOf(list[section]?.text ?? "");
+    if (!title || !key) return;
+    useCosmos.getState().addBeatScene(title, key, inSeries ? episodeAt(screenplay, list[section].start) : undefined);
+    setDrafts({ ...drafts, [section]: "" });
+    setAnnounce(fmt(sq.added, { title, beat: labelOf(list[section].text) }));
+  };
+  const withAdd = (i: number, row: ReactElement | null) => {
+    if (!row) return null;
+    const section = addAfter.get(i);
+    const tagged = cloneElement(row as ReactElement<{ "data-row"?: number }>, { "data-row": i });
+    if (section === undefined || hidden.has(section)) return tagged;
+    const label = labelOf(list[section].text);
+    return (
+      <Fragment key={row.key ?? i}>
+        {tagged}
+        <li className={`sq-add${nestClass(list[section].start)}`}>
+          <form
+            className="plan-add"
+            onSubmit={(e) => {
+              e.preventDefault();
+              addScene(section);
+            }}
+          >
+            <input
+              value={drafts[section] ?? ""}
+              placeholder={t.plan.newScene}
+              aria-label={fmt(t.plan.newSceneIn, { beat: label })}
+              onChange={(e) => setDrafts({ ...drafts, [section]: e.target.value })}
+            />
+            <button type="submit" disabled={!(drafts[section] ?? "").trim()}>
+              {t.plan.add}
+            </button>
+          </form>
+        </li>
+      </Fragment>
+    );
   };
   // Rang d'une case dans le gabarit de son épisode (« Case 3 sur 6 »), ou dans le gabarit du scénario.
   const rankOf = (start: number): { n: number; total: number } | null => {
@@ -255,7 +307,7 @@ export function Sequencier() {
               </p>
             )
           }
-          template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
+          template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements, scriptBeats) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
           about={template && !inSeries ? t.plan.templateAbout[template] : undefined}
         />
         {timeline ? (
@@ -280,7 +332,7 @@ export function Sequencier() {
               </span>
             </li>
           )}
-          {list.map((block, i) => {
+          {list.map((block, i) => withAdd(i, (() => {
             if (hidden.has(i)) return null;
             const dropClass = over === i && dragged !== null && dragged !== i ? " is-over" : "";
             const drop = {
@@ -336,7 +388,7 @@ export function Sequencier() {
                         value={episodeTemplate(episode.id)}
                         options={EPISODE_TEMPLATES}
                         allowNone
-                        custom={episodeTemplate(episode.id) === "perso" ? customOf(episodeScript(screenplay, episode.id).elements) : undefined}
+                        custom={episodeTemplate(episode.id) === "perso" ? customOf(episodeScript(screenplay, episode.id).elements, scriptBeats) : undefined}
                         onBuiltin={(key) => setEpisodeTemplate(episode.id, key ?? "")}
                       />
                     )}
@@ -546,7 +598,7 @@ export function Sequencier() {
                 </div>
               </li>
             );
-          })}
+          })()))}
         </ol>
           </>
         )}

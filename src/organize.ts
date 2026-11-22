@@ -81,7 +81,8 @@ const GROUP_GAP = 56; // entre deux cadres
 const ROW_GAP = 96; // entre deux rangées de l'ensemble
 const PAD = { side: 32, top: 64, bottom: 32 }; // marge intérieure d'un cadre (titre en haut)
 /** Marge du haut d'une case de gabarit : son titre est plus grand et porte son rang (« Case 3 sur 15 », FrameNode). */
-const BEAT_TOP = 96;
+// En-tête d'une case (titre et rang) puis sa description sur deux lignes (`.frame-hint`).
+const BEAT_TOP = 124;
 const padTop = (item: { beat?: string; season?: string }) => (item.beat || item.season ? BEAT_TOP : PAD.top);
 /** Une rangée du récit compte au moins 4 scènes (un petit récit reste sur une ligne)… */
 const MIN_SCENES_PER_ROW = 4;

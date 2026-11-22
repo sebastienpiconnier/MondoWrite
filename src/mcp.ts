@@ -12,8 +12,10 @@ export type McpAccess = "read" | "write";
 export interface McpSettings {
   enabled: boolean;
   projects: Record<string, McpAccess>;
+  /** L'assistant peut demander des images, générées par le service d'images de l'appareil après accord (coupé par défaut). */
+  images: boolean;
 }
-export const DEFAULT_MCP: McpSettings = { enabled: false, projects: {} };
+export const DEFAULT_MCP: McpSettings = { enabled: false, projects: {}, images: false };
 
 /** Réglage relu prudemment : « read » ou « write » comme niveau, au plus 200 projets. */
 export function readMcp(raw: unknown): McpSettings {
@@ -22,7 +24,7 @@ export function readMcp(raw: unknown): McpSettings {
   if (r.projects && typeof r.projects === "object") {
     for (const [id, level] of Object.entries(r.projects).slice(0, 200)) if (typeof id === "string" && (level === "read" || level === "write")) projects[id] = level;
   }
-  return { enabled: r.enabled === true, projects };
+  return { enabled: r.enabled === true, projects, images: r.images === true };
 }
 
 /** Le projet est-il ouvert à l'assistant sur cet appareil ? */

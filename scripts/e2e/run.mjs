@@ -1265,6 +1265,56 @@ const scenarios = [
     },
   },
   {
+    name: "séquencier : « Nouvelle scène… » au bout d'une case, et l'aide de la case dans son cadre du canevas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(2);
+      await page.locator(".plan-template select").first().selectOption("troisActes");
+      await h.wait(300);
+      const field = page.getByRole("textbox", { name: /^Nouvelle scène dans/ });
+      await until(() => field.count(), "pas de champ « Nouvelle scène » dans les cases du séquencier");
+      await field.nth(1).fill("INT. PHARE - NUIT");
+      await field.nth(1).press("Enter");
+      await until(() => page.locator(".sq-scene").filter({ hasText: "INT. PHARE - NUIT" }).count(), "la scène ajoutée n'est pas dans le séquencier");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/sequencier.png` });
+      await page.keyboard.press("Control+s");
+      await h.saved((f) => /\[\[cosmos:beat:[a-z_]+\]\][\s\S]*\[\[cosmos:beat:[a-z_]+\]\]\n\n(?:=[^\n]*\n\n)?INT\. PHARE - NUIT/.test(f["scenario.fountain"] ?? ""), "la scène n'est pas sous la deuxième case du gabarit");
+      await h.view(1);
+      await page.locator(".plan-organize, .canvas-dock button").filter({ hasText: "Organiser" }).first().click();
+      await h.wait(600);
+      await until(() => page.locator(".frame-hint").count(), "les cadres des cases n'ont pas leur description");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/canevas.png` });
+    },
+  },
+  {
+    name: "séquencier : un gabarit de l'auteur garde son nom et les descriptions de ses cases (séquencier et canevas)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare", "scenario");
+      await h.view(2);
+      const select = page.locator(".plan-template select").first();
+      await select.waitFor();
+      const chooser = page.waitForEvent("filechooser");
+      await select.selectOption("__import");
+      const md = "# Deux temps\n\n## Avant\n\nLe monde tel qu’il est\n\n## Après\n\nLe monde changé\n";
+      await (await chooser).setFiles({ name: "deux.md", mimeType: "text/markdown", buffer: Buffer.from(md) });
+      const dialog = page.locator("dialog[open]");
+      await dialog.getByRole("button", { name: "Utiliser dans ce projet" }).click();
+      await until(() => page.locator(".sq-section-hint").filter({ hasText: "Le monde tel qu’il est" }).count(), "la description de la case n'est pas dans le séquencier");
+      await until(async () => (await select.locator("option:checked").textContent())?.trim() === "Deux temps", "le menu ne montre pas le nom du gabarit");
+      const field = page.getByRole("textbox", { name: /^Nouvelle scène dans/ }).first();
+      await field.fill("INT. PHARE - NUIT");
+      await field.press("Enter");
+      await page.keyboard.press("Control+s");
+      await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").plan?.scriptBeats?.u1?.hint === "Le monde tel qu’il est", "les descriptions ne sont pas enregistrées");
+      await h.view(1);
+      await page.locator(".canvas-dock button").filter({ hasText: "Organiser" }).first().click();
+      await until(() => page.locator(".frame-hint").filter({ hasText: "Le monde changé" }).count(), "le cadre de la case n'a pas sa description");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/canevas-gabarit.png` });
+    },
+  },
+  {
     name: "longueur des scènes en huitièmes de page : liste des scènes et séquencier (#44)",
     async run(h) {
       const { page } = h;

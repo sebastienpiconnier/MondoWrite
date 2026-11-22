@@ -201,7 +201,7 @@ jobs:
 
       # Mises à jour dans l'app, seulement si les secrets du dépôt sont posés : TAURI_SIGNING_PRIVATE_KEY
       # (contenu du fichier de clé privée), TAURI_SIGNING_PRIVATE_KEY_PASSWORD (son mot de passe) et
-      # TAURI_UPDATER_PUBKEY (contenu du fichier .pub). Les installeurs sont alors signés pour la mise à jour,
+      # TAURI_UPDATER_PUBKEY (contenu du fichier .pub, aussi écrit dans tauri.conf.json depuis la 1.46.0). Les installeurs sont alors signés pour la mise à jour,
       # l'app reçoit la clé publique et la Release porte latest.json. Sans eux, l'app propose seulement la
       # page de téléchargement de chaque nouvelle version.
       - name: Signature des mises à jour

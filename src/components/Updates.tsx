@@ -36,7 +36,7 @@ const percent = (p: number | null, lang: string) => (p === null ? "" : new Intl.
 function UpdateActions({ onLater }: { onLater?: () => void }) {
   const t = useT().updates;
   const lang = useSettings((s) => s.lang);
-  const { status, release, installable, progress, error } = useUpdates();
+  const { status, release, installable, progress, error, reason } = useUpdates();
   if (!release) return null;
   const busy = status === "downloading" || status === "restarting";
   return (
@@ -71,7 +71,7 @@ function UpdateActions({ onLater }: { onLater?: () => void }) {
           )}
         </div>
       )}
-      {!busy && !installable && <p className="settings-hint">{t.downloadHint}</p>}
+      {!busy && !installable && <p className="settings-hint">{reason ? fmt(t.notInApp, { reason: reason.slice(0, 160) }) : t.downloadHint}</p>}
     </>
   );
 }

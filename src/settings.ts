@@ -229,6 +229,8 @@ interface SettingsState {
   /** Assistant externe par MCP (#62) : autorisé ou non, et projets ouverts à l'assistant (identifiant → niveau). */
   mcp: McpSettings;
   setMcpEnabled: (on: boolean) => void;
+  /** Images demandées par l'assistant externe : permises ou non (coupé par défaut). */
+  setMcpImages: (on: boolean) => void;
   /** Fonctions expérimentales (roman interactif, docs/plan-roman-interactif.md) : coupées par défaut. */
   experimental: ExperimentalSettings;
   setExperimental: (patch: Partial<ExperimentalSettings>) => void;
@@ -355,6 +357,7 @@ export const useSettings = create<SettingsState>((set) => ({
   experimental: readExperimental(saved.experimental),
   setExperimental: (patch) => set((s) => ({ experimental: readExperimental({ ...s.experimental, ...patch }) })),
   setMcpEnabled: (enabled) => set((s) => ({ mcp: { ...s.mcp, enabled } })),
+  setMcpImages: (images) => set((s) => ({ mcp: { ...s.mcp, images } })),
   languageTool: readLt(saved.languageTool),
   setLanguageTool: (patch) => set((s) => ({ languageTool: readLt({ ...s.languageTool, ...patch }) })),
   setMcpProject: (id, access) =>

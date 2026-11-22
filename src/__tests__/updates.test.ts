@@ -1,7 +1,8 @@
 // Mises à jour de l'app : comparaison des versions, lecture de la Release GitHub, rythme des vérifications.
 
 import { describe, expect, it } from "vitest";
-import { CHECK_EVERY_MS, RELEASES_PAGE, canUpdate, checkForUpdate, currentVersion, dueForCheck, isNewer, parseRelease, parseVersion, useUpdates } from "../updates";
+import { CHECK_EVERY_MS, RELEASES_PAGE, canUpdate, checkForUpdate, currentVersion, dueForCheck, isNewer, parseRelease, parseVersion, pluginAbsent, useUpdates } from "../updates";
+import conf from "../../src-tauri/tauri.conf.json";
 import { version } from "../../package.json";
 
 describe("versions", () => {
@@ -57,5 +58,21 @@ describe("rythme", () => {
     expect(canUpdate()).toBe(false);
     expect(await checkForUpdate()).toBe("idle");
     expect(useUpdates.getState().status).toBe("idle");
+  });
+});
+
+describe("mise à jour dans l'app", () => {
+  it("la clé publique est dans tauri.conf.json : toute version construite (pas seulement la CI) sait s'installer", () => {
+    // Jusqu'à la 1.45.0, une app construite hors de la CI n'avait pas le plugin et renvoyait vers la page de la Release.
+    const key = atob(conf.plugins.updater.pubkey);
+    expect(key).toMatch(/^untrusted comment: minisign public key: 9DCFA2B922BDC4B8\n/);
+    expect(conf.plugins.updater.endpoints[0]).toBe("https://github.com/sebastienpiconnier/MondoWrite/releases/latest/download/latest.json");
+  });
+
+  it("plugin absent (inutile de réessayer) ou simple accroc (réessayé)", () => {
+    expect(pluginAbsent("plugin updater not found")).toBe(true);
+    expect(pluginAbsent("updater.check not allowed. Permissions associated with this command: updater:allow-check")).toBe(true);
+    expect(pluginAbsent("Could not fetch a valid release JSON from the remote")).toBe(false);
+    expect(pluginAbsent("error sending request for url (https://github.com/…/latest.json): operation timed out")).toBe(false);
   });
 });

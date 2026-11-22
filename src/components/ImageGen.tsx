@@ -412,7 +412,7 @@ function sceneSource(card: CardData): { synopsis?: string; text?: string; html?:
 }
 
 /** Portrait d'un personnage, réduit (1 024 px, JPEG) pour partir comme image de référence. */
-async function referenceOf(name: string): Promise<ReferenceImage | null> {
+export async function referenceOf(name: string): Promise<ReferenceImage | null> {
   const bytes = await storage.readMedia(name).catch(() => null);
   if (!bytes) return null;
   const url = URL.createObjectURL(new Blob([bytes as BlobPart]));

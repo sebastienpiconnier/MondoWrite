@@ -17,6 +17,7 @@ import { showsInteractive } from "./interactive";
 import { interactiveSlugs } from "./interactive/scenes";
 import { projectFacts } from "./interactive/projectFacts";
 import { applyMcpRequest, type McpAnswer, type McpRequest, type McpStore } from "./mcpWrite";
+import { isImageTool } from "./assistantImages";
 
 const s = () => useCosmos.getState();
 
@@ -139,6 +140,15 @@ export async function applyRaw(raw: string, projectId: string): Promise<{ id: st
   }
   const id = typeof req.id === "string" ? req.id : null;
   const st = useCosmos.getState();
+  const client = typeof req.client === "string" && req.client.trim() ? req.client.trim() : "";
+  if (req.tool === "image_status") {
+    // État des images demandées : un accès en lecture suffit.
+    if (st.screen !== "project" || storage.current?.() !== projectId || !mcpAllows(useSettings.getState().mcp, projectId)) {
+      return { id, answer: { ok: false, text: "Le projet n'est plus ouvert à l'assistant dans MondoWrite." } };
+    }
+    const { imageStatus } = await import("./assistantImagesRun");
+    return { id, answer: imageStatus(req.args, projectId) };
+  }
   if (isLiveTool(req.tool)) {
     // Lecture sur le projet ouvert : un accès en lecture suffit.
     if (st.screen !== "project" || storage.current?.() !== projectId || !mcpAllows(useSettings.getState().mcp, projectId)) {
@@ -154,6 +164,16 @@ export async function applyRaw(raw: string, projectId: string): Promise<{ id: st
   if (st.screen !== "project" || storage.current?.() !== projectId || !mcpWritable(useSettings.getState().mcp, projectId)) {
     return { id, answer: { ok: false, text: "Le projet n'est plus ouvert en écriture dans MondoWrite : rien n'a été écrit." } };
   }
+  if (isImageTool(req.tool)) {
+    // Images : tâches en attente de l'accord de l'auteur, générées ensuite par l'app (assistantImagesRun.ts).
+    try {
+      const { requestImages } = await import("./assistantImagesRun");
+      return { id, answer: requestImages(req.tool, req.args, projectId, client) };
+    } catch (err) {
+      console.error(err);
+      return { id, answer: { ok: false, text: "Erreur dans MondoWrite : aucune image demandée." } };
+    }
+  }
   try {
     const before = s().past.at(-1) ?? null;
     const answer = await applyMcpRequest(req, mcpStore(), getT());
@@ -161,7 +181,7 @@ export async function applyRaw(raw: string, projectId: string): Promise<{ id: st
       // L'IA relit aussitôt ce qu'elle vient d'écrire : l'instantané suit sans attendre l'enregistrement.
       publishOpenProject(true);
       const after = s().past.at(-1) ?? null;
-      noteAssistantWrite(typeof req.client === "string" && req.client.trim() ? req.client.trim() : "", after !== before ? after : null);
+      noteAssistantWrite(client, after !== before ? after : null);
     }
     return { id, answer };
   } catch (err) {

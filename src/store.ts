@@ -53,7 +53,7 @@ import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./
 import { interviewKey, isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
 import { addEntries, breakdownEntries } from "./ai/structure";
-import { EMPTY_PLAN, beatText, templateBeats, withKeys, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
+import { EMPTY_PLAN, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
 import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
@@ -153,6 +153,8 @@ export interface CosmosState {
   stepBookScene: (id: string, way: "up" | "down") => boolean;
   /** Crée une carte Scène et la range dans cette case du plan. */
   addPlanScene: (title: string, beat: string, chapterId?: string | null) => string;
+  /** Nouvelle scène rangée à la fin d'une case du gabarit : Plan d'un roman, ou séquencier d'un scénario (épisode donné). */
+  addBeatScene: (title: string, beat: string, episode?: string | null) => string;
   /**
    * Manuscrit, deux fois Entrée : une nouvelle scène juste après `afterId`, dans la même case du plan et le
    * même chapitre, avec le texte `html` (la suite de la scène coupée). Rend son identifiant.
@@ -1168,7 +1170,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     });
     const pattern = (s: string) => new RegExp(`^${s.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{n\}/g, "\\d+").replace(/\{title\}/g, ".+")}$`);
     const chapterTitle = [pattern(t.chapters.numbered), pattern(t.chapters.numberedTitle), pattern(fmt(t.organize.continued, { label: t.chapters.numbered }))];
-    const own = get().kind === "scenario" ? customOf(get().screenplay?.elements ?? []) : get().plan.custom;
+    const own = get().kind === "scenario" ? customOf(get().screenplay?.elements ?? [], get().plan.scriptBeats) : get().plan.custom;
     const known = new Set([
       ...Object.values(t.plan.beats).map((b) => b.label),
       ...(own?.beats ?? []).map((b) => b.label),
@@ -2501,23 +2503,28 @@ export const useCosmos = create<CosmosState>((set, get) => {
         if (!screenplay) return;
         // Série : gabarit de l'épisode choisi dans le séquencier (sinon de l'épisode ouvert), ses cases dans son
         // seul texte (### sous l'épisode).
+        // Clés déjà prises dans tout le fichier (et par les aides gardées) : une case nouvelle n'en reprend jamais
+        // une, même dans un autre épisode ; son aide et le nom du gabarit vont dans `plan.scriptBeats` (1.46.0).
+        const used = [...screenplay.elements.flatMap((el) => (el.type === "section" ? [beatOf(el.text) ?? ""] : [])), ...Object.keys(get().plan.scriptBeats ?? {})];
+        const beats = withKeys(rows, used);
+        if (beats.length === 0) return;
+        const keep = () => set({ plan: withScriptBeats(get().plan, { name: name.trim(), beats }) });
         const target = resolveEpisode(screenplay, episode ?? get().currentEpisode);
         if (target) {
-          const next = withEpisodeTemplate(screenplay, target, (script) => {
-            const used = script.elements.flatMap((el) => (el.type === "section" ? [beatOf(el.text) ?? ""] : []));
-            const beats = withKeys(rows, used);
-            return beats.length === 0 ? script : applyCustom(script, { name, beats }, fromMap(rows, beats));
-          });
+          const next = withEpisodeTemplate(screenplay, target, (script) => applyCustom(script, { name, beats }, fromMap(rows, beats)));
+          record();
+          keep();
           if (next !== screenplay) get().setScreenplay(next, true);
+          touch();
           return;
         }
         // Série : le gabarit est celui de l'épisode ouvert (ses sections), comme dans le séquencier.
         const script = episodeScript(screenplay, get().currentEpisode);
-        // Clés déjà prises dans le fichier : une case nouvelle n'en reprend jamais une.
-        const used = script.elements.flatMap((el) => (el.type === "section" ? [beatOf(el.text) ?? ""] : []));
-        const beats = withKeys(rows, used);
         const next = applyCustom(script, { name, beats }, fromMap(rows, beats));
+        record();
+        keep();
         if (next !== script) get().setScript(next, true);
+        touch();
         return;
       }
       const used = [...Object.keys(plan.beats), ...(plan.custom?.beats.map((b) => b.key) ?? [])].filter(isCustomBeat);
@@ -2583,6 +2590,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       followStory();
       touch();
       return true;
+    },
+    addBeatScene: (title, beat, episode) => {
+      const { kind, screenplay } = get();
+      if (kind !== "scenario" || !screenplay) return get().addPlanScene(title, beat);
+      // Scénario : la carte, son en-tête à la fin de l'épisode visé, puis dans la case (une seule étape).
+      record();
+      const card: CardData = { id: newId(), type: "scene", title, html: "" };
+      const spot = firstFreeCell(occupied());
+      set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
+      const next = inEpisode(screenplay, episode === undefined ? get().currentEpisode : episode, (sp) => {
+        const added = appendScene(sp, { id: card.id, title });
+        return { ...added, elements: placeSceneInBeat(added.elements, card.id, beat) };
+      });
+      get().setScreenplay(next, true);
+      touch();
+      return card.id;
     },
     addPlanScene: (title, beat, chapterId) => {
       record();

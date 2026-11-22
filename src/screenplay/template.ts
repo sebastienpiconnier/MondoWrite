@@ -7,7 +7,7 @@
 import type { Screenplay, ScreenplayElement } from "./model";
 import { blocks, moveBlock } from "./sequence";
 import { plainSection } from "./series";
-import { EMPTY_PLAN, PLAN_TEMPLATES, cleanLevels, isCustomBeat, type CustomBeat, type CustomTemplate, type Plan, type PlanTemplate } from "../plan";
+import { EMPTY_PLAN, PLAN_TEMPLATES, cleanLevels, isCustomBeat, type CustomBeat, type CustomTemplate, type Plan, type PlanTemplate, type ScriptBeats } from "../plan";
 
 /** Gabarits proposés pour un scénario, dans l'ordre du menu. */
 export const SCREENPLAY_TEMPLATES = ["troisActes", "saveTheCat", "huitSequences", "episode", "voyageHeros", "cercleHarmon", "freytag", "hauge", "septPoints", "kishotenketsu", "romance", "polar"] as const satisfies readonly PlanTemplate[];
@@ -41,14 +41,17 @@ export function currentTemplate(elements: ScreenplayElement[]): ScreenplayTempla
  * d'une case (#111) est la profondeur de sa section, comptée depuis la moins profonde (une case sous un épisode,
  * `###`, est de niveau 1).
  */
-export function customOf(elements: ScreenplayElement[]): CustomTemplate | undefined {
+export function customOf(elements: ScreenplayElement[], extra?: ScriptBeats): CustomTemplate | undefined {
   const found = elements.flatMap((el) => {
     const key = el.type === "section" ? beatOf(el.text) : null;
-    return key && isCustomBeat(key) && el.type === "section" ? [{ key, label: sectionLabel(el.text) || key, depth: el.depth ?? 1 }] : [];
+    if (!key || !isCustomBeat(key) || el.type !== "section") return [];
+    // Aide de la case : gardée dans cosmos.json (`plan.scriptBeats`), le Fountain n'a que son nom.
+    const hint = extra?.[key]?.hint;
+    return [{ key, label: sectionLabel(el.text) || key, depth: el.depth ?? 1, ...(hint ? { hint } : {}) }];
   });
   if (found.length === 0) return undefined;
   const top = Math.min(...found.map((b) => b.depth));
-  return { name: "", beats: cleanLevels(found.map(({ depth, ...b }) => ({ ...b, level: depth - top + 1 }))) };
+  return { name: extra?.[found[0].key]?.tpl ?? "", beats: cleanLevels(found.map(({ depth, ...b }) => ({ ...b, level: depth - top + 1 }))) };
 }
 
 /**
@@ -60,7 +63,12 @@ export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from
   const section = (b: CustomBeat): ScreenplayElement => ({ type: "section", depth: b.level ?? 1, text: `${b.label} [[cosmos:beat:${b.key}]]` });
   // Gabarit né d'un autre (`from` : case d'avant → case nouvelle) : chaque section devient la nouvelle sur place,
   // ses scènes restent dessous ; une case retirée perd sa section, une case ajoutée arrive à la fin.
-  if (from.size > 0 && currentTemplate(screenplay.elements) !== "perso") {
+  // Un autre gabarit de l'auteur (aucune de ses cases n'est dans le texte) remplace celui en place comme un
+  // gabarit livré : sinon les sections d'avant partaient une à une et les scènes de la première case sortaient
+  // du gabarit.
+  const present = new Set(screenplay.elements.flatMap((el) => (isBeat(el) ? [beatOf(el.text)!] : [])));
+  const fresh = currentTemplate(screenplay.elements) !== "perso" || !custom.beats.some((b) => present.has(b.key));
+  if (from.size > 0 && fresh) {
     const byKey = new Map(custom.beats.map((b) => [b.key, b]));
     const placed = new Set<string>();
     const elements = screenplay.elements.flatMap((el) => {
@@ -75,7 +83,7 @@ export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from
     // Une case ajoutée (ou une sous-case, #111) prend ensuite sa place dans l'ordre du gabarit.
     return reorderCustom(next, custom, section);
   }
-  if (currentTemplate(screenplay.elements) !== "perso") {
+  if (fresh) {
     const kept = screenplay.elements.filter((el) => !isBeat(el));
     if (custom.beats.length === 0) return { ...screenplay, elements: kept };
     const sections = custom.beats.map(section);

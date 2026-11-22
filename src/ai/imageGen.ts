@@ -206,6 +206,8 @@ export interface PromptOptions {
   space?: boolean;
   /** Scène : les personnages, dans l'ordre des images de référence jointes. */
   cast?: CastMember[];
+  /** Images de référence d'un lieu ou d'un objet, jointes après celles des personnages (assistant externe). */
+  settingRefs?: number;
 }
 
 /**
@@ -234,12 +236,19 @@ export function imagePrompt(subject: ImageSubject, description: string, names: P
     parts.push(`Composition: leave calm, uncluttered space ${room}, to be added later; keep the main subject and any face away from those areas and from the edges.`);
   }
   const cast = (options.cast ?? []).map((c) => ({ ...c, description: clip(stripNames(c.description, names), 300) }));
+  const settings = Math.max(0, Math.floor(options.settingRefs ?? 0));
+  let ref = 0;
   if (cast.length > 0) {
-    let ref = 0;
     const lines = cast.map((c, i) => `Character ${i + 1}${c.reference ? ` (reference image ${++ref})` : ""}: ${c.description || "no description"}`);
+    const only = settings > 0 ? "" : " Use the references only for these people, not for the setting or the composition.";
     parts.push(
-      `${ref > 0 ? "The attached reference images show some of the characters. Keep each one's face, hair, build and clothing exactly as in their reference image, so they are recognisable from one illustration to the next. Use the references only for these people, not for the setting or the composition.\n" : ""}Characters in the scene:\n${lines.join("\n")}`,
+      `${ref > 0 ? `The attached reference images show some of the characters. Keep each one's face, hair, build and clothing exactly as in their reference image, so they are recognisable from one illustration to the next.${only}\n` : ""}Characters in the scene:\n${lines.join("\n")}`,
     );
+  }
+  if (settings > 0) {
+    const first = ref + 1;
+    const last = ref + settings;
+    parts.push(`Reference image${settings > 1 ? `s ${first} to ${last} show` : ` ${first} shows`} the place or objects of this picture: keep their look, materials and architecture recognisable, but not their composition.`);
   }
   parts.push(text ? `Description (written by the author, follow it faithfully, do not add names):\n${text}` : "No description: keep it simple and neutral.");
   return parts.join("\n\n");
