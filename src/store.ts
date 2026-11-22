@@ -363,6 +363,8 @@ export interface CosmosState {
   setFilterTypes: (types: CardType[]) => void;
   /** Filtre du canevas sur un narrateur : seules ses scènes restent (null : toutes les scènes). */
   setFilterPov: (pov: string | null) => void;
+  /** Préparations (#119) : seules les scènes reliées par une préparation, et ces fils. */
+  setFilterSetups: (on: boolean) => void;
   /** « Filtrer sur cette carte » : elle et ses voisines directes ; null l'enlève. */
   setFilterCard: (id: string | null) => void;
   /** « Tout afficher ». */
@@ -491,6 +493,10 @@ export interface CosmosState {
   /** Fils du canevas masqués : réglage du projet, enregistré dans cosmos.json, hors historique. */
   hideWires: boolean;
   setHideWires: (on: boolean) => void;
+  /** Préparations mises en avant (pastille d'une carte Scène) : cette scène et celles qu'elle prépare ou qui la
+   *  préparent restent nettes, les autres cartes sont estompées (affichage, jamais enregistré). */
+  setupFocus: string | null;
+  focusSetups: (id: string | null) => void;
   /** Fils masqués : cartes dont on a rallumé les fils (affichage, jamais enregistré). */
   wiresShown: string[];
   toggleCardWires: (id: string) => void;
@@ -1323,6 +1329,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       charFilter: null,
       threadFilter: null,
       wiresShown: [],
+      setupFocus: null,
       filter: NO_FILTER,
       expandedId: null,
       versionsFor: null,
@@ -1601,6 +1608,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       charFilter: null,
       threadFilter: null,
       wiresShown: [],
+      setupFocus: null,
       filter: NO_FILTER,
       expandedId: null,
       versionsFor: null,
@@ -1848,6 +1856,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
     setFilterTypes: (types) => applyFilter({ ...get().filter, types }),
     setFilterCard: (card) => applyFilter({ ...get().filter, card }),
     setFilterPov: (pov) => applyFilter({ ...get().filter, pov }),
+    setFilterSetups: (on) => applyFilter({ ...get().filter, setups: on || undefined }),
     clearFilter: () => set({ filter: NO_FILTER }),
     expandedId: null,
     expandCard: (id) => {
@@ -2979,6 +2988,10 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ hideWires, wiresShown: [] });
       touch();
     },
+    setupFocus: null,
+    focusSetups: (id) => {
+      if (get().setupFocus !== id) set({ setupFocus: id });
+    },
     wiresShown: [],
     toggleCardWires: (id) => {
       const shown = get().wiresShown;
@@ -3228,6 +3241,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         charFilter: null,
         threadFilter: null,
         wiresShown: [],
+        setupFocus: null,
         filter: NO_FILTER,
         expandedId: null,
         versionsFor: null,
@@ -3976,6 +3990,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         charFilter: null,
         threadFilter: null,
         wiresShown: [],
+        setupFocus: null,
         filter: NO_FILTER,
         expandedId: null,
         versionsFor: null,

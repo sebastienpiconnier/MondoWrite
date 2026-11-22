@@ -82,6 +82,8 @@
   /* Passages commentés (ouverts) : fond doux et trait d'accent ; le texte de la page y garde 4,5:1. */
   --comment-bg: var(--accent-soft);
   --comment-line: var(--accent);
+  /* Préparer et payer (#119) : fils de préparation, pastilles et filtre ; alias d'un jeton déjà vérifié. */
+  --setup: var(--status-revise);
   --cover-bg: #23265a; /* jaquette de la couverture du projet (Bible) */
   --cover-ink: #ffffff;
   --cover-muted: #c9cbf3;
@@ -162,6 +164,8 @@
   /* Passages commentés (ouverts) : fond doux et trait d'accent ; le texte de la page y garde 4,5:1. */
   --comment-bg: var(--accent-soft);
   --comment-line: var(--accent);
+  /* Préparer et payer (#119) : fils de préparation, pastilles et filtre ; alias d'un jeton déjà vérifié. */
+  --setup: var(--status-revise);
   --cover-bg: #2c2f5c;
   --cover-ink: #f1f2fb;
   --cover-muted: #c4c6ee;

@@ -73,3 +73,47 @@ export function setupProblems(edges: readonly SetupEdge[], order: readonly strin
   }
   return out.sort((x, y) => x.payoffRank - y.payoffRank);
 }
+
+/** Ce qu'une scène prépare et ce qui la prépare (identifiants des autres scènes, dans l'ordre des fils). */
+export interface SceneSetups {
+  prepares: string[];
+  paidBy: string[];
+}
+
+const NO_SETUPS: SceneSetups = { prepares: [], paidBy: [] };
+const setupCache = new WeakMap<readonly SetupEdge[], Map<string, SceneSetups>>();
+
+/** Préparations de chaque scène, calculées une fois par tableau de fils (lu par chaque carte du canevas). */
+export function setupsByScene(edges: readonly SetupEdge[]): Map<string, SceneSetups> {
+  const known = setupCache.get(edges);
+  if (known) return known;
+  const out = new Map<string, SceneSetups>();
+  const entry = (id: string) => {
+    let s = out.get(id);
+    if (!s) out.set(id, (s = { prepares: [], paidBy: [] }));
+    return s;
+  };
+  for (const e of edges) {
+    const setup = setupOf(e);
+    const payoff = payoffOf(e);
+    if (!setup || !payoff) continue;
+    entry(setup).prepares.push(payoff);
+    entry(payoff).paidBy.push(setup);
+  }
+  setupCache.set(edges, out);
+  return out;
+}
+
+/** Préparations d'une scène (jamais undefined). */
+export const setupsOf = (edges: readonly SetupEdge[], id: string): SceneSetups => setupsByScene(edges).get(id) ?? NO_SETUPS;
+
+/** Scènes reliées par au moins une préparation. */
+export function setupScenes(edges: readonly SetupEdge[]): Set<string> {
+  return new Set(setupsByScene(edges).keys());
+}
+
+/** La scène et celles qu'elle prépare ou qui la préparent : ce qui reste net quand on la met en avant. */
+export function setupCircle(edges: readonly SetupEdge[], id: string): Set<string> {
+  const s = setupsOf(edges, id);
+  return new Set([id, ...s.prepares, ...s.paidBy]);
+}

@@ -12,8 +12,10 @@ import { useVocab } from "../vocab";
 import { useCosmos } from "../store";
 import { filterActive } from "../canvasFilter";
 import { typesFor, typeColor } from "../types";
+import { setupScenes } from "../setups";
 
 const NO_NODES: readonly { id: string; data: CardData }[] = [];
+const NO_EDGES: readonly never[] = [];
 
 export function CanvasFilterMenu() {
   const t = useT().filter;
@@ -34,6 +36,10 @@ export function CanvasFilterMenu() {
       .map((n) => ({ id: n.id, name: n.data.title.trim() || t.untitled, n: counts.get(n.id)! }))
       .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, lang));
   }, [nodes, lang, t.untitled]);
+  // Préparations (#119) : proposées dès qu'un fil entre deux scènes dit laquelle prépare l'autre.
+  const edges = useCosmos((s) => (open ? s.edges : NO_EDGES));
+  const anySetup = useMemo(() => setupScenes(edges).size > 0, [edges]);
+  const setFilterSetups = useCosmos((s) => s.setFilterSetups);
   const clearFilter = useCosmos((s) => s.clearFilter);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -106,6 +112,13 @@ export function CanvasFilterMenu() {
                   </option>
                 ))}
               </select>
+            </label>
+          )}
+          {(anySetup || filter.setups) && (
+            <label className="canvas-filter-item canvas-filter-setups">
+              <input type="checkbox" checked={!!filter.setups} onChange={(e) => setFilterSetups(e.target.checked)} />
+              <span className="add-card-dot is-setup" aria-hidden="true" />
+              {t.setupsOnly}
             </label>
           )}
           <div className="canvas-filter-actions">

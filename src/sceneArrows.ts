@@ -27,14 +27,18 @@ export function withSceneArrows<E extends Edge>(edges: E[], scenes: ReadonlySet<
     if (!scenes.has(e.source) || !scenes.has(e.target)) return e;
     changed = true;
     const setup = setupOf(e as { id: string; source: string; target: string; data?: Record<string, unknown> });
-    const marker = { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "var(--accent)" };
+    // Une préparation a sa couleur (`--setup`) et passe en arc par le haut des deux cartes (`arc`, lu par
+    // FloatingEdge) : elle ne se confond pas avec le fil qui mène d'une scène à la suivante.
+    const color = setup ? "var(--setup)" : "var(--accent)";
+    const marker = { type: MarkerType.ArrowClosed, width: 18, height: 18, color };
     const backward = setup !== null && setup === e.target;
     return {
       ...e,
       className: [e.className, SCENE_ARROW_CLASS, setup ? "is-setup" : ""].filter(Boolean).join(" "),
       ...(backward ? { markerStart: { ...marker, orient: "auto-start-reverse" }, markerEnd: undefined } : { markerEnd: marker }),
       ...(setup && prepares && !String(e.label ?? "").trim() ? { label: prepares } : {}),
-      style: { ...e.style, stroke: "var(--accent)", strokeWidth: 1.8 },
+      ...(setup ? { data: { ...e.data, arc: true } } : {}),
+      style: { ...e.style, stroke: color, strokeWidth: 1.8, ...(setup ? { strokeDasharray: "6 4" } : {}) },
     };
   });
   return changed ? out : edges;

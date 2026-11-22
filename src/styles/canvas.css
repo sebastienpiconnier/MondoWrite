@@ -420,6 +420,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 @media (any-hover: hover) { .add-card-item:hover { background: var(--ground); outline: none; } }
 .add-card-item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 .add-card-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.add-card-dot.is-setup { background: var(--setup); }
 .add-card-text { display: flex; flex-direction: column; gap: 1px; }
 .add-card-label { font-size: 0.9375rem; font-weight: 600; }
 .add-card-hint { font-size: 0.8125rem; color: var(--muted); }
@@ -552,3 +553,15 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .canvas-filter-pov { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 4px; font-size: 0.8125rem; color: var(--ink-2); }
 .canvas-filter-pov select { min-height: 36px; }
 @media (pointer: coarse) { .canvas-filter-pov select { min-height: 44px; } }
+
+/* Préparer et payer (#119) : pastille d'une carte Scène, dans le zoom du canevas (en px comme la carte). */
+.card-setups { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; margin: 0 12px 10px; padding: 2px 10px 2px 8px; border: 1px dashed var(--setup); border-radius: 999px; background: transparent; color: var(--ink-2); font: 600 12px var(--font-ui); cursor: pointer; }
+.card-setups.is-on { border-style: solid; color: var(--ink); background: var(--ground); }
+.card-setups-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--setup); }
+@media (any-hover: hover) {
+  .card-setups:hover { color: var(--ink); background: var(--ground); }
+}
+@media (pointer: coarse) {
+  .card-setups { min-height: 44px; }
+}
+.toile .react-flow__edge.is-setup.selected .react-flow__edge-path { stroke-width: 3 !important; }

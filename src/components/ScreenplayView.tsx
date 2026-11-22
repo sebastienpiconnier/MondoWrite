@@ -22,6 +22,7 @@ import type { ManuscriptStats } from "../stats";
 import { blocks, moveBlock } from "../screenplay/sequence";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
+import { SceneSetupsBox } from "./SceneSetups";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -1591,6 +1592,8 @@ export function ScreenplayView() {
                 atelier={elements[scene.index]?.cardId ? { sceneId: elements[scene.index].cardId!, text: screenplaySceneText(scriptOffset(useCosmos.getState()) + scene.index), accept: (text) => saveSynopsis(scene.index, text, true) } : undefined}
               />
             </section>
+
+            <SceneSetupsBox id={card?.id} />
 
             {location && (
               <section className="sp-box">

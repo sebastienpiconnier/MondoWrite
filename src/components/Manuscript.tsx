@@ -22,6 +22,7 @@ import { useStoryFindings } from "./useStoryFindings";
 import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
+import { SceneSetupsBox } from "./SceneSetups";
 import { PovPicker } from "./PovPicker";
 import { narratorCounts } from "../pov";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
@@ -1034,6 +1035,7 @@ export function Manuscript() {
             </span>
           )}
         </section>
+        {!pageKind && <SceneSetupsBox id={card.id} />}
         <section className="sp-box">
           <h2 className="sp-box-title">{m.cited}</h2>
           {detected.length === 0 ? (

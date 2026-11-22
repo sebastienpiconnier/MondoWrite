@@ -336,6 +336,22 @@ const scenarios = [
       await until(() => page.locator(".react-flow__edge.is-setup").isVisible(), "le fil ne se dessine pas en « prépare »");
       await until(() => page.locator(".react-flow").getByText("prépare", { exact: true }).first().isVisible(), "le fil sans étiquette ne dit pas « prépare »");
       await h.saved((f) => Object.values(JSON.parse(f["cosmos.json"] ?? "{}").setups ?? {}).includes(a), "le sens du fil n'est pas enregistré dans setups");
+      // La carte qui prépare porte sa pastille ; un clic met ses préparations en avant.
+      const badge = h.node(a).locator(".card-setups");
+      await until(() => badge.isVisible(), "la carte qui prépare n'a pas de pastille");
+      assert((await badge.textContent())?.includes("Prépare 1"), `pastille inattendue : ${await badge.textContent()}`);
+      await badge.click();
+      await until(() => page.getByText("Préparations de « Le dîner »").isVisible(), "la pastille ne met pas les préparations en avant");
+      await page.getByRole("button", { name: "Tout revoir" }).click();
+      // Filtre « Préparations seulement ».
+      await page.getByRole("button", { name: "Filtrer les cartes" }).click();
+      await page.getByLabel("Préparations seulement").check();
+      await page.keyboard.press("Escape");
+      await until(() => page.getByText("Filtre actif : préparations seulement").isVisible(), "le filtre des préparations n'est pas annoncé");
+      await page.locator(".filter-banner").getByRole("button", { name: "Tout afficher" }).click();
+      // L'onglet « Scène » du Manuscrit dit ce que la scène prépare.
+      await h.view(4);
+      await until(() => page.locator(".scene-setups").isVisible(), "l'onglet Scène ne montre pas les préparations");
       // Le fusil passe avant le dîner : la scène qui paie vient avant celle qui prépare, « Vérifier » le signale.
       await h.view(2);
       await page.getByRole("button", { name: "Monter la scène « Le fusil »" }).click();

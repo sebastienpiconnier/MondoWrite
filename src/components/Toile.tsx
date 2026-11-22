@@ -45,7 +45,7 @@ import { useStoryMap } from "../interactive/useStoryMap";
 import { isChoiceEdgeId, readChoiceEdgeId } from "../interactive/storyMap";
 import { sceneIdsKey, withSceneArrows } from "../sceneArrows";
 import { junctionOrder } from "../projectJunctions";
-import { setupOf } from "../setups";
+import { setupCircle, setupOf } from "../setups";
 import { END_TARGET } from "../interactive/choices";
 import { EdgeEditor, STORY_CHOICE_EVENT, TargetPicker, type StoryChoiceAsk } from "./StoryChoices";
 
@@ -172,7 +172,12 @@ export function Toile() {
   const hideWires = useCosmos((s) => s.hideWires);
   const wiresShown = useCosmos((s) => s.wiresShown);
   // Suivre les fils (#81) : les cartes ni rallumées ni voisines d'une carte rallumée sont estompées.
-  const lit = useMemo(() => litCards(hideWires, wiresShown, edges), [hideWires, wiresShown, edges]);
+  // Préparations mises en avant (pastille d'une carte Scène) : la scène et ses préparations restent nettes.
+  const setupFocus = useCosmos((s) => s.setupFocus);
+  const lit = useMemo(
+    () => (setupFocus ? setupCircle(edges, setupFocus) : litCards(hideWires, wiresShown, edges)),
+    [setupFocus, hideWires, wiresShown, edges],
+  );
   const allNodes = useMemo(() => {
     const held = heldCardIds(nodes, frames);
     if (held.size === 0 && hidden.size === 0 && !spotlightId && !lit) return [...shownFrames, ...nodes];
@@ -188,11 +193,14 @@ export function Toile() {
       }),
     ];
   }, [frames, shownFrames, nodes, hidden, spotlightId, lit]);
+  const onlySetups = !!filter.setups;
   const wireEdges = useMemo(() => {
-    if (hidden.size === 0 && !hideWires) return edges;
+    if (hidden.size === 0 && !hideWires && !onlySetups) return edges;
     const lit = new Set(wiresShown);
-    return edges.map((e) => (hidden.has(e.source) || hidden.has(e.target) || !wireShown(e, hideWires, lit) ? { ...e, hidden: true } : e));
-  }, [edges, hidden, hideWires, wiresShown]);
+    return edges.map((e) =>
+      hidden.has(e.source) || hidden.has(e.target) || !wireShown(e, hideWires, lit) || (onlySetups && !setupOf(e)) ? { ...e, hidden: true } : e,
+    );
+  }, [edges, hidden, hideWires, wiresShown, onlySetups]);
   // Roman interactif (lot 11, #91) : le canevas est la carte des choix. Les flèches de choix se lisent dans les blocs
   // de choix des scènes et s'ajoutent aux fils le temps de l'affichage ; elles ne sont jamais enregistrées comme des fils.
   // Elles restent visibles quand les fils sont masqués (ce sont les chemins de l'histoire), pas quand le filtre cache
@@ -458,6 +466,7 @@ export function Toile() {
         const chosen = all.some((n) => n.selected) || boxesNow.some((b) => b.selected);
         // Rien d'autre à fermer : Échap ne suit plus aucun fil (les cartes estompées reviennent, #81).
         if (!cardMenu && !lit && !chosen && following.length > 0) clearCardWires();
+        if (!cardMenu && !lit && !chosen) useCosmos.getState().focusSetups(null);
         if (cardMenu) setCardMenu(null);
         if (lit) setSpotlight(null);
         if (chosen) clearSelection();
@@ -719,6 +728,7 @@ export function Toile() {
     filter.types.length === 1 ? t.filter.typesOne : filter.types.length > 1 ? fmt(t.filter.typesMany, { n: filter.types.length }) : "",
     filter.card ? fmt(t.filter.card, { title: nodes.find((n) => n.id === filter.card)?.data.title.trim() || t.bible.untitled }) : "",
     filter.pov ? fmt(t.filter.pov, { name: nodes.find((n) => n.id === filter.pov)?.data.title.trim() || t.bible.untitled }) : "",
+    filter.setups ? t.filter.setups : "",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -1055,7 +1065,15 @@ export function Toile() {
         </div>
       )}
       {/* Suivre les fils (#81) : ce qui est estompé, et le chemin pour tout revoir (souris, doigt, clavier). */}
-      {lit && (
+      {setupFocus && (
+        <div className="filter-banner follow-banner" role="status">
+          <span>{fmt(t.toile.setupFocus, { title: nodes.find((n) => n.id === setupFocus)?.data.title.trim() || t.manuscript.untitled })}</span>
+          <button type="button" className="ghost-button" onClick={() => useCosmos.getState().focusSetups(null)}>
+            {t.toile.followClear}
+          </button>
+        </div>
+      )}
+      {lit && !setupFocus && (
         <div className="filter-banner follow-banner" role="status">
           <span>{wiresShown.length === 1 ? t.toile.followOne : fmt(t.toile.followMany, { n: wiresShown.length })}</span>
           <button type="button" className="ghost-button" onClick={() => useCosmos.getState().clearCardWires()}>

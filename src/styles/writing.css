@@ -1642,3 +1642,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 /* Statistiques › Intrigues et thèmes (#118). */
 .thread-stats-note { margin: 0 0 10px; font-size: 0.875rem; }
 .thread-stats td .link-button { white-space: nowrap; }
+
+/* Préparer et payer (#119) : onglet « Scène » du Manuscrit et du Scénario. */
+.scene-setups-row + .scene-setups-row { margin-top: 8px; }
+.scene-setups-label { display: block; margin-bottom: 4px; color: var(--muted); font: 600 0.75rem var(--font-ui); }
+.chip.is-setup { display: inline-flex; align-items: center; gap: 6px; }

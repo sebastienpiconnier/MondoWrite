@@ -28,6 +28,7 @@ import { useVocab } from "../vocab";
 import { useSettings } from "../settings";
 import { CardActions } from "./CardActions";
 import { CardLinks } from "./CardLinks";
+import { SetupBadge } from "./SceneSetups";
 import { StoryMarks, StorySection } from "./StoryChoices";
 import { SceneCardBody } from "./SceneDraft";
 import { SuggestionMenu } from "./SuggestionMenu";
@@ -623,6 +624,8 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       {/* À quoi la carte est reliée : lisible même fils masqués. */}
       {/* Roman interactif (lot 11) : départ, fin, scène inaccessible… Rien pour les autres cartes. */}
       {data.type === "scene" && <StoryMarks id={id} />}
+      {/* Préparer et payer (#119) : ce que la scène prépare et ce qui la prépare, à mettre en avant d'un clic. */}
+      {data.type === "scene" && <SetupBadge id={id} />}
       <CardLinks id={id} />
 
       {mention && mentionCount > 0 && !slash && (

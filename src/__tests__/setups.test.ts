@@ -2,7 +2,8 @@
 // Préparer et payer (#119) : sens d'un fil entre deux scènes, lecture et écriture, ordre inversé.
 
 import { describe, expect, it } from "vitest";
-import { payoffOf, readSetups, setupOf, setupProblems, setupsToMeta } from "../setups";
+import { payoffOf, readSetups, setupCircle, setupOf, setupProblems, setupScenes, setupsByScene, setupsOf, setupsToMeta } from "../setups";
+import { hiddenCards, NO_FILTER } from "../canvasFilter";
 
 const edge = (id: string, source: string, target: string, setup?: string) => ({ id, source, target, ...(setup ? { data: { setup } } : {}) });
 
@@ -53,6 +54,21 @@ describe("préparer et payer : flèches et fichier", () => {
     expect(fwd.label).toBe("le fusil");
     expect(plain.label).toBeUndefined();
     expect(plain.className).not.toContain("is-setup");
+    // Couleur propre et arc par une autre sortie que le fil d'une scène à la suivante.
+    expect(back.style?.stroke).toBe("var(--setup)");
+    expect(back.data).toEqual({ setup: "b", arc: true });
+    expect(plain.style?.stroke).toBe("var(--accent)");
+    expect(plain.data).toBeUndefined();
+  });
+
+  it("l'arc passe par le haut de deux scènes côte à côte, par la gauche de deux scènes l'une sous l'autre", async () => {
+    const { arcPath } = await import("../components/FloatingEdge");
+    const [side, , y1] = arcPath({ x: 0, y: 100, w: 200, h: 80 }, { x: 600, y: 100, w: 200, h: 80 });
+    expect(side.startsWith("M 100,100")).toBe(true);
+    expect(y1).toBeLessThan(100);
+    const [stack, x2] = arcPath({ x: 0, y: 0, w: 200, h: 80 }, { x: 0, y: 400, w: 200, h: 80 });
+    expect(stack.startsWith("M 0,40")).toBe(true);
+    expect(x2).toBeLessThan(0);
   });
 
   it("cosmos.json garde le bloc setups à part des fils, avec la fiche du fil", async () => {
@@ -66,5 +82,25 @@ describe("préparer et payer : flèches et fichier", () => {
     expect(JSON.stringify(meta.links)).not.toContain("setup");
     const back = fromProject(toProject(state as never));
     expect(back.edges.find((e) => e.id === edge.id)?.data).toEqual({ fiche: { enjeu: "x" }, setup: edge.target });
+  });
+});
+
+describe("préparer et payer : ce que chaque scène prépare", () => {
+  const edges = [edge("l1", "a", "b", "a"), edge("l2", "c", "a", "c"), edge("l3", "a", "d"), edge("l4", "b", "e", "e")];
+
+  it("prépare et payée par, une fois par tableau de fils", () => {
+    expect(setupsOf(edges, "a")).toEqual({ prepares: ["b"], paidBy: ["c"] });
+    expect(setupsOf(edges, "b")).toEqual({ prepares: [], paidBy: ["a", "e"] });
+    expect(setupsOf(edges, "d")).toEqual({ prepares: [], paidBy: [] });
+    expect(setupsByScene(edges)).toBe(setupsByScene(edges));
+    expect([...setupScenes(edges)].sort()).toEqual(["a", "b", "c", "e"]);
+    expect([...setupCircle(edges, "a")].sort()).toEqual(["a", "b", "c"]);
+  });
+
+  it("filtre « Préparations seulement » : les autres cartes sont masquées", () => {
+    const cards = ["a", "b", "c", "d", "e", "x"].map((id) => ({ id, type: "scene" as const, html: "" }));
+    const hidden = hiddenCards(cards, edges, { ...NO_FILTER, setups: true });
+    expect([...hidden].sort()).toEqual(["d", "x"]);
+    expect(hiddenCards(cards, edges, NO_FILTER).size).toBe(0);
   });
 });

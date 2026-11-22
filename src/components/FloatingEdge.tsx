@@ -7,7 +7,7 @@ import { bezierPoint, crossesBoxes, freeLabelAt, type Box, type Side } from "../
 /** Clic sur l'étiquette en pilule d'une flèche (roman interactif) : `Toile` la choisit. Détail : l'identifiant du fil. */
 export const EDGE_PILL_EVENT = "edge-pill";
 
-type Rect = { x: number; y: number; w: number; h: number };
+export type Rect = { x: number; y: number; w: number; h: number };
 
 const rectOf = (n: InternalNode): Rect => ({
   x: n.internals.positionAbsolute.x,
@@ -28,7 +28,27 @@ function borderPoint(a: Rect, b: Rect) {
   return { x: ax + dx * sy, y: ay + dy * sy, pos: dy > 0 ? Position.Bottom : Position.Top };
 }
 
-type EdgeData = { offset?: number; labelAt?: number; pill?: boolean; pillClass?: string; pillTitle?: string } | undefined;
+type EdgeData = { offset?: number; labelAt?: number; pill?: boolean; pillClass?: string; pillTitle?: string; arc?: boolean } | undefined;
+
+/**
+ * Arc d'une préparation entre deux scènes (#119), par une autre sortie que le fil d'une scène à la suivante : du
+ * milieu du bord haut de l'une à celui de l'autre quand elles sont côte à côte, du bord gauche quand elles sont l'une
+ * au-dessus de l'autre. Rend le tracé SVG et le milieu de la courbe, pour l'étiquette (pur).
+ */
+export function arcPath(a: Rect, b: Rect): [string, number, number] {
+  const dx = b.x + b.w / 2 - (a.x + a.w / 2);
+  const dy = b.y + b.h / 2 - (a.y + a.h / 2);
+  const lift = (d: number) => Math.min(220, Math.max(60, d * 0.3));
+  // Milieu d'une courbe de Bézier cubique : (P0 + 3 P1 + 3 P2 + P3) / 8.
+  if (Math.abs(dy) > Math.abs(dx)) {
+    const x1 = a.x, y1 = a.y + a.h / 2, x2 = b.x, y2 = b.y + b.h / 2;
+    const left = Math.min(x1, x2) - lift(Math.hypot(dx, dy));
+    return [`M ${x1},${y1} C ${left},${y1} ${left},${y2} ${x2},${y2}`, (x1 + 6 * left + x2) / 8, (y1 + y2) / 2];
+  }
+  const x1 = a.x + a.w / 2, y1 = a.y, x2 = b.x + b.w / 2, y2 = b.y;
+  const top = Math.min(y1, y2) - lift(Math.hypot(dx, dy));
+  return [`M ${x1},${y1} C ${x1},${top} ${x2},${top} ${x2},${y2}`, (x1 + x2) / 2, (y1 + 6 * top + y2) / 8];
+}
 
 /** Bouts d'une flèche flottante : bords des deux cartes, décalés de côté quand plusieurs flèches les relient. */
 function ends(s: InternalNode, t: InternalNode, offset: number) {
@@ -96,6 +116,28 @@ export function FloatingEdge(props: EdgeProps) {
   const data = props.data as EdgeData;
   const pill = usePillAt(id, data);
   if (!s || !t) return null;
+
+  if (data?.arc && !data.pill) {
+    const [path, labelX, labelY] = arcPath(rectOf(s), rectOf(t));
+    return (
+      <BaseEdge
+        id={id}
+        path={path}
+        markerEnd={markerEnd}
+        markerStart={markerStart}
+        style={style}
+        interactionWidth={interactionWidth}
+        label={label}
+        labelX={labelX}
+        labelY={labelY}
+        labelStyle={labelStyle}
+        labelShowBg={labelShowBg}
+        labelBgStyle={labelBgStyle}
+        labelBgPadding={labelBgPadding}
+        labelBgBorderRadius={labelBgBorderRadius}
+      />
+    );
+  }
 
   const { p1, p2 } = ends(s, t, Number(data?.offset ?? 0));
   const [path, labelX, labelY] = getBezierPath({
