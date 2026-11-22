@@ -15,7 +15,7 @@ Règles :
 - on ne cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité
   (import Scrivener, fichiers Final Draft, Fountain) ou pour du code repris (licence, `THIRD-PARTY-NOTICES.md`).
 
-Dernière mise à jour : 16 novembre 2026 (roman interactif ajouté).
+Dernière mise à jour : 22 novembre 2026 (lot 14, relire sa structure, ajouté).
 
 ## Ordre / Order
 
@@ -30,4 +30,6 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
 3. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
 4. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`),
    import de la logique de Twine (#96) dans la 1.41.0
-5. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
+5. Lot 14 · Relire sa structure / Reviewing your structure : #117 lire le récit fil par fil, #118 poids de chaque fil,
+   puis #119 préparer et payer et #120 enchaînements à relire (ensemble, dans « Vérifier »)
+6. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
