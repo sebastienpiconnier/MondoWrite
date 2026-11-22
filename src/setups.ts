@@ -117,3 +117,49 @@ export function setupCircle(edges: readonly SetupEdge[], id: string): Set<string
   const s = setupsOf(edges, id);
   return new Set([id, ...s.prepares, ...s.paidBy]);
 }
+
+/** Lettre d'une paire : A à Z, puis AA, AB… (pur). */
+export function setupLetter(n: number): string {
+  let s = "";
+  for (let i = n; i >= 0; i = Math.floor(i / 26) - 1) s = String.fromCharCode(65 + (i % 26)) + s;
+  return s;
+}
+
+/**
+ * Lettre de chaque préparation (identifiant du fil → « A », « B »…), pour reconnaître les paires : « Prépare A » sur
+ * une scène, « Paie A » sur l'autre. Dans l'ordre du récit de la scène qui prépare, puis de celle qui paie ; une
+ * scène hors du récit passe après, le fil départage. Affichage seulement, jamais écrit (pur).
+ */
+export function setupLetters(edges: readonly SetupEdge[], order: readonly string[]): Map<string, string> {
+  const rank = new Map(order.map((id, i) => [id, i]));
+  const at = (id: string) => rank.get(id) ?? Number.MAX_SAFE_INTEGER;
+  const pairs = edges
+    .map((e) => ({ id: e.id, setup: setupOf(e), payoff: payoffOf(e) }))
+    .filter((p): p is { id: string; setup: string; payoff: string } => p.setup !== null && p.payoff !== null)
+    .sort((a, b) => at(a.setup) - at(b.setup) || at(a.payoff) - at(b.payoff) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return new Map(pairs.map((p, i) => [p.id, setupLetter(i)]));
+}
+
+/** Lettres que porte chaque scène : celles qu'elle prépare, celles qu'elle paie (pur). */
+export function sceneLetters(edges: readonly SetupEdge[], letters: ReadonlyMap<string, string>): Map<string, { prepares: string[]; pays: string[] }> {
+  const out = new Map<string, { prepares: string[]; pays: string[] }>();
+  const entry = (id: string) => {
+    let s = out.get(id);
+    if (!s) out.set(id, (s = { prepares: [], pays: [] }));
+    return s;
+  };
+  const byLetter = (a: string, b: string) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
+  for (const e of edges) {
+    const letter = letters.get(e.id);
+    const setup = setupOf(e);
+    const payoff = payoffOf(e);
+    if (!letter || !setup || !payoff) continue;
+    entry(setup).prepares.push(letter);
+    entry(payoff).pays.push(letter);
+  }
+  for (const s of out.values()) {
+    s.prepares.sort(byLetter);
+    s.pays.sort(byLetter);
+  }
+  return out;
+}

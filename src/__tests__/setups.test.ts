@@ -2,7 +2,7 @@
 // Préparer et payer (#119) : sens d'un fil entre deux scènes, lecture et écriture, ordre inversé.
 
 import { describe, expect, it } from "vitest";
-import { payoffOf, readSetups, setupCircle, setupOf, setupProblems, setupScenes, setupsByScene, setupsOf, setupsToMeta } from "../setups";
+import { payoffOf, readSetups, sceneLetters, setupLetter, setupLetters, setupCircle, setupOf, setupProblems, setupScenes, setupsByScene, setupsOf, setupsToMeta } from "../setups";
 import { hiddenCards, NO_FILTER } from "../canvasFilter";
 
 const edge = (id: string, source: string, target: string, setup?: string) => ({ id, source, target, ...(setup ? { data: { setup } } : {}) });
@@ -102,5 +102,31 @@ describe("préparer et payer : ce que chaque scène prépare", () => {
     const hidden = hiddenCards(cards, edges, { ...NO_FILTER, setups: true });
     expect([...hidden].sort()).toEqual(["d", "x"]);
     expect(hiddenCards(cards, edges, NO_FILTER).size).toBe(0);
+  });
+});
+
+describe("préparer et payer : une lettre par paire", () => {
+  it("A à Z, puis AA", () => {
+    expect([0, 1, 25, 26, 27, 51, 52].map(setupLetter)).toEqual(["A", "B", "Z", "AA", "AB", "AZ", "BA"]);
+  });
+
+  it("dans l'ordre du récit de la scène qui prépare, une scène hors du récit après", () => {
+    const edges = [edge("l1", "c", "d", "c"), edge("l2", "a", "b", "a"), edge("l3", "x", "a", "x"), edge("l4", "a", "d", "d"), edge("l5", "b", "c")];
+    const letters = setupLetters(edges, ["a", "b", "c", "d"]);
+    expect([...letters.entries()]).toEqual([["l2", "A"], ["l1", "B"], ["l4", "C"], ["l3", "D"]]);
+    const byScene = sceneLetters(edges, letters);
+    expect(byScene.get("a")).toEqual({ prepares: ["A"], pays: ["C", "D"] });
+    expect(byScene.get("d")).toEqual({ prepares: ["C"], pays: ["B"] });
+  });
+
+  it("le fil porte la lettre de sa paire, avant l'étiquette de l'auteur", async () => {
+    const { withSceneArrows } = await import("../sceneArrows");
+    const edges: import("@xyflow/react").Edge[] = [
+      { id: "l1", source: "a", target: "b", data: { setup: "a" } },
+      { id: "l2", source: "a", target: "b", data: { setup: "b" }, label: "le fusil" },
+    ];
+    const [plain, named] = withSceneArrows(edges, new Set(["a", "b"]), "prépare", new Map([["l1", "A"], ["l2", "B"]]));
+    expect(plain.label).toBe("prépare A");
+    expect(named.label).toBe("B · le fusil");
   });
 });

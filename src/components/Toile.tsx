@@ -44,7 +44,7 @@ import { projectSections } from "../interactive/projectSections";
 import { useStoryMap } from "../interactive/useStoryMap";
 import { isChoiceEdgeId, readChoiceEdgeId } from "../interactive/storyMap";
 import { sceneIdsKey, withSceneArrows } from "../sceneArrows";
-import { junctionOrder } from "../projectJunctions";
+import { junctionOrder, projectSetupLetters } from "../projectJunctions";
 import { setupCircle, setupOf } from "../setups";
 import { END_TARGET } from "../interactive/choices";
 import { EdgeEditor, STORY_CHOICE_EVENT, TargetPicker, type StoryChoiceAsk } from "./StoryChoices";
@@ -210,7 +210,12 @@ export function Toile() {
   // Roman et scénario : un fil entre deux scènes se dessine en flèche, comme un choix du roman interactif.
   const sceneKey = useMemo(() => (story ? "" : sceneIdsKey(nodes)), [story, nodes]);
   const sceneIds = useMemo(() => new Set(sceneKey ? sceneKey.split(" ") : []), [sceneKey]);
-  const arrowEdges = useMemo(() => withSceneArrows(wireEdges, sceneIds, t.toile.prepares), [wireEdges, sceneIds, t.toile.prepares]);
+  // Lettre de chaque préparation (« prépare A »), la même que sur les pastilles des deux scènes.
+  const setupLetterMap = useCosmos((s) => projectSetupLetters(s).byLink);
+  const arrowEdges = useMemo(
+    () => withSceneArrows(wireEdges, sceneIds, t.toile.prepares, setupLetterMap),
+    [wireEdges, sceneIds, t.toile.prepares, setupLetterMap],
+  );
   const shownEdges = useMemo(() => {
     if (!story || story.edges.length === 0) return arrowEdges;
     const choices = story.edges.map((e) => {
@@ -720,7 +725,9 @@ export function Toile() {
 
   const openLabelEditor = (edge: Edge, x: number, y: number) => {
     const rect = wrapper.current?.getBoundingClientRect();
-    setLabelEditor({ edgeId: edge.id, x: x - (rect?.left ?? 0), y: y - (rect?.top ?? 0), value: String(edge.label ?? "") });
+    // L'étiquette enregistrée, jamais celle affichée (une préparation montre « prépare A » sans en avoir).
+    const saved = useCosmos.getState().edges.find((e) => e.id === edge.id) ?? edge;
+    setLabelEditor({ edgeId: edge.id, x: x - (rect?.left ?? 0), y: y - (rect?.top ?? 0), value: String(saved.label ?? "") });
   };
 
   // Le filtre actif, en mots : les types masqués, la carte dont on ne voit que le voisinage.

@@ -334,12 +334,22 @@ const scenarios = [
       await order.selectOption({ index: 1 });
       await page.keyboard.press("Escape");
       await until(() => page.locator(".react-flow__edge.is-setup").isVisible(), "le fil ne se dessine pas en « prépare »");
-      await until(() => page.locator(".react-flow").getByText("prépare", { exact: true }).first().isVisible(), "le fil sans étiquette ne dit pas « prépare »");
+      await until(() => page.locator(".react-flow").getByText("prépare A", { exact: true }).first().isVisible(), "le fil sans étiquette ne dit pas « prépare A »");
       await h.saved((f) => Object.values(JSON.parse(f["cosmos.json"] ?? "{}").setups ?? {}).includes(a), "le sens du fil n'est pas enregistré dans setups");
+      // Rouvert, l'éditeur du fil montre l'étiquette enregistrée (vide), jamais « prépare A ».
+      const arc = await page.locator(".react-flow__edge.is-setup .react-flow__edge-path").first().evaluate((path) => {
+        const pt = path.getPointAtLength(path.getTotalLength() / 4);
+        const m = path.getScreenCTM();
+        return { x: pt.x * m.a + pt.y * m.c + m.e, y: pt.x * m.b + pt.y * m.d + m.f };
+      });
+      await page.mouse.click(arc.x, arc.y);
+      await until(() => order.isVisible(), "l'éditeur du fil ne se rouvre pas");
+      assert((await page.locator(".label-editor input").inputValue()) === "", "l'éditeur du fil reprend l'étiquette affichée");
+      await page.keyboard.press("Escape");
       // La carte qui prépare porte sa pastille ; un clic met ses préparations en avant.
       const badge = h.node(a).locator(".card-setups");
       await until(() => badge.isVisible(), "la carte qui prépare n'a pas de pastille");
-      assert((await badge.textContent())?.includes("Prépare 1"), `pastille inattendue : ${await badge.textContent()}`);
+      assert((await badge.textContent())?.includes("Prépare A"), `pastille inattendue : ${await badge.textContent()}`);
       await badge.click();
       await until(() => page.getByText("Préparations de « Le dîner »").isVisible(), "la pastille ne met pas les préparations en avant");
       await page.getByRole("button", { name: "Tout revoir" }).click();

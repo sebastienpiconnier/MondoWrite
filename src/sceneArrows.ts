@@ -20,7 +20,7 @@ export function sceneIdsKey(nodes: readonly { id: string; type?: string; data: u
  *  tableau quand aucun fil ne relie deux scènes (pur). */
 //  Un fil qui prépare (#119) va toujours de la scène qui prépare vers celle qui paie : la pointe est au départ du fil
 //  quand il a été tiré dans l'autre sens, et un fil sans étiquette prend le libellé `prepares`.
-export function withSceneArrows<E extends Edge>(edges: E[], scenes: ReadonlySet<string>, prepares = ""): E[] {
+export function withSceneArrows<E extends Edge>(edges: E[], scenes: ReadonlySet<string>, prepares = "", letters?: ReadonlyMap<string, string>): E[] {
   if (scenes.size < 2) return edges;
   let changed = false;
   const out = edges.map((e) => {
@@ -36,10 +36,18 @@ export function withSceneArrows<E extends Edge>(edges: E[], scenes: ReadonlySet<
       ...e,
       className: [e.className, SCENE_ARROW_CLASS, setup ? "is-setup" : ""].filter(Boolean).join(" "),
       ...(backward ? { markerStart: { ...marker, orient: "auto-start-reverse" }, markerEnd: undefined } : { markerEnd: marker }),
-      ...(setup && prepares && !String(e.label ?? "").trim() ? { label: prepares } : {}),
+      // Étiquette de l'auteur précédée de la lettre de la paire (« A · le fusil ») ; sans étiquette, « prépare A ».
+      ...(setup ? setupLabel(String(e.label ?? "").trim(), prepares, letters?.get(e.id)) : {}),
       ...(setup ? { data: { ...e.data, arc: true } } : {}),
       style: { ...e.style, stroke: color, strokeWidth: 1.8, ...(setup ? { strokeDasharray: "6 4" } : {}) },
     };
   });
   return changed ? out : edges;
+}
+
+/** Étiquette affichée d'une préparation : lettre de la paire (la même que sur les pastilles des deux scènes). */
+function setupLabel(label: string, prepares: string, letter: string | undefined): { label?: string } {
+  if (label) return letter ? { label: `${letter} · ${label}` } : {};
+  const text = [prepares, letter].filter(Boolean).join(" ");
+  return text ? { label: text } : {};
 }

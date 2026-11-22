@@ -7,24 +7,26 @@
 
 import { fmt, useT } from "../i18n";
 import { useInteractive } from "../interactive/useInteractive";
-import { setupsOf } from "../setups";
-import { useCosmos } from "../store";
+import { payoffOf, setupOf } from "../setups";
+import { projectSetupLetters } from "../projectJunctions";
+import { useCosmos, type CosmosState } from "../store";
 
-/** Nombre de scènes préparées et de scènes qui préparent, en une chaîne stable (la carte ne se redessine que si
- *  ces nombres changent). */
-const countsKey = (edges: Parameters<typeof setupsOf>[0], id: string) => {
-  const s = setupsOf(edges, id);
-  return `${s.prepares.length}:${s.paidBy.length}`;
+/** Lettres des paires que la scène prépare et qu'elle paie, en une chaîne stable (« A,C|B ») : la carte ne se
+ *  redessine que si elles changent. Vide : aucune préparation. */
+const lettersKey = (s: CosmosState, id: string) => {
+  const mine = projectSetupLetters(s).byScene.get(id);
+  return mine ? `${mine.prepares.join(",")}|${mine.pays.join(",")}` : "";
 };
 
 export function SetupBadge({ id }: { id: string }) {
   const t = useT().toile;
   const interactive = useInteractive();
-  const key = useCosmos((s) => countsKey(s.edges, id));
+  const key = useCosmos((s) => lettersKey(s, id));
   const on = useCosmos((s) => s.setupFocus === id);
-  if (interactive || key === "0:0") return null;
-  const [a, b] = key.split(":").map(Number);
-  const parts = [a > 0 ? fmt(t.setupBadgePrepares, { n: a }) : "", b > 0 ? fmt(t.setupBadgePays, { n: b }) : ""].filter(Boolean);
+  if (interactive || !key) return null;
+  const [a, b] = key.split("|");
+  const list = (x: string) => x.split(",").join(", ");
+  const parts = [a ? fmt(t.setupBadgePrepares, { list: list(a) }) : "", b ? fmt(t.setupBadgePays, { list: list(b) }) : ""].filter(Boolean);
   return (
     <button
       type="button"
@@ -42,22 +44,32 @@ export function SetupBadge({ id }: { id: string }) {
 export function SceneSetupsBox({ id }: { id: string | null | undefined }) {
   const t = useT();
   const interactive = useInteractive();
-  const key = useCosmos((s) => (id ? countsKey(s.edges, id) : "0:0"));
-  const edges = useCosmos((s) => (key === "0:0" ? null : s.edges));
-  const nodes = useCosmos((s) => (key === "0:0" ? null : s.nodes));
-  if (interactive || !id || !edges || !nodes) return null;
-  const { prepares, paidBy } = setupsOf(edges, id);
-  const title = (sid: string) => nodes.find((n) => n.id === sid)?.data.title.trim() || t.manuscript.untitled;
-  const list = (label: string, ids: string[]) =>
-    ids.length > 0 && (
+  const key = useCosmos((s) => (id ? lettersKey(s, id) : ""));
+  const state = useCosmos((s) => (key ? s : null));
+  if (interactive || !id || !state) return null;
+  const letters = projectSetupLetters(state).byLink;
+  const title = (sid: string) => state.nodes.find((n) => n.id === sid)?.data.title.trim() || t.manuscript.untitled;
+  const prepares: { letter: string; other: string }[] = [];
+  const paidBy: { letter: string; other: string }[] = [];
+  for (const e of state.edges) {
+    const letter = letters.get(e.id);
+    const setup = setupOf(e);
+    const payoff = payoffOf(e);
+    if (!letter || !setup || !payoff) continue;
+    if (setup === id) prepares.push({ letter, other: payoff });
+    if (payoff === id) paidBy.push({ letter, other: setup });
+  }
+  const sortByLetter = (a: { letter: string }, b: { letter: string }) => a.letter.length - b.letter.length || a.letter.localeCompare(b.letter);
+  const list = (label: string, items: { letter: string; other: string }[]) =>
+    items.length > 0 && (
       <div className="scene-setups-row">
         <span className="scene-setups-label">{label}</span>
         <ul className="ms-chips">
-          {ids.map((sid) => (
-            <li key={sid}>
-              <button type="button" className="chip is-setup" title={fmt(t.toile.setupGo, { title: title(sid) })} onClick={() => useCosmos.getState().openInManuscript(sid)}>
-                <span className="card-setups-dot" aria-hidden="true" />
-                {title(sid)}
+          {[...items].sort(sortByLetter).map(({ letter, other }) => (
+            <li key={letter}>
+              <button type="button" className="chip is-setup" title={fmt(t.toile.setupGo, { title: title(other) })} onClick={() => useCosmos.getState().openInManuscript(other)}>
+                <span className="setup-letter" aria-hidden="true">{letter}</span>
+                {title(other)}
               </button>
             </li>
           ))}

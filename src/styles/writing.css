@@ -1647,3 +1647,4 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .scene-setups-row + .scene-setups-row { margin-top: 8px; }
 .scene-setups-label { display: block; margin-bottom: 4px; color: var(--muted); font: 600 0.75rem var(--font-ui); }
 .chip.is-setup { display: inline-flex; align-items: center; gap: 6px; }
+.setup-letter { display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; padding: 0 0.2em; border-radius: 999px; background: var(--setup); color: var(--surface); font: 700 0.6875rem var(--font-ui); }
