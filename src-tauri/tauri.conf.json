@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "MondoWrite",
-  "version": "1.45.0",
+  "version": "1.46.0",
   "identifier": "app.cosmos.ecriture",
   "build": {
     "frontendDist": "../dist",
@@ -47,7 +47,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlEQ0ZBMkI5MjJCREM0QjgKUldTNHhMMGl1YUxQbmFWK0QxQ1lrRXlmd05EQjBnblhMODUyemNidjljd2VXMFdrZWxuM3huMHoK",
       "endpoints": [
         "https://github.com/sebastienpiconnier/MondoWrite/releases/latest/download/latest.json"
       ],

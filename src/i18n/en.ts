@@ -726,6 +726,7 @@ export const en: Messages = {
     restarting: "Installing: MondoWrite is restarting…",
     installError: "The installation failed. You can download the new version from its page.",
     downloadHint: "The release page opens in your browser: download the file for your system and install it like the first time.",
+    notInApp: "The in-app update couldn’t get ready ({reason}). “Download” tries again first, then opens the release page.",
     check: "Check for updates",
     checking: "Checking…",
     current: "You have the latest version ({version}).",

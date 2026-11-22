@@ -512,12 +512,13 @@ pub fn run() {
     // Ouvrir l'adresse d'une source dans le navigateur du système.
     .plugin(tauri_plugin_opener::init())
     .setup(|app| {
-      // Mises à jour (ordinateur) : le plugin n'est branché que si l'app a été construite avec la clé
-      // publique de signature (secret TAURI_UPDATER_PUBKEY de la CI). Sans elle, l'app vérifie seulement
-      // la dernière version sur GitHub et propose sa page de téléchargement.
+      // Mises à jour (ordinateur) : le plugin n'est branché que si l'app a une clé publique de signature
+      // (écrite dans tauri.conf.json depuis novembre 2026, et par la CI), et jamais dans une version de
+      // développement (`tauri dev`), qui installerait la version publiée par-dessus. Sans lui, l'app vérifie
+      // seulement la dernière version sur GitHub et propose sa page de téléchargement.
       #[cfg(desktop)]
       {
-        let has_key = app
+        let has_key = !cfg!(debug_assertions) && app
           .config()
           .plugins
           .0

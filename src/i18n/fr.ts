@@ -2861,6 +2861,7 @@ export const fr = {
     restarting: "Installation : MondoWrite redémarre…",
     installError: "L’installation a échoué. Tu peux télécharger la nouvelle version depuis sa page.",
     downloadHint: "La page de la version s’ouvre dans ton navigateur : télécharge le fichier de ton système et installe-le comme la première fois.",
+    notInApp: "La mise à jour dans l’app n’a pas pu se préparer ({reason}). « Télécharger » réessaie d’abord, puis ouvre la page de la version.",
     check: "Rechercher les mises à jour",
     checking: "Recherche…",
     current: "Tu as la dernière version ({version}).",

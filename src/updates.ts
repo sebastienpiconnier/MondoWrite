@@ -3,6 +3,7 @@
 // - installation dans l'app (tauri-plugin-updater) quand la version a été publiée avec sa signature de mise à
 //   jour (`latest.json` dans la Release GitHub, clé publique dans l'app) : téléchargement, vérification de la
 //   signature, installation, redémarrage ;
+//   (le plugin est essayé deux fois, puis encore au clic, avant de renoncer : 1.46.0) ;
 // - sinon, simple vérification : la dernière Release publiée sur GitHub (API publique, sans clé), et un bouton
 //   qui ouvre sa page de téléchargement.
 // Au lancement, une vérification par jour au plus (réglage de l'appareil, désactivable) ; à la demande dans
@@ -80,9 +81,11 @@ interface UpdateState {
   /** Bandeau refermé (« Plus tard ») : il ne revient pas avant le prochain lancement. */
   dismissed: boolean;
   error: "network" | "install" | null;
+  /** Pourquoi l'installation dans l'app n'est pas possible (plugin présent mais sans réponse), pour le dire. */
+  reason: string | null;
 }
 
-export const useUpdates = create<UpdateState>(() => ({ status: "idle", release: null, installable: false, progress: null, dismissed: false, error: null }));
+export const useUpdates = create<UpdateState>(() => ({ status: "idle", release: null, installable: false, progress: null, dismissed: false, error: null, reason: null }));
 
 /** Mise à jour trouvée par le plugin, gardée hors de l'état React (objet du plugin, pas une donnée). */
 let pending: { downloadAndInstall: (onEvent?: (e: DownloadEvent) => void) => Promise<void> } | null = null;
@@ -103,35 +106,66 @@ async function latestRelease(): Promise<ReleaseInfo | null> {
   }
 }
 
+/** Ce que répond le plugin de mise à jour. */
+type PluginAnswer =
+  | { kind: "update"; update: NonNullable<Awaited<ReturnType<typeof import("@tauri-apps/plugin-updater").check>>> }
+  | { kind: "none" }
+  | { kind: "failed"; reason: string; absent: boolean };
+
+/** Le plugin n'est pas branché (version de développement, app construite sans clé) : inutile de réessayer. */
+export const pluginAbsent = (reason: string) => /plugin\s+updater\s+not\s+found|not\s+allowed|unknown\s+command|ipc|__TAURI/i.test(reason);
+
+/** Pause entre deux essais du plugin (un latest.json lu pendant un accroc du réseau). */
+export const RETRY_MS = 2500;
+
+async function askPlugin(): Promise<PluginAnswer> {
+  try {
+    const { check } = await import("@tauri-apps/plugin-updater");
+    const update = await check({ timeout: 20_000 });
+    return update ? { kind: "update", update } : { kind: "none" };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { kind: "failed", reason, absent: pluginAbsent(reason) };
+  }
+}
+
+/** Le plugin, essayé deux fois s'il est là mais n'a pas répondu (jusqu'à la 1.45.0, un seul échec menait à la page). */
+async function askPluginTwice(): Promise<PluginAnswer> {
+  const first = await askPlugin();
+  if (first.kind !== "failed" || first.absent) return first;
+  console.warn("Mise à jour dans l'app : premier essai manqué", first.reason);
+  await new Promise((r) => setTimeout(r, RETRY_MS));
+  return askPlugin();
+}
+
 /**
- * Cherche une nouvelle version. D'abord le plugin de mise à jour (absent tant que l'app n'a pas été construite
- * avec sa clé publique : il répond alors par une erreur), sinon la dernière Release de GitHub.
+ * Cherche une nouvelle version. D'abord le plugin de mise à jour (absent dans une version de développement : il
+ * répond alors par une erreur), sinon la dernière Release de GitHub.
  */
 export async function checkForUpdate(): Promise<UpdateStatus> {
   const s = useUpdates.getState();
   if (!canUpdate() || s.status === "checking" || s.status === "downloading" || s.status === "restarting") return s.status;
-  useUpdates.setState({ status: "checking", error: null });
+  useUpdates.setState({ status: "checking", error: null, reason: null });
   try {
-    try {
-      const { check } = await import("@tauri-apps/plugin-updater");
-      const update = await check({ timeout: 15_000 });
-      if (update && isNewer(update.version, CURRENT)) {
-        pending = update;
-        const release = (await latestRelease().catch(() => null)) ?? { version: update.version, url: RELEASES_PAGE, notes: update.body ?? "" };
-        useUpdates.setState({ status: "available", installable: true, release: { ...release, version: update.version.replace(/^v/, "") } });
-        return "available";
-      }
-      if (update === null) {
-        useUpdates.setState({ status: "current", release: null, installable: false });
-        return "current";
-      }
-    } catch {
-      /* pas de plugin (app construite sans clé de mise à jour) : vérification simple */
+    const answer = await askPluginTwice();
+    if (answer.kind === "update" && isNewer(answer.update.version, CURRENT)) {
+      pending = answer.update;
+      const version = answer.update.version.replace(/^v/, "");
+      const release = (await latestRelease().catch(() => null)) ?? { version, url: RELEASES_PAGE, notes: answer.update.body ?? "" };
+      useUpdates.setState({ status: "available", installable: true, release: { ...release, version } });
+      return "available";
     }
+    if (answer.kind !== "failed") {
+      pending = null;
+      useUpdates.setState({ status: "current", release: null, installable: false });
+      return "current";
+    }
+    // Plugin absent ou sans réponse : vérification simple. La raison est gardée (et redite au clic, qui réessaie).
+    if (!answer.absent) console.error("Mise à jour dans l'app impossible :", answer.reason);
     pending = null;
     const release = await latestRelease();
     const found = release && isNewer(release.version, CURRENT) ? release : null;
-    useUpdates.setState({ status: found ? "available" : "current", release: found, installable: false });
+    useUpdates.setState({ status: found ? "available" : "current", release: found, installable: false, reason: answer.absent ? null : answer.reason });
     return found ? "available" : "current";
   } catch {
     useUpdates.setState({ status: "error", error: "network" });
@@ -144,19 +178,34 @@ export async function checkForUpdate(): Promise<UpdateStatus> {
  * redémarrage. `beforeRestart` enregistre le projet ouvert (avant l'installation). Sans installation possible : page de téléchargement.
  */
 export async function installUpdate(beforeRestart: () => Promise<void>): Promise<void> {
-  const { release, installable } = useUpdates.getState();
+  const { release, installable, error } = useUpdates.getState();
   if (!release) return;
-  if (!installable || !pending) {
+  if (error === "install") {
+    // L'installation a déjà échoué : le message propose la page, le bouton y mène.
     await openExternal(release.url);
     return;
   }
+  if (!installable || !pending) {
+    // Le plugin n'avait pas répondu à la vérification : un nouvel essai avant de renvoyer vers la page.
+    const answer = await askPlugin();
+    if (answer.kind === "update" && isNewer(answer.update.version, CURRENT)) {
+      pending = answer.update;
+      useUpdates.setState({ installable: true, reason: null });
+    } else {
+      if (answer.kind === "failed" && !answer.absent) useUpdates.setState({ reason: answer.reason });
+      await openExternal(release.url);
+      return;
+    }
+  }
+  const update = pending;
+  if (!update) return;
   let total = 0;
   let received = 0;
   useUpdates.setState({ status: "downloading", progress: null, error: null });
   try {
     // Enregistré avant l'installation : sous Windows, l'installeur ferme l'app dès qu'il démarre.
     await beforeRestart().catch(() => undefined);
-    await pending.downloadAndInstall((e) => {
+    await update.downloadAndInstall((e) => {
       if (e.event === "Started") total = e.data.contentLength ?? 0;
       else if (e.event === "Progress") {
         received += e.data.chunkLength;
