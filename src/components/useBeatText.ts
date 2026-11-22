@@ -12,6 +12,7 @@ export function useBeatText(): (key: string) => { label: string; hint: string } 
   const kind = useCosmos((s) => s.kind);
   const screenplay = useCosmos((s) => s.screenplay);
   const planCustom = useCosmos((s) => s.plan.custom);
-  const custom = useMemo(() => (kind === "scenario" ? customOf(screenplay?.elements ?? []) : planCustom), [kind, screenplay, planCustom]);
+  const scriptBeats = useCosmos((s) => s.plan.scriptBeats);
+  const custom = useMemo(() => (kind === "scenario" ? customOf(screenplay?.elements ?? [], scriptBeats) : planCustom), [kind, screenplay, planCustom, scriptBeats]);
   return useCallback((key: string) => beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, custom), [t, custom]);
 }

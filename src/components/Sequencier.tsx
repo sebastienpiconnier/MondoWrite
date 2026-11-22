@@ -54,6 +54,8 @@ export function Sequencier() {
   const anyPov = useMemo(() => nodes.some((n) => n.data.type === "scene" && n.data.fiche?.pov), [nodes]);
   const setScreenplay = useCosmos((s) => s.setScreenplay);
   const revealCard = useCosmos((s) => s.revealCard);
+  // Aides et nom des gabarits de l'auteur (cosmos.json) : le Fountain n'a que le nom des cases.
+  const scriptBeats = useCosmos((s) => s.plan.scriptBeats);
   const pagination = usePagination(true);
   const episodeLabel = useEpisodeLabel();
   // Saisons et épisodes repliés : un affichage, jamais enregistré.
@@ -305,7 +307,7 @@ export function Sequencier() {
               </p>
             )
           }
-          template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
+          template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements, scriptBeats) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
           about={template && !inSeries ? t.plan.templateAbout[template] : undefined}
         />
         {timeline ? (
@@ -386,7 +388,7 @@ export function Sequencier() {
                         value={episodeTemplate(episode.id)}
                         options={EPISODE_TEMPLATES}
                         allowNone
-                        custom={episodeTemplate(episode.id) === "perso" ? customOf(episodeScript(screenplay, episode.id).elements) : undefined}
+                        custom={episodeTemplate(episode.id) === "perso" ? customOf(episodeScript(screenplay, episode.id).elements, scriptBeats) : undefined}
                         onBuiltin={(key) => setEpisodeTemplate(episode.id, key ?? "")}
                       />
                     )}

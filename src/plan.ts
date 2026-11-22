@@ -207,6 +207,44 @@ export interface Plan {
   chapters?: Chapter[];
   /** Gabarit de l'auteur (template « perso ») : ses cases. Gardé quand on change de gabarit, pour y revenir. */
   custom?: CustomTemplate;
+  /**
+   * Scénario : ce que les sections du Fountain ne disent pas d'une case de l'auteur (clé `u3`), son aide et le nom
+   * de son gabarit (1.46.0). Le nom et le niveau restent ceux de la section. Une clé n'est jamais reprise, donc une
+   * entrée sans section ne gêne rien.
+   */
+  scriptBeats?: ScriptBeats;
+}
+
+/** Aide et nom du gabarit de chaque case de l'auteur d'un scénario, par clé. */
+export type ScriptBeats = Record<string, { hint?: string; tpl?: string }>;
+
+/** `scriptBeats` lu dans cosmos.json : clés de case de l'auteur, textes bornés. */
+export function readScriptBeats(raw: unknown): ScriptBeats | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const out: ScriptBeats = {};
+  for (const [key, v] of Object.entries(raw).slice(0, 400)) {
+    if (!isCustomBeat(key) || !v || typeof v !== "object") continue;
+    const { hint, tpl } = v as { hint?: unknown; tpl?: unknown };
+    const entry = {
+      ...(typeof hint === "string" && hint.trim() ? { hint: hint.trim().slice(0, MAX_HINT) } : {}),
+      ...(typeof tpl === "string" && tpl.trim() ? { tpl: tpl.trim().slice(0, MAX_LABEL) } : {}),
+    };
+    if (Object.keys(entry).length > 0) out[key] = entry;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** Scénario : un gabarit posé laisse son nom et ses aides dans `scriptBeats` (une case sans aide n'en garde pas). */
+export function withScriptBeats(plan: Plan, custom: CustomTemplate): Plan {
+  const next: ScriptBeats = { ...(plan.scriptBeats ?? {}) };
+  const tpl = custom.name.trim();
+  for (const b of custom.beats) {
+    const hint = (b.hint ?? "").trim();
+    const entry = { ...(hint ? { hint: hint.slice(0, MAX_HINT) } : {}), ...(tpl ? { tpl: tpl.slice(0, MAX_LABEL) } : {}) };
+    if (Object.keys(entry).length > 0) next[b.key] = entry;
+    else delete next[b.key];
+  }
+  return { ...plan, ...(Object.keys(next).length > 0 ? { scriptBeats: next } : {}) };
 }
 
 export const EMPTY_PLAN: Plan = { template: "libre", beats: {} };
@@ -227,7 +265,8 @@ export function readPlan(raw: unknown): Plan {
   const custom = readCustom((raw as { custom?: unknown }).custom);
   // Un gabarit de l'auteur sans cases relues redevient libre.
   const kind = isPlanTemplate(template) && (template !== "perso" || custom) ? template : "libre";
-  const next: Plan = { template: kind, beats: clean, ...(chapters.length > 0 ? { chapters } : {}), ...(custom ? { custom } : {}) };
+  const scriptBeats = readScriptBeats((raw as { scriptBeats?: unknown }).scriptBeats);
+  const next: Plan = { template: kind, beats: clean, ...(chapters.length > 0 ? { chapters } : {}), ...(custom ? { custom } : {}), ...(scriptBeats ? { scriptBeats } : {}) };
   return isEmptyPlan(next) ? EMPTY_PLAN : next;
 }
 
@@ -250,7 +289,7 @@ function readChapters(raw: unknown): Chapter[] {
 
 /** Rien à écrire dans le fichier : gabarit par défaut, aucune scène rangée, aucun chapitre. */
 export const isEmptyPlan = (plan: Plan) =>
-  plan.template === "libre" && Object.values(plan.beats).every((ids) => ids.length === 0) && (plan.chapters ?? []).length === 0 && !plan.custom;
+  plan.template === "libre" && Object.values(plan.beats).every((ids) => ids.length === 0) && (plan.chapters ?? []).length === 0 && !plan.custom && !plan.scriptBeats;
 
 /**
  * Plan à écrire : sans les cartes qui n'existent plus, ni les cases vides, ni les chapitres vides et

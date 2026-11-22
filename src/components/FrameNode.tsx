@@ -14,14 +14,15 @@ import { beatText, type CustomTemplate } from "../plan";
 import { customOf } from "../screenplay/template";
 import type { CosmosState } from "../store";
 
-/** Cases de l'auteur d'un scénario, relues une fois par texte (chaque cadre de case les lit à chaque changement du store). */
-const scriptCustom = new WeakMap<object, CustomTemplate | undefined>();
+/** Cases de l'auteur d'un scénario, relues une fois par texte et par aides (chaque cadre de case les lit à chaque changement du store). */
+let scriptCustom: { elements: object; extra: object | undefined; custom: CustomTemplate | undefined } | null = null;
 function customFor(s: CosmosState): CustomTemplate | undefined {
   if (s.kind !== "scenario") return s.plan.custom;
   const elements = s.screenplay?.elements;
   if (!elements) return undefined;
-  if (!scriptCustom.has(elements)) scriptCustom.set(elements, customOf(elements));
-  return scriptCustom.get(elements);
+  const extra = s.plan.scriptBeats;
+  if (scriptCustom?.elements !== elements || scriptCustom.extra !== extra) scriptCustom = { elements, extra, custom: customOf(elements, extra) };
+  return scriptCustom.custom;
 }
 
 function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
