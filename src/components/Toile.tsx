@@ -44,6 +44,7 @@ import { projectSections } from "../interactive/projectSections";
 import { useStoryMap } from "../interactive/useStoryMap";
 import { isChoiceEdgeId, readChoiceEdgeId } from "../interactive/storyMap";
 import { sceneIdsKey, withSceneArrows } from "../sceneArrows";
+import { junctionOrder } from "../projectJunctions";
 import { setupOf } from "../setups";
 import { END_TARGET } from "../interactive/choices";
 import { EdgeEditor, STORY_CHOICE_EVENT, TargetPicker, type StoryChoiceAsk } from "./StoryChoices";
@@ -739,15 +740,27 @@ export function Toile() {
     }
     commitLabel();
   };
+  // Les deux scènes d'un fil dans l'ordre du récit (celle qui vient d'abord prépare, d'ordinaire).
+  const storyFirst = (pair: [string, string]): [string, string] => {
+    const st = useCosmos.getState();
+    const order = junctionOrder(st.kind, st.nodes, st.plan, st.screenplay);
+    const rank = (id: string) => {
+      const i = order.indexOf(id);
+      return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    return rank(pair[1]) < rank(pair[0]) ? [pair[1], pair[0]] : pair;
+  };
   // Préparer et payer (#119) : un fil entre deux scènes d'un roman ou d'un scénario peut dire laquelle prépare l'autre.
   const setupEdge = labelEditor && !story ? edges.find((e) => e.id === labelEditor.edgeId) : undefined;
   const setupEnds =
     setupEdge && sceneIds.has(setupEdge.source) && sceneIds.has(setupEdge.target)
-      ? ([setupEdge.source, setupEdge.target] as const).map((id) => {
+      ? storyFirst([setupEdge.source, setupEdge.target]).map((id) => {
           const node = nodes.find((n) => n.id === id);
           return { id, title: String((node?.data as CardData | undefined)?.title ?? "").trim() || t.manuscript.untitled };
         })
       : null;
+  // L'autre sens n'est proposé que s'il est déjà choisi (Bible, ou scènes inversées depuis) : il se choisit dans la Bible.
+  const setupReversed = !!(setupEnds && setupEdge && setupOf(setupEdge) === setupEnds[1].id);
 
   return (
     <div
@@ -934,7 +947,9 @@ export function Toile() {
             >
               <option value="">{t.toile.setupNone}</option>
               <option value={setupEnds[0].id}>{fmt(t.toile.setupOption, { a: setupEnds[0].title, b: setupEnds[1].title })}</option>
-              <option value={setupEnds[1].id}>{fmt(t.toile.setupOption, { a: setupEnds[1].title, b: setupEnds[0].title })}</option>
+              {setupReversed && (
+                <option value={setupEnds[1].id}>{fmt(t.toile.setupOption, { a: setupEnds[1].title, b: setupEnds[0].title })}</option>
+              )}
             </select>
           )}
           {/* Délier : le fil part (annulable). Le focus reste dans le champ jusqu'au clic. */}

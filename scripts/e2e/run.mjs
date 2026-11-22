@@ -328,15 +328,18 @@ const scenarios = [
       await page.mouse.click(mid.x, mid.y);
       const order = page.getByRole("combobox", { name: "Ordre des deux scènes" });
       await until(() => order.isVisible(), "l'éditeur du fil ne propose pas l'ordre des deux scènes");
+      // Une seule option : la scène qui vient d'abord prépare l'autre.
       const sheet = await order.evaluate((el) => [...el.options].map((o) => o.textContent));
-      const fusil = sheet.findIndex((x) => x?.startsWith("Le fusil prépare"));
-      assert(fusil > 0, `pas d'option « Le fusil prépare… » : ${JSON.stringify(sheet)}`);
-      await order.selectOption({ index: fusil });
+      assert(sheet.length === 2 && sheet[1]?.startsWith("Le dîner prépare"), `options inattendues : ${JSON.stringify(sheet)}`);
+      await order.selectOption({ index: 1 });
       await page.keyboard.press("Escape");
       await until(() => page.locator(".react-flow__edge.is-setup").isVisible(), "le fil ne se dessine pas en « prépare »");
       await until(() => page.locator(".react-flow").getByText("prépare", { exact: true }).first().isVisible(), "le fil sans étiquette ne dit pas « prépare »");
-      await h.saved((f) => Object.values(JSON.parse(f["cosmos.json"] ?? "{}").setups ?? {}).includes(b), "le sens du fil n'est pas enregistré dans setups");
-      // Le fusil (2e scène) prépare le dîner (1re) : « Vérifier » le signale.
+      await h.saved((f) => Object.values(JSON.parse(f["cosmos.json"] ?? "{}").setups ?? {}).includes(a), "le sens du fil n'est pas enregistré dans setups");
+      // Le fusil passe avant le dîner : la scène qui paie vient avant celle qui prépare, « Vérifier » le signale.
+      await h.view(2);
+      await page.getByRole("button", { name: "Monter la scène « Le fusil »" }).click();
+      await h.wait(200);
       await h.view(4);
       await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
       const item = page.locator(".review-group", { hasText: "Une scène qui paie avant d’être préparée" }).locator(".review-item");
