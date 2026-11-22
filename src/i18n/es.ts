@@ -2296,6 +2296,7 @@ export const es = {
       moveUp: "Subir la escena «{title}»",
       moveDown: "Bajar la escena «{title}»",
       moved: "Escena «{title}» movida a la posición {n}.",
+      added: "Escena «{title}» añadida en «{beat}».",
       templateHint: "Las casillas de la plantilla son secciones del guion. Todas las escenas empiezan en la primera: colócalas con «Colocar», las flechas o arrastrándolas.",
       noSection: "Antes de las secciones",
     },

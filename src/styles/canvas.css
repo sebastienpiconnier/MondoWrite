@@ -86,7 +86,9 @@
 /* De loin, le titre est dans la couche des titres (FrameLabels), au-dessus des cartes : l'en-tête garde sa place sans texte. */
 .frame.is-far .frame-title, .frame.is-far .frame-kicker { visibility: hidden; }
 /* De loin, l'aide d'une case vide est illisible et le titre agrandi la recouvrirait. */
-.frame.is-far .frame-empty { visibility: hidden; }
+.frame.is-far .frame-empty, .frame.is-far .frame-hint { visibility: hidden; }
+/* Description d'une case de gabarit (aide, ou texte de l'auteur) : deux lignes au plus sous le titre, le reste au survol. */
+.frame-hint { margin: 0 18px 6px; color: var(--muted); font: calc(14px * var(--frame-boost, 1))/1.4 var(--font-ui); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .frame-labels { position: absolute; inset: 0; z-index: 900; pointer-events: none; }
 .frame-label { position: absolute; top: 0; left: 0; box-sizing: border-box; padding: 6px; font-size: calc(var(--frame-title) * var(--frame-boost, 1)); }
 .frame-label-text { display: inline-flex; flex-direction: column; gap: 0.15em; max-width: 100%; box-sizing: border-box; padding: 0.25em 0.5em 0.3em; border-radius: 0.35em; background: color-mix(in srgb, var(--surface) 90%, transparent); box-shadow: var(--shadow-card); }

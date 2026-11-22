@@ -1932,6 +1932,7 @@ export const en: Messages = {
       moveUp: "Move the scene “{title}” up",
       moveDown: "Move the scene “{title}” down",
       moved: "Scene “{title}” moved to position {n}.",
+      added: "Scene “{title}” added to “{beat}”.",
       templateHint: "The template’s slots are sections of the screenplay. Every scene starts in the first one: place them with “Arrange”, the arrows, or by dragging.",
       noSection: "Before the sections",
     },

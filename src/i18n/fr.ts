@@ -1881,6 +1881,7 @@ export const fr = {
       moveUp: "Monter la scène « {title} »",
       moveDown: "Descendre la scène « {title} »",
       moved: "Scène « {title} » déplacée en position {n}.",
+      added: "Scène « {title} » ajoutée dans « {beat} ».",
       templateHint: "Les cases du gabarit sont des sections du scénario. Toutes les scènes commencent dans la première : range-les avec « Ranger », les flèches ou en les glissant.",
       noSection: "Avant les sections",
     },

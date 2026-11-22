@@ -153,6 +153,8 @@ export interface CosmosState {
   stepBookScene: (id: string, way: "up" | "down") => boolean;
   /** Crée une carte Scène et la range dans cette case du plan. */
   addPlanScene: (title: string, beat: string, chapterId?: string | null) => string;
+  /** Nouvelle scène rangée à la fin d'une case du gabarit : Plan d'un roman, ou séquencier d'un scénario (épisode donné). */
+  addBeatScene: (title: string, beat: string, episode?: string | null) => string;
   /**
    * Manuscrit, deux fois Entrée : une nouvelle scène juste après `afterId`, dans la même case du plan et le
    * même chapitre, avec le texte `html` (la suite de la scène coupée). Rend son identifiant.
@@ -2583,6 +2585,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       followStory();
       touch();
       return true;
+    },
+    addBeatScene: (title, beat, episode) => {
+      const { kind, screenplay } = get();
+      if (kind !== "scenario" || !screenplay) return get().addPlanScene(title, beat);
+      // Scénario : la carte, son en-tête à la fin de l'épisode visé, puis dans la case (une seule étape).
+      record();
+      const card: CardData = { id: newId(), type: "scene", title, html: "" };
+      const spot = firstFreeCell(occupied());
+      set({ nodes: [...get().nodes, toNode(card, spot.x, spot.y)] });
+      const next = inEpisode(screenplay, episode === undefined ? get().currentEpisode : episode, (sp) => {
+        const added = appendScene(sp, { id: card.id, title });
+        return { ...added, elements: placeSceneInBeat(added.elements, card.id, beat) };
+      });
+      get().setScreenplay(next, true);
+      touch();
+      return card.id;
     },
     addPlanScene: (title, beat, chapterId) => {
       record();

@@ -2300,6 +2300,7 @@ export const ca = {
       moveUp: "Puja l’escena «{title}»",
       moveDown: "Baixa l’escena «{title}»",
       moved: "Escena «{title}» moguda a la posició {n}.",
+      added: "Escena «{title}» afegida a «{beat}».",
       templateHint: "Les ranures de la plantilla són seccions del guió. Totes les escenes comencen a la primera: col·loca-les amb «Ordena», les fletxes o arrossegant-les.",
       noSection: "Abans de les seccions",
     },
