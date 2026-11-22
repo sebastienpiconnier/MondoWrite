@@ -999,6 +999,7 @@ export const en: Messages = {
       objectOnce: "An object used only once",
       threadUnused: "A plot or theme with no scene",
       setupAfterPayoff: "A scene that pays off before its setup",
+      transitionReread: "A transition to reread",
       beatDrift: "A beat far from its usual place",
     },
     hints: {
@@ -1035,6 +1036,7 @@ export const en: Messages = {
       objectOnce: "An object that is set up should pay off; one that pays off should have been set up.",
       threadUnused: "A thread you planned that the story doesn’t carry yet: link it to the scenes where it matters, or keep it in reserve.",
       setupAfterPayoff: "One scene sets up another, but comes after it in the story. It may be on purpose (a flashback): otherwise, put them back in order.",
+      transitionReread: "A scene has new neighbors: the transition was written for another scene. Reread the passage, then “Looks good”.",
       beatDrift: "The story ribbon compares where each beat begins with its usual place in this structure. A gap can be intended.",
     },
     items: {
@@ -1066,8 +1068,12 @@ export const en: Messages = {
       objectOnce: "“{name}” is named in only one scene: where is it set up, where does it pay off?",
       threadUnused: "“{name}” appears in no scene: where does the story carry it?",
       setupAfterPayoff: "“{payoff}” (scene {b}) comes before “{setup}” (scene {a}), which sets it up",
+      transitionReread: "Reread the passage from “{from}” (scene {a}) to “{to}” (scene {b})",
+      transitionStart: "Reread the opening: “{to}” now starts the story",
       beatDrift: "“{beat}” begins at {at}% of the story, usually around {target}%.",
     },
+    approveTransition: "Looks good",
+    approveAll: "Approve all",
     intended: "It’s intended",
     openSheet: "Open the profile",
     newEpisode: "New episode",

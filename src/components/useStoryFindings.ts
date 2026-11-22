@@ -4,6 +4,8 @@
 
 import { unthreaded } from "../threadFilter";
 import { setupProblems } from "../setups";
+import { transitionsToReread } from "../transitions";
+import { approvedJunctions, junctionOrder } from "../projectJunctions";
 import { numbersKey, usePaperbackSpreads } from "../interactive/spreads";
 import { useMemo } from "react";
 import { currentScript, useCosmos } from "../store";
@@ -62,6 +64,11 @@ export function useStoryFindings(): Finding[] {
       ...(p.label ? { names: [p.label] } : {}),
     }));
   }, [interactive, nodes, plan, manuscript, metaKeep, untitled, spreads]);
+  // Enchaînements à relire après un déplacement (#120), jamais dans un roman interactif.
+  const rereads = useMemo(
+    () => (interactive ? [] : transitionsToReread(approvedJunctions(metaKeep), junctionOrder(kind, nodes, plan, full))),
+    [interactive, metaKeep, kind, nodes, plan, full],
+  );
   const story = useMemo(() => {
     const cards = nodes.map((n) => n.data);
     const order = kind === "scenario" ? [] : bookOrder(nodes, plan);
@@ -98,7 +105,7 @@ export function useStoryFindings(): Finding[] {
     // Intrigues et thèmes reliés à aucune scène du récit (#118).
     const sceneIds = kind === "scenario" ? listScenes(full?.elements ?? elements).flatMap((x) => (x.cardId ? [x.cardId] : [])) : order;
     const unthreadedIds = unthreaded(cards, edges, sceneIds).map((c) => c.id);
-    return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined, series, unthreaded: unthreadedIds, setups: setupProblems(edges, sceneIds) });
-  }, [kind, screenplay, full, paper, nodes, plan, manuscript, pitch, lang, drifts, edges, episodeLabel]);
+    return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined, series, unthreaded: unthreadedIds, setups: setupProblems(edges, sceneIds), rereads });
+  }, [kind, screenplay, full, paper, nodes, plan, manuscript, pitch, lang, drifts, edges, episodeLabel, rereads]);
   return useMemo(() => (verified.length ? [...verified, ...story] : story), [verified, story]);
 }

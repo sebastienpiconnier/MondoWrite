@@ -344,6 +344,44 @@ const scenarios = [
     },
   },
   {
+    name: "enchaînements à relire : une scène déplacée dans le Plan, signalée puis validée dans « Vérifier » (#120)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Enchaînements");
+      await h.view(2);
+      for (const title of ["Un", "Deux", "Trois", "Quatre"]) {
+        await page.getByPlaceholder("Nouvelle scène…").fill(title);
+        await page.getByPlaceholder("Nouvelle scène…").press("Enter");
+        await h.wait(200);
+      }
+      // L'ordre de départ est validé : rien à relire.
+      await h.view(4);
+      await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
+      const group = page.locator(".review-group", { hasText: "Un enchaînement à relire" });
+      await h.wait(300);
+      assert((await group.count()) === 0, "un enchaînement est signalé sans aucun déplacement");
+      // « Quatre » monte d'un cran : Un, Deux, Quatre, Trois.
+      await h.view(2);
+      await page.getByRole("button", { name: "Monter la scène « Quatre »" }).click();
+      await h.view(4);
+      await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
+      const items = group.locator(".review-item");
+      await until(async () => (await items.count()) === 2, "les deux nouveaux enchaînements ne sont pas signalés");
+      await until(() => items.first().getByText("Relire le passage de « Deux » (scène 2) à « Quatre » (scène 3)").isVisible(), "le premier enchaînement n'est pas « Deux » vers « Quatre »");
+      await items.first().getByRole("button", { name: "C’est bon" }).click();
+      await until(async () => (await items.count()) === 1, "« C'est bon » ne retire pas l'enchaînement");
+      await h.saved((f) => (JSON.parse(f["cosmos.json"] ?? "{}").transitions ?? []).length >= 5, "les enchaînements validés ne sont pas enregistrés");
+      // Remonter « Quatre » d'un cran encore puis tout valider.
+      await h.view(2);
+      await page.getByRole("button", { name: "Monter la scène « Quatre »" }).click();
+      await h.view(4);
+      await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
+      await until(async () => (await items.count()) >= 2, "le second déplacement n'est pas signalé");
+      await group.getByRole("button", { name: "Tout valider" }).click();
+      await until(async () => (await group.count()) === 0, "« Tout valider » laisse des enchaînements à relire");
+    },
+  },
+  {
     name: "exemple : ouverture et passage par les quatre vues",
     async run(h) {
       const { page } = h;

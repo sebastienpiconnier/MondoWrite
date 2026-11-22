@@ -1046,6 +1046,7 @@ export const es = {
       objectOnce: "Un objeto que solo sirve una vez",
       threadUnused: "Una trama o un tema sin escena",
       setupAfterPayoff: "Una escena que paga antes de prepararse",
+      transitionReread: "Una transición que releer",
       beatDrift: "Una casilla lejos de su sitio",
     },
     hints: {
@@ -1069,6 +1070,7 @@ export const es = {
       objectOnce: "Un objeto que se planta tiene que servir; un objeto que sirve tiene que haberse plantado.",
       threadUnused: "Un hilo previsto que el relato aún no lleva: únelo a las escenas donde cuenta, o guárdalo en reserva.",
       setupAfterPayoff: "Una escena prepara otra, pero llega después en el relato. Quizá sea a propósito (un salto atrás): si no, vuelve a ordenarlas.",
+      transitionReread: "Una escena tiene nuevas vecinas: la transición se escribió para otra escena. Relee el pasaje y luego «Está bien».",
       beatDrift: "La cinta del relato compara dónde empieza cada casilla con su lugar habitual en esta estructura. Una diferencia puede ser buscada.",
     },
     items: {
@@ -1097,8 +1099,12 @@ export const es = {
       objectOnce: "«{name}» solo se nombra en una escena: ¿dónde se planta, dónde sirve?",
       threadUnused: "«{name}» no aparece en ninguna escena: ¿dónde lo lleva el relato?",
       setupAfterPayoff: "«{payoff}» (escena {b}) llega antes que «{setup}» (escena {a}), que la prepara",
+      transitionReread: "Releer el pasaje de «{from}» (escena {a}) a «{to}» (escena {b})",
+      transitionStart: "Releer el comienzo: «{to}» abre ahora el relato",
       beatDrift: "«{beat}» empieza al {at} % del relato, normalmente hacia el {target} %.",
     },
+    approveTransition: "Está bien",
+    approveAll: "Validar todo",
     intended: "Es a propósito",
     openSheet: "Abrir la ficha",
     newEpisode: "Episodio nuevo",

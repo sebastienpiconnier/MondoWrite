@@ -1078,6 +1078,7 @@ export const ca = {
       objectOnce: "Un objecte usat un sol cop",
       threadUnused: "Una trama o un tema sense escena",
       setupAfterPayoff: "Una escena que paga abans de preparar-se",
+      transitionReread: "Una transició per rellegir",
       beatDrift: "Un temps lluny del seu lloc habitual",
     },
     hints: {
@@ -1101,6 +1102,7 @@ export const ca = {
       objectOnce: "Un objecte que es presenta ha de tenir recorregut; un que resol una situació s’ha d’haver presentat abans.",
       threadUnused: "Un fil previst que el relat encara no porta: uneix-lo a les escenes on compta, o guarda’l en reserva.",
       setupAfterPayoff: "Una escena en prepara una altra, però arriba després en el relat. Potser és volgut (un salt enrere): si no, torna-les a ordenar.",
+      transitionReread: "Una escena té veïnes noves: la transició es va escriure per a una altra escena. Rellegeix el passatge i després «Està bé».",
       beatDrift: "La cinta de la història compara on comença cada temps amb el seu lloc habitual en aquesta estructura. Una desviació pot ser intencionada.",
     },
     items: {
@@ -1129,8 +1131,12 @@ export const ca = {
       objectOnce: "«{name}» només s’esmenta en una escena: on es presenta i on té efecte?",
       threadUnused: "«{name}» no apareix en cap escena: on el porta el relat?",
       setupAfterPayoff: "«{payoff}» (escena {b}) arriba abans que «{setup}» (escena {a}), que la prepara",
+      transitionReread: "Rellegir el passatge de «{from}» (escena {a}) a «{to}» (escena {b})",
+      transitionStart: "Rellegir el començament: «{to}» obre ara el relat",
       beatDrift: "«{beat}» comença al {at}% de la història, habitualment cap al {target}%.",
     },
+    approveTransition: "Està bé",
+    approveAll: "Validar-ho tot",
     intended: "És intencionat",
     openSheet: "Obre la fitxa",
     newEpisode: "Episodi nou",

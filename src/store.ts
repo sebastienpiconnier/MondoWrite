@@ -17,6 +17,8 @@ import { flushPendingEdits } from "./pendingEdits";
 import { vracCardHeight, vracGrid, type VracCard, type VracLink } from "./ai/vrac";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
 import { setupOf } from "./setups";
+import { TRANSITIONS_KEY, approveJunctions, withNewScenes, type Junction } from "./transitions";
+import { approvedJunctions, junctionOrder } from "./projectJunctions";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, sceneBody, sceneEnd, setSceneBody } from "./screenplay/sceneText";
 import { isOmitted, omitScene, omittedIndex } from "./screenplay/omit";
@@ -176,6 +178,10 @@ export interface CosmosState {
   /** Libellé d'un fait (gardé dans `storyFacts` de cosmos.json, hors historique) ; null l'oublie. */
   setFactLabel: (name: string, label: string | null) => void;
   /** Roman interactif, lot 12 : numéros des sections gardés dans cosmos.json (hors historique). */
+  /** Enchaînements à relire (#120) : retient sans les faire relire ceux des scènes nouvelles (et l'ordre du moment au premier passage). */
+  syncJunctions: () => void;
+  /** « C'est bon » ou « Tout valider » de « Vérifier » : enchaînements validés (ajout seulement, hors historique). */
+  approveJunctions: (list: readonly Junction[]) => void;
   freezeSections: () => void;
   /** Donne un numéro précis à une section et le garde ; false si c'est refusé (départ, 1, numéro gardé ailleurs). */
   setSectionNumber: (id: string, n: number) => boolean;
@@ -866,6 +872,8 @@ const HISTORY_MERGE_MS = 800;
 
 /** Roman interactif : les choix suivent le nom de leur scène (voir l'abonnement en fin de fichier), sauf pendant une annulation. */
 let followSceneNames = true;
+/** Enchaînements à relire (#120) : une relecture de l'ordre est déjà prévue après l'action en cours. */
+let junctionsQueued = false;
 
 export const useCosmos = create<CosmosState>((set, get) => {
   const touch = () => set({ status: "modifie" });
@@ -2729,6 +2737,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       get().setFactLabel(name, clean);
       return name;
     },
+    syncJunctions: () => {
+      const s = get();
+      if (s.screen !== "project" || isInteractiveMeta(s.metaKeep)) return;
+      const approved = approvedJunctions(s.metaKeep);
+      const next = withNewScenes(approved, junctionOrder(s.kind, s.nodes, s.plan, s.screenplay));
+      if (next === approved) return;
+      set({ metaKeep: { ...s.metaKeep, [TRANSITIONS_KEY]: next } });
+    },
+    approveJunctions: (list) => {
+      const s = get();
+      const approved = approvedJunctions(s.metaKeep);
+      const next = approveJunctions(approved, list);
+      if (approved !== null && next === approved) return;
+      set({ metaKeep: { ...s.metaKeep, [TRANSITIONS_KEY]: next } });
+      touch();
+    },
     freezeSections: () => {
       const s = get();
       if (s.screen !== "project" || !isInteractiveMeta(s.metaKeep)) return;
@@ -2815,6 +2839,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set(toTrash([fromId], get()));
       // Une fusion n'est pas une suppression : pas de message « à la corbeille » ici (`mergeWithNext` a le sien).
       set({ trashNotice: null });
+      // Une fusion ne fait rien relire (#120) : la scène qui suivait la scène fondue suit maintenant celle qui reste.
+      const st = get();
+      const after = junctionOrder(st.kind, st.nodes, st.plan, st.screenplay);
+      const at = after.indexOf(intoId);
+      if (at >= 0 && at + 1 < after.length) st.approveJunctions([{ prev: intoId, next: after[at + 1] }]);
       touch();
       return { ...undo, step: null };
     },
@@ -4458,4 +4487,21 @@ useCosmos.subscribe((s, prev) => {
   if (!followSceneNames || s.screen !== "project" || !isInteractiveMeta(s.metaKeep)) return;
   if (s.nodes === prev.nodes && s.plan === prev.plan && s.screen === prev.screen) return;
   s.freezeSections();
+});
+
+/**
+ * Enchaînements à relire (#120) : une scène nouvelle (ou coupée) est retenue avec sa voisine sans rien faire relire,
+ * et au premier passage tout l'ordre du moment est validé. Hors historique, dans `metaKeep` (clé `transitions`).
+ */
+useCosmos.subscribe((s, prev) => {
+  if (!followSceneNames || s.screen !== "project") return;
+  if (s.nodes === prev.nodes && s.plan === prev.plan && s.screenplay === prev.screenplay && s.screen === prev.screen && s.metaKeep === prev.metaKeep) return;
+  // Après l'action entière : une scène coupée reçoit sa carte puis sa place dans le plan en deux temps, et l'ordre
+  // intermédiaire la retiendrait à la mauvaise place.
+  if (junctionsQueued) return;
+  junctionsQueued = true;
+  queueMicrotask(() => {
+    junctionsQueued = false;
+    useCosmos.getState().syncJunctions();
+  });
 });

@@ -936,6 +936,7 @@ export const fr = {
       objectOnce: "Un objet qui ne sert qu’une fois",
       threadUnused: "Une intrigue ou un thème sans scène",
       setupAfterPayoff: "Une scène qui paie avant d’être préparée",
+      transitionReread: "Un enchaînement à relire",
       beatDrift: "Une case loin de sa place",
     },
     hints: {
@@ -972,6 +973,7 @@ export const fr = {
       objectOnce: "Un objet posé doit servir ; un objet qui sert doit avoir été posé.",
       threadUnused: "Un fil prévu que le récit ne porte pas encore : relie-le aux scènes où il compte, ou laisse-le en réserve.",
       setupAfterPayoff: "Une scène en prépare une autre, mais elle arrive après elle dans le récit. C’est peut-être voulu (un retour en arrière) : sinon, remets-les dans l’ordre.",
+      transitionReread: "Une scène a changé de voisine : la transition a été écrite pour une autre scène. Relis le passage, puis « C’est bon ».",
       beatDrift: "Le ruban du récit compare où chaque case commence à sa place habituelle dans cette structure. Un écart peut être voulu.",
     },
     items: {
@@ -1003,8 +1005,12 @@ export const fr = {
       objectOnce: "« {name} » n’est nommé que dans une scène : où le pose-t-on, où sert-il ?",
       threadUnused: "« {name} » n’apparaît dans aucune scène : où le récit le porte-t-il ?",
       setupAfterPayoff: "« {payoff} » (scène {b}) arrive avant « {setup} » (scène {a}), qui la prépare",
+      transitionReread: "Relire le passage de « {from} » (scène {a}) à « {to} » (scène {b})",
+      transitionStart: "Relire le début du récit : « {to} » l’ouvre maintenant",
       beatDrift: "« {beat} » commence à {at} % du récit, d’ordinaire vers {target} %.",
     },
+    approveTransition: "C’est bon",
+    approveAll: "Tout valider",
     intended: "C’est voulu",
     openSheet: "Ouvrir la fiche",
     newEpisode: "Nouvel épisode",

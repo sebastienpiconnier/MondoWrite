@@ -37,8 +37,8 @@ export const INTERACTIVE_RULES: readonly RuleKey[] = [
 ];
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
-export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent" | "threadUnused" | "setupAfterPayoff";
-export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "episodeLength", "principalAbsent", "secretNoReveal", "secretNoClue", "objectOnce", "threadUnused", "setupAfterPayoff", "beatDrift"];
+export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent" | "threadUnused" | "setupAfterPayoff" | "transitionReread";
+export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "episodeLength", "principalAbsent", "secretNoReveal", "secretNoClue", "objectOnce", "threadUnused", "setupAfterPayoff", "transitionReread", "beatDrift"];
 
 export const RULE_ORDER: RuleKey[] = [
   ...INTERACTIVE_RULES,
@@ -62,6 +62,7 @@ export const RULE_ORDER: RuleKey[] = [
   "objectOnce",
   "threadUnused",
   "setupAfterPayoff",
+  "transitionReread",
   "beatDrift",
 ];
 
@@ -290,6 +291,8 @@ export interface StoryExtras {
   unthreaded?: readonly string[];
   /** Préparer et payer (#119) : fils dont la scène qui paie arrive avant celle qui prépare (`setupProblems`). */
   setups?: readonly { linkId: string; setup: string; payoff: string; setupRank: number; payoffRank: number }[];
+  /** Enchaînements à relire après un déplacement (#120, `transitionsToReread`) : scène d'avant (vide au début), scène, rang. */
+  rereads?: readonly { prev: string; next: string; rank: number }[];
 }
 
 /** Épisodes écrits de suite sans un personnage principal avant d'en faire une question. */
@@ -355,6 +358,10 @@ export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman
   const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() ?? "";
   for (const p of extras.setups ?? []) {
     out.push({ key: `setupAfterPayoff:${p.linkId}:${p.setupRank}:${p.payoffRank}`, rule: "setupAfterPayoff", at: -1, scene: 0, sceneId: p.payoff, text: "", names: [titleOf(p.setup), titleOf(p.payoff)], counts: [p.setupRank, p.payoffRank] });
+  }
+  // Un enchaînement nouveau après un déplacement (#120) : `text` garde la scène d'avant, pour « C'est bon ».
+  for (const r of extras.rereads ?? []) {
+    out.push({ key: `transitionReread:${r.prev}>${r.next}`, rule: "transitionReread", at: -1, scene: 0, sceneId: r.next, text: r.prev, names: [titleOf(r.prev), titleOf(r.next)], counts: [r.rank - 1, r.rank] });
   }
   // Une case du gabarit qui commence loin de sa place habituelle : on y va par sa première scène.
   for (const d of extras.drifts ?? []) {

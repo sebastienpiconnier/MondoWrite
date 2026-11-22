@@ -887,7 +887,9 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .review-actions button { min-height: 32px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 0.8125rem; cursor: pointer; }
 .review-primary { border: 0; background: var(--accent); color: var(--surface); }
 .review-ignore { border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); }
-@media (pointer: coarse) { .review-actions button { min-height: 44px; } }
+/* « Tout valider » des enchaînements à relire (#120) : sous l'aide du groupe, comme un bouton d'action. */
+.review-all { align-self: flex-start; min-height: 32px; margin: 0 0 4px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 0.8125rem; cursor: pointer; }
+@media (pointer: coarse) { .review-actions button, .review-all { min-height: 44px; } }
 .review-ignored { margin: 0; color: var(--ink-2); font-size: 0.8125rem; }
 /* Questions de l'IA (relecture, AiReview.tsx) : en tête de « Vérifier », un liseré d'accent pour les distinguer des points sans IA. */
 .ai-review { padding-left: 10px; border-left: 3px solid var(--accent); }

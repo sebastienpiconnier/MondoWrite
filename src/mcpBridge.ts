@@ -1,6 +1,8 @@
 // Assistant externe par MCP, écriture (#62, lot 3) : branche les demandes du serveur sur le store. Chargé à la
 // demande par la boucle de `startMcpBridge` (mcp.ts), seulement quand une demande arrive.
 
+import { transitionsToReread } from "./transitions";
+import { approvedJunctions, junctionOrder } from "./projectJunctions";
 import { noteAssistantWrite } from "./assistantNotice";
 import { getT } from "./i18n";
 import { publishOpenProject, useCosmos } from "./store";
@@ -13,7 +15,7 @@ import { canvasCenter } from "./canvasCenter";
 import { buildMcpSnapshot } from "./mcpSnapshot";
 import { bookOrder } from "./book";
 import { chapterNumbers } from "./plan";
-import { showsInteractive } from "./interactive";
+import { isInteractiveMeta, showsInteractive } from "./interactive";
 import { interactiveSlugs } from "./interactive/scenes";
 import { projectFacts } from "./interactive/projectFacts";
 import { applyMcpRequest, type McpAnswer, type McpRequest, type McpStore } from "./mcpWrite";
@@ -211,6 +213,7 @@ function liveSource(): LiveSource {
     nodes: st.nodes,
     plan: st.plan,
     metaKeep: st.metaKeep,
+    rereads: st.kind !== "scenario" && isInteractiveMeta(st.metaKeep) ? [] : transitionsToReread(approvedJunctions(st.metaKeep), junctionOrder(st.kind, st.nodes, st.plan, st.screenplay)),
     readVersions: (cardId) => storage.readVersions(cardId),
   };
 }

@@ -18,6 +18,13 @@ import { AiQuestions, useAiReviewActive } from "./AiReview";
 const useIgnored = create<{ keys: Set<string> }>(() => ({ keys: new Set() }));
 const ignore = (key: string) => useIgnored.setState((s) => ({ keys: new Set(s.keys).add(key) }));
 
+/** Questions sur l'histoire qui mènent au texte plutôt qu'à une fiche. */
+const TO_TEXT: readonly string[] = ["beatDrift", "setupAfterPayoff", "transitionReread"];
+
+/** Enchaînements relus (#120) : gardés dans le projet, ils ne reviennent plus. La scène d'avant est dans `text`. */
+const approveFindings = (list: readonly Finding[]) =>
+  useCosmos.getState().approveJunctions(list.flatMap((f) => (f.sceneId ? [{ prev: f.text, next: f.sceneId }] : [])));
+
 /** Nombre de points encore à regarder (pour le bouton « Vérifier · N »). */
 export function useOpenFindings(findings: Finding[]): number {
   const keys = useIgnored((s) => s.keys);
@@ -90,6 +97,10 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
         return fmt(t.items.objectOnce, { name: f.names![0] });
       case "threadUnused":
         return fmt(t.items.threadUnused, { name: f.names![0] });
+      case "transitionReread":
+        return f.text
+          ? fmt(t.items.transitionReread, { from: f.names![0] || all.manuscript.untitled, to: f.names![1] || all.manuscript.untitled, a: f.counts![0], b: f.counts![1] })
+          : fmt(t.items.transitionStart, { to: f.names![1] || all.manuscript.untitled });
       case "setupAfterPayoff":
         return fmt(t.items.setupAfterPayoff, { setup: f.names![0] || all.manuscript.untitled, payoff: f.names![1] || all.manuscript.untitled, a: f.counts![0], b: f.counts![1] });
       case "noEnding":
@@ -124,7 +135,7 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
     if (!STORY_RULES.includes(f.rule)) return onGo(f);
     const s = useCosmos.getState();
     // Une case loin de sa place : on va à sa première scène, dans le texte.
-    if ((f.rule === "beatDrift" || f.rule === "setupAfterPayoff") && f.sceneId) return s.openInManuscript(f.sceneId);
+    if ((f.rule === "beatDrift" || f.rule === "setupAfterPayoff" || f.rule === "transitionReread") && f.sceneId) return s.openInManuscript(f.sceneId);
     // La longueur d'un épisode : on ouvre cet épisode dans le séquencier.
     if (f.rule === "episodeLength" && f.sceneId) {
       s.openEpisode(f.sceneId);
@@ -148,10 +159,15 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
             {t.rules[g.rule]} · {g.items.length}
           </h3>
           <p className="review-hint">{t.hints[g.rule]}</p>
+          {g.rule === "transitionReread" && g.items.length > 1 && (
+            <button type="button" className="review-primary review-all" onClick={() => approveFindings(g.items)}>
+              {t.approveAll}
+            </button>
+          )}
           <ul className="review-list">
             {g.items.map((f) => (
               <li key={f.key} className="review-item">
-                <button type="button" className="review-go" title={STORY_RULES.includes(f.rule) && !INTERACTIVE_RULES.includes(f.rule) ? t.openSheet : t.goTo} onClick={() => go(f)}>
+                <button type="button" className="review-go" title={STORY_RULES.includes(f.rule) && !INTERACTIVE_RULES.includes(f.rule) && !TO_TEXT.includes(f.rule) ? t.openSheet : t.goTo} onClick={() => go(f)}>
                   {label(f)}
                 </button>
                 {f.rule === "frequentWords" && (
@@ -204,9 +220,15 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
                       {t.showOnMap}
                     </button>
                   )}
-                  <button type="button" className="review-ignore" onClick={() => ignore(f.key)}>
-                    {STORY_RULES.includes(f.rule) || INTERACTIVE_RULES.includes(f.rule) ? t.intended : t.ignore}
-                  </button>
+                  {f.rule === "transitionReread" ? (
+                    <button type="button" className="review-ignore" onClick={() => approveFindings([f])}>
+                      {t.approveTransition}
+                    </button>
+                  ) : (
+                    <button type="button" className="review-ignore" onClick={() => ignore(f.key)}>
+                      {STORY_RULES.includes(f.rule) || INTERACTIVE_RULES.includes(f.rule) ? t.intended : t.ignore}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}

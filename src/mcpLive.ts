@@ -53,6 +53,8 @@ export interface LiveSource {
   nodes?: readonly Positioned[];
   plan?: Plan;
   metaKeep?: Record<string, unknown>;
+  /** Enchaînements à relire après un déplacement (#120), calculés par l'app (vides dans un roman interactif). */
+  rereads?: { prev: string; next: string; rank: number }[];
 }
 
 export const LIVE_TOOLS = ["todo_list", "read_comments", "project_stats", "review", "scene_versions", "read_journal"] as const;
@@ -183,6 +185,7 @@ const MCP_FIX: Record<string, string> = {
   secretNoClue: "update_card sur la carte Secret, champ `indices` (ce qui le laisse deviner avant)",
   noGoal: "update_card sur la carte Personnage, champ `objectif`",
   threadUnused: "link_cards entre la carte (intrigue ou thème) et les scènes où elle compte",
+  transitionReread: "read_scene sur les deux scènes, puis replace_passage si la transition casse ; l’auteur valide l’enchaînement dans « Vérifier »",
   setupAfterPayoff: "move_scene pour remettre la scène qui prépare avant celle qui paie, ou update_link (setup vide) si l’ordre n’a plus lieu d’être",
 };
 
@@ -192,7 +195,7 @@ function review(src: LiveSource, t: Messages): McpAnswer {
     src.kind === "scenario" ? (sp ? checkScreenplay(sp.elements, LAYOUTS[src.paper], src.cards, src.lang) : []) : checkManuscript(src.manuscript, src.order, src.cards, src.lang);
   // Intrigues et thèmes reliés à aucune scène (#118), comme dans l'app.
   const sceneIds = src.kind === "scenario" ? (sp ? listScenes(sp.elements).flatMap((x) => (x.cardId ? [x.cardId] : [])) : []) : src.order;
-  const story = checkStory(src.cards, characterRows(src), src.kind, src.pitch, { unthreaded: unthreaded(src.cards, src.edges, sceneIds).map((c) => c.id), setups: setupProblems(src.edges, sceneIds) });
+  const story = checkStory(src.cards, characterRows(src), src.kind, src.pitch, { unthreaded: unthreaded(src.cards, src.edges, sceneIds).map((c) => c.id), setups: setupProblems(src.edges, sceneIds), rereads: src.rereads });
   const all = [...interactivePoints(src), ...story, ...found];
   if (all.length === 0) return ok("Rien à signaler dans « Vérifier ».");
   const rules = t.review.rules as Record<string, string>;
@@ -207,7 +210,9 @@ function review(src: LiveSource, t: Messages): McpAnswer {
     for (const f of list.slice(0, 25)) {
       const where = f.sceneId ? sceneName(src, f.sceneId) : f.scene ? `scène ${f.scene}` : "";
       const names = f.names?.length ? ` [${f.names.join(" / ")}]` : "";
-      out.push(`- ${where}${names}${f.text ? ` : ${f.text.replace(/\s+/g, " ").slice(0, 200)}` : ""}`);
+      // Un enchaînement à relire garde dans `text` l'identifiant de la scène d'avant : rien à montrer.
+      const text = f.rule === "transitionReread" ? "" : f.text;
+      out.push(`- ${where}${names}${text ? ` : ${text.replace(/\s+/g, " ").slice(0, 200)}` : ""}`);
     }
     if (list.length > 25) out.push(`- … et ${list.length - 25} de plus`);
     out.push("");
