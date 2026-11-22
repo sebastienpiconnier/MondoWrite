@@ -37,8 +37,8 @@ export const INTERACTIVE_RULES: readonly RuleKey[] = [
 ];
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */
-export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent";
-export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "episodeLength", "principalAbsent", "secretNoReveal", "secretNoClue", "objectOnce", "beatDrift"];
+export type StoryRule = "principalNotMost" | "noGoal" | "noEpisodes" | "pilotLength" | "secretNoReveal" | "secretNoClue" | "objectOnce" | "beatDrift" | "episodeLength" | "principalAbsent" | "threadUnused";
+export const STORY_RULES: readonly RuleKey[] = ["principalNotMost", "noGoal", "noEpisodes", "pilotLength", "episodeLength", "principalAbsent", "secretNoReveal", "secretNoClue", "objectOnce", "threadUnused", "beatDrift"];
 
 export const RULE_ORDER: RuleKey[] = [
   ...INTERACTIVE_RULES,
@@ -60,6 +60,7 @@ export const RULE_ORDER: RuleKey[] = [
   "secretNoReveal",
   "secretNoClue",
   "objectOnce",
+  "threadUnused",
   "beatDrift",
 ];
 
@@ -284,6 +285,8 @@ export interface StoryExtras {
   episodes?: number;
   /** Série (lot 3) : chaque épisode, dans l'ordre, avec sa longueur et les personnages qui y paraissent. */
   series?: readonly { id: string; label: string; pages: number; cast: ReadonlySet<string> }[];
+  /** Intrigues et thèmes reliés à aucune scène du récit (#118, `unthreaded`), par identifiant. */
+  unthreaded?: readonly string[];
 }
 
 /** Épisodes écrits de suite sans un personnage principal avant d'en faire une question. */
@@ -342,6 +345,8 @@ export function checkStory(cards: CardData[], rows: CharacterRow[], kind: "roman
     }
     // Un objet nommé dans une seule scène : posé sans servir, ou sert sans avoir été posé.
     if (c.type === "objet" && extras.named?.get(c.id) === 1) out.push({ key: `objectOnce:${c.id}`, rule: "objectOnce", at: -1, scene: 0, sceneId: c.id, text: "", names: [name] });
+    // Une intrigue ou un thème reliés à aucune scène (#118) : un fil prévu que le récit ne porte pas encore.
+    if (extras.unthreaded?.includes(c.id)) out.push({ key: `threadUnused:${c.id}`, rule: "threadUnused", at: -1, scene: 0, sceneId: c.id, text: c.type, names: [name] });
   }
   // Une case du gabarit qui commence loin de sa place habituelle : on y va par sa première scène.
   for (const d of extras.drifts ?? []) {

@@ -3,6 +3,7 @@
 // les transmet comme les écritures, mais un accès en lecture suffit. Les textes rendus sont pour l'IA : en clair,
 // avec les numéros et titres des scènes. Pur hormis `readVersions`, testé.
 
+import { unthreaded } from "./threadFilter";
 import type { Messages } from "./i18n";
 import type { CardData, ProjectKind } from "./types";
 import type { Screenplay } from "./screenplay/model";
@@ -180,13 +181,16 @@ const MCP_FIX: Record<string, string> = {
   secretNoReveal: "update_card sur la carte Secret, champ `revelation` (la scène où il éclate, qui le découvre)",
   secretNoClue: "update_card sur la carte Secret, champ `indices` (ce qui le laisse deviner avant)",
   noGoal: "update_card sur la carte Personnage, champ `objectif`",
+  threadUnused: "link_cards entre la carte (intrigue ou thème) et les scènes où elle compte",
 };
 
 function review(src: LiveSource, t: Messages): McpAnswer {
   const sp = src.screenplay;
   const found: Finding[] =
     src.kind === "scenario" ? (sp ? checkScreenplay(sp.elements, LAYOUTS[src.paper], src.cards, src.lang) : []) : checkManuscript(src.manuscript, src.order, src.cards, src.lang);
-  const story = checkStory(src.cards, characterRows(src), src.kind, src.pitch);
+  // Intrigues et thèmes reliés à aucune scène (#118), comme dans l'app.
+  const sceneIds = src.kind === "scenario" ? (sp ? listScenes(sp.elements).flatMap((x) => (x.cardId ? [x.cardId] : [])) : []) : src.order;
+  const story = checkStory(src.cards, characterRows(src), src.kind, src.pitch, { unthreaded: unthreaded(src.cards, src.edges, sceneIds).map((c) => c.id) });
   const all = [...interactivePoints(src), ...story, ...found];
   if (all.length === 0) return ok("Rien à signaler dans « Vérifier ».");
   const rules = t.review.rules as Record<string, string>;

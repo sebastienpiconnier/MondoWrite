@@ -2,6 +2,7 @@
 // avec les statistiques des personnages (mêmes comptes que la fenêtre Statistiques), la longueur du pilote et
 // les scènes qui nomment chaque objet. Rien n'est enregistré.
 
+import { unthreaded } from "../threadFilter";
 import { numbersKey, usePaperbackSpreads } from "../interactive/spreads";
 import { useMemo } from "react";
 import { currentScript, useCosmos } from "../store";
@@ -93,7 +94,10 @@ export function useStoryFindings(): Finding[] {
             }));
           })()
         : undefined;
-    return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined, series });
+    // Intrigues et thèmes reliés à aucune scène du récit (#118).
+    const sceneIds = kind === "scenario" ? listScenes(full?.elements ?? elements).flatMap((x) => (x.cardId ? [x.cardId] : [])) : order;
+    const unthreadedIds = unthreaded(cards, edges, sceneIds).map((c) => c.id);
+    return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined, series, unthreaded: unthreadedIds });
   }, [kind, screenplay, full, paper, nodes, plan, manuscript, pitch, lang, drifts, edges, episodeLabel]);
   return useMemo(() => (verified.length ? [...verified, ...story] : story), [verified, story]);
 }

@@ -11,6 +11,8 @@ import { storage } from "../storage";
 import { useVocab } from "../vocab";
 import { CharacterStats } from "./CharacterStats";
 import { PlaceStats } from "./PlaceStats";
+import { ThreadStats } from "./ThreadStats";
+import { useInteractive } from "../interactive/useInteractive";
 import { BreakdownStats } from "./StructureTools";
 import { useProjectStats } from "./useProjectStats";
 import { exportParts } from "./useExportScript";
@@ -20,7 +22,7 @@ import { iaPercent, iaShareOfManuscript, iaShareOfScreenplay } from "../atelier"
 import { IaImageStats } from "./ImageGen";
 import { csvSeparator } from "../typoRules";
 
-type Tab = "characters" | "places" | "crossings" | "setting" | "breakdown";
+type Tab = "characters" | "places" | "crossings" | "threads" | "setting" | "breakdown";
 
 /** Au-delà, la matrice devient illisible : les plus présents seulement. */
 const MATRIX_MAX = 12;
@@ -46,10 +48,17 @@ export function StatsPanel() {
     useCosmos.getState().setCharFilter({ name: name.toLocaleUpperCase(useSettings.getState().lang), mode: "lines" });
     useCosmos.getState().setView("manuscrit");
   };
+  const interactive = useInteractive();
+  const readThread = (id: string) => {
+    close();
+    useCosmos.getState().readThread(id);
+  };
   const tabs: [Tab, string][] = [
     ["characters", s.tabCharacters],
     ["places", types.lieu.section],
     ["crossings", s.tabCrossings],
+    // Poids de chaque intrigue et de chaque thème (#118), pas dans un roman interactif (pas d'ordre de lecture).
+    ...(interactive ? [] : ([["threads", s.tabThreads]] as [Tab, string][])),
     ...(script ? ([["setting", s.tabSetting], ["breakdown", t.structure.breakdownTitle]] as [Tab, string][]) : []),
   ];
 
@@ -85,6 +94,7 @@ export function StatsPanel() {
       {tab === "characters" && <CharacterStats rows={characters} kind={script ? "script" : "text"} onOpen={openCard} onSeeLines={script ? seeLines : undefined} />}
       {tab === "places" && <PlaceStats rows={places} kind={script ? "script" : "text"} onOpen={openCard} />}
       {tab === "crossings" && <Crossings cast={cast} script={script} onOpen={openCard} />}
+      {tab === "threads" && !interactive && <ThreadStats onOpen={openCard} onRead={readThread} />}
       {tab === "setting" && summary && <Setting summary={summary} />}
       {/* Dépouillement (1.9.0) : tout le scénario par l'IA, à cocher, puis la liste par catégorie avec les scènes. */}
       {tab === "breakdown" && script && <BreakdownStats />}

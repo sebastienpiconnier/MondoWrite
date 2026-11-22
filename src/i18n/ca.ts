@@ -1070,6 +1070,7 @@ export const ca = {
       secretNoReveal: "Un secret que no surt mai a la llum",
       secretNoClue: "Un secret sense pistes",
       objectOnce: "Un objecte usat un sol cop",
+      threadUnused: "Una trama o un tema sense escena",
       beatDrift: "Un temps lluny del seu lloc habitual",
     },
     hints: {
@@ -1091,6 +1092,7 @@ export const ca = {
       secretNoReveal: "Un secret pesa quan sabem que sortirà a la llum (el camp «Quan i com es descobreix»).",
       secretNoClue: "Un secret que es revela sense cap pista prèvia sorprèn però no convenç.",
       objectOnce: "Un objecte que es presenta ha de tenir recorregut; un que resol una situació s’ha d’haver presentat abans.",
+      threadUnused: "Un fil previst que el relat encara no porta: uneix-lo a les escenes on compta, o guarda’l en reserva.",
       beatDrift: "La cinta de la història compara on comença cada temps amb el seu lloc habitual en aquesta estructura. Una desviació pot ser intencionada.",
     },
     items: {
@@ -1117,6 +1119,7 @@ export const ca = {
       secretNoReveal: "«{name}»: quan es descobreix aquest secret i qui se n’assabenta?",
       secretNoClue: "«{name}» surt a la llum, però què ho insinuava abans?",
       objectOnce: "«{name}» només s’esmenta en una escena: on es presenta i on té efecte?",
+      threadUnused: "«{name}» no apareix en cap escena: on el porta el relat?",
       beatDrift: "«{beat}» comença al {at}% de la història, habitualment cap al {target}%.",
     },
     intended: "És intencionat",

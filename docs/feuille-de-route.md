@@ -30,6 +30,6 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
 3. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
 4. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`),
    import de la logique de Twine (#96) dans la 1.41.0
-5. Lot 14 · Relire sa structure / Reviewing your structure : #118 poids de chaque fil,
-   puis #119 préparer et payer et #120 enchaînements à relire (ensemble, dans « Vérifier ») ; #117 fait
+5. Lot 14 · Relire sa structure / Reviewing your structure : #119 préparer et payer et #120 enchaînements à relire
+   (ensemble, dans « Vérifier ») ; #117 et #118 faits
 6. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)

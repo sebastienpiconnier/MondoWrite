@@ -1,7 +1,7 @@
 // Lire le récit fil par fil (#117) : scènes gardées pour une carte, et écart entre deux scènes gardées.
 
 import { describe, expect, it } from "vitest";
-import { canFollow, keptByThread, threadGaps, threadPresence } from "../threadFilter";
+import { canFollow, keptByThread, threadGaps, threadPresence, threadWeights, unthreaded } from "../threadFilter";
 import { mentionHtml } from "../mentions";
 import type { CardData } from "../types";
 
@@ -66,5 +66,36 @@ describe("écart entre deux scènes gardées", () => {
     const gaps = threadGaps(["a", "b", "c"], new Set(["a", "b", "c"]), (id) => sizes[id]);
     expect(gaps.size).toBe(0);
     expect(threadGaps(["x", "a"], new Set(["a"]), (id) => sizes[id]).get("a")).toEqual({ scenes: 1, size: 0 });
+  });
+});
+
+describe("poids de chaque fil (#118)", () => {
+  const cards = [
+    card("s1", "scene", "A"),
+    card("s2", "scene", "B"),
+    card("s3", "scene", "C"),
+    card("i1", "intrigue", "Le naufrage"),
+    card("i2", "intrigue", "La dette"),
+    card("t1", "theme", "Le deuil"),
+    card("t2", "theme", ""),
+    card("p1", "personnage", "Inès"),
+  ];
+  const links = [{ source: "i1", target: "s1" }, { source: "s2", target: "i1" }, { source: "t1", target: "s2" }, { source: "p1", target: "s3" }, { source: "i2", target: "p1" }];
+  const order = ["s1", "s2", "s3"];
+  const words: Record<string, number> = { s1: 100, s2: 300, s3: 600 };
+
+  it("part du récit reliée à chaque intrigue et thème, une scène comptée pour chacun", () => {
+    const w = threadWeights(cards, links, order, (id) => words[id]);
+    expect(w.map((x) => [x.card.id, x.scenes, x.size, x.share])).toEqual([["i1", 2, 400, 0.4], ["t1", 1, 300, 0.3], ["i2", 0, 0, 0]]);
+  });
+
+  it("rien d'écrit : la part se compte en scènes", () => {
+    const w = threadWeights(cards, links, order, () => 0);
+    expect(w.find((x) => x.card.id === "i1")!.share).toBeCloseTo(2 / 3);
+  });
+
+  it("une intrigue ou un thème reliés à aucune scène du récit (un fil vers un personnage ne compte pas)", () => {
+    expect(unthreaded(cards, links, order).map((c) => c.id)).toEqual(["i2"]);
+    expect(unthreaded(cards, links, [])).toEqual([]);
   });
 });

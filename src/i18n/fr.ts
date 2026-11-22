@@ -928,6 +928,7 @@ export const fr = {
       secretNoReveal: "Un secret qui n’éclate pas",
       secretNoClue: "Un secret sans indice",
       objectOnce: "Un objet qui ne sert qu’une fois",
+      threadUnused: "Une intrigue ou un thème sans scène",
       beatDrift: "Une case loin de sa place",
     },
     hints: {
@@ -962,6 +963,7 @@ export const fr = {
       secretNoReveal: "Un secret pèse quand on sait qu’il éclatera (case « Quand et comment il éclate »).",
       secretNoClue: "Un secret qui éclate sans indice semé avant surprend sans convaincre.",
       objectOnce: "Un objet posé doit servir ; un objet qui sert doit avoir été posé.",
+      threadUnused: "Un fil prévu que le récit ne porte pas encore : relie-le aux scènes où il compte, ou laisse-le en réserve.",
       beatDrift: "Le ruban du récit compare où chaque case commence à sa place habituelle dans cette structure. Un écart peut être voulu.",
     },
     items: {
@@ -991,6 +993,7 @@ export const fr = {
       secretNoReveal: "« {name} » : quand ce secret éclate-t-il, et qui le découvre ?",
       secretNoClue: "« {name} » éclate, mais qu’est-ce qui le laisse deviner avant ?",
       objectOnce: "« {name} » n’est nommé que dans une scène : où le pose-t-on, où sert-il ?",
+      threadUnused: "« {name} » n’apparaît dans aucune scène : où le récit le porte-t-il ?",
       beatDrift: "« {beat} » commence à {at} % du récit, d’ordinaire vers {target} %.",
     },
     intended: "C’est voulu",
@@ -2309,6 +2312,19 @@ export const fr = {
 
   // Carte des relations (rubrique Personnages de la Bible).
   // Bible › Lieux › Statistiques (Décors dans un scénario) : relus dans le texte, rien n'est enregistré.
+  // Statistiques › Intrigues et thèmes (#118) : la part du récit reliée à chaque fil.
+  threadStats: {
+    name: "Intrigue ou thème",
+    type: "Type",
+    scenes: "Scènes",
+    words: "Mots",
+    pages: "Pages",
+    share: "Part du récit",
+    note: "Une scène reliée à deux intrigues compte pour les deux : les parts ne s’additionnent pas.",
+    noteScenes: "Rien n’est encore écrit : la part se compte en scènes.",
+    none: "Reliée à aucune scène",
+    empty: "Pas encore d’intrigue ni de thème. Crée une carte Intrigue ou Thème, puis relie-la à ses scènes par un fil.",
+  },
   placeStats: {
     tabsAria: "Présentation des lieux",
     columns: {
@@ -2422,6 +2438,7 @@ export const fr = {
     tabsAria: "Que compter",
     tabCharacters: "Personnages",
     tabCrossings: "Qui croise qui",
+    tabThreads: "Intrigues et thèmes",
     tabSetting: "Int./Ext. et Jour/Nuit",
     crossIntroScript: "Scènes partagées par deux personnages (ils y parlent ou y sont nommés).",
     crossIntroText: "Scènes dont le texte nomme les deux personnages.",

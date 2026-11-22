@@ -1038,6 +1038,7 @@ export const es = {
       secretNoReveal: "Un secreto que no estalla",
       secretNoClue: "Un secreto sin pista",
       objectOnce: "Un objeto que solo sirve una vez",
+      threadUnused: "Una trama o un tema sin escena",
       beatDrift: "Una casilla lejos de su sitio",
     },
     hints: {
@@ -1059,6 +1060,7 @@ export const es = {
       secretNoReveal: "Un secreto pesa cuando sabemos que estallará (casilla «Cuándo y cómo estalla»).",
       secretNoClue: "Un secreto que estalla sin una pista sembrada antes sorprende sin convencer.",
       objectOnce: "Un objeto que se planta tiene que servir; un objeto que sirve tiene que haberse plantado.",
+      threadUnused: "Un hilo previsto que el relato aún no lleva: únelo a las escenas donde cuenta, o guárdalo en reserva.",
       beatDrift: "La cinta del relato compara dónde empieza cada casilla con su lugar habitual en esta estructura. Una diferencia puede ser buscada.",
     },
     items: {
@@ -1085,6 +1087,7 @@ export const es = {
       secretNoReveal: "«{name}»: ¿cuándo estalla este secreto, y quién lo descubre?",
       secretNoClue: "«{name}» estalla, pero ¿qué lo deja adivinar antes?",
       objectOnce: "«{name}» solo se nombra en una escena: ¿dónde se planta, dónde sirve?",
+      threadUnused: "«{name}» no aparece en ninguna escena: ¿dónde lo lleva el relato?",
       beatDrift: "«{beat}» empieza al {at} % del relato, normalmente hacia el {target} %.",
     },
     intended: "Es a propósito",
@@ -2442,6 +2445,18 @@ export const es = {
     synthesisHeading: "Síntesis",
     synthesisAdded: "Síntesis añadida a la ficha.",
   },
+  threadStats: {
+    name: "Trama o tema",
+    type: "Tipo",
+    scenes: "Escenas",
+    words: "Palabras",
+    pages: "Páginas",
+    share: "Parte del relato",
+    note: "Una escena unida a dos tramas cuenta para las dos: las partes no se suman.",
+    noteScenes: "Aún no hay nada escrito: la parte se cuenta en escenas.",
+    none: "Sin ninguna escena",
+    empty: "Todavía no hay tramas ni temas. Crea una tarjeta Trama o Tema y únela a sus escenas con un hilo.",
+  },
   placeStats: {
     tabsAria: "Presentación de los lugares",
     columns: {
@@ -2526,6 +2541,7 @@ export const es = {
     tabsAria: "Qué contar",
     tabCharacters: "Personajes",
     tabCrossings: "Quién se cruza con quién",
+    tabThreads: "Tramas y temas",
     tabSetting: "Int./Ext. y Día/Noche",
     crossIntroScript: "Escenas compartidas por dos personajes (hablan en ellas o se les nombra).",
     crossIntroText: "Escenas cuyo texto nombra a los dos personajes.",

@@ -991,6 +991,7 @@ export const en: Messages = {
       secretNoReveal: "A secret that never comes out",
       secretNoClue: "A secret with no clue",
       objectOnce: "An object used only once",
+      threadUnused: "A plot or theme with no scene",
       beatDrift: "A beat far from its usual place",
     },
     hints: {
@@ -1025,6 +1026,7 @@ export const en: Messages = {
       secretNoReveal: "A secret weighs when we know it will come out (the “When and how it comes out” box).",
       secretNoClue: "A secret that comes out with no clue planted before surprises without convincing.",
       objectOnce: "An object that is set up should pay off; one that pays off should have been set up.",
+      threadUnused: "A thread you planned that the story doesn’t carry yet: link it to the scenes where it matters, or keep it in reserve.",
       beatDrift: "The story ribbon compares where each beat begins with its usual place in this structure. A gap can be intended.",
     },
     items: {
@@ -1054,6 +1056,7 @@ export const en: Messages = {
       secretNoReveal: "“{name}”: when does this secret come out, and who finds out?",
       secretNoClue: "“{name}” comes out, but what hints at it before?",
       objectOnce: "“{name}” is named in only one scene: where is it set up, where does it pay off?",
+      threadUnused: "“{name}” appears in no scene: where does the story carry it?",
       beatDrift: "“{beat}” begins at {at}% of the story, usually around {target}%.",
     },
     intended: "It’s intended",
@@ -2066,6 +2069,18 @@ export const en: Messages = {
   },
 
   // Relationship map (Characters section of the Bible).
+  threadStats: {
+    name: "Plot or theme",
+    type: "Type",
+    scenes: "Scenes",
+    words: "Words",
+    pages: "Pages",
+    share: "Share of the story",
+    note: "A scene linked to two plots counts for both: the shares don’t add up.",
+    noteScenes: "Nothing is written yet: the share is counted in scenes.",
+    none: "Linked to no scene",
+    empty: "No plot or theme yet. Create a Plot or Theme card, then link it to its scenes with a thread.",
+  },
   placeStats: {
     tabsAria: "How to show the places",
     columns: {
@@ -2177,6 +2192,7 @@ export const en: Messages = {
     tabsAria: "What to count",
     tabCharacters: "Characters",
     tabCrossings: "Who meets whom",
+    tabThreads: "Plots and themes",
     tabSetting: "Int./Ext. and Day/Night",
     crossIntroScript: "Scenes shared by two characters (they speak or are named in them).",
     crossIntroText: "Scenes whose text names both characters.",

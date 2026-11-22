@@ -1637,3 +1637,6 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 @media (pointer: coarse) {
   .thread-banner .ghost-button, .thread-banner-cited { min-height: 44px; }
 }
+/* Statistiques › Intrigues et thèmes (#118). */
+.thread-stats-note { margin: 0 0 10px; font-size: 0.875rem; }
+.thread-stats td .link-button { white-space: nowrap; }

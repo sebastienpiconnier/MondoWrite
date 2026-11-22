@@ -91,3 +91,61 @@ export function threadGaps(order: string[], kept: ReadonlySet<string>, size: (id
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Poids de chaque fil (#118) : la part du récit reliée à chaque intrigue et à chaque thème, et ceux qui ne sont
+// reliés à aucune scène. Tout se lit dans les fils : rien à saisir.
+
+/** Types dont on mesure le poids, et qu'on signale quand ils ne sont reliés à aucune scène. */
+export const WEIGHED_TYPES: CardType[] = ["intrigue", "theme"];
+
+export interface ThreadWeight {
+  card: CardData;
+  /** Scènes reliées par un fil. */
+  scenes: number;
+  /** Longueur de ces scènes, dans l'unité de la vue (mots ou pages). */
+  size: number;
+  /** Part du récit entier (0 à 1). Une scène reliée à deux intrigues compte pour les deux. */
+  share: number;
+}
+
+/** Scènes du récit (`order`) reliées à une carte par un fil, dans un sens ou l'autre. */
+function linkedScenes(cardId: string, links: Pick<Link, "source" | "target">[], inStory: ReadonlySet<string>): Set<string> {
+  const out = new Set<string>();
+  for (const l of links) {
+    const other = l.source === cardId ? l.target : l.target === cardId ? l.source : null;
+    if (other && inStory.has(other)) out.add(other);
+  }
+  return out;
+}
+
+/**
+ * Poids de chaque intrigue et de chaque thème titrés, des plus lourds aux plus légers (à égalité, par titre). La
+ * part se mesure sur la longueur ; tant que le récit n'a aucune longueur (rien d'écrit), sur le nombre de scènes.
+ */
+export function threadWeights(
+  cards: CardData[],
+  links: Pick<Link, "source" | "target">[],
+  order: string[],
+  size: (id: string) => number,
+  lang = "fr",
+): ThreadWeight[] {
+  const inStory = new Set(order);
+  const total = order.reduce((sum, id) => sum + (size(id) || 0), 0);
+  return cards
+    .filter((c) => WEIGHED_TYPES.includes(c.type) && c.title.trim())
+    .map((card) => {
+      const ids = [...linkedScenes(card.id, links, inStory)];
+      const length = ids.reduce((sum, id) => sum + (size(id) || 0), 0);
+      const share = total > 0 ? length / total : order.length > 0 ? ids.length / order.length : 0;
+      return { card, scenes: ids.length, size: length, share };
+    })
+    .sort((a, b) => b.share - a.share || b.scenes - a.scenes || a.card.title.localeCompare(b.card.title, lang));
+}
+
+/** Intrigues et thèmes titrés reliés à aucune scène du récit (rien tant que le récit n'a pas de scène). */
+export function unthreaded(cards: CardData[], links: Pick<Link, "source" | "target">[], order: string[]): CardData[] {
+  if (order.length === 0) return [];
+  const inStory = new Set(order);
+  return cards.filter((c) => WEIGHED_TYPES.includes(c.type) && c.title.trim() && linkedScenes(c.id, links, inStory).size === 0);
+}

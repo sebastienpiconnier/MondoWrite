@@ -88,6 +88,8 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
         return fmt(t.items.secretNoClue, { name: f.names![0] });
       case "objectOnce":
         return fmt(t.items.objectOnce, { name: f.names![0] });
+      case "threadUnused":
+        return fmt(t.items.threadUnused, { name: f.names![0] });
       case "noEnding":
       case "noGoodEnding":
       case "unreachableScene":
