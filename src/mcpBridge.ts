@@ -121,6 +121,7 @@ function mcpStore(): McpStore {
     restore: (id) => s().restoreFromTrash(id),
     renameLink: (id, label) => s().renameLink(id, label),
     setWireFiche: (id, field, value) => s().setWireFiche(id, field, value),
+    setLinkSetup: (id, setup) => s().setLinkSetup(id, setup),
     frames: () => s().frames.map((f) => ({ id: f.id, title: (f.data.title ?? "").trim() })),
     renameFrame: (id, title) => s().updateFrame(id, { title }),
     deleteFrame: (id) => s().deleteFrame(id),

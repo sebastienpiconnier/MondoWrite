@@ -57,7 +57,8 @@
 .label-editor input { min-width: 200px; height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 0.875rem; outline: none; }
 .label-unlink { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 0.8125rem; cursor: pointer; }
 @media (any-hover: hover) { .label-unlink:hover { color: var(--danger); border-color: var(--danger); } }
-@media (pointer: coarse) { .label-editor input, .label-unlink { min-height: 44px; } }
+.label-setup { max-width: 260px; height: 36px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.8125rem; }
+@media (pointer: coarse) { .label-editor input, .label-unlink, .label-setup { min-height: 44px; } }
 
 /* ---------- Cadre de regroupement ---------- */
 /* Le cadre est derrière les cartes et son intérieur laisse passer les clics (créer une carte dedans,

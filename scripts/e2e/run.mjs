@@ -296,6 +296,54 @@ const scenarios = [
     },
   },
   {
+    name: "préparer et payer : le sens d'un fil entre deux scènes, et l'ordre signalé dans « Vérifier » (#119)",
+    async run(h) {
+      const { page } = h;
+      await h.create("Préparer");
+      await h.view(2);
+      for (const title of ["Le dîner", "Le fusil"]) {
+        await page.getByPlaceholder("Nouvelle scène…").fill(title);
+        await page.getByPlaceholder("Nouvelle scène…").press("Enter");
+        await h.wait(200);
+      }
+      await h.view(1);
+      const scenes = page.locator(".react-flow__node-card:has(.card.type-scene)");
+      await until(async () => (await scenes.count()) === 2, "les deux scènes ne sont pas sur le canevas");
+      const [a, b] = await scenes.evaluateAll((els) => els.map((e) => e.dataset.id));
+      const from = await h.node(a).locator(".react-flow__handle-bottom").first().boundingBox();
+      const bb = await h.node(b).boundingBox();
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+      await page.mouse.down();
+      const tx = bb.x + bb.width / 2, ty = bb.y + bb.height / 2;
+      for (let i = 1; i <= 12; i++) await page.mouse.move(from.x + ((tx - from.x) * i) / 12, from.y + ((ty - from.y) * i) / 12);
+      await page.mouse.up();
+      await until(async () => (await h.edges().count()) === 1, "le fil n'a pas été tiré");
+      await h.pane();
+      // Le fil choisi : son éditeur propose l'ordre des deux scènes.
+      const mid = await page.locator(".react-flow__edge.scene-arrow .react-flow__edge-path").first().evaluate((path) => {
+        const pt = path.getPointAtLength(path.getTotalLength() / 2);
+        const m = path.getScreenCTM();
+        return { x: pt.x * m.a + pt.y * m.c + m.e, y: pt.x * m.b + pt.y * m.d + m.f };
+      });
+      await page.mouse.click(mid.x, mid.y);
+      const order = page.getByRole("combobox", { name: "Ordre des deux scènes" });
+      await until(() => order.isVisible(), "l'éditeur du fil ne propose pas l'ordre des deux scènes");
+      const sheet = await order.evaluate((el) => [...el.options].map((o) => o.textContent));
+      const fusil = sheet.findIndex((x) => x?.startsWith("Le fusil prépare"));
+      assert(fusil > 0, `pas d'option « Le fusil prépare… » : ${JSON.stringify(sheet)}`);
+      await order.selectOption({ index: fusil });
+      await page.keyboard.press("Escape");
+      await until(() => page.locator(".react-flow__edge.is-setup").isVisible(), "le fil ne se dessine pas en « prépare »");
+      await until(() => page.locator(".react-flow").getByText("prépare", { exact: true }).first().isVisible(), "le fil sans étiquette ne dit pas « prépare »");
+      await h.saved((f) => Object.values(JSON.parse(f["cosmos.json"] ?? "{}").setups ?? {}).includes(b), "le sens du fil n'est pas enregistré dans setups");
+      // Le fusil (2e scène) prépare le dîner (1re) : « Vérifier » le signale.
+      await h.view(4);
+      await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
+      const item = page.locator(".review-group", { hasText: "Une scène qui paie avant d’être préparée" }).locator(".review-item");
+      await until(async () => (await item.count()) === 1, "« Vérifier » ne signale pas la scène qui paie avant d'être préparée");
+    },
+  },
+  {
     name: "exemple : ouverture et passage par les quatre vues",
     async run(h) {
       const { page } = h;

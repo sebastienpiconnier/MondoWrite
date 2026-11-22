@@ -4,6 +4,7 @@
 // avec les numéros et titres des scènes. Pur hormis `readVersions`, testé.
 
 import { unthreaded } from "./threadFilter";
+import { setupProblems } from "./setups";
 import type { Messages } from "./i18n";
 import type { CardData, ProjectKind } from "./types";
 import type { Screenplay } from "./screenplay/model";
@@ -35,7 +36,7 @@ export interface LiveSource {
   kind: ProjectKind;
   lang: string;
   cards: CardData[];
-  edges: { source: string; target: string }[];
+  edges: { id: string; source: string; target: string; data?: Record<string, unknown> }[];
   manuscript: Record<string, string>;
   screenplay: Screenplay | null;
   comments: Comments;
@@ -182,6 +183,7 @@ const MCP_FIX: Record<string, string> = {
   secretNoClue: "update_card sur la carte Secret, champ `indices` (ce qui le laisse deviner avant)",
   noGoal: "update_card sur la carte Personnage, champ `objectif`",
   threadUnused: "link_cards entre la carte (intrigue ou thème) et les scènes où elle compte",
+  setupAfterPayoff: "move_scene pour remettre la scène qui prépare avant celle qui paie, ou update_link (setup vide) si l’ordre n’a plus lieu d’être",
 };
 
 function review(src: LiveSource, t: Messages): McpAnswer {
@@ -190,7 +192,7 @@ function review(src: LiveSource, t: Messages): McpAnswer {
     src.kind === "scenario" ? (sp ? checkScreenplay(sp.elements, LAYOUTS[src.paper], src.cards, src.lang) : []) : checkManuscript(src.manuscript, src.order, src.cards, src.lang);
   // Intrigues et thèmes reliés à aucune scène (#118), comme dans l'app.
   const sceneIds = src.kind === "scenario" ? (sp ? listScenes(sp.elements).flatMap((x) => (x.cardId ? [x.cardId] : [])) : []) : src.order;
-  const story = checkStory(src.cards, characterRows(src), src.kind, src.pitch, { unthreaded: unthreaded(src.cards, src.edges, sceneIds).map((c) => c.id) });
+  const story = checkStory(src.cards, characterRows(src), src.kind, src.pitch, { unthreaded: unthreaded(src.cards, src.edges, sceneIds).map((c) => c.id), setups: setupProblems(src.edges, sceneIds) });
   const all = [...interactivePoints(src), ...story, ...found];
   if (all.length === 0) return ok("Rien à signaler dans « Vérifier ».");
   const rules = t.review.rules as Record<string, string>;

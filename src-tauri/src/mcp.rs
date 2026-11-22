@@ -989,8 +989,8 @@ impl Server {
       },
       {
         "name": "update_link",
-        "description": "Modifie le fil entre deux cartes : étiquette et fiche du fil (histoire, enjeu, évolution). / Edits the wire between two cards (label, history, stake, evolution).",
-        "inputSchema": { "type": "object", "properties": { "project": project, "from": { "type": "string" }, "to": { "type": "string" }, "label": { "type": "string" }, "fields": { "type": "object", "additionalProperties": { "type": "string" }, "description": "histoire, enjeu, evolution (ou libellés)." } }, "required": ["from", "to"] }
+        "description": "Modifie le fil entre deux cartes : étiquette, fiche du fil (histoire, enjeu, évolution) et, entre deux scènes, celle qui prépare l'autre. / Edits the wire between two cards (label, history, stake, evolution, and which scene sets up the other).",
+        "inputSchema": { "type": "object", "properties": { "project": project, "from": { "type": "string" }, "to": { "type": "string" }, "label": { "type": "string" }, "setup": { "type": "string", "description": "Fil entre deux scènes : titre de la scène qui prépare l'autre (vide pour retirer l'ordre). / Between two scenes: title of the scene that sets up the other (empty to clear)." }, "fields": { "type": "object", "additionalProperties": { "type": "string" }, "description": "histoire, enjeu, evolution (ou libellés)." } }, "required": ["from", "to"] }
       },
       {
         "name": "restore_card",

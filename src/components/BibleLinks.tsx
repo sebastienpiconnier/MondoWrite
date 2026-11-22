@@ -7,9 +7,15 @@ import type { Edge } from "@xyflow/react";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { WIRE_FIELDS, wireFicheOf } from "../wires";
+import { setupOf } from "../setups";
+import type { CardData } from "../types";
 
 export function BibleLinks({ cardId, links, titleOf }: { cardId: string; links: Edge[]; titleOf: (id: string) => string }) {
-  const t = useT().bible;
+  const all = useT();
+  const t = all.bible;
+  // Préparer et payer (#119) : le choix n'existe qu'entre deux cartes Scène.
+  const nodes = useCosmos((s) => s.nodes);
+  const isScene = (id: string) => (nodes.find((n) => n.id === id)?.data as CardData | undefined)?.type === "scene";
   const [open, setOpen] = useState<string | null>(null);
   const id = useId();
   if (links.length === 0) return null;
@@ -21,6 +27,8 @@ export function BibleLinks({ cardId, links, titleOf }: { cardId: string; links: 
         {links.map((e) => {
           const other = e.source === cardId ? e.target : e.source;
           const filled = Object.keys(wireFicheOf(e) ?? {}).length > 0;
+          const setup = setupOf(e);
+          const role = setup ? (setup === cardId ? t.setsUp : t.setUpBy) : "";
           return (
             <span key={e.id} className={`chip link-chip${open === e.id ? " is-open" : ""}`}>
               <button
@@ -32,7 +40,7 @@ export function BibleLinks({ cardId, links, titleOf }: { cardId: string; links: 
                 onClick={() => setOpen(open === e.id ? null : e.id)}
               >
                 {titleOf(other)}
-                {e.label ? ` · ${String(e.label)}` : ""}
+                {e.label ? ` · ${String(e.label)}` : role ? ` · ${role}` : ""}
                 {filled && <span className="link-chip-mark" aria-hidden="true" />}
               </button>
             </span>
@@ -56,6 +64,16 @@ export function BibleLinks({ cardId, links, titleOf }: { cardId: string; links: 
               </div>
             ))}
           </div>
+          {isScene(edge.source) && isScene(edge.target) && (
+            <div className="sheet-field is-wide">
+              <label htmlFor={`${id}-setup`}>{all.toile.setupAria}</label>
+              <select id={`${id}-setup`} value={setupOf(edge) ?? ""} onChange={(ev) => useCosmos.getState().setLinkSetup(edge.id, ev.target.value || null)}>
+                <option value="">{all.toile.setupNone}</option>
+                <option value={edge.source}>{fmt(all.toile.setupOption, { a: titleOf(edge.source), b: titleOf(edge.target) })}</option>
+                <option value={edge.target}>{fmt(all.toile.setupOption, { a: titleOf(edge.target), b: titleOf(edge.source) })}</option>
+              </select>
+            </div>
+          )}
           <div className="wire-sheet-actions">
             <button
               type="button"

@@ -4,6 +4,7 @@
 
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { CardData } from "./types";
+import { setupOf } from "./setups";
 
 /** Classe des fils dessinés en flèche (canvas.css). */
 export const SCENE_ARROW_CLASS = "scene-arrow";
@@ -17,16 +18,22 @@ export function sceneIdsKey(nodes: readonly { id: string; type?: string; data: u
 
 /** Les fils dont les deux bouts sont des scènes reçoivent une pointe de flèche et le trait des choix. Rend le même
  *  tableau quand aucun fil ne relie deux scènes (pur). */
-export function withSceneArrows<E extends Edge>(edges: E[], scenes: ReadonlySet<string>): E[] {
+//  Un fil qui prépare (#119) va toujours de la scène qui prépare vers celle qui paie : la pointe est au départ du fil
+//  quand il a été tiré dans l'autre sens, et un fil sans étiquette prend le libellé `prepares`.
+export function withSceneArrows<E extends Edge>(edges: E[], scenes: ReadonlySet<string>, prepares = ""): E[] {
   if (scenes.size < 2) return edges;
   let changed = false;
   const out = edges.map((e) => {
     if (!scenes.has(e.source) || !scenes.has(e.target)) return e;
     changed = true;
+    const setup = setupOf(e as { id: string; source: string; target: string; data?: Record<string, unknown> });
+    const marker = { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "var(--accent)" };
+    const backward = setup !== null && setup === e.target;
     return {
       ...e,
-      className: [e.className, SCENE_ARROW_CLASS].filter(Boolean).join(" "),
-      markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "var(--accent)" },
+      className: [e.className, SCENE_ARROW_CLASS, setup ? "is-setup" : ""].filter(Boolean).join(" "),
+      ...(backward ? { markerStart: { ...marker, orient: "auto-start-reverse" }, markerEnd: undefined } : { markerEnd: marker }),
+      ...(setup && prepares && !String(e.label ?? "").trim() ? { label: prepares } : {}),
       style: { ...e.style, stroke: "var(--accent)", strokeWidth: 1.8 },
     };
   });

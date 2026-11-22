@@ -3,6 +3,7 @@
 // les scènes qui nomment chaque objet. Rien n'est enregistré.
 
 import { unthreaded } from "../threadFilter";
+import { setupProblems } from "../setups";
 import { numbersKey, usePaperbackSpreads } from "../interactive/spreads";
 import { useMemo } from "react";
 import { currentScript, useCosmos } from "../store";
@@ -97,7 +98,7 @@ export function useStoryFindings(): Finding[] {
     // Intrigues et thèmes reliés à aucune scène du récit (#118).
     const sceneIds = kind === "scenario" ? listScenes(full?.elements ?? elements).flatMap((x) => (x.cardId ? [x.cardId] : [])) : order;
     const unthreadedIds = unthreaded(cards, edges, sceneIds).map((c) => c.id);
-    return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined, series, unthreaded: unthreadedIds });
+    return checkStory(cards, rows, kind, pitch, { pages, named, drifts, episodes: kind === "scenario" ? episodes.length : undefined, series, unthreaded: unthreadedIds, setups: setupProblems(edges, sceneIds) });
   }, [kind, screenplay, full, paper, nodes, plan, manuscript, pitch, lang, drifts, edges, episodeLabel]);
   return useMemo(() => (verified.length ? [...verified, ...story] : story), [verified, story]);
 }

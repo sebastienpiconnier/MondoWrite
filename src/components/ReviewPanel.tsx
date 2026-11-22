@@ -90,6 +90,8 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
         return fmt(t.items.objectOnce, { name: f.names![0] });
       case "threadUnused":
         return fmt(t.items.threadUnused, { name: f.names![0] });
+      case "setupAfterPayoff":
+        return fmt(t.items.setupAfterPayoff, { setup: f.names![0] || all.manuscript.untitled, payoff: f.names![1] || all.manuscript.untitled, a: f.counts![0], b: f.counts![1] });
       case "noEnding":
       case "noGoodEnding":
       case "unreachableScene":
@@ -122,7 +124,7 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
     if (!STORY_RULES.includes(f.rule)) return onGo(f);
     const s = useCosmos.getState();
     // Une case loin de sa place : on va à sa première scène, dans le texte.
-    if (f.rule === "beatDrift" && f.sceneId) return s.openInManuscript(f.sceneId);
+    if ((f.rule === "beatDrift" || f.rule === "setupAfterPayoff") && f.sceneId) return s.openInManuscript(f.sceneId);
     // La longueur d'un épisode : on ouvre cet épisode dans le séquencier.
     if (f.rule === "episodeLength" && f.sceneId) {
       s.openEpisode(f.sceneId);

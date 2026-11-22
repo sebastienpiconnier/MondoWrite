@@ -472,6 +472,8 @@ export interface McpStore {
   restore: (id: string) => void;
   renameLink: (id: string, label: string) => void;
   setWireFiche: (id: string, field: WireField, value: string) => void;
+  /** Préparer et payer (#119) : la scène qui prépare l'autre bout du fil, ou null. */
+  setLinkSetup: (id: string, setup: string | null) => void;
   frames: () => { id: string; title: string }[];
   renameFrame: (id: string, title: string) => void;
   deleteFrame: (id: string) => void;
@@ -1207,10 +1209,22 @@ export async function applyMcpRequest(req: McpRequest, store: McpStore, t: Messa
       if (!wire) return fail("Ces deux cartes ne sont pas reliées : tire d'abord le fil (link_cards).");
       const fields = wireFieldsOf(a.fields, t);
       const label = typeof a.label === "string" ? a.label.trim() : null;
-      if (label === null && fields.set.length === 0) return fail(`Rien à faire : donne \`label\` ou \`fields\` (${WIRE_FIELDS.join(", ")}).`);
+      // Préparer et payer (#119) : `setup` nomme la scène qui prépare l'autre (vide : pas d'ordre).
+      let setup: string | null | undefined;
+      if (typeof a.setup === "string") {
+        if (from.type !== "scene" || to.type !== "scene") return fail("`setup` ne vaut que pour un fil entre deux cartes Scène.");
+        if (!a.setup.trim()) setup = null;
+        else {
+          const which = findCard([from, to], a.setup);
+          if (!which) return fail(`\`setup\` doit nommer l'une des deux scènes : « ${from.title} » ou « ${to.title} ».`);
+          setup = which.id;
+        }
+      }
+      if (label === null && fields.set.length === 0 && setup === undefined) return fail(`Rien à faire : donne \`label\`, \`setup\` ou \`fields\` (${WIRE_FIELDS.join(", ")}).`);
       store.batch(() => {
         if (label !== null) store.renameLink(wire.id, label);
         for (const [key, value] of fields.set) store.setWireFiche(wire.id, key, value);
+        if (setup !== undefined) store.setLinkSetup(wire.id, setup);
       });
       const refused = fields.refused.length ? ` Champs non repris : ${fields.refused.join(", ")}.` : "";
       return { ok: true, text: `Fil entre « ${from.title} » et « ${to.title} » modifié.${refused}` };

@@ -88,7 +88,7 @@ function usePillAt(id: string, data: EdgeData): { at: number; crosses: boolean }
 }
 
 export function FloatingEdge(props: EdgeProps) {
-  const { id, source, target, markerEnd, style, selected, interactionWidth, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius } = props;
+  const { id, source, target, markerEnd, markerStart, style, selected, interactionWidth, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius } = props;
   const s = useInternalNode(source);
   const t = useInternalNode(target);
   // Plusieurs flèches entre les deux mêmes cartes (choix aller et retour d'un roman interactif) : chacune est
@@ -147,6 +147,7 @@ export function FloatingEdge(props: EdgeProps) {
       id={id}
       path={path}
       markerEnd={markerEnd}
+      markerStart={markerStart}
       style={style}
       interactionWidth={interactionWidth}
       label={label}

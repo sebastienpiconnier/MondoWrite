@@ -16,6 +16,7 @@ import { isTouch } from "./platform";
 import { flushPendingEdits } from "./pendingEdits";
 import { vracCardHeight, vracGrid, type VracCard, type VracLink } from "./ai/vrac";
 import { setWireField, wireFicheOf, type WireField } from "./wires";
+import { setupOf } from "./setups";
 import { applyReplace, type ReplaceInit, type ReplaceRequest, type ReplaceSnapshot } from "./replace";
 import { headingOf, sceneBody, sceneEnd, setSceneBody } from "./screenplay/sceneText";
 import { isOmitted, omitScene, omittedIndex } from "./screenplay/omit";
@@ -710,6 +711,8 @@ export interface CosmosState {
   renameLink: (id: string, label: string) => void;
   /** Fiche d'un fil (lot 7) : un champ, vidé pour le retirer. */
   setWireFiche: (id: string, field: WireField, value: string) => void;
+  /** Préparer et payer (#119) : la scène qui prépare l'autre bout du fil, ou null pour retirer le sens. */
+  setLinkSetup: (id: string, setup: string | null) => void;
 
   setView: (view: View, focusId?: string | null) => void;
   /** Ouvre le projet sélectionné dans le stockage, ou démarre le projet d'exemple si l'emplacement est vide. */
@@ -3895,6 +3898,22 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record(`link:${id}:fiche:${field}`);
       const fiche = setWireField(wireFicheOf(edge), field, value);
       set({ edges: get().edges.map((e) => (e.id === id ? { ...e, data: { ...(e.data ?? {}), fiche } } : e)) });
+      touch();
+    },
+
+    setLinkSetup: (id, setup) => {
+      const edge = get().edges.find((e) => e.id === id);
+      if (!edge || (setup !== null && setup !== edge.source && setup !== edge.target)) return;
+      if ((setupOf(edge) ?? null) === setup) return;
+      record(`link:${id}:setup`);
+      set({
+        edges: get().edges.map((e) => {
+          if (e.id !== id) return e;
+          const { setup: _old, ...rest } = (e.data ?? {}) as Record<string, unknown>;
+          const data = setup ? { ...rest, setup } : rest;
+          return { ...e, data };
+        }),
+      });
       touch();
     },
 

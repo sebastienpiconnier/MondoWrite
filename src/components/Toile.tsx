@@ -44,6 +44,7 @@ import { projectSections } from "../interactive/projectSections";
 import { useStoryMap } from "../interactive/useStoryMap";
 import { isChoiceEdgeId, readChoiceEdgeId } from "../interactive/storyMap";
 import { sceneIdsKey, withSceneArrows } from "../sceneArrows";
+import { setupOf } from "../setups";
 import { END_TARGET } from "../interactive/choices";
 import { EdgeEditor, STORY_CHOICE_EVENT, TargetPicker, type StoryChoiceAsk } from "./StoryChoices";
 
@@ -116,6 +117,7 @@ function chosenCards(target: HTMLElement | Element | null): string[] {
 
 
 export function Toile() {
+  const t = useT();
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addCard, renameLink, focusId, setView, undo, redo } =
     useCosmos();
   const frames = useCosmos((s) => s.frames);
@@ -199,7 +201,7 @@ export function Toile() {
   // Roman et scénario : un fil entre deux scènes se dessine en flèche, comme un choix du roman interactif.
   const sceneKey = useMemo(() => (story ? "" : sceneIdsKey(nodes)), [story, nodes]);
   const sceneIds = useMemo(() => new Set(sceneKey ? sceneKey.split(" ") : []), [sceneKey]);
-  const arrowEdges = useMemo(() => withSceneArrows(wireEdges, sceneIds), [wireEdges, sceneIds]);
+  const arrowEdges = useMemo(() => withSceneArrows(wireEdges, sceneIds, t.toile.prepares), [wireEdges, sceneIds, t.toile.prepares]);
   const shownEdges = useMemo(() => {
     if (!story || story.edges.length === 0) return arrowEdges;
     const choices = story.edges.map((e) => {
@@ -264,7 +266,6 @@ export function Toile() {
   const [labelEditor, setLabelEditor] = useState<LabelEditor | null>(null);
   const edgeCountBeforeConnect = useRef(0);
   const touch = isTouch();
-  const t = useT();
   const theme = useSettings((s) => s.theme);
   // Mode « Sélection » : glisser sur le canevas entoure des cartes au lieu de déplacer la vue (chemin du doigt).
   const [selecting, setSelecting] = useState(false);
@@ -729,6 +730,24 @@ export function Toile() {
     if (labelEditor) renameLink(labelEditor.edgeId, labelEditor.value.trim());
     setLabelEditor(null);
   };
+  // Le focus passe du champ au choix « prépare » (ou l'inverse) : l'étiquette s'enregistre, l'éditeur reste ouvert.
+  const blurLabel = (e: React.FocusEvent) => {
+    const next = e.relatedTarget as Node | null;
+    if (next && e.currentTarget.parentElement?.contains(next)) {
+      if (labelEditor) renameLink(labelEditor.edgeId, labelEditor.value.trim());
+      return;
+    }
+    commitLabel();
+  };
+  // Préparer et payer (#119) : un fil entre deux scènes d'un roman ou d'un scénario peut dire laquelle prépare l'autre.
+  const setupEdge = labelEditor && !story ? edges.find((e) => e.id === labelEditor.edgeId) : undefined;
+  const setupEnds =
+    setupEdge && sceneIds.has(setupEdge.source) && sceneIds.has(setupEdge.target)
+      ? ([setupEdge.source, setupEdge.target] as const).map((id) => {
+          const node = nodes.find((n) => n.id === id);
+          return { id, title: String((node?.data as CardData | undefined)?.title ?? "").trim() || t.manuscript.untitled };
+        })
+      : null;
 
   return (
     <div
@@ -896,12 +915,28 @@ export function Toile() {
             aria-label={t.toile.labelAria}
             value={labelEditor.value}
             onChange={(e) => setLabelEditor({ ...labelEditor, value: e.target.value })}
-            onBlur={commitLabel}
+            onBlur={blurLabel}
             onKeyDown={(e) => {
               if (e.key === "Enter") commitLabel();
               if (e.key === "Escape") setLabelEditor(null);
             }}
           />
+          {setupEnds && setupEdge && (
+            <select
+              className="label-setup"
+              aria-label={t.toile.setupAria}
+              value={setupOf(setupEdge) ?? ""}
+              onChange={(e) => useCosmos.getState().setLinkSetup(setupEdge.id, e.target.value || null)}
+              onBlur={blurLabel}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setLabelEditor(null);
+              }}
+            >
+              <option value="">{t.toile.setupNone}</option>
+              <option value={setupEnds[0].id}>{fmt(t.toile.setupOption, { a: setupEnds[0].title, b: setupEnds[1].title })}</option>
+              <option value={setupEnds[1].id}>{fmt(t.toile.setupOption, { a: setupEnds[1].title, b: setupEnds[0].title })}</option>
+            </select>
+          )}
           {/* Délier : le fil part (annulable). Le focus reste dans le champ jusqu'au clic. */}
           <button
             type="button"

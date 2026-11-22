@@ -188,6 +188,7 @@ function fakeStore(kind: "roman" | "scenario", screenplay: Screenplay | null = n
     },
     renameLink: (id, label) => void state.calls.push(`label:${id}:${label}`),
     setWireFiche: (id, field, value) => void state.calls.push(`wire:${id}:${field}:${value}`),
+    setLinkSetup: (id, setup) => void state.calls.push(`setup:${id}:${setup ?? ""}`),
     frames: () => state.frames,
     renameFrame: (id, title) => void (state.frames = state.frames.map((f) => (f.id === id ? { ...f, title } : f))),
     deleteFrame: (id) => void (state.frames = state.frames.filter((f) => f.id !== id || f.locked)),
@@ -444,6 +445,18 @@ describe("dernier lot", () => {
     expect(res.ok).toBe(true);
     expect(state.calls).toEqual(["label:w1:raconte", "wire:w1:enjeu:Sa place"]);
     expect(res.text).toContain("taille");
+  });
+
+  it("fil entre deux scènes : celle qui prépare l'autre (#119)", async () => {
+    const { state, store } = fakeStore("roman");
+    state.cards.push(card({ id: "s2", type: "scene", title: "La tempête" }));
+    state.wires.push({ id: "w2", source: "s1", target: "s2" });
+    expect((await applyMcpRequest({ id: "1", tool: "update_link", args: { from: "s1", to: "La tempête", setup: "tempête" } }, store, fr)).ok).toBe(true);
+    expect((await applyMcpRequest({ id: "2", tool: "update_link", args: { from: "s1", to: "s2", setup: "" } }, store, fr)).ok).toBe(true);
+    expect(state.calls).toEqual(["setup:w2:s2", "setup:w2:"]);
+    expect((await applyMcpRequest({ id: "3", tool: "update_link", args: { from: "s1", to: "s2", setup: "Inès" } }, store, fr)).ok).toBe(false);
+    state.wires.push({ id: "w1", source: "c1", target: "s1" });
+    expect((await applyMcpRequest({ id: "4", tool: "update_link", args: { from: "s1", to: "Inès", setup: "s1" } }, store, fr)).ok).toBe(false);
   });
 
   it("corbeille, question d'un personnage, cadre, projet", async () => {

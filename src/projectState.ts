@@ -5,6 +5,7 @@ import { readAiMode, type AiMode } from "./atelier";
 import type { Comments } from "./comments";
 import { relabelMentions, removeMentions } from "./mentions";
 import { readWires, wiresToMeta } from "./wires";
+import { readSetups, setupsToMeta } from "./setups";
 import { foldNovelNodes, foldScreenplayNotes } from "./sceneNotes";
 import { renamedZone } from "./research";
 import { authorName, contactLines } from "./profile";
@@ -99,7 +100,11 @@ export function fromProject(p: Project) {
   });
   // Fiches des fils (lot 7), rangées dans le fil lui-même pendant le travail.
   const wires = readWires((p.meta as { wires?: unknown }).wires, new Set(p.meta.links.map((l) => l.id)));
-  const edges: Edge[] = p.meta.links.map((l) => ({ id: l.id, source: l.source, target: l.target, label: l.label, type: "floating", ...(wires.has(l.id) ? { data: { fiche: wires.get(l.id) } } : {}) }));
+  const setups = readSetups((p.meta as { setups?: unknown }).setups, p.meta.links);
+  const edges: Edge[] = p.meta.links.map((l) => {
+    const data = { ...(wires.has(l.id) ? { fiche: wires.get(l.id) } : {}), ...(setups.has(l.id) ? { setup: setups.get(l.id) } : {}) };
+    return { id: l.id, source: l.source, target: l.target, label: l.label, type: "floating", ...(Object.keys(data).length > 0 ? { data } : {}) };
+  });
   const kind: ProjectKind = isProjectKind(p.meta.kind) ? p.meta.kind : "roman";
   const paperChosen = isPaper(p.meta.paper);
   const paper: Paper = isPaper(p.meta.paper) ? p.meta.paper : defaultPaper(useSettings.getState().lang);
@@ -110,7 +115,7 @@ export function fromProject(p: Project) {
 }
 
 /** Clés de cosmos.json que cette version lit ou écrit elle-même. */
-export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "revisions", "bibleExport", "coverDesign", "wires", "viewport"]);
+export const KNOWN_META = new Set(["version", "title", "kind", "paper", "sceneNumbers", "underlineHeadings", "hideWires", "aiMode", "markdownCopies", "layout", "links", "frames", "plan", "goals", "progress", "pitch", "chutier", "print", "scriptPdf", "revisions", "bibleExport", "coverDesign", "wires", "setups", "viewport"]);
 
 /** Clés inconnues de cosmos.json (écrites par une version plus récente), gardées pour être réécrites. */
 export function unknownMeta(meta: object): Record<string, unknown> {
@@ -361,6 +366,7 @@ export function toProject(
       ...(bibleExportToMeta(s.bibleExport) ? { bibleExport: bibleExportToMeta(s.bibleExport) } : {}),
       ...(s.coverDesign && coverDesignToMeta(s.coverDesign) ? { coverDesign: coverDesignToMeta(s.coverDesign) } : {}),
       ...(wiresToMeta(s.edges) ? { wires: wiresToMeta(s.edges) } : {}),
+      ...(setupsToMeta(s.edges) ? { setups: setupsToMeta(s.edges) } : {}),
     },
     cards: s.nodes.map((n) => n.data),
     screenplay: s.screenplay,
