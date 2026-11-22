@@ -47,7 +47,11 @@ import type { ResolvedPos } from "@tiptap/pm/model";
 import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
 import { eighthsBetween } from "../screenplay/eighths";
-import { SceneLength } from "./SceneLength";
+import { SceneLength, useSceneEighths } from "./SceneLength";
+import { keptByThread, threadGaps, threadPresence } from "../threadFilter";
+import { setThreadFold, type ThreadFold } from "../screenplay/editor/threadFold";
+import { ThreadBanner, gapText } from "./ThreadBanner";
+import { screenplaySceneTexts } from "../timeline";
 import { suggest, type Suggestion } from "../screenplay/editor/autocomplete";
 import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { EditorContent, type Editor } from "@tiptap/react";
@@ -333,7 +337,7 @@ export function ScreenplayView() {
           },
           // Pas de pages en mode focus (comme dans le manuscrit) : le texte seul, sans coupures de page.
           // Filtre par personnage : des scènes sont cachées, la feuille passe en continu (les pages mentiraient).
-          enabled: (dom) => !useCosmos.getState().focusMode && !useCosmos.getState().charFilter && (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
+          enabled: (dom) => !useCosmos.getState().focusMode && !useCosmos.getState().charFilter && !useCosmos.getState().threadFilter && (dom.closest(".sp-scroll")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
           // Réplique coupée par la page : (À SUIVRE) et (SUITE), comme dans le PDF (réglage du projet).
           lock: () => useCosmos.getState().revisions.locked,
           continued: () => (useCosmos.getState().scriptPdf.breaks ? { more: getT().screenplay.more, contd: getT().screenplay.contd } : null),
@@ -795,6 +799,35 @@ export function ScreenplayView() {
     if (!editor || editor.isDestroyed) return;
     editor.view.dispatch(setCharacterFilter(editor.state, charFilter));
   }, [editor, charFilter]);
+  // Lire le récit fil par fil (#117) : seulement les scènes d'une carte, l'écart entre elles en pages.
+  const threadFilter = useCosmos((s) => s.threadFilter);
+  const edges = useCosmos((s) => s.edges);
+  const eighths = useSceneEighths();
+  const threadCard = threadFilter ? nodes.find((n) => n.id === threadFilter.id)?.data : undefined;
+  const sceneIds = useMemo(() => scenes.flatMap((x) => (x.cardId ? [x.cardId] : [])), [scenes]);
+  const threadKeptIds = useMemo(() => {
+    if (!threadFilter || !threadCard) return null;
+    // Le texte ne compte que pour « aussi celles qui la citent ».
+    const texts = threadFilter.cited ? screenplaySceneTexts(elements) : {};
+    return keptByThread(threadPresence(threadFilter.id, nodes.map((n) => n.data), edges, texts, sceneIds), sceneIds, threadFilter.cited);
+  }, [threadFilter, threadCard, nodes, edges, sceneIds, elements]);
+  // Scènes connues quand le filtre a été posé : une scène écrite depuis reste montrée.
+  const [threadKnown, setThreadKnown] = useState<{ for: unknown; ids: Set<string> } | null>(null);
+  if (threadFilter && threadKnown?.for !== threadFilter) setThreadKnown({ for: threadFilter, ids: new Set(sceneIds) });
+  else if (!threadFilter && threadKnown) setThreadKnown(null);
+  const threadFold = useMemo<ThreadFold | null>(() => {
+    if (!threadKeptIds || !threadKnown) return null;
+    const kept = new Set(threadKeptIds);
+    const gaps = threadGaps(sceneIds, kept, (id) => eighths.get(id) ?? 0);
+    return { kept, known: threadKnown.ids, gap: (id) => { const g = gaps.get(id); return g ? gapText(g.scenes, Math.floor(g.size / 8), getT()) : null; } };
+  }, [threadKeptIds, threadKnown, sceneIds, eighths]);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dispatch(setThreadFold(editor.state, threadFold));
+  }, [editor, threadFold]);
+  /** Une scène de la liste est-elle montrée par le filtre en cours (personnage ou fil) ? */
+  const listed = (s: { index: number; cardId?: string }) =>
+    keptScenes ? keptScenes.has(s.index) : threadFold ? !!s.cardId && (threadFold.kept.has(s.cardId) || !threadFold.known.has(s.cardId)) : true;
 
   if (!editor || !screenplay) return null;
 
@@ -1198,7 +1231,7 @@ export function ScreenplayView() {
           </div>
         )}
         <ol className="sp-scene-list">
-          {sceneRows.map((row) => row.kind === "omitted" ? (keptScenes ? null : (
+          {sceneRows.map((row) => row.kind === "omitted" ? (keptScenes || threadFold ? null : (
             <li key={`omitted:${row.id}`} className="sp-scene-omitted">
               <button type="button" aria-label={fmt(sp.omittedAria, { n: elements[row.at]?.sceneNumber ?? String(row.number) })} onClick={() => goTo(row.at)}>
                 <span className="is-slugline ms-name">
@@ -1212,7 +1245,7 @@ export function ScreenplayView() {
                 {row.title}
               </button>
             </li>
-          ) : ((s: (typeof scenes)[number], k: number) => keptScenes && !keptScenes.has(s.index) ? null : (
+          ) : ((s: (typeof scenes)[number], k: number) => !listed(s) ? null : (
             <li
               key={s.index}
               className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}`}
@@ -1405,6 +1438,7 @@ export function ScreenplayView() {
           {/* Mode Atelier : variantes de l'élément en cours, « Je l'ai repris », trois directions pour la scène. */}
           <ScreenplayAtelier editor={editor} />
           <ScreenplayDirections editor={editor} />
+          {threadFilter && <ThreadBanner card={threadCard} shown={threadKeptIds?.length ?? 0} total={sceneIds.length} />}
           {charFilter && (
             <p className="sp-filter-banner" role="status">
               <span>{charFilter.with ? fmt(charFilter.mode === "lines" ? sp.filterBannerPairLines : sp.filterBannerPair, { name: charFilter.name, other: charFilter.with }) : fmt(charFilter.mode === "lines" ? sp.filterBannerLines : sp.filterBannerScenes, { name: charFilter.name })}</span>

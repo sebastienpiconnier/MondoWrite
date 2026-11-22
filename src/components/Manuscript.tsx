@@ -36,7 +36,7 @@ import { setCaretSource } from "../resume";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { EdgeHandle } from "./EdgeHandle";
-import { fmt, useT } from "../i18n";
+import { fmt, getT, useT } from "../i18n";
 import { checkManuscript, type Finding } from "../review/checks";
 import { ReviewPanel, SideTabs, useOpenFindings, type SideTab } from "./ReviewPanel";
 import { CommentsPanel } from "./CommentsPanel";
@@ -61,10 +61,15 @@ import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar"
 import { FOCUS_COLUMN_EM } from "../focusText";
 import type { Passage } from "../chutier";
 import { plainText } from "../search";
-import { manuscriptStats } from "../stats";
+import { manuscriptStats, pagesFor } from "../stats";
+import { keptByThread, threadGaps, threadPresence } from "../threadFilter";
+import type { ThreadFold } from "../screenplay/editor/threadFold";
+import { ThreadBanner, gapText } from "./ThreadBanner";
 import { StatsBox } from "./StatsBox";
 
 const COUNTER_KEY = "mondowrite.manuscript.counter";
+/** Texte lu par le filtre par fil quand seuls les fils comptent (objet stable : pas de recalcul à la frappe). */
+const NO_TEXT: Record<string, string> = {};
 type CounterScope = "scene" | "chapter" | "book";
 function readCounter(): CounterScope {
   try {
@@ -172,11 +177,12 @@ export function Manuscript() {
   const told = useMemo(() => new Set(povOn ? cards.filter((c) => c.type === "scene" && !c.page && c.fiche?.pov === povOn).map((c) => c.id) : []), [cards, povOn]);
   /** Scènes d'un groupe du volet : celles du narrateur, et les autres repliées par suites. */
   const withFolds = (ids: string[]): (string | { fold: string[] })[] => {
-    if (!povOn) return ids;
+    const keep = threadFold?.kept ?? (povOn ? told : null);
+    if (!keep) return ids;
     const out: (string | { fold: string[] })[] = [];
     for (const id of ids) {
       const last = out[out.length - 1];
-      if (told.has(id)) out.push(id);
+      if (keep.has(id) || (threadFold && !threadFold.known.has(id))) out.push(id);
       else if (last && typeof last !== "string") last.fold.push(id);
       else out.push({ fold: [id] });
     }
@@ -389,6 +395,26 @@ export function Manuscript() {
     };
   }, [setFocusMode]);
   const stats = useMemo(() => manuscriptStats(manuscript, order), [manuscript, order]);
+  // Lire le récit fil par fil (#117) : seulement les scènes d'une carte, l'écart entre elles en pages du livre.
+  const threadFilter = useCosmos((s) => s.threadFilter);
+  const edges = useCosmos((s) => s.edges);
+  const threadCard = threadFilter ? cards.find((c) => c.id === threadFilter.id) : undefined;
+  // Le texte ne compte que pour « aussi celles qui la citent » : sans cela, rien à relire à chaque frappe.
+  const citedText = threadFilter?.cited ? manuscript : NO_TEXT;
+  const threadKeptIds = useMemo(
+    () => (threadFilter && threadCard ? keptByThread(threadPresence(threadFilter.id, cards, edges, citedText, order), order, threadFilter.cited) : null),
+    [threadFilter, threadCard, cards, edges, order, citedText],
+  );
+  // Scènes du livre quand le filtre a été posé : une scène née depuis (coupure) reste montrée.
+  const [threadKnown, setThreadKnown] = useState<{ for: unknown; ids: Set<string> } | null>(null);
+  if (threadFilter && threadKnown?.for !== threadFilter) setThreadKnown({ for: threadFilter, ids: new Set(order) });
+  else if (!threadFilter && threadKnown) setThreadKnown(null);
+  const threadFold = useMemo<ThreadFold | null>(() => {
+    if (!threadKeptIds || !threadKnown) return null;
+    const kept = new Set(threadKeptIds);
+    const gaps = threadGaps(order, kept, (id) => stats.perScene.get(id) ?? 0);
+    return { kept, known: threadKnown.ids, gap: (id) => { const g = gaps.get(id); return g ? gapText(g.scenes, pagesFor(g.size), getT()) : null; } };
+  }, [threadKeptIds, threadKnown, order, stats]);
   const numbers = useMemo(() => chapterNumbers(plan, order), [plan, order]);
   const chapterName = (chapter: Chapter) => {
     const n = numbers.get(chapter.id) ?? 0;
@@ -418,6 +444,13 @@ export function Manuscript() {
     setChosen(id);
     bookApi.current?.scrollToScene(id);
   };
+  // Filtre par fil posé : on va à la première scène du fil si la scène en cours n'en est pas.
+  const firstKept = threadKeptIds?.[0] ?? null;
+  useEffect(() => {
+    if (!threadFilter || !firstKept || (current && threadKeptIds?.includes(current))) return;
+    requestAnimationFrame(() => go(firstKept));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadFilter, firstKept]);
 
   if (!current || !card) {
     return (
@@ -604,8 +637,9 @@ export function Manuscript() {
 
   const at = order.indexOf(current);
   // Flèches : la scène d'avant et d'après, parmi celles du narrateur si le filtre est posé.
-  const prevId = order.slice(0, Math.max(at, 0)).reverse().find((id) => !povOn || told.has(id)) ?? null;
-  const nextId = order.slice(at + 1).find((id) => !povOn || told.has(id)) ?? null;
+  const inView = (id: string) => (threadFold ? threadFold.kept.has(id) || !threadFold.known.has(id) : !povOn || told.has(id));
+  const prevId = order.slice(0, Math.max(at, 0)).reverse().find(inView) ?? null;
+  const nextId = order.slice(at + 1).find(inView) ?? null;
   const title = card.title.trim() || m.untitled;
   const detected = citedCards(manuscript[current], cards);
   const chapter = chapterOf(plan, current);
@@ -718,6 +752,7 @@ export function Manuscript() {
                         title={m.povFoldHint}
                         onClick={() => {
                           setPovFilter(null);
+                          useCosmos.getState().setThreadFilter(null);
                           go(entry.fold[0]);
                         }}
                       >
@@ -930,13 +965,15 @@ export function Manuscript() {
             />
           </div>
           </div>
+          {/* Lire le récit fil par fil (#117) : le bandeau reste collé avec la barre pendant qu'on lit. */}
+          {threadFilter && <ThreadBanner card={threadCard} shown={threadKeptIds?.length ?? 0} total={story.length} />}
           </div>
           {/* Tout le livre dans un seul éditeur, mis en pages ; le volet de gauche mène à une scène ou à un chapitre. */}
           <div
             className={`ms-page${focusMode && (writing.highlight === "sentence" || writing.highlight === "paragraph") ? " is-dimmed" : ""}`}
             style={{ ["--ms-width" as string]: PAGE.width, ["--ms-height" as string]: PAGE.height }}
           >
-            <BookEditor order={order} cards={cards} plan={plan} current={current} onCurrent={setChosen} handlers={handlers} api={bookApi} onPlace={setPlace} spell={spell} />
+            <BookEditor order={order} cards={cards} plan={plan} current={current} onCurrent={setChosen} handlers={handlers} api={bookApi} onPlace={setPlace} spell={spell} thread={threadFold} />
           </div>
           {notice && (
             <div className="ms-notice" role="status">

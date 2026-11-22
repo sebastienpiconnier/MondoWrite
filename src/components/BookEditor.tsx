@@ -35,6 +35,7 @@ import { findInText, nthMatch } from "../search";
 import { centerSelection } from "./centerSelection";
 import { LanguageTool } from "../languagetool/extension";
 import { LanguageToolBubble, LanguageToolLive } from "./LanguageToolBubble";
+import { ThreadFoldExtension, setThreadFold, type ThreadFold } from "../screenplay/editor/threadFold";
 
 /** Page du manuscrit à l'écran, en em : format livre (2:3), environ 250 mots par page. */
 export const PAGE = { width: 34, height: 51, marginTop: 5, marginBottom: 5, lineHeight: 1.6 };
@@ -98,6 +99,7 @@ export function BookEditor({
   api,
   onPlace,
   spell,
+  thread = null,
 }: {
   order: string[];
   cards: CardData[];
@@ -110,6 +112,8 @@ export function BookEditor({
   onPlace: (place: { first: number; last: number } | null) => void;
   /** Correcteur orthographique du navigateur : coupé pendant l'écriture, activé à la demande. */
   spell: boolean;
+  /** Lire le récit fil par fil (#117) : scènes gardées et écarts ; null, tout le livre. */
+  thread?: ThreadFold | null;
 }) {
   const t = useT();
   const { types } = useVocab();
@@ -200,7 +204,8 @@ export function BookEditor({
           const lines = (PAGE.height - PAGE.marginTop - PAGE.marginBottom) / PAGE.lineHeight;
           return { lines: lines * PAGE.lineHeight, pageLines: PAGE.height, marginTop: PAGE.marginTop };
         },
-        enabled: (dom) => !useCosmos.getState().focusMode && (dom.closest(".ms-main")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
+        // Pendant un filtre par fil (#117), la feuille passe en continu : les scènes cachées fausseraient les pages.
+        enabled: (dom) => !useCosmos.getState().focusMode && !useCosmos.getState().threadFilter && (dom.closest(".ms-main")?.clientWidth ?? 0) - 32 > PAGE_MIN_WIDTH,
         item: (type, node) =>
           type === SCENE_MARK
             ? { margin: 0, keep: node.attrs.chapterId ? 4 : node.attrs.breakBefore ? 2 : 0, before: !!node.attrs.newPage }
@@ -218,6 +223,7 @@ export function BookEditor({
       }),
       BookUndo,
       BookKeys.configure({ handlers: () => handlers.current }),
+      ThreadFoldExtension.configure({ start: (node) => (node.type.name === SCENE_MARK ? String(node.attrs.id) : undefined) }),
       // Mode focus : la phrase ou le paragraphe en cours en pleine encre, le reste estompé.
       FocusWriting.configure({ mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off") }),
     ],
@@ -274,6 +280,12 @@ export function BookEditor({
     },
   });
   editorRef.current = editor;
+
+  // Lire le récit fil par fil (#117) : les scènes hors du fil se cachent, l'écart se lit devant les autres.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dispatch(setThreadFold(editor.state, thread));
+  }, [editor, thread]);
 
   /** Remplace « /Nom » par le nom seul (ou garde le nom sélectionné), crée la fiche en arrière-plan : on continue d'écrire, aucun lien ne reste. */
   const pickCreate = (index: number) => {

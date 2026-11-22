@@ -215,6 +215,8 @@
 .tl-card { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 @media (any-hover: hover) { .tl-card:hover, .tl-table thead th button:hover .tl-scene { text-decoration: underline; } }
 .tl-count { font-size: 0.75rem; color: var(--ink-2); }
+.tl-read { flex: none; width: 28px; height: 28px; min-height: 0; color: var(--ink-2); }
+@media (pointer: coarse) { .tl-read { width: 44px; height: 44px; } }
 .tl-group-label { position: sticky; left: 10px; display: inline-block; }
 .tl-group th { padding: 10px 10px 6px; background: var(--ground); font: 600 11px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); text-align: left; }
 .tl-cell { display: grid; place-items: center; width: 100%; min-width: 96px; height: 44px; border: 0; background: transparent; cursor: pointer; }
@@ -1042,7 +1044,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ribbon-legend-swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--scene-pov); }
 .ribbon-legend .is-none .ribbon-legend-swatch { background: transparent; border: 1.5px solid var(--line-2); box-sizing: border-box; }
 .ribbon-lane { margin-top: 4px; }
-.ribbon-lane-name { display: block; overflow: hidden; color: var(--ink-2); font-size: 0.75rem; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.ribbon-lane-name { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 0.75rem; line-height: 1.4; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+@media (any-hover: hover) { .ribbon-lane-name:hover { color: var(--ink); text-decoration: underline; } }
 .ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--ground); }
 .ribbon-lane-mark { position: absolute; top: 0; bottom: 0; min-width: 3px; border-right: 2px solid var(--surface); background: var(--type-intrigue); }
 .ribbon-lane-mark.is-cited { opacity: 0.45; }
@@ -1597,3 +1600,40 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 /* Mode focus sans couleur : les soulignements de LanguageTool restent, à l'encre du thème. */
 .is-focus .lt-issue { --lt-color: var(--ink-2); }
 .is-focus .lt-issue.is-active { background: none; }
+
+/* Lire le récit fil par fil (#117) : scènes hors du fil cachées, écart dit devant les scènes gardées. */
+.ms-editor .is-thread-hidden,
+.sp-editor .is-thread-hidden { display: none !important; } /* plus fort que la lettrine (flow-root) */
+.ms-meta-wrap .thread-banner { margin: 6px auto 0; box-shadow: var(--shadow-card); }
+.thread-gap {
+  margin: 1.2em 0;
+  padding: 0.3em 0;
+  border-block: 1px dashed var(--line);
+  color: var(--page-ink-dim);
+  font-family: var(--font-ui);
+  font-size: 0.8em;
+  font-style: italic;
+  text-align: center;
+  user-select: none;
+}
+.thread-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 12px;
+  margin: 6px auto;
+  padding: 4px 6px 4px 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 0.875rem;
+  max-width: 100%;
+}
+.sp-bar .thread-banner { flex-basis: 100%; }
+.thread-banner-title { font-weight: 600; }
+.thread-banner-cited { display: inline-flex; align-items: center; gap: 6px; }
+.thread-banner .ghost-button { min-height: 32px; color: inherit; }
+@media (pointer: coarse) {
+  .thread-banner .ghost-button, .thread-banner-cited { min-height: 44px; }
+}

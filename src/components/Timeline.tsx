@@ -11,7 +11,8 @@ import { typeColor } from "../types";
 import { screenplaySceneTexts, timeline } from "../timeline";
 
 export function Timeline({ order }: { order: string[] }) {
-  const p = useT().plan;
+  const t = useT();
+  const p = t.plan;
   const { types } = useVocab();
   const lang = useSettings((s) => s.lang);
   const nodes = useCosmos((s) => s.nodes);
@@ -23,6 +24,7 @@ export function Timeline({ order }: { order: string[] }) {
   const texts = useMemo(() => (kind === "scenario" && screenplay ? screenplaySceneTexts(screenplay.elements) : manuscript), [kind, screenplay, manuscript]);
   const toggleLink = useCosmos((s) => s.toggleLink);
   const revealCard = useCosmos((s) => s.revealCard);
+  const readThread = useCosmos((s) => s.readThread);
 
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
   const groups = useMemo(() => timeline(cards, edges, texts, order, lang), [cards, edges, texts, order, lang]);
@@ -75,6 +77,12 @@ export function Timeline({ order }: { order: string[] }) {
                         {row.card.title}
                       </button>
                       <span className="tl-count">{row.count}</span>
+                      {/* Lire le récit fil par fil (#117) : seulement ses scènes, dans le Manuscrit ou le Scénario. */}
+                      {row.count > 0 && (
+                        <button type="button" className="icon-button tl-read" aria-label={fmt(t.thread.readOf, { title: row.card.title })} title={fmt(t.thread.readOf, { title: row.card.title })} onClick={() => readThread(row.card.id)}>
+                          <ReadIcon />
+                        </button>
+                      )}
                     </div>
                   </th>
                   {row.cells.map((cell, i) => {
@@ -109,5 +117,15 @@ export function Timeline({ order }: { order: string[] }) {
         </table>
       </div>
     </>
+  );
+}
+
+/** Icône « lire » : un livre ouvert, au trait de l'encre du thème. */
+function ReadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5Z" />
+      <path d="M12 6.5V19.5" />
+    </svg>
   );
 }

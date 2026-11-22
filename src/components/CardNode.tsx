@@ -4,6 +4,7 @@
 // (souris, doigt, et sans clavier physique sur mobile).
 // « @ » dans le texte cite une autre carte : un menu propose les cartes du projet, et un fil est tiré.
 
+import { canFollow } from "../threadFilter";
 import { formOf } from "../pitch";
 import { autosize } from "./autosize";
 import { documentExtension, imageExtension } from "../media";
@@ -514,7 +515,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         </button>
         {/* Mettre à la corbeille : dans le menu ⋯ (1.11.1), en rouge et en dernier ; un × se lisait comme « fermer ».
             Suppr au clavier reste le chemin rapide. */}
-        <CardActions id={id} hasImage={!!data.image} title={data.title} isCharacter={data.type === "personnage"} />
+        <CardActions id={id} hasImage={!!data.image} title={data.title} isCharacter={data.type === "personnage"} follow={canFollow(data.type)} />
       </div>
 
       {/* Titre sur plusieurs lignes si besoin (zone qui grandit), mais sans retour à la ligne :

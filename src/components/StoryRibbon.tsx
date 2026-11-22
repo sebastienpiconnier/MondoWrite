@@ -140,7 +140,10 @@ export function StoryRibbon({ currentId, onGo }: Props) {
       )}
       {lanes.map((lane) => (
         <div key={lane.id} className="ribbon-lane">
-          <span className="ribbon-lane-name">{lane.title}</span>
+          {/* Lire le récit fil par fil (#117) : le nom de l'intrigue ouvre ses seules scènes. */}
+          <button type="button" className="ribbon-lane-name" title={fmt(t.thread.readOf, { title: lane.title })} onClick={() => useCosmos.getState().readThread(lane.id)}>
+            {lane.title}
+          </button>
           <div className="ribbon-lane-track" role="img" aria-label={fmt(r.laneAria, { title: lane.title, n: lane.cells.filter((c) => c.presence !== "none").length })}>
             {lane.cells.map((c) =>
               c.presence === "none" ? null : (

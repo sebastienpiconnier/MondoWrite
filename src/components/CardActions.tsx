@@ -10,8 +10,9 @@ import { useStoryMarks } from "../interactive/useStoryMap";
 import { readMarksKey } from "../interactive/storyMap";
 import { openPlay } from "../interactive/playState";
 import { askStoryChoice } from "./StoryChoices";
+import { useInteractive } from "../interactive/useInteractive";
 
-export function CardActions({ id, hasImage, title = "", isCharacter = false }: { id: string; hasImage: boolean; title?: string; isCharacter?: boolean }) {
+export function CardActions({ id, hasImage, title = "", isCharacter = false, follow = false }: { id: string; hasImage: boolean; title?: string; isCharacter?: boolean; follow?: boolean }) {
   const all = useT();
   const t = all.card;
   const open = useCosmos((s) => s.cardMenu === id);
@@ -35,6 +36,8 @@ export function CardActions({ id, hasImage, title = "", isCharacter = false }: {
   };
   // Scène d'un roman interactif (lot 11) : les gestes de la carte des choix, au clavier et au doigt.
   const story = useStoryMarks((s) => id in s.byId);
+  // Lire le récit fil par fil (#117) : pas dans un roman interactif, où l'ordre du livre n'est pas celui de la lecture.
+  const interactive = useInteractive();
   const marksKey = useStoryMarks((s) => s.byId[id] ?? "");
   const m = all.interactive.map;
   // Une scène qui finit l'histoire (lot 14) : son type de fin, les deux autres proposés.
@@ -64,6 +67,7 @@ export function CardActions({ id, hasImage, title = "", isCharacter = false }: {
     // Photos libres ou fichier de l'appareil : la fenêtre propose les deux.
     [hasImage ? t.changeImage : t.addImage, () => useCosmos.getState().openPhotos({ kind: "card", id })],
     [t.filterHere, () => useCosmos.getState().setFilterCard(id)],
+    ...(follow && !interactive ? [[all.thread.menu, () => useCosmos.getState().readThread(id)] as [string, () => void]] : []),
     // Copier : Cmd/Ctrl + V (ou Coller du menu Édition) la recrée ; le presse-papiers reçoit aussi son texte.
     [
       t.copyCard,

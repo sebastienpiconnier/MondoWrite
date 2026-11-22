@@ -142,7 +142,7 @@
   /* Mode focus : la barre du haut est cachée ; le volet passe sous l'encoche, à gauche de la croix de sortie. */
   .screenplay.is-focus .sp-bar { padding-top: calc(env(safe-area-inset-top) + 6px); padding-right: 60px; justify-content: flex-start; background: var(--ground); border-bottom-color: transparent; }
   .screenplay.is-focus .sp-bar .sp-bar-toggle { min-height: 40px; }
-  .sp-bar:not(.is-open) > :not(.sp-bar-toggle, .sp-filter-banner) { display: none; }
+  .sp-bar:not(.is-open) > :not(.sp-bar-toggle, .sp-filter-banner, .thread-banner) { display: none; }
   .sp-bar.is-open .sp-bar-toggle { flex: 0 0 100%; justify-content: center; }
   .screenplay.is-focus .sp-bar.is-open .sp-bar-toggle { justify-content: flex-start; }
   .sp-bar-hint { display: none; }

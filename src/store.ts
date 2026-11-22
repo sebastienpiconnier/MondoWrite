@@ -22,6 +22,7 @@ import { isOmitted, omitScene, omittedIndex } from "./screenplay/omit";
 import { serialize as serializeFountain } from "./screenplay/serialize";
 import { parse as parseFountain } from "./screenplay/parse";
 import type { CharacterFilter } from "./review/filter";
+import type { ThreadFilter } from "./threadFilter";
 import { copyBounds, copyText, linksWithin, pasteCopy, type CardCopy, type CopiedCard } from "./cardClipboard";
 import { appendHtml, fountainElements, notesAreSceneText, sceneBodyHtml, sceneToNotes, textElements, textToHtml, withoutLeadingSynopsis } from "./cardText";
 import { foldNovelNodes, foldNovelNotes, foldScreenplayNotes } from "./sceneNotes";
@@ -340,6 +341,14 @@ export interface CosmosState {
   /** Scénario : filtre par personnage (« Ses scènes », « Ses répliques »). Affichage, jamais enregistré. */
   charFilter: CharacterFilter | null;
   setCharFilter: (filter: CharacterFilter | null) => void;
+  /**
+   * Lire le récit fil par fil (#117) : le Manuscrit ou le Scénario ne montrent que les scènes d'une carte.
+   * Affichage, jamais enregistré ; exclusif du filtre par personnage.
+   */
+  threadFilter: ThreadFilter | null;
+  setThreadFilter: (filter: ThreadFilter | null) => void;
+  /** « Lire ces scènes » : pose le filtre sur la carte et ouvre la vue d'écriture (tout le scénario d'une série). */
+  readThread: (id: string) => void;
   spotlightId: string | null;
   setSpotlight: (id: string | null) => void;
   filter: CanvasFilter;
@@ -1301,6 +1310,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       sessionStart: null,
       spotlightId: null,
       charFilter: null,
+      threadFilter: null,
       wiresShown: [],
       filter: NO_FILTER,
       expandedId: null,
@@ -1578,6 +1588,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       sessionStart: null,
       spotlightId: null,
       charFilter: null,
+      threadFilter: null,
       wiresShown: [],
       filter: NO_FILTER,
       expandedId: null,
@@ -1813,7 +1824,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
     // Ouvrir la corbeille efface le message « mis à la corbeille » : on y est.
     setDialog: (dialog) => set({ dialog, ...(dialog === "trash" ? { trashNotice: null } : {}), ...(dialog !== "card" ? { expandedId: null } : {}) }),
     charFilter: null,
-    setCharFilter: (charFilter) => set({ charFilter }),
+    setCharFilter: (charFilter) => set({ charFilter, ...(charFilter ? { threadFilter: null } : {}) }),
+    threadFilter: null,
+    setThreadFilter: (threadFilter) => set({ threadFilter, ...(threadFilter ? { charFilter: null } : {}) }),
+    readThread: (id) => {
+      const serie = get().kind === "scenario" ? { currentEpisode: null } : {};
+      set({ threadFilter: { id, cited: get().threadFilter?.cited ?? false }, charFilter: null, view: "manuscrit", cardMenu: null, ...serie });
+    },
     spotlightId: null,
     setSpotlight: (spotlightId) => set({ spotlightId: spotlightId && get().nodes.some((n) => n.id === spotlightId) ? spotlightId : null }),
     filter: NO_FILTER,
@@ -3177,6 +3194,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         saveError: null,
         spotlightId: null,
         charFilter: null,
+        threadFilter: null,
         wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,
@@ -3908,6 +3926,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         saveError: null,
         spotlightId: null,
         charFilter: null,
+        threadFilter: null,
         wiresShown: [],
         filter: NO_FILTER,
         expandedId: null,

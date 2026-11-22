@@ -1,6 +1,7 @@
 // Extensions TipTap de l'éditeur de scénario, assemblées.
 
 import { CharacterFilterExtension } from "./characterFilter";
+import { ThreadFoldExtension } from "./threadFold";
 import { FocusWriting } from "../../components/focusWriting";
 import type { FocusHighlight } from "../../focusText";
 import type { Extensions } from "@tiptap/react";
@@ -92,6 +93,10 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     ...(options.continued ? [Continued.configure(options.continued)] : []),
     ...(options.revision ? [Revisions.configure({ current: options.revision })] : []),
     CharacterFilterExtension,
+    // Lire le récit fil par fil (#117) : une scène commence à son en-tête (sans carte ou omise : jamais gardée).
+    ThreadFoldExtension.configure({
+      start: (node) => (node.type.name === "sceneHeading" ? (node.attrs.cardId && node.attrs.omitted == null ? String(node.attrs.cardId) : null) : undefined),
+    }),
     ReadingMark,
   ];
 }
