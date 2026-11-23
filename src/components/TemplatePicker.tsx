@@ -295,7 +295,9 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
           <ol className="tpl-rows" data-reorder-list>
             {editing.rows.map((r, i) => (
               <li key={r.id} data-reorder-index={i} className={`tpl-row level-${r.level ?? 1}`} aria-label={(r.level ?? 1) > 1 ? fmt(e.levelOf, { n: r.level ?? 1 }) : undefined}>
-                <ReorderHandle index={i} count={editing.rows.length} onMove={move} label={fmt(t.controls.reorder, { label: r.label || i + 1 })} />
+                <ReorderHandle index={i} count={editing.rows.length} onMove={move}
+                  label={fmt(t.controls.reorder, { label: r.label || i + 1 })}
+                  moveLabels={{ up: fmt(e.up, { label: r.label || i + 1 }), down: fmt(e.down, { label: r.label || i + 1 }) }} />
                 <span className="tpl-num" aria-hidden="true">
                   {i + 1}
                 </span>

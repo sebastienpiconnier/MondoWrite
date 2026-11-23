@@ -13,6 +13,7 @@ import { useCosmos } from "../store";
 import { filterActive } from "../canvasFilter";
 import { typesFor, typeColor } from "../types";
 import { setupScenes } from "../setups";
+import { EyeIcon } from "./EyeIcon";
 
 const NO_NODES: readonly { id: string; data: CardData }[] = [];
 const NO_EDGES: readonly never[] = [];
@@ -85,7 +86,7 @@ export function CanvasFilterMenu() {
         <span className="tool-label" aria-hidden="true">{t.short}</span>
       </button>
       {open && (
-        <div id={panelId} className="canvas-filter-panel" role="group" aria-label={t.button}>
+        <div id={panelId} className="canvas-filter-panel canvas-type-filter" role="group" aria-label={t.button}>
           <p className="canvas-filter-title">{t.title}</p>
           {menuTypes.map((type) => {
             const shown = !filter.types.includes(type);
@@ -123,10 +124,10 @@ export function CanvasFilterMenu() {
           )}
           <div className="canvas-filter-actions">
             <button type="button" className="ghost-button" disabled={!active} onClick={clearFilter}>
-              {t.showAll}
+              <EyeIcon /> {t.showAll}
             </button>
             <button type="button" className="ghost-button" disabled={menuTypes.every((x) => filter.types.includes(x))} onClick={() => setFilterTypes([...menuTypes])}>
-              {t.hideAll}
+              <EyeIcon slashed /> {t.hideAll}
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Native disclosure shared by writing preferences and optional profile fields. */
+/** Volet natif commun aux réglages d’écriture et aux champs facultatifs du profil. */
 export function SettingsDisclosure({ title, summary, name, initiallyOpen, children }: {
   title: string;
   summary?: string;

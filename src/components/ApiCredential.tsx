@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from "react";
 import { useT } from "../i18n";
+import { EyeIcon } from "./EyeIcon";
 
 interface Props {
   value: string;
@@ -7,7 +8,7 @@ interface Props {
   server?: { url: string; placeholder?: string; onChange: (value: string) => void };
 }
 
-/** The provider key on this component resets visibility when the service changes. */
+/** La clé React du fournisseur masque de nouveau le secret au changement de service. */
 export function ApiCredential({ value, onChange, server }: Props) {
   const t = useT();
   const id = useId();
@@ -39,10 +40,7 @@ export function ApiCredential({ value, onChange, server }: Props) {
           <div className="credential-field">
             <input id={id} ref={input} type={visible ? "text" : "password"} value={value} autoComplete="off" spellCheck={false} aria-describedby={id + "-hint"} onChange={(e) => onChange(e.target.value)} />
             <button type="button" className="icon-button" title={toggleLabel} aria-label={toggleLabel} onClick={() => setVisible(!visible)}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                {visible ? <path d="m3 3 18 18M10 5.2a10 10 0 0 1 2-.2c6.2 0 10 7 10 7a19 19 0 0 1-3.2 4.1M6.2 6.8A20 20 0 0 0 2 12s3.8 7 10 7c1.7 0 3.3-.5 4.7-1.2M10 10a3 3 0 0 0 4 4" /> :
-                  <><path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>}
-              </svg>
+              <EyeIcon slashed={visible} />
             </button>
           </div>
           <p className="settings-hint" id={id + "-hint"}>{server ? t.ai.tokenHint : t.ai.keyHint}</p>

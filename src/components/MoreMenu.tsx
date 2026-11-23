@@ -4,7 +4,7 @@
 // s'il manque de place. Souris, doigt et clavier : flèches, Début, Fin, Échap rend le focus au bouton.
 // Une action destructive (`danger`) est en rouge, en dernier, séparée des autres.
 
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type ButtonHTMLAttributes } from "react";
 import { createPortal } from "react-dom";
 import { portalRoot } from "./portalRoot";
 import { useT } from "../i18n";
@@ -36,7 +36,15 @@ export function useKeyHint(): (...keys: ("Mod" | "Shift" | "Alt" | string)[]) =>
   };
 }
 
-export function MoreMenu({ items, label, className = "", icon }: { items: (MoreItem | false | null | undefined)[]; label?: string; className?: string; icon?: ReactNode }) {
+interface MoreMenuProps {
+  items: (MoreItem | false | null | undefined)[];
+  label?: string;
+  className?: string;
+  icon?: ReactNode;
+  triggerProps?: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "className" | "children" | "onClick">;
+}
+
+export function MoreMenu({ items, label, className = "", icon, triggerProps }: MoreMenuProps) {
   const t = useT();
   const name = label ?? t.app.moreActions;
   const list = items.filter((i): i is MoreItem => !!i);
@@ -105,6 +113,7 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
   return (
     <>
       <button
+        {...triggerProps}
         ref={buttonRef}
         type="button"
         className={`icon-button more-button nodrag ${className}`}

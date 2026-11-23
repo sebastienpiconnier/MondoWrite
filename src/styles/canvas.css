@@ -307,8 +307,13 @@
 .canvas-filter-item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: 8px; color: var(--ink); font-size: 0.875rem; cursor: pointer; }
 @media (any-hover: hover) { .canvas-filter-item:hover { background: var(--ground); } }
 .canvas-filter-item input { order: 1; width: 18px; height: 18px; margin: 0; margin-inline-start: auto; accent-color: var(--accent); }
-.canvas-filter-actions { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+.canvas-type-filter { min-width: min(17rem, calc(100vw - 24px)); max-height: calc(100dvh - 9rem); overflow-y: auto; }
+.canvas-type-filter > * { flex-shrink: 0; }
+.canvas-filter-actions { position: sticky; bottom: 0; background: var(--surface); display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
 .canvas-filter-panel .ghost-button { margin-top: 6px; min-height: 40px; }
+.canvas-filter-actions .ghost-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin: 0; padding: 0 8px; border-radius: 8px; font-size: 0.8125rem; white-space: nowrap; }
+.canvas-filter-actions svg { flex: none; }
+@media (pointer: coarse) { .canvas-filter-actions .ghost-button { min-height: 44px; } }
 .card-port { width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--accent); opacity: 0; transition: opacity 0.15s; z-index: 3; }
 .card.is-selected .card-port, .react-flow__node.connecting .card-port { opacity: 1; }
 @media (any-hover: hover) { .card:hover .card-port { opacity: 1; } }
@@ -510,6 +515,8 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 /* Téléphone : le menu des filtres s'ouvre vers la gauche depuis son bouton (il sortait de l'écran à droite). */
 @media (max-width: 720px) {
   .canvas-filter-panel { left: auto; right: 0; max-width: calc(100vw - 24px); }
+  .canvas-filter:has(.canvas-type-filter) { position: static; }
+  .canvas-type-filter { width: min(18rem, 100%); max-height: calc(100dvh - 11rem - env(safe-area-inset-bottom)); }
 }
 
 /* Cartes : le navigateur ne traite aucun geste tactile lui-même (comme le fond de React Flow). Sans cela, iOS

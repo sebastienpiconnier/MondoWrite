@@ -2322,7 +2322,9 @@ const scenarios = [
       await handle.focus();
       await page.keyboard.press("ArrowDown");
       await until(async () => await rows.nth(2).locator("input").first().inputValue() === title && await rows.nth(2).locator(".reorder-handle").evaluate(el => el === document.activeElement), "la case ou sa poignée n’a pas suivi le déplacement");
-      await page.keyboard.press("ArrowUp");
+      // Un simple clic sur la poignée ouvre aussi les commandes utilisables sans glisser.
+      await rows.nth(2).locator(".reorder-handle").click();
+      await dialog.getByRole("menuitem", { name: /Monter la case/ }).click();
       await until(async () => await rows.nth(1).locator("input").first().inputValue() === title, "la case n’est pas revenue à sa place");
       // La ligne affiche ses actions quand son nom reçoit le focus clavier.
       await dialog.locator(".tpl-row").last().locator("input").first().focus();
