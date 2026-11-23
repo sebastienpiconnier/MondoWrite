@@ -56,26 +56,15 @@ export function groupByPart<T>(items: readonly T[], typeOf: (item: T) => CardTyp
   return BIBLE_PARTS.map((part) => ({ part, items: items.filter((item) => PART_OF[typeOf(item)] === part) })).filter((g) => g.items.length > 0);
 }
 
-/**
- * Déplace une rubrique d'un cran à l'intérieur de sa partie (mode « Choisir et ranger ») : elle échange sa
- * place avec la rubrique voisine de la même partie. Au bord de sa partie, rien ne change (même objet rendu).
- */
-export function moveInPart(prefs: BibleSections, type: CardType, way: "up" | "down"): BibleSections {
+/** Déplace une rubrique à la place d'une autre de la même partie, sans toucher aux autres parties. */
+export function moveInPart(prefs: BibleSections, type: CardType, target: CardType): BibleSections {
+  const part = PART_OF[type];
+  if (type === target || PART_OF[target] !== part) return prefs;
   const order = sectionOrder(prefs);
-  const mates = order.filter((t) => PART_OF[t] === PART_OF[type]);
-  const i = mates.indexOf(type);
-  const other = mates[way === "up" ? i - 1 : i + 1];
-  if (i < 0 || !other) return prefs;
-  const a = order.indexOf(type);
-  const b = order.indexOf(other);
-  const next = [...order];
-  [next[a], next[b]] = [next[b], next[a]];
-  return { ...prefs, order: next };
-}
-
-/** La rubrique peut-elle monter ou descendre dans sa partie ? */
-export function canMoveInPart(prefs: BibleSections, type: CardType, way: "up" | "down"): boolean {
-  const mates = sectionOrder(prefs).filter((t) => PART_OF[t] === PART_OF[type]);
-  const i = mates.indexOf(type);
-  return way === "up" ? i > 0 : i >= 0 && i < mates.length - 1;
+  const mates = order.filter((item) => PART_OF[item] === part);
+  const to = mates.indexOf(target);
+  mates.splice(mates.indexOf(type), 1);
+  mates.splice(to, 0, type);
+  let index = 0;
+  return { ...prefs, order: order.map((item) => PART_OF[item] === part ? mates[index++] : item) };
 }

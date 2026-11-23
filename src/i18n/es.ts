@@ -630,7 +630,7 @@ export const es = {
     arrange: "Elegir y ordenar las secciones",
     arrangeDone: "Listo",
     arrangeReset: "Restablecer",
-    arrangeAria: "Secciones de la biblia: marca para mostrar, flechas para mover",
+    arrangeAria: "Secciones de la biblia: marca las que quieras mostrar y usa los tiradores para reordenarlas",
     moveUp: "Subir la sección «{section}»",
     moveDown: "Bajar la sección «{section}»",
     sectionEmpty: "Aún no hay fichas en esta sección.",

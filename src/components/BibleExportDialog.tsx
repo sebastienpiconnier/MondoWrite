@@ -266,23 +266,11 @@ export function BibleExportDialog() {
                     {label}
                     {!filled.has(p) && <span className="bexp-empty">{e.partEmpty}</span>}
                   </label>
-                  {on && !isPrivatePart(p) && (
-                    <>
-                      <span className="bexp-move">
-                        {(["up", "down"] as const).map((direction) => (
-                          <button key={direction} type="button"
-                            aria-label={fmt(direction === "up" ? e.moveUp : e.moveDown, { part: t.bible.parts[p] })}
-                            disabled={direction === "up" ? i === 0 : i === publicChecked.length - 1}
-                            onClick={() => set(movePart(options, p, direction))}>
-                            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                              <path d={direction === "up" ? "m3 10 5-5 5 5" : "m3 6 5 5 5-5"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                        ))}
-                      </span>
-                      <ReorderHandle index={i} count={publicChecked.length} label={fmt(t.controls.reorder, { label: t.bible.parts[p] })}
-                        onMove={(from, to) => set(movePart(options, publicChecked[from], to))} />
-                    </>
+                  {i >= 0 && (
+                    <ReorderHandle index={i} count={publicChecked.length}
+                      label={fmt(t.controls.reorder, { label: t.bible.parts[p] })}
+                      moveLabels={{ up: fmt(e.moveUp, { part: t.bible.parts[p] }), down: fmt(e.moveDown, { part: t.bible.parts[p] }) }}
+                      onMove={(_, to) => set(movePart(options, p, to))} />
                   )}
                 </li>
               );

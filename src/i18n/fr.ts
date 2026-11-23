@@ -533,7 +533,7 @@ export const fr = {
     arrange: "Choisir et ranger les rubriques",
     arrangeDone: "Terminé",
     arrangeReset: "Rétablir",
-    arrangeAria: "Rubriques de la bible : cocher pour afficher, flèches pour déplacer",
+    arrangeAria: "Rubriques de la bible : coche pour afficher, utilise les poignées pour réordonner",
     moveUp: "Monter la rubrique « {section} »",
     moveDown: "Descendre la rubrique « {section} »",
     sectionEmpty: "Aucune fiche dans cette rubrique pour l’instant.",

@@ -525,7 +525,7 @@ export const en: Messages = {
     arrange: "Choose and order sections",
     arrangeDone: "Done",
     arrangeReset: "Reset",
-    arrangeAria: "Bible sections: tick to show, arrows to move",
+    arrangeAria: "Bible sections: select to show, use the handles to reorder",
     moveUp: "Move the “{section}” section up",
     moveDown: "Move the “{section}” section down",
     sectionEmpty: "No entries in this section yet.",

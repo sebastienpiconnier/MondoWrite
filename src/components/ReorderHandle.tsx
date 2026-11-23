@@ -5,7 +5,7 @@ interface Props {
   label: string;
   index: number;
   count: number;
-  moveLabels?: { up: string; down: string };
+  moveLabels: { up: string; down: string };
   onMove: (from: number, to: number) => void;
 }
 
@@ -22,7 +22,7 @@ export function ReorderHandle({ label, index, count, onMove, moveLabels }: Props
     const next = index + delta;
     if (next < 0 || next >= count) return;
     onMove(index, next);
-    // Moving a DOM node can blur it. Leave a later, deliberate focus change alone.
+    // Le déplacement peut faire perdre le focus à la poignée. Respecter un changement de focus volontaire.
     requestAnimationFrame(() => {
       if (document.activeElement === document.body || document.activeElement?.tagName === "DIALOG") grip.current?.focus();
     });
@@ -71,11 +71,8 @@ export function ReorderHandle({ label, index, count, onMove, moveLabels }: Props
       {[4, 9, 14].map(y => <g key={y}><circle cx="4" cy={y} r="1.4" /><circle cx="10" cy={y} r="1.4" /></g>)}
     </svg>
   );
-  if (moveLabels) {
-    return <MoreMenu label={label} icon={dots} className="reorder-handle" triggerProps={triggerProps} items={[
-      { label: moveLabels.up, disabled: index === 0, onSelect: () => moveBy(-1) },
-      { label: moveLabels.down, disabled: index === count - 1, onSelect: () => moveBy(1) },
-    ]} />;
-  }
-  return <button type="button" className="reorder-handle" aria-label={label} title={label} {...triggerProps}>{dots}</button>;
+  return <MoreMenu label={label} icon={dots} className="reorder-handle" triggerProps={triggerProps} items={[
+    { label: moveLabels.up, disabled: index === 0, onSelect: () => moveBy(-1) },
+    { label: moveLabels.down, disabled: index === count - 1, onSelect: () => moveBy(1) },
+  ]} />;
 }

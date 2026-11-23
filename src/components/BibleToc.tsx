@@ -7,7 +7,8 @@ import { typeColor, type CardType } from "../types";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { DEFAULT_SECTIONS, sectionOrder, toggleSection, type BibleSections } from "../bibleSections";
-import { canMoveInPart, groupByPart, isPrivatePart, moveInPart, partNumber, type PartKey } from "../bibleParts";
+import { ReorderHandle } from "./ReorderHandle";
+import { groupByPart, isPrivatePart, moveInPart, partNumber, type PartKey } from "../bibleParts";
 
 export interface TocSection {
   type: CardType;
@@ -69,24 +70,27 @@ export function BibleToc({ sections, counts, prefs, setPrefs, arranging, setArra
                 <PartBadge part={part} />
                 {parts[part]}
               </div>
-              <ul>
-                {items.map((type) => {
+              <ul data-reorder-list>
+                {items.map((type, index) => {
                   const label = types[type].section;
                   const visible = !prefs.hidden.includes(type);
                   return (
-                    <li key={type}>
+                    <li key={type} data-reorder-index={index}>
                       <label className="toc-check">
                         <input type="checkbox" checked={visible} onChange={() => setPrefs(toggleSection(prefs, type))} />
                         <span className="card-dot" style={{ background: typeColor(type) }} />
                         <span>{label}</span>
                         <span className="toc-count">{counts.get(type) ?? 0}</span>
                       </label>
-                      <button type="button" className="icon-button" disabled={!canMoveInPart(prefs, type, "up")} aria-label={fmt(t.bible.moveUp, { section: label })} onClick={() => setPrefs(moveInPart(prefs, type, "up"))}>
-                        <span aria-hidden="true">↑</span>
-                      </button>
-                      <button type="button" className="icon-button" disabled={!canMoveInPart(prefs, type, "down")} aria-label={fmt(t.bible.moveDown, { section: label })} onClick={() => setPrefs(moveInPart(prefs, type, "down"))}>
-                        <span aria-hidden="true">↓</span>
-                      </button>
+                      {items.length > 1 && (
+                        <ReorderHandle
+                          label={fmt(t.controls.reorder, { label })}
+                          index={index}
+                          count={items.length}
+                          moveLabels={{ up: fmt(t.bible.moveUp, { section: label }), down: fmt(t.bible.moveDown, { section: label }) }}
+                          onMove={(from, to) => setPrefs(moveInPart(prefs, items[from], items[to]))}
+                        />
+                      )}
                     </li>
                   );
                 })}

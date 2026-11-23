@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BIBLE_PARTS, PART_OF, bibleOrder, canMoveInPart, groupByPart, inPartOrder, isPrivatePart, moveInPart, partNumber } from "../bibleParts";
+import { BIBLE_PARTS, PART_OF, bibleOrder, groupByPart, inPartOrder, isPrivatePart, moveInPart, partNumber } from "../bibleParts";
 import { DEFAULT_SECTIONS, sectionOrder } from "../bibleSections";
 import { CARD_TYPES, type CardType } from "../types";
 
@@ -35,17 +35,17 @@ describe("parties de la Bible", () => {
   });
 
   it("déplace une rubrique seulement à l'intérieur de sa partie", () => {
-    const prefs = DEFAULT_SECTIONS;
-    const pourVous = sectionOrder(prefs).filter((t) => PART_OF[t] === "pourVous");
-    const second = pourVous[1];
-    const moved = moveInPart(prefs, second, "up");
-    expect(sectionOrder(moved).filter((t) => PART_OF[t] === "pourVous")[0]).toBe(second);
-    // Au bord de sa partie : rien ne change, même objet.
-    expect(moveInPart(prefs, "personnage", "up")).toBe(prefs);
-    expect(moveInPart(prefs, "personnage", "down")).toBe(prefs);
-    expect(canMoveInPart(prefs, "personnage", "up")).toBe(false);
-    expect(canMoveInPart(prefs, pourVous[0], "down")).toBe(true);
-    expect(canMoveInPart(prefs, pourVous[pourVous.length - 1], "down")).toBe(false);
+    const prefs = { order: DEFAULT_SECTIONS.order, hidden: ["image"] as CardType[] };
+    const order = sectionOrder(prefs);
+    const part = (t: CardType) => PART_OF[t] === "pourVous";
+    const [a, b, c, d, e] = order.filter(part);
+    const moved = moveInPart(prefs, a, d);
+    expect(moved.order.filter(part)).toEqual([b, c, d, a, e]);
+    expect(moved.order.filter((type) => !part(type))).toEqual(order.filter((type) => !part(type)));
+    expect(moved.hidden).toBe(prefs.hidden);
+    expect(moveInPart(moved, a, b).order).toEqual(order);
+    expect(moveInPart(prefs, a, a)).toBe(prefs);
+    expect(moveInPart(prefs, a, "personnage")).toBe(prefs);
   });
 
   it("garde un ordre enregistré par une version précédente", () => {

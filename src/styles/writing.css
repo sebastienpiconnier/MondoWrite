@@ -995,16 +995,11 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .bexp-parts li .spdf-choice { flex: 1; min-width: 0; }
 .bexp-parts li:not(.is-on) .spdf-choice { color: var(--ink-2); }
 .bexp-empty { font-size: 0.75rem; color: var(--ink-2); font-style: italic; }
-.bexp-move { display: flex; gap: 2px; }
 .bexp-parts li { border-bottom: 1px solid var(--line); }
 .bexp-parts li:focus-within { background: var(--ground); }
 @media (any-hover: hover) { .bexp-parts li:hover { background: var(--ground); } }
-.bexp-move button { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 5px; background: var(--surface); color: var(--ink-2); cursor: pointer; }
-@media (any-hover: hover) and (pointer: fine) {
-  .bexp-parts li:not(:hover):not(:focus-within) .bexp-move { opacity: 0; }
-}
 .bexp-ghost { min-width: 36px; min-height: 36px; display: grid; place-items: center; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 7px; background: var(--surface); color: var(--ink); cursor: pointer; }
-.bexp-move button:disabled, .bexp-ghost:disabled { opacity: .4; cursor: default; }
+.bexp-ghost:disabled { opacity: .4; cursor: default; }
 .bexp-themes { display: flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--ground); }
 .bexp-theme { flex: 1; min-height: 32px; padding: 2px 6px; border: 0; border-radius: 5px; background: transparent; color: var(--ink); font: 600 .875rem var(--font-ui); cursor: pointer; }
 .bexp-theme.is-editorial { font-family: var(--font-text); }
@@ -1039,7 +1034,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .spdf-field-tools .insert-field { display: inline-flex; align-items: center; gap: 4px; width: auto; min-width: 0; height: auto; min-height: 26px; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--control-green); color: var(--control-green); background: var(--ground); font-size: .8rem; }
 .spdf .spdf-unavailable { padding-inline-start: 25px; color: color-mix(in srgb, var(--danger) 48%, var(--ink-2)); }
 @media (pointer: coarse) {
-  .bexp-themes button, .bexp-accents button, .bexp-row button, .bexp-move button, .spdf-field-tools .insert-field { min-width: 44px; min-height: 44px; }
+  .bexp-themes button, .bexp-accents button, .bexp-row button, .spdf-field-tools .insert-field { min-width: 44px; min-height: 44px; }
 }
 .bexp-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .bexp-row select, .bexp-row input[type="text"] { flex: 1 1 160px; min-width: 0; }
@@ -1052,7 +1047,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .bexp-pages.is-hidden { display: none; }
 .bexp-page { max-width: 100%; height: auto; box-shadow: var(--shadow-card); }
 @media (any-hover: hover) {
-  .bexp-move button:not(:disabled):hover, .bexp-ghost:not(:disabled):hover, .bexp-theme:not([aria-checked="true"]):hover { background: var(--hover); }
+  .bexp-ghost:not(:disabled):hover, .bexp-theme:not([aria-checked="true"]):hover { background: var(--hover); }
 }
 @media (max-width: 640px) {
   .app-dialog.is-bible-export { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }

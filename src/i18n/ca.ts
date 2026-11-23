@@ -615,7 +615,7 @@ export const ca = {
     arrange: "Tria i ordena les seccions",
     arrangeDone: "Fet",
     arrangeReset: "Restableix",
-    arrangeAria: "Seccions de la Bíblia: marca per mostrar, fletxes per moure",
+    arrangeAria: "Seccions de la Bíblia: marca-les per mostrar-les i utilitza les nanses per reordenar-les",
     moveUp: "Puja la secció «{section}»",
     moveDown: "Baixa la secció «{section}»",
     sectionEmpty: "Encara no hi ha cap entrada en aquesta secció.",
