@@ -2457,6 +2457,22 @@ const scenarios = [
           meta.frames?.some((fr) => fr.title === "Personnages")
         );
       }, "le projet importé de Scrivener n'est pas enregistré comme attendu");
+      // Déplacer le chapitre importé d'un cran conserve ses scènes et le focus sur ses commandes.
+      const chapters = page.locator(".ms-scenes .ms-chapter");
+      assert(await chapters.count() === 2, "deux chapitres attendus dans le sommaire");
+      // Reproduire la hauteur de deux longs chapitres sans alourdir le projet Scrivener de cet essai.
+      await page.addStyleTag({ content: ".ms-scenes .ms-chapter .sp-scene-list { min-height: 200vh; }" });
+      const movedId = await chapters.first().getAttribute("data-chapter-id");
+      const down = chapters.first().getByRole("button", { name: /^Descendre «\s*Chapitre/ });
+      await down.scrollIntoViewIfNeeded();
+      const top = await down.evaluate(el => el.getBoundingClientRect().top);
+      await down.click();
+      await until(async () => (await chapters.last().getAttribute("data-chapter-id")) === movedId, "le clic ne déplace pas le chapitre");
+      const up = chapters.last().getByRole("button", { name: /^Monter «\s*Chapitre/ });
+      await until(() => up.evaluate(el => el === document.activeElement), "le focus ne suit pas le chapitre arrivé en dernier");
+      assert(Math.abs(await up.evaluate(el => el.getBoundingClientRect().top) - top) < 2, "la commande du chapitre a quitté sa place dans le volet");
+      await page.keyboard.press("ArrowUp");
+      await until(async () => (await chapters.first().getAttribute("data-chapter-id")) === movedId, "la flèche du clavier ne remonte pas le chapitre");
     },
   },
   {

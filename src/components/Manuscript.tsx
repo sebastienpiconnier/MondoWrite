@@ -54,7 +54,7 @@ import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
 import { LanguageToolStatus, useLanguageTool } from "./LanguageToolBubble";
 import { typeColor } from "../types";
-import { ReorderHandle } from "./ReorderHandle";
+import { flushSync } from "react-dom";
 import { chapterDropTarget, chapterNumbers, chapterOf, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
 import { citedCards, countWords, orphanTexts } from "../manuscript";
@@ -129,6 +129,7 @@ export function Manuscript() {
   const deletePlanChapter = useCosmos((s) => s.deletePlanChapter);
   const movePlanChapter = useCosmos((s) => s.movePlanChapter);
   const chapterDrag = useRef<number | null>(null);
+  const boundaryFocus = useRef<HTMLButtonElement | null>(null);
   const [chapterOver, setChapterOver] = useState<{ index: number; side: "before" | "after" } | null>(null);
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
   // La scène glissée reste dans une ref : le dépôt peut précéder le rendu suivant.
@@ -611,6 +612,30 @@ export function Manuscript() {
     const before = chapterDropTarget(storyGroups, from, to);
     if (chapter && before !== undefined) movePlanChapter(chapter.id, before);
   };
+  const stepChapter = (button: HTMLButtonElement, index: number, delta: number) => {
+    if (!storyGroups[index + delta]) return;
+    const sidebar = button.closest<HTMLElement>(".ms-scenes");
+    if (!sidebar) return;
+    const top = button.getBoundingClientRect().top;
+    const chapterId = storyGroups[index].chapter!.id;
+    flushSync(() => moveChapterGroup(index, index + delta));
+    // Une scène déplacée peut réunir deux fragments d'un même chapitre et recréer son en-tête.
+    const moved = button.isConnected ? button : sidebar.querySelector<HTMLButtonElement>(
+      `[data-chapter-id="${CSS.escape(chapterId)}"] [data-direction="${button.dataset.direction}"]`,
+    );
+    if (!moved) return;
+    const active = moved.disabled ? moved.parentElement?.querySelector<HTMLButtonElement>("button:enabled") : moved;
+    active?.focus({ preventScroll: true });
+    boundaryFocus.current = active && active !== moved ? active : null;
+    // Garder la commande sous le pointeur, même si le chapitre dépassé remplit plusieurs écrans.
+    const anchor = () => { sidebar.scrollTop += moved.getBoundingClientRect().top - top; };
+    anchor();
+    const scroll = sidebar.scrollTop;
+    // Sur tablette, la barre d’enregistrement peut changer de hauteur au rendu suivant.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (moved.isConnected && sidebar.scrollTop === scroll && document.activeElement === active) anchor();
+    }));
+  };
   // Roman interactif (lot 12) : le numéro de la section dans le livre-jeu, celui des cartes et des choix.
   const storyNumber = (id: string) => sections?.numbers[id] ?? story.indexOf(id) + 1;
   const pageLabel = (id: string) => {
@@ -672,7 +697,7 @@ export function Manuscript() {
       {focusMode && <FocusBar />}
       {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
       <LanguageToolStatus status={lt.status} />
-      <nav data-reorder-list className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
+      <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
@@ -699,7 +724,7 @@ export function Manuscript() {
           return <div
             key={`${chapter?.id ?? "none"}-${group.ids[0]}`}
             className={chapter ? "ms-chapter" : undefined}
-            data-reorder-index={index}
+            data-chapter-id={chapter?.id}
             data-drop-target={chapterOver?.index === index ? chapterOver?.side : undefined}
             onDragOver={(event) => {
               if (chapterDrag.current === null || index === undefined || index === chapterDrag.current) return;
@@ -738,13 +763,41 @@ export function Manuscript() {
                 >{title}</span>
                 <span className="ms-words">{num(group.ids.reduce((sum, id) => sum + (stats.perScene.get(id) ?? 0), 0))}</span>
                 {movable && (
-                  <ReorderHandle
-                    label={fmt(t.controls.reorder, { label: title })}
-                    index={index}
-                    count={storyGroups.length}
-                    moveLabels={{ up: fmt(b.chapterUp, { title }), down: fmt(b.chapterDown, { title }) }}
-                    onMove={moveChapterGroup}
-                  />
+                  <span className="ms-chapter-order">
+                    {(["up", "down"] as const).map((direction) => {
+                      const delta = direction === "up" ? -1 : 1;
+                      const disabled = !storyGroups[index + delta];
+                      const label = fmt(direction === "up" ? b.chapterUp : b.chapterDown, { title });
+                      return (
+                        <button
+                          key={direction}
+                          type="button"
+                          className="ms-chapter-move"
+                          data-direction={direction}
+                          aria-label={label}
+                          title={label}
+                          disabled={disabled}
+                          aria-disabled={disabled}
+                          aria-keyshortcuts="ArrowUp ArrowDown"
+                          onClick={(event) => stepChapter(event.currentTarget, index, delta)}
+                          onKeyDown={(event) => {
+                            // Entrée maintenue à une extrémité ne doit pas inverser le sens du déplacement.
+                            if (event.key === "Enter" && event.repeat && boundaryFocus.current === event.currentTarget) {
+                              event.preventDefault();
+                              return;
+                            }
+                            if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+                            event.preventDefault();
+                            stepChapter(event.currentTarget, index, event.key === "ArrowUp" ? -1 : 1);
+                          }}
+                        >
+                          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d={direction === "up" ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} />
+                          </svg>
+                        </button>
+                      );
+                    })}
+                  </span>
                 )}
               </h3>
             )}
