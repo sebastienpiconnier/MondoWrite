@@ -83,19 +83,20 @@ export function SystemFontField() {
   );
 }
 
-type FontListProps = {
+type FontListProps<T extends string> = {
   id: string;
-  describedBy: string;
+  describedBy?: string;
   label: string;
-  placeholder: string;
-  current: string;
-  options: string[];
-  preview: (name: string) => { fontFamily: string } | undefined;
-  onChoose: (name: string) => void;
+  placeholder?: string;
+  current: T;
+  options: readonly T[];
+  optionLabel?: (name: T) => string;
+  preview: (name: T) => { fontFamily: string } | undefined;
+  onChoose: (name: T) => void;
 };
 
 /** Liste déroulante maison : souris, doigt et clavier (flèches, Début, Fin, Entrée, Échap), posée dans la fenêtre ouverte. */
-function FontList({ id, describedBy, label, placeholder, current, options, preview, onChoose }: FontListProps) {
+export function FontList<T extends string>({ id, describedBy, label, placeholder, current, options, optionLabel = (value) => value, preview, onChoose }: FontListProps<T>) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [place, setPlace] = useState<{ left: number; top: number; width: number; height: number; up: boolean } | null>(null);
@@ -143,7 +144,7 @@ function FontList({ id, describedBy, label, placeholder, current, options, previ
     setActive(Math.max(0, options.indexOf(current)));
     setOpen(true);
   };
-  const choose = (name: string) => {
+  const choose = (name: T) => {
     onChoose(name);
     setOpen(false);
     buttonRef.current?.focus();
@@ -189,7 +190,7 @@ function FontList({ id, describedBy, label, placeholder, current, options, previ
           }
         }}
       >
-        <span className="font-list-name">{current || placeholder}</span>
+        <span className="font-list-name">{current ? optionLabel(current) : placeholder}</span>
         <svg className="font-list-chevron" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
           <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -218,7 +219,7 @@ function FontList({ id, describedBy, label, placeholder, current, options, previ
                 onMouseEnter={() => setActive(i)}
                 onClick={() => choose(f)}
               >
-                <span className="font-list-name">{f}</span>
+                <span className="font-list-name">{optionLabel(f)}</span>
                 {f === current && (
                   <svg className="font-list-check" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
                     <path d="M2.5 6.2 5 8.5 9.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />

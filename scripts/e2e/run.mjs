@@ -657,6 +657,8 @@ const scenarios = [
       await h.create("Relecture");
       await openSettings(page);
       await page.getByRole("tab", { name: "Écriture", exact: true }).click();
+      await page.getByText("Saisie et correction", { exact: true }).click();
+      await page.getByText("LanguageTool", { exact: true }).click();
       await page.getByLabel("Vérification LanguageTool", { exact: true }).selectOption("public");
       await until(() => page.getByText("Le texte de la scène est envoyé au service choisi", { exact: false }).isVisible(), "l'avertissement d'envoi du texte n'apparaît pas");
       await page.keyboard.press("Escape");
@@ -931,13 +933,14 @@ const scenarios = [
       await dialog.getByRole("button", { name: "Fermer" }).click();
       // Réécrire, puis comparer avec le texte actuel.
       await editor.click();
-      await page.keyboard.press("Control+a");
+      await editor.selectText();
       await page.keyboard.type("Le réveil sonne à six heures et Ethan se lève aussitôt.");
       await h.wait(400);
       await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
       await page.getByRole("menuitem", { name: /^Versions de la scène/ }).click();
       await until(async () => (await items.count()) === 1, "la liste des versions n'est pas relue");
-      await dialog.getByLabel("Comparer avec").selectOption("current");
+      await dialog.getByRole("button", { name: "Comparer", exact: true }).click();
+      assert((await dialog.getByRole("combobox", { name: "Comparer avec" }).inputValue()) === "current", "la comparaison ne propose pas le texte actuel");
       await until(() => dialog.locator(".versions-text del", { hasText: "rêve" }).first().isVisible(), "les mots retirés ne sont pas barrés");
       await until(() => dialog.locator(".versions-text ins", { hasText: "lève" }).first().isVisible(), "les mots ajoutés ne sont pas soulignés");
       await until(async () => /mots ajoutés, \d+ retirés/.test((await dialog.locator(".versions-summary").textContent()) ?? ""), "pas de résumé de la comparaison");
@@ -2267,7 +2270,7 @@ const scenarios = [
       assert(size.w > size.h * 1.15, `aperçu de ${size.w} × ${size.h}`);
       // Le petit exemple fait moins de 80 pages : pas de texte sur le dos, et c'est dit.
       await until(() => page.getByText(/Moins de 80 pages/).isVisible(), "le contrôle du dos n'est pas affiché");
-      await page.locator(".full-cover select").first().selectOption("bottom");
+      await page.getByRole("radio", { name: "En bas, ton nom en haut", exact: true }).check();
       await until(() => preview.isVisible(), "l'aperçu ne revient pas après un réglage", 30000);
       await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").coverDesign?.titlePlace === "bottom", "coverDesign n'est pas enregistré");
     },
@@ -2312,7 +2315,17 @@ const scenarios = [
       await (await chooser).setFiles({ name: "actes.md", mimeType: "text/markdown", buffer: Buffer.from(md) });
       const dialog = page.locator("dialog[open]");
       await until(() => dialog.locator(".tpl-row.level-2").first().isVisible(), "les sous-cases ne sont pas en retrait dans l'éditeur");
-      // « Acte II » décalé à droite devient une sous-case d'« Acte I » ; le bouton suivant est grisé (au plus un niveau de plus).
+      // Réordonner deux cases de même niveau au clavier conserve le focus sur la poignée déplacée.
+      const rows = dialog.locator(".tpl-row");
+      const handle = rows.nth(1).locator(".reorder-handle");
+      const title = await rows.nth(1).locator("input").first().inputValue();
+      await handle.focus();
+      await page.keyboard.press("ArrowDown");
+      await until(async () => await rows.nth(2).locator("input").first().inputValue() === title && await rows.nth(2).locator(".reorder-handle").evaluate(el => el === document.activeElement), "la case ou sa poignée n’a pas suivi le déplacement");
+      await page.keyboard.press("ArrowUp");
+      await until(async () => await rows.nth(1).locator("input").first().inputValue() === title, "la case n’est pas revenue à sa place");
+      // La ligne affiche ses actions quand son nom reçoit le focus clavier.
+      await dialog.locator(".tpl-row").last().locator("input").first().focus();
       await dialog.getByRole("button", { name: "Décaler à droite la case « Acte II »" }).click();
       assert((await dialog.locator(".tpl-row.level-2").count()) === 3, "Acte II n'est pas passé au niveau 2");
       await dialog.getByRole("button", { name: "Décaler à gauche la case « Acte II »" }).click();
@@ -2507,8 +2520,8 @@ const scenarios = [
       const before = await page.locator(".ms-page").evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize));
       await openSettings(page);
       await page.getByRole("tab", { name: "Écriture" }).click();
-      await page.getByLabel("Police de la page (manuscrit)").selectOption("literata");
-      await page.getByLabel("Interligne de la page (manuscrit)").selectOption("double");
+      await page.getByLabel("Police du manuscrit", { exact: true }).selectOption("literata");
+      await page.getByLabel("Interligne", { exact: true }).selectOption("double");
       await page.keyboard.press("Escape");
       await until(async () => (await page.locator(".ms-page").evaluate((el) => getComputedStyle(el).fontFamily)).includes("Literata"), "la police de la page n'a pas changé");
       const after = await page.locator(".ms-page").evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize));

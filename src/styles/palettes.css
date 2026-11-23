@@ -3,6 +3,7 @@
    La palette est posée sur <html data-palette="..."> par settings.ts, le mode (clair ou sombre) sur data-theme.
    Chaque bloc ne redéfinit que les jetons qui dépendent de la couleur ; les couleurs de type de carte restent celles de styles.css (sauf Sépia, assombries pour son fond crème). */
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="indigo"],
 :root[data-palette="indigo"]:not([data-theme="dark"]) {
   --ink: #1B1E2E;
   --ink-2: #444754;
@@ -30,6 +31,7 @@
   --cover-muted: #d9d9f3;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="indigo"],
 :root[data-palette="indigo"][data-theme="dark"] {
   --ink: #cfd1da;
   --ink-2: #bbbdc6;
@@ -57,6 +59,7 @@
   --cover-muted: #ebebfd;
 }
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="papier"],
 :root[data-palette="papier"]:not([data-theme="dark"]) {
   --ink: #2B2620;
   --ink-2: #504c46;
@@ -85,6 +88,7 @@
   --status-draft: #6b7084;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="papier"],
 :root[data-palette="papier"][data-theme="dark"] {
   --ink: #d9d0c3;
   --ink-2: #c4bcb0;
@@ -112,6 +116,7 @@
   --cover-muted: #f9e8df;
 }
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="foret"],
 :root[data-palette="foret"]:not([data-theme="dark"]) {
   --ink: #1E2A24;
   --ink-2: #454f4a;
@@ -140,6 +145,7 @@
   --status-draft: #6c7185;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="foret"],
 :root[data-palette="foret"][data-theme="dark"] {
   --ink: #cbd6ce;
   --ink-2: #b6c2ba;
@@ -167,6 +173,7 @@
   --cover-muted: #e2f5eb;
 }
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="encre"],
 :root[data-palette="encre"]:not([data-theme="dark"]) {
   --ink: #14203A;
   --ink-2: #3e485d;
@@ -194,6 +201,7 @@
   --cover-muted: #cee3e9;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="encre"],
 :root[data-palette="encre"][data-theme="dark"] {
   --ink: #ccd2de;
   --ink-2: #b8beca;
@@ -221,6 +229,7 @@
   --cover-muted: #def4f9;
 }
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="aube"],
 :root[data-palette="aube"]:not([data-theme="dark"]) {
   --ink: #2B1F27;
   --ink-2: #51464d;
@@ -248,6 +257,7 @@
   --cover-muted: #e8d9e1;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="aube"],
 :root[data-palette="aube"][data-theme="dark"] {
   --ink: #d8cbd3;
   --ink-2: #c4b7bf;
@@ -275,6 +285,7 @@
   --cover-muted: #f7e8f1;
 }
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="sepia"],
 :root[data-palette="sepia"]:not([data-theme="dark"]) {
   --ink: #33281C;
   --ink-2: #564b3f;
@@ -306,6 +317,7 @@
   --type-question: #65697d;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="sepia"],
 :root[data-palette="sepia"][data-theme="dark"] {
   --ink: #d8cebb;
   --ink-2: #c5baa9;
@@ -333,6 +345,7 @@
   --cover-muted: #f7e2e5;
 }
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="orange"],
 :root[data-palette="orange"]:not([data-theme="dark"]) {
   --ink: #221E1A;
   --ink-2: #4a4743;
@@ -360,6 +373,7 @@
   --cover-muted: #f1dbcc;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="orange"],
 :root[data-palette="orange"][data-theme="dark"] {
   --ink: #d2cdc8;
   --ink-2: #beb9b4;
@@ -387,6 +401,7 @@
   --cover-muted: #ffe8d8;
 }
 
+:root:not([data-theme="dark"]) .palette-sample[data-palette="contraste"],
 :root[data-palette="contraste"]:not([data-theme="dark"]) {
   --ink: #000000;
   --ink-2: #2e2e2e;
@@ -414,6 +429,7 @@
   --cover-muted: #cedaf7;
 }
 
+:root[data-theme="dark"] .palette-sample[data-palette="contraste"],
 :root[data-palette="contraste"][data-theme="dark"] {
   --ink: #FFFFFF;
   --ink-2: #d3d3d3;

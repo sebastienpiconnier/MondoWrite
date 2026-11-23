@@ -58,7 +58,8 @@
   .app-dialog.is-card .expanded-title { font-size: 1.5rem; }
   .app-dialog.is-card .expanded-body { min-height: 40vh; font-size: 1.0625rem; }
   /* Types de carte : une feuille pleine largeur au-dessus de la barre d'outils, deux colonnes. */
-  .add-card-menu { position: fixed; left: 8px; right: 8px; bottom: calc(60px + env(safe-area-inset-bottom) + 76px); max-width: none; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 10px; border-radius: 18px; }
+  .add-card-menu { position: fixed; left: 8px; right: 8px; bottom: calc(60px + env(safe-area-inset-bottom) + 76px); width: auto; max-width: none; min-width: 0; gap: 4px; padding: 10px; border-radius: 18px; }
+  .add-card-group { gap: 4px; }
   .add-card-hint { display: none; }
   .add-card-item { min-height: 52px; border: 1px solid var(--line); }
 
@@ -72,7 +73,7 @@
   .ms-meta .ms-panel-toggle, .ms-meta .ghost-button { min-height: 44px; }
 
   /* Réglages : les quatre onglets sur une ligne, à parts égales (« IA » passait seul sur une seconde ligne). */
-  .settings-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); justify-self: stretch; }
+  .settings-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: auto; justify-self: stretch; }
   .settings-tabs button { padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Séquencier en liste : la fiche de la scène sur toute la largeur, puis « Ranger dans », la longueur et une rangée

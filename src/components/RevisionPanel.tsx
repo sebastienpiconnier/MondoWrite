@@ -102,13 +102,16 @@ export function RevisionPanel() {
         <h3>{k.openTitle}</h3>
         <label>
           {k.color}
-          <select value={color} onChange={(e) => isRevColor(e.target.value) && setColor(e.target.value)}>
-            {REV_COLORS.map((c) => (
-              <option key={c} value={c}>
-                {k.colors[c]}
-              </option>
-            ))}
-          </select>
+          <span className="revision-color-field">
+            <span className="rev-swatch" aria-hidden="true" style={{ background: revisionVar(color) }} />
+            <select value={color} onChange={(e) => isRevColor(e.target.value) && setColor(e.target.value)}>
+              {REV_COLORS.map((c) => (
+                <option key={c} value={c}>
+                  {k.colors[c]}
+                </option>
+              ))}
+            </select>
+          </span>
         </label>
         <label>
           {k.date}

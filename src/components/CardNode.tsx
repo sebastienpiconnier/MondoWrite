@@ -663,6 +663,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
             <SuggestionMenu
               title={t.card.menuTitle}
               className="is-floating"
+              currentKey={data.type}
               items={options.map((type) => ({ key: type, label: types[type].label, color: typeColor(type) }))}
               active={active}
               onPick={(i) => pick(options[i])}

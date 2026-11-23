@@ -4,7 +4,7 @@
 // dans le projet (`coverDesign`). Textes : titre du projet, nom signé du profil (nom de plume d'abord), accroche
 // et quatrième de couverture de la Bible, parcours du profil. Pas d'ISBN à part : le code-barres de KDP le porte déjà.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
@@ -15,7 +15,8 @@ import { fileName } from "../screenplay/export";
 import { BLOCKING, type CoverCheck } from "../export/fullCover";
 import { coverGenre } from "../ai/imageGen";
 import { COVER_FONTS, resolveCoverFont, type CoverFontChoice } from "../export/coverFonts";
-import { COVER_BACKS, COVER_CROPS, COVER_TITLE_PLACES, type CoverBack, type CoverCrop, type CoverTitlePlace } from "../export/coverDesign";
+import { FontList } from "./SystemFontField";
+import { COVER_BACKS, COVER_CROPS, COVER_TITLE_PLACES, type CoverBack } from "../export/coverDesign";
 
 const PREVIEW_WIDTH = 560;
 const DELAY = 400;
@@ -29,9 +30,31 @@ type Upscale =
 
 type Preview = { status: "working" } | { status: "failed" } | { status: "ready"; checks: CoverCheck[]; edge: string | null };
 
+function CoverPosition<T extends "top" | "bottom" | "center">({ label, choices, labels, value, onChange, disabled, crop }: {
+  label: string; choices: readonly T[]; labels: Record<T, string>; value: T;
+  onChange: (value: T) => void; disabled?: boolean; crop?: boolean;
+}) {
+  const name = useId();
+  return <fieldset className="cover-position" disabled={disabled}>
+    <legend>{label}</legend>
+    <div>{choices.map((choice) => (
+      <label key={choice}>
+        <input type="radio" name={name} value={choice} checked={choice === value} onChange={() => onChange(choice)} />
+        <svg width="18" height="24" viewBox="0 0 18 24" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="16" height="22" rx="2" stroke="currentColor" />
+          <rect x="4" y={choice === "top" ? 4 : choice === "bottom" ? 16 : 10} width="10" height="4" rx="1" fill="currentColor" />
+          {!crop && <path d={choice === "top" ? "M6 19h6" : "M6 5h6"} stroke="currentColor" />}
+        </svg>
+        {labels[choice]}
+      </label>
+    ))}</div>
+  </fieldset>;
+}
+
 export function FullCoverSection({ pages }: { pages: number | null }) {
   const t = useT();
   const k = t.paperback.full;
+  const fontId = useId();
   const print = useCosmos((s) => s.print);
   const design = useCosmos((s) => s.coverDesign);
   const setDesign = useCosmos((s) => s.setCoverDesign);
@@ -178,39 +201,20 @@ export function FullCoverSection({ pages }: { pages: number | null }) {
       <h3 id="full-cover-heading">{k.heading}</h3>
       <p className="paperback-note">{k.intro}</p>
       <div className="paperback-grid">
-        <label className="replace-field">
-          <span>{k.titlePlace}</span>
-          <select value={design.titlePlace} disabled={design.titleOnImage} onChange={(e) => setDesign({ titlePlace: e.target.value as CoverTitlePlace })}>
-            {COVER_TITLE_PLACES.map((id) => (
-              <option key={id} value={id}>
-                {k.titlePlaces[id]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <CoverPosition label={k.titlePlace} choices={COVER_TITLE_PLACES} labels={k.titlePlaces} value={design.titlePlace}
+          disabled={design.titleOnImage} onChange={(titlePlace) => setDesign({ titlePlace })} />
         {!design.titleOnImage && (
-          <label className="replace-field">
-            <span>{k.font}</span>
-            <select value={design.font} onChange={(e) => setDesign({ font: e.target.value as CoverFontChoice })}>
-              {COVER_FONTS.map((id) => (
-                <option key={id} value={id}>
-                  {id === "auto" ? fmt(k.fontAuto, { font: k.fonts[resolveCoverFont("auto", genre)] }) : k.fonts[id]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="replace-field cover-font">
+            <label htmlFor={fontId}>{k.font}</label>
+            <FontList<CoverFontChoice> id={fontId} label={k.font} current={design.font} options={COVER_FONTS}
+              optionLabel={(id) => id === "auto" ? fmt(k.fontAuto, { font: k.fonts[resolveCoverFont("auto", genre)] }) : k.fonts[id]}
+              preview={(id) => id === "auto" ? undefined : { fontFamily: `var(--cover-font-${id})` }}
+              onChoose={(font) => setDesign({ font })} />
+          </div>
         )}
         {visual && (
-          <label className="replace-field">
-            <span>{k.crop}</span>
-            <select value={design.crop} onChange={(e) => setDesign({ crop: e.target.value as CoverCrop })}>
-              {COVER_CROPS.map((id) => (
-                <option key={id} value={id}>
-                  {k.crops[id]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <CoverPosition label={k.crop} choices={COVER_CROPS} labels={k.crops} value={design.crop}
+            onChange={(crop) => setDesign({ crop })} crop />
         )}
         {visual && (
           <label className="replace-field">

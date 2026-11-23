@@ -7,7 +7,7 @@
 import { revisionHeader } from "../revisionsText";
 import { PAPER_TINTS, colorFor, setOf, usedRevisions } from "../screenplay/revisions";
 import { resolveLock } from "../screenplay/lockedPages";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { exportBooksOf, useExportScript } from "./useExportScript";
@@ -21,6 +21,8 @@ import { speakingNames } from "../review/filter";
 
 const titleField = (titlePage: Record<string, string>, ...names: string[]) =>
   Object.entries(titlePage).find(([key]) => names.includes(key.trim().toLowerCase()))?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+
+import { MoreMenu } from "./MoreMenu";
 
 export function ScriptPdfPanel() {
   const t = useT();
@@ -44,6 +46,22 @@ export function ScriptPdfPanel() {
   const titlePage = screenplay?.titlePage ?? {};
 
   const speakers = useMemo(() => speakingNames(elements, lang), [elements, lang]);
+  const headerInput = useRef<HTMLInputElement>(null);
+  const headerId = useId();
+  const insertField = (name: string) => {
+    const input = headerInput.current;
+    if (!input) return;
+    const from = input.selectionStart ?? input.value.length;
+    const to = input.selectionEnd ?? from;
+    const token = `{${name}}`;
+    const value = input.value.slice(0, from) + token + input.value.slice(to);
+    if (value.length > input.maxLength) return;
+    set({ header: value });
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(from + token.length, from + token.length);
+    });
+  };
   const names = options.character && !speakers.includes(options.character) ? [...speakers, options.character] : speakers;
   const title = titleField(titlePage, "title") || projectTitle.trim() || t.home.untitled;
   const header = fillHeader(options.header, {
@@ -149,6 +167,7 @@ export function ScriptPdfPanel() {
             <input type="radio" name="spdf-content" checked={!!options.character} disabled={names.length === 0} onChange={() => set({ character: names[0] ?? "" })} />
             {k.character}
           </label>
+          {names.length === 0 && <p className="spdf-hint spdf-unavailable">{k.noSpeakers}</p>}
           {options.character && (
             <div className="spdf-indent">
               <select aria-label={k.characterAria} value={options.character} onChange={(e) => set({ character: e.target.value })}>
@@ -203,15 +222,20 @@ export function ScriptPdfPanel() {
         )}
         <fieldset>
           <legend>{k.onEachPage}</legend>
-          <label className="spdf-field">
-            {k.header}
-            <input type="text" value={options.header} placeholder={k.headerPlaceholder} maxLength={120} onChange={(e) => set({ header: e.target.value })} />
-          </label>
+          <div className="spdf-field">
+            <div className="spdf-field-tools">
+              <label htmlFor={headerId}>{k.header}</label>
+              <MoreMenu className="insert-field" label={k.insertField}
+                icon={<>{k.insertField}<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="m3 5 3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg></>}
+                items={[{ label: k.headerDate, onSelect: () => insertField("date") }, { label: k.headerTitle, onSelect: () => insertField("title") }, { label: k.headerAuthor, onSelect: () => insertField("author") }]} />
+            </div>
+            <input id={headerId} ref={headerInput} type="text" value={options.header} placeholder={k.headerPlaceholder} maxLength={120} onChange={(e) => set({ header: e.target.value })} />
+          </div>
           <label className="spdf-field">
             {k.watermark}
             <input type="text" value={options.watermark} placeholder={k.watermarkPlaceholder} maxLength={60} onChange={(e) => set({ watermark: e.target.value })} />
           </label>
-          <p className="spdf-hint">{k.placeholdersHint}</p>
+          <p className="spdf-hint">{k.pageNumberHint}</p>
         </fieldset>
         <div className="spdf-actions">
           <p className="spdf-hint">{k.kept}</p>

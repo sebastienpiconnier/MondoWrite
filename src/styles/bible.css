@@ -168,9 +168,12 @@ textarea.bible-title, textarea.bible-hook { display: block; resize: none; overfl
   .breakdown-category-list .link-button { min-height: 44px; padding: 0 2px; }
 }
 /* Menu Exporter : un groupe par document (manuscrit ou scénario, bible). */
-.export-group { display: flex; flex-direction: column; gap: 4px; }
+.export-group { display: flex; flex-direction: column; }
+.export-group .ghost-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; padding: 5px 8px; border: 0; background: transparent; text-align: start; }
+.export-group .ghost-button small { flex: none; font-size: .72rem; color: var(--muted); }
+@media (pointer: coarse) { .export-group .ghost-button { min-height: 44px; } }
 .export-group + .export-group { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
-.export-group .eyebrow { padding: 2px 4px; }
+.export-group .eyebrow { padding: 2px 8px; font-size: .875rem; color: var(--ink); text-transform: none; letter-spacing: normal; }
 /* Assistant personnage : une question à la fois, dans la fiche. */
 .assistant { margin-top: 14px; }
 .assistant-bar { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -2,6 +2,8 @@
    Règle : aucune couleur en dur dans les composants, uniquement ces variables.
    Le thème est posé sur <html data-theme="light|dark"> par settings.ts. */
 :root {
+  --control-green: #2f6b52;
+  --control-green-ink: #fff;
   --ink: #1b1e2e;
   /* Identité : traits et étoile du logo (l'icône de l'app garde ses couleurs : #141B2D, #F4F0E8, #F2C14E) */
   --brand-line: #9a9dab;
@@ -99,6 +101,8 @@
 }
 
 :root[data-theme="dark"] {
+  --control-green: #6fcb9d;
+  --control-green-ink: #14271c;
   --ink: #cfd1da;
   --brand-line: #8e9099;
   --brand-star: #f2c14e;

@@ -140,21 +140,27 @@ export function PaperbackPanel() {
         <span>{k.isbn}</span>
         <input type="text" inputMode="numeric" autoComplete="off" value={print.isbn} placeholder={k.isbnHint} onChange={(e) => setPrint({ isbn: e.target.value })} />
       </label>
-      <div className="replace-options paperback-options">
-        <label>
-          <input type="checkbox" checked={print.toc} onChange={(e) => setPrint({ toc: e.target.checked })} /> {k.toc}
-        </label>
-        <label>
-          <input type="checkbox" checked={print.dropCap} onChange={(e) => setPrint({ dropCap: e.target.checked })} /> {k.dropCap}
-        </label>
-        {!ownCopyright && (
+      <div className="replace-options paperback-options paperback-page-options">
+        <fieldset>
+          <legend>{k.bookPages}</legend>
           <label>
-            <input type="checkbox" checked={print.fiction} onChange={(e) => setPrint({ fiction: e.target.checked })} /> {k.fiction}
+            <input type="checkbox" checked={print.toc} onChange={(e) => setPrint({ toc: e.target.checked })} /> {k.toc}
           </label>
-        )}
-        <label>
-          <input type="checkbox" checked={print.thanks} onChange={(e) => setPrint({ thanks: e.target.checked })} /> {k.thanks}
-        </label>
+          {!ownCopyright && (
+            <label>
+              <input type="checkbox" checked={print.fiction} onChange={(e) => setPrint({ fiction: e.target.checked })} /> {k.fiction}
+            </label>
+          )}
+          <label>
+            <input type="checkbox" checked={print.thanks} onChange={(e) => setPrint({ thanks: e.target.checked })} /> {k.thanks}
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>{k.typeOptions}</legend>
+          <label>
+            <input type="checkbox" checked={print.dropCap} onChange={(e) => setPrint({ dropCap: e.target.checked })} /> {k.dropCap}
+          </label>
+        </fieldset>
       </div>
       {ownCopyright && <p className="paperback-note">{k.ownCopyright}</p>}
       <div className="paperback-grid">

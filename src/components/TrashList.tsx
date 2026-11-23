@@ -100,7 +100,7 @@ export function TrashNotice() {
       <span>{text}</span>
       <button
         type="button"
-        className="ghost-button"
+        className="ghost-button trash-undo"
         onClick={() => {
           if (merged) useCosmos.getState().undoMerge(merged.undo);
           else useCosmos.getState().undo();
@@ -109,7 +109,7 @@ export function TrashNotice() {
       >
         {t.trash.undo}
       </button>
-      <button type="button" className="ghost-button" onClick={() => useCosmos.getState().setDialog("trash")}>
+      <button type="button" className="ghost-button trash-open" onClick={() => useCosmos.getState().setDialog("trash")}>
         {t.trash.see}
       </button>
       <button type="button" className="icon-button trash-notice-close" aria-label={t.gallery.close} title={t.gallery.close} onClick={clear}>

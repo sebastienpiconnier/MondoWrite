@@ -13,6 +13,8 @@ import { newId } from "../projectState";
 import { MAX_BEAT_LEVEL, beatLevel, beatText, cleanLevels, templateBeats, type CustomTemplate, type PlanTemplate } from "../plan";
 import { isAppleKeyboard } from "../platform";
 import { storage } from "../storage";
+import { ReorderHandle } from "./ReorderHandle";
+import { TrashIcon } from "./TrashIcon";
 import { MoreMenu } from "./MoreMenu";
 import { type SavedTemplate } from "../settings";
 import { parseTemplateText, TEMPLATE_IMPORT_EXTENSIONS, templateFileName, templateToMarkdown, type TemplateFile } from "../templateFile";
@@ -196,13 +198,12 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     setEditing(null);
   };
   const update = (id: string, patch: Partial<Row>) => setEditing((ed) => (ed ? { ...ed, rows: ed.rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) } : ed));
-  const move = (i: number, by: number) =>
+  const move = (i: number, j: number) =>
     setEditing((ed) => {
       if (!ed) return ed;
       const rows = [...ed.rows];
-      const j = i + by;
       if (j < 0 || j >= rows.length) return ed;
-      [rows[i], rows[j]] = [rows[j], rows[i]];
+      rows.splice(j, 0, ...rows.splice(i, 1));
       return { ...ed, rows: cleanLevels(rows) };
     });
   // Décaler une case (#111) : au plus un niveau sous la précédente, trois niveaux au plus ; les cases qui la
@@ -291,9 +292,10 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
           </label>
           <h3 className="tpl-beats-title">{e.beats}</h3>
           <p className="tpl-file-hint">{fmt(e.levelsHint, { mod })}</p>
-          <ol className="tpl-rows">
+          <ol className="tpl-rows" data-reorder-list>
             {editing.rows.map((r, i) => (
-              <li key={r.id} className={`tpl-row level-${r.level ?? 1}`} aria-label={(r.level ?? 1) > 1 ? fmt(e.levelOf, { n: r.level ?? 1 }) : undefined}>
+              <li key={r.id} data-reorder-index={i} className={`tpl-row level-${r.level ?? 1}`} aria-label={(r.level ?? 1) > 1 ? fmt(e.levelOf, { n: r.level ?? 1 }) : undefined}>
+                <ReorderHandle index={i} count={editing.rows.length} onMove={move} label={fmt(t.controls.reorder, { label: r.label || i + 1 })} />
                 <span className="tpl-num" aria-hidden="true">
                   {i + 1}
                 </span>
@@ -317,25 +319,23 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
                 />
                 <input type="text" className="tpl-hint" value={r.hint} placeholder={e.hintPlaceholder} aria-label={fmt(e.hint, { n: i + 1 })} onChange={(ev) => update(r.id, { hint: ev.target.value })} />
                 <span className="tpl-row-actions">
-                  <button type="button" className="icon-button" disabled={!canOutdent(i)} aria-label={fmt(e.outdent, { label: r.label || i + 1 })} onClick={() => shift(i, -1)}>
-                    <span aria-hidden="true">←</span>
-                  </button>
-                  <button type="button" className="icon-button" disabled={!canIndent(i)} aria-label={fmt(e.indent, { label: r.label || i + 1 })} onClick={() => shift(i, 1)}>
-                    <span aria-hidden="true">→</span>
-                  </button>
-                  <button type="button" className="icon-button" disabled={i === 0} aria-label={fmt(e.up, { label: r.label || i + 1 })} onClick={() => move(i, -1)}>
-                    <span aria-hidden="true">↑</span>
-                  </button>
-                  <button type="button" className="icon-button" disabled={i === editing.rows.length - 1} aria-label={fmt(e.down, { label: r.label || i + 1 })} onClick={() => move(i, 1)}>
-                    <span aria-hidden="true">↓</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-button"
+                  {([-1, 1] as const).map(direction => {
+                    const outdent = direction === -1;
+                    if (!(outdent ? canOutdent(i) : canIndent(i))) return null;
+                    return (
+                      <button key={direction} type="button" className="icon-button" data-tip={outdent ? t.controls.outdent : t.controls.indent}
+                        aria-label={fmt(outdent ? e.outdent : e.indent, { label: r.label || i + 1 })} onClick={() => shift(i, direction)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M3 4h18M12 9h9M12 15h9M3 20h18" />
+                          <path d={outdent ? "m7 9-3 3 3 3" : "m4 9 3 3-3 3"} />
+                        </svg>
+                      </button>
+                    );
+                  })}
+                  <button type="button" className="icon-button is-danger" data-tip={t.controls.remove}
                     aria-label={fmt(e.remove, { label: r.label || i + 1 })}
-                    onClick={() => setEditing({ ...editing, rows: cleanLevels(editing.rows.filter((x) => x.id !== r.id)) })}
-                  >
-                    <span aria-hidden="true">×</span>
+                    onClick={() => setEditing({ ...editing, rows: cleanLevels(editing.rows.filter(x => x.id !== r.id)) })}>
+                    <TrashIcon />
                   </button>
                 </span>
               </li>
