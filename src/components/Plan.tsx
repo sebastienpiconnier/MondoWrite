@@ -5,6 +5,7 @@
 // Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
+import { ReorderHandle } from "./ReorderHandle";
 import { useInteractive } from "../interactive/useInteractive";
 import { interactiveScenes } from "../interactive/scenes";
 import { choiceGraph } from "../interactive/choices";
@@ -113,16 +114,12 @@ export function Plan() {
 
   // Après un déplacement au clavier, le focus suit la scène.
   const rootRef = useRef<HTMLDivElement>(null);
-  const refocus = useRef<{ id: string; way: "up" | "down" } | null>(null);
+  const refocus = useRef<string | null>(null);
   useEffect(() => {
     const target = refocus.current;
     if (!target) return;
     refocus.current = null;
-    const row = rootRef.current?.querySelector(`[data-scene="${target.id}"]`);
-    const button =
-      row?.querySelector<HTMLButtonElement>(`button[data-move="${target.way}"]:not(:disabled)`) ??
-      row?.querySelector<HTMLButtonElement>("button[data-move]:not(:disabled)");
-    button?.focus();
+    rootRef.current?.querySelector<HTMLButtonElement>(`[data-scene="${target}"] .reorder-handle`)?.focus();
   }, [plan]);
 
   const beatInfo = useBeatText();
@@ -145,7 +142,7 @@ export function Plan() {
   };
   const step = (id: string, way: "up" | "down") => {
     if (!stepInPlan(id, way)) return;
-    refocus.current = { id, way };
+    refocus.current = id;
     tell(id);
   };
   const add = (beat: string) => {
@@ -156,6 +153,19 @@ export function Plan() {
   };
 
   const order = arranged.beats.flatMap((b) => b.ids);
+  // Les scènes occupent les premiers indices. Chaque case, même vide, et la zone « À placer »
+  // restent des cibles de dépôt pour la poignée, comme pour le glisser de ligne entière.
+  const firstBeatTarget = order.length;
+  const unplacedTarget = firstBeatTarget + arranged.beats.length;
+  const gripDrop = (id: string, from: number, to: number) => {
+    if (to >= firstBeatTarget) {
+      place(id, arranged.beats[to - firstBeatTarget]?.key ?? null);
+      return;
+    }
+    const target = order[to];
+    const beat = arranged.beats.find((b) => b.ids.includes(target));
+    if (beat) place(id, beat.key, beat.ids.indexOf(target) + (from < to ? 1 : 0));
+  };
   const numbers = useMemo(() => chapterNumbers(plan, [...order, ...arranged.unplaced]), [plan, order, arranged.unplaced]);
   const chapterName = (chapter: Chapter) => {
     const n = numbers.get(chapter.id) ?? 0;
@@ -208,6 +218,7 @@ export function Plan() {
       <li
         key={id}
         data-scene={id}
+        data-reorder-index={bySection ? undefined : beat === null ? unplacedTarget : at}
         className={`sq-scene plan-scene${dragged === id ? " is-dragged" : ""}${over === id && dragged !== id ? " is-over" : ""}`}
         draggable={!bySection}
         onDragStart={(e) => {
@@ -227,19 +238,19 @@ export function Plan() {
         {bySection && <SectionNumber id={id} n={book.numbers.get(id)} title={title} locked={book.locked.has(id)} start={!!book.marks.get(id)?.start} />}
         {beat !== null && !bySection && (
           <div className="sq-moves">
-            <button type="button" className="icon-button" data-move="up" disabled={at <= 0} aria-label={fmt(p.moveUp, { title })} onClick={() => step(id, "up")}>
-              <span aria-hidden="true">{asCards ? "←" : "↑"}</span>
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              data-move="down"
-              disabled={at === order.length - 1}
-              aria-label={fmt(p.moveDown, { title })}
-              onClick={() => step(id, "down")}
-            >
-              <span aria-hidden="true">{asCards ? "→" : "↓"}</span>
-            </button>
+            <ReorderHandle
+              label={fmt(t.controls.reorder, { label: title })}
+              moveLabels={{ up: fmt(p.moveUp, { title }), down: fmt(p.moveDown, { title }) }}
+              index={at}
+              count={order.length}
+              dragEnabled={!free || order.length > 1}
+              canStep={{
+                up: index > 0 || beat !== arranged.beats[0]?.key,
+                down: at < order.length - 1 || beat !== arranged.beats[arranged.beats.length - 1]?.key,
+              }}
+              onStep={(way) => step(id, way)}
+              onMove={(from, to) => gripDrop(id, from, to)}
+            />
           </div>
         )}
         <div className="sq-body">
@@ -338,7 +349,7 @@ export function Plan() {
   };
 
   return (
-    <div className="sequencer" ref={rootRef}>
+    <div className="sequencer" ref={rootRef} data-reorder-list>
       <div className={`sq-inner${asCards || showTimeline ? " is-cards" : ""}`}>
         <PlanHeader
           title={interactive ? t.interactive.plan.sectionsTitle : p.title}
@@ -402,7 +413,7 @@ export function Plan() {
           />
         )}
 
-        {arranged.beats.map((beat) => {
+        {arranged.beats.map((beat, beatIndex) => {
           // Gabarit imbriqué (#111) : un ensemble (« Acte I ») n'a pas de rang, ses sous-cases sont en retrait.
           const level = beatLevel(plan.custom, beat.key);
           const isGroup = hasSubBeats(plan.custom, beat.key);
@@ -411,6 +422,7 @@ export function Plan() {
           return (
           <section
             key={beat.key}
+            data-reorder-index={bySection ? undefined : firstBeatTarget + beatIndex}
             className={`plan-beat${free ? "" : " is-beat"}${isGroup ? " is-group" : ""}${level > 1 ? ` level-${level}` : ""}${over === beat.key ? " is-over" : ""}`}
             aria-labelledby={`plan-${beat.key}`}
             {...dropOn(beat.key, beat.key)}
@@ -474,7 +486,7 @@ export function Plan() {
         })}
 
         {!free && (
-          <section className={`plan-beat is-unplaced${over === "unplaced" ? " is-over" : ""}`} aria-labelledby="plan-unplaced" {...dropOn("unplaced", null)}>
+          <section data-reorder-index={unplacedTarget} className={`plan-beat is-unplaced${over === "unplaced" ? " is-over" : ""}`} aria-labelledby="plan-unplaced" {...dropOn("unplaced", null)}>
             <h2 id="plan-unplaced">
               {p.unplaced}
               {arranged.unplaced.length > 0 && <span className="plan-count">{arranged.unplaced.length}</span>}

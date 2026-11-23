@@ -5,12 +5,19 @@ interface Props {
   label: string;
   index: number;
   count: number;
+  dragEnabled?: boolean;
+  canStep?: { up: boolean; down: boolean };
+  onStep?: (direction: "up" | "down") => void;
   moveLabels: { up: string; down: string };
   onMove: (from: number, to: number) => void;
 }
 
-/** Le clavier et le pointeur partagent le même déplacement. Le glisser-déposer est validé au relâchement. */
-export function ReorderHandle({ label, index, count, onMove, moveLabels }: Props) {
+/** La poignée valide le dépôt au relâchement. Son menu et les flèches du clavier avancent d’un cran. */
+export function ReorderHandle({
+  label, index, count, moveLabels, onMove, onStep,
+  canStep = { up: index > 0, down: index < count - 1 },
+  dragEnabled = count > 1,
+}: Props) {
   const target = useRef<HTMLElement | null>(null);
   const clearTarget = () => {
     target.current?.removeAttribute("data-drop-target");
@@ -18,26 +25,30 @@ export function ReorderHandle({ label, index, count, onMove, moveLabels }: Props
   };
   const press = useRef({ x: 0, y: 0, dragged: false });
   const grip = useRef<HTMLButtonElement | null>(null);
-  const moveBy = (delta: number) => {
-    const next = index + delta;
-    if (next < 0 || next >= count) return;
-    onMove(index, next);
+  const moveBy = (direction: "up" | "down") => {
+    if (!canStep[direction]) return;
+    if (onStep) onStep(direction);
+    else onMove(index, index + (direction === "up" ? -1 : 1));
     // Le déplacement peut faire perdre le focus à la poignée. Respecter un changement de focus volontaire.
     requestAnimationFrame(() => {
       if (document.activeElement === document.body || document.activeElement?.tagName === "DIALOG") grip.current?.focus();
     });
   };
   const triggerProps: ButtonHTMLAttributes<HTMLButtonElement> = {
-    disabled: count < 2,
+    disabled: !dragEnabled && !canStep.up && !canStep.down,
     "aria-keyshortcuts": "ArrowUp ArrowDown",
     onFocus: (event) => { grip.current = event.currentTarget; },
     onKeyDown: (event) => {
       if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
       event.preventDefault();
-      moveBy(event.key === "ArrowUp" ? -1 : 1);
+      event.stopPropagation();
+      moveBy(event.key === "ArrowUp" ? "up" : "down");
     },
     onPointerDown: (event) => {
-      if (event.button !== 0 || !event.isPrimary) return;
+      if (!dragEnabled || event.button !== 0 || !event.isPrimary) return;
+      // La poignée pilote le geste, même si la ligne accepte aussi le glisser-déposer natif.
+      event.preventDefault();
+      event.currentTarget.focus({ preventScroll: true });
       grip.current = event.currentTarget;
       press.current = { x: event.clientX, y: event.clientY, dragged: false };
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -72,7 +83,7 @@ export function ReorderHandle({ label, index, count, onMove, moveLabels }: Props
     </svg>
   );
   return <MoreMenu label={label} icon={dots} className="reorder-handle" triggerProps={triggerProps} items={[
-    { label: moveLabels.up, disabled: index === 0, onSelect: () => moveBy(-1) },
-    { label: moveLabels.down, disabled: index === count - 1, onSelect: () => moveBy(1) },
+    { label: moveLabels.up, disabled: !canStep.up, onSelect: () => moveBy("up") },
+    { label: moveLabels.down, disabled: !canStep.down, onSelect: () => moveBy("down") },
   ]} />;
 }

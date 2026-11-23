@@ -566,14 +566,10 @@ export function moveChapter(plan: Plan, sceneIds: string[], id: string, before: 
   );
 }
 
-/** Chapitre précédent ou suivant dans le récit : la scène avant laquelle le poser (null : à la fin). Undefined : il ne peut pas bouger. */
-export function chapterStep(plan: Plan, order: string[], id: string, way: "up" | "down"): string | null | undefined {
-  const groups = groupByChapter(plan, order);
-  const i = groups.findIndex((g) => g.chapter?.id === id);
-  if (i < 0) return undefined;
-  if (way === "up") return i > 0 ? groups[i - 1].ids[0] : undefined;
-  if (i >= groups.length - 1) return undefined;
-  return groups[i + 2]?.ids[0] ?? null;
+/** Scène devant laquelle insérer le chapitre : avant la cible en remontant, après en descendant. */
+export function chapterDropTarget(groups: ChapterGroup[], from: number, to: number): string | null | undefined {
+  if (!groups[from] || !groups[to] || from === to) return undefined;
+  return groups[to < from ? to : to + 1]?.ids[0] ?? null;
 }
 
 /**

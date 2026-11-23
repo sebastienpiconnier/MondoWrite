@@ -370,7 +370,7 @@ const scenarios = [
       await until(() => page.locator(".scene-setups").isVisible(), "l'onglet Scène ne montre pas les préparations");
       // Le fusil passe avant le dîner : la scène qui paie vient avant celle qui prépare, « Vérifier » le signale.
       await h.view(2);
-      await page.getByRole("button", { name: "Monter la scène « Le fusil »" }).click();
+      await page.getByRole("button", { name: /^Réordonner Le fusil/ }).press("ArrowUp");
       await h.wait(200);
       await h.view(4);
       await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
@@ -397,7 +397,8 @@ const scenarios = [
       assert((await group.count()) === 0, "un enchaînement est signalé sans aucun déplacement");
       // « Quatre » monte d'un cran : Un, Deux, Quatre, Trois.
       await h.view(2);
-      await page.getByRole("button", { name: "Monter la scène « Quatre »" }).click();
+      await page.getByRole("button", { name: /^Réordonner Quatre/ }).click();
+      await page.getByRole("menuitem", { name: "Monter la scène « Quatre »" }).click();
       await h.view(4);
       await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
       const items = group.locator(".review-item");
@@ -408,7 +409,7 @@ const scenarios = [
       await h.saved((f) => (JSON.parse(f["cosmos.json"] ?? "{}").transitions ?? []).length >= 5, "les enchaînements validés ne sont pas enregistrés");
       // Remonter « Quatre » d'un cran encore puis tout valider.
       await h.view(2);
-      await page.getByRole("button", { name: "Monter la scène « Quatre »" }).click();
+      await page.getByRole("button", { name: /^Réordonner Quatre/ }).press("ArrowUp");
       await h.view(4);
       await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
       await until(async () => (await items.count()) >= 2, "le second déplacement n'est pas signalé");
