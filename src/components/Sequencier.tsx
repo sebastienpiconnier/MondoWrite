@@ -268,7 +268,7 @@ export function Sequencier() {
   const sceneCards = useMemo(() => list.filter((b) => b.kind === "scene" && b.cardId).map((b) => b.cardId as string), [list]);
 
   return (
-    <div className="sequencer" data-reorder-scroll>
+    <div className="sequencer" data-native-reorder>
       <div className={`sq-inner${cards || timeline ? " is-cards" : ""}`}>
         {/* Même en-tête que le Plan d'un roman (#55) : seuls le vocabulaire et les actions changent. */}
         <PlanHeader

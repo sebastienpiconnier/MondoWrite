@@ -100,6 +100,11 @@ function readPanels(): Panels {
 /** Pause dans la frappe avant de refaire « Vérifier » sur tout le livre. */
 const REVIEW_PAUSE_MS = 700;
 
+function sceneDropSide(row: HTMLElement, y: number) {
+  const box = row.getBoundingClientRect();
+  return y < box.top + box.height / 2 ? "before" : "after";
+}
+
 export function Manuscript() {
   const t = useT();
   const m = t.manuscript;
@@ -697,7 +702,7 @@ export function Manuscript() {
       {focusMode && <FocusBar />}
       {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
       <LanguageToolStatus status={lt.status} />
-      <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
+      <nav className="sp-scenes ms-scenes" data-native-reorder aria-label={m.scenesAria}>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
@@ -859,14 +864,13 @@ export function Manuscript() {
                       e.stopPropagation();
                       e.dataTransfer.dropEffect = "move";
                       // Moitié haute : avant cette scène ; moitié basse : après (même chapitre qu'elle).
-                      const box = e.currentTarget.getBoundingClientRect();
-                      const side = e.clientY < box.top + box.height / 2 ? "before" : "after";
+                      const side = sceneDropSide(e.currentTarget, e.clientY);
                       setSceneOver((o) => (o?.id === id && o.side === side ? o : { id, side }));
                     }}
                     onDragLeave={() => setSceneOver((o) => (o?.id === id ? null : o))}
                     onDrop={(e) => {
                       const from = sceneDragRef.current;
-                      const side = sceneOver?.id === id ? sceneOver.side : "before";
+                      const side = sceneDropSide(e.currentTarget, e.clientY);
                       sceneDragRef.current = null;
                       setSceneDrag(null);
                       setSceneOver(null);

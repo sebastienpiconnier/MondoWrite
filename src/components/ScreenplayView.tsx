@@ -1195,7 +1195,7 @@ export function ScreenplayView() {
           num={num}
         />
       )}
-      <nav className="sp-scenes ms-scenes" aria-label={sp.scenesAria}>
+      <nav className="sp-scenes ms-scenes" data-native-reorder aria-label={sp.scenesAria}>
         <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
         {/* Même en-tête que le volet du Manuscrit (#58). */}
         <h2 className="sp-box-title">{sp.scenesTitle}</h2>

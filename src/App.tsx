@@ -1,5 +1,6 @@
 import { openGuide } from "./help";
 import { useEffect } from "react";
+import { listenForNativeDragScroll } from "./components/nativeDragScroll";
 import { sendCommand } from "./commands";
 import { openPalette } from "./commandList";
 import { captureSpot } from "./resume";
@@ -44,6 +45,7 @@ const SAVED_KEYS = [
 
 export function App() {
   const t = useT();
+  useEffect(listenForNativeDragScroll, []);
   const storedView = useCosmos((s) => s.view);
   // Téléphone : Carnet à la place du canevas et du Plan (usePhone.ts).
   const phone = usePhone();

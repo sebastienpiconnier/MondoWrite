@@ -349,7 +349,7 @@ export function Plan() {
   };
 
   return (
-    <div className="sequencer" data-reorder-scroll ref={rootRef} data-reorder-list>
+    <div className="sequencer" data-native-reorder ref={rootRef} data-reorder-list>
       <div className={`sq-inner${asCards || showTimeline ? " is-cards" : ""}`}>
         <PlanHeader
           title={interactive ? t.interactive.plan.sectionsTitle : p.title}

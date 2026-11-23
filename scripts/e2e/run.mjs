@@ -1428,6 +1428,34 @@ const scenarios = [
     },
   },
   {
+    name: "séquencier : relâcher un glisser natif sur la scène qui défile sous le pointeur",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…" }).click();
+      const scenes = Array.from({ length: 19 }, (_, i) => `INT. ATELIER ${i + 1} - JOUR\n\nUne lettre arrive.`);
+      await (await chooser).setFiles({ name: "Lettres.fountain", mimeType: "text/plain", buffer: Buffer.from(scenes.join("\n\n")) });
+      await page.locator(".views").waitFor();
+      await h.closeTour();
+      await h.view(2);
+      const pane = page.locator(".sequencer");
+      const rows = pane.locator(".sq-scene");
+      const source = await rows.first().locator(".sq-title").boundingBox();
+      const edge = await pane.boundingBox();
+      const x = edge.x + edge.width / 2, y = edge.y + edge.height - 32;
+      assert((await rows.nth(18).boundingBox()).y > y, "la cible devrait être hors écran");
+      await page.mouse.move(source.x + 8, source.y + 5);
+      await page.mouse.down();
+      await page.mouse.move(x, y, { steps: 16 });
+      // À la fin de la liste, la cible reste sous la souris même sur un navigateur lent.
+      await until(() => pane.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight <= 1), "la liste ne défile pas jusqu’à la dernière scène");
+      assert(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("[data-reorder-index]")?.getAttribute("data-reorder-index") === "18", { x, y }), "la dernière scène n’est pas sous le pointeur");
+      await page.mouse.up();
+      await until(async () => (await rows.nth(18).locator(".sq-title").innerText()).includes("ATELIER 1 - JOUR"), "le dépôt a utilisé l’ancienne ligne sous le pointeur");
+    },
+  },
+  {
     name: "séquencier en fiches : déposer une scène sur une section conserve son bloc Fountain",
     async run(h) {
       const { page } = h;
@@ -2390,6 +2418,51 @@ const scenarios = [
       await page.getByRole("menuitem", { name: "Retirer l’image" }).click();
       await until(() => add.isVisible(), "l'image retirée, le bouton ne revient pas");
       await h.saved((f) => !JSON.parse(f["cosmos.json"] ?? "{}").pitch?.visuel, "pitch.visuel est resté après le retrait");
+    },
+  },
+  {
+    name: "Plan : déplacer une case hors écran dans la fenêtre du gabarit",
+    async run(h) {
+      const { page } = h;
+      await h.create("Les passages");
+      await h.view(2);
+      const titles = Array.from({ length: 36 }, (_, i) => `Étape ${i + 1}`);
+      const chooser = page.waitForEvent("filechooser");
+      await page.locator(".plan-template select").selectOption("__import");
+      await (await chooser).setFiles({ name: "passages.md", mimeType: "text/markdown", buffer: Buffer.from(["# Les passages", ...titles.map(t => `## ${t}`)].join("\n\n")) });
+      const dialog = page.locator("dialog.tpl-editor[open]");
+      const rows = dialog.locator(".tpl-row");
+      const order = () => rows.evaluateAll(items => items.map(row => row.querySelector("input").value));
+      await rows.last().waitFor({ state: "attached" });
+      const panel = await dialog.boundingBox();
+      const plan = page.locator(".sequencer");
+      const background = await plan.evaluate(el => el.scrollTop);
+      const source = rows.first().locator(".reorder-handle");
+      await source.scrollIntoViewIfNeeded();
+      const start = await source.boundingBox();
+      const destination = 24;
+      assert((await rows.nth(destination).boundingBox()).y >= panel.y + panel.height, "la case de destination est déjà visible");
+      const x = start.x + start.width / 2;
+      await page.mouse.move(x, start.y + start.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, panel.y + panel.height - 6, { steps: 6 });
+      await until(async () => Number(await dialog.locator("[data-drop-target]").first().getAttribute("data-reorder-index", { timeout: 200 })) >= destination + 1, "la fenêtre du gabarit ne défile pas jusqu’à la case visée");
+      const target = await rows.nth(destination).boundingBox();
+      await page.mouse.move(x, target.y + target.height / 2);
+      await page.mouse.up();
+      const expected = [...titles.slice(1, destination + 1), titles[0], ...titles.slice(destination + 1)];
+      assert(JSON.stringify(await order()) === JSON.stringify(expected), "la case n’est pas déposée à la bonne place");
+      const moved = await rows.nth(destination).locator(".reorder-handle").boundingBox();
+      const scroll = await dialog.evaluate(el => el.scrollTop);
+      await page.mouse.move(x, moved.y + moved.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, panel.y + 6, { steps: 6 });
+      await until(async () => await dialog.evaluate(el => el.scrollTop) < scroll - 50, "le bord supérieur de la fenêtre ne défile pas");
+      await page.keyboard.press("Escape");
+      await page.mouse.up();
+      assert(await dialog.isVisible() && await dialog.locator("[data-drop-target]").count() === 0, "Échap doit annuler le glisser et garder la fenêtre ouverte");
+      assert(JSON.stringify(await order()) === JSON.stringify(expected), "Échap a déplacé la case");
+      assert(await plan.evaluate(el => el.scrollTop) === background && await page.evaluate(() => window.scrollY) === 0, "le déplacement a fait défiler le fond");
     },
   },
   {
