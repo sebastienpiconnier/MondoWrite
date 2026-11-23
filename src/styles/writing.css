@@ -518,6 +518,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 @media (any-hover: hover) { .trash-notice .ghost-button:hover { background: var(--strong-hover); color: var(--strong-bg); } }
 .trash-notice .trash-undo { background: var(--strong-fg); color: var(--strong-bg); font-weight: 600; }
 .trash-notice .trash-open { border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
+@media (any-hover: hover) {
+  .trash-notice .trash-undo:hover { background: var(--strong-fg); color: var(--strong-bg); text-decoration: underline; text-underline-offset: 3px; }
+  .trash-notice .trash-open:hover { background: transparent; color: var(--strong-fg); text-decoration-thickness: 2px; }
+}
 .trash-notice .icon-button { background: transparent; color: var(--strong-fg); border-color: transparent; }
 /* Croix en haut à droite, à l'endroit attendu ; le texte et les boutons lui laissent la place (padding). */
 .trash-notice .trash-notice-close { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; }
