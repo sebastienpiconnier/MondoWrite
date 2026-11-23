@@ -148,6 +148,10 @@
 .ms-goal > :first-child { flex: 1; }
 .ms-goal input, .ms-goal .goal-with-unit { min-height: 36px; }
 .ms-goal input { width: 100%; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.875rem; }
+.goal-help { grid-column: 1 / -1; margin: 0; color: var(--ink-2); font-size: .75rem; }
+.goal-with-unit { display: flex; align-items: center; min-width: 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); }
+.ms-goal .goal-with-unit input { min-width: 0; min-height: 0; align-self: stretch; border: 0; background: transparent; }
+.goal-with-unit > small { padding-right: 8px; color: var(--muted); font-size: .75rem; }
 .ms-goal input::placeholder { color: var(--placeholder); }
 /* Titre de la scène : dans la barre, à la taille du reste ; la page, elle, reste celle d'un livre. */
 .ms-title { flex: 1 1 180px; min-width: 120px; min-height: 36px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); font: 600 15px/1.2 var(--font-ui); text-overflow: ellipsis; }
@@ -446,16 +450,22 @@ input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); ou
 .ms-focus-bar:focus-within { opacity: 1; }
 @media (any-hover: hover) { .ms-focus-bar:hover { opacity: 1; } }
 .ms-focus-bar button, .ms-focus-bar select { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.8125rem; cursor: pointer; }
-.ms-focus-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); border-color: transparent; }
-.ms-focus-bar .focus-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ms-focus-bar .focus-options { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
 .ms-focus-bar .focus-exit-x { display: none; }
 .ms-focus-bar label { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--ink-2); }
+.ms-focus-bar .focus-select, .ms-focus-bar .focus-check { display: inline-flex; min-height: 36px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.ms-focus-bar .focus-select select { width: auto; min-height: 32px; padding: 0 2px; border: 0; font-weight: 600; }
+.focus-check input { width: 15px; height: 15px; margin: 0; accent-color: var(--ink-2); }
+.ms-focus-bar .focus-check:has(:checked) { background: var(--ink-2); border-color: var(--ink-2); color: var(--surface); }
+.ms-focus-bar .focus-check:has(:checked) input { accent-color: var(--surface); }
+.ms-focus-bar .focus-exit { border-color: transparent; }
+.ms-focus-bar .focus-select:focus-within, .ms-focus-bar .focus-check:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Mise en valeur : le texte s'estompe, la phrase ou le paragraphe en cours garde sa pleine encre. */
 .ms-page.is-dimmed .ms-editor { color: var(--page-ink-dim); transition: color 0.2s; }
 .ms-page.is-dimmed .ms-editor .is-focus-on { color: var(--page-ink); }
 /* Ligne : un voile au-dessus et au-dessous de la ligne du curseur. */
 .ms-veil { position: absolute; left: 0; right: 0; background: var(--page); opacity: 0.65; pointer-events: none; z-index: 2; }
-@media (pointer: coarse) { .ms-focus-bar { opacity: 1; } .ms-focus-bar button, .ms-focus-bar select { min-height: 44px; } }
+@media (pointer: coarse) { .ms-focus-bar { opacity: 1; } .ms-focus-bar button, .ms-focus-bar select, .ms-focus-bar .focus-select, .ms-focus-bar .focus-check { min-height: 44px; } }
 
 /* ---------- Pages du livre et chapitrage dans le manuscrit ---------- */
 .ms-page .ms-chapter-heading { margin: 0; font-size: 0.62em; }
@@ -1005,6 +1015,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .bexp-accent { display: grid; place-content: center; width: 34px; height: 34px; border: 3px solid var(--surface); border-radius: 50%; box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; }
 .bexp-accent svg { color: var(--swatch-check); filter: drop-shadow(0 1px 1px var(--backdrop)); }
 .bexp-accent[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+@media (forced-colors: active) {
+  .cover-position input { position: static; width: 1em; height: 1em; flex: none; opacity: 1; appearance: auto; }
+  .bexp-theme[aria-checked="true"] { outline: 2px solid Highlight; outline-offset: -3px; }
+}
 .bexp-formats { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; }
 .bexp-formats .spdf-choice { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-content: center; border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; cursor: pointer; }
 .bexp-formats .spdf-choice:has(:checked) { background: var(--accent-soft); border-color: var(--accent); }
@@ -1317,7 +1331,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .more-menu button.is-danger { color: var(--danger); }
 .more-menu button.has-rule { margin-top: 5px; position: relative; }
 .more-menu button.has-rule::before { content: ""; position: absolute; left: 8px; right: 8px; top: -4px; border-top: 1px solid var(--line); }
-.more-menu kbd { flex: none; white-space: nowrap; font: 0.75rem var(--font-ui); color: var(--ink-2); }
+.more-menu kbd { padding: 2px 5px; border-radius: 4px; background: var(--ground); flex: none; white-space: nowrap; font: 0.75rem var(--font-ui); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+@media (pointer: fine) { .more-menu button { min-height: 34px; padding-block: 6px; } }
 @media (pointer: coarse) { .more-menu button { min-height: 44px; } .more-button { min-width: 44px; min-height: 44px; } }
 
 /* Manuscrit : filtre « Ses scènes en point de vue » (1.13.0), les scènes des autres narrateurs repliées. */

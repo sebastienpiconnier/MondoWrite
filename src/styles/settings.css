@@ -1,9 +1,7 @@
-/* Réglages, profil et commandes d’écriture dans la palette active. */
+/* Réglages et profil dans la palette active. */
 .settings-disclosure { grid-column: 1 / -1; min-width: 0; border-top: 1px solid var(--line); }
-.settings-disclosure > summary { position: relative; padding: 14px 26px 14px 0; cursor: pointer; list-style: none; }
-.settings-disclosure > summary::-webkit-details-marker { display: none; }
-.settings-disclosure > summary::after { content: ""; position: absolute; right: 6px; top: calc(50% - 4px); width: 7px; height: 7px; border: solid var(--ink-2); border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); }
-.settings-disclosure[open] > summary::after { transform: rotate(45deg); }
+.settings-disclosure > summary { position: relative; padding: 14px 26px 14px 0; cursor: pointer; }
+.settings-disclosure > summary::before { position: absolute; inset-inline-end: 6px; top: calc(50% - 4px); margin: 0; }
 .settings-disclosure > summary strong { display: block; font-size: 1rem; font-weight: 600; }
 .settings-disclosure > summary small { display: block; margin-top: 3px; color: var(--ink-2); font-size: .8125rem; }
 .settings-disclosure[open] > summary small { display: none; }
@@ -32,24 +30,8 @@
 .credential-field { position: relative; }
 .settings-panel .credential-field input { padding-right: 44px; }
 .credential-field button { position: absolute; top: 0; right: 0; bottom: 0; width: 40px; margin: 0; color: var(--accent-ink); }
-.ms-focus-bar .focus-select, .ms-focus-bar .focus-check { display: inline-flex; min-height: 36px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; cursor: pointer; white-space: nowrap; }
-.ms-focus-bar .focus-select select { width: auto; min-height: 32px; padding: 0 2px; border: 0; font-weight: 600; }
-.focus-check input { width: 15px; height: 15px; margin: 0; accent-color: var(--ink-2); }
-.ms-focus-bar .focus-check:has(:checked) { background: var(--ink-2); border-color: var(--ink-2); color: var(--surface); }
-.ms-focus-bar .focus-check:has(:checked) input { accent-color: var(--surface); }
-.ms-focus-bar .focus-options { gap: 5px; }
-.ms-focus-bar .focus-exit { border-color: transparent; }
-.ms-focus-bar .focus-select:focus-within, .ms-focus-bar .focus-check:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
-.goal-help { grid-column: 1 / -1; margin: 0; color: var(--ink-2); font-size: .75rem; }
-.goal-with-unit { display: flex; align-items: center; min-width: 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); }
-.ms-goal .goal-with-unit input { min-width: 0; min-height: 0; align-self: stretch; border: 0; background: transparent; }
-.goal-with-unit > small { padding-right: 8px; color: var(--muted); font-size: .75rem; }
-.more-menu kbd { padding: 2px 5px; border-radius: 4px; background: var(--ground); font-variant-numeric: tabular-nums; }
-@media (pointer: fine) {
-  .more-menu button { min-height: 34px; padding-block: 6px; }
-}
 @media (pointer: coarse) {
-  .appearance-modes button, .appearance-palettes button, .ms-focus-bar .focus-check, .ms-focus-bar .focus-select, .settings-disclosure > summary { min-height: 44px; }
+  .appearance-modes button, .appearance-palettes button, .settings-disclosure > summary { min-height: 44px; }
   .credential-field button { min-width: 44px; min-height: 44px; }
   .settings-panel .credential-field input { min-height: 44px; }
 }

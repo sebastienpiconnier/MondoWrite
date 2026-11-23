@@ -233,7 +233,13 @@ const scenarios = [
       await h.create("Le Phare");
       const id = await h.newCard("Inès Morvan");
       await h.node(id).locator(".card-type").click();
-      await page.getByRole("option", { name: "Personnage", exact: true }).click();
+      const selected = page.getByRole("option", { selected: true });
+      await until(() => selected.evaluate((el) => el === document.activeElement), "le type courant n’a pas le focus");
+      await page.keyboard.press("ArrowDown");
+      const candidate = page.getByRole("option", { name: "Personnage", exact: true });
+      assert(await candidate.evaluate((el) => el === document.activeElement), "la flèche ne donne pas le focus au type suivant");
+      assert(await selected.count() === 1 && await candidate.getAttribute("aria-selected") === "false", "déplacer le focus a changé le type");
+      await page.keyboard.press("Enter");
       await until(() => h.node(id).locator(".card.type-personnage").count(), "la carte n'est pas devenue Personnage");
       await h.saved((f) => /type: personnage/.test(f[`cartes/${id}.md`] ?? ""), "la carte Personnage n'a pas été enregistrée");
       await h.reloadAndOpen();

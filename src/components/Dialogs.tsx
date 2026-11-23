@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCosmos } from "../store";
 import { useT } from "../i18n";
 import { shortcutScore } from "../shortcutSearch";
-import { SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
+import { shortcutKeyName, SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
 import { isAppleKeyboard, openExternal } from "../platform";
 import { openBugReport } from "../reportBug";
 import { canRateInStore, openStoreReviewPage } from "../storeReview";
@@ -181,13 +181,10 @@ function ShortcutList() {
   const t = useT();
   const [query, setQuery] = useState("");
   const apple = isAppleKeyboard();
-  const keyName = (k: string) =>
-    ({ Mod: apple ? "⌘" : "Ctrl", Shift: apple ? "⇧" : t.shortcuts.shift, Alt: apple ? "⌥" : "Alt", Entrée: t.shortcuts.enter, Échap: t.shortcuts.escape, Suppr: t.shortcuts.delete, Glisser: t.shortcuts.drag, Clic: t.shortcuts.click })[k] ?? k;
-
   const groups = (Object.keys(SHORTCUT_GROUPS) as ShortcutGroup[]).map(group => {
     const rows = SHORTCUT_GROUPS[group].map(([item, keys]) => {
-      const displayKeys = keys.map(keyName);
-      const score = shortcutScore(query, t.shortcuts.items[item], t.shortcuts.groups[group], [...displayKeys, ...keys]);
+      const displayKeys = keys.map(k => shortcutKeyName(k, apple, t.shortcuts));
+      const score = shortcutScore(query, t.shortcuts.items[item], t.shortcuts.groups[group], [...displayKeys, ...keys], t.shortcuts.shift);
       return { item, displayKeys, score };
     }).filter(row => Number.isFinite(row.score)).sort((a, b) => a.score - b.score);
     return { group, rows };

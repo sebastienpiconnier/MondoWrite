@@ -11,17 +11,25 @@ function oneEdit(a: string, b: string): boolean {
 }
 
 function tokens(text: string): string[] {
-  const expanded = text.replace(/⌘/g, " cmd ").replace(/⇧/g, " shift ").replace(/⌥/g, " alt ")
+  const expanded = text.replace(/−/g, "-").replace(/⌘/g, " cmd ").replace(/⇧/g, " shift ").replace(/⌥/g, " alt ")
     .replace(/\bcommand\b/gi, "cmd").replace(/\bcontrol\b/gi, "ctrl").replace(/\boption\b/gi, "alt");
   return foldCommand(expanded).match(/[\p{L}\p{N}]+|[^\s\p{L}\p{N}]/gu) ?? [];
 }
 
-export function shortcutScore(query: string, label: string, group: string, keys: readonly string[]): number {
+function keyTokens(key: string): string[] {
+  const range = /^(\d)…(\d)$/.exec(key);
+  if (!range) return tokens(key);
+  const start = Number(range[1]);
+  return Array.from({ length: Number(range[2]) - start + 1 }, (_, i) => String(start + i));
+}
+
+export function shortcutScore(query: string, label: string, group: string, keys: readonly string[], shiftLabel = "Shift"): number {
   if (!query.trim()) return 0;
-  const terms = tokens(query);
+  const localizedShift = foldCommand(shiftLabel);
+  const terms = tokens(query).map(term => term === localizedShift ? "shift" : term);
   const modifiers = ["cmd", "ctrl", "shift", "alt"];
   const chord = terms.some(term => modifiers.includes(term));
-  const keyWords = keys.flatMap(tokens);
+  const keyWords = keys.flatMap(keyTokens);
   const words = tokens(label);
   const context = tokens(group);
   let score = 0;

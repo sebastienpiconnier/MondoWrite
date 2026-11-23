@@ -3,6 +3,7 @@
 // scénario). Image ouvre la fenêtre Photos (photo libre ou image de l'appareil), Document le choix d'un PDF.
 // Menu au clavier (flèches, Début, Fin, Échap), à la souris et au doigt.
 
+import { focusMenuItem } from "./focusMenuItem";
 import { useCosmos } from "../store";
 import { formOf } from "../pitch";
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -51,14 +52,8 @@ export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }
   };
 
   const onMenuKey = (e: ReactKeyboardEvent) => {
-    const items = Array.from(menuRef.current?.querySelectorAll("button") ?? []);
-    const at = items.indexOf(document.activeElement as HTMLButtonElement);
-    const go = (i: number) => items[(i + items.length) % items.length]?.focus();
-    if (e.key === "ArrowDown") go(at + 1);
-    else if (e.key === "ArrowUp") go(at - 1);
-    else if (e.key === "Home") go(0);
-    else if (e.key === "End") go(items.length - 1);
-    else if (e.key === "Escape" || e.key === "Tab") {
+    if (focusMenuItem(e)) return;
+    if (e.key === "Escape" || e.key === "Tab") {
       if (e.key === "Escape") e.stopPropagation();
       close(e.key === "Escape");
       if (e.key === "Tab") return;

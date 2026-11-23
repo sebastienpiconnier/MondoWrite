@@ -102,6 +102,22 @@ export function matchesIn(text: string, query: string): number[] {
   return out;
 }
 
+/** Plages à surligner : la saisie entière dans un passage, chaque mot dans une carte. */
+export function highlightRanges(text: string, query: string, words = false): { start: number; end: number }[] {
+  const folded = foldQuery(query);
+  const terms = words ? new Set(folded.split(" ")) : [folded];
+  const ranges = Array.from(terms).flatMap((term) =>
+    matchesIn(text, term).map((start) => ({ start, end: start + term.length })),
+  ).sort((a, b) => a.start - b.start);
+  const merged: typeof ranges = [];
+  for (const range of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && range.start < last.end) last.end = Math.max(last.end, range.end);
+    else merged.push(range);
+  }
+  return merged;
+}
+
 /** Une scène où chercher dans les vues d'écriture : où aller, son titre, ses paragraphes (ou éléments) dans l'ordre. */
 export interface TextUnit {
   target: string;

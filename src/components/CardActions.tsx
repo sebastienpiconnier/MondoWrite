@@ -2,6 +2,7 @@
 // la mettre en avant (le reste du canevas s'estompe), ne montrer qu'elle et ses voisines. Au clavier :
 // flèches, Échap.
 
+import { focusMenuItem } from "./focusMenuItem";
 import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useT } from "../i18n";
 import { useCosmos } from "../store";
@@ -86,11 +87,8 @@ export function CardActions({ id, hasImage, title = "", isCharacter = false, fol
   ];
 
   const onKey = (e: ReactKeyboardEvent) => {
-    const all = [...(rootRef.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]") ?? [])];
-    const at = all.indexOf(document.activeElement as HTMLButtonElement);
-    if (e.key === "ArrowDown") all[(at + 1) % all.length]?.focus();
-    else if (e.key === "ArrowUp") all[(at - 1 + all.length) % all.length]?.focus();
-    else if (e.key === "Escape") {
+    if (focusMenuItem(e)) return;
+    if (e.key === "Escape") {
       setCardMenu(null);
       buttonRef.current?.focus();
     } else return;

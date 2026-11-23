@@ -69,7 +69,7 @@ export function StatsBox({
           step={key === "total" ? 1000 : key === "chapter" ? 500 : 100}
           inputMode="numeric"
           value={goals[key] ?? ""}
-          placeholder="—"
+          placeholder="–"
           onChange={(e) => setGoals({ ...goals, [key]: Number(e.target.value) || undefined })}
         />
         <small>{s.words.toLocaleLowerCase(lang)}</small>

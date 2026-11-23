@@ -11,7 +11,7 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { typeColor, type CardType } from "../types";
 import { useVocab } from "../vocab";
-import { findPassages, findInText, matchesIn, plainText, searchCards } from "../search";
+import { findPassages, highlightRanges, plainText, searchCards } from "../search";
 import { sceneBody, sceneText } from "../screenplay/sceneText";
 import { excerptOf } from "../ai/semantic";
 import { openPalette } from "../commandList";
@@ -26,24 +26,23 @@ import type { SemanticHit } from "../ai/semantic";
 /** Mode de la dernière recherche, gardé pour la session (l'auteur qui cherche par le sens y revient). */
 let lastMode: "words" | "sense" = "words";
 
-function Highlight({ text, query }: { text: string; query: string }) {
-  const match = findInText(text, query);
-  if (!match) return text;
-  const starts = matchesIn(text, text.slice(match.at, match.at + match.length));
-  return starts.map((at, i) => (
-    <Fragment key={at}>
-      {text.slice(i ? starts[i - 1] + match.length : 0, at)}
-      <mark>{text.slice(at, at + match.length)}</mark>
-      {i === starts.length - 1 && text.slice(at + match.length)}
+function Highlight({ text, query, words }: { text: string; query: string; words?: boolean }) {
+  const ranges = highlightRanges(text, query, words);
+  if (!ranges.length) return text;
+  return ranges.map(({ start, end }, i) => (
+    <Fragment key={start}>
+      {text.slice(i ? ranges[i - 1].end : 0, start)}
+      <mark>{text.slice(start, end)}</mark>
+      {i === ranges.length - 1 && text.slice(end)}
     </Fragment>
   ));
 }
 
-function ResultHeading({ type, meta, title, query = "" }: { type: CardType; meta: string; title: string; query?: string }) {
+function ResultHeading({ type, meta, title, query = "", words }: { type: CardType; meta: string; title: string; query?: string; words?: boolean }) {
   return (
     <span className="search-result-head">
       <span className="search-result-type"><span className="card-dot" style={{ background: typeColor(type) }} />{meta}</span>
-      <span className="search-result-title"><Highlight text={title} query={query} /></span>
+      <span className="search-result-title"><Highlight text={title} query={query} words={words} /></span>
     </span>
   );
 }
@@ -311,8 +310,8 @@ export function Search() {
               {results.map((r, i) => (
                 <li key={r.id} id={`${ids.list}-${i}`} role="option" aria-selected={i === active}>
                   <button type="button" className={`search-result${i === active ? " is-active" : ""}`} tabIndex={-1} onClick={() => choose(i)}>
-                    <ResultHeading type={r.type} meta={[types[r.type].label, r.inText && where !== "bible" && s.inText].filter(Boolean).join(" · ")} title={r.title || t.bible.untitled} query={query} />
-                    {r.excerpt && <span className="search-result-text"><Highlight text={r.excerpt} query={query} /></span>}
+                    <ResultHeading type={r.type} meta={[types[r.type].label, r.inText && where !== "bible" && s.inText].filter(Boolean).join(" · ")} title={r.title || t.bible.untitled} query={query} words />
+                    {r.excerpt && <span className="search-result-text"><Highlight text={r.excerpt} query={query} words /></span>}
                   </button>
                 </li>
               ))}

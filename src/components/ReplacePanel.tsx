@@ -148,7 +148,7 @@ export function ReplacePanel() {
           <ul className="replace-list">
             {occurrences.slice(0, MAX_ROWS).map((o, index) => (
               <li key={o.key}>
-                {(index === 0 || occurrences[index - 1].label !== o.label) && <div className="replace-where">{o.label || r.untitled}</div>}
+                {(index === 0 || occurrences[index - 1].source !== o.source) && <div className="replace-where">{o.label || r.untitled}</div>}
                 <label className={o.sentenceStart && alsoAWord ? "is-doubtful" : undefined}>
                   <input type="checkbox" aria-label={`${o.label || r.untitled}: ${o.before}${o.match}${o.after}`} checked={!skip.has(o.key)} onChange={() => toggle(o.key)} />
                   <span className="replace-context">
