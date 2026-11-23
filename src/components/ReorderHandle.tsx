@@ -1,5 +1,6 @@
-import { useRef, type ButtonHTMLAttributes } from "react";
+import { useEffect, useRef, type ButtonHTMLAttributes } from "react";
 import { MoreMenu } from "./MoreMenu";
+import { trackReorderDrag } from "./trackReorderDrag";
 
 interface Props {
   label: string;
@@ -18,12 +19,9 @@ export function ReorderHandle({
   canStep = { up: index > 0, down: index < count - 1 },
   dragEnabled = count > 1,
 }: Props) {
-  const target = useRef<HTMLElement | null>(null);
-  const clearTarget = () => {
-    target.current?.removeAttribute("data-drop-target");
-    target.current = null;
-  };
-  const press = useRef({ x: 0, y: 0, dragged: false });
+  const stopDrag = useRef<(() => void) | null>(null);
+  const dragged = useRef(false);
+  useEffect(() => () => stopDrag.current?.(), []);
   const grip = useRef<HTMLButtonElement | null>(null);
   const moveBy = (direction: "up" | "down") => {
     if (!canStep[direction]) return;
@@ -50,31 +48,19 @@ export function ReorderHandle({
       event.preventDefault();
       event.currentTarget.focus({ preventScroll: true });
       grip.current = event.currentTarget;
-      press.current = { x: event.clientX, y: event.clientY, dragged: false };
-      event.currentTarget.setPointerCapture(event.pointerId);
+      stopDrag.current?.();
+      dragged.current = false;
+      stopDrag.current = trackReorderDrag(
+        event.currentTarget, event.nativeEvent, index,
+        () => { dragged.current = true; },
+        (to) => {
+          stopDrag.current = null;
+          if (to !== undefined) onMove(index, to);
+        },
+      );
     },
-    onPointerMove: (event) => {
-      if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
-      const gesture = press.current;
-      if (!gesture.dragged && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) < 5) return;
-      gesture.dragged = true;
-      clearTarget();
-      const row = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-reorder-index]");
-      if (!row || row.closest("[data-reorder-list]") !== event.currentTarget.closest("[data-reorder-list]")) return;
-      const to = Number(row.dataset.reorderIndex);
-      if (to === index) return;
-      row.dataset.dropTarget = to > index ? "after" : "before";
-      target.current = row;
-    },
-    onPointerUp: (event) => {
-      if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
-      const row = target.current;
-      clearTarget();
-      if (row) onMove(index, Number(row.dataset.reorderIndex));
-    },
-    onLostPointerCapture: clearTarget,
     onClickCapture: (event) => {
-      if (event.detail && press.current.dragged) event.stopPropagation();
+      if (event.detail && dragged.current) event.stopPropagation();
     },
   };
   const dots = (

@@ -379,6 +379,60 @@ const scenarios = [
     },
   },
   {
+    name: "Plan : la poignée fait défiler un long plan jusqu’à une scène hors écran, dans une autre case",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le passage");
+      await h.view(2);
+      await page.locator('select:has(option[value="troisActes"])').selectOption("troisActes");
+      const beats = page.locator(".plan-beat.is-beat");
+      for (let b = 0; b < 2; b++) {
+        const field = beats.nth(b).locator(".plan-add input");
+        for (let i = 1; i <= 8; i++) {
+          await field.fill(`Acte ${b + 1}, scène ${i}`);
+          await field.press("Enter");
+        }
+      }
+      const ids = (list) => list.locator(".plan-scene").evaluateAll((rows) => rows.map((r) => r.dataset.scene));
+      const first = await ids(beats.first()), second = await ids(beats.nth(1));
+      const row = (id) => page.locator(`.plan-scene[data-scene="${id}"]`);
+      const source = row(first[4]).locator(".reorder-handle");
+      await source.evaluate((e) => e.scrollIntoView({ block: "center" }));
+      const handle = await source.boundingBox();
+      const list = await page.locator(".sequencer").boundingBox();
+      const x = list.x + list.width / 2, y = list.y + list.height - 5;
+      assert((await row(second[1]).boundingBox()).y > y, "la destination devrait commencer hors écran");
+      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, y, { steps: 8 });
+      // Le pointeur reste immobile : le défilement doit aussi renouveler la cible sous lui.
+      await until(async () => {
+        const id = await page.locator(".plan-scene[data-drop-target]").getAttribute("data-scene", { timeout: 200 });
+        return second.indexOf(id) >= 2;
+      }, "le bord du Plan ne fait pas apparaître les scènes de la case suivante");
+      // Revenir au centre d’une ligne désormais visible arrête le défilement avant de la déposer.
+      const target = second[1];
+      const dest = await row(target).boundingBox();
+      await page.mouse.move(x, dest.y + dest.height / 2);
+      await page.mouse.up();
+      const expected = [...second];
+      expected.splice(second.indexOf(target) + 1, 0, first[4]);
+      assert(JSON.stringify(await ids(beats.first())) === JSON.stringify(first.filter((id) => id !== first[4])), "la case de départ a changé d’ordre");
+      assert(JSON.stringify(await ids(beats.nth(1))) === JSON.stringify(expected), "la scène n’est pas déposée après la destination");
+      assert(await page.getByRole("menu").count() === 0, "le glisser a aussi ouvert le menu de la poignée");
+      const moved = await source.boundingBox();
+      await page.mouse.move(moved.x + moved.width / 2, moved.y + moved.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, list.y + 6, { steps: 8 });
+      await until(() => page.locator(".plan-beat [data-drop-target], .plan-beat[data-drop-target]").count(), "pas de cible avant l’annulation");
+      await page.keyboard.press("Escape");
+      await page.mouse.up();
+      assert(await page.locator("[data-drop-target]").count() === 0, "Échap garde le repère du dépôt");
+      assert(JSON.stringify(await ids(beats.nth(1))) === JSON.stringify(expected), "Échap a déplacé la scène");
+      assert(await page.getByRole("menu").count() === 0, "Échap a ouvert le menu de la poignée");
+    },
+  },
+  {
     name: "enchaînements à relire : une scène déplacée dans le Plan, signalée puis validée dans « Vérifier » (#120)",
     async run(h) {
       const { page } = h;
@@ -1371,6 +1425,36 @@ const scenarios = [
       await h.wait(400);
       await page.keyboard.press("Control+s");
       await h.saved((f) => /\[\[cosmos:beat:e_teaser\]\]\n\nINT\. MANOIR - JOUR/i.test(f["scenario.fountain"] ?? ""), "la frappe sous la première case n'a pas fait un en-tête de scène");
+    },
+  },
+  {
+    name: "séquencier en fiches : déposer une scène sur une section conserve son bloc Fountain",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…" }).click();
+      const source = "# Acte I\n\nINT. PHARE - NUIT\n\n= La veille.\n\nLa lanterne tourne.\n\nINÈS\nJe vois le bateau.\n\n# Acte II\n\nINT. QUAI - JOUR\n\nLa foule attend.";
+      await (await chooser).setFiles({ name: "Le Phare.fountain", mimeType: "text/plain", buffer: Buffer.from(source) });
+      await page.locator(".views").waitFor();
+      await h.closeTour();
+      await h.view(2);
+      await page.getByRole("button", { name: "Fiches", exact: true }).click();
+
+      await h.saved((files) => files["scenario.fountain"]?.includes("La foule attend."), "le scénario importé n'est pas enregistré");
+      const original = (await h.files())["scenario.fountain"];
+      const expected = original.replace(/(INT\. PHARE[\s\S]*?)(# Acte II[\s\S]*?)(?=INT\. QUAI)/, "$2$1");
+      assert(expected !== original, "les deux sections du scénario manquent");
+      const cards = page.locator(".sq-list.is-cards");
+      const grip = cards.locator(".sq-scene").filter({ hasText: "INT. PHARE" }).locator(".reorder-handle");
+      const section = cards.locator(".sq-section").filter({ hasText: "Acte II" });
+      const from = await grip.boundingBox();
+      const to = await section.boundingBox();
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+      await page.mouse.up();
+      await h.saved((files) => files["scenario.fountain"] === expected, "le déplacement n'a pas conservé tout le bloc de scène et ses repères");
     },
   },
   {
