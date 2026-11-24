@@ -1400,8 +1400,15 @@ const scenarios = [
       await until(() => pill.count(), "le personnage qui parle n'est pas dans la rangée Personnages");
       assert(/1 réplique/.test(await pill.innerText()), `pas de nombre de répliques : ${await pill.innerText()}`);
       await page.locator(".sp-side .scene-setups").getByRole("button", { name: "Prépare…" }).click();
-      await page.locator(".sp-side .scene-setups-pick select").selectOption({ label: "EXT. QUAI – NUIT" });
-      await h.saved((f) => /"setups"/.test(f["cosmos.json"] ?? ""), "la préparation n'est pas enregistrée");
+      await page.getByRole("searchbox", { name: "Chercher par numéro, titre ou synopsis" }).fill("2");
+      await page.locator(".scene-setups-choices button", { hasText: "EXT. QUAI" }).click();
+      await page.getByRole("textbox", { name: "Nom du lien (facultatif)" }).fill("le bateau");
+      await page.getByRole("button", { name: "Relier", exact: true }).click();
+      await h.saved((f) => /"setups"/.test(f["cosmos.json"] ?? "") && /le bateau/.test(f["cosmos.json"] ?? ""), "la préparation n'est pas enregistrée avec son nom");
+      await until(() => page.locator(".sp-side .scene-setups-linklabel", { hasText: "le bateau" }).count(), "le nom du lien n'est pas montré");
+      // Le volet des scènes filtre aussi par décor (lot 17).
+      await page.locator("#sp-filter-name").selectOption({ label: "Quai" });
+      await until(() => page.locator(".thread-banner").count(), "le filtre par décor ne pose pas de bandeau");
       await h.view(1);
       await until(async () => (await page.locator(".card-scene-number").allInnerTexts()).sort().join(",") === "1,2", "les cartes Scène n'ont pas leur numéro");
     },

@@ -64,13 +64,13 @@ export function plotColors(nodes: readonly NodeLike[], edges: readonly EdgeLike[
 }
 
 /**
- * Fond d'une scène : chaque intrigue reliée en bande verticale, la principale à gauche, mêlée au fond à 25 %
- * (`--plot-mix`) : à 50 %, le texte n'était plus lisible (2,4:1 en sombre ; AA tenu jusqu'à 25 % pour tous les textes). Undefined pour une scène sans intrigue.
+ * Fond d'une scène : chaque intrigue reliée en bande verticale pleine, la principale à gauche. Le texte posé
+ * dessus prend la surface (`.has-plot`), à 4,5:1 de chaque couleur. Undefined pour une scène sans intrigue.
  */
 export function sceneBackground(colors: PlotColors, sceneId: string | undefined): string | undefined {
   const list = sceneId ? colors.all.get(sceneId) : undefined;
   if (!list || list.length === 0) return undefined;
-  const tints = list.map((p) => `color-mix(in srgb, var(--pov-${colors.plots.get(p) ?? 1}) var(--plot-mix, 25%), transparent)`);
+  const tints = list.map((p) => `var(--pov-${colors.plots.get(p) ?? 1})`);
   if (tints.length === 1) return `linear-gradient(${tints[0]}, ${tints[0]})`;
   const step = 100 / tints.length;
   return `linear-gradient(90deg, ${tints.map((c, i) => `${c} ${(i * step).toFixed(2)}% ${((i + 1) * step).toFixed(2)}%`).join(", ")})`;
@@ -81,4 +81,10 @@ export function sceneColor(colors: PlotColors, sceneId: string | undefined): str
   const plot = sceneId ? colors.main.get(sceneId) : undefined;
   const slot = plot ? colors.plots.get(plot) : undefined;
   return slot ? `var(--pov-${slot})` : undefined;
+}
+
+/** Fond d'une carte Intrigue : sa propre couleur, pleine. */
+export function plotCardBackground(colors: PlotColors, plotId: string): string | undefined {
+  const n = colors.plots.get(plotId);
+  return n ? `linear-gradient(var(--pov-${n}), var(--pov-${n}))` : undefined;
 }

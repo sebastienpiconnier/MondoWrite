@@ -2214,7 +2214,7 @@ export const es = {
     hintEscape: "salir",
     scenesTitle: "Escenas",
     scenesAria: "Escenas del guion",
-    filterLabel: "Personaje",
+    filterLabel: "Filtrar las escenas",
     filterAll: "Todos",
     filterModes: "Mostrar",
     filterScenes: "Sus escenas",

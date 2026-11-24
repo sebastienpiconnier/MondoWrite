@@ -2218,7 +2218,7 @@ export const ca = {
     hintEscape: "surt",
     scenesTitle: "Escenes",
     scenesAria: "Escenes del guió",
-    filterLabel: "Personatge",
+    filterLabel: "Filtrar les escenes",
     filterAll: "Tots",
     filterModes: "Mostra",
     filterScenes: "Les seves escenes",

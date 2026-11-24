@@ -1049,7 +1049,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ribbon-lane-name { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 0.75rem; line-height: 1.4; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 @media (any-hover: hover) { .ribbon-lane-name:hover { color: var(--ink); text-decoration: underline; } }
 .ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--ground); }
-.ribbon-lane-mark { position: absolute; top: 0; bottom: 0; min-width: 3px; border-right: 2px solid var(--surface); background: var(--type-intrigue); }
+.ribbon-lane-mark { position: absolute; top: 0; bottom: 0; min-width: 3px; border-right: 2px solid var(--surface); background: var(--lane, var(--type-intrigue)); }
 .ribbon-lane-mark.is-cited { opacity: 0.45; }
 .ribbon-curve { position: relative; height: 44px; margin-top: 6px; }
 .ribbon-curve svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -1702,9 +1702,18 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 @media (pointer: coarse) { .scene-place-row select { min-height: 44px; } }
 .scene-place-hint { margin: 0; }
 
-/* Couleur des scènes par leur intrigue principale (#143) : un trait de la couleur de l'intrigue, à gauche. */
-/* Fond aux couleurs des intrigues de la scène (une bande par intrigue, la principale à gauche), à 25 % (AA). */
-.has-plot { background-image: var(--plot-bg); }
+/* Fond aux couleurs des intrigues de la scène (#143) : une bande pleine par intrigue, la principale à gauche.
+   Chaque couleur de type est à 4,5:1 de la surface dans toutes les palettes : le texte prend la surface
+   (`--plot-fg`), et ce qui était posé sur la surface (pastilles) s'inverse. */
+.has-plot {
+  background-image: var(--plot-bg);
+  color: var(--plot-fg);
+  --ink: var(--plot-fg); --ink-2: var(--plot-fg); --muted: var(--plot-fg); --placeholder: var(--plot-fg);
+  --accent: var(--plot-fg); --accent-ink: var(--plot-fg); --type: var(--plot-fg);
+  --surface: var(--plot-fg-swap); --ground: var(--plot-fg-swap); --accent-soft: transparent;
+  --line: var(--plot-fg); --line-2: var(--plot-fg);
+}
+.has-plot.is-current, .has-plot[aria-current="true"], .has-plot:has(> [aria-current="true"]) { box-shadow: inset 0 0 0 3px var(--plot-fg), inset 0 0 0 5px var(--plot-fg-swap); }
 .plan-plot-colors[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
 .link-pill .link-star { min-width: 28px; border: 0; background: transparent; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
 .link-pill .link-star[aria-pressed="true"] { color: var(--accent); }
@@ -1745,4 +1754,21 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 /* Préparations : « Prépare… » et « Payée par… » de l'onglet Scène (lot 17). */
 .scene-setups-add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .scene-setups-pick { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; font: 0.8125rem var(--font-ui); color: var(--ink-2); }
-.scene-setups-pick select { min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }
+.scene-setups-pick input, .scene-setups-rename { min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px; padding: 0 8px; }
+.scene-setups-choices { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.scene-setups-choices li + li { border-top: 1px solid var(--line); }
+.scene-setups-choices button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: 6px 10px; border: 0; background: transparent; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.scene-setups-choices button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
+.scene-setups-choices button[aria-pressed="true"] .scene-setups-hint, .scene-setups-choices button[aria-pressed="true"] .scene-setups-num { color: inherit; }
+@media (any-hover: hover) { .scene-setups-choices button:hover:not([aria-pressed="true"]) { background: var(--ground); } }
+.scene-setups-title { font-weight: 600; }
+.scene-setups-hint { color: var(--ink-2); font-size: 0.8125rem; line-height: 1.35; }
+.scene-setups-num { display: inline-block; min-width: 2em; margin-right: 6px; color: var(--ink-2); font-variant-numeric: tabular-nums; font-weight: 600; }
+.scene-setups-none { padding: 8px 10px; color: var(--ink-2); }
+.scene-setups-name { display: flex; flex-direction: column; gap: 4px; }
+.scene-setups-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.scene-setups-links li { display: flex; align-items: center; gap: 4px; }
+.scene-setups-links .chip { flex: 1; min-width: 0; text-align: left; }
+.scene-setups-linklabel { margin-left: 4px; color: var(--ink-2); font-style: italic; }
+.scene-setups-pen { flex: none; width: 32px; min-height: 32px; }
+@media (pointer: coarse) { .scene-setups-pen { width: 44px; min-height: 44px; } }

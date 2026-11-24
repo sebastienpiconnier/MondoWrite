@@ -52,7 +52,7 @@ import type { TitleField } from "../screenplay/titlePage";
 import { minutesFor, usePagination } from "./usePagination";
 import { eighthsBetween } from "../screenplay/eighths";
 import { SceneLength, useSceneEighths } from "./SceneLength";
-import { keptByThread, threadGaps, threadPresence } from "../threadFilter";
+import { keptByThread, threadGaps, threadPresence, THREAD_TYPES } from "../threadFilter";
 import { setThreadFold, type ThreadFold } from "../screenplay/editor/threadFold";
 import { ThreadBanner, gapText } from "./ThreadBanner";
 import { screenplaySceneTexts } from "../timeline";
@@ -884,6 +884,20 @@ export function ScreenplayView() {
   }, [editor, charFilter]);
   // Lire le récit fil par fil (#117) : seulement les scènes d'une carte, l'écart entre elles en pages.
   const threadFilter = useCosmos((s) => s.threadFilter);
+  // Cartes qu'on peut suivre depuis le volet des scènes (lot 17), par type, sauf les personnages (filtre à part).
+  const filterGroups = useMemo(
+    () =>
+      THREAD_TYPES.filter((type) => type !== "personnage")
+        .map((type) => ({
+          type,
+          cards: nodes
+            .filter((n) => n.data.type === type && n.data.title.trim())
+            .map((n) => ({ id: n.id, title: n.data.title.trim() }))
+            .sort((a, b) => a.title.localeCompare(b.title, lang)),
+        }))
+        .filter((g) => g.cards.length > 0),
+    [nodes, lang],
+  );
   const edges = useCosmos((s) => s.edges);
   const eighths = useSceneEighths();
   const threadCard = threadFilter ? nodes.find((n) => n.id === threadFilter.id)?.data : undefined;
@@ -1282,20 +1296,44 @@ export function ScreenplayView() {
         {/* Même en-tête que le volet du Manuscrit (#58). */}
         <h2 className="sp-box-title">{sp.scenesTitle}</h2>
         {scenes.length === 0 && <p className="sp-empty">{sp.scenesEmpty}</p>}
-        {(speakingList.length > 0 || charFilter) && (
+        {(speakingList.length > 0 || charFilter || threadFilter || filterGroups.length > 0) && (
           <div className="sp-filter">
             <label htmlFor="sp-filter-name">{sp.filterLabel}</label>
+            {/* Lot 17 : personnages (leurs répliques), puis décors, intrigues, thèmes, objets… (scènes reliées ou qui
+                les nomment, comme « Lire le fil »). */}
             <select
               id="sp-filter-name"
-              value={charFilter?.name ?? ""}
-              onChange={(e) => setCharFilter(e.target.value ? { name: e.target.value, mode: charFilter?.mode ?? "scenes" } : null)}
+              value={charFilter ? `c:${charFilter.name}` : threadFilter ? `t:${threadFilter.id}` : ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                const st = useCosmos.getState();
+                if (v.startsWith("c:")) setCharFilter({ name: v.slice(2), mode: charFilter?.mode ?? "scenes" });
+                else if (v.startsWith("t:")) st.setThreadFilter({ id: v.slice(2), cited: true });
+                else {
+                  setCharFilter(null);
+                  st.setThreadFilter(null);
+                }
+              }}
             >
               <option value="">{sp.filterAll}</option>
-              {/* Nom venu de la Bible sans réplique encore : il reste proposé. */}
-              {(charFilter && !speakingList.includes(charFilter.name) ? [...speakingList, charFilter.name] : speakingList).map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
+              {speakingList.length > 0 && (
+                <optgroup label={types.personnage.section}>
+                  {/* Nom venu de la Bible sans réplique encore : il reste proposé. */}
+                  {(charFilter && !speakingList.includes(charFilter.name) ? [...speakingList, charFilter.name] : speakingList).map((name) => (
+                    <option key={name} value={`c:${name}`}>
+                      {name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {filterGroups.map((g) => (
+                <optgroup key={g.type} label={types[g.type].section}>
+                  {g.cards.map((c) => (
+                    <option key={c.id} value={`t:${c.id}`}>
+                      {c.title}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             {charFilter && (
@@ -1524,7 +1562,9 @@ export function ScreenplayView() {
             </span>
           )}
           {/* #54 : le mode focus en icône, Écouter et les voix dans le menu ⋯ (la barre ne montre la lecture qu'en cours).
-              Sur téléphone, la barre reste en mode focus : on en sort par ce bouton, écrit en toutes lettres. */}
+              Sur téléphone, la barre reste en mode focus : on en sort par ce bouton, écrit en toutes lettres.
+              Ces boutons restent ensemble à droite : le ⋯ ne part jamais seul sur une seconde ligne (lot 17). */}
+          <span className="sp-bar-end">
           {focusMode ? (
             <button type="button" className="sp-focus" aria-pressed onPointerDown={(e) => e.preventDefault()} onClick={() => setFocusMode(false)}>
               {sp.focusExit}
@@ -1577,6 +1617,7 @@ export function ScreenplayView() {
           {/* Mode Atelier : variantes de l'élément en cours, « Je l'ai repris », trois directions pour la scène. */}
           <ScreenplayAtelier editor={editor} />
           <ScreenplayDirections editor={editor} />
+          </span>
           {threadFilter && <ThreadBanner card={threadCard} shown={threadKeptIds?.length ?? 0} total={sceneIds.length} />}
           {charFilter && (
             <p className="sp-filter-banner" role="status">

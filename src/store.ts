@@ -736,7 +736,7 @@ export interface CosmosState {
   setLinkSetup: (id: string, setup: string | null) => void;
   /** « Prépare… » / « Payée par… » de l'onglet Scène : le fil entre les deux scènes (tiré s'il n'existe pas, gardé
    *  avec son étiquette s'il existe) dit laquelle prépare l'autre. Une étape d'historique. */
-  setSceneSetup: (setup: string, payoff: string) => void;
+  setSceneSetup: (setup: string, payoff: string, label?: string) => void;
 
   setView: (view: View, focusId?: string | null) => void;
   /** Ouvre le projet sélectionné dans le stockage, ou démarre le projet d'exemple si l'emplacement est vide. */
@@ -4007,12 +4007,16 @@ export const useCosmos = create<CosmosState>((set, get) => {
       touch();
     },
 
-    setSceneSetup: (setup, payoff) => {
+    setSceneSetup: (setup, payoff, label) => {
       if (setup === payoff) return;
+      const name = (label ?? "").trim().slice(0, 60);
       const between = (e: { source: string; target: string }) => (e.source === setup && e.target === payoff) || (e.source === payoff && e.target === setup);
-      if (!get().edges.some(between)) get().linkCards(setup, payoff, "");
+      // Un fil déjà tiré est gardé, avec son étiquette, sauf si l'auteur en donne une nouvelle.
+      if (!get().edges.some(between)) get().linkCards(setup, payoff, name);
       const edge = get().edges.find(between);
-      if (edge) get().setLinkSetup(edge.id, setup);
+      if (!edge) return;
+      if (name) get().renameLink(edge.id, name);
+      get().setLinkSetup(edge.id, setup);
     },
 
     // Quitter la Bible autrement que par « Retour au manuscrit » oublie le retour proposé.

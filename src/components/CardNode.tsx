@@ -6,7 +6,7 @@
 
 import { sceneNumbers } from "../sceneNumbers";
 import { isInteractiveMeta } from "../interactive";
-import { plotColors, sceneBackground } from "../plotColors";
+import { plotCardBackground, plotColors, sceneBackground } from "../plotColors";
 import { canFollow } from "../threadFilter";
 import { formOf } from "../pitch";
 import { autosize } from "./autosize";
@@ -78,7 +78,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   // Scène : son numéro dans le récit, et le fond aux couleurs de ses intrigues (#143, réglage `plotColors`).
   const plotOn = useSettings((s) => s.plotColors);
   const sceneNumber = useCosmos((s) => (data.type === "scene" && !data.page && !isInteractiveMeta(s.metaKeep) ? sceneNumbers(s).get(id) : undefined));
-  const plotBg = useCosmos((s) => (plotOn && data.type === "scene" ? sceneBackground(plotColors(s.nodes, s.edges), id) : undefined));
+  const plotBg = useCosmos((s) => (!plotOn ? undefined : data.type === "scene" ? sceneBackground(plotColors(s.nodes, s.edges), id) : data.type === "intrigue" ? plotCardBackground(plotColors(s.nodes, s.edges), id) : undefined));
 
   const [slash, setSlash] = useState<MenuState | null>(null);
   const [active, setActive] = useState(0);
@@ -433,7 +433,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [pendingFocus]);
 
   return (
-    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${lifted ? " is-lifted" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}${data.inbox ? " is-inbox" : ""}${plotBg ? " has-plot" : ""}`} style={{ ["--type" as string]: typeColor(data.type), ...(plotBg ? { ["--plot-bg" as string]: plotBg } : {}) }}>
+    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${lifted ? " is-lifted" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}${data.inbox ? " is-inbox" : ""}${plotBg ? " has-plot" : ""}`} style={plotBg ? { ["--plot-bg" as string]: plotBg } : { ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}
