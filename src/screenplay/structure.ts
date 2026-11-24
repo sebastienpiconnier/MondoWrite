@@ -198,11 +198,21 @@ export function partOfScene(parts: StructurePart[], heading: number, kind?: Stru
  * Séquences lues comme des chapitres, le temps de ranger le canevas (« Organiser » : un cadre par séquence) :
  * jamais écrites dans cosmos.json. Sans séquence, les actes en tiennent lieu.
  */
-export function partChapters(elements: ScreenplayElement[], labels: { act: string; seq: string }): { id: string; title: string; scenes: string[] }[] {
+export function partChapters(
+  elements: ScreenplayElement[],
+  labels: { act: string; seq: string },
+): { id: string; title: string; scenes: string[]; act?: { id: string; title: string } }[] {
   const parts = structureOf(elements);
   const seqs = parts.filter((p) => p.kind === "seq");
-  const used = seqs.length > 0 ? seqs : parts;
-  return used
-    .map((p) => ({ id: `part:${p.key}`, title: partLabel(p, labels), scenes: p.scenes.flatMap((s) => (s.cardId ? [s.cardId] : [])) }))
-    .filter((c) => c.scenes.length > 0);
+  const acts = new Map(parts.filter((p) => p.kind === "act").map((p) => [p.key, p]));
+  const cards = (p: StructurePart) => p.scenes.flatMap((s) => (s.cardId ? [s.cardId] : []));
+  if (seqs.length === 0) return parts.map((p) => ({ id: `part:${p.key}`, title: partLabel(p, labels), scenes: cards(p) })).filter((c) => c.scenes.length > 0);
+  // Une séquence garde son acte : « Organiser » met les cadres des séquences dans celui de l'acte.
+  const out: { id: string; title: string; scenes: string[]; act?: { id: string; title: string } }[] = [];
+  for (const p of seqs) {
+    const act = p.act ? acts.get(p.act) : undefined;
+    const scenes = cards(p);
+    if (scenes.length > 0) out.push({ id: `part:${p.key}`, title: partLabel(p, labels), scenes, ...(act ? { act: { id: act.key, title: partLabel(act, labels) } } : {}) });
+  }
+  return out;
 }

@@ -1376,6 +1376,37 @@ const scenarios = [
     },
   },
   {
+    name: "fiche de scène (lot 17 bis) : qui parle dans Personnages, « Prépare… » tire le fil, numéros et couleurs sur le canevas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Fiche", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, who, line] of [["INT. PHARE – NUIT", "INÈS", "Il pleut."], ["EXT. QUAI – NUIT", "YANN", "Le bateau."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type("Le vent.");
+        await page.keyboard.press("Enter");
+        await page.keyboard.press("Tab");
+        await page.keyboard.type(who);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(line);
+        await page.keyboard.press("Enter");
+        await page.keyboard.press("Enter");
+      }
+      await h.wait(800);
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      const pill = page.locator(".sp-side .scene-links .link-pill", { hasText: "INÈS" });
+      await until(() => pill.count(), "le personnage qui parle n'est pas dans la rangée Personnages");
+      assert(/1 réplique/.test(await pill.innerText()), `pas de nombre de répliques : ${await pill.innerText()}`);
+      await page.locator(".sp-side .scene-setups").getByRole("button", { name: "Prépare…" }).click();
+      await page.locator(".sp-side .scene-setups-pick select").selectOption({ label: "EXT. QUAI – NUIT" });
+      await h.saved((f) => /"setups"/.test(f["cosmos.json"] ?? ""), "la préparation n'est pas enregistrée");
+      await h.view(1);
+      await until(async () => (await page.locator(".card-scene-number").allInnerTexts()).sort().join(",") === "1,2", "les cartes Scène n'ont pas leur numéro");
+    },
+  },
+  {
     name: "recherche dans le Scénario (#85) : le mot trouvé dans l'action d'une scène y est sélectionné",
     async run(h) {
       const { page } = h;

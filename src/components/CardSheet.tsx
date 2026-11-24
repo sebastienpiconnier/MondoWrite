@@ -5,6 +5,8 @@
 // Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; les autres attendent
 // derrière « Ajouter si utile », une pastille par champ (Bible v2), ou tous d'un coup par « Afficher les champs vides ». Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
+import { plotColors } from "../plotColors";
+import { PLOT_COLORS } from "../character";
 import { BufferedInput, BufferedTextarea } from "./BufferedField";
 import { IaFieldNote } from "./Atelier";
 import { useEffect, useId, useState } from "react";
@@ -104,6 +106,8 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   };
 
   return (
+    <>
+    {card.type === "intrigue" && <PlotColorPicker card={card} />}
     <section className="sheet" aria-label={title}>
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
         <span>{title}</span>
@@ -147,5 +151,41 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
         </div>
       )}
     </section>
+    </>
+  );
+}
+
+/**
+ * Couleur d'une intrigue (#143) : huit pastilles de la palette des points de vue, et « Auto ». Elle colore les
+ * scènes reliées (Plan, séquencier, listes des scènes, canevas) quand « Couleurs des intrigues » est allumé.
+ */
+export function PlotColorPicker({ card }: { card: CardData }) {
+  const t = useT().plan;
+  const auto = useCosmos((s) => plotColors(s.nodes, s.edges).plots.get(s.nodes.find((n) => n.data === card)?.id ?? ""));
+  const id = useCosmos((s) => s.nodes.find((n) => n.data === card)?.id);
+  const chosen = card.fiche?.couleur ?? "";
+  const set = (v: string) => id && useCosmos.getState().setFiche(id, "couleur", v);
+  return (
+    <div className="plot-color" role="radiogroup" aria-label={t.plotColor}>
+      <span className="plot-color-label">{t.plotColor}</span>
+      {PLOT_COLORS.map((c) => (
+        <button
+          key={c}
+          type="button"
+          role="radio"
+          aria-checked={chosen === c || (!chosen && String(auto) === c)}
+          className={`plot-swatch${chosen === c ? " is-chosen" : ""}`}
+          style={{ background: `var(--pov-${c})` }}
+          aria-label={fmt(t.plotColorN, { n: c })}
+          title={fmt(t.plotColorN, { n: c })}
+          onClick={() => set(chosen === c ? "" : c)}
+        />
+      ))}
+      {chosen && (
+        <button type="button" className="link-button" onClick={() => set("")}>
+          {t.plotColorAuto}
+        </button>
+      )}
+    </div>
   );
 }

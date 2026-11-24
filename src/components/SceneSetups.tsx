@@ -5,7 +5,9 @@
 //   y mène.
 // Rien dans un roman interactif (les préparations n'y sont pas proposées).
 
+import { useState } from "react";
 import { fmt, useT } from "../i18n";
+import { junctionOrder } from "../projectJunctions";
 import { useInteractive } from "../interactive/useInteractive";
 import { payoffOf, setupOf } from "../setups";
 import { projectSetupLetters } from "../projectJunctions";
@@ -46,7 +48,53 @@ export function SceneSetupsBox({ id }: { id: string | null | undefined }) {
   const interactive = useInteractive();
   const key = useCosmos((s) => (id ? lettersKey(s, id) : ""));
   const state = useCosmos((s) => (key ? s : null));
-  if (interactive || !id || !state) return null;
+  const [adding, setAdding] = useState<"prepares" | "paidBy" | null>(null);
+  // Scènes du récit, pour « Prépare… » et « Payée par… » (lot 17) : relues seulement quand on en choisit une.
+  const scenes = useCosmos((s) => (adding ? junctionOrder(s.kind, s.nodes, s.plan, s.screenplay).join(",") : ""));
+  if (interactive || !id) return null;
+  const titleOf = (sid: string) => useCosmos.getState().nodes.find((n) => n.id === sid)?.data.title.trim() || t.manuscript.untitled;
+  const picker = adding && (
+    <label className="scene-setups-pick">
+      <span>{adding === "prepares" ? t.toile.setupsPickPrepares : t.toile.setupsPickPaidBy}</span>
+      <select
+        // Ouvert pour qu'on choisisse tout de suite.
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus
+        value=""
+        onChange={(e) => {
+          const other = e.target.value;
+          if (other) useCosmos.getState().setSceneSetup(adding === "prepares" ? id : other, adding === "prepares" ? other : id);
+          setAdding(null);
+        }}
+        onBlur={() => setAdding(null)}
+      >
+        <option value="">{t.toile.setupsChoose}</option>
+        {scenes.split(",").filter((sid) => sid && sid !== id).map((sid) => (
+          <option key={sid} value={sid}>
+            {titleOf(sid)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+  const addButtons = (
+    <div className="scene-setups-add">
+      <button type="button" className="ghost-button" onClick={() => setAdding("prepares")}>
+        {t.toile.setupsAddPrepares}
+      </button>
+      <button type="button" className="ghost-button" onClick={() => setAdding("paidBy")}>
+        {t.toile.setupsAddPaidBy}
+      </button>
+    </div>
+  );
+  if (!state) {
+    return (
+      <section className="sp-box scene-setups">
+        <h2 className="sp-box-title">{t.toile.setupsTitle}</h2>
+        {picker || addButtons}
+      </section>
+    );
+  }
   const letters = projectSetupLetters(state).byLink;
   const title = (sid: string) => state.nodes.find((n) => n.id === sid)?.data.title.trim() || t.manuscript.untitled;
   const prepares: { letter: string; other: string }[] = [];
@@ -81,6 +129,7 @@ export function SceneSetupsBox({ id }: { id: string | null | undefined }) {
       <h2 className="sp-box-title">{t.toile.setupsTitle}</h2>
       {list(t.toile.setupsPrepares, prepares)}
       {list(t.toile.setupsPaidBy, paidBy)}
+      {picker || addButtons}
     </section>
   );
 }

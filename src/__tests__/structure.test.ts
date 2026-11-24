@@ -35,6 +35,7 @@ describe("actes et séquences (#140)", () => {
       ["seq", 2],
     ]);
     expect(parts[1].act).toBe("a1");
+    expect(partChapters(els, labels)).toEqual([{ id: "part:s1", title: "Séquence 1", scenes: ["a", "b"], act: { id: "a1", title: "Acte 1" } }]);
     expect(parts[0].scenes.length).toBe(2);
     expect(nextNumber(els, els.length, "seq")).toBe(2);
   });

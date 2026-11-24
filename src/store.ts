@@ -734,6 +734,9 @@ export interface CosmosState {
   setWireFiche: (id: string, field: WireField, value: string) => void;
   /** Préparer et payer (#119) : la scène qui prépare l'autre bout du fil, ou null pour retirer le sens. */
   setLinkSetup: (id: string, setup: string | null) => void;
+  /** « Prépare… » / « Payée par… » de l'onglet Scène : le fil entre les deux scènes (tiré s'il n'existe pas, gardé
+   *  avec son étiquette s'il existe) dit laquelle prépare l'autre. Une étape d'historique. */
+  setSceneSetup: (setup: string, payoff: string) => void;
 
   setView: (view: View, focusId?: string | null) => void;
   /** Ouvre le projet sélectionné dans le stockage, ou démarre le projet d'exemple si l'emplacement est vide. */
@@ -1217,7 +1220,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
     ]);
     known.add(t.season.outside);
     // Cadres des actes et séquences (#140) : leur titre, et sa suite.
-    if (get().kind === "scenario") for (const c of partChapters(get().screenplay?.elements ?? [], t.screenplay.preserved)) known.add(c.title).add(fmt(t.organize.continued, { label: c.title }));
+    if (get().kind === "scenario")
+      for (const c of partChapters(get().screenplay?.elements ?? [], t.screenplay.preserved)) {
+        known.add(c.title).add(fmt(t.organize.continued, { label: c.title }));
+        if (c.act) known.add(c.act.title);
+      }
     const organized =
       storyFrames.length > 0 &&
       storyFrames.every((f) => f.data.season || f.data.episode || known.has(f.data.title) || chapterTitle.some((re) => re.test(f.data.title)));
@@ -3998,6 +4005,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
         }),
       });
       touch();
+    },
+
+    setSceneSetup: (setup, payoff) => {
+      if (setup === payoff) return;
+      const between = (e: { source: string; target: string }) => (e.source === setup && e.target === payoff) || (e.source === payoff && e.target === setup);
+      if (!get().edges.some(between)) get().linkCards(setup, payoff, "");
+      const edge = get().edges.find(between);
+      if (edge) get().setLinkSetup(edge.id, setup);
     },
 
     // Quitter la Bible autrement que par « Retour au manuscrit » oublie le retour proposé.

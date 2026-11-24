@@ -29,10 +29,12 @@ export function scenePlots(sceneId: string, nodes: readonly NodeLike[], edges: r
 }
 
 export interface PlotColors {
-  /** Couleur de chaque intrigue : rang dans la palette, de 1 à 8. */
+  /** Couleur de chaque intrigue : rang dans la palette, de 1 à 8 (celle choisie dans sa fiche, sinon attribuée). */
   plots: Map<string, number>;
   /** Scène → son intrigue principale. */
   main: Map<string, string>;
+  /** Scène → toutes ses intrigues, la principale d'abord. */
+  all: Map<string, string[]>;
 }
 
 const cache = new WeakMap<readonly NodeLike[], WeakMap<readonly EdgeLike[], PlotColors>>();
@@ -42,16 +44,36 @@ export function plotColors(nodes: readonly NodeLike[], edges: readonly EdgeLike[
   cache.set(nodes, byEdges);
   const hit = byEdges.get(edges);
   if (hit) return hit;
-  const plots = narratorColors(nodes.filter((n) => n.data.type === "intrigue").map((n) => n.id));
+  const plotNodes = nodes.filter((n) => n.data.type === "intrigue");
+  const plots = narratorColors(plotNodes.map((n) => n.id));
+  for (const n of plotNodes) {
+    const chosen = Number(n.data.fiche?.couleur);
+    if (chosen >= 1 && chosen <= 8) plots.set(n.id, chosen);
+  }
   const main = new Map<string, string>();
+  const all = new Map<string, string[]>();
   for (const n of nodes) {
     if (n.data.type !== "scene") continue;
-    const first = scenePlots(n.id, nodes, edges)[0];
-    if (first) main.set(n.id, first);
+    const list = scenePlots(n.id, nodes, edges);
+    if (list[0]) main.set(n.id, list[0]);
+    if (list.length > 0) all.set(n.id, list);
   }
-  const out = { plots, main };
+  const out = { plots, main, all };
   byEdges.set(edges, out);
   return out;
+}
+
+/**
+ * Fond d'une scène : chaque intrigue reliée en bande verticale, la principale à gauche, mêlée au fond à 25 %
+ * (`--plot-mix`) : à 50 %, le texte n'était plus lisible (2,4:1 en sombre ; AA tenu jusqu'à 25 % pour tous les textes). Undefined pour une scène sans intrigue.
+ */
+export function sceneBackground(colors: PlotColors, sceneId: string | undefined): string | undefined {
+  const list = sceneId ? colors.all.get(sceneId) : undefined;
+  if (!list || list.length === 0) return undefined;
+  const tints = list.map((p) => `color-mix(in srgb, var(--pov-${colors.plots.get(p) ?? 1}) var(--plot-mix, 25%), transparent)`);
+  if (tints.length === 1) return `linear-gradient(${tints[0]}, ${tints[0]})`;
+  const step = 100 / tints.length;
+  return `linear-gradient(90deg, ${tints.map((c, i) => `${c} ${(i * step).toFixed(2)}% ${((i + 1) * step).toFixed(2)}%`).join(", ")})`;
 }
 
 /** Variable CSS de la couleur d'une scène, ou undefined (scène sans intrigue). */

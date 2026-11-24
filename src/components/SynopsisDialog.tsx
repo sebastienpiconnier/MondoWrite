@@ -2,6 +2,7 @@
 // leur export (PDF, Word, Markdown). Un titre de scène y mène dans le Manuscrit ou le Scénario.
 
 import { useMemo, useState } from "react";
+import { exportDocument } from "../export";
 import { SCENE_AT, useCosmos } from "../store";
 import { fmt, useT } from "../i18n";
 import { useSettings } from "../settings";
@@ -44,7 +45,6 @@ export function SynopsisDialog() {
     setMessage(s.working);
     try {
       const doc = synopsisDoc(rows, { title: fmt(s.fileTitle, { title: title || "MondoWrite" }), author, lang, heading: s.title, empty: s.empty });
-      const { exportDocument } = await import("../export");
       const file = await exportDocument(doc, format, { name: doc.title, paper: useCosmos.getState().paper, contents: s.title });
       setMessage((await storage.saveAs(file, s.formats[format])) ? s.done : "");
     } catch (err) {

@@ -43,13 +43,14 @@
 .sp-scene-list .sp-scene-group.is-episode { margin-top: 6px; }
 .sp-scene-list .sp-scene-group.is-episode button { color: var(--accent-ink); font-size: 0.8125rem; }
 /* Actes et séquences (#140, #142) : un intertitre avec sa flèche pour replier. */
-.sp-scene-list .sp-scene-group.is-act, .sp-scene-list .sp-scene-group.is-seq { display: flex; align-items: center; gap: 2px; }
+.sp-scene-list li.sp-scene-group.is-act, .sp-scene-list li.sp-scene-group.is-seq { display: flex; flex-direction: row; align-items: center; gap: 2px; }
+/* writing.css, chargée après, met les lignes de la liste en colonne : l'intertitre garde sa rangée. */
 .sp-scene-list .sp-scene-group.is-act { margin-top: 10px; }
-.sp-scene-list .sp-scene-group.is-act button:last-child { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.875rem; }
+.sp-scene-list .sp-scene-group.is-act .sp-part-title { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.875rem; }
 .sp-scene-list .sp-scene-group.is-seq { margin-top: 4px; }
-.sp-scene-list .sp-scene-group.is-seq button:last-child { background: var(--ground); font-size: 0.8125rem; }
+.sp-scene-list .sp-scene-group.is-seq .sp-part-title { background: var(--ground); font-size: 0.8125rem; }
 .sp-scene-list .sp-scene-group .sp-part-fold { flex: none; width: 32px; min-height: 32px; }
-.sp-scene-list .sp-scene-group button:last-child { flex: 1; text-align: left; }
+.sp-scene-list .sp-scene-group .sp-part-title { flex: 1; min-width: 0; width: auto; text-align: left; }
 .sp-part-count { font-weight: 400; color: var(--ink-2); }
 @media (pointer: coarse) { .sp-scene-list .sp-scene-group .sp-part-fold { width: 44px; min-height: 44px; } }
 .sp-scene-list .sp-scene-omitted .ms-name { color: var(--muted); font-style: italic; }
@@ -209,12 +210,13 @@
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"],
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"],
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] { display: none; }
-/* Synopsis montré sous l'en-tête (#147, réglage de l'appareil) : dans la ligne vide qui suit l'en-tête, sans prendre
-   de place (les pages ne bougent pas), en petit et en gris, coupé à une ligne. */
-.screenplay.show-synopsis .sp-sceneHeading[data-synopsis] { position: relative; }
+/* Synopsis montré sous l'en-tête (#147, réglage de l'appareil) : un bloc à part, plus grand, espacé et tenu par un
+   trait d'accent. Il prend sa place à l'écran (les coupures de page de la feuille bougent), jamais dans le PDF ni
+   dans le compte des pages. L'en-tête passe en colonne pour que le synopsis vienne après son texte. */
+.screenplay.show-synopsis .sp-sceneHeading[data-synopsis] { display: flex; flex-direction: column; }
 .screenplay.show-synopsis .sp-sceneHeading[data-synopsis]::before {
-  content: attr(data-synopsis); position: absolute; left: 0; right: 0; top: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-  font: italic 400 0.72em/1.4 var(--font-ui); text-transform: none; text-decoration: none; letter-spacing: 0; color: var(--muted); pointer-events: none;
+  content: attr(data-synopsis); order: 2; margin: 0.6em 0 0.4em; padding: 0.15em 0 0.15em 0.7em; border-left: 3px solid var(--accent);
+  font: italic 400 0.9em/1.45 var(--font-ui); text-transform: none; text-decoration: none; letter-spacing: 0; color: var(--ink-2); white-space: normal; pointer-events: none;
 }
 .sp-preserved[data-preserved="centered"] { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
 .sp-preserved[data-preserved="pageBreak"] { padding: 6px 0 0; border: 0; border-top: 1px dashed var(--line-2); border-radius: 0; background: none; text-align: center; }
@@ -311,3 +313,8 @@
 
 /* Nom d'un personnage ou d'un décor du volet « Scène » qui ouvre sa fiche de la Bible (au doigt comme à la souris). */
 .sp-sheet-link { font: inherit; text-align: left; min-height: 44px; padding: 0; text-transform: inherit; }
+
+/* Renommer un acte ou une séquence dans la liste des scènes (lot 17). */
+.sp-scene-list .sp-scene-group .sp-part-rename { flex: none; width: 32px; min-height: 32px; opacity: 0.7; }
+.sp-scene-list .sp-scene-group .sp-part-input { flex: 1; min-width: 0; font: inherit; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--ink); }
+@media (pointer: coarse) { .sp-scene-list .sp-scene-group .sp-part-rename { width: 44px; min-height: 44px; } }

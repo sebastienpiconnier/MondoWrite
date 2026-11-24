@@ -16,6 +16,10 @@ import { foldName } from "../review/names";
 import { junctionOrder } from "../projectJunctions";
 import { canFollow } from "../threadFilter";
 import { useInteractive } from "../interactive/useInteractive";
+import { plotColors } from "../plotColors";
+import { listScenes, sceneCharacters } from "../screenplay/scenes";
+import { titleCase } from "../screenplay/editor/autocomplete";
+import { useSettings } from "../settings";
 
 const MAX_SHOWN = 40;
 
@@ -67,7 +71,13 @@ function useTitles(type: CardType): Map<string, string> {
 }
 
 /** Une rangée : intitulé, pastilles, et le « + » qui ouvre la recherche. */
-function LinkRow({ id, type, label, ordered, onOpen, canCreate = true }: { id: string; type: CardType; label: string; ordered?: string[]; onOpen: (card: string) => void; canCreate?: boolean }) {
+/** Personnage qui parle dans la scène (Scénario) : son nom tel qu'écrit et son nombre de répliques. */
+export interface Speaker {
+  name: string;
+  lines: number;
+}
+
+function LinkRow({ id, type, label, ordered, onOpen, canCreate = true, speakers }: { id: string; type: CardType; label: string; ordered?: string[]; onOpen: (card: string) => void; canCreate?: boolean; speakers?: Speaker[] }) {
   const t = useT().sceneLinks;
   const links = useLinks(id, type);
   const titles = useTitles(type);
@@ -94,6 +104,23 @@ function LinkRow({ id, type, label, ordered, onOpen, canCreate = true }: { id: s
   }, [links, ordered, titles, mainPlot, type]);
 
   const linked = new Set(links.map((l) => l.card));
+  // Couleur de chaque intrigue (#143) sur sa pastille.
+  const plots = useCosmos((s) => (type === "intrigue" ? plotColors(s.nodes, s.edges).plots : null));
+  // Personnages (Scénario) : une seule liste pour ceux qu'on a reliés et ceux qui parlent. Un personnage qui parle
+  // sans être relié a sa pastille en pointillé, « + » le relie (et crée sa carte s'il n'en a pas).
+  const speakerOf = (card: string) => {
+    const full = foldName(name(card));
+    const first = foldName(name(card).split(/\s+/)[0] ?? "");
+    return speakers?.find((sp) => foldName(sp.name) === full) ?? speakers?.find((sp) => foldName(sp.name) === first);
+  };
+  const lineText = (n: number) => (n === 1 ? t.linesOne : fmt(t.linesMany, { n }));
+  const loose = (speakers ?? []).filter((sp) => !shown.some(({ card }) => speakerOf(card) === sp));
+  const linkSpeaker = (sp: Speaker) => {
+    const st = useCosmos.getState();
+    const card = [...titles.entries()].find(([, title]) => foldName(title) === foldName(sp.name) || foldName(title.split(/\s+/)[0] ?? "") === foldName(sp.name))?.[0];
+    if (card) st.linkCards(id, card, "");
+    else st.addLinkedCard(id, type, titleCase(sp.name, useSettings.getState().lang));
+  };
   const wanted = foldName(query.trim());
   const candidates = [...titles.keys()]
     .filter((c) => c !== id && !linked.has(c) && (!wanted || foldName(name(c)).includes(wanted)))
@@ -147,7 +174,7 @@ function LinkRow({ id, type, label, ordered, onOpen, canCreate = true }: { id: s
           </svg>
         </button>
       </div>
-      {shown.length === 0 && !open ? (
+      {shown.length === 0 && loose.length === 0 && !open ? (
         <p className="sp-empty">{t.none}</p>
       ) : (
         <ul className="ms-chips">
@@ -166,11 +193,23 @@ function LinkRow({ id, type, label, ordered, onOpen, canCreate = true }: { id: s
                 </button>
               )}
               <button type="button" className="link-chip-open" onClick={() => onOpen(card)}>
-                <span className="card-dot" aria-hidden="true" />
+                <span className="card-dot" aria-hidden="true" style={plots?.get(card) ? { background: `var(--pov-${plots.get(card)})` } : undefined} />
                 {name(card)}
+                {speakers && speakerOf(card) && <span className="link-lines"> · {lineText(speakerOf(card)!.lines)}</span>}
               </button>
               <button type="button" className="chip-remove" aria-label={fmt(t.unlink, { title: name(card) })} title={fmt(t.unlink, { title: name(card) })} onClick={() => useCosmos.getState().removeLink(edge)}>
                 ×
+              </button>
+            </li>
+          ))}
+          {loose.map((sp) => (
+            <li key={`speaker-${sp.name}`} className="chip link-pill is-loose">
+              <span className="link-chip-open">
+                {sp.name}
+                <span className="link-lines"> · {lineText(sp.lines)}</span>
+              </span>
+              <button type="button" className="chip-remove" aria-label={fmt(t.linkSpeaker, { title: sp.name })} title={fmt(t.linkSpeaker, { title: sp.name })} onClick={() => linkSpeaker(sp)}>
+                +
               </button>
             </li>
           ))}
@@ -232,13 +271,20 @@ function LinkRow({ id, type, label, ordered, onOpen, canCreate = true }: { id: s
 }
 
 /** Personnages, intrigues et lieu (décor) d'une scène. */
-export function SceneLinks({ id }: { id: string }) {
+export function SceneLinks({ id, speakers: given, compact }: { id: string; speakers?: Speaker[]; compact?: boolean }) {
   const { types } = useVocab();
+  // Scénario : ceux qui parlent dans la scène, lus dans le texte (carte agrandie, Bible) quand la vue ne les donne pas.
+  const screenplay = useCosmos((s) => (s.kind === "scenario" && !given ? s.screenplay : null));
+  const speakers = useMemo(() => {
+    if (given || !screenplay) return given;
+    const scene = listScenes(screenplay.elements).find((sc) => sc.cardId === id);
+    return scene ? sceneCharacters(screenplay.elements, scene).map((c) => ({ name: c.name, lines: c.lines })) : undefined;
+  }, [given, screenplay, id]);
   const st = useCosmos.getState;
   const open = (card: string) => st().openInBible(card);
   return (
-    <section className="sp-box scene-links" aria-label={useT().sceneLinks.title}>
-      <LinkRow id={id} type="personnage" label={types.personnage.section} onOpen={open} />
+    <section className={`sp-box scene-links${compact ? " is-compact" : ""}`} aria-label={useT().sceneLinks.title}>
+      <LinkRow id={id} type="personnage" label={types.personnage.section} onOpen={open} speakers={speakers} />
       <LinkRow id={id} type="intrigue" label={types.intrigue.section} onOpen={open} />
       <LinkRow id={id} type="lieu" label={types.lieu.section} onOpen={open} />
     </section>

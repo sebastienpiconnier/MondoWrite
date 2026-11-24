@@ -134,6 +134,8 @@ export const MoveBlocks = Extension.create<{ rules: MoveRules }>({
   addOptions: () => ({ rules: BOOK_MOVE }),
   addKeyboardShortcuts() {
     const go = (dir: -1 | 1) => () => {
+      // WebKit (Mac, iPad) : la sélection de ProseMirror peut retarder sur celle de la page juste après un clic.
+      (this.editor.view as unknown as { domObserver?: { flush?: () => void } }).domObserver?.flush?.();
       const tr = moveBlocks(this.editor.state, dir, this.options.rules);
       if (tr) this.editor.view.dispatch(tr);
       return true;

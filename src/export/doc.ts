@@ -315,7 +315,7 @@ export function bibleDoc(
           // Pivot d'un épisode, point de vue d'une scène : la fiche garde l'identifiant du personnage, on écrit son nom.
           const value = ficheValue(card, key, cards);
           // « Personnage principal » sert à ranger (et au dossier), pas à lire : jamais écrit dans la fiche exportée.
-          if (key === "principal") continue;
+          if (key === "principal" || key === "couleur") continue;
           if (strings.forOther && (key === "certitude" || key === "etat")) continue;
           if (value) blocks.push({ kind: "paragraph", runs: [{ text: `${strings.fields[key] ?? key} : `, bold: true }, { text: ficheText(key, value, strings.arcTypes) }] });
         }

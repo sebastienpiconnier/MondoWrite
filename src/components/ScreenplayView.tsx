@@ -66,7 +66,7 @@ import { openNames } from "../namesState";
 import { setCaretSource } from "../resume";
 import { newId } from "../projectState";
 import { plainSection, resolveEpisode, seriesOf } from "../screenplay/series";
-import { insertionPoint, nextNumber, partLabel, structureOf, structureSection, type StructureKind } from "../screenplay/structure";
+import { insertionPoint, nextNumber, partLabel, renameStructure, structureOf, structureSection, type StructureKind } from "../screenplay/structure";
 import { toggleFoldedPart, useFoldedParts } from "../structureFold";
 import { useEpisodeLabel } from "./EpisodePicker";
 import { EpisodePicker } from "./EpisodePicker";
@@ -647,6 +647,20 @@ export function ScreenplayView() {
     emit();
     ed.view.focus();
     setAnnounce(fmt(sp.partAdded, { title: plainSection(section.text) }));
+  };
+  // Renommer un acte ou une séquence depuis la liste des scènes (lot 17) : la section de la feuille, ses notes gardées.
+  const [renamingPart, setRenamingPart] = useState<string | null>(null);
+  const renamePart = (at: number, title: string) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed || at >= ed.state.doc.childCount) return;
+    const node = ed.state.doc.child(at);
+    const text = String(node.attrs.text ?? "");
+    const next = renameStructure([{ type: "section", depth: 1, text }], 0, title)[0].text;
+    if (next === text || !title.trim()) return;
+    let pos = 0;
+    for (let i = 0; i < at; i++) pos += ed.state.doc.child(i).nodeSize;
+    ed.view.dispatch(ed.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, text: next }));
+    emit();
   };
   const insertPartRef = useRef(insertPart);
   insertPartRef.current = insertPart;
@@ -1319,9 +1333,38 @@ export function ScreenplayView() {
               >
                 <span className={`disclosure${foldedParts.has(row.id) ? "" : " is-open"}`} aria-hidden="true" />
               </button>
-              <button type="button" onClick={() => goTo(row.at)}>
-                {row.title} <span className="sp-part-count">· {row.count}</span>
-              </button>
+              {renamingPart === row.id ? (
+                <input
+                  // Le champ s'ouvre pour qu'on tape tout de suite le nouveau titre.
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus
+                  className="sp-part-input"
+                  defaultValue={row.title}
+                  aria-label={fmt(sp.renamePart, { title: row.title })}
+                  onBlur={(e) => {
+                    renamePart(row.at, e.target.value);
+                    setRenamingPart(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      setRenamingPart(null);
+                    }
+                  }}
+                />
+              ) : (
+                <button type="button" className="sp-part-title" onClick={() => goTo(row.at)} onDoubleClick={() => setRenamingPart(row.id)}>
+                  {row.title} <span className="sp-part-count">· {row.count}</span>
+                </button>
+              )}
+              {renamingPart !== row.id && (
+                <button type="button" className="icon-button sp-part-rename" aria-label={fmt(sp.renamePart, { title: row.title })} title={fmt(sp.renamePart, { title: row.title })} onClick={() => setRenamingPart(row.id)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 20h4L19 9l-4-4L4 16z" />
+                  </svg>
+                </button>
+              )}
             </li>
           ) : row.kind !== "scene" ? (
             <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
@@ -1524,6 +1567,7 @@ export function ScreenplayView() {
               // Synopsis (#147) : sous chaque en-tête (hors pages), ou lu seul dans sa fenêtre.
               { label: writing.showSynopsis ? t.synopsisView.hide : t.synopsisView.show, onSelect: () => { const st = useSettings.getState(); st.setWriting({ ...st.writing, showSynopsis: !st.writing.showSynopsis }); } },
               { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
+              { label: useSettings.getState().plotColors ? t.plan.plotColorsOff : t.plan.plotColorsOn, onSelect: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
               { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
               !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
               // Pages verrouillées (#46) : la scène laisse « OMIS » à sa place ; en rouge, en dernier (elle part à la corbeille).
@@ -1689,7 +1733,7 @@ export function ScreenplayView() {
 
             <SceneSetupsBox id={card?.id} />
             {/* Personnages (aussi ceux qui ne parlent pas), intrigues et décor, reliés sans tirer de fil (#137). */}
-            {card && <SceneLinks id={card.id} />}
+            {card && <SceneLinks id={card.id} speakers={speakers.map((c) => ({ name: c.name, lines: c.lines }))} />}
             {card && <ScenePlace id={card.id} />}
 
             {location && (
@@ -1706,7 +1750,8 @@ export function ScreenplayView() {
               </section>
             )}
 
-            <section className="sp-box">
+            {/* Personnages qui parlent : dans « Personnages » ci-dessus dès que la scène a sa carte. */}
+            {!card && <section className="sp-box">
               <div className="eyebrow" style={{ color: "var(--type-personnage)" }}>
                 {sp.characters}
               </div>
@@ -1724,7 +1769,7 @@ export function ScreenplayView() {
                   ))}
                 </ul>
               )}
-            </section>
+            </section>}
           </>
         )}
         <Chutier passages={chutier} cards={nodes.map((n) => n.data)} onPutBack={putBack} />

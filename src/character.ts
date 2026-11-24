@@ -82,6 +82,8 @@ export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<
   // Le point de vue a sa pastille (PovPicker), à côté du statut.
   // L'intrigue principale (#143) se choisit par l'étoile de sa pastille (onglet Scène).
   if (card.type === "scene") return new Set<string>(["statut", "pov", "intrigue", ...BREAKDOWN_FIELDS]);
+  // Couleur d'une intrigue : sa rangée de pastilles à elle (PlotColorPicker), jamais un champ de texte.
+  if (card.type === "intrigue") return new Set<string>(["couleur"]);
   return card.type === "personnage" ? new Set<string>([...motorFields(card), ...CHARACTER_HEAD_FIELDS]) : new Set<string>();
 }
 
@@ -110,7 +112,9 @@ export const GROUP_FIELDS = ["nature", "but", "fonctionnement", "ressources"] as
 export const SECRET_FIELDS = ["verite", "enjeu", "indices", "revelation"] as const;
 /** Carte Question : où elle en est (`etat`) et ce qui a été décidé. */
 export const QUESTION_FIELDS = ["etat", "decision"] as const;
-export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution"] as const;
+export const PLOT_FIELDS = ["nature", "question", "enjeu", "declencheur", "obstacles", "tournant", "resolution", "couleur"] as const;
+/** Couleur choisie d'une intrigue (#143) : rang dans la palette des points de vue, « 1 » à « 8 ». */
+export const PLOT_COLORS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
 
 /** Champs de la fiche de chaque type de carte qui en a une. Clés écrites dans le fichier : ne jamais les renommer. */
 /** Scène d'un roman : ce qui s'y passe, en une phrase (le scénario garde le sien dans le fichier Fountain). */
@@ -243,6 +247,7 @@ export function readFiche(raw: unknown, type: CardType = "personnage"): Record<s
     if (key === "arcType" && !isArcType(value)) continue;
     if (key === "statut" && !isSceneStatus(value)) continue;
     if (key === "principal" && value !== PRINCIPAL) continue;
+    if (key === "couleur" && !(PLOT_COLORS as readonly string[]).includes(value)) continue;
     if (isChoiceField(key) && !(CHOICE_FIELDS[key] as readonly string[]).includes(value)) continue;
     out[key] = value.slice(0, MAX_VALUE);
   }

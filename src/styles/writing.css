@@ -1703,8 +1703,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .scene-place-hint { margin: 0; }
 
 /* Couleur des scènes par leur intrigue principale (#143) : un trait de la couleur de l'intrigue, à gauche. */
-.has-plot { box-shadow: inset 5px 0 0 var(--plot); }
-.sq-scene.has-plot { padding-left: 16px; }
+/* Fond aux couleurs des intrigues de la scène (une bande par intrigue, la principale à gauche), à 25 % (AA). */
+.has-plot { background-image: var(--plot-bg); }
 .plan-plot-colors[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
 .link-pill .link-star { min-width: 28px; border: 0; background: transparent; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
 .link-pill .link-star[aria-pressed="true"] { color: var(--accent); }
@@ -1719,3 +1719,30 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .synopsis-row p.is-empty { font-style: italic; color: var(--muted); }
 .synopsis-title { font-weight: 600; text-align: left; }
 .synopsis-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+/* Couleur d'une intrigue (#143) : huit pastilles, celle choisie (ou attribuée) cerclée. */
+.plot-color { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; }
+.plot-color-label { font: 600 0.8125rem var(--font-ui); color: var(--ink-2); margin-right: 4px; }
+.plot-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; padding: 0; }
+.plot-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+@media (pointer: coarse) { .plot-swatch { width: 40px; height: 40px; } }
+
+/* Carte Scène agrandie : personnages, intrigues, décor et place dans le récit en tête, en rangées compactes. */
+.expanded-scene-head { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.scene-links.is-compact { gap: 0; padding: 6px 12px; }
+.scene-links.is-compact .link-row { display: grid; grid-template-columns: minmax(8.5em, auto) 1fr; align-items: center; column-gap: 12px; padding: 4px 0; }
+.scene-links.is-compact .link-row + .link-row { padding-top: 4px; }
+.scene-links.is-compact .link-row-head { justify-content: flex-start; }
+.scene-links.is-compact .link-row > .sp-empty { margin: 0; }
+.scene-links.is-compact .link-picker { grid-column: 1 / -1; }
+.scene-place.is-compact { flex-direction: row; flex-wrap: wrap; gap: 8px 16px; padding: 8px 12px; }
+.scene-place.is-compact .scene-place-row > span { min-width: 0; }
+/* Personnages qui parlent sans être reliés : pointillé, « + » les relie. */
+.link-pill.is-loose { border-style: dashed; background: transparent; }
+.link-pill.is-loose .link-chip-open { display: inline-flex; align-items: center; padding: 4px 2px; }
+.link-lines { color: var(--ink-2); font-size: 0.85em; }
+
+/* Préparations : « Prépare… » et « Payée par… » de l'onglet Scène (lot 17). */
+.scene-setups-add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.scene-setups-pick { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; font: 0.8125rem var(--font-ui); color: var(--ink-2); }
+.scene-setups-pick select { min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }

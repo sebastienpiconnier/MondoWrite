@@ -208,7 +208,25 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
   // Les chapitres d'un groupe se suivent de gauche à droite, leurs scènes aussi.
   // Un chapitre réparti sur plusieurs cases du gabarit : son titre complet dans la première, « (suite) » ensuite.
   const titled = new Set<string>();
-  const chaptered = (ids: string[]): { item: Item; count: number }[] =>
+  const chaptered = (ids: string[]): { item: Item; count: number }[] => withActs(chapterGroups(ids));
+  // Actes d'un scénario (#140) : les séquences qui se suivent sous un même acte vont dans son cadre.
+  const withActs = (groups: { item: Item; count: number; act?: { id: string; title: string } }[]): { item: Item; count: number }[] => {
+    const out: { item: Item; count: number }[] = [];
+    let i = 0;
+    while (i < groups.length) {
+      const act = groups[i].act;
+      if (!act) {
+        out.push(groups[i]);
+        i++;
+        continue;
+      }
+      const run: typeof groups = [];
+      while (i < groups.length && groups[i].act?.id === act.id) run.push(groups[i++]);
+      out.push({ item: { kind: "frame", title: act.title, body: { items: run.map((g) => g.item), columns: Math.max(1, run.length), gap: GROUP_GAP } }, count: run.reduce((n, g) => n + g.count, 0) });
+    }
+    return out;
+  };
+  const chapterGroups = (ids: string[]): { item: Item; count: number; act?: { id: string; title: string } }[] =>
     groupByChapter(plan, ids).map((g) => {
       const body: Layout = { items: g.ids.flatMap(cardItem), columns: sceneColumns(g.ids.length), gap: GAP };
       let item: Item = { kind: "box", body };
@@ -218,7 +236,8 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
         titled.add(g.chapter.id);
         item = { kind: "frame", title: first ? labels.chapter(n, g.chapter.title.trim()) : labels.continued(labels.chapter(n, "")), body };
       }
-      return { item, count: g.ids.length };
+      const act = (g.chapter as { act?: { id: string; title: string } } | null)?.act;
+      return { item, count: g.ids.length, ...(act ? { act } : {}) };
     });
   const free = !series && (plan.template === "libre" || templateBeats(plan.template, plan.custom).length <= 1);
   let story: Item[];

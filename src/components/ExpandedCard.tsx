@@ -2,6 +2,7 @@
 // texte et sa fiche, avec la place d'écrire. C'est la même carte que sur le canevas (même état du store,
 // rien n'est recopié) : ce qu'on écrit ici y est aussitôt. Échap ou un clic à côté ferme.
 
+import { SceneSetupsBox } from "./SceneSetups";
 import { useEffect, useRef } from "react";
 import { useT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -89,6 +90,14 @@ export function ExpandedCard({ card }: { card: CardData }) {
           body?.focus();
         }}
       />
+      {/* Scène : personnages, intrigues, décor et place dans le récit en tête, avant le texte (lot 17). */}
+      {(scriptScene || novelScene) && !card.page && (
+        <div className="expanded-scene-head">
+          <SceneLinks id={card.id} compact />
+          <ScenePlace id={card.id} compact />
+          <SceneSetupsBox id={card.id} />
+        </div>
+      )}
       {imageUrl && <img className="expanded-image" src={imageUrl} alt="" />}
       {scriptScene ? (
         <>
@@ -96,8 +105,6 @@ export function ExpandedCard({ card }: { card: CardData }) {
           <section className="expanded-draft" aria-label={t.draft.heading}>
             <ScriptSceneEditor card={card} />
           </section>
-          {!card.page && <SceneLinks id={card.id} />}
-          {!card.page && <ScenePlace id={card.id} />}
           {!card.page && <BreakdownSheet card={card} />}
           <button
             type="button"
@@ -120,7 +127,6 @@ export function ExpandedCard({ card }: { card: CardData }) {
             <h3 className="expanded-draft-title">{t.draft.heading}</h3>
             <DraftEditor card={card} autofocus />
           </section>
-          {!card.page && <SceneLinks id={card.id} />}
           <button type="button" className="link-button expanded-open" onClick={() => {
               useCosmos.getState().setDialog(null);
               useCosmos.getState().openInManuscript(card.id);

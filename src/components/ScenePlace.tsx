@@ -11,7 +11,7 @@ import { customOf, screenplayPlan } from "../screenplay/template";
 import { beatText, templateBeats } from "../plan";
 import { useEpisodeLabel } from "./EpisodePicker";
 
-export function ScenePlace({ id }: { id: string }) {
+export function ScenePlace({ id, compact }: { id: string; compact?: boolean }) {
   const t = useT();
   const sp = t.screenplay;
   const kind = useCosmos((s) => s.kind);
@@ -40,7 +40,7 @@ export function ScenePlace({ id }: { id: string }) {
   if (!info || (info.choices.length === 0 && info.episodes.length === 0 && info.beats.length === 0)) return null;
   const st = useCosmos.getState;
   return (
-    <section className="sp-box scene-place" aria-label={sp.placeTitle}>
+    <section className={`sp-box scene-place${compact ? " is-compact" : ""}`} aria-label={sp.placeTitle}>
       {info.episodes.length > 0 && (
         <label className="scene-place-row">
           <span>{sp.preserved.episode}</span>
@@ -80,7 +80,7 @@ export function ScenePlace({ id }: { id: string }) {
           </select>
         </label>
       )}
-      <p className="sp-detail scene-place-hint">{sp.placeHint}</p>
+      {!compact && <p className="sp-detail scene-place-hint">{sp.placeHint}</p>}
     </section>
   );
 }

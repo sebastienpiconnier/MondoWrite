@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { useMemo } from "react";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
-import { plotColors, sceneColor } from "../plotColors";
+import { plotColors, sceneBackground, sceneColor } from "../plotColors";
 
 /** Pour chaque scène : classe et style à poser sur sa ligne (rien si l'option est coupée ou sans intrigue). */
 export function usePlotColor(): (sceneId: string | undefined) => { className: string; style?: CSSProperties } {
@@ -15,7 +15,8 @@ export function usePlotColor(): (sceneId: string | undefined) => { className: st
     const colors = plotColors(nodes, edges);
     return (id: string | undefined) => {
       const color = sceneColor(colors, id);
-      return color ? { className: " has-plot", style: { ["--plot" as string]: color } as CSSProperties } : { className: "" };
+      const bg = sceneBackground(colors, id);
+      return color && bg ? { className: " has-plot", style: { ["--plot" as string]: color, ["--plot-bg" as string]: bg } as CSSProperties } : { className: "" };
     };
   }, [on, nodes, edges]);
 }
