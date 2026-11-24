@@ -18,6 +18,7 @@ import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { CardScenes, SceneLinks } from "./LinkedCards";
+import { ScenePlace } from "./ScenePlace";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -96,6 +97,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
             <ScriptSceneEditor card={card} />
           </section>
           {!card.page && <SceneLinks id={card.id} />}
+          {!card.page && <ScenePlace id={card.id} />}
           {!card.page && <BreakdownSheet card={card} />}
           <button
             type="button"

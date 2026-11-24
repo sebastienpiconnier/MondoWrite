@@ -1693,3 +1693,11 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .sq-list:not(.is-cards) .sq-scene.in-seq { margin-left: 16px; border-left: 3px solid var(--line-2); }
 .sq-list.is-cards .sq-scene.in-seq { border-top: 3px solid var(--line-2); }
 @media (max-width: 720px) { .sq-list:not(.is-cards) .sq-scene.in-seq { margin-left: 8px; } }
+
+/* Place d'une scène (#141) : séquence, épisode, case, en listes déroulantes. */
+.scene-place { display: flex; flex-direction: column; gap: 6px; }
+.scene-place-row { display: flex; align-items: center; gap: 8px; font: 0.875rem var(--font-ui); color: var(--ink-2); }
+.scene-place-row > span { flex: none; min-width: 6.5em; }
+.scene-place-row select { flex: 1; min-width: 0; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }
+@media (pointer: coarse) { .scene-place-row select { min-height: 44px; } }
+.scene-place-hint { margin: 0; }

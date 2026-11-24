@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { SuggestionMenu } from "./SuggestionMenu";
 import { SceneSetupsBox } from "./SceneSetups";
 import { SceneLinks } from "./LinkedCards";
+import { ScenePlace } from "./ScenePlace";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -611,14 +612,37 @@ export function ScreenplayView() {
     const ed = editorRef.current;
     if (!ed || ed.isDestroyed) return;
     const { elements: els } = fromDoc(ed.getJSON(), {});
-    const top = ed.state.doc.resolve(ed.state.selection.from).index(0);
+    // Le curseur d'après la page : juste après un clic, ProseMirror n'a pas toujours relu la sélection.
+    const anchor = window.getSelection()?.anchorNode ?? null;
+    let block: Node | null = anchor && ed.view.dom.contains(anchor) ? anchor : null;
+    while (block && block.parentNode !== ed.view.dom) block = block.parentNode;
+    let from = ed.state.selection.from;
+    let caret: number | null = null;
+    try {
+      if (block && !(block as HTMLElement).classList?.contains("ProseMirror-widget")) from = ed.view.posAtDOM(block, 0);
+      if (block && anchor) caret = ed.view.posAtDOM(anchor, window.getSelection()?.anchorOffset ?? 0);
+    } catch {
+      // Nœud inconnu de ProseMirror : la sélection de l'éditeur.
+    }
+    const top = ed.state.doc.resolve(Math.min(from, ed.state.doc.content.size)).index(0);
     const at = insertionPoint(els, top);
     const label = kind === "act" ? sp.preserved.act : sp.preserved.seq;
     const section = structureSection(els, at, kind, newId(), `${label} ${nextNumber(els, at, kind)}`);
     let pos = 0;
     for (let i = 0; i < at && i < ed.state.doc.childCount; i++) pos += ed.state.doc.child(i).nodeSize;
     const node = ed.schema.nodeFromJSON(toNode(section));
-    ed.view.dispatch(ed.state.tr.insert(pos, node).scrollIntoView());
+    const tr = ed.state.tr.insert(pos, node);
+    // Le curseur reste où il était (et non à la sélection que ProseMirror n'avait pas encore relue).
+    if (caret !== null) {
+      try {
+        tr.setSelection(TextSelection.near(tr.doc.resolve(Math.min(tr.mapping.map(caret), tr.doc.content.size))));
+      } catch {
+        // Position introuvable : la sélection suit d'elle-même.
+      }
+    }
+    ed.view.dispatch(tr.scrollIntoView());
+    // Tout de suite dans le store : séquencier, liste des scènes et onglet Scène la voient sans attendre.
+    emit();
     ed.view.focus();
     setAnnounce(fmt(sp.partAdded, { title: plainSection(section.text) }));
   };
@@ -1660,6 +1684,7 @@ export function ScreenplayView() {
             <SceneSetupsBox id={card?.id} />
             {/* Personnages (aussi ceux qui ne parlent pas), intrigues et décor, reliés sans tirer de fil (#137). */}
             {card && <SceneLinks id={card.id} />}
+            {card && <ScenePlace id={card.id} />}
 
             {location && (
               <section className="sp-box">

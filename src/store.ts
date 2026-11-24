@@ -59,7 +59,8 @@ import { interviewKey, isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
 import { addEntries, breakdownEntries } from "./ai/structure";
 import { EMPTY_PLAN, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
-import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
+import { applyCustom, beatOf, customOf, moveToSection, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
+import { blocks } from "./screenplay/sequence";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
 import { readPitch, setPitchField, setPitchFieldIa, setPitchVisual, withoutPitchIa, type Pitch, type PitchField, type PitchText } from "./pitch";
@@ -81,7 +82,7 @@ import { htmlToMarkdown, markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
 import { addEpisode, addSeason, allEpisodes, seriesMark as seriesMarkOf, episodeScenes, placeSceneInEpisode, seriesOf as readSeries, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript, withEpisodeTemplate } from "./screenplay/series";
-import { partChapters } from "./screenplay/structure";
+import { partChapters, structureMark, structureOf } from "./screenplay/structure";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
@@ -147,6 +148,8 @@ export interface CosmosState {
   placeInBeat: (id: string, beat: string, index?: number) => void;
   /** Série : range la scène de cette carte dans un épisode, avec son texte (à la fin sans index). */
   placeInEpisode: (id: string, episode: string, index?: number) => void;
+  /** Scénario : range la scène de cette carte à la fin d'un acte ou d'une séquence (#141), avec son texte. */
+  placeInPart: (id: string, part: string) => void;
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Scénario : le corps d'une scène (après son en-tête et son synopsis), écrit depuis sa carte agrandie. */
@@ -2596,6 +2599,21 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (elements === script.elements) return;
       get().setScript({ ...script, elements }, true, episode);
     },
+    placeInPart: (id, key) => {
+      const { screenplay } = get();
+      if (!screenplay) return;
+      const els = screenplay.elements;
+      const part = structureOf(els).find((p) => p.key === key);
+      const heading = els.findIndex((el) => el.type === "sceneHeading" && el.cardId === id);
+      if (!part || heading < 0) return;
+      const list = blocks(els);
+      const from = list.findIndex((b) => b.start === heading);
+      // Un acte qui a des séquences : la scène va après sa dernière séquence, sinon juste sous l'acte.
+      const last = list.reduce((acc, b, i) => (b.kind === "section" && b.start >= part.at && b.start < part.end ? i : acc), -1);
+      const elements = moveToSection(els, from, last);
+      // Le canevas suit (setScreenplay voit que l'ordre des scènes a changé).
+      if (elements !== els) get().setScreenplay({ ...screenplay, elements }, true);
+    },
     placeInEpisode: (id, episode, index) => {
       const { screenplay } = get();
       if (!screenplay) return;
@@ -3123,7 +3141,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         sp
           ? sp.elements
               .flatMap((el) =>
-                el.type === "sceneHeading" ? [el.cardId ?? ""] : seriesMarkOf(el) || (el.type === "section" && beatOf(el.text)) ? [`|${el.text}`] : [],
+                el.type === "sceneHeading" ? [el.cardId ?? ""] : seriesMarkOf(el) || structureMark(el) || (el.type === "section" && beatOf(el.text)) ? [`|${el.text}`] : [],
               )
               .join(" ")
           : "";

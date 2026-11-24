@@ -1311,6 +1311,43 @@ const scenarios = [
     },
   },
   {
+    name: "séquence choisie dans la fiche (#141) : la liste de l'onglet Scène déplace la scène, Ctrl Z rend l'ordre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Places", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "Un."], ["EXT. QUAI – NUIT", "Deux."], ["INT. CUISINE – JOUR", "Trois."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      // Les cartes des scènes naissent un instant après la frappe (l'éditeur se recharge alors).
+      await h.wait(800);
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await page.keyboard.press("Control+Alt+Shift+S");
+      await page.locator(".sp-editor [data-el=action]").nth(1).click();
+      await page.keyboard.press("Control+Alt+Shift+S");
+      await until(async () => (await page.locator('.sp-editor [data-series="seq"]').count()) === 2, "les deux séquences ne sont pas posées");
+      // Le curseur reste dans la scène où il était.
+      await page.keyboard.type("Z");
+      await until(async () => (await page.locator(".sp-editor [data-el=action]").nth(1).innerText()) === "Deux.Z", "le curseur n'est pas resté dans la scène");
+      // Curseur dans la deuxième scène (QUAI), qui ouvre la séquence 2 : on la range dans la séquence 1, après CUISINE.
+      await h.wait(500);
+      await page.locator(".sp-editor [data-el=action]").nth(1).click();
+      await until(async () => /QUAI/.test(await page.locator(".sp-side").first().innerText().catch(() => "")), "l'onglet Scène ne montre pas la scène du quai");
+      const select = page.locator(".scene-place select").first();
+      await select.waitFor();
+      await select.selectOption({ label: "Séquence 1" });
+      await h.saved((f) => /## Séquence 1[\s\S]*PHARE[\s\S]*QUAI[\s\S]*## Séquence 2/.test(f["scenario.fountain"] ?? ""), "la scène n'a pas rejoint la séquence 1");
+      await h.view(1);
+      await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+      await page.keyboard.press("Control+z");
+      await h.saved((f) => /## Séquence 1[\s\S]*PHARE[\s\S]*## Séquence 2[\s\S]*QUAI/.test(f["scenario.fountain"] ?? ""), "Ctrl Z n'a pas rendu l'ordre d'avant");
+    },
+  },
+  {
     name: "recherche dans le Scénario (#85) : le mot trouvé dans l'action d'une scène y est sélectionné",
     async run(h) {
       const { page } = h;

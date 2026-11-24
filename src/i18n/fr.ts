@@ -1871,6 +1871,9 @@ export const fr = {
     sceneLength: "Longueur : {n} p.",
     // Scène omise (#46) : en-tête qui garde la place et le numéro, une fois les pages verrouillées.
     omitted: "OMIS",
+    placeTitle: "Place de la scène",
+    placeNone: "Aucune",
+    placeHint: "Changer la valeur déplace la scène et son texte à la fin de cette partie.",
     addAct: "+ Acte",
     addSeq: "+ Séquence",
     addPartHint: "Pose une ligne au-dessus de la scène du curseur. Elle regroupe les scènes qui suivent ; renomme-la dans le séquencier.",
