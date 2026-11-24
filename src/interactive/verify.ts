@@ -23,7 +23,9 @@ export type VerifyRule =
   | "sectionGap"
   | "hiddenUnlocked"
   | "hiddenNotPlayable"
-  | "sameSpread";
+  | "sameSpread"
+  | "imageNoAlt"
+  | "manyChoices";
 
 export interface VerifyPoint {
   rule: VerifyRule;
@@ -50,7 +52,25 @@ export const VERIFY_ORDER: readonly VerifyRule[] = [
   "hiddenUnlocked",
   "hiddenNotPlayable",
   "sameSpread",
+  "imageNoAlt",
+  "manyChoices",
 ];
+
+/**
+ * Une image du texte sans description (`<img data-media … alt="">`), lue sans DOM : le vérificateur reste pur et
+ * tourne aussi hors du navigateur. Le HTML vient de `sanitizeHtml`, attributs entre guillemets doubles.
+ */
+export function hasImageWithoutAlt(html: string | undefined): boolean {
+  for (const m of (html ?? "").matchAll(/<img\b[^>]*>/gi)) {
+    if (!/\sdata-media="[^"]+"/i.test(m[0])) continue;
+    const alt = /\salt="([^"]*)"/i.exec(m[0]);
+    if (!alt || !alt[1].replace(/&nbsp;|&#160;/g, " ").trim()) return true;
+  }
+  return false;
+}
+
+/** Au-delà, une liste de choix se retient mal, surtout à l'oreille (lecteur d'écran, #126). */
+export const MANY_CHOICES = 4;
 
 const DIVERT_RE = /^\s*->\s*([\p{L}\p{N}_]+)(?:\s+#(?:good|bad))?\s*$/u;
 const ASSIGN_RE = /^([\p{L}_][\p{L}\p{N}_]*)\s*(?:\+=|-=|=|\+\+|--)/u;
@@ -198,6 +218,13 @@ export function verifyStory(
       const pair = `${from} \u2192 ${to}`;
       out.push({ rule: "sameSpread", scene: byNumber.get(from) ?? null, name: pair, label: pair });
     }
+  }
+
+  // Accessibilité de la page web (#126) : deux rappels doux, jamais bloquants.
+  for (const s of scenes) {
+    if (hasImageWithoutAlt(manuscript[s.id])) out.push({ rule: "imageNoAlt", scene: s.id });
+    const shown = (exits.get(s.id) ?? []).filter((e) => !e.divert && !e.hidden).length;
+    if (shown > MANY_CHOICES) out.push({ rule: "manyChoices", scene: s.id, name: String(shown), label: String(shown) });
   }
 
   const rank = new Map(scenes.map((s, i) => [s.id, i]));

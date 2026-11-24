@@ -30,11 +30,12 @@ import { BackupsDialog } from "./BackupsDialog";
 import { SynonymsPanel } from "./SynonymsPanel";
 import { NamePicker } from "./NamePicker";
 import { RevisionPanel } from "./RevisionPanel";
+import { WebPagePanel } from "./WebPagePanel";
 
 const REPO = "https://github.com/sebastienpiconnier/MondoWrite";
 
 // Fenêtres qui ont leur propre bouton de fermeture : pas de « Fermer » en bas.
-const OWN_CLOSE = new Set(["document", "paperback", "scriptPdf", "bibleExport", "profile", "card", "stats", "vrac", "versions"]);
+const OWN_CLOSE = new Set(["document", "paperback", "scriptPdf", "bibleExport", "profile", "card", "stats", "vrac", "versions", "webPage"]);
 function hasCloseButton(dialog: string): boolean {
   return !OWN_CLOSE.has(dialog);
 }
@@ -81,7 +82,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "synonyms" || dialog === "names" ? " is-replace is-names" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : dialog === "revisions" ? " is-replace is-revisions" : dialog === "play" ? " is-play" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "synonyms" || dialog === "names" ? " is-replace is-names" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : dialog === "revisions" ? " is-replace is-revisions" : dialog === "play" ? " is-play" : dialog === "webPage" ? " is-replace is-web-page" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -126,6 +127,7 @@ export function Dialogs() {
       {dialog === "stats" && <StatsPanel />}
       {dialog === "versions" && <VersionsDialog />}
       {dialog === "play" && <PlayDialog />}
+      {dialog === "webPage" && <WebPagePanel />}
       {dialog === "backups" && <BackupsDialog />}
       {dialog === "goto" && <GoToPanel />}
       {dialog === "commands" && <CommandPalette />}

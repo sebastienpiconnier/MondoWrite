@@ -33,6 +33,21 @@ const texts = {
   noScript: "JavaScript requis.",
   failed: "Échec.",
   madeWith: "Écrit avec MondoWrite",
+  start: "Commencer",
+  continue: "Continuer",
+  home: "Accueil",
+  skip: "Aller à l’histoire",
+  choices: "Que faites-vous ?",
+  choiceOf: "Choix {n} sur {total} :",
+  display: "Affichage",
+  theme: "Thème",
+  modeAuto: "Auto",
+  modeLight: "Clair",
+  modeDark: "Sombre",
+  textSize: "Taille du texte",
+  sizeSmall: "Petit texte",
+  sizeMedium: "Texte normal",
+  sizeLarge: "Grand texte",
 };
 const input = (over: Partial<WebPageInput> = {}): WebPageInput => ({
   title: "La <grille>",
@@ -56,13 +71,15 @@ function load(html: string) {
   const story = document.getElementById("story")!;
   return {
     paragraphs: () => [...story.querySelectorAll("p:not(.known):not(.end-tools)")].map((p) => p.textContent),
-    choices: () => [...story.querySelectorAll(".choices button")].map((b) => b.textContent),
-    choose: (label: string) => ([...story.querySelectorAll<HTMLButtonElement>(".choices button")].find((b) => b.textContent === label)!).click(),
+    choices: () => [...story.querySelectorAll(".choices button .label")].map((b) => b.textContent),
+    choose: (label: string) => ([...story.querySelectorAll<HTMLButtonElement>(".choices button")].find((b) => b.querySelector(".label")!.textContent === label)!).click(),
     known: () => story.querySelector(".known")?.textContent ?? null,
     images: () => [...story.querySelectorAll("img")].map((i) => i.getAttribute("src")),
     back: () => document.getElementById("mw-back") as HTMLButtonElement,
     restart: () => (document.getElementById("mw-restart") as HTMLButtonElement).click(),
     ended: () => story.querySelector(".end")?.textContent ?? null,
+    button: (id: string) => document.getElementById(id) as HTMLButtonElement,
+    shown: (id: string) => !(document.getElementById(id) as HTMLElement).hidden,
   };
 }
 
@@ -145,5 +162,124 @@ describe("page web d'un roman interactif", () => {
   it("dit l'échec si l'histoire ne se charge pas", () => {
     const page = load(storyPage(input({ storyJson: '{"inkVersion": 1}' })));
     expect(page.paragraphs()).toEqual(["Échec."]);
+  });
+
+  it("s'ouvre sur l'accueil : couverture, titre, auteur, accroche, Commencer", () => {
+    const page = load(storyPage(input({ cover: { src: "data:image/jpeg;base64,QUJD", alt: "Couverture : Le puits" }, tagline: "Ne regarde pas en bas." })));
+    expect(page.shown("mw-home")).toBe(true);
+    expect(page.shown("mw-reader")).toBe(false);
+    const cover = document.querySelector<HTMLImageElement>(".cover img")!;
+    expect(cover.getAttribute("src")).toBe("data:image/jpeg;base64,QUJD");
+    expect(cover.alt).toBe("Couverture : Le puits");
+    expect(document.querySelector("#mw-home h1")!.textContent).toBe("La <grille>");
+    expect(document.querySelector(".tagline")!.textContent).toBe("Ne regarde pas en bas.");
+    expect(page.shown("mw-start")).toBe(true);
+    expect(page.shown("mw-continue")).toBe(false);
+    page.button("mw-start").click();
+    expect(page.shown("mw-reader")).toBe(true);
+    expect(page.shown("mw-home")).toBe(false);
+  });
+
+  it("sans couverture, l'accueil n'a que le titre et l'auteur", () => {
+    load(storyPage(input()));
+    expect(document.querySelector(".cover")).toBeNull();
+    expect(document.querySelector(".tagline")).toBeNull();
+    expect(document.querySelector("#mw-home .author")!.textContent).toBe("Sébastien");
+    // Une couverture qui n'est pas une image en data: n'entre pas dans la page.
+    load(storyPage(input({ cover: { src: "javascript:alert(1)", alt: "x" } })));
+    expect(document.querySelector(".cover")).toBeNull();
+  });
+
+  it("Continuer ramène au dernier choix, Recommencer repart du début", () => {
+    const html = storyPage(input());
+    load(html).choose("Pousser la grille");
+    const again = load(html);
+    expect(again.shown("mw-start")).toBe(false);
+    expect(again.shown("mw-continue")).toBe(true);
+    expect(again.shown("mw-again")).toBe(true);
+    again.button("mw-continue").click();
+    expect(again.shown("mw-reader")).toBe(true);
+    expect(document.activeElement?.textContent).toBe("Pousser la grille");
+    expect(again.choices()).toEqual(["Ouvrir la porte", "Repartir"]);
+    again.button("mw-home-btn").click();
+    expect(again.shown("mw-home")).toBe(true);
+    expect(document.activeElement?.id).toBe("mw-continue");
+    again.button("mw-again").click();
+    expect(again.shown("mw-reader")).toBe(true);
+    expect(again.choices()).toEqual(["Pousser la grille", "Rentrer"]);
+    expect(again.back().disabled).toBe(true);
+  });
+
+  it("garde le thème clair ou sombre et la taille du texte choisis par le lecteur", () => {
+    load(storyPage(input()));
+    const dark = document.querySelector<HTMLButtonElement>('[data-set-mode="dark"]')!;
+    dark.click();
+    expect(document.documentElement.getAttribute("data-mode")).toBe("dark");
+    expect(dark.getAttribute("aria-pressed")).toBe("true");
+    document.querySelector<HTMLButtonElement>('[data-set-size="l"]')!.click();
+    expect(document.documentElement.getAttribute("data-size")).toBe("l");
+    expect(JSON.parse(localStorage.getItem("mondowrite-display")!)).toEqual({ mode: "dark", size: "l" });
+    document.documentElement.removeAttribute("data-mode");
+    document.documentElement.removeAttribute("data-size");
+    load(storyPage(input()));
+    expect(document.documentElement.getAttribute("data-mode")).toBe("dark");
+    expect(document.querySelector('[data-set-size="l"]')!.getAttribute("aria-pressed")).toBe("true");
+    document.querySelector<HTMLButtonElement>('[data-set-mode="auto"]')!.click();
+    expect(document.documentElement.hasAttribute("data-mode")).toBe(false);
+    document.documentElement.removeAttribute("data-size");
+  });
+
+  it("dit aux lecteurs d'écran le rang de chaque choix, dans une liste nommée", () => {
+    load(storyPage(input()));
+    const list = document.querySelector("#story ol.choices")!;
+    expect(list.getAttribute("aria-label")).toBe("Que faites-vous ?");
+    const first = list.querySelector("button")!;
+    expect(first.querySelector(".sr")!.textContent).toBe("Choix 1 sur 2 : ");
+    expect(first.querySelector(".n")!.getAttribute("aria-hidden")).toBe("true");
+    expect(document.getElementById("story")!.hasAttribute("aria-live")).toBe(false);
+    expect(document.querySelector("a.skip")!.textContent).toBe("Aller à l’histoire");
+  });
+
+  it("après un choix, le focus va au début du passage qui suit", () => {
+    const page = load(storyPage(input()));
+    page.button("mw-start").click();
+    page.choose("Rentrer");
+    const focused = document.activeElement as HTMLElement;
+    expect(focused.className).toBe("chose");
+    expect(focused.textContent).toBe("Rentrer");
+    expect(focused.getAttribute("tabindex")).toBe("-1");
+  });
+
+  it("donne aux images la description écrite par l'auteur", () => {
+    const page = load(storyPage(input({ alts: { "grille.jpg": "Une grille rouillée" } })));
+    expect(page.images()).toEqual(["data:image/jpeg;base64,AAAA"]);
+    expect(document.querySelector<HTMLImageElement>("#story img")!.alt).toBe("Une grille rouillée");
+  });
+
+  it("garde le gras et l'italique, sans jamais lire de HTML", () => {
+    const rich = { s1: "<p>Un <strong>mot fort</strong> et un <em>autre</em>, &lt;b&gt;pas du HTML&lt;/b&gt;.</p>" };
+    const one = [{ id: "s1", title: "Seule" }];
+    const src = projectToInk(one, sceneSlugs(one), rich, {}, "…", { marks: true });
+    const json = new Compiler(src.ink).Compile().ToJson()!;
+    const page = load(storyPage(input({ storyJson: json, title: "Riche" })));
+    expect(page.paragraphs()[0]).toBe("Un mot fort et un autre, <b>pas du HTML</b>.");
+    expect(document.querySelector("#story strong")!.textContent).toBe("mot fort");
+    expect(document.querySelector("#story em")!.textContent).toBe("autre");
+    expect(document.querySelector("#story b")).toBeNull();
+    // Sans l'option, l'Ink n'a aucune marque (export Ink, « Lire l'histoire »).
+    expect(projectToInk(one, sceneSlugs(one), rich).ink).not.toMatch(/[\uE000-\uE003]/);
+  });
+
+  it("pose le thème choisi, puis le CSS de l'auteur rendu inerte", () => {
+    const html = storyPage(input({ theme: "terminal", customCss: "body { --accent: red; } </style><script>alert(1)</script> x { background: url(javascript:alert(1)) }" }));
+    expect(html).toContain("monospace");
+    expect(html).toContain("--accent: red;");
+    const custom = /<style id="mw-custom">([\s\S]*?)<\/style>/.exec(html)![1];
+    expect(custom).not.toMatch(/</);
+    expect(custom).not.toMatch(/javascript\s*:/i);
+    expect(html.match(/<script/g)!.length).toBe(html.match(/<\/script>/g)!.length);
+    // Sans réglage : le thème Classique, comme avant.
+    expect(storyPage(input())).toContain("--paper: #fdfcf9;");
+    expect(storyPage(input())).not.toContain("mw-custom");
   });
 });

@@ -68,3 +68,34 @@ describe("faits", () => {
     expect(rules(verifyStory(scenes.slice(0, 1), m))).toEqual([]);
   });
 });
+
+describe("accessibilité de la page web (#126)", () => {
+  it("rappelle une image sans description et une scène à plus de quatre choix", () => {
+    const five = ["Un", "Deux", "Trois", "Quatre", "Cinq"].map((x) => `* [${x}] -> END`).join("\n");
+    const m = {
+      a: `<p>Début.</p><img data-media="grille.jpg" alt=""><img data-media="cour.jpg" alt="La cour vide">${choicesHtml("* [Entrer] -> la_cour")}`,
+      b: `<img data-media="cour.jpg" alt="La cour vide">${choicesHtml(five)}`,
+      c: "",
+      d: "",
+    };
+    const found = rules(verifyStory(scenes.slice(0, 2), m));
+    expect(found).toContain("imageNoAlt:a");
+    expect(found).not.toContain("imageNoAlt:b");
+    expect(found).toContain("manyChoices:b:5");
+    // Quatre choix, et un renvoi caché en plus : rien à dire.
+    const four = { ...m, b: choicesHtml(["Un", "Deux", "Trois", "Quatre"].map((x) => `* [${x}] -> END`).join("\n") + "\n* [Caché] -> END #hidden") };
+    expect(rules(verifyStory(scenes.slice(0, 2), four)).filter((r) => r.startsWith("manyChoices"))).toEqual([]);
+  });
+});
+
+describe("images sans description, lues sans DOM", () => {
+  it("reconnaît une description absente ou vide", async () => {
+    const { hasImageWithoutAlt } = await import("../interactive/verify");
+    expect(hasImageWithoutAlt('<img data-media="a.jpg" alt="">')).toBe(true);
+    expect(hasImageWithoutAlt('<img data-media="a.jpg">')).toBe(true);
+    expect(hasImageWithoutAlt('<img data-media="a.jpg" alt="  ">')).toBe(true);
+    expect(hasImageWithoutAlt('<img data-media="a.jpg" alt="Un puits">')).toBe(false);
+    expect(hasImageWithoutAlt('<p>Pas d’image</p>')).toBe(false);
+    expect(hasImageWithoutAlt(undefined)).toBe(false);
+  });
+});
