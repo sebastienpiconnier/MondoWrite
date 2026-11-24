@@ -15,7 +15,7 @@ export function toDoc(screenplay: Screenplay): JSONContent {
   return { type: "doc", content: content.length > 0 ? content : [{ type: "sceneHeading" }] };
 }
 
-function toNode(el: ScreenplayElement): JSONContent {
+export function toNode(el: ScreenplayElement): JSONContent {
   if (!isEditableType(el.type)) {
     return { type: PRESERVED, attrs: { kind: el.type, text: el.text, depth: el.depth ?? null, ia: el.ia === true } };
   }

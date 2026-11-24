@@ -120,6 +120,9 @@ export const COMMANDS: AppCommandItem[] = [
   { id: "merge-next", group: "edit", label: (t) => t.appMenu.mergeNext, enabled: writing, run: () => sendCommand("merge-next") },
   // Omettre la scène en cours (#46) : scénario aux pages verrouillées seulement, la vue sait quelle scène.
   { id: "omit-scene", group: "edit", label: (t) => t.appMenu.omitScene, enabled: (c) => writing(c) && c.kind === "scenario" && !!s().revisions.locked, run: () => sendCommand("omit-scene") },
+  // Acte et séquence au-dessus de la scène du curseur (#140) : scénario seulement, raccourci rejoué vers la vue.
+  { id: "insert-act", group: "edit", label: (t) => t.appMenu.insertAct, accelerator: "CmdOrCtrl+Alt+Shift+A", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("A", "KeyA", true, true) },
+  { id: "insert-sequence", group: "edit", label: (t) => t.appMenu.insertSequence, accelerator: "CmdOrCtrl+Alt+Shift+S", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("S", "KeyS", true, true) },
   // Onglet « Vérifier » du Manuscrit ou du Scénario.
   { id: "review", group: "edit", label: (t) => t.appMenu.review, enabled: writing, run: () => sendCommand("review") },
 

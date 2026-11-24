@@ -243,14 +243,20 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
           const loose = ids.filter((id) => !inBeats.has(id));
           const beatItems: Item[] = ep.beats.map((b) => {
             const own = keep(b.scenes);
-            return { kind: "frame", title: b.label, beat: b.key, episode: ep.id, body: { items: own.flatMap(cardItem), columns: sceneColumns(own.length), gap: GAP } };
+            const inner = chaptered(own);
+            return { kind: "frame", title: b.label, beat: b.key, episode: ep.id, body: { items: inner.map((g) => g.item), columns: Math.max(1, inner.length), gap: GROUP_GAP } };
           });
           const items: Item[] = [...(loose.length > 0 ? [{ kind: "box" as const, body: { items: loose.flatMap(cardItem), columns: sceneColumns(loose.length), gap: GAP } }] : []), ...beatItems];
           const count = loose.length + ep.beats.reduce((a, b) => a + Math.max(1, keep(b.scenes).length), 0);
           const item: Item = { kind: "frame", title, episode: ep.id, body: { items, columns: items.length, gap: GROUP_GAP } };
           return { item, count };
         }
-        const item: Item = { kind: "frame", title, episode: ep.id, body: { items: ids.flatMap(cardItem), columns: sceneColumns(ids.length), gap: GAP } };
+        // Séquences de l'épisode (#140) : un cadre chacune, dans le cadre de l'épisode.
+        const groups = chaptered(ids);
+        const body: Layout = groups.some((g) => g.item.kind === "frame")
+          ? { items: groups.map((g) => g.item), columns: groups.length, gap: GROUP_GAP }
+          : { items: ids.flatMap(cardItem), columns: sceneColumns(ids.length), gap: GAP };
+        const item: Item = { kind: "frame", title, episode: ep.id, body };
         return { item, count: Math.max(1, ids.length) };
       });
       const rows = inRows(episodes);

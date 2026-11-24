@@ -69,6 +69,8 @@ export const SHORTCUT_GROUPS = {
     ["elementBar", ["Échap"]],
     ["moveScene", ["Alt", "↑ ↓"]],
     ["moveLines", ["Alt", "Shift", "↑ ↓"]],
+    ["insertAct", ["Mod", "Alt", "Shift", "A"]],
+    ["insertSequence", ["Mod", "Alt", "Shift", "S"]],
   ],
 } as const;
 

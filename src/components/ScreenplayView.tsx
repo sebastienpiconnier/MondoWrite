@@ -62,7 +62,10 @@ import type { Node as PMNode } from "@tiptap/pm/model";
 import { SCENE_AT, currentScript, scriptOffset, useCosmos, type CosmosState } from "../store";
 import { openNames } from "../namesState";
 import { setCaretSource } from "../resume";
-import { resolveEpisode, seriesOf } from "../screenplay/series";
+import { newId } from "../projectState";
+import { plainSection, resolveEpisode, seriesOf } from "../screenplay/series";
+import { insertionPoint, nextNumber, partLabel, structureOf, structureSection, type StructureKind } from "../screenplay/structure";
+import { toggleFoldedPart, useFoldedParts } from "../structureFold";
 import { useEpisodeLabel } from "./EpisodePicker";
 import { EpisodePicker } from "./EpisodePicker";
 import { useSettings } from "../settings";
@@ -96,6 +99,7 @@ import { LanguageToolBubble, LanguageToolLive, LanguageToolStatus, useLanguageTo
 import {
   currentElement,
   fromDoc,
+  toNode,
   screenplayExtensions,
   setElementType,
   toDoc,
@@ -510,11 +514,13 @@ export function ScreenplayView() {
   // Tout le scénario d'une série : la liste des scènes reprend le découpage en saisons et en épisodes (un épisode
   // encore vide y paraît aussi, on y va d'un clic). Dans un épisode ouvert, ses seules scènes.
   const episodeLabel = useEpisodeLabel();
+  const foldedParts = useFoldedParts();
   const sceneRows = useMemo(() => {
     type Row =
       | { kind: "season"; id: string; at: number; title: string }
       | { kind: "episode"; id: string; at: number; title: string }
       | { kind: "omitted"; id: string; at: number; title: string; number: number }
+      | { kind: "act" | "seq"; id: string; at: number; title: string; count: number }
       | { kind: "scene"; at: number; k: number };
     const rows: Row[] = scenes.map((sc, k) => ({ kind: "scene", at: sc.index, k }));
     // Scènes omises (#46) : « OMIS » à sa place, en grisé, avec son rang.
@@ -525,8 +531,11 @@ export function ScreenplayView() {
       if (season.id !== null && named > 0) rows.push({ kind: "season", id: season.id, at: season.at, title: season.title || fmt(t.season.seasonDefault, { n: i + 1 - (seasons[0].id === null ? 1 : 0) }) });
       for (const ep of season.episodes) rows.push({ kind: "episode", id: ep.id, at: ep.at, title: episodeLabel(ep) });
     });
-    return rows.sort((a, b) => a.at - b.at);
-  }, [scenes, elements, episodeLabel, t]);
+    // Actes et séquences (#140, #142) : un intertitre repliable ; une partie repliée cache ses scènes.
+    for (const p of structureOf(elements)) rows.push({ kind: p.kind, id: p.key, at: p.at, title: partLabel(p, t.screenplay.preserved), count: p.scenes.length });
+    const hiddenBy = structureOf(elements).filter((p) => foldedParts.has(p.key));
+    return rows.sort((a, b) => a.at - b.at).filter((r) => !hiddenBy.some((p) => r.at > p.at && r.at < p.end));
+  }, [scenes, elements, episodeLabel, t, foldedParts]);
   // Scène en cours pour le ruban : la dernière dont l'en-tête est avant le curseur.
   const ribbonScene = scenes.filter((s) => s.index <= current.index).pop();
   const ribbonCurrent = ribbonScene ? (ribbonScene.cardId ?? `@${ribbonScene.index}`) : null;
@@ -596,6 +605,25 @@ export function ScreenplayView() {
   useCommand("omit-scene", () => omitRef.current());
   const openVersionsRef = useRef(openVersions);
   openVersionsRef.current = openVersions;
+  // Acte ou séquence (#140) : une section notée, posée au-dessus de la scène du curseur, par une transaction de
+  // l'éditeur (le texte reste la source). Titre « Séquence 3 », renommé dans le séquencier.
+  const insertPart = (kind: StructureKind) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return;
+    const { elements: els } = fromDoc(ed.getJSON(), {});
+    const top = ed.state.doc.resolve(ed.state.selection.from).index(0);
+    const at = insertionPoint(els, top);
+    const label = kind === "act" ? sp.preserved.act : sp.preserved.seq;
+    const section = structureSection(els, at, kind, newId(), `${label} ${nextNumber(els, at, kind)}`);
+    let pos = 0;
+    for (let i = 0; i < at && i < ed.state.doc.childCount; i++) pos += ed.state.doc.child(i).nodeSize;
+    const node = ed.schema.nodeFromJSON(toNode(section));
+    ed.view.dispatch(ed.state.tr.insert(pos, node).scrollIntoView());
+    ed.view.focus();
+    setAnnounce(fmt(sp.partAdded, { title: plainSection(section.text) }));
+  };
+  const insertPartRef = useRef(insertPart);
+  insertPartRef.current = insertPart;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
@@ -605,6 +633,11 @@ export function ScreenplayView() {
       if ((e.metaKey || e.ctrlKey) && e.altKey && !e.shiftKey && e.code === "KeyS") {
         e.preventDefault();
         openVersionsRef.current(true);
+      }
+      // Acte et séquence (#140) : Cmd/Ctrl + Alt + Maj + A ou S (Maj : jamais une lettre d'AltGr sous Windows).
+      if ((e.metaKey || e.ctrlKey) && e.altKey && e.shiftKey && (e.code === "KeyA" || e.code === "KeyS")) {
+        e.preventDefault();
+        insertPartRef.current(e.code === "KeyA" ? "act" : "seq");
       }
       // Commenter l'élément où est le curseur (Cmd/Ctrl + Alt + M, comme dans le manuscrit).
       if ((e.metaKey || e.ctrlKey) && e.altKey && !e.shiftKey && e.code === "KeyM") {
@@ -1249,7 +1282,22 @@ export function ScreenplayView() {
                 </span>
               </button>
             </li>
-          )) : row.kind !== "scene" ? (
+          )) : row.kind === "act" || row.kind === "seq" ? (
+            <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
+              <button
+                type="button"
+                className="icon-button sp-part-fold"
+                aria-expanded={!foldedParts.has(row.id)}
+                aria-label={fmt(foldedParts.has(row.id) ? t.season.unfold : t.season.fold, { title: row.title })}
+                onClick={() => toggleFoldedPart(row.id)}
+              >
+                <span className={`disclosure${foldedParts.has(row.id) ? "" : " is-open"}`} aria-hidden="true" />
+              </button>
+              <button type="button" onClick={() => goTo(row.at)}>
+                {row.title} <span className="sp-part-count">· {row.count}</span>
+              </button>
+            </li>
+          ) : row.kind !== "scene" ? (
             <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
               <button type="button" onClick={() => goTo(row.at)}>
                 {row.title}
@@ -1391,6 +1439,13 @@ export function ScreenplayView() {
               {sp.elements[type]}
             </button>
           ))}
+          {/* Actes et séquences (#140) : une ligne posée au-dessus de la scène du curseur. */}
+          <button type="button" className="sp-part" title={sp.addPartHint} onPointerDown={(e) => e.preventDefault()} onClick={() => { insertPart("act"); setToolsOpen(false); }}>
+            {sp.addAct}
+          </button>
+          <button type="button" className="sp-part" title={sp.addPartHint} onPointerDown={(e) => e.preventDefault()} onClick={() => { insertPart("seq"); setToolsOpen(false); }}>
+            {sp.addSeq}
+          </button>
           {/* Rappel des touches, jusqu'à ce qu'elles soient apprises (#59) : la barre tient alors sur une ligne. */}
           {!keysLearned && (
             <span className="sp-bar-hint">

@@ -29,7 +29,7 @@ import {
   type EditableType,
 } from "./nodes";
 
-export { toDoc, fromDoc } from "./convert";
+export { toDoc, fromDoc, toNode } from "./convert";
 export { currentElement, setElementType } from "./keymap";
 export { isEditableType, type EditableType, type PreservedKind } from "./nodes";
 

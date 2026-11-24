@@ -1683,3 +1683,13 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 @media (any-hover: hover) { .link-picker-list [role="option"]:hover { background: var(--hover); } }
 @media (pointer: coarse) { .link-picker-list [role="option"] { min-height: 44px; } }
 .card-scenes-foot { margin: 0; }
+
+/* Actes et séquences dans le séquencier (#140, #142) : un acte a un grand titre, une séquence forme un bloc. */
+.sq-section.sq-part { align-items: center; flex-wrap: nowrap; border-radius: 0; }
+.sq-section.sq-act { margin-top: 28px; padding: 12px 4px 6px; border-top: 3px solid var(--accent); font-size: 1.5rem; font-weight: 700; }
+.sq-section.sq-seq { margin-top: 14px; padding: 8px 6px 6px; background: var(--ground); border-top: 1px solid var(--line-2); border-radius: 8px 8px 0 0; }
+.sq-section.sq-part .sq-section-name { flex: 1; }
+.sq-section.sq-part .sq-section-length { white-space: nowrap; }
+.sq-list:not(.is-cards) .sq-scene.in-seq { margin-left: 16px; border-left: 3px solid var(--line-2); }
+.sq-list.is-cards .sq-scene.in-seq { border-top: 3px solid var(--line-2); }
+@media (max-width: 720px) { .sq-list:not(.is-cards) .sq-scene.in-seq { margin-left: 8px; } }

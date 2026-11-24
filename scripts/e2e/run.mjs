@@ -1277,6 +1277,40 @@ const scenarios = [
     },
   },
   {
+    name: "actes et séquences (#140, #142) : « + Séquence » regroupe les scènes, bloc repliable du séquencier, renommée, cadre du canevas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Séquences", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. QUAI – NUIT", "La pluie."], ["INT. CUISINE – JOUR", "Le café."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      // Le curseur dans la première scène : la séquence se pose au-dessus de son en-tête.
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await page.locator(".sp-bar").getByRole("button", { name: "+ Séquence" }).click();
+      await until(() => page.locator('.sp-editor [data-series="seq"]').count(), "la ligne Séquence n'apparaît pas dans la feuille");
+      await h.saved((f) => /^## Séquence 1 \[\[cosmos:seq:[A-Za-z0-9_-]+\]\]\s*\n+\s*INT\. PHARE/m.test(f["scenario.fountain"] ?? ""), "la séquence n'est pas enregistrée au-dessus de la première scène");
+      await until(() => page.locator(".sp-scene-group.is-seq").count(), "la liste des scènes ne montre pas la séquence");
+      await h.view(2);
+      const row = page.locator(".sq-section.sq-seq");
+      await row.waitFor();
+      assert(/3 scènes/.test(await row.innerText()), `la séquence ne compte pas trois scènes : ${await row.innerText()}`);
+      await row.locator("input").fill("La nuit");
+      await row.locator("input").press("Enter");
+      await h.saved((f) => /^## La nuit \[\[cosmos:seq:/m.test(f["scenario.fountain"] ?? ""), "le titre de la séquence n'est pas enregistré");
+      await row.getByRole("button", { name: /^Replier/ }).click();
+      await until(async () => (await page.locator(".sq-scene").count()) === 0, "replier la séquence ne cache pas ses scènes");
+      await row.getByRole("button", { name: /^Déplier/ }).click();
+      await h.view(1);
+      await page.getByRole("button", { name: "Organiser le canevas" }).first().click();
+      await until(async () => (await page.locator(".frame-title").evaluateAll((els) => els.map((e) => e.value))).includes("La nuit"), "pas de cadre pour la séquence après « Organiser »");
+    },
+  },
+  {
     name: "recherche dans le Scénario (#85) : le mot trouvé dans l'action d'une scène y est sélectionné",
     async run(h) {
       const { page } = h;

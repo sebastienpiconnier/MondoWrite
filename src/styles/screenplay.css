@@ -42,6 +42,16 @@
 .sp-scene-list .sp-scene-group.is-season button { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.9375rem; }
 .sp-scene-list .sp-scene-group.is-episode { margin-top: 6px; }
 .sp-scene-list .sp-scene-group.is-episode button { color: var(--accent-ink); font-size: 0.8125rem; }
+/* Actes et séquences (#140, #142) : un intertitre avec sa flèche pour replier. */
+.sp-scene-list .sp-scene-group.is-act, .sp-scene-list .sp-scene-group.is-seq { display: flex; align-items: center; gap: 2px; }
+.sp-scene-list .sp-scene-group.is-act { margin-top: 10px; }
+.sp-scene-list .sp-scene-group.is-act button:last-child { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.875rem; }
+.sp-scene-list .sp-scene-group.is-seq { margin-top: 4px; }
+.sp-scene-list .sp-scene-group.is-seq button:last-child { background: var(--ground); font-size: 0.8125rem; }
+.sp-scene-list .sp-scene-group .sp-part-fold { flex: none; width: 32px; min-height: 32px; }
+.sp-scene-list .sp-scene-group button:last-child { flex: 1; text-align: left; }
+.sp-part-count { font-weight: 400; color: var(--ink-2); }
+@media (pointer: coarse) { .sp-scene-list .sp-scene-group .sp-part-fold { width: 44px; min-height: 44px; } }
 .sp-scene-list .sp-scene-omitted .ms-name { color: var(--muted); font-style: italic; }
 .sp-scene-moves { display: flex; gap: 4px; padding: 2px 0 2px 10px; }
 .sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 0.8125rem; }
@@ -64,6 +74,8 @@
 @media (any-hover: hover) { .sp-bar button:hover { background: var(--hover); } }
 /* Au doigt : 44 px. Ici et pas seulement dans canvas.css, chargé avant : la règle ci-dessus l'emportait (36 px). */
 @media (pointer: coarse) { .sp-bar button { min-height: 44px; padding: 0 14px; } }
+/* Acte et séquence (#140) : après les éléments, séparés d'un filet. */
+.sp-bar .sp-part:not(.sp-part + .sp-part) { margin-left: 6px; box-shadow: inset 1px 0 0 var(--line); border-radius: 0 8px 8px 0; }
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
 .sp-bar-hint { padding: 0 10px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .sp-focus { border: 1px solid var(--line) !important; }
@@ -178,6 +190,11 @@
 .sp-preserved[data-series="season"]::before { content: var(--sp-label-season); }
 .sp-preserved[data-series="episode"]::before { content: var(--sp-label-episode) " " counter(episode); }
 .sp-preserved[data-series="beat"]::before { content: var(--sp-label-beat); }
+/* Actes et séquences (#140) : un acte ouvre une partie (accent), une séquence se lit en retrait. */
+.sp-preserved[data-series="act"]::before { content: var(--sp-label-act); }
+.sp-preserved[data-series="seq"]::before { content: var(--sp-label-seq); }
+.sp-preserved[data-series="act"] { margin-top: 2em; border-left-color: var(--accent); font-size: 16px; }
+.sp-preserved[data-series="seq"] { border-left-color: var(--ink-2); }
 .sp-preserved[data-series]:empty::after { content: var(--sp-label-episodeUntitled); font-weight: 400; font-style: italic; color: var(--muted); }
 /* Une saison et un épisode ouvrent une partie : plus d'air au-dessus, et l'accent pour les distinguer des cases. */
 .sp-preserved[data-series="season"], .sp-preserved[data-series="episode"] { margin-top: 2.4em; border-left-color: var(--accent); }

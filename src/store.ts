@@ -81,6 +81,7 @@ import { htmlToMarkdown, markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
 import { addEpisode, addSeason, allEpisodes, seriesMark as seriesMarkOf, episodeScenes, placeSceneInEpisode, seriesOf as readSeries, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript, withEpisodeTemplate } from "./screenplay/series";
+import { partChapters } from "./screenplay/structure";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
@@ -1082,7 +1083,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
     const sizes = boxes(arranged);
     // Un scénario a son plan dans le fichier Fountain : ses sections de gabarit font les cases.
-    const story = kind === "scenario" ? screenplayPlan(get().screenplay?.elements ?? []) : plan;
+    // Actes et séquences (#140) : lus comme des chapitres le temps du rangement, un cadre chacun.
+    const partsAsChapters = kind === "scenario" ? partChapters(get().screenplay?.elements ?? [], t.screenplay.preserved) : [];
+    const story = kind === "scenario" ? { ...screenplayPlan(get().screenplay?.elements ?? []), ...(partsAsChapters.length > 0 ? { chapters: partsAsChapters } : {}) } : plan;
     // Série : cadres saison › épisode, d'après les sections du Fountain (screenplay/series.ts).
     const sp = get().screenplay;
     const series =
@@ -1138,7 +1141,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       labels: {
         groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
         beat: (key) => beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, story.custom).label,
-        chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
+        chapter: (n, title) => (kind === "scenario" && title ? title : title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
         continued: (label) => fmt(t.organize.continued, { label }),
         unplaced: t.plan.unplaced,
         story: types.scene.section,
@@ -1210,6 +1213,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
       t.scenario.types.scene?.section ?? t.types.scene.section,
     ]);
     known.add(t.season.outside);
+    // Cadres des actes et séquences (#140) : leur titre, et sa suite.
+    if (get().kind === "scenario") for (const c of partChapters(get().screenplay?.elements ?? [], t.screenplay.preserved)) known.add(c.title).add(fmt(t.organize.continued, { label: c.title }));
     const organized =
       storyFrames.length > 0 &&
       storyFrames.every((f) => f.data.season || f.data.episode || known.has(f.data.title) || chapterTitle.some((re) => re.test(f.data.title)));

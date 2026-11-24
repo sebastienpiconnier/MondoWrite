@@ -13,7 +13,7 @@ import type { Screenplay, ScreenplayElement } from "./model";
 export type SeriesKind = "season" | "episode";
 
 const NOTE_RE = /\s*\[\[cosmos:(season|episode):([A-Za-z0-9_-]+)\]\]/;
-const ANY_NOTE_RE = /\s*\[\[cosmos:(?:season|episode|beat):[A-Za-z0-9_-]+\]\]/g;
+const ANY_NOTE_RE = /\s*\[\[cosmos:(?:season|episode|beat|act|seq):[A-Za-z0-9_-]+\]\]/g;
 
 /** Saison ou épisode porté par une section, sinon null. */
 export function seriesMark(el: ScreenplayElement | undefined): { kind: SeriesKind; id: string } | null {
