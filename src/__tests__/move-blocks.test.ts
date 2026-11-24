@@ -91,3 +91,19 @@ describe("déplacer des lignes au clavier (#145)", () => {
     expect(moveBlocks(at(d, "PHARE"), 1, SCREENPLAY_MOVE)).toBeNull();
   });
 });
+
+import { keptScenes } from "../review/filter";
+
+describe("« Ses scènes » et les fils (#137)", () => {
+  it("une scène reliée au personnage par un fil est gardée, même s'il n'y parle pas", () => {
+    const elements = [
+      { type: "sceneHeading", text: "INT. PHARE", cardId: "s1" },
+      { type: "character", text: "INÈS" },
+      { type: "dialogue", text: "Tu entends ?" },
+      { type: "sceneHeading", text: "EXT. QUAI", cardId: "s2" },
+      { type: "action", text: "La mer." },
+    ];
+    expect(keptScenes(elements, { name: "Inès", mode: "scenes" })).toEqual([0]);
+    expect(keptScenes(elements, { name: "Inès", mode: "scenes", linked: ["s2"] })).toEqual([0, 3]);
+  });
+});

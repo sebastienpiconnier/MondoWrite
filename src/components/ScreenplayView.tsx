@@ -23,11 +23,12 @@ import { blocks, moveBlock } from "../screenplay/sequence";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SuggestionMenu } from "./SuggestionMenu";
 import { SceneSetupsBox } from "./SceneSetups";
+import { SceneLinks } from "./LinkedCards";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
 import { checkScreenplay, type Finding } from "../review/checks";
-import { keptScenes as keptBy, speakingNames } from "../review/filter";
+import { keptScenes as keptBy, speakingNames, type CharacterFilter } from "../review/filter";
 import { setCharacterFilter } from "../screenplay/editor/characterFilter";
 import { ReviewPanel, SideTabs, useOpenFindings, type SideTab } from "./ReviewPanel";
 import { CommentsPanel } from "./CommentsPanel";
@@ -58,7 +59,7 @@ import { ADOPT_META, adoptNew } from "../screenplay/editor/adopt";
 import { EditorContent, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { SCENE_AT, currentScript, scriptOffset, useCosmos } from "../store";
+import { SCENE_AT, currentScript, scriptOffset, useCosmos, type CosmosState } from "../store";
 import { openNames } from "../namesState";
 import { setCaretSource } from "../resume";
 import { resolveEpisode, seriesOf } from "../screenplay/series";
@@ -792,9 +793,17 @@ export function ScreenplayView() {
     return () => document.removeEventListener("click", onClick);
   }, []);
   // Filtre par personnage : ses scènes, ou ses répliques (le reste estompé). Affichage seulement.
-  const charFilter = useCosmos((s) => s.charFilter);
+  // Les scènes reliées par un fil à la carte du personnage comptent aussi (#137 : un personnage muet ajouté à la main).
+  const charFilter = useCosmos((s) => withLinkedScenes(s, s.charFilter));
   const setCharFilter = useCosmos((s) => s.setCharFilter);
-  const speakingList = useMemo(() => speakingNames(elements, lang), [elements, lang]);
+  // Ceux qui parlent, puis les personnages reliés à une scène sans y parler (#137), pour les filtrer aussi.
+  const wiredKey = useCosmos((s) => wiredCharacters(s));
+  const speakingList = useMemo(() => {
+    const speaking = speakingNames(elements, lang);
+    const known = new Set(speaking.map(foldName));
+    const silent = wiredKey ? wiredKey.split("\n").filter((n) => !known.has(foldName(n))) : [];
+    return [...speaking, ...silent.sort((x, y) => x.localeCompare(y, lang))];
+  }, [elements, lang, wiredKey]);
   const keptScenes = useMemo(() => (charFilter ? new Set(keptBy(elements, charFilter)) : null), [elements, charFilter]);
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -1594,6 +1603,8 @@ export function ScreenplayView() {
             </section>
 
             <SceneSetupsBox id={card?.id} />
+            {/* Personnages (aussi ceux qui ne parlent pas), intrigues et décor, reliés sans tirer de fil (#137). */}
+            {card && <SceneLinks id={card.id} />}
 
             {location && (
               <section className="sp-box">
@@ -1661,4 +1672,37 @@ function SheetLink({ name, type, nodes }: { name: string; type: "personnage" | "
       {name}
     </button>
   );
+}
+
+/** Le filtre par personnage, avec les scènes reliées par un fil à sa carte ; même objet tant que rien ne change. */
+let linkedCache: { filter: CharacterFilter | null; nodes: unknown; edges: unknown; out: CharacterFilter | null } | null = null;
+function withLinkedScenes(s: CosmosState, filter: CharacterFilter | null): CharacterFilter | null {
+  if (!filter) return null;
+  if (linkedCache && linkedCache.filter === filter && linkedCache.nodes === s.nodes && linkedCache.edges === s.edges) return linkedCache.out;
+  const key = foldName(filter.name);
+  const card = s.nodes.find((n) => n.data.type === "personnage" && foldName(n.data.title) === key);
+  const scenes = new Set(s.nodes.filter((n) => n.data.type === "scene").map((n) => n.id));
+  const linked = card ? s.edges.flatMap((e) => (e.source === card.id && scenes.has(e.target) ? [e.target] : e.target === card.id && scenes.has(e.source) ? [e.source] : [])).sort() : [];
+  const previous = linkedCache?.filter === filter ? linkedCache.out : null;
+  // Mêmes scènes qu'avant : le même objet, pour ne pas reposer le filtre dans l'éditeur à chaque changement.
+  const out = previous && (previous.linked ?? []).join() === linked.join() ? previous : linked.length ? { ...filter, linked } : filter;
+  linkedCache = { filter, nodes: s.nodes, edges: s.edges, out };
+  return out;
+}
+
+/** Personnages reliés par un fil à au moins une carte Scène, en une chaîne stable (un nom par ligne). */
+let wiredCache: { nodes: unknown; edges: unknown; key: string } | null = null;
+function wiredCharacters(s: CosmosState): string {
+  if (wiredCache && wiredCache.nodes === s.nodes && wiredCache.edges === s.edges) return wiredCache.key;
+  const type = new Map(s.nodes.map((n) => [n.id, n.data]));
+  const names = new Set<string>();
+  for (const e of s.edges) {
+    const a = type.get(e.source);
+    const b = type.get(e.target);
+    if (a?.type === "personnage" && b?.type === "scene" && a.title.trim()) names.add(a.title.trim());
+    if (b?.type === "personnage" && a?.type === "scene" && b.title.trim()) names.add(b.title.trim());
+  }
+  const key = [...names].sort().join("\n");
+  wiredCache = { nodes: s.nodes, edges: s.edges, key };
+  return key;
 }

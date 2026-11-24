@@ -23,6 +23,7 @@ import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { SceneSetupsBox } from "./SceneSetups";
+import { SceneLinks } from "./LinkedCards";
 import { PovPicker } from "./PovPicker";
 import { narratorCounts } from "../pov";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
@@ -1040,6 +1041,8 @@ export function Manuscript() {
           )}
         </section>
         {!pageKind && <SceneSetupsBox id={card.id} />}
+        {/* Personnages, intrigues, lieu de la scène, reliés sans tirer de fil (#137). */}
+        {!pageKind && <SceneLinks id={card.id} />}
         <section className="sp-box">
           <h2 className="sp-box-title">{m.cited}</h2>
           {detected.length === 0 ? (

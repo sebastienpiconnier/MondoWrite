@@ -494,6 +494,31 @@ const scenarios = [
     },
   },
   {
+    name: "fiche de scène reliée (#137 à #139) : un personnage créé depuis l'onglet Scène est relié ; double-clic sur sa carte, ses scènes ; délier",
+    async run(h) {
+      const { page } = h;
+      await h.create("Liens");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      await page.locator(".ProseMirror[contenteditable=true]").first().waitFor();
+      await page.getByRole("button", { name: "Ajouter : Personnages" }).click();
+      await page.getByRole("combobox", { name: "Ajouter : Personnages" }).fill("Inès");
+      await page.keyboard.press("Enter");
+      await until(() => page.locator(".scene-links .link-pill", { hasText: "Inès" }).count(), "la pastille du personnage n'apparaît pas");
+      await h.saved((f) => Object.values(f).some((v) => /type: personnage/.test(v) && /Inès/.test(v)) && /"links":\s*\[\s*\{/.test(f["cosmos.json"] ?? ""), "le personnage et son fil ne sont pas enregistrés");
+      const charId = Object.entries(await h.files()).find(([k, v]) => k.startsWith("cartes/") && /type: personnage/.test(v))[0].slice(7, -3);
+      await h.view(1);
+      const card = h.node(charId).locator(".card");
+      await card.waitFor();
+      const box = await card.boundingBox();
+      await page.mouse.dblclick(box.x + box.width - 4, box.y + box.height / 2);
+      await until(() => page.locator(".expanded-card .card-scenes .link-pill", { hasText: "Le phare" }).count(), "la carte agrandie du personnage ne montre pas sa scène");
+      await page.locator(".expanded-card .card-scenes").getByRole("button", { name: "Délier de « Le phare »" }).click();
+      await until(async () => (await page.locator(".expanded-card .card-scenes .link-pill").count()) === 0, "délier n'a pas retiré la pastille");
+    },
+  },
+  {
     name: "image dans le texte (#87) : insérée par le ⋯ du Manuscrit, enregistrée en Markdown, sa description et sa place modifiables",
     async run(h) {
       const { page } = h;

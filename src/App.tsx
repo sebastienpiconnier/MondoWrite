@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { sendCommand } from "./commands";
 import { openPalette } from "./commandList";
 import { captureSpot } from "./resume";
-import { keepPlace } from "./components/keepPlaceRun";
+import { forgetPlace, keepPlace } from "./components/keepPlaceRun";
 import { reviewProjectClosed, reviewProjectOpened } from "./storeReview";
 import { nextZoom, useSettings } from "./settings";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -73,6 +73,7 @@ export function App() {
   useEffect(
     () =>
       useCosmos.subscribe((s, prev) => {
+        if (s.screen === "project" && prev.screen !== "project") forgetPlace();
         if (s.screen !== "project" || prev.screen !== "project" || s.view === prev.view) return;
         captureSpot(storage.current?.(), s.view);
         // Garder sa place (#144) : la scène où l'on écrivait suit d'une vue à l'autre.

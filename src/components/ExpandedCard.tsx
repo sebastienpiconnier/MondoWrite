@@ -17,6 +17,7 @@ import { ScriptSceneEditor } from "./ScriptSceneEditor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
+import { CardScenes, SceneLinks } from "./LinkedCards";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -94,6 +95,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
           <section className="expanded-draft" aria-label={t.draft.heading}>
             <ScriptSceneEditor card={card} />
           </section>
+          {!card.page && <SceneLinks id={card.id} />}
           {!card.page && <BreakdownSheet card={card} />}
           <button
             type="button"
@@ -116,6 +118,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
             <h3 className="expanded-draft-title">{t.draft.heading}</h3>
             <DraftEditor card={card} autofocus />
           </section>
+          {!card.page && <SceneLinks id={card.id} />}
           <button type="button" className="link-button expanded-open" onClick={() => {
               useCosmos.getState().setDialog(null);
               useCosmos.getState().openInManuscript(card.id);
@@ -129,6 +132,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
             <BibleBody card={card} />
           </div>
           <CardSheet card={card} />
+          <CardScenes id={card.id} type={card.type} />
         </>
       )}
     </div>

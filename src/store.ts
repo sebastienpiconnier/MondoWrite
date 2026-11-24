@@ -699,6 +699,8 @@ export interface CosmosState {
   toggleLink: (a: string, b: string) => void;
   /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
   linkCards: (source: string, target: string, label: string) => void;
+  /** Crée une carte de ce type et la relie à `id`, en une étape (fiche de scène reliée, #137). Rend son identifiant. */
+  addLinkedCard: (id: string, type: CardType, title: string) => string;
   updateCard: (id: string, patch: Partial<Omit<CardData, "id">>) => void;
   /** Élargit ou rétrécit une carte (clavier) ; la hauteur suit le contenu. */
   resizeCard: (id: string, delta: number) => void;
@@ -3731,6 +3733,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       record();
       set({ edges: get().edges.filter((e) => !between(e)) });
       touch();
+    },
+    addLinkedCard: (id, type, title) => {
+      const created = get().addTitledCard(type, title);
+      get().linkCards(id, created, "");
+      return created;
     },
     linkCards: (source, target, label) => {
       const linked = get().edges.some(

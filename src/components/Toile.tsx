@@ -869,6 +869,14 @@ export function Toile() {
           if (s.cardMenu) s.setCardMenu(null);
           setChoiceSel(null);
         }}
+        // Double-clic sur une carte, hors de son titre et de son texte (#139) : elle s'ouvre en grand, la même fenêtre
+        // pour tous les types (texte, fiche, liens), comme une scène. Dans le texte, le double-clic choisit un mot.
+        onNodeDoubleClick={(event, node) => {
+          if (node.type !== "card") return;
+          const target = event.target as HTMLElement;
+          if (target.closest(".card-title, .card-body:not(.is-scene), textarea, input, button, a, [contenteditable=true], .card-links")) return;
+          useCosmos.getState().expandCard(node.id);
+        }}
         // Clic droit sur une carte, hors de son texte (le menu du navigateur y reste, pour l'orthographe) : son menu.
         onNodeContextMenu={(event, node) => {
           if (node.type !== "card" || (event.target as HTMLElement).closest(".card-body, .card-title")) return;

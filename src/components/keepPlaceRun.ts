@@ -3,11 +3,12 @@
 // partent après le rendu : la vue d'arrivée n'est pas encore là quand la vue change.
 
 import { placeOnSwitch } from "../keepPlace";
-import { readSpot } from "../resume";
+import { readSpot, type Spot } from "../resume";
 import { storage } from "../storage";
 import { SCENE_AT, useCosmos, type CosmosState } from "../store";
 import type { View } from "../projectState";
 import { revealPlanRow } from "./revealRow";
+import { episodeAt, episodeOfCard } from "../screenplay/series";
 
 const shown = (v: View): View => (v === "carnet" ? "toile" : v);
 
@@ -24,21 +25,40 @@ function pickedIn(view: View, s: CosmosState): string | null {
   return null;
 }
 
+// Place quittée dans la vue d'écriture pendant cette séance du projet. La position de « Reprendre » vient aussi
+// des séances d'avant : à l'ouverture d'un projet, la vue d'écriture s'ouvre comme avant (série : tout le
+// scénario), seul le bouton « Reprendre là où j'en étais » y remet le curseur.
+let left: Spot | null = null;
+
+/** Un projet vient de s'ouvrir : rien n'a encore été quitté. */
+export function forgetPlace() {
+  left = null;
+}
+
 export function keepPlace(s: CosmosState, prev: CosmosState) {
   const from = shown(prev.view);
   const to = shown(s.view);
   const scenario = s.kind === "scenario";
+  const spot = readSpot(storage.current?.() ?? "");
+  if (from === "manuscrit") left = spot;
   const action = placeOnSwitch({
     from,
     to,
-    spot: readSpot(storage.current?.() ?? ""),
+    spot: to === "manuscrit" ? left : spot,
     // La vue qu'on quitte est encore affichée : sa sélection se lit maintenant.
     picked: pickedIn(from, prev),
-    targetPending: !!s.manuscriptTarget,
-    exists: (id) =>
-      id.startsWith(SCENE_AT)
+    // « Écrire l'épisode » (série) choisit l'épisode en même temps que la vue : c'est lui qu'on veut voir.
+    targetPending: !!s.manuscriptTarget || s.currentEpisode !== prev.currentEpisode,
+    exists: (id) => {
+      const known = id.startsWith(SCENE_AT)
         ? scenario && Number(id.slice(SCENE_AT.length)) < (s.screenplay?.elements.length ?? 0)
-        : s.nodes.some((n) => n.id === id && n.data.type === "scene"),
+        : s.nodes.some((n) => n.id === id && n.data.type === "scene");
+      if (!known || !scenario || !s.currentEpisode || to !== "manuscrit") return known;
+      // Série, un épisode ouvert : on ne quitte pas l'épisode pour une scène d'un autre.
+      const full = s.screenplay;
+      const episode = id.startsWith(SCENE_AT) ? episodeAt(full, Number(id.slice(SCENE_AT.length))) : episodeOfCard(full, id);
+      return !episode || episode === s.currentEpisode;
+    },
   });
   if (!action) return;
   queueMicrotask(() => {
