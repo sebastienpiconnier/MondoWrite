@@ -25,6 +25,7 @@ import { SuggestionMenu } from "./SuggestionMenu";
 import { SceneSetupsBox } from "./SceneSetups";
 import { SceneLinks } from "./LinkedCards";
 import { ScenePlace } from "./ScenePlace";
+import { usePlotColor } from "./usePlotColor";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -516,6 +517,7 @@ export function ScreenplayView() {
   // encore vide y paraît aussi, on y va d'un clic). Dans un épisode ouvert, ses seules scènes.
   const episodeLabel = useEpisodeLabel();
   const foldedParts = useFoldedParts();
+  const plotColor = usePlotColor();
   const sceneRows = useMemo(() => {
     type Row =
       | { kind: "season"; id: string; at: number; title: string }
@@ -1330,7 +1332,8 @@ export function ScreenplayView() {
           ) : ((s: (typeof scenes)[number], k: number) => !listed(s) ? null : (
             <li
               key={s.index}
-              className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}`}
+              className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}${plotColor(s.cardId).className}`}
+              style={plotColor(s.cardId).style}
               // Glisser une scène dans la liste la déplace dans le scénario (texte compris).
               draggable
               onDragStart={(e) => {

@@ -5,6 +5,7 @@
 // Chapitres : dans chaque case, les scènes se regroupent par chapitre. Le menu « Chapitre » d'une scène
 // la range dans un chapitre, ou en commence un nouveau à cette scène (le précédent s'arrête juste avant).
 
+import { usePlotColor } from "./usePlotColor";
 import { useInteractive } from "../interactive/useInteractive";
 import { interactiveScenes } from "../interactive/scenes";
 import { choiceGraph } from "../interactive/choices";
@@ -127,6 +128,7 @@ export function Plan() {
 
   const beatInfo = useBeatText();
   const beatLabel = (key: string) => beatInfo(key).label;
+  const plotColor = usePlotColor();
   const titleOf = (id: string) => cards.get(id)?.title.trim() || p.untitled;
 
   /** Annonce la nouvelle place d'une scène (lecteurs d'écran), d'après l'état à jour du store. */
@@ -208,7 +210,8 @@ export function Plan() {
       <li
         key={id}
         data-scene={id}
-        className={`sq-scene plan-scene${dragged === id ? " is-dragged" : ""}${over === id && dragged !== id ? " is-over" : ""}`}
+        className={`sq-scene plan-scene${dragged === id ? " is-dragged" : ""}${over === id && dragged !== id ? " is-over" : ""}${plotColor(id).className}`}
+        style={plotColor(id).style}
         draggable={!bySection}
         onDragStart={(e) => {
           // Pas en tirant dans un champ : on y sélectionne du texte.

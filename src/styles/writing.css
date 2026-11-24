@@ -1701,3 +1701,11 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .scene-place-row select { flex: 1; min-width: 0; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }
 @media (pointer: coarse) { .scene-place-row select { min-height: 44px; } }
 .scene-place-hint { margin: 0; }
+
+/* Couleur des scènes par leur intrigue principale (#143) : un trait de la couleur de l'intrigue, à gauche. */
+.has-plot { box-shadow: inset 5px 0 0 var(--plot); }
+.sq-scene.has-plot { padding-left: 16px; }
+.plan-plot-colors[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
+.link-pill .link-star { min-width: 28px; border: 0; background: transparent; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
+.link-pill .link-star[aria-pressed="true"] { color: var(--accent); }
+@media (pointer: coarse) { .link-pill .link-star { min-width: 44px; min-height: 44px; } }

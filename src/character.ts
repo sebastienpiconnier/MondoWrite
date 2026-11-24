@@ -80,7 +80,8 @@ export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<
   // Le statut d'une scène a son propre sélecteur (SceneStatusPicker) : pas une ligne de la fiche.
   // Le dépouillement a sa propre section (BreakdownSheet).
   // Le point de vue a sa pastille (PovPicker), à côté du statut.
-  if (card.type === "scene") return new Set<string>(["statut", "pov", ...BREAKDOWN_FIELDS]);
+  // L'intrigue principale (#143) se choisit par l'étoile de sa pastille (onglet Scène).
+  if (card.type === "scene") return new Set<string>(["statut", "pov", "intrigue", ...BREAKDOWN_FIELDS]);
   return card.type === "personnage" ? new Set<string>([...motorFields(card), ...CHARACTER_HEAD_FIELDS]) : new Set<string>();
 }
 
@@ -121,13 +122,13 @@ export const BREAKDOWN_FIELDS = ["accessoires", "costumes", "figurants", "vehicu
 export type BreakdownField = (typeof BREAKDOWN_FIELDS)[number];
 export const isBreakdownField = (key: string): key is BreakdownField => (BREAKDOWN_FIELDS as readonly string[]).includes(key);
 /** `pov` (1.13.0) : personnage narrateur de la scène (identifiant d'une carte Personnage, voir `CARD_REF_FIELDS`). */
-export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement", "issue", ...BREAKDOWN_FIELDS, "pov"] as const;
+export const SCENE_FIELDS = ["synopsis", "statut", "but", "obstacle", "tournant", "changement", "issue", ...BREAKDOWN_FIELDS, "pov", "intrigue"] as const;
 
 /**
  * Champs qui désignent une autre carte : la fiche garde son identifiant, jamais son nom (un renommage ne touche
  * à rien). Type attendu de la carte désignée. Exports et IA écrivent son titre (`cardRefTitle`).
  */
-export const CARD_REF_FIELDS = { pivot: "personnage", pov: "personnage" } as const satisfies Partial<Record<string, CardType>>;
+export const CARD_REF_FIELDS = { pivot: "personnage", pov: "personnage", intrigue: "intrigue" } as const satisfies Partial<Record<string, CardType>>;
 export type CardRefField = keyof typeof CARD_REF_FIELDS;
 export const isCardRefField = (key: string): key is CardRefField => Object.prototype.hasOwnProperty.call(CARD_REF_FIELDS, key);
 

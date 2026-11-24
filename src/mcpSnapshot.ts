@@ -141,7 +141,7 @@ function ficheOf(card: CardData, cards: CardData[], t: Messages, skip: ReadonlyS
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-const SCENE_SKIP = new Set(["synopsis", "statut", "pov"]);
+const SCENE_SKIP = new Set(["synopsis", "statut", "pov", "intrigue"]);
 // « Personnage principal » sert à ranger, pas à lire (comme dans l'export de la Bible).
 const CARD_SKIP = new Set(["principal", "accroche"]);
 

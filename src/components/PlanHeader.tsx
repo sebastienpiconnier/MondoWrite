@@ -43,6 +43,8 @@ export function PlanHeader({ title, timeline, onTimeline, noTimeline = false, mo
   const sq = t.screenplay.sequencer;
   const mode = useSettings((s) => s.sequencerMode);
   const setMode = useSettings((s) => s.setSequencerMode);
+  const plotColors = useSettings((s) => s.plotColors);
+  const setPlotColors = useSettings((s) => s.setPlotColors);
   return (
     <header className="sq-head">
       <h1>{title}</h1>
@@ -73,6 +75,10 @@ export function PlanHeader({ title, timeline, onTimeline, noTimeline = false, mo
         )}
       </div>
       {actions}
+      {/* Couleur des scènes par leur intrigue principale (#143), réglage de l'appareil, coupé par défaut. */}
+      <button type="button" className="ghost-button plan-plot-colors" aria-pressed={plotColors} onClick={() => setPlotColors(!plotColors)}>
+        {t.plan.plotColors}
+      </button>
       {total}
       {(template || about) && (
         <div className="sq-template-row">

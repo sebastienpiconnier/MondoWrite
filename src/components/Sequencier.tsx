@@ -3,6 +3,7 @@
 // Changer l'ordre ici déplace la scène entière dans scenario.fountain.
 // Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
 
+import { usePlotColor } from "./usePlotColor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { leafBeats, type PlanBeat } from "../plan";
@@ -132,6 +133,7 @@ export function Sequencier() {
   const parts = useMemo(() => structureOf(screenplay.elements), [screenplay.elements]);
   const partAt = useMemo(() => new Map(parts.map((p) => [p.at, p])), [parts]);
   const foldedParts = useFoldedParts();
+  const plotColor = usePlotColor();
   const partName = (p: StructurePart) => partLabel(p, sp.preserved);
   // Scène rangée dans une séquence : son bloc a un fond (#142).
   const inSeq = (start: number) => parts.some((p) => p.kind === "seq" && start > p.at && start < p.end);
@@ -525,7 +527,8 @@ export function Sequencier() {
               <li
                 key={`scene-${block.start}`}
                 data-scene={block.cardId || undefined}
-                className={`sq-scene${dragged === i ? " is-dragged" : ""}${inSeq(block.start) ? " in-seq" : ""}${dropClass}`}
+                className={`sq-scene${dragged === i ? " is-dragged" : ""}${inSeq(block.start) ? " in-seq" : ""}${dropClass}${plotColor(block.cardId).className}`}
+                style={plotColor(block.cardId).style}
                 draggable
                 onDragStart={(e) => {
                   // Pas en tirant dans le champ du synopsis : on y sélectionne du texte.

@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { usePlotColor } from "./usePlotColor";
 import { useInteractive } from "../interactive/useInteractive";
 import { projectSections } from "../interactive/projectSections";
 import { openPlay } from "../interactive/playState";
@@ -135,6 +136,7 @@ export function Manuscript() {
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
   // Scène qu'on glisse dans la colonne (même raison : une ref) et l'endroit où elle irait.
   const sceneDragRef = useRef<string | null>(null);
+  const plotColor = usePlotColor();
   const [sceneDrag, setSceneDrag] = useState<string | null>(null);
   const [sceneOver, setSceneOver] = useState<{ id: string; side: "before" | "after" } | null>(null);
   const b = t.book;
@@ -781,7 +783,8 @@ export function Manuscript() {
                 return (
                   <li
                     key={id}
-                    className={`${sceneDrag === id ? "is-dragged" : ""}${drop}`}
+                    className={`${sceneDrag === id ? "is-dragged" : ""}${drop}${plotColor(id).className}`}
+                    style={plotColor(id).style}
                     draggable={movable}
                     onDragStart={(e) => {
                       if (!movable) return;

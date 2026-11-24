@@ -79,12 +79,19 @@ function LinkRow({ id, type, label, ordered, onOpen, canCreate = true }: { id: s
   const untitled = useT().sceneLinks.untitledScene;
   const name = (card: string) => titles.get(card) || (type === "scene" ? untitled : "…");
 
+  // Intrigues d'une scène (#143) : l'étoile choisit la principale, qui passe en tête (sa couleur colore la scène).
+  const mainPlot = useCosmos((s) => (type === "intrigue" ? s.nodes.find((n) => n.id === id)?.data.fiche?.intrigue : undefined));
+  const withStar = type === "intrigue" && links.length > 1;
   const shown = useMemo(() => {
+    if (type === "intrigue") {
+      // Ordre des fils, l'intrigue principale d'abord (sinon la première reliée l'est).
+      return mainPlot && links.some((l) => l.card === mainPlot) ? [...links.filter((l) => l.card === mainPlot), ...links.filter((l) => l.card !== mainPlot)] : links;
+    }
     if (!ordered) return [...links].sort((a, b) => name(a.card).localeCompare(name(b.card)));
     const rank = new Map(ordered.map((x, i) => [x, i]));
     return [...links].sort((a, b) => (rank.get(a.card) ?? 1e9) - (rank.get(b.card) ?? 1e9));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [links, ordered, titles]);
+  }, [links, ordered, titles, mainPlot, type]);
 
   const linked = new Set(links.map((l) => l.card));
   const wanted = foldName(query.trim());
@@ -144,8 +151,20 @@ function LinkRow({ id, type, label, ordered, onOpen, canCreate = true }: { id: s
         <p className="sp-empty">{t.none}</p>
       ) : (
         <ul className="ms-chips">
-          {shown.map(({ edge, card }) => (
+          {shown.map(({ edge, card }, k) => (
             <li key={edge} className="chip link-pill">
+              {withStar && (
+                <button
+                  type="button"
+                  className="link-star"
+                  aria-pressed={k === 0}
+                  aria-label={fmt(k === 0 ? t.mainPlot : t.makeMainPlot, { title: name(card) })}
+                  title={fmt(k === 0 ? t.mainPlot : t.makeMainPlot, { title: name(card) })}
+                  onClick={() => k !== 0 && useCosmos.getState().setFiche(id, "intrigue", card)}
+                >
+                  {k === 0 ? "★" : "☆"}
+                </button>
+              )}
               <button type="button" className="link-chip-open" onClick={() => onOpen(card)}>
                 <span className="card-dot" aria-hidden="true" />
                 {name(card)}
