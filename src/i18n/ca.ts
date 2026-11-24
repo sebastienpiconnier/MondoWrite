@@ -494,6 +494,13 @@ export const ca = {
     addCard: "Targeta nova",
     addCardHint: "Drecera: tecla N",
     addCardMore: "Més targetes: personatge, lloc, escena, enllaç, imatge, PDF…",
+    paneMenu: {
+      label: "Menú del llenç",
+      newHere: "Targeta nova aquí",
+      createType: "Crea aquí: {type}",
+      paste: "Enganxa les targetes copiades",
+      fit: "Mostra-ho tot",
+    },
     newCard: {
       idee: "Una targeta buida (tecla N)",
       lien: "Enganxa o escriu una adreça",
@@ -517,7 +524,7 @@ export const ca = {
     redo: "Refés",
     undoHint: "Desfés (Ctrl o Cmd + Z)",
     redoHint: "Refés (Ctrl o Cmd + Maj + Z)",
-    hintMouse: "Doble clic o clic dret per escriure",
+    hintMouse: "Doble clic per escriure, clic dret per al menú",
     hintTouch: "Mantén premuda una targeta per moure-la",
     hintLink: "Arrossega un fil des d’una vora",
     hintTransform: "o l’etiqueta per transformar",
@@ -3694,7 +3701,7 @@ export const ca = {
     steps: {
       cards: {
         title: "Deixa anar les teves idees on vulguis",
-        body: "Doble clic, clic dret o el botó «Targeta nova»: neix una targeta. Mantén-la premuda per aixecar-la i moure-la. Escriu / a principi de línia per convertir-la en personatge, lloc, escena… Traça un fil d’una targeta a una altra i posa-li nom («germana de», «passa a»).",
+        body: "Doble clic, el botó «Targeta nova» o la tecla N: neix una targeta (el clic dret també ofereix «Targeta nova aquí»). Mantén-la premuda per aixecar-la i moure-la. Escriu / a principi de línia per convertir-la en personatge, lloc, escena… Traça un fil d’una targeta a una altra i posa-li nom («germana de», «passa a»).",
       },
       sources: {
         title: "Tingues les teves fonts a mà",

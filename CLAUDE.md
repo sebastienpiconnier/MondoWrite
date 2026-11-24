@@ -21,7 +21,7 @@ Fichiers de mise à jour Mac : leur nom suit `productName` (`MondoWrite_aarch64.
 
 - **Un seul contenu, plusieurs vues.** Canevas, Plan, Bible et Manuscrit sont des lectures du même projet. Rien n'est jamais recopié d'une vue à l'autre. Ce qu'on crée dans une vue existe aussitôt dans les autres : une scène ou un personnage écrits dans le scénario, une fiche créée dans la Bible, ont leur carte sur le canevas.
 - **La structure émerge, on ne la configure pas.** Aucun champ obligatoire, aucun formulaire. Une carte naît « Idée » et devient Personnage, Lieu, Scène… via `/`.
-- **Trois gestes** : taper (double-clic, clic droit, bouton « + » ou touche N), tirer un fil, déposer. Un cadre (bouton ou touche C) regroupe des cartes sans rien leur imposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
+- **Trois gestes** : taper (double-clic, bouton « + », touche N, ou clic droit puis « Nouvelle carte ici »), tirer un fil, déposer. Un cadre (bouton ou touche C) regroupe des cartes sans rien leur imposer. Toute nouvelle fonction doit tenir dans ces gestes ou rester discrète.
 - **L'IA questionne, elle n'écrit pas à la place de l'auteur.** Assistant et bouton « Ranger » proposent, l'auteur décide. La synthèse d'un personnage remet seulement en ordre ce que l'auteur a écrit, et n'entre dans la fiche que sur son clic. L'IA reste optionnelle. Les consignes complètes sont dans `docs/prompts-ia.md`.
 - **Mode Atelier, l'exception choisie par projet** (1.8.0) : le principe ci-dessus reste le défaut (« gardienne »). Pour le seul projet où l'auteur l'active (Réglages › Ce projet, IA branchée), l'IA peut proposer du texte (trois variantes, synopsis d'une scène, trois directions, brouillon de la couverture, fiche d'un personnage secondaire). Rien n'entre sans un clic ; ce qui est accepté est **toujours marqué** (pointillé, jusqu'à « Je l'ai repris ») et **journalisé** (`ia-journal.md`). Aucune autre action IA ne change de règle.
 - **L'auteur possède ses textes** : fichiers Markdown lisibles hors de l'app.
@@ -252,7 +252,7 @@ src/
     ExamplesPanel.tsx   « Grands exemples » de la page des projets : liste du site, téléchargement, ouverture
     FrameLabels.tsx     Titres des cadres vus de loin, dans une couche au-dessus des cartes
     BrandMark.tsx       Logo (constellation), pour la barre du haut et la page des projets
-    Toile.tsx           ReactFlow : double-clic / clic droit / bouton « + » / touche N = nouvelle carte, appui long sur une carte = la soulève (sélection + ombre), étiquette de fil
+    Toile.tsx           ReactFlow : double-clic / bouton « + » / touche N = nouvelle carte, clic droit sur le fond = menu (PaneMenu.tsx, #146), appui long sur une carte = la soulève (sélection + ombre), étiquette de fil
     CardNode.tsx        Carte : type (bouton), titre, éditeur TipTap (créé à la demande, lazyEditor.tsx), menu « Transformer en… »
     lazyEditor.tsx      Texte riche créé à la demande : StaticBody (HTML du schéma, cardStatic.ts) puis LiveBody (TipTap) au premier clic, toucher ou focus
     useStableEditor.ts  useEditor de TipTap sans reconfiguration à chaque rendu (tous les éditeurs passent par lui)

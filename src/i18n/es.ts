@@ -512,6 +512,13 @@ export const es = {
     addCard: "Tarjeta nueva",
     addCardHint: "Atajo: tecla N",
     addCardMore: "Otras tarjetas: personaje, lugar, escena, enlace, imagen, PDF…",
+    paneMenu: {
+      label: "Menú del lienzo",
+      newHere: "Tarjeta nueva aquí",
+      createType: "Crear aquí: {type}",
+      paste: "Pegar las tarjetas copiadas",
+      fit: "Verlo todo",
+    },
     newCard: {
       idee: "Una tarjeta vacía (tecla N)",
       lien: "Pega o escribe una dirección",
@@ -535,7 +542,7 @@ export const es = {
     redo: "Rehacer",
     undoHint: "Deshacer (Ctrl o Cmd + Z)",
     redoHint: "Rehacer (Ctrl o Cmd + Mayús + Z)",
-    hintMouse: "Doble clic o clic derecho para escribir",
+    hintMouse: "Doble clic para escribir, clic derecho para el menú",
     hintTouch: "Mantén pulsada una tarjeta para moverla",
     hintLink: "Tira de un hilo desde un borde",
     hintTransform: "o la etiqueta para transformar",
@@ -3668,7 +3675,7 @@ export const es = {
     steps: {
       cards: {
         title: "Suelta tus ideas sin orden",
-        body: "Doble clic, clic derecho o el botón «Tarjeta nueva»: nace una tarjeta. Mantén pulsada una tarjeta para levantarla y moverla. Escribe / al principio de una línea para convertirla en personaje, lugar, escena… Tira de un hilo de una tarjeta a otra y ponle nombre («hermana de», «transcurre en»).",
+        body: "Doble clic, el botón «Tarjeta nueva» o la tecla N: nace una tarjeta (el clic derecho también ofrece «Tarjeta nueva aquí»). Mantén pulsada una tarjeta para levantarla y moverla. Escribe / al principio de una línea para convertirla en personaje, lugar, escena… Tira de un hilo de una tarjeta a otra y ponle nombre («hermana de», «transcurre en»).",
       },
       sources: {
         title: "Ten tus fuentes a mano",

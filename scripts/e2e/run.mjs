@@ -243,6 +243,24 @@ const scenarios = [
     },
   },
   {
+    name: "clic droit sur le canevas (#146) : un menu, pas de carte ; « Créer ici : Personnage » crée la carte, Échap ferme",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare");
+      const pane = page.locator(".react-flow__pane");
+      await pane.click({ button: "right", position: { x: 300, y: 220 } });
+      const menu = page.getByRole("menu", { name: "Menu du canevas" });
+      await until(() => menu.count(), "le clic droit n'a pas ouvert de menu");
+      assert((await h.cardList()).length === 0, "le clic droit a créé une carte");
+      await page.keyboard.press("Escape");
+      await until(async () => (await menu.count()) === 0, "Échap n'a pas fermé le menu");
+      await pane.click({ button: "right", position: { x: 300, y: 220 } });
+      await menu.getByRole("menuitem", { name: "Créer ici : Personnage" }).click();
+      await until(() => page.locator(".card.type-personnage").count(), "le menu n'a pas créé de carte Personnage");
+      assert((await h.cardList()).length === 1, "une seule carte attendue");
+    },
+  },
+  {
     name: "menus ⋯ (1.11.1) : une carte part à la corbeille par son menu, la corbeille en dernier et en rouge ; Annuler la remet",
     async run(h) {
       const { page } = h;
