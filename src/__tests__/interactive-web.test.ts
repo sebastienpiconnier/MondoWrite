@@ -199,7 +199,8 @@ describe("page web d'un roman interactif", () => {
     expect(again.shown("mw-again")).toBe(true);
     again.button("mw-continue").click();
     expect(again.shown("mw-reader")).toBe(true);
-    expect(document.activeElement?.textContent).toBe("Pousser la grille");
+    expect((document.activeElement as HTMLElement).className).toBe("turn");
+    expect(document.activeElement?.querySelector(".chose")?.textContent).toBe("Pousser la grille");
     expect(again.choices()).toEqual(["Ouvrir la porte", "Repartir"]);
     again.button("mw-home-btn").click();
     expect(again.shown("mw-home")).toBe(true);
@@ -240,14 +241,21 @@ describe("page web d'un roman interactif", () => {
     expect(document.querySelector("a.skip")!.textContent).toBe("Aller à l’histoire");
   });
 
-  it("après un choix, le focus va au début du passage qui suit", () => {
+  it("après un choix, le focus va sur tout le passage qui suit, choix compris", () => {
     const page = load(storyPage(input()));
     page.button("mw-start").click();
+    // Au départ, le focus est sur le premier passage, choix compris.
+    expect((document.activeElement as HTMLElement).className).toBe("turn");
+    expect(document.activeElement!.querySelector(".choices")).not.toBeNull();
     page.choose("Rentrer");
+    // Le bloc du passage entier : le choix fait, le texte qui suit, puis les choix proposés.
     const focused = document.activeElement as HTMLElement;
-    expect(focused.className).toBe("chose");
-    expect(focused.textContent).toBe("Rentrer");
+    expect(focused.className).toBe("turn");
     expect(focused.getAttribute("tabindex")).toBe("-1");
+    expect(focused.querySelector(".chose")!.textContent).toBe("Rentrer");
+    expect([...focused.querySelectorAll("p:not(.chose)")].map((p) => p.textContent)).toEqual(["Le village dort."]);
+    expect(focused.querySelector(".choices button .label")!.textContent).toBe("Dormir");
+    expect(document.querySelectorAll("#story .turn").length).toBe(2);
   });
 
   it("donne aux images la description écrite par l'auteur", () => {

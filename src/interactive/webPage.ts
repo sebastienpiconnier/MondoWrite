@@ -123,7 +123,7 @@ button { font: inherit; font-size: 1rem; color: inherit; background: none; borde
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-size: 1.125rem; padding: 0.6em 1.6em; }
 button:disabled { opacity: 0.45; cursor: default; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-#story [tabindex="-1"]:focus { outline: none; }
+#story .turn:focus { outline: none; }
 @media (any-hover: hover) { button:not(:disabled):hover { border-color: var(--accent); } }
 .tools { display: flex; gap: 0.5em; justify-content: center; flex-wrap: wrap; margin: 0 0 2.5em; }
 #story p { margin: 0 0 0.9em; }
@@ -230,16 +230,23 @@ const PLAYER = `(function () {
     flush();
     return parent;
   };
+  // Un passage = un bloc (#126) : le choix fait, le texte et les images qui suivent, puis les choix proposés. Le
+  // focus va sur le bloc entier : un lecteur d'écran lit tout le passage, puis les choix, sans relire la page.
+  var turn = null;
+  var newTurn = function () { turn = el("div", "turn"); turn.setAttribute("tabindex", "-1"); storyEl.appendChild(turn); return turn; };
+  var into = function () { return turn || newTurn(); };
+  var clearStory = function () { storyEl.textContent = ""; turn = null; };
   var draw = function (item) {
+    if (item.k === "chose") newTurn();
     if (item.k === "img") {
       var src = has(data.images, item.v) ? data.images[item.v] : null;
       if (!src) return null;
       var f = el("figure"); var img = el("img"); img.src = src; img.alt = has(data.alts, item.v) ? String(data.alts[item.v]) : "";
-      f.appendChild(img); storyEl.appendChild(f); return f;
+      f.appendChild(img); into().appendChild(f); return f;
     }
     var p = el("p", item.k === "chose" ? "chose" : null);
     if (item.k === "chose") p.textContent = String(item.v); else rich(p, String(item.v));
-    storyEl.appendChild(p); return p;
+    into().appendChild(p); return p;
   };
   var add = function (item) { log.push(item); return draw(item); };
   var showKnown = function () {
@@ -249,13 +256,13 @@ const PLAYER = `(function () {
       if (v === true) parts.push(f.label);
       else if (typeof v === "number" && v !== 0) parts.push(data.texts.value.replace("{fact}", f.label).replace("{value}", String(v)));
     });
-    if (parts.length) storyEl.appendChild(el("p", "known", data.texts.known + " " + parts.join(", ")));
+    if (parts.length) into().appendChild(el("p", "known", data.texts.known + " " + parts.join(", ")));
   };
   var showChoices = function () {
     if (!story.currentChoices.length) {
-      storyEl.appendChild(el("p", "end", data.texts.end));
+      into().appendChild(el("p", "end", data.texts.end));
       var wrap = el("p", "end-tools"); var again = el("button", null, data.texts.restart); again.type = "button";
-      again.addEventListener("click", restart); wrap.appendChild(again); storyEl.appendChild(wrap);
+      again.addEventListener("click", restart); wrap.appendChild(again); into().appendChild(wrap);
       return;
     }
     // Liste nommée, et pour un lecteur d'écran « Choix 1 sur 3 : » avant chaque choix (#126). Le numéro visible est
@@ -270,11 +277,11 @@ const PLAYER = `(function () {
       b.addEventListener("click", function () { choose(i, c.text); });
       li.appendChild(b); list.appendChild(li);
     });
-    storyEl.appendChild(list);
+    into().appendChild(list);
   };
   var clearTail = function () { each("#story .choices, #story .known, #story .end, #story .end-tools", function (n) { n.remove(); }); };
   var redraw = function () {
-    storyEl.textContent = "";
+    clearStory();
     log.forEach(draw);
     showKnown(); showChoices();
     backBtn.disabled = steps.length === 0;
@@ -291,7 +298,7 @@ const PLAYER = `(function () {
     save();
   };
   // Le passage qui commence : un lecteur d'écran lit la suite depuis là, puis les choix (#126), sans relire la page.
-  var lastTurn = function () { var c = storyEl.querySelectorAll(".chose"); return c.length ? c[c.length - 1] : storyEl.firstElementChild; };
+  var lastTurn = function () { return turn; };
   var choose = function (i, text) {
     steps.push({ state: story.state.ToJson(), n: log.length });
     clearTail();
@@ -299,24 +306,24 @@ const PLAYER = `(function () {
     story.ChooseChoiceIndex(i);
     advance();
     chose.scrollIntoView({ block: "start", behavior: smooth() });
-    focusAt(chose);
+    focusAt(turn);
   };
   var back = function () {
     var last = steps.pop(); if (!last) return;
     story.state.LoadJson(last.state);
     log = log.slice(0, last.n);
     redraw(); save();
-    focusAt(storyEl.querySelector(".choices button"));
+    focusAt(turn);
   };
   var restart = function () {
-    forget(); steps = []; log = []; story.ResetState(); storyEl.textContent = ""; advance();
+    forget(); steps = []; log = []; story.ResetState(); clearStory(); advance();
     window.scrollTo(0, 0);
-    focusAt(storyEl.firstElementChild);
+    focusAt(turn);
   };
   backBtn.addEventListener("click", back);
   restartBtn.addEventListener("click", restart);
   // Accueil (#121) : Commencer, ou Continuer et Recommencer quand une partie est en cours.
-  startBtn.addEventListener("click", function () { showReader(); window.scrollTo(0, 0); focusAt(storyEl.firstElementChild); });
+  startBtn.addEventListener("click", function () { showReader(); window.scrollTo(0, 0); focusAt(turn); });
   continueBtn.addEventListener("click", function () {
     showReader();
     var at = lastTurn();
@@ -347,7 +354,7 @@ const PLAYER = `(function () {
       restored = true;
     } catch (e) { story.ResetState(); log = []; steps = []; }
   }
-  if (!restored) { storyEl.textContent = ""; advance(); }
+  if (!restored) { clearStory(); advance(); }
   showHome();
 })();`;
 
