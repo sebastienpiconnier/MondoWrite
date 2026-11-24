@@ -66,7 +66,10 @@ import { openNames } from "../namesState";
 import { setCaretSource } from "../resume";
 import { newId } from "../projectState";
 import { plainSection, resolveEpisode, seriesOf } from "../screenplay/series";
-import { insertionPoint, nextNumber, partLabel, renameStructure, structureOf, structureSection, type StructureKind } from "../screenplay/structure";
+import { insertionPoint, nextNumber, partLabel, renameStructure, structureMark, structureOf, structureSection, type StructureKind } from "../screenplay/structure";
+import { customizeRange, scopeAt, usedCaseKeys } from "../screenplay/structureCases";
+import { SCREENPLAY_TEMPLATES, beatOf } from "../screenplay/template";
+import { PLAN_TEMPLATES, isCustomBeat, nextCustomKey, type PlanBeat } from "../plan";
 import { toggleFoldedPart, useFoldedParts } from "../structureFold";
 import { useEpisodeLabel } from "./EpisodePicker";
 import { EpisodePicker } from "./EpisodePicker";
@@ -629,11 +632,38 @@ export function ScreenplayView() {
     const top = ed.state.doc.resolve(Math.min(from, ed.state.doc.content.size)).index(0);
     const at = insertionPoint(els, top);
     const label = kind === "act" ? sp.preserved.act : sp.preserved.seq;
-    const section = structureSection(els, at, kind, newId(), `${label} ${nextNumber(els, at, kind)}`);
+    // #148 : l'acte ou la séquence est aussi une case de la structure de l'auteur. Une structure livrée de cet
+    // épisode devient d'abord la sienne (« d'après » elle), ses cases gardent leurs scènes.
+    const st = useCosmos.getState();
+    const tp = t.plan;
+    const used = [...usedCaseKeys(st.screenplay?.elements ?? [], st.plan.scriptBeats), ...usedCaseKeys(els)];
+    const [scopeStart, scopeEnd] = scopeAt(els, at);
+    const firstBuiltIn = els.slice(scopeStart, scopeEnd).flatMap((el) => {
+      const k = el.type === "section" && !structureMark(el) ? beatOf(el.text) : null;
+      return k && !isCustomBeat(k) ? [k] : [];
+    })[0];
+    const builtIn = firstBuiltIn ? SCREENPLAY_TEMPLATES.find((tpl) => (PLAN_TEMPLATES[tpl] as readonly string[]).includes(firstBuiltIn)) : undefined;
+    const custom = customizeRange(els, scopeStart, scopeEnd, used, {
+      label: (k) => tp.beats[k as PlanBeat]?.label ?? k,
+      hint: (k) => tp.beats[k as PlanBeat]?.hint ?? "",
+      tplName: builtIn ? fmt(tp.structureFrom, { name: tp.templates[builtIn] }) : "",
+    });
+    const caseKey = nextCustomKey([...used, ...Object.keys(custom.entries)]);
+    const section = structureSection(custom.elements, at, kind, newId(), `${label} ${nextNumber(custom.elements, at, kind)}`, caseKey);
+    let tr = ed.state.tr;
+    if (custom.elements !== els) {
+      let p = 0;
+      for (let i = 0; i < ed.state.doc.childCount; i++) {
+        const node = ed.state.doc.child(i);
+        const changed = custom.elements[i];
+        if (changed !== els[i] && changed?.type === "section") tr = tr.setNodeMarkup(p, undefined, { ...node.attrs, text: changed.text });
+        p += node.nodeSize;
+      }
+    }
     let pos = 0;
-    for (let i = 0; i < at && i < ed.state.doc.childCount; i++) pos += ed.state.doc.child(i).nodeSize;
+    for (let i = 0; i < at && i < tr.doc.childCount; i++) pos += tr.doc.child(i).nodeSize;
     const node = ed.schema.nodeFromJSON(toNode(section));
-    const tr = ed.state.tr.insert(pos, node);
+    tr = tr.insert(pos, node);
     // Le curseur reste où il était (et non à la sélection que ProseMirror n'avait pas encore relue).
     if (caret !== null) {
       try {
@@ -645,6 +675,7 @@ export function ScreenplayView() {
     ed.view.dispatch(tr.scrollIntoView());
     // Tout de suite dans le store : séquencier, liste des scènes et onglet Scène la voient sans attendre.
     emit();
+    if (Object.keys(custom.entries).length > 0) useCosmos.getState().addScriptBeats(custom.entries);
     ed.view.focus();
     setAnnounce(fmt(sp.partAdded, { title: plainSection(section.text) }));
   };

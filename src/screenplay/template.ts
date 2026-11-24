@@ -22,6 +22,13 @@ export const beatOf = (text: string): string | null => BEAT_RE.exec(text)?.[1] ?
 /** Texte d'une section sans sa note de gabarit, de saison ou d'épisode (ce que l'auteur lit). */
 export const sectionLabel = (text: string): string => plainSection(text);
 
+/** Texte de la section d'une case de l'auteur : son nom, sa note, et les autres notes de la section qu'elle
+ *  remplace (acte ou séquence, #148). */
+function caseText(b: CustomBeat, old?: ScreenplayElement): string {
+  const notes = old?.type === "section" ? (old.text.match(/\[\[cosmos:(?!beat:)[^\]]*\]\]/g) ?? []) : [];
+  return [b.label, `[[cosmos:beat:${b.key}]]`, ...notes].join(" ");
+}
+
 const isBeat = (el: ScreenplayElement) => el.type === "section" && beatOf(el.text) !== null;
 
 /** Gabarit en place dans ce scénario, d'après ses sections (« perso » : un gabarit de l'auteur). */
@@ -60,7 +67,7 @@ export function customOf(elements: ScreenplayElement[], extra?: ScriptBeats): Cu
  * arrive à la fin. Sinon, comme `applyTemplate` : la première case avant la première scène, les autres à la fin.
  */
 export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from: ReadonlyMap<string, string> = new Map()): Screenplay {
-  const section = (b: CustomBeat): ScreenplayElement => ({ type: "section", depth: b.level ?? 1, text: `${b.label} [[cosmos:beat:${b.key}]]` });
+  const section = (b: CustomBeat, old?: ScreenplayElement): ScreenplayElement => ({ type: "section", depth: b.level ?? 1, text: caseText(b, old) });
   // Gabarit né d'un autre (`from` : case d'avant → case nouvelle) : chaque section devient la nouvelle sur place,
   // ses scènes restent dessous ; une case retirée perd sa section, une case ajoutée arrive à la fin.
   // Un autre gabarit de l'auteur (aucune de ses cases n'est dans le texte) remplace celui en place comme un
@@ -77,16 +84,16 @@ export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from
       const b = key ? byKey.get(key) : undefined;
       if (!b || placed.has(b.key)) return [];
       placed.add(b.key);
-      return [section(b)];
+      return [section(b, el)];
     });
-    const next = { ...screenplay, elements: [...elements, ...custom.beats.filter((b) => !placed.has(b.key)).map(section)] };
+    const next = { ...screenplay, elements: [...elements, ...custom.beats.filter((b) => !placed.has(b.key)).map((b) => section(b))] };
     // Une case ajoutée (ou une sous-case, #111) prend ensuite sa place dans l'ordre du gabarit.
     return reorderCustom(next, custom, section);
   }
   if (fresh) {
     const kept = screenplay.elements.filter((el) => !isBeat(el));
     if (custom.beats.length === 0) return { ...screenplay, elements: kept };
-    const sections = custom.beats.map(section);
+    const sections = custom.beats.map((b) => section(b));
     const first = kept.findIndex((el) => el.type === "sceneHeading" || el.type === "section");
     const at = first === -1 ? kept.length : first;
     return { ...screenplay, elements: [...kept.slice(0, at), sections[0], ...kept.slice(at), ...sections.slice(1)] };
@@ -101,7 +108,7 @@ export function applyCustom(screenplay: Screenplay, custom: CustomTemplate, from
  * une case nouvelle prend sa place dans l'ordre (#111 : une sous-case doit suivre son ensemble). Même objet si
  * rien ne change.
  */
-function reorderCustom(screenplay: Screenplay, custom: CustomTemplate, section: (b: CustomBeat) => ScreenplayElement): Screenplay {
+function reorderCustom(screenplay: Screenplay, custom: CustomTemplate, section: (b: CustomBeat, old?: ScreenplayElement) => ScreenplayElement): Screenplay {
   const elements = screenplay.elements;
   const isOwn = (el: ScreenplayElement) => el.type === "section" && isCustomBeat(beatOf(el.text) ?? "");
   const head: ScreenplayElement[] = [];
@@ -127,12 +134,14 @@ function reorderCustom(screenplay: Screenplay, custom: CustomTemplate, section: 
   }
   for (const b of custom.beats) {
     const chunk = chunks.get(b.key);
-    const next = section(b);
     if (!chunk) {
+      const next = section(b);
       out.push(next);
       continue;
     }
     const el = chunk[0] as ScreenplayElement & { type: "section" };
+    // Ses autres notes restent (acte ou séquence, #148).
+    const next = section(b, el);
     out.push(el.text === next.text && (el.depth ?? 1) === (next as typeof el).depth ? el : { ...el, text: next.text, depth: (next as typeof el).depth }, ...chunk.slice(1), ...(orphans.get(b.key) ?? []));
   }
   if (out.length === elements.length && out.every((el, i) => el === elements[i])) return screenplay;

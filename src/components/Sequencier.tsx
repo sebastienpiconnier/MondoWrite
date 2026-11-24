@@ -453,13 +453,23 @@ export function Sequencier() {
               const name = partName(part);
               const pages = pagesBetween(pagination, part.at + 1, part.end);
               const kindLabel = part.kind === "act" ? sp.preserved.act : sp.preserved.seq;
+              // #148 : un acte ou une séquence est aussi une case de la structure, et se montre comme elle.
+              const caseKey = beatOf(block.text);
+              const rank = caseKey ? rankOf(block.start) : null;
+              const kicker = rank ? fmt(part.kind === "seq" ? t.plan.seqRank : t.plan.beatRank, rank) : `${kindLabel} ${part.number}`;
               return (
-                <li key={`part-${part.key}`} className={`sq-section sq-part sq-${part.kind}${dropClass}`} data-part={part.key} {...drop}>
+                <li
+                  key={`part-${part.key}`}
+                  className={`sq-section sq-part${caseKey ? ` is-beat${inSeries ? " in-episode" : ""}${nestClass(block.start)}` : ` sq-${part.kind}`}${dropClass}`}
+                  data-part={part.key}
+                  data-beat={caseKey ?? undefined}
+                  {...drop}
+                >
                   <button type="button" className="icon-button sq-fold" aria-expanded={open} aria-label={fmt(open ? ts.fold : ts.unfold, { title: name })} onClick={() => toggleFoldedPart(part.key)}>
                     <span className={`disclosure${open ? " is-open" : ""}`} aria-hidden="true" />
                   </button>
                   <span className="sq-section-name">
-                    <span className="beat-rank">{`${kindLabel} ${part.number}`}</span>
+                    <span className="beat-rank">{kicker}</span>
                     <input
                       key={`${part.key}:${part.title}`}
                       className="sq-series-title beat-title"

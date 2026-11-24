@@ -9,7 +9,7 @@ import { fmt, useT } from "../i18n";
 import { useLifted } from "../lifted";
 import { boxes, frameBox } from "../projectState";
 import { frameDepth, frameLevel, titleBoost } from "../frameLevels";
-import { beatKeys, zoomStep } from "./FrameLabels";
+import { caseRank, zoomStep } from "./FrameLabels";
 import { beatText, type CustomTemplate } from "../plan";
 import { customOf } from "../screenplay/template";
 import type { CosmosState } from "../store";
@@ -32,8 +32,11 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   // De loin, le titre passe dans la couche des titres, au-dessus des cartes (FrameLabels) : l'en-tête le cache.
   const far = useStore((s) => titleBoost(zoomStep(s), level) > 1);
   // Case du gabarit : sa place dans la structure (« Case 3 sur 15 »), 0 si la clé n'est plus dans le gabarit.
-  const rank = useCosmos((s) => (data.beat ? beatKeys(s).indexOf(data.beat) + 1 : 0));
-  const total = useCosmos((s) => (data.beat ? beatKeys(s).length : 0));
+  // Par épisode, et « Séquence 3 sur 8 » pour une séquence (#148).
+  const caseInfo = useCosmos((s) => caseRank(s, data.beat, data.episode));
+  const rank = caseInfo?.n ?? 0;
+  const total = caseInfo?.total ?? 0;
+  const rankText = useT().plan.seqRank;
   // Ce qu'on met dans la case (aide d'un gabarit livré, ou texte écrit par l'auteur dans « Mes gabarits ») : la
   // description du cadre. Une chaîne : le cadre ne se redessine que si elle change.
   const beatsDict = useT().plan.beats as Record<string, { label: string; hint: string }>;
@@ -85,7 +88,7 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
         {/* Rang de la case, à côté du titre : l'en-tête garde la hauteur d'une ligne (les cases déjà rangées n'ont que 64 px). */}
         {rank > 0 && (
           <span className="frame-kicker" aria-hidden="true">
-            {fmt(t.beatRank, { n: rank, total })}
+            {fmt(caseInfo?.seq ? rankText : t.beatRank, { n: rank, total })}
           </span>
         )}
         {/* Verrou : « Organiser » laisse ce cadre et ses cartes à leur place ; il ne bouge plus par mégarde. */}

@@ -58,7 +58,7 @@ import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./
 import { interviewKey, isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
 import { addEntries, breakdownEntries } from "./ai/structure";
-import { EMPTY_PLAN, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
+import { EMPTY_PLAN, beatLevel, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate, type ScriptBeats } from "./plan";
 import { applyCustom, beatOf, customOf, moveToSection, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
 import { blocks } from "./screenplay/sequence";
 import { organize, reorderSlots } from "./organize";
@@ -737,6 +737,8 @@ export interface CosmosState {
   /** « Prépare… » / « Payée par… » de l'onglet Scène : le fil entre les deux scènes (tiré s'il n'existe pas, gardé
    *  avec son étiquette s'il existe) dit laquelle prépare l'autre. Une étape d'historique. */
   setSceneSetup: (setup: string, payoff: string, label?: string) => void;
+  /** Aides et nom de structure de cases nouvelles de l'auteur (#148, `plan.scriptBeats`). */
+  addScriptBeats: (entries: ScriptBeats) => void;
 
   setView: (view: View, focusId?: string | null) => void;
   /** Ouvre le projet sélectionné dans le stockage, ou démarre le projet d'exemple si l'emplacement est vide. */
@@ -1106,7 +1108,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
                   // Cases du gabarit de l'épisode (lot 3) : lues dans son texte seul.
                   const own = screenplayPlan(episodeScript(sp, ep.id).elements);
                   const keys = own.template === "libre" ? [] : templateBeats(own.template, own.custom);
-                  const beats = keys.map((key) => ({ key, label: beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, own.custom).label, scenes: own.beats[key] ?? [] }));
+                  const beats = keys.map((key) => ({ key, label: beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, own.custom).label, scenes: own.beats[key] ?? [], level: own.template === "perso" ? beatLevel(own.custom, key) : 1 }));
                   return { id: ep.id, title: ep.title, number: ep.number, scenes: byEpisode.get(ep.id) ?? [], ...(beats.length > 0 ? { beats } : {}) };
                 }),
               })),
@@ -4004,6 +4006,14 @@ export const useCosmos = create<CosmosState>((set, get) => {
           return { ...e, data };
         }),
       });
+      touch();
+    },
+
+    addScriptBeats: (entries) => {
+      const plan = get().plan;
+      const scriptBeats = { ...(plan.scriptBeats ?? {}), ...entries };
+      for (const k of Object.keys(scriptBeats)) if (Object.keys(scriptBeats[k]).length === 0) delete scriptBeats[k];
+      set({ plan: { ...plan, ...(Object.keys(scriptBeats).length > 0 ? { scriptBeats } : {}) } });
       touch();
     },
 

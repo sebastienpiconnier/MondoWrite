@@ -140,7 +140,7 @@ export const Preserved = Node.create({
     // Section d'une série ou case d'un gabarit : son libellé dit ce qu'elle est (Saison, Épisode 2, Case).
     if (kind === "section") {
       const series = seriesMark({ type: "section", text: content });
-      const role = series?.kind ?? (beatOf(content) ? "beat" : (structureMark({ type: "section", text: content })?.kind ?? null));
+      const role = series?.kind ?? structureMark({ type: "section", text: content })?.kind ?? (beatOf(content) ? "beat" : null);
       if (role) attrs["data-series"] = role;
     }
     if (ia) attrs["data-ia"] = "";

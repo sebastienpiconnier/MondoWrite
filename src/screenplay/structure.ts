@@ -22,8 +22,9 @@ export function structureMark(el: ScreenplayElement | undefined): { kind: Struct
   return m ? { kind: m[1] as StructureKind, id: m[2] } : null;
 }
 
-/** Section qui ordonne le récit sans être un acte ni une séquence : saison, épisode, case de gabarit. */
-const isFrame = (el: ScreenplayElement) => el.type === "section" && (!!seriesMark(el) || !!beatOf(el.text));
+/** Section qui ordonne le récit sans être un acte ni une séquence : saison, épisode, case d'une structure. Un
+ *  acte ou une séquence porte aussi une note de case (#148) : il reste un acte ou une séquence. */
+const isFrame = (el: ScreenplayElement) => el.type === "section" && (!!seriesMark(el) || (!!beatOf(el.text) && !MARK_RE.test(el.text)));
 
 export interface StructurePart {
   kind: StructureKind;
@@ -94,8 +95,9 @@ export function structureOf(elements: ScreenplayElement[]): StructurePart[] {
     const mark = structureMark(el);
     const kind = mark?.kind ?? guessed.get(i);
     if (!kind) {
-      // Saison, épisode ou case : les numéros repartent de 1 en dessous.
-      scope = `${i}`;
+      // Saison ou épisode : les numéros repartent de 1 en dessous (pas une case : ils courent dans tout
+      // l'épisode, #148).
+      if (seriesMark(el)) scope = `${i}`;
       open.push({ part: null, depth });
       return;
     }
@@ -130,15 +132,18 @@ export const partLabel = (part: Pick<StructurePart, "kind" | "title" | "number">
  * (épisode, case) pour un acte ; sous l'acte ouvert, sinon deux crans, pour une séquence.
  */
 export function structureDepth(elements: ScreenplayElement[], at: number, kind: StructureKind): number {
-  const stack: { depth: number; frame: boolean; act: boolean }[] = [];
+  const stack: { depth: number; frame: boolean; beat: boolean; act: boolean }[] = [];
   const guessed = classify(elements);
   elements.slice(0, at).forEach((el, i) => {
     if (el.type !== "section") return;
     const depth = el.depth ?? 1;
     while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop();
-    stack.push({ depth, frame: isFrame(el), act: (structureMark(el)?.kind ?? guessed.get(i)) === "act" });
+    stack.push({ depth, frame: isFrame(el), beat: isFrame(el) && !seriesMark(el), act: (structureMark(el)?.kind ?? guessed.get(i)) === "act" });
   });
   const base = Math.max(0, ...stack.filter((s) => s.frame).map((s) => s.depth));
+  // Dans une case d'une structure (#148) : une sous-case, un cran sous elle.
+  const innermost = [...stack].reverse().find((s) => s.frame || s.act);
+  if (innermost?.frame && innermost.beat) return base + 1;
   if (kind === "act") return base + 1;
   const act = [...stack].reverse().find((s) => s.act);
   return act ? act.depth + 1 : base + 2;
@@ -154,26 +159,27 @@ export function insertionPoint(elements: ScreenplayElement[], cursor: number): n
   return Math.max(0, Math.min(cursor, elements.length));
 }
 
-/** Section d'un acte ou d'une séquence, avec sa note et sa profondeur. */
-export function structureSection(elements: ScreenplayElement[], at: number, kind: StructureKind, id: string, title: string): ScreenplayElement {
-  return { type: "section", depth: structureDepth(elements, at, kind), text: `${title.trim()} [[cosmos:${kind}:${id}]]`.trim() };
+/** Section d'un acte ou d'une séquence, avec ses notes (case de l'auteur `caseKey`, #148) et sa profondeur. */
+export function structureSection(elements: ScreenplayElement[], at: number, kind: StructureKind, id: string, title: string, caseKey?: string): ScreenplayElement {
+  const beat = caseKey ? ` [[cosmos:beat:${caseKey}]]` : "";
+  return { type: "section", depth: structureDepth(elements, at, kind), text: `${title.trim()}${beat} [[cosmos:${kind}:${id}]]`.trim() };
 }
 
 /** Nombre de parties de cette sorte sous la même section notée que le rang `at`, plus une : numéro de la nouvelle. */
 export function nextNumber(elements: ScreenplayElement[], at: number, kind: StructureKind): number {
   const parts = structureOf(elements).filter((p) => p.kind === kind && p.at < at);
-  // Même section notée (épisode, case) : la dernière section notée avant `at`.
+  // Même épisode (#148 : les numéros courent à travers les cases) : la dernière saison ou épisode avant `at`.
   let scope = -1;
   elements.slice(0, at).forEach((el, i) => {
-    if (isFrame(el)) scope = i;
+    if (seriesMark(el)) scope = i;
   });
   return parts.filter((p) => p.at > scope).length + 1;
 }
 
 /** Ajoute un acte ou une séquence au rang `at`. */
-export function insertStructure(elements: ScreenplayElement[], at: number, kind: StructureKind, id: string, title: string): ScreenplayElement[] {
+export function insertStructure(elements: ScreenplayElement[], at: number, kind: StructureKind, id: string, title: string, caseKey?: string): ScreenplayElement[] {
   const pos = Math.max(0, Math.min(at, elements.length));
-  return [...elements.slice(0, pos), structureSection(elements, pos, kind, id, title), ...elements.slice(pos)];
+  return [...elements.slice(0, pos), structureSection(elements, pos, kind, id, title, caseKey), ...elements.slice(pos)];
 }
 
 /** Renomme la section au rang `at` en gardant ses notes. Même tableau si rien ne change. */
@@ -202,7 +208,9 @@ export function partChapters(
   elements: ScreenplayElement[],
   labels: { act: string; seq: string },
 ): { id: string; title: string; scenes: string[]; act?: { id: string; title: string } }[] {
-  const parts = structureOf(elements);
+  // Un acte ou une séquence qui est aussi une case (#148) a déjà son cadre de case : seules les sections de
+  // l'auteur sans note passent ici.
+  const parts = structureOf(elements).filter((p) => !beatOf(elements[p.at]?.type === "section" ? (elements[p.at] as { text: string }).text : ""));
   const seqs = parts.filter((p) => p.kind === "seq");
   const acts = new Map(parts.filter((p) => p.kind === "act").map((p) => [p.key, p]));
   const cards = (p: StructurePart) => p.scenes.flatMap((s) => (s.cardId ? [s.cardId] : []));

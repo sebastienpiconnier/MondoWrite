@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { useCosmos } from "../store";
 import { useT } from "../i18n";
 import { partLabel, partOfScene, structureOf } from "../screenplay/structure";
+import { caseKind } from "../screenplay/structureCases";
 import { allEpisodes, episodeOfCard, episodeScript } from "../screenplay/series";
 import { customOf, screenplayPlan } from "../screenplay/template";
 import { beatText, templateBeats } from "../plan";
@@ -33,7 +34,8 @@ export function ScenePlace({ id, compact }: { id: string; compact?: boolean }) {
     const own = episodeScript(screenplay, episode);
     const plan = screenplayPlan(own.elements);
     const custom = customOf(own.elements, scriptBeats);
-    const beats = plan.template === "libre" ? [] : templateBeats(plan.template, custom);
+    // Un acte ou une séquence est aussi une case (#148) : il a déjà sa liste plus haut.
+    const beats = plan.template === "libre" ? [] : templateBeats(plan.template, custom).filter((k) => !caseKind(own.elements, k));
     const beat = beats.find((k) => (plan.beats[k] ?? []).includes(id)) ?? "";
     return { choices, part, episodes, episode, beats, beat, custom };
   }, [kind, screenplay, id, scriptBeats]);
