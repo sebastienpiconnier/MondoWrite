@@ -44,16 +44,37 @@ Décidé le 23 novembre 2026. Les issues du lot (jalon « Lot 16 · Collaboratio
 
 ## Lot C · Projet partagé (#131)
 
-- Verrou **par scène** en plus du verrou par appareil : quand le projet est partagé, plusieurs personnes l'ouvrent en
-  écriture, et seule la scène en cours d'écriture est tenue (fichier `verrous/<appareil>.json` enrichi de la scène
-  ouverte, même battement : toujours un fichier par appareil, jamais un fichier commun).
-- Une scène tenue ailleurs s'affiche en lecture seule avec « Ouverte par Camille sur son Mac, il y a 2 min ». Le verrou
-  **prévient**, il ne garantit rien : la synchronisation met quelques secondes, et le filet reste la détection de conflit.
+- **Réservation d'une scène** (retour d'Eddy, 24 novembre 2026 : « bloquer telle scène tant qu'elle n'est pas écrite ou
+  réécrite ») : un choix de l'auteur, « Je prends cette scène » puis « Je la rends », et non un verrou posé tant que la
+  scène est ouverte. Elle dure le temps qu'il faut (plusieurs jours si besoin) et ne dépend donc pas des quelques
+  secondes de synchronisation. Fichier `reservations/<appareil>.json` (un par appareil, comme les verrous, pour éviter
+  les copies en conflit ; à ajouter à `PROJECT_DIRS`, jamais relu comme texte) : identifiants des scènes, nom, date.
+  Deux réservations de la même scène : la plus ancienne l'emporte, l'autre auteur est prévenu.
+- Une scène réservée par quelqu'un d'autre s'affiche en lecture seule avec « Réservée par Camille depuis mardi ».
+  On peut quand même la lui « reprendre » après confirmation (coauteur absent) ; le filet reste la détection de conflit.
+- Le verrou par appareil existant (projet ouvert ailleurs) est assoupli quand le projet est partagé : plusieurs
+  personnes l'ouvrent en écriture, seules les scènes réservées sont tenues.
 - Journal des contributions : chaque enregistrement d'une scène note qui l'a changée (ligne ajoutée à `journal.md`,
   sur le modèle de `ia-journal.md`, seulement ajouté). Affichage « Modifiée par… » dans la liste des scènes.
 - « Ce projet est partagé » : réglage du projet (`shared: true` dans `cosmos.json`), qui allume tout cela.
 - Les cartes et `cosmos.json` restent sous le verrou du projet pour les changements de structure (canevas, plan) :
   à étudier pendant le lot, peut-être un verrou « structure » à part.
+
+## Lot F · Voir les changements des coauteurs (#135)
+
+Le besoin le plus important pour Eddy (24 novembre 2026) : « voir ce que l'autre a changé, et pouvoir l'accepter ou le
+refuser ». Relecture **après coup**, scène par scène, et non un mode suggestion pendant la frappe : plus simple à
+construire et plus facile à comprendre. Repose sur les versions des scènes (`versions/<id>/`) et `textDiff.ts`.
+
+- Avant d'enregistrer pour la première fois, dans une séance, une scène qu'un autre auteur a écrite en dernier,
+  MondoWrite garde la version d'avant (en-tête de la version : `author`, nom de l'auteur du texte remplacé).
+- « Dernière visite » retenue sur l'appareil, jamais dans le projet : pour chaque scène, l'empreinte du texte vu.
+- À l'ouverture du projet : « Camille a modifié 3 scènes depuis ta dernière visite », puis une liste (Manuscrit et
+  Scénario). Chaque scène montre les changements en barré et souligné (comme la comparaison des versions).
+- « Accepter » (la scène est marquée vue) ou « Revenir à ma version » (`restoreVersion`, qui garde d'abord le texte
+  actuel comme version : rien n'est perdu) ; « Tout accepter ».
+- Les changements de structure (cartes, plan, canevas) ne se refusent pas : ils sont seulement listés, d'après le
+  journal des contributions.
 
 ## Lot D · Services de synchronisation (#132)
 
@@ -77,10 +98,12 @@ Décidé le 23 novembre 2026. Les issues du lot (jalon « Lot 16 · Collaboratio
 
 ## Ordre
 
-#128, puis #130 (utile seul : faire relire), puis #131 et #132 ensemble (coécriture), puis #129.
+#128, puis #130 (utile seul : faire relire), puis #131, #132 et #135 ensemble (coécriture), puis #129.
 
 ## Hors du lot (écarté)
 
-- Édition simultanée en temps réel, curseurs des autres, serveur MondoWrite.
+- Édition simultanée en temps réel, curseurs des autres, serveur MondoWrite (étudiés le 24 novembre 2026 : il faudrait
+  refaire le cœur de l'app, store, annulation et scénario, autour d'un document partagé, et traverser les box à distance.
+  Eddy confirme que deux personnes dans la même scène au même moment est très rare : écarté).
 - Connexion aux API des services, comptes MondoWrite.
 - Droits fins par personne (le partage du dossier, chez le service, fait foi).

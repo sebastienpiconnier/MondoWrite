@@ -31,6 +31,6 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
 4. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`),
    import de la logique de Twine (#96) dans la 1.41.0
 5. Lot 14 · Relire sa structure / Reviewing your structure : #117 à #120 faits (à publier)
-6. Lot 16 · Collaboration / Collaboration : #128 identité, #130 mode Relecteur, #131 projet partagé et #132 services de
+6. Lot 16 · Collaboration / Collaboration : #128 identité, #130 mode Relecteur, #131 projet partagé, #135 changements des coauteurs et #132 services de
    synchronisation ensemble, puis #129 iPhone et iPad (`docs/plan-collaboration.md`)
 7. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
