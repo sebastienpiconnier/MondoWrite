@@ -207,7 +207,10 @@ export function ExportMenu() {
       throw err;
     }
   };
-  const webItem = { key: "ms-web", label: all.interactive.web.menu, build: webFile };
+  // #122 : sur ordinateur et tablette, la fenêtre du thème ; sur téléphone, la page aux réglages gardés.
+  const webItem = phone
+    ? { key: "ms-web", label: all.interactive.web.menu, build: webFile }
+    : { key: "ms-web", label: all.interactive.web.menuDialog, open: () => useCosmos.getState().setDialog("webPage") };
   // Lot 8 : le livre-jeu, sections mélangées et numérotées.
   // Le livre-jeu imprimé passe par le livre broché (même typographie, formats KDP) : ici, l'EPUB seulement.
   const gamebookItems = (["epub"] as const).map((f) => ({

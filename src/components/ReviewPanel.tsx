@@ -110,7 +110,10 @@ export function ReviewPanel({ findings, kind, where, onGo, onAiScene }: Props) {
       case "lockedScene":
       case "implicitEnd":
       case "hiddenNotPlayable":
+      case "imageNoAlt":
         return fmt(t.items.verifyScene, { scene: f.text });
+      case "manyChoices":
+        return fmt(t.items.manyChoices, { scene: f.text, n: f.names?.[0] ?? "" });
       case "sectionGap":
         return fmt(t.items.sectionGap, { n: f.names?.[0] ?? "" });
       case "factNeverGiven":

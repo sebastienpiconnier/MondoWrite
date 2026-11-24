@@ -48,6 +48,7 @@ import { bibleOrder } from "./bibleParts";
 import { importExtensions, importFromFile } from "./import";
 import type { ScrivenerReport, ScrivenerSource } from "./import/scrivener/mapping";
 import type { StoryReport } from "./interactive/storyImport";
+import { withWebPage, type WebPageOptions } from "./interactive/webThemes";
 import { CARD_SIZE, firstFreeCell, placeCard, placeFrame, type Occupied } from "./placement";
 import { clampCardWidth, documentExtension, imageExtension, isDocumentName, isMediaName } from "./media";
 import { documentFiche, documentTitle } from "./documents";
@@ -177,6 +178,8 @@ export interface CosmosState {
   createFact: (label: string) => string | null;
   /** Libellé d'un fait (gardé dans `storyFacts` de cosmos.json, hors historique) ; null l'oublie. */
   setFactLabel: (name: string, label: string | null) => void;
+  /** Thème et CSS de la page web jouable (#122), gardés dans `webPage` de cosmos.json. */
+  setWebPage: (patch: Partial<WebPageOptions>) => void;
   /** Roman interactif, lot 12 : numéros des sections gardés dans cosmos.json (hors historique). */
   /** Enchaînements à relire (#120) : retient sans les faire relire ceux des scènes nouvelles (et l'ordre du moment au premier passage). */
   syncJunctions: () => void;
@@ -330,8 +333,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -2802,6 +2805,13 @@ export const useCosmos = create<CosmosState>((set, get) => {
         touch();
       }
       return neighbours;
+    },
+    setWebPage: (patch) => {
+      const metaKeep = get().metaKeep;
+      const next = withWebPage(metaKeep, patch);
+      if (next === metaKeep) return;
+      set({ metaKeep: next });
+      touch();
     },
     setFactLabel: (name, label) => {
       if (!isFactName(name)) return;

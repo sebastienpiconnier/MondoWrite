@@ -29,14 +29,30 @@ export function escapeInk(text: string): string {
   return out;
 }
 
-const blockText = (b: Block): string =>
-  b.kind === "image"
-    ? ""
-    : b.runs
-        .map((r) => r.text)
-        .join("")
-        .replace(/\s+/g, " ")
-        .trim();
+/**
+ * Marques du gras et de l'italique dans le texte compilé pour la page web (#122) : des caractères d'usage privé,
+ * que le texte de l'auteur ne contient pas et qu'Ink laisse passer. Seule la page web les demande et les lit ;
+ * l'export Ink et « Lire l'histoire » ne les reçoivent jamais.
+ */
+export const MARKS = { boldOpen: "\uE000", boldClose: "\uE001", italicOpen: "\uE002", italicClose: "\uE003" } as const;
+const MARK_RE = /[\uE000-\uE003]/g;
+
+const blockText = (b: Block, marks = false): string => {
+  if (b.kind === "image") return "";
+  const text = b.runs
+    .map((r) => {
+      const plain = r.text.replace(MARK_RE, "");
+      if (!marks || !plain.trim()) return plain;
+      let out = plain;
+      if (r.italic) out = `${MARKS.italicOpen}${out}${MARKS.italicClose}`;
+      if (r.bold) out = `${MARKS.boldOpen}${out}${MARKS.boldClose}`;
+      return out;
+    })
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text;
+};
 
 export interface InkLine {
   /** Scène d'où vient la ligne (rien pour la ligne de départ). */
@@ -62,6 +78,8 @@ export function projectToInk(
   factLabels: Readonly<Record<string, string>> = {},
   /** Texte d'un choix laissé vide : Ink cacherait un choix sans texte (choix de repli). */
   emptyLabel = "…",
+  /** Page web (#122) : garder le gras et l'italique, en marques `MARKS`. */
+  options: { marks?: boolean } = {},
 ): InkSource {
   const out: string[] = [];
   const lines: InkLine[] = [];
@@ -82,7 +100,7 @@ export function projectToInk(
     for (const b of htmlToBlocks(manuscript[s.id])) {
       if (b.kind === "image") push(`# ${IMAGE_TAG} ${b.name}`, s.id);
       else {
-        const text = blockText(b);
+        const text = blockText(b, options.marks);
         if (text) push(escapeInk(text), s.id);
       }
     }

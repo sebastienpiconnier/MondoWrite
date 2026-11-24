@@ -1,7 +1,7 @@
 // Roman interactif, lot 7 : fabrique la page web jouable du projet ouvert. Le compilateur, le moteur recopié
 // dans la page et les images ne sont chargés qu'ici, à l'export.
 
-import { getT } from "../i18n";
+import { fmt, getT } from "../i18n";
 import { fileName, type ExportedFile } from "../screenplay/export";
 import { storage } from "../storage";
 import { useCosmos } from "../store";
@@ -11,6 +11,8 @@ import { projectFacts } from "./projectFacts";
 import { inkProblems, projectToInk, type InkProblem } from "./ink";
 import { interactiveScenes, interactiveSlugs } from "./scenes";
 import { storyImageNames, storyPage } from "./webPage";
+import { readWebPage } from "./webThemes";
+import { imageAlts } from "./imageAlts";
 
 /** L'histoire ne se compile pas (les points sont ceux de « Lire l'histoire »). */
 export class StoryCompileError extends Error {
@@ -28,10 +30,11 @@ const toBase64 = (bytes: Uint8Array) => {
 /** La page web de l'histoire, ou null s'il n'y a pas encore de scène. */
 export async function storyWebFile(title: string, author: string): Promise<ExportedFile | null> {
   const t = getT();
-  const { nodes, plan, manuscript, metaKeep } = useCosmos.getState();
+  const { nodes, plan, manuscript, metaKeep, pitch } = useCosmos.getState();
   const scenes = interactiveScenes(nodes, plan);
   if (scenes.length === 0) return null;
-  const source = projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript, readFactLabels(metaKeep), t.interactive.map.defaultLabel);
+  // Gras et italique gardés en marques (#122), lues par le lecteur de la page.
+  const source = projectToInk(scenes, interactiveSlugs(nodes, plan), manuscript, readFactLabels(metaKeep), t.interactive.map.defaultLabel, { marks: true });
   const [{ Compiler }, runtime, license] = await Promise.all([
     import("inkjs/full"),
     // Fichiers d'inkjs tels que publiés, lus en texte. Chemin relatif et non nom de paquet : le préchargement
@@ -49,25 +52,41 @@ export async function storyWebFile(title: string, author: string): Promise<Expor
   if (!storyJson) throw new StoryCompileError(inkProblems(compiler.errors.length ? compiler.errors : [t.interactive.play.failed], source));
 
   const names = storyImageNames(source);
+  // Couverture du projet (#121) : en tête de l'accueil de la page.
+  const cover = pitch.visuel;
   const images: Record<string, string> = {};
-  if (names.length) {
-    const loaded = await (await import("../export/images")).loadImages(names, (n) => storage.mediaUrl(n));
-    for (const [name, img] of Object.entries(loaded)) images[name] = `data:image/jpeg;base64,${toBase64(img.data)}`;
+  let coverSrc: string | undefined;
+  if (names.length || cover) {
+    const loaded = await (await import("../export/images")).loadImages([...names, ...(cover ? [cover] : [])], (n) => storage.mediaUrl(n));
+    for (const [name, img] of Object.entries(loaded)) {
+      const src = `data:image/jpeg;base64,${toBase64(img.data)}`;
+      if (names.includes(name)) images[name] = src;
+      if (name === cover) coverSrc = src;
+    }
   }
+  // Description de chaque image, telle que l'auteur l'a écrite dans le texte (#126).
+  const alts = Object.fromEntries(Object.entries(imageAlts(scenes, manuscript)).filter(([name]) => names.includes(name)));
 
   const { lang } = useSettings.getState();
   const facts = projectFacts(useCosmos.getState()).map((f) => ({ name: f.name, label: f.label }));
   const p = t.interactive.play;
   const w = t.interactive.web;
+  const options = readWebPage(metaKeep);
+  const shownTitle = title.trim() || w.untitled;
   const html = storyPage({
-    title: title.trim() || w.untitled,
+    title: shownTitle,
     author: author.trim() || undefined,
+    tagline: pitch.tagline?.trim() || undefined,
+    cover: coverSrc ? { src: coverSrc, alt: fmt(w.coverAlt, { title: shownTitle }) } : undefined,
     lang,
     storyJson,
     runtime,
     runtimeLicense: license,
     images,
+    alts,
     facts,
+    theme: options.theme,
+    customCss: options.css,
     texts: {
       restart: p.restart,
       back: p.back,
@@ -77,6 +96,22 @@ export async function storyWebFile(title: string, author: string): Promise<Expor
       noScript: w.noScript,
       failed: w.failed,
       madeWith: w.madeWith,
+      start: w.start,
+      continue: w.continue,
+      home: w.home,
+      skip: w.skip,
+      choices: w.choices,
+      choiceOf: w.choiceOf,
+      image: w.image,
+      display: w.display,
+      theme: w.theme,
+      modeAuto: w.modeAuto,
+      modeLight: w.modeLight,
+      modeDark: w.modeDark,
+      textSize: w.textSize,
+      sizeSmall: w.sizeSmall,
+      sizeMedium: w.sizeMedium,
+      sizeLarge: w.sizeLarge,
     },
   });
   return { name: `${fileName(title, "mondowrite")}.html`, extension: "html", mime: "text/html", data: new TextEncoder().encode(html) };

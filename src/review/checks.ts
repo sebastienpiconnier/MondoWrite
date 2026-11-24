@@ -34,6 +34,8 @@ export const INTERACTIVE_RULES: readonly RuleKey[] = [
   "hiddenUnlocked",
   "hiddenNotPlayable",
   "sameSpread",
+  "imageNoAlt",
+  "manyChoices",
 ];
 
 /** Questions sur l'histoire (lot 6 de la Bible v2) : posées au projet, pas à un passage ; « C'est voulu » les écarte. */

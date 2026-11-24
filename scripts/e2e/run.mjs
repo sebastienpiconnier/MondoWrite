@@ -2980,15 +2980,31 @@ const scenarios = [
         const file = await download;
         return { name: file.suggestedFilename(), data: fs.readFileSync(await file.path()) };
       };
-      const web = await exportFile("Page web jouable (.html)");
+      // #122 : la page web passe par sa fenêtre, où le thème se choisit et reste dans le projet.
+      await page.getByRole("button", { name: "Exporter", exact: true }).click();
+      await page.locator(".export-panel").getByRole("button", { name: "Page web jouable (.html)…" }).click();
+      await page.locator(".wpage").getByText("Noir", { exact: true }).click();
+      await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").webPage?.theme === "noir", "le thème de la page web n'est pas gardé dans le projet");
+      const webDownload = page.waitForEvent("download", { timeout: 30_000 });
+      await page.getByRole("button", { name: "Enregistrer la page" }).click();
+      const webFile = await webDownload;
+      const web = { name: webFile.suggestedFilename(), data: fs.readFileSync(await webFile.path()) };
+      await page.keyboard.press("Escape");
       assert(web.name.endsWith(".html"), `nom de la page web : ${web.name}`);
+      assert(web.data.includes("--paper: #f0f0ee;"), "la page web n'a pas le thème Noir");
       const reader = await page.context().newPage();
       await reader.route("http://127.0.0.1:9/puits.html", (r) => r.fulfill({ body: web.data, contentType: "text/html; charset=utf-8" }));
       await reader.goto("http://127.0.0.1:9/puits.html");
+      // #121 : l'accueil d'abord, puis l'histoire.
+      await until(() => reader.getByRole("heading", { name: "Le Puits" }).isVisible(), "la page web ne s'ouvre pas sur son accueil");
+      await reader.getByRole("button", { name: "Commencer" }).click();
       await until(() => reader.getByText("Il fait nuit dans la cour.").isVisible(), "la page web ne montre pas la première scène");
+      // #126 : tout au clavier ; le choix est annoncé avec son rang.
+      await until(async () => /^Choix 1 sur \d+\u00a0: /.test((await reader.locator("#story .choices .sr").first().textContent()) ?? ""), "les choix n'ont pas leur rang pour les lecteurs d'écran");
       await reader.getByRole("button", { name: /Descendre au puits/ }).click();
       await until(() => reader.getByText("L’eau est noire.").isVisible(), "dans la page web, le choix ne mène pas au puits");
       await reader.reload();
+      await reader.getByRole("button", { name: "Continuer" }).click();
       await until(() => reader.getByText("L’eau est noire.").isVisible(), "après rechargement, la page web n'a pas gardé la lecture");
       await reader.close();
       const epub = await exportFile("Livre-jeu (EPUB)");
