@@ -327,7 +327,7 @@ export const useSettings = create<SettingsState>((set) => ({
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   ribbonPov: saved.ribbonPov === true,
   setRibbonPov: (ribbonPov) => set({ ribbonPov }),
-  plotColors: saved.plotColors === true,
+  plotColors: saved.plotColors !== false,
   setPlotColors: (plotColors) => set({ plotColors }),
   learned: readLearned(saved.learned),
   learn: (hint) => set((s) => (s.learned.includes(hint) ? s : { learned: [...s.learned, hint] })),
