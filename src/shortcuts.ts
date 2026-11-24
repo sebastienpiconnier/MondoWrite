@@ -55,6 +55,7 @@ export const SHORTCUT_GROUPS = {
     ["focusHighlight", ["Mod", "Shift", "E"]],
     ["chutier", ["Mod", "Shift", "K"]],
     ["moveScene", ["Alt", "↑ ↓"]],
+    ["moveLines", ["Alt", "Shift", "↑ ↓"]],
     ["findNext", ["F3"]],
     ["findPrev", ["Shift", "F3"]],
     ["keepVersion", ["Mod", "Alt", "S"]],
@@ -67,6 +68,7 @@ export const SHORTCUT_GROUPS = {
     ["nextElement", ["Entrée"]],
     ["elementBar", ["Échap"]],
     ["moveScene", ["Alt", "↑ ↓"]],
+    ["moveLines", ["Alt", "Shift", "↑ ↓"]],
   ],
 } as const;
 

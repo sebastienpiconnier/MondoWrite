@@ -2733,6 +2733,7 @@ export const fr = {
       nextElement: "Élément suivant",
       elementBar: "Barre des éléments",
       moveScene: "Déplacer la scène (liste des scènes)",
+      moveLines: "Monter ou descendre le paragraphe, la sélection ou la réplique",
     },
   },
   // Aide en ligne et menu de l'app sur Mac (barre des menus du système).

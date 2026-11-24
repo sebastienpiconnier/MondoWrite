@@ -475,6 +475,25 @@ const scenarios = [
     },
   },
   {
+    name: "déplacer des lignes (#145) : Alt Maj ↑ monte le paragraphe du Manuscrit, enregistré dans le nouvel ordre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Lignes");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Premier.");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Second.");
+      await page.keyboard.press("Alt+Shift+ArrowUp");
+      await page.keyboard.type(" Monté.");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && /Second\. Monté\.\s+Premier\./.test(v)), "le paragraphe n'est pas monté avec le curseur");
+    },
+  },
+  {
     name: "image dans le texte (#87) : insérée par le ⋯ du Manuscrit, enregistrée en Markdown, sa description et sa place modifiables",
     async run(h) {
       const { page } = h;

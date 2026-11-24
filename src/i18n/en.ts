@@ -2772,6 +2772,7 @@ export const en: Messages = {
       nextElement: "Next element",
       elementBar: "Element bar",
       moveScene: "Move the scene (scene list)",
+      moveLines: "Move the paragraph, selection or line of dialogue up or down",
     },
   },
   help: {

@@ -9,6 +9,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Autodetect } from "./autodetect";
 import { ScreenplayKeymap } from "./keymap";
+import { MoveBlocks, SCREENPLAY_MOVE } from "../../components/moveBlocks";
 import { Pages, type PagesOptions } from "./pages";
 import { Continued, type ContinuedOptions } from "./continued";
 import { Revisions } from "./revisions";
@@ -85,6 +86,8 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
       placeholder: ({ node }) => (isEditableType(node.type.name) ? options.placeholder(node.type.name) : ""),
     }),
     ScreenplayKeymap.configure({ onEscape: options.onEscape }),
+    // Alt Maj ↑ ↓ : la ligne ou la réplique entière monte ou descend (#145).
+    MoveBlocks.configure({ rules: SCREENPLAY_MOVE }),
     // Synonymes (#16) : dans les actions et les répliques, pas dans les noms ni les en-têtes.
     Synonyms.configure({ allow: (type) => type === "action" || type === "dialogue" }),
     Autodetect.configure({ locale: options.locale }),

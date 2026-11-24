@@ -17,6 +17,7 @@ import { MentionNode } from "./MentionNode";
 import { FormatBar } from "./FormatBar";
 import { FocusWriting, focusKey } from "./focusWriting";
 import { BookKeys, BookUndo, BookStructure, SceneMark, type BookHandlers } from "./bookExtensions";
+import { BOOK_MOVE, MoveBlocks } from "./moveBlocks";
 import { Pages } from "../screenplay/editor/pages";
 import { ReadingMark } from "./readingMark";
 import { SCENE_MARK, bookBlocks, changedRange, composeBook, sceneAt, sceneGroups, structureSignature } from "../bookDoc";
@@ -223,6 +224,8 @@ export function BookEditor({
       }),
       BookUndo,
       BookKeys.configure({ handlers: () => handlers.current }),
+      // Alt Maj ↑ ↓ : le paragraphe (ou la sélection) monte ou descend, et peut passer dans la scène voisine (#145).
+      MoveBlocks.configure({ rules: BOOK_MOVE }),
       ThreadFoldExtension.configure({ start: (node) => (node.type.name === SCENE_MARK ? String(node.attrs.id) : undefined) }),
       // Mode focus : la phrase ou le paragraphe en cours en pleine encre, le reste estompé.
       FocusWriting.configure({ mode: () => (useCosmos.getState().focusMode ? useSettings.getState().writing.highlight : "off") }),
