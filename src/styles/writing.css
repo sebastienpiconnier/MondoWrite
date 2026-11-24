@@ -1650,6 +1650,10 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .setup-letter { display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; padding: 0 0.2em; border-radius: 999px; background: var(--setup); color: var(--surface); font: 700 0.6875rem var(--font-ui); }
 
 /* Fenêtre « Page web jouable » (WebPagePanel, #122) : thèmes en liste, CSS personnalisé replié. */
+.wpage-choice { align-items: flex-start; }
+.wpage-choice input { flex: none; margin-top: 2px; }
+.wpage-choice .spdf-hint { display: block; }
+.wpage-quality { display: flex; flex-wrap: wrap; gap: 4px 20px; }
 .wpage-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
 .wpage-theme { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 12px; cursor: pointer; }
 .wpage-theme.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }

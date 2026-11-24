@@ -36,7 +36,16 @@ describe("thèmes de la page web", () => {
   it("relit les réglages du projet, Classique par défaut", () => {
     expect(readWebPage({})).toEqual(DEFAULT_WEB_PAGE);
     expect(readWebPage({ webPage: { theme: "inconnu", css: 3 } })).toEqual(DEFAULT_WEB_PAGE);
-    expect(readWebPage({ webPage: { theme: "noir", css: "h1 { color: red }" } })).toEqual({ theme: "noir", css: "h1 { color: red }" });
+    expect(readWebPage({ webPage: { theme: "noir", css: "h1 { color: red }" } })).toEqual({ ...DEFAULT_WEB_PAGE, theme: "noir", css: "h1 { color: red }" });
+    // Retour au choix précédent, qualité des images et forme (#124, #125) : une valeur inconnue redevient le défaut.
+    expect(readWebPage({ webPage: { back: false, quality: "high", format: "zip" } })).toEqual({ ...DEFAULT_WEB_PAGE, back: false, quality: "high", format: "zip" });
+    expect(readWebPage({ webPage: { back: "non", quality: "max", format: "pdf" } })).toEqual(DEFAULT_WEB_PAGE);
+  });
+
+  it("n'écrit que ce qui s'écarte du défaut pour la qualité, la forme et le retour", () => {
+    const meta = withWebPage({}, { back: false, quality: "light", format: "zip" });
+    expect(meta).toEqual({ [WEB_PAGE_KEY]: { back: false, quality: "light", format: "zip" } });
+    expect(withWebPage(meta, { back: true, quality: "standard", format: "html" })).toEqual({});
   });
 
   it("n'écrit la clé que si un réglage s'écarte du défaut, et garde les clés d'une version future", () => {
