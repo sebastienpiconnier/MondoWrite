@@ -7,10 +7,12 @@ export interface SidePrefs {
   order: string[];
   hidden: string[];
   folded: string[];
+  /** Rubriques masquées d'office que l'auteur a choisi de montrer. */
+  shown: string[];
 }
 
 export const SIDE_PANEL_KEY = "mondowrite.sidePanel";
-export const EMPTY_SIDE_PREFS: SidePrefs = { order: [], hidden: [], folded: [] };
+export const EMPTY_SIDE_PREFS: SidePrefs = { order: [], hidden: [], folded: [], shown: [] };
 const KEY_RE = /^[a-z][a-z0-9-]{0,30}$/;
 
 const keys = (raw: unknown): string[] =>
@@ -20,7 +22,7 @@ const keys = (raw: unknown): string[] =>
 export function readSidePrefs(raw: unknown): SidePrefs {
   if (!raw || typeof raw !== "object") return EMPTY_SIDE_PREFS;
   const o = raw as Record<string, unknown>;
-  return { order: keys(o.order), hidden: keys(o.hidden), folded: keys(o.folded) };
+  return { order: keys(o.order), hidden: keys(o.hidden), folded: keys(o.folded), shown: keys(o.shown) };
 }
 
 /**
@@ -52,13 +54,21 @@ export function moveSidePart(prefs: SidePrefs, defaults: string[], key: string, 
 
 const toggle = (list: string[], key: string, on: boolean) => (on ? (list.includes(key) ? list : [...list, key]) : list.filter((k) => k !== key));
 
-export const setSideHidden = (prefs: SidePrefs, key: string, hidden: boolean): SidePrefs => ({ ...prefs, hidden: toggle(prefs.hidden, key, hidden) });
+/** Masquée : par l'auteur, ou d'office (`byDefault`) tant qu'il ne l'a pas montrée. */
+export const isSideHidden = (prefs: SidePrefs, key: string, byDefault = false): boolean =>
+  prefs.hidden.includes(key) || (byDefault && !prefs.shown.includes(key));
+export const setSideHidden = (prefs: SidePrefs, key: string, hidden: boolean): SidePrefs => ({
+  ...prefs,
+  hidden: toggle(prefs.hidden, key, hidden),
+  shown: toggle(prefs.shown, key, !hidden),
+});
 export const setSideFolded = (prefs: SidePrefs, key: string, folded: boolean): SidePrefs => ({ ...prefs, folded: toggle(prefs.folded, key, folded) });
 /** Retour à l'ordre et à l'affichage par défaut de cette vue (les rubriques repliées le restent). */
 export const resetSideParts = (prefs: SidePrefs, defaults: string[]): SidePrefs => ({
   ...prefs,
   order: prefs.order.filter((k) => !defaults.includes(k)),
   hidden: prefs.hidden.filter((k) => !defaults.includes(k)),
+  shown: prefs.shown.filter((k) => !defaults.includes(k)),
 });
 
 export function loadSidePrefs(): SidePrefs {

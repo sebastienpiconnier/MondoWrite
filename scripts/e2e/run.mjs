@@ -1395,6 +1395,10 @@ const scenarios = [
       await h.wait(500);
       await page.locator(".sp-editor [data-el=action]").nth(1).click();
       await until(async () => /QUAI/.test(await page.locator(".sp-side").first().innerText().catch(() => "")), "l'onglet Scène ne montre pas la scène du quai");
+      // « Place de la scène » est masquée d'office (lot 17 ter) : on la montre par « Personnaliser le volet ».
+      await page.locator(".sp-side .side-parts-customize").click();
+      await page.locator(".side-parts-list label", { hasText: "Place de la scène" }).locator("input").check();
+      await page.locator(".sp-side").getByRole("button", { name: "Terminé" }).click();
       const select = page.locator(".scene-place select").first();
       await select.waitFor();
       await select.selectOption({ label: "Séquence 1" });

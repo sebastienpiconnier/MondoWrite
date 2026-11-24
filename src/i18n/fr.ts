@@ -3284,7 +3284,7 @@ export const fr = {
   },
   sidePanel: {
     customize: "Personnaliser le volet",
-    customizeHidden: "Personnaliser le volet ({n} masquées)",
+    customizeHidden: "Personnaliser le volet (masquées : {n})",
     up: "Monter",
     down: "Descendre",
     reset: "Ordre par défaut",

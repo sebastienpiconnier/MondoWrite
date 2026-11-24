@@ -9,6 +9,7 @@ import {
   saveSidePrefs,
   setSideFolded,
   setSideHidden,
+  isSideHidden,
   type SidePrefs,
 } from "../sidePanel";
 
@@ -28,6 +29,8 @@ export interface SidePart {
   node: ReactNode;
   /** La rubrique se replie déjà elle-même (chutier, statistiques) : pas d'en-tête en plus. */
   ownFold?: boolean;
+  /** Masquée tant que l'auteur ne la montre pas (« Personnaliser le volet »). */
+  hiddenByDefault?: boolean;
 }
 
 /**
@@ -42,7 +45,9 @@ export function SideParts({ parts }: { parts: SidePart[] }) {
   const defaults = parts.map((p) => p.key);
   const byKey = new Map(parts.map((p) => [p.key, p]));
   const order = orderParts(defaults, prefs);
-  const shown = order.filter((k) => !prefs.hidden.includes(k));
+  const hiddenKey = (k: string) => isSideHidden(prefs, k, byKey.get(k)?.hiddenByDefault);
+  const shown = order.filter((k) => !hiddenKey(k));
+  const hiddenCount = order.filter(hiddenKey).length;
 
   return (
     <>
@@ -68,7 +73,7 @@ export function SideParts({ parts }: { parts: SidePart[] }) {
           <ul className="side-parts-list">
             {order.map((key, i) => {
               const part = byKey.get(key)!;
-              const hidden = prefs.hidden.includes(key);
+              const hidden = hiddenKey(key);
               return (
                 <li key={key}>
                   <label>
@@ -96,7 +101,7 @@ export function SideParts({ parts }: { parts: SidePart[] }) {
         </section>
       ) : (
         <button type="button" className="link-button side-parts-customize" onClick={() => setEditing(true)}>
-          {prefs.hidden.some((k) => defaults.includes(k)) ? fmt(t.customizeHidden, { n: prefs.hidden.filter((k) => defaults.includes(k)).length }) : t.customize}
+          {hiddenCount > 0 ? fmt(t.customizeHidden, { n: hiddenCount }) : t.customize}
         </button>
       )}
     </>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_SIDE_PREFS, moveSidePart, orderParts, readSidePrefs, resetSideParts, setSideHidden } from "../sidePanel";
+import { EMPTY_SIDE_PREFS, isSideHidden, moveSidePart, orderParts, readSidePrefs, resetSideParts, setSideHidden } from "../sidePanel";
 
 const D = ["props", "setups", "links", "cited", "synopsis", "chutier", "stats"];
 
@@ -18,9 +18,15 @@ describe("volet de droite", () => {
     const p = { ...EMPTY_SIDE_PREFS, order: ["synopsis", "props", "cited"] };
     expect(orderParts(D, p)).toEqual(["synopsis", "props", "setups", "links", "cited", "chutier", "stats"]);
   });
+  it("masque d'office une rubrique tant que l'auteur ne la montre pas", () => {
+    expect(isSideHidden(EMPTY_SIDE_PREFS, "place", true)).toBe(true);
+    const p = setSideHidden(EMPTY_SIDE_PREFS, "place", false);
+    expect(isSideHidden(p, "place", true)).toBe(false);
+    expect(isSideHidden(setSideHidden(p, "place", true), "place", true)).toBe(true);
+  });
   it("relit prudemment et rétablit l'ordre", () => {
-    expect(readSidePrefs({ order: ["a", 3, "../x", "a"], hidden: "x" })).toEqual({ order: ["a"], hidden: [], folded: [] });
+    expect(readSidePrefs({ order: ["a", 3, "../x", "a"], hidden: "x" })).toEqual({ order: ["a"], hidden: [], folded: [], shown: [] });
     const p = setSideHidden({ ...EMPTY_SIDE_PREFS, order: ["stats", "scene"] }, "stats", true);
-    expect(resetSideParts(p, D)).toEqual({ order: ["scene"], hidden: [], folded: [] });
+    expect(resetSideParts(p, D)).toEqual({ order: ["scene"], hidden: [], folded: [], shown: [] });
   });
 });

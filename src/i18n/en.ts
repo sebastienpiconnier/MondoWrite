@@ -3226,7 +3226,7 @@ export const en: Messages = {
   },
   sidePanel: {
     customize: "Customize this panel",
-    customizeHidden: "Customize this panel ({n} hidden)",
+    customizeHidden: "Customize this panel (hidden: {n})",
     up: "Move up",
     down: "Move down",
     reset: "Default order",

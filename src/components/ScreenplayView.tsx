@@ -1889,7 +1889,7 @@ export function ScreenplayView() {
             ) });
             parts.push({ key: "setups", title: P.setups, node: <SceneSetupsBox id={card?.id} /> });
             if (card) parts.push({ key: "links", title: P.links, node: <SceneLinks id={card.id} speakers={speakers.map((c) => ({ name: c.name, lines: c.lines }))} /> });
-            if (card) parts.push({ key: "place", title: P.place, node: <ScenePlace id={card.id} /> });
+            if (card) parts.push({ key: "place", title: P.place, node: <ScenePlace id={card.id} />, hiddenByDefault: true });
             if (location && !card) parts.push({ key: "location", title: P.location, node: (
               <section className="sp-box">
                 <div className="eyebrow" style={{ color: "var(--type-lieu)" }}>
