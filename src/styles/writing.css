@@ -1046,6 +1046,13 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ribbon-legend-swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--scene-pov); }
 .ribbon-legend .is-none .ribbon-legend-swatch { background: transparent; border: 1.5px solid var(--line-2); box-sizing: border-box; }
 .ribbon-lane { margin-top: 4px; }
+/* Pistes ouvertes : le nom de chaque intrigue à gauche de son trait, sur la même ligne ; le ruban et la courbe
+   laissent la même place à gauche, pour que chaque trait tombe exactement sous ses scènes. */
+.ribbon.has-lanes { --lane-name: clamp(5.5em, 22%, 10em); }
+.ribbon.has-lanes .ribbon-track, .ribbon.has-lanes .ribbon-curve { margin-left: calc(var(--lane-name) + 8px); }
+.ribbon.has-lanes .ribbon-lane { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.ribbon.has-lanes .ribbon-lane-name { flex: none; width: var(--lane-name); text-align: right; }
+.ribbon.has-lanes .ribbon-lane-track { flex: 1; min-width: 0; }
 .ribbon-lane-name { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 0.75rem; line-height: 1.4; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 @media (any-hover: hover) { .ribbon-lane-name:hover { color: var(--ink); text-decoration: underline; } }
 .ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--ground); }
@@ -1713,6 +1720,9 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
   --surface: var(--plot-fg-swap); --ground: var(--plot-fg-swap); --accent-soft: transparent;
   --line: var(--plot-fg); --line-2: var(--plot-fg);
 }
+/* Survol d'une scène colorée : jamais le fond clair de --hover (le texte, couleur de la surface, disparaissait). */
+@media (any-hover: hover) { .has-plot button:hover, .has-plot a:hover { background: color-mix(in srgb, var(--plot-fg-swap) 22%, transparent); } }
+.has-plot button.is-current { background: color-mix(in srgb, var(--plot-fg-swap) 30%, transparent); }
 .has-plot.is-current, .has-plot[aria-current="true"], .has-plot:has(> [aria-current="true"]) { box-shadow: inset 0 0 0 3px var(--plot-fg), inset 0 0 0 5px var(--plot-fg-swap); }
 .plan-plot-colors[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
 .link-pill .link-star { min-width: 28px; border: 0; background: transparent; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
@@ -1768,7 +1778,32 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .scene-setups-name { display: flex; flex-direction: column; gap: 4px; }
 .scene-setups-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .scene-setups-links li { display: flex; align-items: center; gap: 4px; }
-.scene-setups-links .chip { flex: 1; min-width: 0; text-align: left; }
-.scene-setups-linklabel { margin-left: 4px; color: var(--ink-2); font-style: italic; }
-.scene-setups-pen { flex: none; width: 32px; min-height: 32px; }
+/* Une préparation tient dans la colonne : lettre et numéro, titre coupé, nom du lien sur la ligne dessous ; le crayon reste visible. */
+.scene-setups-links .chip.is-setup {
+  flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 6px; row-gap: 0;
+  border: 0; border-radius: 10px; text-align: left; font: inherit; font-size: 0.8125rem; cursor: pointer; min-height: 36px;
+}
+.scene-setups-links .chip.is-setup .scene-setups-num { min-width: 0; margin: 0 6px 0 0; }
+.scene-setups-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scene-setups-linklabel { grid-column: 1 / -1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); font-style: italic; font-size: 0.75rem; }
+.scene-setups-pen { flex: none; width: 36px; min-height: 36px; }
 @media (pointer: coarse) { .scene-setups-pen { width: 44px; min-height: 44px; } }
+
+/* Volet de droite en rubriques (lot 17 ter) : chacune se replie par son en-tête, l'ordre et les rubriques masquées
+   sont un réglage de l'appareil (sidePanel.ts). Le contenu garde son composant ; son cadre et son titre cèdent la place. */
+.side-part { display: flex; flex-direction: column; gap: 6px; padding: 8px 14px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.side-part.is-folded { padding-bottom: 8px; }
+.side-part.is-own { padding: 0; border: 0; background: transparent; }
+.side-part-title { margin: 0; font-size: 0.875rem; }
+.side-part-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0; border: 0; background: transparent; color: var(--ink); font: 600 0.875rem var(--font-ui); text-align: left; cursor: pointer; }
+.side-part-head .disclosure { flex: none; }
+@media (pointer: coarse) { .side-part-head { min-height: 44px; } }
+.side-part-body > .sp-box { padding: 0; border: 0; background: transparent; border-radius: 0; }
+.side-part-body > .sp-box > h2.sp-box-title, .side-part-body > .sp-box > .eyebrow:first-child { display: none; }
+.side-parts-customize { align-self: flex-start; font-size: 0.8125rem; }
+.side-parts-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.side-parts-list li { display: flex; align-items: center; gap: 4px; }
+.side-parts-list label { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 0.8125rem; color: var(--ink); cursor: pointer; }
+.side-parts-list .icon-button { width: 32px; min-height: 32px; }
+@media (pointer: coarse) { .side-parts-list label, .side-parts-list .icon-button { min-height: 44px; } .side-parts-list .icon-button { width: 44px; } }
+.side-parts-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }

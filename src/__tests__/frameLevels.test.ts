@@ -42,9 +42,9 @@ describe("titre agrandi de loin", () => {
 
   it("grandit quand on recule, par crans, jusqu'au plafond du niveau", () => {
     expect(titleBoost(0.35, 0)).toBe(2);
-    expect(titleBoost(0.1, 0)).toBe(4);
-    expect(titleBoost(0.1, 1)).toBe(2.5);
-    expect(titleBoost(0.1, 2)).toBe(1.5);
+    expect(titleBoost(0.1, 0)).toBe(5);
+    expect(titleBoost(0.1, 1)).toBe(3.5);
+    expect(titleBoost(0.1, 2)).toBe(3);
     expect(titleBoost(0.3, 0) * 4 % 1).toBe(0);
   });
 

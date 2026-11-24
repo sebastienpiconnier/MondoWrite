@@ -25,6 +25,7 @@ import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { SceneSetupsBox } from "./SceneSetups";
 import { SceneLinks } from "./LinkedCards";
+import { SideParts, type SidePart } from "./SideParts";
 import { PovPicker } from "./PovPicker";
 import { narratorCounts } from "../pov";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
@@ -1024,8 +1025,9 @@ export function Manuscript() {
             onAiScene={goToAiScene}
           />
         ) : (
-        <>
-        {/* La scène elle-même (#54) : type de page, statut, point de vue, sortis de la barre au-dessus de la page. */}
+        (() => {
+          const P = t.sidePanel.parts;
+          const parts: SidePart[] = [{ key: "props", title: P.props, node: (
         <section className="sp-box ms-scene-props" aria-label={b.sceneProps}>
           <label className="ms-kind">
             <span className="sr-only">{b.pageKind}</span>
@@ -1045,9 +1047,11 @@ export function Manuscript() {
             </span>
           )}
         </section>
-        {!pageKind && <SceneSetupsBox id={card.id} />}
-        {/* Personnages, intrigues, lieu de la scène, reliés sans tirer de fil (#137). */}
-        {!pageKind && <SceneLinks id={card.id} />}
+          ) }];
+          if (!pageKind) parts.push({ key: "setups", title: P.setups, node: <SceneSetupsBox id={card.id} /> });
+          // Personnages, intrigues, lieu de la scène, reliés sans tirer de fil (#137).
+          if (!pageKind) parts.push({ key: "links", title: P.links, node: <SceneLinks id={card.id} /> });
+          parts.push({ key: "cited", title: P.cited, node: (
         <section className="sp-box">
           <h2 className="sp-box-title">{m.cited}</h2>
           {detected.length === 0 ? (
@@ -1065,6 +1069,8 @@ export function Manuscript() {
             </ul>
           )}
         </section>
+          ) });
+          parts.push({ key: "synopsis", title: P.synopsis, node: (
         <section className="sp-box">
           <h2 className="sp-box-title">{m.synopsis}</h2>
           {/* Le synopsis de la scène (ses anciennes notes y sont passées) : il s'affiche aussi en filigrane dans une scène vide. */}
@@ -1080,9 +1086,13 @@ export function Manuscript() {
             {fmt(m.show, { title })}
           </button>
         </section>
-        <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
+          ) });
+          parts.push({ key: "chutier", title: P.chutier, ownFold: true, node: <Chutier passages={chutier} cards={cards} onPutBack={putBack} /> });
+          parts.push({ key: "stats", title: P.stats, ownFold: true, node: (
         <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} chapterWords={chapter ? order.reduce((sum, id) => sum + (chapterOf(plan, id)?.id === chapter.id ? (stats.perScene.get(id) ?? 0) : 0), 0) : undefined} />
-        </>
+          ) });
+          return <SideParts parts={parts} />;
+        })()
         )}
       </aside>
     </div>

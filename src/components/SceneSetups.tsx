@@ -189,12 +189,14 @@ export function SceneSetupsBox({ id }: { id: string | null | undefined }) {
                 <>
                   <button type="button" className="chip is-setup" title={fmt(t.toile.setupGo, { title: title(it.other) })} onClick={() => useCosmos.getState().openInManuscript(it.other)}>
                     <span className="setup-letter" aria-hidden="true">{it.letter}</span>
-                    {numbers.get(it.other) && <span className="scene-setups-num">{numbers.get(it.other)}</span>}
-                    {title(it.other)}
-                    {it.label && <span className="scene-setups-linklabel">· {it.label}</span>}
+                    <span className="scene-setups-text">
+                      {numbers.get(it.other) && <span className="scene-setups-num">{numbers.get(it.other)}</span>}
+                      {title(it.other)}
+                    </span>
+                    {it.label && <span className="scene-setups-linklabel">{it.label}</span>}
                   </button>
                   <button type="button" className="icon-button scene-setups-pen" aria-label={fmt(t.toile.setupsRename, { title: title(it.other) })} title={fmt(t.toile.setupsRename, { title: title(it.other) })} onClick={() => setRenaming(it.edge)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M4 20h4L19 9l-4-4L4 16z" />
                     </svg>
                   </button>

@@ -1464,6 +1464,24 @@ const scenarios = [
       await page.getByRole("button", { name: "Relier", exact: true }).click();
       await h.saved((f) => /"setups"/.test(f["cosmos.json"] ?? "") && /le bateau/.test(f["cosmos.json"] ?? ""), "la préparation n'est pas enregistrée avec son nom");
       await until(() => page.locator(".sp-side .scene-setups-linklabel", { hasText: "le bateau" }).count(), "le nom du lien n'est pas montré");
+      // Volet de droite (lot 17 ter) : une rubrique se replie par son en-tête, se masque par « Personnaliser le volet ».
+      await page.locator(".sp-side .side-part-head", { hasText: "Synopsis" }).click();
+      await until(async () => (await page.locator('.sp-side .side-part[data-part="synopsis"] .side-part-body').count()) === 0, "le synopsis ne se replie pas");
+      await page.locator(".sp-side").getByRole("button", { name: "Personnaliser le volet" }).click();
+      await page.locator(".side-parts-list label", { hasText: "Préparations" }).locator("input").uncheck();
+      await until(async () => (await page.locator('.sp-side .side-part[data-part="setups"]').count()) === 0, "les préparations ne se masquent pas");
+      assert(/"hidden":\["setups"\]/.test(await page.evaluate(() => localStorage.getItem("mondowrite.sidePanel") ?? "")), "le volet n'est pas gardé sur l'appareil");
+      await page.locator(".side-parts-list label", { hasText: "Préparations" }).locator("input").check();
+      await page.locator(".sp-side").getByRole("button", { name: "Terminé" }).click();
+      // Renommer une séquence dans la feuille : double-clic sur sa ligne.
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await page.keyboard.press("Control+Alt+Shift+KeyS");
+      await until(() => page.locator('.sp-editor [data-series="seq"]').count(), "la séquence n'est pas posée");
+      await page.locator('.sp-editor [data-series="seq"]').first().dblclick();
+      await page.locator(".sp-sheet-rename").fill("La tempête");
+      await page.locator(".sp-sheet-rename").press("Enter");
+      await until(async () => /La tempête/.test(await page.locator('.sp-editor [data-series="seq"]').first().innerText()), "la séquence n'est pas renommée dans la feuille");
+      await h.saved((f) => /## La tempête \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:/.test(f["scenario.fountain"] ?? ""), "le nouveau titre perd ses notes");
       // Le volet des scènes filtre aussi par décor (lot 17).
       await page.locator("#sp-filter-name").selectOption({ label: "Quai" });
       await until(() => page.locator(".thread-banner").count(), "le filtre par décor ne pose pas de bandeau");

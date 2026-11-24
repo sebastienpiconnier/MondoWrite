@@ -60,15 +60,15 @@ export function StoryRibbon({ currentId, onGo }: Props) {
     const colors = plotColors(nodes, edges).plots;
     return (plots?.rows ?? []).map((row) => ({ id: row.card.id, title: row.card.title.trim(), color: colors.get(row.card.id) ?? 1, cells: row.cells.map((presence, i) => ({ presence, scene: scenes[i] })) }));
   }, [lanesOpen, ribbon, hasPlots, kind, screenplay, manuscript, nodes, edges, lang]);
-  // Couleurs des intrigues allumées : chaque scène du ruban prend celle de son intrigue principale.
+  // Couleurs des intrigues allumées, ou pistes des intrigues ouvertes : chaque scène du ruban prend celle de son intrigue principale.
   const plotOf = useMemo(() => {
-    if (!plotOn) return null;
+    if (!plotOn && !(lanesOpen && hasPlots)) return null;
     const c = plotColors(nodes, edges);
     return (id: string) => {
       const main = c.main.get(id);
       return main ? c.plots.get(main) : undefined;
     };
-  }, [plotOn, nodes, edges]);
+  }, [plotOn, lanesOpen, hasPlots, nodes, edges]);
   // Courbe du récit : d'après « Pour le héros, la scène finit » des fiches de scène.
   const [curveOpen, setCurveOpen] = useState(false);
   const curve = useMemo(() => {
@@ -108,7 +108,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   const here = ribbon.segments.flatMap((seg) => seg.scenes.map((s) => ({ seg, s }))).find((x) => x.s.id === currentId);
 
   return (
-    <nav className={`ribbon${povMode ? " is-pov" : ""}`} aria-label={r.aria}>
+    <nav className={`ribbon${povMode ? " is-pov" : ""}${lanes.length > 0 ? " has-lanes" : ""}`} aria-label={r.aria}>
       <div className="ribbon-track">
         {ribbon.segments.map((seg, i) => (
           <div

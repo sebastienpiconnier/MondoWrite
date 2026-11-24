@@ -14,6 +14,9 @@ import { Chutier } from "./Chutier";
 import { usePanels } from "./usePanels";
 import { useFocusFollow } from "./useFocusFollow";
 import { nanoid } from "nanoid";
+import { createPortal } from "react-dom";
+import { NodeSelection } from "@tiptap/pm/state";
+import { portalRoot } from "./portalRoot";
 import { placePassage, takePassage, type Passage } from "../chutier";
 import { screenplayGroups } from "../screenplay/groups";
 import { screenplayWords, sceneWords as wordsOfScene } from "../screenplay/words";
@@ -25,6 +28,7 @@ import { SuggestionMenu } from "./SuggestionMenu";
 import { SceneSetupsBox } from "./SceneSetups";
 import { SceneLinks } from "./LinkedCards";
 import { ScenePlace } from "./ScenePlace";
+import { SideParts, type SidePart } from "./SideParts";
 import { usePlotColor } from "./usePlotColor";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
@@ -327,6 +331,7 @@ export function ScreenplayView() {
 
   const pickRef = useRef<(index: number) => void>(() => {});
   const editorRef = useRef<Editor | null>(null);
+  const openSheetRenameRef = useRef<(el: HTMLElement) => boolean>(() => false);
 
   const track = (ed: Editor) => {
     const index = ed.state.selection.$from.index(0);
@@ -386,6 +391,10 @@ export function ScreenplayView() {
       handleKeyDown: (_view, event) => {
         // Touches du scénario (#59) : au cinquième changement d'élément par Tab, leur rappel quitte la barre.
         if (event.key === "Tab" && !event.ctrlKey && !event.metaKey && !event.altKey) noteUse("screenplayKeys", TAB_USES);
+        if (event.key === "Enter" && !event.shiftKey && _view.state.selection instanceof NodeSelection) {
+          const dom = _view.nodeDOM(_view.state.selection.from);
+          if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"]') && openSheetRenameRef.current(dom)) return true;
+        }
         const open = menuRef.current;
         if (!open) return false;
         const count = open.items.length;
@@ -693,6 +702,51 @@ export function ScreenplayView() {
     ed.view.dispatch(ed.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, text: next }));
     emit();
   };
+  // Renommer un acte ou une séquence dans la feuille même : double-clic sur sa ligne, ou Entrée quand elle est choisie.
+  const [sheetRename, setSheetRename] = useState<{ at: number; title: string; top: number; left: number; width: number } | null>(null);
+  const openSheetRename = (el: HTMLElement) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return false;
+    let pos = 0;
+    for (let i = 0; i < ed.state.doc.childCount; i++) {
+      const node = ed.state.doc.child(i);
+      if (ed.view.nodeDOM(pos) === el) {
+        if (!structureMark({ type: "section", text: String(node.attrs.text ?? "") })) return false;
+        const r = el.getBoundingClientRect();
+        const open = { at: i, title: plainSection(String(node.attrs.text ?? "")), top: r.top, left: r.left, width: r.width };
+        // Après le geste : l'éditeur reprend le focus à la fin d'un double-clic et refermerait le champ aussitôt.
+        setTimeout(() => setSheetRename(open), 0);
+        return true;
+      }
+      pos += node.nodeSize;
+    }
+    return false;
+  };
+  openSheetRenameRef.current = openSheetRename;
+  // La feuille défile : le champ posé sur la ligne la quitterait, il enregistre et se ferme.
+  useEffect(() => {
+    if (!sheetRename) return;
+    const close = () => {
+      const el = document.querySelector(".sp-sheet-rename");
+      if (el instanceof HTMLElement) el.blur();
+    };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [sheetRename]);
+  useEffect(() => {
+    const dom = editor?.view.dom;
+    if (!dom) return;
+    const onDbl = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"]');
+      if (el instanceof HTMLElement && openSheetRenameRef.current(el)) e.preventDefault();
+    };
+    dom.addEventListener("dblclick", onDbl);
+    return () => dom.removeEventListener("dblclick", onDbl);
+  }, [editor]);
   const insertPartRef = useRef(insertPart);
   insertPartRef.current = insertPart;
   useEffect(() => {
@@ -1429,7 +1483,7 @@ export function ScreenplayView() {
               )}
               {renamingPart !== row.id && (
                 <button type="button" className="icon-button sp-part-rename" aria-label={fmt(sp.renamePart, { title: row.title })} title={fmt(sp.renamePart, { title: row.title })} onClick={() => setRenamingPart(row.id)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M4 20h4L19 9l-4-4L4 16z" />
                   </svg>
                 </button>
@@ -1742,6 +1796,36 @@ export function ScreenplayView() {
       <EdgeHandle side="right" open={panels.side} label={t.manuscript.panelSide} onClick={() => togglePanel("side")} />
 
       {commentHighlight && <style>{commentHighlight}</style>}
+      {sheetRename &&
+        createPortal(
+          <input
+            // Le champ s'ouvre sur la ligne de la section, prêt pour le nouveau titre.
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+            className="sp-sheet-rename"
+            style={{ top: sheetRename.top, left: sheetRename.left, width: Math.max(220, sheetRename.width) }}
+            defaultValue={sheetRename.title}
+            aria-label={fmt(sp.renamePart, { title: sheetRename.title })}
+            onFocus={(e) => e.currentTarget.select()}
+            onBlur={(e) => {
+              renamePart(sheetRename.at, e.target.value);
+              setSheetRename(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+                editorRef.current?.view.focus();
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setSheetRename(null);
+                editorRef.current?.view.focus();
+              }
+            }}
+          />,
+          portalRoot(editorRef.current?.view.dom ?? null),
+        )}
       <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : sideTab === "comments" ? t.comments.title : sp.inSceneTitle}>
         <SideTabs tab={sideTab} onTab={setSideTab} count={openFindings} comments={scene?.cardId ? openCount(comments[scene.cardId]) : 0} />
         {sideTab === "comments" ? (
@@ -1759,11 +1843,12 @@ export function ScreenplayView() {
             onAiScene={goToAiScene}
           />
         ) : (
-        <>
-        {!scene ? (
-          <p className="sp-empty">{sp.noScene}</p>
-        ) : (
-          <>
+        (() => {
+          const P = t.sidePanel.parts;
+          const parts: SidePart[] = [];
+          if (!scene) parts.push({ key: "scene", title: P.scene, node: <p className="sp-empty">{sp.noScene}</p> });
+          else {
+            parts.push({ key: "scene", title: P.scene, node: (
             <section className="sp-box">
               <div className="eyebrow" style={{ color: "var(--type-scene)" }}>
                 {types.scene.label}
@@ -1788,9 +1873,8 @@ export function ScreenplayView() {
                 </>
               )}
             </section>
-
-            {/* Synopsis de la scène (novembre 2026) : ici seulement, comme dans le Manuscrit ; ni dans la feuille ni dans
-                le volet des scènes. Il reste la ligne « = … » sous l'en-tête du Fountain, et le séquencier le montre. */}
+            ) });
+            parts.push({ key: "synopsis", title: P.synopsis, node: (
             <section className="sp-box">
               <h2 className="sp-box-title">{t.manuscript.synopsis}</h2>
               <SynopsisField
@@ -1802,13 +1886,11 @@ export function ScreenplayView() {
                 atelier={elements[scene.index]?.cardId ? { sceneId: elements[scene.index].cardId!, text: screenplaySceneText(scriptOffset(useCosmos.getState()) + scene.index), accept: (text) => saveSynopsis(scene.index, text, true) } : undefined}
               />
             </section>
-
-            <SceneSetupsBox id={card?.id} />
-            {/* Personnages (aussi ceux qui ne parlent pas), intrigues et décor, reliés sans tirer de fil (#137). */}
-            {card && <SceneLinks id={card.id} speakers={speakers.map((c) => ({ name: c.name, lines: c.lines }))} />}
-            {card && <ScenePlace id={card.id} />}
-
-            {location && (
+            ) });
+            parts.push({ key: "setups", title: P.setups, node: <SceneSetupsBox id={card?.id} /> });
+            if (card) parts.push({ key: "links", title: P.links, node: <SceneLinks id={card.id} speakers={speakers.map((c) => ({ name: c.name, lines: c.lines }))} /> });
+            if (card) parts.push({ key: "place", title: P.place, node: <ScenePlace id={card.id} /> });
+            if (location) parts.push({ key: "location", title: P.location, node: (
               <section className="sp-box">
                 <div className="eyebrow" style={{ color: "var(--type-lieu)" }}>
                   {types.lieu.label}
@@ -1820,10 +1902,9 @@ export function ScreenplayView() {
                   {plural(scenesInLocation(scenes, location, lang), sp.locationScenesOne, sp.locationScenesMany)}
                 </p>
               </section>
-            )}
-
-            {/* Personnages qui parlent : dans « Personnages » ci-dessus dès que la scène a sa carte. */}
-            {!card && <section className="sp-box">
+            ) });
+            if (!card) parts.push({ key: "speakers", title: P.speakers, node: (
+              <section className="sp-box">
               <div className="eyebrow" style={{ color: "var(--type-personnage)" }}>
                 {sp.characters}
               </div>
@@ -1841,19 +1922,22 @@ export function ScreenplayView() {
                   ))}
                 </ul>
               )}
-            </section>}
-          </>
-        )}
-        <Chutier passages={chutier} cards={nodes.map((n) => n.data)} onPutBack={putBack} />
-        <StatsBox
-          stats={stats}
-          done={scenes.filter((s) => (statusCards.get(s.cardId ?? "") ? sceneStatus(statusCards.get(s.cardId!)!) === "fini" : false)).length}
-          chapters={0}
-          sceneWords={sceneWordCount}
-          place={null}
-          note={t.stats.estimateScreenplay}
-        />
-        </>
+            </section>
+            ) });
+          }
+          parts.push({ key: "chutier", title: P.chutier, ownFold: true, node: <Chutier passages={chutier} cards={nodes.map((n) => n.data)} onPutBack={putBack} /> });
+          parts.push({ key: "stats", title: P.stats, ownFold: true, node: (
+            <StatsBox
+              stats={stats}
+              done={scenes.filter((s) => (statusCards.get(s.cardId ?? "") ? sceneStatus(statusCards.get(s.cardId!)!) === "fini" : false)).length}
+              chapters={0}
+              sceneWords={sceneWordCount}
+              place={null}
+              note={t.stats.estimateScreenplay}
+            />
+          ) });
+          return <SideParts parts={parts} />;
+        })()
         )}
       </aside>
     </div>
