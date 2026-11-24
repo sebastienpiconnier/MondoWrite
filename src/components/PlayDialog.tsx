@@ -18,6 +18,7 @@ import { closedChoices, matchPick, type Pick } from "../interactive/playTrail";
 import { condWords } from "../interactive/conditions";
 import { openingWords, pathLine, pathMarkdown, pathNotes, type PathStep } from "../interactive/readingPath";
 import { projectSections } from "../interactive/projectSections";
+import { imageAlts } from "../interactive/imageAlts";
 import { markQuoteInHtml } from "../mcpWrite";
 import { newId } from "../projectState";
 import { storage } from "../storage";
@@ -36,9 +37,9 @@ interface Step {
   passages: number;
 }
 
-function PlayImage({ name }: { name: string }) {
+function PlayImage({ name, alt }: { name: string; alt?: string }) {
   const url = useMediaUrl(name);
-  return url ? <img className="play-image" src={url} alt="" /> : null;
+  return url ? <img className="play-image" src={url} alt={alt ?? ""} /> : null;
 }
 
 /** Réglage de l'appareil : montrer les choix fermés pendant la lecture (#104). */
@@ -71,6 +72,8 @@ export function PlayDialog() {
   const [message, setMessage] = useState("");
   // Faits et compteurs (lot 4) : relus après chaque pas, montrés quand le lecteur les a.
   const facts = useMemo(() => projectFacts(useCosmos.getState()), []);
+  // Description des images, telle que l'auteur l'a écrite (#126) : lue par un lecteur d'écran.
+  const alts = useMemo(() => imageAlts(scenes, manuscript), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [known, setKnown] = useState<{ label: string; value: string }[]>([]);
   const readKnown = useCallback(
     (s: Story) =>
@@ -396,7 +399,7 @@ export function PlayDialog() {
             {passage.lines.map((line, j) => (
               <div key={j}>
                 {line.images.map((name) => (
-                  <PlayImage key={name} name={name} />
+                  <PlayImage key={name} name={name} alt={alts[name]} />
                 ))}
                 {line.text && <p>{line.text}</p>}
               </div>

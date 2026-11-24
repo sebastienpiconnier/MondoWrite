@@ -262,13 +262,15 @@ describe("page web d'un roman interactif", () => {
   it("donne aux images la description écrite par l'auteur", () => {
     const page = load(storyPage(input({ alts: { "grille.jpg": "Une grille rouillée" } })));
     expect(page.images()).toEqual(["data:image/jpeg;base64,AAAA"]);
-    // Dite en texte dans le bloc du passage, l'image restant décorative (pas lue deux fois).
+    // Dite en paragraphe du passage, hors de tout <figure> (VoiceOver n'y entre pas), l'image restant décorative.
     expect(document.querySelector<HTMLImageElement>("#story img")!.alt).toBe("");
-    expect(document.querySelector("#story figure .sr")!.textContent).toBe("Image : Une grille rouillée");
+    expect(document.querySelector("#story figure")).toBeNull();
+    expect(document.querySelector("#story .illus")!.getAttribute("aria-hidden")).toBe("true");
+    expect(document.querySelector("#story .turn > p.sr")!.textContent).toBe("Image : Une grille rouillée");
     expect(document.querySelector("#story .turn")!.textContent).toContain("Image : Une grille rouillée");
     // Sans description : rien à dire.
     load(storyPage(input()));
-    expect(document.querySelector("#story figure .sr")).toBeNull();
+    expect(document.querySelector("#story p.sr")).toBeNull();
   });
 
   it("garde le gras et l'italique, sans jamais lire de HTML", () => {

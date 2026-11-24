@@ -129,7 +129,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 @media (any-hover: hover) { button:not(:disabled):hover { border-color: var(--accent); } }
 .tools { display: flex; gap: 0.5em; justify-content: center; flex-wrap: wrap; margin: 0 0 2.5em; }
 #story p { margin: 0 0 0.9em; }
-#story figure { margin: 1.5em 0; text-align: center; }
+#story .illus { margin: 1.5em 0; text-align: center; }
 #story img { max-width: 100%; height: auto; }
 .chose { margin: 2em 0 1em; color: var(--soft); font-style: italic; }
 .chose::before { content: "\\2192\\00a0"; }
@@ -243,13 +243,15 @@ const PLAYER = `(function () {
     if (item.k === "img") {
       var src = has(data.images, item.v) ? data.images[item.v] : null;
       if (!src) return null;
-      // La description passe en texte (#126) : en lisant le bloc d'un passage, VoiceOver saute les images, même
-      // décrites. L'image elle-même est décorative, pour que la description ne soit pas lue deux fois.
-      var f = el("figure"); var img = el("img"); img.src = src; img.alt = "";
-      f.appendChild(img);
+      // La description passe en paragraphe (#126) : en lisant le bloc d'un passage, VoiceOver saute les images,
+      // même décrites, et tout ce qui est dans un <figure> (un groupe à part). Image décorative, dans un <div>
+      // simple, et description en <p> à côté d'elle, comme le texte du passage.
+      var f = el("div", "illus"); var img = el("img"); img.src = src; img.alt = "";
+      f.setAttribute("aria-hidden", "true"); f.appendChild(img);
       var alt = has(data.alts, item.v) ? String(data.alts[item.v]).trim() : "";
-      if (alt) f.appendChild(el("span", "sr", data.texts.image.replace("{alt}", alt)));
-      into().appendChild(f); return f;
+      var box = into(); box.appendChild(f);
+      if (alt) box.appendChild(el("p", "sr", data.texts.image.replace("{alt}", alt)));
+      return f;
     }
     var p = el("p", item.k === "chose" ? "chose" : null);
     if (item.k === "chose") p.textContent = String(item.v); else rich(p, String(item.v));

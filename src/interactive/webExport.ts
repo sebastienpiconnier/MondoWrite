@@ -2,7 +2,6 @@
 // dans la page et les images ne sont chargés qu'ici, à l'export.
 
 import { fmt, getT } from "../i18n";
-import { htmlToBlocks } from "../export/doc";
 import { fileName, type ExportedFile } from "../screenplay/export";
 import { storage } from "../storage";
 import { useCosmos } from "../store";
@@ -13,6 +12,7 @@ import { inkProblems, projectToInk, type InkProblem } from "./ink";
 import { interactiveScenes, interactiveSlugs } from "./scenes";
 import { storyImageNames, storyPage } from "./webPage";
 import { readWebPage } from "./webThemes";
+import { imageAlts } from "./imageAlts";
 
 /** L'histoire ne se compile pas (les points sont ceux de « Lire l'histoire »). */
 export class StoryCompileError extends Error {
@@ -65,10 +65,7 @@ export async function storyWebFile(title: string, author: string): Promise<Expor
     }
   }
   // Description de chaque image, telle que l'auteur l'a écrite dans le texte (#126).
-  const alts: Record<string, string> = {};
-  for (const s of scenes)
-    for (const b of htmlToBlocks(manuscript[s.id]))
-      if (b.kind === "image" && b.alt?.trim() && names.includes(b.name) && !alts[b.name]) alts[b.name] = b.alt.trim();
+  const alts = Object.fromEntries(Object.entries(imageAlts(scenes, manuscript)).filter(([name]) => names.includes(name)));
 
   const { lang } = useSettings.getState();
   const facts = projectFacts(useCosmos.getState()).map((f) => ({ name: f.name, label: f.label }));
