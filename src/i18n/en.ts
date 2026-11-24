@@ -3943,6 +3943,7 @@ export const en: Messages = {
       skip: "Skip to the story",
       choices: "What do you do?",
       choiceOf: "Choice {n} of {total}:",
+      image: "Image: {alt}",
       display: "Display",
       theme: "Theme",
       modeAuto: "Auto",

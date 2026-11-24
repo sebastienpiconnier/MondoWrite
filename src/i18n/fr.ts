@@ -4003,6 +4003,7 @@ export const fr = {
       skip: "Aller à l’histoire",
       choices: "Que faites-vous ?",
       choiceOf: "Choix {n} sur {total} :",
+      image: "Image : {alt}",
       display: "Affichage",
       theme: "Thème",
       modeAuto: "Auto",

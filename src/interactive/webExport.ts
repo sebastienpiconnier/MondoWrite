@@ -105,6 +105,7 @@ export async function storyWebFile(title: string, author: string): Promise<Expor
       skip: w.skip,
       choices: w.choices,
       choiceOf: w.choiceOf,
+      image: w.image,
       display: w.display,
       theme: w.theme,
       modeAuto: w.modeAuto,

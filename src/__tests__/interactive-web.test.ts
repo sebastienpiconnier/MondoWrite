@@ -39,6 +39,7 @@ const texts = {
   skip: "Aller à l’histoire",
   choices: "Que faites-vous ?",
   choiceOf: "Choix {n} sur {total} :",
+  image: "Image : {alt}",
   display: "Affichage",
   theme: "Thème",
   modeAuto: "Auto",
@@ -261,7 +262,13 @@ describe("page web d'un roman interactif", () => {
   it("donne aux images la description écrite par l'auteur", () => {
     const page = load(storyPage(input({ alts: { "grille.jpg": "Une grille rouillée" } })));
     expect(page.images()).toEqual(["data:image/jpeg;base64,AAAA"]);
-    expect(document.querySelector<HTMLImageElement>("#story img")!.alt).toBe("Une grille rouillée");
+    // Dite en texte dans le bloc du passage, l'image restant décorative (pas lue deux fois).
+    expect(document.querySelector<HTMLImageElement>("#story img")!.alt).toBe("");
+    expect(document.querySelector("#story figure .sr")!.textContent).toBe("Image : Une grille rouillée");
+    expect(document.querySelector("#story .turn")!.textContent).toContain("Image : Une grille rouillée");
+    // Sans description : rien à dire.
+    load(storyPage(input()));
+    expect(document.querySelector("#story figure .sr")).toBeNull();
   });
 
   it("garde le gras et l'italique, sans jamais lire de HTML", () => {

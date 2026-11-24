@@ -29,6 +29,8 @@ export interface WebPageTexts {
   choices: string;
   /** Avant chaque choix, pour un lecteur d'écran (#126) : « Choix {n} sur {total} : » */
   choiceOf: string;
+  /** Description d'une image, dite par un lecteur d'écran (#126) : « Image : {alt} » */
+  image: string;
   /** Réglages d'affichage du lecteur (#121) */
   display: string;
   theme: string;
@@ -241,8 +243,13 @@ const PLAYER = `(function () {
     if (item.k === "img") {
       var src = has(data.images, item.v) ? data.images[item.v] : null;
       if (!src) return null;
-      var f = el("figure"); var img = el("img"); img.src = src; img.alt = has(data.alts, item.v) ? String(data.alts[item.v]) : "";
-      f.appendChild(img); into().appendChild(f); return f;
+      // La description passe en texte (#126) : en lisant le bloc d'un passage, VoiceOver saute les images, même
+      // décrites. L'image elle-même est décorative, pour que la description ne soit pas lue deux fois.
+      var f = el("figure"); var img = el("img"); img.src = src; img.alt = "";
+      f.appendChild(img);
+      var alt = has(data.alts, item.v) ? String(data.alts[item.v]).trim() : "";
+      if (alt) f.appendChild(el("span", "sr", data.texts.image.replace("{alt}", alt)));
+      into().appendChild(f); return f;
     }
     var p = el("p", item.k === "chose" ? "chose" : null);
     if (item.k === "chose") p.textContent = String(item.v); else rich(p, String(item.v));
@@ -366,7 +373,7 @@ export function storyPage(input: WebPageInput): string {
     images: input.images,
     alts: input.alts ?? {},
     facts: input.facts,
-    texts: { restart: texts.restart, end: texts.end, known: texts.known, value: texts.value, failed: texts.failed, choices: texts.choices, choiceOf: texts.choiceOf },
+    texts: { restart: texts.restart, end: texts.end, known: texts.known, value: texts.value, failed: texts.failed, choices: texts.choices, choiceOf: texts.choiceOf, image: texts.image },
   };
   const license = input.runtimeLicense.replace(/\*\//g, "* /").trim();
   const e = escapeHtml;
