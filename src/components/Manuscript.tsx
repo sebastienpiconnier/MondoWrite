@@ -349,12 +349,16 @@ export function Manuscript() {
   }, [target]);
 
   // Où est le curseur (#27) : lu au moment où l'on relève la position (changement de vue, enregistrement, retour
-  // aux projets). La scène choisie dans le volet l'emporte ; le curseur ne compte que s'il est dans cette scène.
+  // aux projets). La scène choisie dans le volet l'emporte, sauf quand on écrit dans le livre ; le curseur ne compte
+  // que s'il est dans cette scène.
   useEffect(() => {
     setCaretSource(() => {
-      const id = currentRef.current;
-      if (!id) return null;
       const caret = bookApi.current?.caret();
+      // Curseur dans le livre (on écrit) : sa scène l'emporte sur celle du volet, que le défilement peut avoir
+      // fait passer à la précédente (#144, le curseur au milieu de l'écran, le haut de l'écran sur la scène d'avant).
+      const writing = !!caret && !!document.activeElement?.closest(".ProseMirror") && useCosmos.getState().nodes.some((n) => n.id === caret.id && n.data.type === "scene");
+      const id = writing ? caret.id : currentRef.current;
+      if (!id) return null;
       const label = useCosmos.getState().nodes.find((n) => n.id === id)?.data.title.trim() || undefined;
       return { scene: id, offset: caret && caret.id === id ? caret.offset : undefined, label };
     });

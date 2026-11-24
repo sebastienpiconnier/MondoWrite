@@ -447,6 +447,34 @@ const scenarios = [
     },
   },
   {
+    name: "garder sa place (#144) : la scène du Manuscrit choisie sur le canevas et montrée dans le Plan, le curseur retrouvé au retour",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      const rows = page.locator(".ms-scenes [data-scene], [data-scene].is-movable, button[data-scene]");
+      await until(() => rows.count(), "le volet des scènes est vide");
+      const id = await rows.nth(2).getAttribute("data-scene");
+      await rows.nth(2).click();
+      await h.wait(500);
+      // Le curseur dans le premier paragraphe de la scène, au bout.
+      await page.locator(`.ProseMirror [data-scene-id="${id}"]`).locator("xpath=following-sibling::p[1]").click();
+      await page.keyboard.press("End");
+      await page.keyboard.type("ZZZ");
+      await h.wait(300);
+      await h.view(1);
+      await until(() => page.locator(`.react-flow__node.selected[data-id="${id}"]`).count(), "le canevas n'a pas choisi la carte de la scène où l'on écrivait");
+      await h.view(4);
+      await h.wait(300);
+      await h.view(2);
+      await until(() => page.evaluate((sid) => document.activeElement?.closest("[data-scene]")?.getAttribute("data-scene") === sid, id), `le Plan ne montre pas la ligne de la scène ${id} : ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 200))}`);
+      await h.view(4);
+      await h.wait(500);
+      await page.keyboard.type("QQQ");
+      await h.saved((f) => (f[`manuscrit/${id}.md`] ?? "").includes("ZZZQQQ"), "le curseur n'est pas revenu à sa place dans la scène");
+    },
+  },
+  {
     name: "image dans le texte (#87) : insérée par le ⋯ du Manuscrit, enregistrée en Markdown, sa description et sa place modifiables",
     async run(h) {
       const { page } = h;
