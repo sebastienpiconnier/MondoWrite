@@ -2982,13 +2982,24 @@ const scenarios = [
       };
       // #122 : la page web passe par sa fenêtre, où le thème se choisit et reste dans le projet.
       await page.getByRole("button", { name: "Exporter", exact: true }).click();
-      await page.locator(".export-panel").getByRole("button", { name: "Page web jouable (.html)…" }).click();
+      await page.locator(".export-panel").getByRole("button", { name: "Page web jouable…" }).click();
       await page.locator(".wpage").getByText("Noir", { exact: true }).click();
       await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").webPage?.theme === "noir", "le thème de la page web n'est pas gardé dans le projet");
-      const webDownload = page.waitForEvent("download", { timeout: 30_000 });
-      await page.getByRole("button", { name: "Enregistrer la page" }).click();
-      const webFile = await webDownload;
-      const web = { name: webFile.suggestedFilename(), data: fs.readFileSync(await webFile.path()) };
+      // #125 : le poids est donné avant d'enregistrer.
+      await until(() => page.getByText(/^Poids estimé\u00a0: /).isVisible(), "la fenêtre de la page web ne donne pas le poids", 20_000);
+      const savePage = async () => {
+        const download = page.waitForEvent("download", { timeout: 30_000 });
+        await page.getByRole("button", { name: "Enregistrer la page" }).click();
+        const file = await download;
+        return { name: file.suggestedFilename(), data: fs.readFileSync(await file.path()) };
+      };
+      const web = await savePage();
+      // #125 : l'archive pour itch.io, la page et ses images à part.
+      await page.locator(".wpage").getByRole("radio", { name: /^Archive pour itch\.io \(\.zip\)/ }).check();
+      const archive = await savePage();
+      assert(archive.name.endsWith(".zip") && archive.data.subarray(0, 2).toString() === "PK" && archive.data.includes("index.html"), `archive de la page web : ${archive.name}`);
+      assert(!archive.data.includes("data:image/"), "l'archive garde des images en data:");
+      await page.locator(".wpage").getByRole("radio", { name: /^Une seule page \(\.html\)/ }).check();
       await page.keyboard.press("Escape");
       assert(web.name.endsWith(".html"), `nom de la page web : ${web.name}`);
       assert(web.data.includes("--paper: #f0f0ee;"), "la page web n'a pas le thème Noir");

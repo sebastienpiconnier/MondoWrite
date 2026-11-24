@@ -12,6 +12,9 @@ import { inkDeclarations, storyFacts } from "./facts";
 /** Étiquette Ink d'une image du texte : `# image: nom.jpg` (nom d'un fichier de medias/). */
 export const IMAGE_TAG = "image:";
 
+/** Variable d'Ink qui garde la scène en cours, posée seulement pour la page web (#124) : sa fin trouvée. */
+export const SCENE_VAR = "mw__scene";
+
 /**
  * Texte de l'auteur rendu inerte pour Ink : barre oblique inverse devant tout ce qu'Ink lirait comme une
  * instruction (accolades, crochets, barre verticale, dièse, flèches, colle, commentaires, et en début de ligne
@@ -78,8 +81,11 @@ export function projectToInk(
   factLabels: Readonly<Record<string, string>> = {},
   /** Texte d'un choix laissé vide : Ink cacherait un choix sans texte (choix de repli). */
   emptyLabel = "…",
-  /** Page web (#122) : garder le gras et l'italique, en marques `MARKS`. */
-  options: { marks?: boolean } = {},
+  /**
+   * Page web : `marks` garde le gras et l'italique en marques `MARKS` (#122), `track` note la scène en cours dans
+   * `SCENE_VAR` pour compter les fins trouvées (#124).
+   */
+  options: { marks?: boolean; track?: boolean } = {},
 ): InkSource {
   const out: string[] = [];
   const lines: InkLine[] = [];
@@ -90,6 +96,7 @@ export function projectToInk(
   // Faits et compteurs (lot 4) : déclarés en tête, faux ou à zéro au départ.
   const facts = storyFacts(manuscript, scenes.map((s) => s.id), new Set(slugs.values()), factLabels);
   for (const decl of inkDeclarations(facts)) push(decl);
+  if (options.track) push(`VAR ${SCENE_VAR} = ""`);
   const first = scenes[0];
   push(first ? `-> ${slugs.get(first.id)}` : `-> ${END_TARGET}`);
   for (const s of scenes) {
@@ -97,6 +104,7 @@ export function projectToInk(
     if (!knot) continue;
     push("", s.id);
     push(`=== ${knot} ===`, s.id);
+    if (options.track) push(`~ ${SCENE_VAR} = "${knot}"`, s.id);
     for (const b of htmlToBlocks(manuscript[s.id])) {
       if (b.kind === "image") push(`# ${IMAGE_TAG} ${b.name}`, s.id);
       else {
