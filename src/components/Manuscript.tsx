@@ -958,6 +958,7 @@ export function Manuscript() {
                 { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },
                 { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
                 { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
+                { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
                 !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
                 {
                   // La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle.

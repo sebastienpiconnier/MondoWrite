@@ -1,6 +1,7 @@
 // Fenêtres par-dessus l'app : la liste des raccourcis clavier (Cmd/Ctrl + /) et « À propos de MondoWrite ».
 // Ouvertes depuis les Réglages ou au clavier ; <dialog> natif : Échap ferme, le focus est retenu dedans.
 
+import { SynopsisDialog } from "./SynopsisDialog";
 import { BrandMark, Wordmark } from "./BrandMark";
 import { useEffect, useRef, useState } from "react";
 import { useCosmos } from "../store";
@@ -82,7 +83,7 @@ export function Dialogs() {
   return (
     <dialog
       ref={ref}
-      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "synonyms" || dialog === "names" ? " is-replace is-names" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : dialog === "revisions" ? " is-replace is-revisions" : dialog === "play" ? " is-play" : dialog === "webPage" ? " is-replace is-web-page" : ""}`}
+      className={`app-dialog${dialog === "document" ? " is-document" : dialog === "photos" ? " is-photos" : dialog === "card" ? " is-card" : dialog === "replace" ? " is-replace" : dialog === "paperback" ? " is-replace is-paperback" : dialog === "stats" ? " is-stats" : dialog === "goto" || dialog === "commands" ? " is-goto" : dialog === "synonyms" || dialog === "names" ? " is-replace is-names" : dialog === "scriptPdf" ? " is-stats is-script-pdf" : dialog === "bibleExport" ? " is-stats is-script-pdf is-bible-export" : dialog === "profile" ? " is-replace is-profile" : dialog === "vrac" ? " is-replace is-vrac" : dialog === "versions" ? " is-stats is-versions" : dialog === "backups" ? " is-replace is-backups" : dialog === "revisions" ? " is-replace is-revisions" : dialog === "play" ? " is-play" : dialog === "webPage" ? " is-replace is-web-page" : dialog === "synopsis" ? " is-stats is-synopsis" : ""}`}
       aria-labelledby="app-dialog-title"
       onClose={() => setDialog(null)}
       // Carte agrandie : un clic à côté de la fenêtre (sur le fond) la ferme. Seulement si le bouton a aussi été
@@ -128,6 +129,7 @@ export function Dialogs() {
       {dialog === "versions" && <VersionsDialog />}
       {dialog === "play" && <PlayDialog />}
       {dialog === "webPage" && <WebPagePanel />}
+      {dialog === "synopsis" && <SynopsisDialog />}
       {dialog === "backups" && <BackupsDialog />}
       {dialog === "goto" && <GoToPanel />}
       {dialog === "commands" && <CommandPalette />}

@@ -1709,3 +1709,13 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .link-pill .link-star { min-width: 28px; border: 0; background: transparent; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
 .link-pill .link-star[aria-pressed="true"] { color: var(--accent); }
 @media (pointer: coarse) { .link-pill .link-star { min-width: 44px; min-height: 44px; } }
+
+/* « Lire le synopsis seul » (#147) */
+.synopsis-list { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: min(60dvh, 640px); overflow: auto; }
+.synopsis-row h3 { margin: 12px 0 0; font: 600 1.0625rem var(--font-display); color: var(--ink); }
+.synopsis-row.is-act h3, .synopsis-row.is-season h3 { font-size: 1.25rem; border-top: 2px solid var(--accent); padding-top: 8px; }
+.synopsis-row.is-seq h3, .synopsis-row.is-chapter h3 { font-size: 1rem; }
+.synopsis-row p { margin: 2px 0 0; color: var(--ink-2); line-height: 1.5; }
+.synopsis-row p.is-empty { font-style: italic; color: var(--muted); }
+.synopsis-title { font-weight: 600; text-align: left; }
+.synopsis-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

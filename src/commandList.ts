@@ -64,6 +64,7 @@ export const COMMANDS: AppCommandItem[] = [
   // MondoWrite
   { id: "about", group: "app", label: (t) => t.appMenu.about, run: () => s().setDialog("about") },
   { id: "settings", group: "app", label: (t) => t.appMenu.settings, accelerator: "CmdOrCtrl+,", run: () => sendCommand("settings") },
+  { id: "synopsis-view", group: "view", menu: false, label: (t) => t.synopsisView.menu, enabled: inProject, run: () => s().setDialog("synopsis") },
   { id: "plot-colors", group: "view", menu: false, label: (t) => t.plan.plotColors, enabled: inProject, run: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
   { id: "profile", group: "app", menu: false, label: (t) => t.palette.items.profile, run: () => s().setDialog("profile") },
   // Pas l'élément « Quitter » du système : il fermait l'app sans laisser enregistrer la dernière frappe.

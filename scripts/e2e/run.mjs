@@ -1348,6 +1348,34 @@ const scenarios = [
     },
   },
   {
+    name: "synopsis (#147) : montré sous l'en-tête sans changer les pages, lu seul dans sa fenêtre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Synopsis", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("INT. PHARE – NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne.");
+      await h.wait(800);
+      await page.getByRole("button", { name: /^Ajouter un synopsis/ }).first().click();
+      await page.keyboard.type("Inès veille seule.");
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await until(async () => (await page.locator(".sp-editor .sp-sceneHeading").first().getAttribute("data-synopsis")) === "Inès veille seule.", "l'en-tête ne porte pas son synopsis");
+      const pagesBefore = await page.locator(".sp-statusbar, .sp-foot").first().innerText().catch(() => "");
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Afficher le synopsis sous l’en-tête" }).click();
+      await until(() => page.locator(".screenplay.show-synopsis").count(), "l'option n'est pas posée sur la feuille");
+      const shown = await page.evaluate(() => getComputedStyle(document.querySelector(".sp-sceneHeading[data-synopsis]"), "::before").content);
+      assert(/Inès veille seule/.test(shown), `le synopsis n'est pas dessiné sous l'en-tête : ${shown}`);
+      const pagesAfter = await page.locator(".sp-statusbar, .sp-foot").first().innerText().catch(() => "");
+      assert(pagesBefore === pagesAfter, `les pages ont changé : ${pagesBefore} → ${pagesAfter}`);
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Lire le synopsis seul" }).click();
+      await until(() => page.locator(".synopsis-row.is-scene", { hasText: "Inès veille seule." }).count(), "la fenêtre du synopsis ne montre pas la scène");
+    },
+  },
+  {
     name: "recherche dans le Scénario (#85) : le mot trouvé dans l'action d'une scène y est sélectionné",
     async run(h) {
       const { page } = h;

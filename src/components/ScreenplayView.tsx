@@ -1248,7 +1248,7 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${writing.showSynopsis && !focusMode ? " show-synopsis" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       // Largeur de la colonne du mode focus, comme dans le Manuscrit : la taille du texte ne change pas, la colonne
       // s'élargit (réglage de l'appareil, en caractères).
@@ -1521,6 +1521,9 @@ export function ScreenplayView() {
               { label: t.versions.listMenu, disabled: !scene?.cardId, onSelect: () => openVersions(false) },
               { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: openReplace },
               { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
+              // Synopsis (#147) : sous chaque en-tête (hors pages), ou lu seul dans sa fenêtre.
+              { label: writing.showSynopsis ? t.synopsisView.hide : t.synopsisView.show, onSelect: () => { const st = useSettings.getState(); st.setWriting({ ...st.writing, showSynopsis: !st.writing.showSynopsis }); } },
+              { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
               { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
               !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
               // Pages verrouillées (#46) : la scène laisse « OMIS » à sa place ; en rouge, en dernier (elle part à la corbeille).

@@ -84,6 +84,8 @@ const KEY = "cosmos:reglages";
 export interface WritingSettings {
   /** La ligne en cours reste à mi-hauteur de l'écran, comme sur une machine à écrire. */
   typewriter: boolean;
+  /** Scénario : synopsis de chaque scène montré sous son en-tête (#147), hors pages ; non par défaut. */
+  showSynopsis: boolean;
   /** Ce qui reste en pleine encre ; le reste s'estompe. */
   highlight: FocusHighlight;
   /** Typographie automatique à la frappe : selon la langue de l'interface, celle d'une langue de typoRules.ts, ou aucune. */
@@ -158,6 +160,7 @@ function readWriting(raw: unknown): WritingSettings {
   const w = (raw ?? {}) as Partial<Record<keyof WritingSettings, unknown>>;
   return {
     typewriter: w.typewriter === true,
+    showSynopsis: w.showSynopsis === true,
     highlight: isFocusHighlight(w.highlight) ? w.highlight : "off",
     typography: isTypographySetting(w.typography) ? w.typography : "auto",
     zoom: readZoom(w.zoom),
