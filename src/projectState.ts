@@ -299,13 +299,7 @@ export function openProject(p: Project) {
   // reçoivent, et une structure livrée du même épisode devient celle de l'auteur (« d'après » elle).
   let plan = base.plan;
   if (base.kind === "scenario" && screenplay) {
-    const tp = getT().plan;
-    const done = adoptStructureCases(screenplay.elements, plan.scriptBeats, {
-      label: (key) => tp.beats[key as PlanBeat]?.label ?? key,
-      hint: (key) => tp.beats[key as PlanBeat]?.hint ?? "",
-      tplName: (template) => fmt(tp.structureFrom, { name: tp.templates[template as keyof typeof tp.templates] ?? template }),
-      builtInOf: (key) => SCREENPLAY_TEMPLATES.find((tpl) => (PLAN_TEMPLATES[tpl] as readonly string[]).includes(key)) ?? "",
-    });
+    const done = adoptStructureCases(screenplay.elements, plan.scriptBeats, structureCaseText());
     if (done.elements !== screenplay.elements) {
       screenplay = { ...screenplay, elements: done.elements };
       if (Object.keys(done.entries).length > 0) plan = { ...plan, scriptBeats: { ...(plan.scriptBeats ?? {}), ...done.entries } };
@@ -319,6 +313,18 @@ export function openProject(p: Project) {
     // Un projet qu'on ouvre repart d'un historique vide.
     state: { ...base, paperChosen, nodes, screenplay, savedScreenplay: p.screenplay, currentEpisode: null as string | null, exportPart: null as string | null, past: [], future: [], awaitingLayout: [] as CardLayout[] },
     dirty: renamed || !!episodes || seriesAdopted || screenplay !== p.screenplay || nodes !== base.nodes || paperChosen !== base.paperChosen || adopted.nodes !== read.nodes,
+  };
+}
+
+/** Libellés de la reprise des actes et séquences en cases de l'auteur (#148), aussi pour une section transformée
+ *  dans la feuille (#155). */
+export function structureCaseText() {
+  const tp = getT().plan;
+  return {
+    label: (key: string) => tp.beats[key as PlanBeat]?.label ?? key,
+    hint: (key: string) => tp.beats[key as PlanBeat]?.hint ?? "",
+    tplName: (template: string) => fmt(tp.structureFrom, { name: tp.templates[template as keyof typeof tp.templates] ?? template }),
+    builtInOf: (key: string) => SCREENPLAY_TEMPLATES.find((tpl) => (PLAN_TEMPLATES[tpl] as readonly string[]).includes(key)) ?? "",
   };
 }
 
