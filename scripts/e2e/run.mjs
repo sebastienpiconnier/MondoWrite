@@ -2017,7 +2017,8 @@ const scenarios = [
       assert(expected !== original, "les deux sections du scénario manquent");
       const cards = page.locator(".sq-list.is-cards");
       const grip = cards.locator(".sq-scene").filter({ hasText: "INT. PHARE" }).locator(".reorder-handle");
-      const section = cards.locator(".sq-section").filter({ hasText: "Acte II" });
+      // Les sections importées sont des parties de la structure (1.48) : leur titre est un champ, pris par son rang.
+      const section = cards.locator(".sq-section").nth(1);
       const from = await grip.boundingBox();
       const to = await section.boundingBox();
       await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -3030,7 +3031,7 @@ const scenarios = [
       await until(async () => await rows.nth(2).locator("input").first().inputValue() === title && await rows.nth(2).locator(".reorder-handle").evaluate(el => el === document.activeElement), "la case ou sa poignée n’a pas suivi le déplacement");
       // Un simple clic sur la poignée ouvre aussi les commandes utilisables sans glisser.
       await rows.nth(2).locator(".reorder-handle").click();
-      await dialog.getByRole("menuitem", { name: /Monter la case/ }).click();
+      await dialog.getByRole("menuitem", { name: /Monter l’étape/ }).click();
       await until(async () => await rows.nth(1).locator("input").first().inputValue() === title, "la case n’est pas revenue à sa place");
       // La ligne affiche ses actions quand son nom reçoit le focus clavier.
       await dialog.locator(".tpl-row").last().locator("input").first().focus();

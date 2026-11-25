@@ -38,6 +38,8 @@ const PAIRS: [string, string][] = [
   ["placeholder", "surface"],
   ["accent", "surface"],
   ["accent-ink", "accent-soft"],
+  // Bouton « Insérer un champ » de l’en-tête du PDF du scénario (PR #133) : sur le fond de la fenêtre.
+  ["accent-ink", "ground"],
   ["strong-fg", "strong-bg"],
   ["page-ink", "page"],
   ["page-ink-dim", "page"],

@@ -1003,7 +1003,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .bexp-theme { flex: 1; min-height: 32px; padding: 2px 6px; border: 0; border-radius: 5px; background: transparent; color: var(--ink); font: 600 .875rem var(--font-ui); cursor: pointer; }
 .bexp-theme.is-editorial { font-family: var(--font-text); }
 .bexp-theme.is-nuit { font-family: var(--font-display); }
-.bexp-theme[aria-checked="true"] { background: var(--control-green); color: var(--control-green-ink); }
+.bexp-theme[aria-checked="true"] { background: var(--strong-bg); color: var(--strong-fg); }
 .bexp-accent-label { margin-top: 8px; font-weight: 600; }
 .bexp-accents { display: flex; gap: 8px; margin: 2px 0 6px; }
 .bexp-accent { display: grid; place-content: center; width: 34px; height: 34px; border: 3px solid var(--surface); border-radius: 50%; box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; }
@@ -1030,7 +1030,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 }
 .preset-dialog input { font: inherit; padding: 8px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--surface); color: var(--ink); }
 .spdf-field-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.spdf-field-tools .insert-field { display: inline-flex; align-items: center; gap: 4px; width: auto; min-width: 0; height: auto; min-height: 26px; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--control-green); color: var(--control-green); background: var(--ground); font-size: .8rem; }
+.spdf-field-tools .insert-field { display: inline-flex; align-items: center; gap: 4px; width: auto; min-width: 0; height: auto; min-height: 26px; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--accent-ink); color: var(--accent-ink); background: var(--ground); font-size: .8rem; }
 .spdf .spdf-unavailable { padding-inline-start: 25px; color: color-mix(in srgb, var(--danger) 48%, var(--ink-2)); }
 @media (pointer: coarse) {
   .bexp-themes button, .bexp-accents button, .bexp-row button, .spdf-field-tools .insert-field { min-width: 44px; min-height: 44px; }

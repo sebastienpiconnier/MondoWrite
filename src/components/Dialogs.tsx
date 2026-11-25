@@ -8,7 +8,7 @@ import { useCosmos } from "../store";
 import { useT } from "../i18n";
 import { shortcutScore } from "../shortcutSearch";
 import { shortcutKeyName, SHORTCUT_GROUPS, type ShortcutGroup } from "../shortcuts";
-import { isAppleKeyboard, openExternal } from "../platform";
+import { isAppleKeyboard, isTouch, openExternal } from "../platform";
 import { openBugReport } from "../reportBug";
 import { canRateInStore, openStoreReviewPage } from "../storeReview";
 import { version } from "../../package.json";
@@ -193,7 +193,8 @@ function ShortcutList() {
   }).filter(({ rows }) => rows.length);
   return <>
     <h2 id="app-dialog-title">{t.shortcuts.title}</h2>
-    <input className="goto-input" type="search" autoFocus autoComplete="off" spellCheck={false}
+    {/* Au doigt, pas de focus d’office : le clavier virtuel couvrirait la liste des raccourcis. */}
+    <input className="goto-input" type="search" autoFocus={!isTouch()} autoComplete="off" spellCheck={false}
       aria-label={t.shortcuts.filter} placeholder={t.shortcuts.filter} value={query}
       onChange={e => setQuery(e.target.value)} />
     {!groups.length && <p role="status">{t.shortcuts.empty}</p>}
