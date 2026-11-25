@@ -1432,6 +1432,45 @@ const scenarios = [
     },
   },
   {
+    name: "scène en cours (#156) : un trait dans la marge le long de la scène du curseur (scénario, manuscrit), aucun en mode focus, barre dans la liste",
+    async run(h) {
+      const { page } = h;
+      await h.create("Repère", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. QUAI – NUIT", "La pluie."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      await page.locator(".sp-editor [data-el=action]", { hasText: "La pluie." }).click();
+      await until(() => page.locator(".sp-page .scene-rail").count(), "pas de trait pour la scène en cours");
+      const along = await page.evaluate(() => {
+        const rail = document.querySelector(".scene-rail").getBoundingClientRect();
+        const heads = [...document.querySelectorAll(".sp-editor [data-el=sceneHeading]")].map((e) => e.getBoundingClientRect());
+        return { rail: [rail.top, rail.bottom], first: heads[0].top, second: heads[1].top };
+      });
+      assert(along.rail[0] <= along.second + 2 && along.rail[0] > along.first + 2, `le trait n'est pas le long de la seconde scène : ${JSON.stringify(along)}`);
+      const bar = await page.locator(".sp-scene-list button.is-current").evaluate((el) => getComputedStyle(el).boxShadow);
+      assert(/inset/.test(bar), `pas de barre sur la scène en cours de la liste : ${bar}`);
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/scene-156.png` });
+      await page.keyboard.press("Control+Shift+F");
+      await until(() => page.locator(".screenplay.is-focus").count(), "le mode focus ne s'ouvre pas");
+      await h.wait(300);
+      assert((await page.locator(".scene-rail").count()) === 0, "le trait reste en mode focus");
+      await page.keyboard.press("Escape");
+      // Manuscrit de l'exemple : le trait suit la scène choisie dans le volet.
+      await h.example();
+      await h.view(4);
+      const rows = page.locator(".ms-scenes button[data-scene], .ms-scenes [data-scene] > button, .ms-scenes button.is-movable");
+      await until(() => rows.count(), "le volet des scènes est vide");
+      await rows.nth(1).click();
+      await until(() => page.locator(".ms-page .scene-rail").count(), "pas de trait dans le manuscrit");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/scene-156-ms.png` });
+    },
+  },
+  {
     name: "sections importées (#155) : proposées une fois comme actes et séquences, « Les lire ainsi » les transforme",
     async run(h) {
       const { page } = h;

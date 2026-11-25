@@ -3,7 +3,7 @@
 // Chaque scène garde son fichier : ce qu'on écrit est rangé dans la scène où se trouve le curseur.
 
 import { useStableEditor } from "./useStableEditor";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, createDocument, getHTMLFromFragment, type Editor } from "@tiptap/react";
 import { Fragment, type Node as PMNode } from "@tiptap/pm/model";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -37,6 +37,7 @@ import { centerSelection } from "./centerSelection";
 import { LanguageTool } from "../languagetool/extension";
 import { LanguageToolBubble, LanguageToolLive } from "./LanguageToolBubble";
 import { ThreadFoldExtension, setThreadFold, type ThreadFold } from "../screenplay/editor/threadFold";
+import { SceneRail, bookRange } from "./SceneRail";
 
 /** Page du manuscrit à l'écran, en em : format livre (2:3), environ 250 mots par page. */
 export const PAGE = { width: 34, height: 51, marginTop: 5, marginBottom: 5, lineHeight: 1.6 };
@@ -648,9 +649,13 @@ export function BookEditor({
     };
   }, [editor, focusMode, writing]);
 
+  // Scène en cours (#156) : un trait dans la marge, le long de ses paragraphes.
+  const railRange = useMemo(() => bookRange(current, SCENE_MARK), [current]);
+  const railBox = useCallback(() => editor?.view.dom.closest<HTMLElement>(".ms-page") ?? null, [editor]);
   return (
     <>
       <EditorContent editor={editor} />
+      <SceneRail editor={editor} range={railRange} container={railBox} enabled={!focusMode && !!current} />
       {create && (
         <SuggestionMenu
           title={t.manuscript.createTitle}

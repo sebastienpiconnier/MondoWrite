@@ -30,6 +30,7 @@ import { SceneLinks } from "./LinkedCards";
 import { ScenePlace } from "./ScenePlace";
 import { SideParts, type SidePart } from "./SideParts";
 import { usePlotColor } from "./usePlotColor";
+import { SceneRail, screenplayRange } from "./SceneRail";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -252,6 +253,7 @@ export function ScreenplayView() {
 
   // Complétion ouverte sous le curseur (personnages, décors, moments).
   const pageRef = useRef<HTMLDivElement>(null);
+  const railBox = useCallback(() => pageRef.current, []);
   const [menu, setMenu] = useState<{ items: Suggestion[]; active: number; style: CSSProperties } | null>(null);
   const menuRef = useRef(menu);
   menuRef.current = menu;
@@ -1846,6 +1848,7 @@ export function ScreenplayView() {
           >
             {revisionRules && <style>{revisionRules}</style>}
             <EditorContent editor={editor} />
+            <SceneRail editor={editor} range={screenplayRange} container={railBox} enabled={!focusMode} />
             {editor && <LanguageToolBubble editor={editor} />}
             {editor && <LanguageToolLive editor={editor} accept={ltAccept} />}
             {veil && (
