@@ -91,6 +91,8 @@ describe("sous-séquences (lot 17 ter)", () => {
       ["sub", 3],
     ]);
     expect(parts[2].seq).toBe("s1");
+    // Le titre ne garde aucune note (bug de « Place de la scène »).
+    expect(parts[2].title).toBe("Sous-séquence 1");
     expect(parts[2].act).toBe("a1");
     expect(partOfScene(parts, 3)?.key).toBe("u1");
   });
