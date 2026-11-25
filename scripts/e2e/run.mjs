@@ -1245,6 +1245,32 @@ const scenarios = [
     },
   },
   {
+    name: "collage depuis Word : un paragraphe du scénario reste d'un seul tenant",
+    async run(h) {
+      const { page } = h;
+      // Word coupe le code source HTML de ses paragraphes par de vrais retours à la ligne.
+      const word = '<html><body><p class=MsoNormal>Il pleuvait sur la ville depuis\r\ntrois jours, et personne ne\r\nsortait plus.</p></body></html>';
+      const paste = (selector) =>
+        page.evaluate(
+          ([sel, html]) => {
+            const el = document.querySelector(sel);
+            const data = new DataTransfer();
+            data.setData("text/html", html);
+            data.setData("text/plain", "Il pleuvait sur la ville depuis trois jours, et personne ne sortait plus.");
+            el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+          },
+          [selector, word],
+        );
+      await h.create("Collage", "scenario");
+      await h.view(4);
+      const editor = page.getByRole("textbox", { name: "Texte du scénario" });
+      await editor.click();
+      await paste(".sp-editor");
+      const text = await until(() => page.evaluate(() => [...document.querySelectorAll(".sp-editor > [data-el]")].map((e) => e.textContent).join("|")).then((t) => (t.includes("pleuvait") ? t : null)), "le collage n'arrive pas dans le scénario");
+      assert(!/[\r\n]/.test(text) && text.includes("depuis trois jours, et personne ne sortait"), `scénario coupé : ${JSON.stringify(text)}`);
+    },
+  },
+  {
     name: "scénario : en-tête, action et réplique donnent leurs cartes Scène, Décor et Personnage",
     async run(h) {
       const { page } = h;

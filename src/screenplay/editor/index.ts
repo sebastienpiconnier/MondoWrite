@@ -15,7 +15,7 @@ import { Continued, type ContinuedOptions } from "./continued";
 import { Revisions } from "./revisions";
 import { HiddenSynopsis } from "./hiddenSynopsis";
 import { ReadingMark } from "../../components/readingMark";
-import { Synonyms } from "../../components/editorKit";
+import { PastedHtml, Synonyms } from "../../components/editorKit";
 import {
   Action,
   Character,
@@ -101,5 +101,7 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
       start: (node) => (node.type.name === "sceneHeading" ? (node.attrs.cardId && node.attrs.omitted == null ? String(node.attrs.cardId) : null) : undefined),
     }),
     ReadingMark,
+    // Texte collé depuis Word : les retours du code source HTML ne coupent plus un paragraphe.
+    PastedHtml,
   ];
 }
