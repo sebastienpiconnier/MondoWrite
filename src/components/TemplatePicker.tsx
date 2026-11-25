@@ -32,6 +32,9 @@ interface Props {
   /** Libellé du menu (par défaut « Gabarit »). */
   label?: string;
   className?: string;
+  /** Ce que choisir une autre structure retirerait (#154 : actes et séquences de « Ma structure ») ; absent ou
+   *  null : rien, le choix s'applique aussitôt. Sinon une confirmation le dit, « Annuler » garde tout. */
+  replaceWarning?: string | null;
 }
 
 interface Row {
@@ -55,7 +58,7 @@ const MANAGE = "__manage";
 /** Durée d'affichage du message d'import ou d'export. */
 const NOTICE_MS = 6000;
 
-export function TemplatePicker({ value, options, allowNone = false, custom, onBuiltin, episode, label, className }: Props) {
+export function TemplatePicker({ value, options, allowNone = false, custom, onBuiltin, episode, label, className, replaceWarning }: Props) {
   const t = useT();
   const p = t.plan;
   const e = p.editor;
@@ -68,6 +71,9 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     return () => window.clearTimeout(timer);
   }, [notice]);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Choix en attente de confirmation (#154) : il remplacerait actes et séquences de l'auteur.
+  const [pending, setPending] = useState<(() => void) | null>(null);
+  const guarded = (run: () => void) => (replaceWarning ? setPending(() => run) : run());
   // « Gérer mes gabarits… » : la bibliothèque de l'appareil, avec Exporter et Retirer (1.13.1).
   const [managing, setManaging] = useState(false);
   const manageRef = useRef<HTMLDialogElement>(null);
@@ -180,7 +186,7 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
     }
     if (v.startsWith(MINE)) {
       const tpl = saved.find((s) => s.id === v.slice(MINE.length));
-      if (tpl) apply(tpl.name, tpl.beats);
+      if (tpl) guarded(() => apply(tpl.name, tpl.beats));
       return;
     }
     // Les cases de l'auteur gardées dans le projet (roman) : on y revient.
@@ -188,7 +194,9 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
       if (value !== "perso") onBuiltin("perso");
       return;
     }
-    onBuiltin(v ? (v as PlanTemplate) : null);
+    const next = v ? (v as PlanTemplate) : null;
+    if (next === value) return;
+    guarded(() => onBuiltin(next));
   };
 
   const close = () => {
@@ -252,6 +260,26 @@ export function TemplatePicker({ value, options, allowNone = false, custom, onBu
           </optgroup>
         </select>
       </label>
+      {pending && (
+        <span className="tpl-confirm" role="alertdialog" aria-label={replaceWarning ?? ""}>
+          <span>{replaceWarning}</span>
+          {/* « Annuler » d'abord et choisi : ne rien perdre est le geste sûr. */}
+          <button type="button" className="ghost-button" autoFocus onClick={() => setPending(null)}>
+            {p.replaceNo}
+          </button>
+          <button
+            type="button"
+            className="ghost-button is-danger"
+            onClick={() => {
+              const run = pending;
+              setPending(null);
+              run();
+            }}
+          >
+            {p.replaceYes}
+          </button>
+        </span>
+      )}
       {notice && (
         <span className={`tpl-notice${notice.error ? " is-error" : ""}`} role="status">
           {notice.text}

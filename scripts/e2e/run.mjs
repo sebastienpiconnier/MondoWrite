@@ -478,6 +478,43 @@ const scenarios = [
     },
   },
   {
+    name: "garder sa place (#153) : Scénario › Canevas › Séquencier montre la scène, la séquence repliée qui la contient se déplie",
+    async run(h) {
+      const { page } = h;
+      await h.create("Place", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. QUAI – NUIT", "La pluie."], ["INT. CUISINE – JOUR", "Le café."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      await page.locator(".sp-editor [data-el=action]", { hasText: "Le café." }).click();
+      await page.locator(".sp-bar").getByRole("button", { name: "+ Séquence" }).click();
+      await h.saved((f) => /\[\[cosmos:seq:[^\]]+\]\]\s*\n+\s*INT\. CUISINE/.test(f["scenario.fountain"] ?? ""), "la séquence n'est pas posée au-dessus de la troisième scène");
+      // La séquence repliée dans le séquencier : la scène n'y a plus de ligne.
+      await h.view(2);
+      const row = page.locator(".sq-section.sq-part");
+      await row.getByRole("button", { name: /^Replier/ }).click();
+      await until(async () => (await page.locator(".sq-scene").count()) === 2, "replier la séquence ne cache pas sa scène");
+      await h.view(4);
+      await page.locator(".sp-editor [data-el=action]", { hasText: "Le café." }).click();
+      await page.keyboard.press("End");
+      await h.wait(300);
+      await h.view(1);
+      const picked = page.locator(".react-flow__node.selected");
+      await until(() => picked.count(), "le canevas n'a pas choisi la carte de la scène");
+      const id = await picked.first().getAttribute("data-id");
+      await h.view(2);
+      await until(
+        () => page.evaluate((sid) => document.activeElement?.closest("[data-scene]")?.getAttribute("data-scene") === sid, id),
+        `le séquencier ne montre pas la scène ${id} : ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 160))}`,
+      );
+      assert((await page.locator(".sq-scene").count()) === 3, "la séquence ne s'est pas dépliée");
+    },
+  },
+  {
     name: "déplacer des lignes (#145) : Alt Maj ↑ monte le paragraphe du Manuscrit, enregistré dans le nouvel ordre",
     async run(h) {
       const { page } = h;
@@ -555,6 +592,35 @@ const scenarios = [
       await until(async () => (await figure.count()) === 1, "après rechargement, l'image a disparu du texte");
       assert((await figure.getAttribute("data-place")) === "page", "après rechargement, l'image n'est plus seule sur sa page");
       assert((await figure.locator("input").inputValue()) === "Le phare sous l’orage", "après rechargement, la description de l'image est perdue");
+    },
+  },
+  {
+    name: "recherche (#160) : le nombre de passages, de cartes et de scènes à côté du champ, annoncé poliment",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      await until(() => page.locator(".manuscript .ProseMirror").first().isVisible(), "le Manuscrit ne s'ouvre pas");
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("loup");
+      const count = page.locator(".search-count");
+      await until(async () => /^\d+ passages$/.test(await count.innerText()), "pas de nombre de passages à côté du champ");
+      const n = Number((await count.innerText()).split(" ")[0]);
+      assert(n === (await page.locator(".search-result").count()), `${n} passages annoncés, ${await page.locator(".search-result").count()} listés`);
+      assert((await count.getAttribute("aria-live")) === "polite", "le nombre n'est pas annoncé poliment");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/search-160.png` });
+      await page.locator(".search-input").fill("zzzz");
+      await until(async () => (await count.innerText()) === "", "un nombre reste affiché sans résultat");
+      await page.keyboard.press("Escape");
+      await h.view(1);
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("loup");
+      await until(async () => /^\d+ cartes?$/.test(await count.innerText()), `pas de nombre de cartes : « ${await count.innerText()} »`);
+      await page.keyboard.press("Escape");
+      await h.view(2);
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("loup");
+      await until(async () => /^\d+ scènes?$/.test(await count.innerText()), `pas de nombre de scènes : « ${await count.innerText()} »`);
     },
   },
   {
@@ -1395,6 +1461,146 @@ const scenarios = [
         return !/e_teaser/.test(text) && /### Pré-générique \[\[cosmos:beat:u\d+\]\]/.test(text) && /#### Séquence 1 \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:[A-Za-z0-9_-]+\]\]\s*\n+\s*\.?INT\. CUISINE/.test(text);
       }, "la structure livrée de l'épisode 2 n'est pas devenue celle de l'auteur avec la séquence dessous");
       assert(/d’après Épisode de série/.test(JSON.stringify(JSON.parse((await h.files())["cosmos.json"]).plan?.scriptBeats ?? {})), "le nom « d'après » n'est pas gardé");
+    },
+  },
+  {
+    name: "structure livrée (#154) : choisir « Trois actes » annonce la séquence retirée ; Annuler la garde, Remplacer la retire",
+    async run(h) {
+      const { page } = h;
+      await h.create("Remplacer", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. QUAI – NUIT", "La pluie."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await page.locator(".sp-bar").getByRole("button", { name: "+ Séquence" }).click();
+      await h.saved((f) => /\[\[cosmos:seq:/.test(f["scenario.fountain"] ?? ""), "la séquence n'est pas enregistrée");
+      await h.view(2);
+      const select = page.locator(".plan-template select").first();
+      await select.selectOption("troisActes");
+      const ask = page.getByRole("alertdialog");
+      await until(() => ask.isVisible(), "pas de confirmation avant de retirer la séquence");
+      assert(/1 séquence/.test(await ask.innerText()), `la confirmation ne compte pas la séquence : ${await ask.innerText()}`);
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/structure-154.png` });
+      assert(await ask.getByRole("button", { name: "Annuler" }).evaluate((el) => el === document.activeElement), "« Annuler » n'a pas le focus");
+      await ask.getByRole("button", { name: "Annuler" }).click();
+      await h.wait(800);
+      const kept = (await h.files())["scenario.fountain"] ?? "";
+      assert(/\[\[cosmos:seq:/.test(kept) && !/c_setup|a_setup/.test(kept), `Annuler n'a pas tout gardé : ${kept}`);
+      await select.selectOption("troisActes");
+      await page.getByRole("alertdialog").getByRole("button", { name: "Remplacer" }).click();
+      await h.saved((f) => !/\[\[cosmos:seq:/.test(f["scenario.fountain"] ?? "") && /\[\[cosmos:beat:a_/.test(f["scenario.fountain"] ?? ""), "la structure livrée n'a pas remplacé la séquence");
+      assert(/La lanterne tourne\./.test((await h.files())["scenario.fountain"] ?? ""), "le texte des scènes a disparu");
+    },
+  },
+  {
+    name: "scène en cours (#156) : un trait dans la marge le long de la scène du curseur (scénario, manuscrit), aucun en mode focus, barre dans la liste",
+    async run(h) {
+      const { page } = h;
+      await h.create("Repère", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. QUAI – NUIT", "La pluie."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      await page.locator(".sp-editor [data-el=action]", { hasText: "La pluie." }).click();
+      await until(() => page.locator(".sp-page .scene-rail").count(), "pas de trait pour la scène en cours");
+      const along = await page.evaluate(() => {
+        const rail = document.querySelector(".scene-rail").getBoundingClientRect();
+        const heads = [...document.querySelectorAll(".sp-editor [data-el=sceneHeading]")].map((e) => e.getBoundingClientRect());
+        return { rail: [rail.top, rail.bottom], first: heads[0].top, second: heads[1].top };
+      });
+      assert(along.rail[0] <= along.second + 2 && along.rail[0] > along.first + 2, `le trait n'est pas le long de la seconde scène : ${JSON.stringify(along)}`);
+      const bar = await page.locator(".sp-scene-list button.is-current").evaluate((el) => getComputedStyle(el).boxShadow);
+      assert(/inset/.test(bar), `pas de barre sur la scène en cours de la liste : ${bar}`);
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/scene-156.png` });
+      await page.keyboard.press("Control+Shift+F");
+      await until(() => page.locator(".screenplay.is-focus").count(), "le mode focus ne s'ouvre pas");
+      await h.wait(300);
+      assert((await page.locator(".scene-rail").count()) === 0, "le trait reste en mode focus");
+      await page.keyboard.press("Escape");
+      // Manuscrit de l'exemple : le trait suit la scène choisie dans le volet.
+      await h.example();
+      await h.view(4);
+      const rows = page.locator(".ms-scenes button[data-scene], .ms-scenes [data-scene] > button, .ms-scenes button.is-movable");
+      await until(() => rows.count(), "le volet des scènes est vide");
+      await rows.nth(1).click();
+      await until(() => page.locator(".ms-page .scene-rail").count(), "pas de trait dans le manuscrit");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/scene-156-ms.png` });
+    },
+  },
+  {
+    name: "sections importées (#155) : proposées une fois comme actes et séquences, « Les lire ainsi » les transforme",
+    async run(h) {
+      const { page } = h;
+      await h.create("Causality", "scenario");
+      await h.wait(1200);
+      const fountain = ["# Premier acte", "## Le réveil", ".INT. CHAMBRE - JOUR", "Elle dort.", "## La route", ".EXT. ROUTE - JOUR", "Il roule.", ""].join("\n\n");
+      await page.evaluate((text) => {
+        const key = Object.keys(localStorage).find((k) => k.startsWith("cosmos:projet:"));
+        const files = JSON.parse(localStorage.getItem(key));
+        files["scenario.fountain"] = text;
+        localStorage.setItem(key, JSON.stringify(files));
+      }, fountain);
+      await h.reloadAndOpen();
+      await h.view(4);
+      const ask = page.locator(".sp-sections-ask");
+      await until(() => ask.isVisible(), "la proposition de lire les sections n'apparaît pas");
+      assert(/3 sections/.test(await ask.innerText()), `mauvais décompte : ${await ask.innerText()}`);
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/sections-155-ask.png` });
+      // Rien n'est écrit avant le clic.
+      assert(!/cosmos:(act|seq)/.test((await h.files())["scenario.fountain"] ?? ""), "les sections ont changé sans clic");
+      await ask.getByRole("button", { name: "Les lire ainsi" }).click();
+      await h.saved((f) => {
+        const text = f["scenario.fountain"] ?? "";
+        return /^# Premier acte \[\[cosmos:beat:u\d+\]\] \[\[cosmos:act:/m.test(text) && /^## Le réveil \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:/m.test(text) && /^## La route \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:/m.test(text);
+      }, "les sections ne sont pas devenues acte et séquences");
+      await until(async () => (await ask.count()) === 0, "la proposition reste affichée");
+      await until(() => page.locator('.sp-editor [data-series="act"]').count(), "la feuille ne montre pas l'acte");
+    },
+  },
+  {
+    name: "sections importées (#155) : « Non » ne change rien ; « Transformer en… » au double-clic et « + Séquence » sur la section la transforment",
+    async run(h) {
+      const { page } = h;
+      await h.create("Highland", "scenario");
+      await h.wait(1200);
+      const fountain = ["# Ouverture", ".INT. CHAMBRE - JOUR", "Elle dort.", "# Départ", ".EXT. ROUTE - JOUR", "Il roule.", ""].join("\n\n");
+      await page.evaluate((text) => {
+        const key = Object.keys(localStorage).find((k) => k.startsWith("cosmos:projet:"));
+        const files = JSON.parse(localStorage.getItem(key));
+        files["scenario.fountain"] = text;
+        localStorage.setItem(key, JSON.stringify(files));
+      }, fountain);
+      await h.reloadAndOpen();
+      await h.view(4);
+      const ask = page.locator(".sp-sections-ask");
+      await until(() => ask.isVisible(), "la proposition n'apparaît pas");
+      await ask.getByRole("button", { name: "Non, garder des sections" }).click();
+      await until(async () => (await ask.count()) === 0, "la proposition reste affichée");
+      const sections = page.locator('.sp-editor .sp-preserved[data-preserved="section"]');
+      await sections.nth(1).dblclick();
+      const menu = page.getByRole("group", { name: /Transformer « Départ »/ });
+      await until(() => menu.isVisible(), "pas de menu « Transformer en… » au double-clic");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/sections-155-menu.png` });
+      await menu.getByRole("button", { name: "Acte", exact: true }).click();
+      await h.saved((f) => /^# Départ \[\[cosmos:beat:u\d+\]\] \[\[cosmos:act:/m.test(f["scenario.fountain"] ?? ""), "« Départ » n'est pas devenu un acte");
+      // Le curseur sur la première section : « + Séquence » la transforme, sans ligne de plus.
+      await sections.nth(0).click();
+      await page.locator(".sp-bar").getByRole("button", { name: "+ Séquence" }).click();
+      await h.saved((f) => /^# Ouverture \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:/m.test(f["scenario.fountain"] ?? ""), "« Ouverture » n'est pas devenue une séquence");
+      assert((await sections.count()) === 2, `une ligne de plus a été créée : ${await sections.count()}`);
+      await h.reloadAndOpen();
+      await h.view(4);
+      await h.wait(800);
+      assert((await page.locator(".sp-sections-ask").count()) === 0, "la proposition revient après « Non »");
     },
   },
   {

@@ -67,3 +67,26 @@ describe("contraste AA dans toutes les palettes", () => {
     }
   }
 });
+
+// Scène en cours (#156) : le trait de la marge (encre de la page à 55 % sur la page, `.scene-rail`) et la barre des
+// listes des scènes (encre sur le fond de la scène en cours) se voient sans la couleur : 3:1 au moins (WCAG 1.4.11).
+const mix = (a: string, b: string, share: number) =>
+  "#" +
+  [1, 3, 5]
+    .map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * share + parseInt(b.slice(i, i + 2), 16) * (1 - share)))
+    .map((n) => n.toString(16).padStart(2, "0"))
+    .join("");
+
+describe("scène en cours visible sans la couleur (#156)", () => {
+  for (const palette of PALETTES) {
+    for (const mode of ["light", "dark"] as const) {
+      it(`${palette}, ${mode === "light" ? "clair" : "sombre"}`, () => {
+        const selector = mode === "light" ? `:root[data-palette="${palette}"]:not([data-theme="dark"])` : `:root[data-palette="${palette}"][data-theme="dark"]`;
+        const tk = { ...(mode === "light" ? lightBase : darkBase), ...tokensOf(blockOf(palettes, selector)) };
+        expect(contrast(mix(tk["page-ink"], tk.page, 0.55), tk.page)).toBeGreaterThanOrEqual(3);
+        expect(contrast(tk.ink, tk["accent-soft"])).toBeGreaterThanOrEqual(3);
+        expect(contrast(tk.ink, tk.surface)).toBeGreaterThanOrEqual(3);
+      });
+    }
+  }
+});

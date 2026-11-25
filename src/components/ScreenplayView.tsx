@@ -30,6 +30,7 @@ import { SceneLinks } from "./LinkedCards";
 import { ScenePlace } from "./ScenePlace";
 import { SideParts, type SidePart } from "./SideParts";
 import { usePlotColor } from "./usePlotColor";
+import { SceneRail, screenplayRange } from "./SceneRail";
 import { SynopsisField } from "./SynopsisField";
 import { TitlePage } from "./TitlePage";
 import { LAYOUTS } from "../screenplay/layout";
@@ -68,10 +69,12 @@ import type { Node as PMNode } from "@tiptap/pm/model";
 import { SCENE_AT, currentScript, scriptOffset, useCosmos, type CosmosState } from "../store";
 import { openNames } from "../namesState";
 import { setCaretSource } from "../resume";
-import { newId } from "../projectState";
+import { newId, structureCaseText } from "../projectState";
+import { storage } from "../storage";
+import { markSectionsAsked, sectionsAsked } from "../sectionsAsked";
 import { plainSection, resolveEpisode, seriesOf } from "../screenplay/series";
-import { insertionPoint, nextNumber, partLabel, renameStructure, structureMark, structureOf, structureSection, type StructureKind } from "../screenplay/structure";
-import { customizeRange, scopeAt, usedCaseKeys } from "../screenplay/structureCases";
+import { adoptUnmarkedSections, convertSection, insertionPoint, nextNumber, partLabel, renameStructure, structureMark, structureOf, structureSection, unmarkedSections, type StructureKind } from "../screenplay/structure";
+import { adoptStructureCases, customizeRange, scopeAt, usedCaseKeys } from "../screenplay/structureCases";
 import { SCREENPLAY_TEMPLATES, beatOf } from "../screenplay/template";
 import { PLAN_TEMPLATES, isCustomBeat, nextCustomKey, type PlanBeat } from "../plan";
 import { toggleFoldedPart, useFoldedParts } from "../structureFold";
@@ -88,7 +91,7 @@ import { revisionName, revisionVar } from "../revisionsText";
 import { usePhone } from "./usePhone";
 import { useVocab } from "../vocab";
 import { isTouch } from "../platform";
-import { EDITABLE_TYPES } from "../screenplay/model";
+import { EDITABLE_TYPES, type ScreenplayElement } from "../screenplay/model";
 import { cardsWithoutScene, type SceneCard } from "../screenplay/link";
 import {
   headingParts,
@@ -180,6 +183,9 @@ function scriptScope(ed: Editor): LtScope | null {
 
 const ltAccept = (block: PMNode) => LT_ELEMENTS.has(block.type.name);
 
+/** Ligne d'une section de l'auteur dans la feuille : ni saison, ni épisode, ni étape, ni acte ou séquence notés. */
+const AUTHOR_SECTION = '.sp-preserved[data-preserved="section"]:not([data-series])';
+
 export function ScreenplayView() {
   const { t, types } = useVocab();
   const sp = t.screenplay;
@@ -247,6 +253,7 @@ export function ScreenplayView() {
 
   // Complétion ouverte sous le curseur (personnages, décors, moments).
   const pageRef = useRef<HTMLDivElement>(null);
+  const railBox = useCallback(() => pageRef.current, []);
   const [menu, setMenu] = useState<{ items: Suggestion[]; active: number; style: CSSProperties } | null>(null);
   const menuRef = useRef(menu);
   menuRef.current = menu;
@@ -332,6 +339,8 @@ export function ScreenplayView() {
   const pickRef = useRef<(index: number) => void>(() => {});
   const editorRef = useRef<Editor | null>(null);
   const openSheetRenameRef = useRef<(el: HTMLElement) => boolean>(() => false);
+  // Section de l'auteur sans note (#155) : « Transformer en… » au double-clic ou à Entrée.
+  const openSheetConvertRef = useRef<(el: HTMLElement) => boolean>(() => false);
 
   const track = (ed: Editor) => {
     const index = ed.state.selection.$from.index(0);
@@ -394,6 +403,7 @@ export function ScreenplayView() {
         if (event.key === "Enter" && !event.shiftKey && _view.state.selection instanceof NodeSelection) {
           const dom = _view.nodeDOM(_view.state.selection.from);
           if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]') && openSheetRenameRef.current(dom)) return true;
+          if (dom instanceof HTMLElement && dom.matches(AUTHOR_SECTION) && openSheetConvertRef.current(dom)) return true;
         }
         const open = menuRef.current;
         if (!open) return false;
@@ -622,6 +632,51 @@ export function ScreenplayView() {
   openVersionsRef.current = openVersions;
   // Acte ou séquence (#140) : une section notée, posée au-dessus de la scène du curseur, par une transaction de
   // l'éditeur (le texte reste la source). Titre « Séquence 3 », renommé dans le séquencier.
+  // Sections de l'auteur réécrites sur place (#155 : une section importée devient acte, séquence ou sous-séquence),
+  // par une transaction de l'éditeur ; les actes et séquences reçoivent aussitôt leur case (#148, comme à
+  // l'ouverture). Le nombre d'éléments ne change pas. Faux si rien ne change.
+  const rewriteSections = (change: (els: ScreenplayElement[]) => ScreenplayElement[]): boolean => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return false;
+    const { elements: els } = fromDoc(ed.getJSON(), {});
+    const changed = change(els);
+    if (changed === els || changed.length !== els.length) return false;
+    const done = adoptStructureCases(changed, useCosmos.getState().plan.scriptBeats, structureCaseText());
+    let tr = ed.state.tr;
+    let p = 0;
+    for (let i = 0; i < ed.state.doc.childCount; i++) {
+      const node = ed.state.doc.child(i);
+      const el = done.elements[i];
+      if (el !== els[i] && el?.type === "section") tr = tr.setNodeMarkup(p, undefined, { ...node.attrs, text: el.text });
+      p += node.nodeSize;
+    }
+    if (!tr.docChanged) return false;
+    ed.view.dispatch(tr);
+    emit();
+    if (Object.keys(done.entries).length > 0) useCosmos.getState().addScriptBeats(done.entries);
+    return true;
+  };
+  const kindLabel = (kind: StructureKind) => (kind === "act" ? sp.preserved.act : kind === "sub" ? sp.preserved.sub : sp.preserved.seq);
+  const convertAt = (at: number, kind: StructureKind) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed || at >= ed.state.doc.childCount) return;
+    const title = plainSection(String(ed.state.doc.child(at).attrs.text ?? ""));
+    if (!rewriteSections((els) => convertSection(els, at, kind, newId()))) return;
+    setAnnounce(fmt(sp.sectionConverted, { title: title || sp.preserved.section, kind: kindLabel(kind) }));
+  };
+  // Sections sans note dans le texte (#155, fichier venu de Causality, Highland…) : une fois par projet, proposer de
+  // les lire comme actes et séquences. Rien n'est écrit sans le clic.
+  const projectKey = storage.current?.() ?? "";
+  const unmarked = useMemo(() => (screenplay ? unmarkedSections(screenplay.elements).length : 0), [screenplay]);
+  const [askedNow, setAskedNow] = useState(false);
+  const askSections = unmarked > 0 && !askedNow && !!projectKey && !sectionsAsked(projectKey);
+  const answerSections = (yes: boolean) => {
+    if (projectKey) markSectionsAsked(projectKey);
+    setAskedNow(true);
+    if (!yes) return;
+    const n = unmarked;
+    if (rewriteSections((els) => adoptUnmarkedSections(els, newId, () => undefined))) setAnnounce(fmt(sp.sectionsDone, { n }));
+  };
   const insertPart = (kind: StructureKind) => {
     const ed = editorRef.current;
     if (!ed || ed.isDestroyed) return;
@@ -639,6 +694,13 @@ export function ScreenplayView() {
       // Nœud inconnu de ProseMirror : la sélection de l'éditeur.
     }
     const top = ed.state.doc.resolve(Math.min(from, ed.state.doc.content.size)).index(0);
+    // Curseur sur une section de l'auteur sans note (#155, fichier venu d'ailleurs) : elle devient l'acte, la
+    // séquence ou la sous-séquence demandé, au lieu d'en créer un autre en dessous.
+    if (unmarkedSections(els).some((u) => u.at === top)) {
+      convertAt(top, kind);
+      ed.view.focus();
+      return;
+    }
     const at = insertionPoint(els, top);
     const label = kind === "act" ? sp.preserved.act : kind === "sub" ? sp.preserved.sub : sp.preserved.seq;
     // #148 : l'acte ou la séquence est aussi une case de la structure de l'auteur. Une structure livrée de cet
@@ -723,6 +785,42 @@ export function ScreenplayView() {
     return false;
   };
   openSheetRenameRef.current = openSheetRename;
+  // « Transformer en… » (#155) : petit menu posé sur la ligne d'une section de l'auteur sans note.
+  const [sheetConvert, setSheetConvert] = useState<{ at: number; title: string; kind: StructureKind; top: number; left: number; lineTop: number; width: number } | null>(null);
+  const openSheetConvert = (el: HTMLElement) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return false;
+    const { elements: els } = fromDoc(ed.getJSON(), {});
+    let pos = 0;
+    for (let i = 0; i < ed.state.doc.childCount; i++) {
+      const node = ed.state.doc.child(i);
+      if (ed.view.nodeDOM(pos) === el) {
+        const found = unmarkedSections(els).find((u) => u.at === i);
+        if (!found) return false;
+        const r = el.getBoundingClientRect();
+        const open = { at: i, title: plainSection(String(node.attrs.text ?? "")), kind: found.kind, top: r.bottom + 4, left: r.left, lineTop: r.top, width: r.width };
+        setTimeout(() => setSheetConvert(open), 0);
+        return true;
+      }
+      pos += node.nodeSize;
+    }
+    return false;
+  };
+  openSheetConvertRef.current = openSheetConvert;
+  const closeSheetConvert = () => {
+    setSheetConvert(null);
+    editorRef.current?.view.focus();
+  };
+  useEffect(() => {
+    if (!sheetConvert) return;
+    const close = () => setSheetConvert(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [sheetConvert]);
   // La feuille défile : le champ posé sur la ligne la quitterait, il enregistre et se ferme.
   useEffect(() => {
     if (!sheetRename) return;
@@ -742,7 +840,9 @@ export function ScreenplayView() {
     if (!dom) return;
     const onDbl = (e: MouseEvent) => {
       const el = (e.target as HTMLElement | null)?.closest?.('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]');
-      if (el instanceof HTMLElement && openSheetRenameRef.current(el)) e.preventDefault();
+      if (el instanceof HTMLElement && openSheetRenameRef.current(el)) return void e.preventDefault();
+      const section = (e.target as HTMLElement | null)?.closest?.(AUTHOR_SECTION);
+      if (section instanceof HTMLElement && openSheetConvertRef.current(section)) e.preventDefault();
     };
     dom.addEventListener("dblclick", onDbl);
     return () => dom.removeEventListener("dblclick", onDbl);
@@ -1748,6 +1848,7 @@ export function ScreenplayView() {
           >
             {revisionRules && <style>{revisionRules}</style>}
             <EditorContent editor={editor} />
+            <SceneRail editor={editor} range={screenplayRange} container={railBox} enabled={!focusMode} />
             {editor && <LanguageToolBubble editor={editor} />}
             {editor && <LanguageToolLive editor={editor} accept={ltAccept} />}
             {veil && (
@@ -1768,6 +1869,17 @@ export function ScreenplayView() {
             )}
           </div>
         </div>
+        {askSections && (
+          <div className="ms-notice sp-notice sp-sections-ask" role="status">
+            <span>{unmarked === 1 ? sp.sectionsAskOne : fmt(sp.sectionsAsk, { n: unmarked })}</span>
+            <button type="button" className="ghost-button" onClick={() => answerSections(true)}>
+              {unmarked === 1 ? sp.sectionsYesOne : sp.sectionsYes}
+            </button>
+            <button type="button" className="ghost-button" onClick={() => answerSections(false)}>
+              {sp.sectionsNo}
+            </button>
+          </div>
+        )}
         {notice && (
           <div className="ms-notice sp-notice" role="status">
             <span>{notice.text}</span>
@@ -1828,6 +1940,60 @@ export function ScreenplayView() {
               }
             }}
           />,
+          portalRoot(editorRef.current?.view.dom ?? null),
+        )}
+      {sheetConvert &&
+        createPortal(
+          <div
+            className="sp-sheet-convert"
+            role="group"
+            aria-label={fmt(sp.convertAria, { title: sheetConvert.title || sp.preserved.section })}
+            style={{ top: sheetConvert.top, left: sheetConvert.left }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                closeSheetConvert();
+              }
+              if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                const buttons = [...e.currentTarget.querySelectorAll("button")];
+                const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+                const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
+                buttons[(at + step + buttons.length) % buttons.length]?.focus();
+                e.preventDefault();
+              }
+            }}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setSheetConvert(null);
+            }}
+          >
+            <span className="sp-sheet-convert-title">{sp.convertTitle}</span>
+            {(["act", "seq", "sub"] as const).map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus={kind === sheetConvert.kind}
+                onClick={() => {
+                  const at = sheetConvert.at;
+                  setSheetConvert(null);
+                  convertAt(at, kind);
+                  editorRef.current?.view.focus();
+                }}
+              >
+                {kindLabel(kind)}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const { at, title, lineTop, left, width } = sheetConvert;
+                setSheetConvert(null);
+                setTimeout(() => setSheetRename({ at, title, top: lineTop, left, width }), 0);
+              }}
+            >
+              {sp.convertRename}
+            </button>
+          </div>,
           portalRoot(editorRef.current?.view.dom ?? null),
         )}
       <aside className="sp-side" aria-label={sideTab === "review" ? t.review.tabReview : sideTab === "comments" ? t.comments.title : sp.inSceneTitle}>

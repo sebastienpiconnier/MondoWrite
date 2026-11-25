@@ -242,3 +242,114 @@ export function partChapters(
   }
   return out;
 }
+
+/** Nombre d'actes, de séquences et de sous-séquences. */
+export type StructureCount = Record<StructureKind, number>;
+
+/**
+ * Actes, séquences et sous-séquences qu'une structure choisie retirerait (#154) : ceux qui sont aussi une case de
+ * « Ma structure » (note de case, #148). Une section de l'auteur sans note de case reste, elle ne compte pas.
+ */
+export function replacedParts(elements: ScreenplayElement[]): StructureCount {
+  const count: StructureCount = { act: 0, seq: 0, sub: 0 };
+  for (const p of structureOf(elements)) {
+    const el = elements[p.at];
+    if (el?.type === "section" && beatOf(el.text)) count[p.kind]++;
+  }
+  return count;
+}
+
+export const countTotal = (c: StructureCount): number => c.act + c.seq + c.sub;
+
+/**
+ * Sections de l'auteur sans aucune note (#155 : fichier venu d'ailleurs, Causality, Highland…), lues par leur
+ * profondeur : rang et sorte devinée. Saisons, épisodes, cases et sections déjà notées n'y sont pas.
+ */
+export function unmarkedSections(elements: ScreenplayElement[]): { at: number; kind: StructureKind }[] {
+  return structureOf(elements).flatMap((p) => {
+    const el = elements[p.at];
+    return p.id === null && el?.type === "section" && !/\[\[cosmos:/.test(el.text) ? [{ at: p.at, kind: p.kind }] : [];
+  });
+}
+
+/**
+ * Transforme la section de l'auteur au rang `at` en acte, séquence ou sous-séquence (#155) : son titre et sa
+ * profondeur restent, elle reçoit la note de sa sorte (et la note de case `caseKey`, #148). Une section déjà
+ * notée acte, séquence ou sous-séquence change de sorte (la note est remplacée, l'identifiant gardé). Même
+ * tableau si ce n'est pas une section de l'auteur, ou si rien ne change.
+ */
+export function convertSection(elements: ScreenplayElement[], at: number, kind: StructureKind, id: string, caseKey?: string): ScreenplayElement[] {
+  const el = elements[at];
+  if (el?.type !== "section" || seriesMark(el)) return elements;
+  const mark = structureMark(el);
+  // Une case d'une structure livrée (note de case sans acte ni séquence) n'est pas une section de l'auteur.
+  if (!mark && beatOf(el.text)) return elements;
+  if (mark?.kind === kind) return elements;
+  const title = plainSection(el.text);
+  const beat = beatOf(el.text) ?? caseKey;
+  const text = [title, beat ? `[[cosmos:beat:${beat}]]` : "", `[[cosmos:${kind}:${mark?.id ?? id}]]`].filter(Boolean).join(" ");
+  const next = elements.slice();
+  next[at] = { ...el, text };
+  return next;
+}
+
+/**
+ * Lit d'un coup toutes les sections de l'auteur sans note comme actes, séquences et sous-séquences selon leur
+ * profondeur (#155 : « les lire comme actes et séquences ? »). `ids` fournit un identifiant par section,
+ * `caseKeys` une clé de case de l'auteur (#148), dans l'ordre. Même tableau s'il n'y en a aucune.
+ */
+export function adoptUnmarkedSections(elements: ScreenplayElement[], ids: () => string, caseKeys: () => string | undefined): ScreenplayElement[] {
+  const found = unmarkedSections(elements);
+  if (found.length === 0) return elements;
+  let next = elements;
+  for (const { at, kind } of found) next = convertSection(next, at, kind, ids(), caseKeys());
+  return next;
+}
+
+/**
+ * Ce qui contient la scène de la carte `cardId` (#153) : clés des actes, séquences et sous-séquences (celles du
+ * pli, `StructurePart.key`) et identifiants de la saison et de l'épisode. Vide si la scène n'est pas dans le texte.
+ */
+export function holdersOf(elements: ScreenplayElement[], cardId: string): { parts: string[]; series: string[] } {
+  const heading = elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === cardId);
+  if (heading === -1) return { parts: [], series: [] };
+  const parts = structureOf(elements)
+    .filter((p) => p.at < heading && heading < p.end)
+    .map((p) => p.key);
+  let season: string | null = null;
+  let episode: string | null = null;
+  for (let i = 0; i < heading; i++) {
+    const m = seriesMark(elements[i]);
+    if (m?.kind === "season") {
+      season = m.id;
+      episode = null;
+    } else if (m?.kind === "episode") episode = m.id;
+  }
+  return { parts, series: [season, episode].filter((x): x is string => !!x) };
+}
+
+/** Libellés d'un décompte (« 1 acte », « {n} actes »…), lus dans `t.plan`. */
+export interface CountLabels {
+  partsAct: string;
+  partsActs: string;
+  partsSeq: string;
+  partsSeqs: string;
+  partsSub: string;
+  partsSubs: string;
+}
+
+/** « 2 actes, 6 séquences et 1 sous-séquence » dans la langue `lang` ; null quand il n'y a rien. */
+export function describeCount(c: StructureCount, labels: CountLabels, lang: string): string | null {
+  const one = (n: number, single: string, many: string) => (n === 1 ? single : many.replace("{n}", String(n)));
+  const items = [
+    c.act ? one(c.act, labels.partsAct, labels.partsActs) : "",
+    c.seq ? one(c.seq, labels.partsSeq, labels.partsSeqs) : "",
+    c.sub ? one(c.sub, labels.partsSub, labels.partsSubs) : "",
+  ].filter(Boolean);
+  if (items.length === 0) return null;
+  try {
+    return new Intl.ListFormat(lang, { type: "conjunction" }).format(items);
+  } catch {
+    return items.join(", ");
+  }
+}

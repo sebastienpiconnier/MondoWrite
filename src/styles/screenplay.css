@@ -326,3 +326,10 @@
 /* Renommer un acte ou une séquence dans la feuille (double-clic, ou Entrée sur la ligne choisie). */
 .sp-sheet-rename { position: fixed; z-index: 60; box-sizing: border-box; min-height: 36px; padding: 4px 10px; font: 600 1rem var(--font-ui); color: var(--ink); background: var(--surface); border: 2px solid var(--accent); border-radius: 8px; box-shadow: 0 6px 20px -8px rgba(20, 24, 40, 0.4); }
 @media (pointer: coarse) { .sp-sheet-rename { min-height: 44px; } }
+/* « Transformer en… » d'une section venue d'ailleurs (#155) : sous sa ligne. */
+.sp-sheet-convert { position: fixed; z-index: 60; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: min(520px, calc(100vw - 24px)); padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-pop); font: 0.875rem var(--font-ui); }
+.sp-sheet-convert-title { padding: 0 6px; color: var(--ink-2); }
+.sp-sheet-convert button { min-height: 36px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--ground); color: var(--ink); font: inherit; cursor: pointer; }
+.sp-sheet-convert button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (any-hover: hover) { .sp-sheet-convert button:hover { background: var(--hover); } }
+@media (pointer: coarse) { .sp-sheet-convert button { min-height: 44px; } }

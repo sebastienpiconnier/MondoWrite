@@ -34,4 +34,14 @@ describe("garder sa place en changeant de vue (#144)", () => {
     expect(placeOnSwitch({ ...base, from: "plan", to: "toile" })).toBeNull();
     expect(placeOnSwitch({ ...base, from: "manuscrit", to: "toile", spot: { ...spot, scene: "@12" } })).toBeNull();
   });
+
+  it("du canevas au séquencier, la scène choisie sur le canevas est montrée (#153)", () => {
+    const fromCanvas = { ...base, from: "toile" as const, to: "plan" as const };
+    expect(placeOnSwitch({ ...fromCanvas, picked: "s7" })).toEqual({ kind: "plan", scene: "s7" });
+    // Rien de choisi (ou plusieurs cartes), une scène disparue : rien ne bouge.
+    expect(placeOnSwitch(fromCanvas)).toBeNull();
+    expect(placeOnSwitch({ ...fromCanvas, picked: "s7", exists: () => false })).toBeNull();
+    // Et du Plan au canevas, toujours rien.
+    expect(placeOnSwitch({ ...base, from: "plan", to: "toile", picked: "s7" })).toBeNull();
+  });
 });

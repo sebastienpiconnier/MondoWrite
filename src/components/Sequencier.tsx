@@ -31,9 +31,10 @@ import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
-import { partLabel, renameStructure, structureOf, type StructurePart } from "../screenplay/structure";
+import { describeCount, holdersOf, partLabel, renameStructure, replacedParts, structureOf, type StructurePart } from "../screenplay/structure";
+import { REVEAL_SCENE } from "./revealRow";
 import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
-import { toggleFoldedPart, useFoldedParts } from "../structureFold";
+import { foldedPartsNow, toggleFoldedPart, useFoldedParts } from "../structureFold";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
 import { ArrangeToggle, PlanHeader } from "./PlanHeader";
@@ -134,6 +135,21 @@ export function Sequencier() {
   const parts = useMemo(() => structureOf(screenplay.elements), [screenplay.elements]);
   const partAt = useMemo(() => new Map(parts.map((p) => [p.at, p])), [parts]);
   const foldedParts = useFoldedParts();
+  // Une scène à montrer dans un bloc replié (#153 : retour du canevas, recherche) : ce qui la contient se déplie.
+  const elementsRef = useRef(screenplay.elements);
+  elementsRef.current = screenplay.elements;
+  useEffect(() => {
+    const onReveal = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (typeof id !== "string") return;
+      const holders = holdersOf(elementsRef.current, id);
+      for (const key of holders.parts) if (foldedPartsNow().has(key)) toggleFoldedPart(key);
+      if (holders.series.length > 0)
+        setFolded((before) => (holders.series.some((x) => before.has(x)) ? new Set([...before].filter((x) => !holders.series.includes(x))) : before));
+    };
+    window.addEventListener(REVEAL_SCENE, onReveal);
+    return () => window.removeEventListener(REVEAL_SCENE, onReveal);
+  }, []);
   const plotColor = usePlotColor();
   const partName = (p: StructurePart) => partLabel(p, sp.preserved);
   // Scène rangée dans une séquence : son bloc a un fond (#142).
@@ -244,6 +260,12 @@ export function Sequencier() {
     const keys = plan.template === "libre" ? [] : leafBeats(plan.template, plan.custom);
     return kindRanks(own, keys).get(key) ?? null;
   };
+  // Ce que choisir une autre structure retirerait (#154) : actes et séquences de « Ma structure », dans le
+  // scénario ou dans l'épisode ; null si rien.
+  const replaceWarning = (elements: typeof screenplay.elements): string | null => {
+    const parts = describeCount(replacedParts(elements), t.plan, lang);
+    return parts ? fmt(t.plan.replaceAsk, { parts }) : null;
+  };
   const setTemplate = (value: string) =>
     setScreenplay(applyTemplate(screenplay, isScreenplayTemplate(value) ? value : null, (key) => t.plan.beats[key as PlanBeat].label), true);
   const moveTo = (from: number, section: number) => {
@@ -330,7 +352,7 @@ export function Sequencier() {
               </p>
             )
           }
-          template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements, scriptBeats) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} />}
+          template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements, scriptBeats) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} replaceWarning={replaceWarning(screenplay.elements)} />}
           about={template && !inSeries ? t.plan.templateAbout[template] : undefined}
         />
         {timeline ? (
@@ -413,6 +435,7 @@ export function Sequencier() {
                         allowNone
                         custom={episodeTemplate(episode.id) === "perso" ? customOf(episodeScript(screenplay, episode.id).elements, scriptBeats) : undefined}
                         onBuiltin={(key) => setEpisodeTemplate(episode.id, key ?? "")}
+                        replaceWarning={replaceWarning(episodeScript(screenplay, episode.id).elements)}
                       />
                     )}
                   </span>

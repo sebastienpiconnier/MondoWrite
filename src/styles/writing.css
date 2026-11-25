@@ -1110,6 +1110,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Import et export d'un gabarit (1.12.0) : message près du choix du gabarit, origine du fichier dans l'éditeur. */
 .tpl-notice { font-size: 0.8125rem; color: var(--ink-2); }
 .tpl-notice.is-error { color: var(--danger); }
+/* Confirmation avant de remplacer actes et séquences (#154) : sous le menu, sur toute la largeur. */
+.tpl-confirm { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-left: 3px solid var(--danger); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 0.875rem; }
+.tpl-confirm > span { flex: 1 1 260px; }
+@media (pointer: coarse) { .tpl-confirm button { min-height: 44px; } }
 .tpl-imported { margin: -6px 0 14px; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--ground); font-size: 0.875rem; line-height: 1.45; }
 .tpl-file-hint { margin: 0 0 10px; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.45; }
 .tpl-actions { justify-content: flex-end; }
@@ -1731,7 +1735,16 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 /* Survol d'une scène colorée : jamais le fond clair de --hover (le texte, couleur de la surface, disparaissait). */
 @media (any-hover: hover) { .has-plot button:hover, .has-plot a:hover { background: color-mix(in srgb, var(--plot-fg-swap) 22%, transparent); } }
 .has-plot button.is-current { background: color-mix(in srgb, var(--plot-fg-swap) 30%, transparent); }
+/* Scène en cours sans dépendre de la couleur (#156) : une barre épaisse à gauche, à l'encre du thème ; sur une scène
+   colorée, l'encre est la surface (4,5:1 sur chaque couleur) bordée de l'encre inverse. */
+.sp-scene-list button.is-current, .ms-scenes button.is-current { box-shadow: inset 5px 0 0 var(--ink); }
+.has-plot button.is-current { box-shadow: none; }
+/* Trait de la scène en cours dans la marge de la feuille et de la page : un dessin, jamais imprimé. */
+.scene-rail { position: absolute; width: 3px; border-radius: 2px; background: color-mix(in srgb, var(--page-ink) 55%, var(--page)); pointer-events: none; z-index: 1; }
+@media print { .scene-rail { display: none; } }
 .has-plot.is-current, .has-plot[aria-current="true"], .has-plot:has(> [aria-current="true"]) { box-shadow: inset 0 0 0 3px var(--plot-fg), inset 0 0 0 5px var(--plot-fg-swap); }
+/* Liste des scènes (#156) : en plus du cadre, la même barre à gauche que sur une scène sans couleur. */
+.sp-scene-list .has-plot:has(> [aria-current="true"]) { box-shadow: inset 8px 0 0 var(--plot-fg), inset 11px 0 0 var(--plot-fg-swap), inset 0 0 0 3px var(--plot-fg), inset 0 0 0 5px var(--plot-fg-swap); }
 .plan-plot-colors[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
 .link-pill .link-star { min-width: 28px; border: 0; background: transparent; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
 .link-pill .link-star[aria-pressed="true"] { color: var(--accent); }
