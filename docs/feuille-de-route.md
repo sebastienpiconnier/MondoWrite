@@ -15,7 +15,7 @@ Règles :
 - on ne cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité
   (import Scrivener, fichiers Final Draft, Fountain) ou pour du code repris (licence, `THIRD-PARTY-NOTICES.md`).
 
-Dernière mise à jour : 23 novembre 2026 (lot 16, collaboration, ajouté).
+Dernière mise à jour : 25 novembre 2026 (lot 18, 1.48.1 faite).
 
 ## Ordre / Order
 
@@ -24,9 +24,8 @@ Les issues sont rangées en lots (jalons GitHub), du plus facile au plus dur, pa
 batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #24, #21), 2 (safety: #14, #15,
 #30), 3 (usability: #27, #26) are done; batch 4 (writing tools: #20, #16, #17) and batch 9 (screenplay for production: #44, #45, #46, #47) batch 10 (usability 2: #54 to #59) batch 11 (external assistant: #62), batch 14 (reviewing your structure: #117 to #120, 1.47.0) and batch 17 (the scene at the centre: #137 to #148, 1.48.0) are done.
 
-1. Lot 18 · Retours de la 1.48 / Feedback on 1.48 : d'abord une 1.48.1 avec #154 (confirmation avant de retirer
-   actes et séquences), #155 (sections importées en actes et séquences), #156 (scène en cours visible sans la
-   couleur), #160 (nombre de passages trouvés) et #153 (place gardée dans le séquencier) ; puis une 1.49 avec #159
+1. Lot 18 · Retours de la 1.48 / Feedback on 1.48 : la 1.48.1 (#154 partie A, #155, #156, #160, #153) est faite ;
+   ensuite une 1.49 avec #159
    (déplacer un acte ou une séquence), #157 (couleurs des intrigues pour daltoniens) et #163 (ruban et préparations
    expliqués) ; à évaluer ensuite : #154 partie B (structures en couches séparées), #158, #161, #162
 2. Lot 6 · Import et narration / Import and narration : #28 finitions de
