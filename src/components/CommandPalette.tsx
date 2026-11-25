@@ -61,9 +61,6 @@ export function CommandPalette() {
           else if (e.key === "Enter") (e.preventDefault(), go(found[current]));
         }}
       />
-      <p className="goto-hint" id="palette-hint">
-        {p.hint}
-      </p>
       {found.length === 0 ? (
         <p className="goto-empty" role="status">
           {p.empty}
@@ -72,8 +69,8 @@ export function CommandPalette() {
         <ul className="goto-list" id="palette-list" ref={listRef} role="listbox" aria-label={p.results}>
           {found.map((entry, i) => (
             <li key={entry.id} id={`palette-${entry.id}`} role="option" aria-selected={i === current}>
+              {found[i - 1]?.group !== entry.group && <div className="command-section">{groupName(t, entry.group)}</div>}
               <button type="button" className={`goto-item${i === current ? " is-active" : ""}`} tabIndex={-1} onClick={() => go(entry)} onPointerEnter={() => setActive(i)}>
-                <span className="goto-kind">{groupName(t, entry.group)}</span>
                 <span className="goto-label">{entry.label}</span>
                 {entry.accelerator && <kbd className="goto-page palette-keys">{key(...acceleratorKeys(entry.accelerator))}</kbd>}
               </button>
@@ -81,6 +78,9 @@ export function CommandPalette() {
           ))}
         </ul>
       )}
+      <p className="goto-hint" id="palette-hint">
+        {p.hint}
+      </p>
     </div>
   );
 }

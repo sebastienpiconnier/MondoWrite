@@ -125,6 +125,9 @@ export function NamePicker() {
       </div>
       <div className="names-actions">
         <button type="button" className="ghost-button" onClick={more}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 8a8 8 0 1 0 .2 7M20 3v5h-5" />
+          </svg>
           {t.more}
         </button>
       </div>

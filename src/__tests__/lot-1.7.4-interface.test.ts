@@ -2,7 +2,7 @@
 // Lot 1.7.4, interface : fenêtre des raccourcis ouverte en haut, typographie de fr.ts, police du Carnet,
 // état d'enregistrement sur téléphone, cibles tactiles, barre du haut sans abonnement au store entier, F1 sur téléphone.
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
@@ -103,24 +103,21 @@ describe("aide (F1)", () => {
 });
 
 describe("fenêtre des raccourcis", () => {
-  it("s'ouvre en haut : « Fermer » reçoit le focus sans faire défiler", async () => {
+  it("s’ouvre en haut avec le focus sur le filtre", async () => {
     const proto = HTMLDialogElement.prototype as unknown as { showModal?: () => void };
     if (!proto.showModal) proto.showModal = function (this: HTMLDialogElement) { this.setAttribute("open", ""); };
-    const focus = vi.spyOn(HTMLElement.prototype, "focus");
     const { Dialogs } = await import("../components/Dialogs");
     const host = document.createElement("div");
     document.body.append(host);
     const root = createRoot(host);
     await act(async () => root.render(createElement(Dialogs)));
     await act(async () => useCosmos.setState({ dialog: "shortcuts" }));
-    const close = host.querySelector(".app-dialog-actions button");
-    expect(close).not.toBeNull();
-    const calls = focus.mock.contexts.map((el, i) => [el, focus.mock.calls[i][0]] as const).filter(([el]) => el === close);
-    expect(calls.length).toBeGreaterThan(0);
-    for (const [, opts] of calls) expect(opts).toEqual({ preventScroll: true });
+    const filter = host.querySelector('input[type="search"]');
+    expect(filter).not.toBeNull();
+    expect(document.activeElement).toBe(filter);
+    expect(host.querySelector("dialog")?.scrollTop).toBe(0);
     await act(async () => useCosmos.setState({ dialog: null }));
     await act(async () => root.unmount());
-    focus.mockRestore();
     host.remove();
   });
 });

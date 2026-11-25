@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
-import { findInText, findPassages, matchesIn, nthMatch, plainText, searchCards } from "../search";
+import { findInText, findPassages, highlightRanges, matchesIn, nthMatch, plainText, searchCards } from "../search";
 import { serialize } from "../screenplay/serialize";
 import type { CardData } from "../types";
 
@@ -338,6 +338,13 @@ describe("recherche des vues d'écriture : un résultat par passage (#85)", () =
     expect(nthMatch(texts, "DANTÈS", 1)).toEqual({ index: 1, at: 0, length: 6 });
     expect(nthMatch(texts, "encore", 1)).toEqual({ index: 1, at: texts[1].lastIndexOf("encore"), length: 6 });
     expect(nthMatch(texts, "dantes", 2)).toBeNull();
+  });
+
+  it("surligne tous les mots des cartes, mais seulement la saisie entière des passages", () => {
+    const text = "Le loup dans le blé, un autre LOUP.";
+    expect(highlightRanges(text, "ble loup lou", true).map(({ start, end }) => text.slice(start, end))).toEqual(["loup", "blé", "LOUP"]);
+    expect(highlightRanges(text, "ble loup")).toEqual([]);
+    expect(highlightRanges(text, "le ble")).toEqual([{ start: 13, end: 19 }]);
   });
 
   it("matchesIn : occurrences sans chevauchement", () => {

@@ -23,7 +23,7 @@ import { REPO } from "../updates";
 
 /** Guide des traducteurs sur GitHub. */
 const TRANSLATE_URL = `https://github.com/${REPO}/blob/main/TRANSLATING.md`;
-import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type Palette, type ThemePref, type WheelMode } from "../settings";
+import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type ThemePref, type WheelMode } from "../settings";
 import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
@@ -38,6 +38,8 @@ import { fmt } from "../i18n";
 import { SOURCE_INFO } from "../imageSources";
 import { ImageModelField } from "./ImageGen";
 import { McpAppSettings, McpProjectSetting } from "./McpSettings";
+import { SettingsDisclosure } from "./SettingsDisclosure";
+import { ApiCredential } from "./ApiCredential";
 import { SystemFontField } from "./SystemFontField";
 import { LT_CUSTOM_DEFAULT, LT_SERVERS, isLtServer, ltLeavesDevice, ltLive } from "../languagetool/api";
 
@@ -142,7 +144,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiKey: useId(), aiUrl: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -280,41 +282,46 @@ export function Settings({ project = true }: { project?: boolean }) {
           {project && (
             <section className="settings-col" role="tabpanel" id={`${ids.panel}-project`} aria-labelledby={`${ids.panel}-tab-project`} hidden={tab !== "project"}>
           {/* Réglage du projet (enregistré dans cosmos.json) */}
-          <label htmlFor={ids.kind}>{t.kinds.label}</label>
-          <select
-            id={ids.kind}
-            value={kind}
-            aria-describedby={ids.kindHint}
-            onChange={(e) => isProjectKind(e.target.value) && setKind(e.target.value)}
-          >
-            {PROJECT_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {t.kinds[k]}
-              </option>
-            ))}
-          </select>
+          <div className="settings-field-row">
+            <label htmlFor={ids.kind}>{t.kinds.label}</label>
+            <select
+              id={ids.kind}
+              value={kind}
+              aria-describedby={ids.kindHint}
+              onChange={(e) => isProjectKind(e.target.value) && setKind(e.target.value)}
+            >
+              {PROJECT_KINDS.map((k) => (
+                <option key={k} value={k}>
+                  {t.kinds[k]}
+                </option>
+              ))}
+            </select>
+          </div>
           <p className="settings-hint" id={ids.kindHint}>
             {t.kinds.hint}
           </p>
           {interactiveProject && <p className="settings-hint">{t.interactive.projectNote}</p>}
           {kind === "scenario" && (
             <>
-              <label htmlFor={ids.paper}>{t.kinds.paper}</label>
-              <select
-                id={ids.paper}
-                value={paper}
-                aria-describedby={ids.paperHint}
-                onChange={(e) => isPaper(e.target.value) && setPaper(e.target.value)}
-              >
-                {PAPERS.map((p) => (
-                  <option key={p} value={p}>
-                    {p === "letter" ? t.kinds.paperLetter : t.kinds.paperA4}
-                  </option>
-                ))}
-              </select>
+              <div className="settings-field-row">
+                <label htmlFor={ids.paper}>{t.kinds.paper}</label>
+                <select
+                  id={ids.paper}
+                  value={paper}
+                  aria-describedby={ids.paperHint}
+                  onChange={(e) => isPaper(e.target.value) && setPaper(e.target.value)}
+                >
+                  {PAPERS.map((p) => (
+                    <option key={p} value={p}>
+                      {p === "letter" ? t.kinds.paperLetter : t.kinds.paperA4}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <p className="settings-hint" id={ids.paperHint}>
                 {t.kinds.paperHint}
               </p>
+              <h3 className="settings-group-heading">{t.settings.sceneHeadings}</h3>
               <label className="settings-check" htmlFor={ids.numbers}>
                 <input
                   id={ids.numbers}
@@ -332,14 +339,17 @@ export function Settings({ project = true }: { project?: boolean }) {
                 <input type="checkbox" checked={underlineHeadings} onChange={(e) => useCosmos.getState().setUnderlineHeadings(e.target.checked)} />
                 {t.kinds.underlineHeadings}
               </label>
+              <h3 className="settings-group-heading">{t.settings.continuations}</h3>
               {/* (À SUIVRE) et (SUITE) : les mêmes réglages que la fenêtre PDF (scriptPdf), écran et PDF. */}
               <label className="settings-check">
                 <input type="checkbox" checked={scriptPdf.breaks} onChange={(e) => useCosmos.getState().setScriptPdf({ breaks: e.target.checked })} />
-                {t.scriptPdf.breaks}
+                {t.settings.continuedSpeech}
+                <small className="screenplay-mark">{t.screenplay.more} / {t.screenplay.contd}</small>
               </label>
               <label className="settings-check">
                 <input type="checkbox" checked={scriptPdf.resumes} onChange={(e) => useCosmos.getState().setScriptPdf({ resumes: e.target.checked })} />
-                {t.scriptPdf.resumes}
+                {t.settings.afterAction}
+                <small className="screenplay-mark">{t.screenplay.contd}</small>
               </label>
             </>
           )}
@@ -397,22 +407,21 @@ export function Settings({ project = true }: { project?: boolean }) {
           <button type="button" className="link-button settings-link" onClick={() => void openExternal(TRANSLATE_URL)}>
             {t.settings.translateHelp} <span aria-hidden="true">↗</span>
           </button>
-          <label htmlFor={ids.theme}>{t.settings.theme}</label>
-          <select id={ids.theme} value={themePref} onChange={(e) => setThemePref(e.target.value as ThemePref)}>
-            {themes.map((th) => (
-              <option key={th.value} value={th.value}>
-                {th.label}
-              </option>
+          <span className="settings-label" id={ids.theme}>{t.settings.theme}</span>
+          <div role="group" aria-labelledby={ids.theme} className="appearance-modes">
+            {themes.map(({ value, label }) => (
+              <button key={value} type="button" aria-pressed={themePref === value} onClick={() => setThemePref(value)}>{label}</button>
             ))}
-          </select>
-          <label htmlFor={ids.palette}>{t.settings.palette}</label>
-          <select id={ids.palette} value={palette} onChange={(e) => setPalette(e.target.value as Palette)}>
+          </div>
+          <span className="settings-label" id={ids.palette}>{t.settings.palette}</span>
+          <div role="group" aria-labelledby={ids.palette} className="appearance-palettes">
             {PALETTES.map((id) => (
-              <option key={id} value={id}>
+              <button key={id} type="button" aria-pressed={palette === id} onClick={() => setPalette(id)}>
+                <span className="palette-sample" data-palette={id} aria-hidden="true" />
                 {t.settings.palettes[id]}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
           {moreContrast && <p className="settings-hint">{t.settings.paletteSystemContrast}</p>}
           {/* Seulement avec une souris ou un trackpad : au doigt, déplacer et pincer ne changent pas. */}
           {finePointer && (
@@ -481,177 +490,196 @@ export function Settings({ project = true }: { project?: boolean }) {
           </section>
 
           <section className="settings-col" role="tabpanel" id={`${ids.panel}-writing`} aria-labelledby={`${ids.panel}-tab-writing`} hidden={tab !== "writing"}>
-          {/* Écriture : mode focus, zoom, typographie, correcteur. */}
-          {/* Mode focus : réglé dans sa propre barre (FocusBar) ; sur téléphone, cette barre ne garde que la sortie,
-              d'où ces deux réglages ici. La largeur de colonne et le plein écran n'existent pas sur téléphone. */}
-          {phone && (
-            <>
-              <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
-              <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
-                {FOCUS_HIGHLIGHTS.map((h) => (
-                  <option key={h} value={h}>
-                    {t.focus.highlights[h]}
+          <SettingsDisclosure title={t.settings.pageAppearance} summary={[new Intl.NumberFormat(lang, { style: "percent" }).format(writing.zoom), t.settings.pageFonts[writing.pageFont], t.settings.lineSpacings[writing.lineSpacing]].join(" · ")} name={ids.panel + "-writing-sections"} initiallyOpen>
+            <div className="settings-field-row">
+              <label htmlFor={ids.pageZoom}>{t.settings.pageZoom}</label>
+              <select id={ids.pageZoom} value={String(writing.zoom)} onChange={(e) => setWriting({ ...writing, zoom: Number(e.target.value) })}>
+                {/* Une valeur relue hors des crans reste proposée, sinon la liste afficherait autre chose. */}
+                {(PAGE_ZOOMS.includes(writing.zoom as (typeof PAGE_ZOOMS)[number]) ? PAGE_ZOOMS : [...PAGE_ZOOMS, writing.zoom].sort((a, b) => a - b)).map((z) => (
+                  <option key={z} value={String(z)}>
+                    {new Intl.NumberFormat(lang, { style: "percent" }).format(z)}
                   </option>
                 ))}
               </select>
-              <label className="settings-check" htmlFor={ids.focusTw}>
-                <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
-                {t.settings.focusTypewriter}
-              </label>
-            </>
-          )}
-          <label htmlFor={ids.pageZoom}>{t.settings.pageZoom}</label>
-          <select id={ids.pageZoom} value={String(writing.zoom)} onChange={(e) => setWriting({ ...writing, zoom: Number(e.target.value) })}>
-            {/* Une valeur relue hors des crans reste proposée, sinon la liste afficherait autre chose. */}
-            {(PAGE_ZOOMS.includes(writing.zoom as (typeof PAGE_ZOOMS)[number]) ? PAGE_ZOOMS : [...PAGE_ZOOMS, writing.zoom].sort((a, b) => a - b)).map((z) => (
-              <option key={z} value={String(z)}>
-                {new Intl.NumberFormat(lang, { style: "percent" }).format(z)}
-              </option>
-            ))}
-          </select>
-          {/* « Juste écrire » (discussion #61) : les projets s'ouvrent sur la page d'écriture, les autres vues se cachent. */}
-          <label className="settings-check">
-            <input type="checkbox" checked={writing.writerMode} aria-describedby={ids.writerHint} onChange={(e) => setWriting({ ...writing, writerMode: e.target.checked })} />
-            {t.settings.writerMode}
-          </label>
-          <p className="settings-hint" id={ids.writerHint}>
-            {t.settings.writerModeHint}
-          </p>
-          {/* Police et interligne de la page du Manuscrit (#24) : à l'écran seulement. */}
-          <label htmlFor={ids.pageFont}>{t.settings.pageFont}</label>
-          <select id={ids.pageFont} value={writing.pageFont} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, pageFont: e.target.value as PageFont })}>
-            {PAGE_FONTS.map((f) => (
-              <option key={f} value={f}>
-                {t.settings.pageFonts[f]}
-              </option>
-            ))}
-          </select>
-          {writing.pageFont === "system" && <SystemFontField />}
-          <label htmlFor={ids.lineSpacing}>{t.settings.lineSpacing}</label>
-          <select id={ids.lineSpacing} value={writing.lineSpacing} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, lineSpacing: e.target.value as LineSpacing })}>
-            {LINE_SPACINGS.map((l) => (
-              <option key={l} value={l}>
-                {t.settings.lineSpacings[l]}
-              </option>
-            ))}
-          </select>
-          <p className="settings-hint" id={ids.pageLookHint}>
-            {t.settings.pageLookHint}
-          </p>
-          {icloudOk === false && storage.icloud && (
-            <p className="settings-hint" id={ids.icloudHint}>
-              {storage.canPickFolder ? t.settings.icloudOffMac : t.settings.icloudOff}
+            </div>
+            {/* Police et interligne de la page du Manuscrit (#24) : à l'écran seulement. */}
+            <div className="settings-field-row">
+              <label htmlFor={ids.pageFont}>{t.settings.pageFont}</label>
+              <select id={ids.pageFont} value={writing.pageFont} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, pageFont: e.target.value as PageFont })}>
+                {PAGE_FONTS.map((f) => (
+                  <option key={f} value={f}>
+                    {t.settings.pageFonts[f]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {writing.pageFont === "system" && <SystemFontField />}
+            <div className="settings-field-row">
+              <label htmlFor={ids.lineSpacing}>{t.settings.lineSpacing}</label>
+              <select id={ids.lineSpacing} value={writing.lineSpacing} aria-describedby={ids.pageLookHint} onChange={(e) => setWriting({ ...writing, lineSpacing: e.target.value as LineSpacing })}>
+                {LINE_SPACINGS.map((l) => (
+                  <option key={l} value={l}>
+                    {t.settings.lineSpacings[l]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="settings-hint" id={ids.pageLookHint}>
+              {t.settings.pageLookHint}
             </p>
-          )}
-          {icloudOk && storage.icloud && (
-            <>
-              <label className="settings-check" htmlFor={ids.icloud}>
-                <input
-                  id={ids.icloud}
-                  type="checkbox"
-                  aria-describedby={ids.icloudHint}
-                  checked={icloudOn}
-                  onChange={(e) => {
-                    setIcloudOn(e.target.checked);
-                    void useCosmos.getState().setIcloud(e.target.checked);
-                  }}
-                />
-                {t.settings.icloud}
-              </label>
+          </SettingsDisclosure>
+          <SettingsDisclosure title={t.settings.typingTools} summary={t.settings.typingSummary} name={ids.panel + "-writing-sections"}>
+            {/* Typographie à la frappe (manuscrit, cartes, Bible) : selon la langue, ou choisie, ou aucune. */}
+            <div className="settings-field-row">
+              <label htmlFor={ids.typography}>{t.settings.typography}</label>
+              <select
+                id={ids.typography}
+                aria-describedby={ids.typographyHint}
+                value={writing.typography}
+                onChange={(e) => isTypographySetting(e.target.value) && setWriting({ ...writing, typography: e.target.value })}
+              >
+                <option value="auto">{t.settings.typographyModes.auto}</option>
+                {typoOptions(lang).map(({ code, language, quotes }) => (
+                  <option key={code} value={code}>
+                    {fmt(t.settings.typographyLang, { language, quotes })}
+                  </option>
+                ))}
+                <option value="off">{t.settings.typographyModes.off}</option>
+              </select>
+            </div>
+            <p className="settings-hint" id={ids.typographyHint}>{t.settings.typographyHint}</p>
+            {/* Correcteur et suggestions du système (writingAids.ts) : réglages de l'appareil. */}
+            <div className="settings-field-row">
+              <label htmlFor={ids.spell}>{t.settings.spellcheck}</label>
+              <select
+                id={ids.spell}
+                aria-describedby={ids.spellHint}
+                value={writing.spellcheck}
+                onChange={(e) => isSpellcheckMode(e.target.value) && setWriting({ ...writing, spellcheck: e.target.value })}
+              >
+                {SPELLCHECK_MODES.map((v) => (
+                  <option key={v} value={v}>
+                    {t.settings.spellcheckModes[v]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="settings-hint" id={ids.spellHint}>{t.settings.spellcheckHint}</p>
+            {writing.spellcheck === "all" && ltLive(languageTool) && <p className="settings-hint">{t.settings.spellcheckByLt}</p>}
+            <label className="settings-check" htmlFor={ids.suggestions}>
+              <input id={ids.suggestions} type="checkbox" aria-describedby={ids.suggestionsHint} checked={writing.suggestions} onChange={(e) => setWriting({ ...writing, suggestions: e.target.checked })} />
+              {t.settings.suggestions}
+            </label>
+            <p className="settings-hint" id={ids.suggestionsHint}>{t.settings.suggestionsHint}</p>
+            <SettingsDisclosure title="LanguageTool">
+              {/* LanguageTool (à la demande, menu ⋯ du manuscrit et du scénario) : service, compte Premium, serveur personnel. */}
+              <div className="settings-field-row">
+                <label htmlFor={ids.lt}>{t.languageTool.server}</label>
+                <select id={ids.lt} aria-describedby={ids.ltHint} value={languageTool.server} onChange={(e) => isLtServer(e.target.value) && setLanguageTool({ server: e.target.value })}>
+                  {LT_SERVERS.map((v) => (
+                    <option key={v} value={v}>
+                      {t.languageTool.servers[v]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {languageTool.server !== "off" && (
+                <p className="settings-hint" id={ids.ltHint}>
+                  {ltLeavesDevice(languageTool) ? t.languageTool.hint : t.languageTool.hintLocal}
+                </p>
+              )}
+              {languageTool.server === "premium" && (
+                <>
+                  <label htmlFor={ids.ltUser}>{t.languageTool.username}</label>
+                  <input id={ids.ltUser} type="text" inputMode="email" autoComplete="off" spellCheck={false} value={languageTool.username} onChange={(e) => setLanguageTool({ username: e.target.value })} />
+                  <label htmlFor={ids.ltKey}>{t.languageTool.key}</label>
+                  <input id={ids.ltKey} type="password" autoComplete="off" spellCheck={false} aria-describedby={ids.ltKeyHint} value={languageTool.key} onChange={(e) => setLanguageTool({ key: e.target.value })} />
+                  <p className="settings-hint" id={ids.ltKeyHint}>{t.languageTool.keyHint}</p>
+                </>
+              )}
+              {(languageTool.server === "premium" || languageTool.server === "custom") && (
+                <>
+                  <label className="settings-check" htmlFor={ids.ltLive}>
+                    <input id={ids.ltLive} type="checkbox" aria-describedby={ids.ltLiveHint} checked={languageTool.live} onChange={(e) => setLanguageTool({ live: e.target.checked })} />
+                    {t.languageTool.live}
+                  </label>
+                  <p className="settings-hint" id={ids.ltLiveHint}>
+                    {ltLeavesDevice(languageTool) ? t.languageTool.liveHint : t.languageTool.liveHintLocal}
+                  </p>
+                </>
+              )}
+              {languageTool.server === "public" && <p className="settings-hint">{t.languageTool.livePublic}</p>}
+              {languageTool.server === "custom" && (
+                <>
+                  <label htmlFor={ids.ltUrl}>{t.languageTool.url}</label>
+                  <input
+                    id={ids.ltUrl}
+                    type="url"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={LT_CUSTOM_DEFAULT}
+                    aria-describedby={ids.ltUrlHint}
+                    value={languageTool.url}
+                    onChange={(e) => setLanguageTool({ url: e.target.value })}
+                  />
+                  <p className="settings-hint" id={ids.ltUrlHint}>{t.languageTool.urlHint}</p>
+                </>
+              )}
+            </SettingsDisclosure>
+          </SettingsDisclosure>
+          <SettingsDisclosure title={t.settings.workspace} summary={t.settings.workspaceSummary} name={ids.panel + "-writing-sections"}>
+            {/* « Juste écrire » (discussion #61) : les projets s'ouvrent sur la page d'écriture, les autres vues se cachent. */}
+            <label className="settings-check">
+              <input type="checkbox" checked={writing.writerMode} aria-describedby={ids.writerHint} onChange={(e) => setWriting({ ...writing, writerMode: e.target.checked })} />
+              {t.settings.writerMode}
+            </label>
+            <p className="settings-hint" id={ids.writerHint}>
+              {t.settings.writerModeHint}
+            </p>
+            {phone && (
+              <>
+                <div className="settings-field-row">
+                  <label htmlFor={ids.focusHl}>{t.settings.focusHighlight}</label>
+                  <select id={ids.focusHl} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
+                    {FOCUS_HIGHLIGHTS.map((h) => (
+                      <option key={h} value={h}>
+                        {t.focus.highlights[h]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="settings-check" htmlFor={ids.focusTw}>
+                  <input id={ids.focusTw} type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
+                  {t.settings.focusTypewriter}
+                </label>
+              </>
+            )}
+            {icloudOk === false && storage.icloud && (
               <p className="settings-hint" id={ids.icloudHint}>
-                {storage.canPickFolder ? t.settings.icloudHintMac : t.settings.icloudHint}
+                {storage.canPickFolder ? t.settings.icloudOffMac : t.settings.icloudOff}
               </p>
-            </>
-          )}
-          {/* Typographie à la frappe (manuscrit, cartes, Bible) : selon la langue, ou choisie, ou aucune. */}
-          <label htmlFor={ids.typography}>{t.settings.typography}</label>
-          <select
-            id={ids.typography}
-            aria-describedby={ids.typographyHint}
-            value={writing.typography}
-            onChange={(e) => isTypographySetting(e.target.value) && setWriting({ ...writing, typography: e.target.value })}
-          >
-            <option value="auto">{t.settings.typographyModes.auto}</option>
-            {typoOptions(lang).map(({ code, language, quotes }) => (
-              <option key={code} value={code}>
-                {fmt(t.settings.typographyLang, { language, quotes })}
-              </option>
-            ))}
-            <option value="off">{t.settings.typographyModes.off}</option>
-          </select>
-          <p className="settings-hint" id={ids.typographyHint}>{t.settings.typographyHint}</p>
-          {/* Correcteur et suggestions du système (writingAids.ts) : réglages de l'appareil. */}
-          <label htmlFor={ids.spell}>{t.settings.spellcheck}</label>
-          <select
-            id={ids.spell}
-            aria-describedby={ids.spellHint}
-            value={writing.spellcheck}
-            onChange={(e) => isSpellcheckMode(e.target.value) && setWriting({ ...writing, spellcheck: e.target.value })}
-          >
-            {SPELLCHECK_MODES.map((v) => (
-              <option key={v} value={v}>
-                {t.settings.spellcheckModes[v]}
-              </option>
-            ))}
-          </select>
-          <p className="settings-hint" id={ids.spellHint}>{t.settings.spellcheckHint}</p>
-          {writing.spellcheck === "all" && ltLive(languageTool) && <p className="settings-hint">{t.settings.spellcheckByLt}</p>}
-          <label className="settings-check" htmlFor={ids.suggestions}>
-            <input id={ids.suggestions} type="checkbox" aria-describedby={ids.suggestionsHint} checked={writing.suggestions} onChange={(e) => setWriting({ ...writing, suggestions: e.target.checked })} />
-            {t.settings.suggestions}
-          </label>
-          <p className="settings-hint" id={ids.suggestionsHint}>{t.settings.suggestionsHint}</p>
-          {/* LanguageTool (à la demande, menu ⋯ du manuscrit et du scénario) : service, compte Premium, serveur personnel. */}
-          <label htmlFor={ids.lt}>{t.languageTool.server}</label>
-          <select id={ids.lt} aria-describedby={ids.ltHint} value={languageTool.server} onChange={(e) => isLtServer(e.target.value) && setLanguageTool({ server: e.target.value })}>
-            {LT_SERVERS.map((v) => (
-              <option key={v} value={v}>
-                {t.languageTool.servers[v]}
-              </option>
-            ))}
-          </select>
-          {languageTool.server !== "off" && (
-            <p className="settings-hint" id={ids.ltHint}>
-              {ltLeavesDevice(languageTool) ? t.languageTool.hint : t.languageTool.hintLocal}
-            </p>
-          )}
-          {languageTool.server === "premium" && (
-            <>
-              <label htmlFor={ids.ltUser}>{t.languageTool.username}</label>
-              <input id={ids.ltUser} type="text" inputMode="email" autoComplete="off" spellCheck={false} value={languageTool.username} onChange={(e) => setLanguageTool({ username: e.target.value })} />
-              <label htmlFor={ids.ltKey}>{t.languageTool.key}</label>
-              <input id={ids.ltKey} type="password" autoComplete="off" spellCheck={false} aria-describedby={ids.ltKeyHint} value={languageTool.key} onChange={(e) => setLanguageTool({ key: e.target.value })} />
-              <p className="settings-hint" id={ids.ltKeyHint}>{t.languageTool.keyHint}</p>
-            </>
-          )}
-          {(languageTool.server === "premium" || languageTool.server === "custom") && (
-            <>
-              <label className="settings-check" htmlFor={ids.ltLive}>
-                <input id={ids.ltLive} type="checkbox" aria-describedby={ids.ltLiveHint} checked={languageTool.live} onChange={(e) => setLanguageTool({ live: e.target.checked })} />
-                {t.languageTool.live}
-              </label>
-              <p className="settings-hint" id={ids.ltLiveHint}>
-                {ltLeavesDevice(languageTool) ? t.languageTool.liveHint : t.languageTool.liveHintLocal}
-              </p>
-            </>
-          )}
-          {languageTool.server === "public" && <p className="settings-hint">{t.languageTool.livePublic}</p>}
-          {languageTool.server === "custom" && (
-            <>
-              <label htmlFor={ids.ltUrl}>{t.languageTool.url}</label>
-              <input
-                id={ids.ltUrl}
-                type="url"
-                autoComplete="off"
-                spellCheck={false}
-                placeholder={LT_CUSTOM_DEFAULT}
-                aria-describedby={ids.ltUrlHint}
-                value={languageTool.url}
-                onChange={(e) => setLanguageTool({ url: e.target.value })}
-              />
-              <p className="settings-hint" id={ids.ltUrlHint}>{t.languageTool.urlHint}</p>
-            </>
-          )}
+            )}
+            {icloudOk && storage.icloud && (
+              <>
+                <label className="settings-check" htmlFor={ids.icloud}>
+                  <input
+                    id={ids.icloud}
+                    type="checkbox"
+                    aria-describedby={ids.icloudHint}
+                    checked={icloudOn}
+                    onChange={(e) => {
+                      setIcloudOn(e.target.checked);
+                      void useCosmos.getState().setIcloud(e.target.checked);
+                    }}
+                  />
+                  {t.settings.icloud}
+                </label>
+                <p className="settings-hint" id={ids.icloudHint}>
+                  {storage.canPickFolder ? t.settings.icloudHintMac : t.settings.icloudHint}
+                </p>
+              </>
+            )}
+          </SettingsDisclosure>
           </section>
 
           <section className="settings-col" role="tabpanel" id={`${ids.panel}-ai`} aria-labelledby={`${ids.panel}-tab-ai`} hidden={tab !== "ai"}>
@@ -710,20 +738,17 @@ export function Settings({ project = true }: { project?: boolean }) {
           {provider === "chatgpt" && chatgptControls}
           {provider && provider !== "chatgpt" && config && !PROVIDERS[provider].device && (
             <>
-              {PROVIDERS[provider].local ? (
-                <>
-                  <label htmlFor={ids.aiUrl}>{t.ai.url}</label>
-                  <input id={ids.aiUrl} type="url" value={config.url} placeholder={PROVIDERS[provider].url} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("urls", e.target.value)} />
-                  <label htmlFor={ids.aiKey}>{t.ai.token}</label>
-                  <input id={ids.aiKey} type="password" value={config.key} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("keys", e.target.value)} />
-                  <p className="settings-hint">{t.ai.tokenHint}</p>
-                </>
-              ) : (
-                <>
-                  <label htmlFor={ids.aiKey}>{t.ai.key}</label>
-                  <input id={ids.aiKey} type="password" value={config.key} autoComplete="off" spellCheck={false} onChange={(e) => patchAi("keys", e.target.value)} />
-                  <p className="settings-hint">{t.ai.keyHint}</p>
-                </>
+              {tab === "ai" && (
+                <ApiCredential
+                  key={provider}
+                  value={config.key}
+                  onChange={(value) => patchAi("keys", value)}
+                  server={PROVIDERS[provider].local ? {
+                    url: config.url,
+                    placeholder: PROVIDERS[provider].url,
+                    onChange: (url) => patchAi("urls", url),
+                  } : undefined}
+                />
               )}
               <label htmlFor={ids.aiModel}>{t.ai.model}</label>
               {/* Une liste déroulante dès que les modèles sont connus : un champ avec suggestions n'aurait

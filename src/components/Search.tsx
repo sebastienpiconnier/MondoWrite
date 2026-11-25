@@ -5,13 +5,13 @@
 // Avec un service d'IA local, un second mode « Par le sens » (SemanticSearch.tsx) trouve les passages
 // qui parlent de la même chose, avec d'autres mots.
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useCommand } from "../commands";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
-import { typeColor } from "../types";
+import { typeColor, type CardType } from "../types";
 import { useVocab } from "../vocab";
-import { findPassages, plainText, searchCards } from "../search";
+import { findPassages, highlightRanges, plainText, searchCards } from "../search";
 import { sceneBody, sceneText } from "../screenplay/sceneText";
 import { excerptOf } from "../ai/semantic";
 import { openPalette } from "../commandList";
@@ -28,6 +28,27 @@ const RESULT_LIMIT = 20;
 
 /** Mode de la dernière recherche, gardé pour la session (l'auteur qui cherche par le sens y revient). */
 let lastMode: "words" | "sense" = "words";
+
+function Highlight({ text, query, words }: { text: string; query: string; words?: boolean }) {
+  const ranges = highlightRanges(text, query, words);
+  if (!ranges.length) return text;
+  return ranges.map(({ start, end }, i) => (
+    <Fragment key={start}>
+      {text.slice(i ? ranges[i - 1].end : 0, start)}
+      <mark>{text.slice(start, end)}</mark>
+      {i === ranges.length - 1 && text.slice(end)}
+    </Fragment>
+  ));
+}
+
+function ResultHeading({ type, meta, title, query = "", words }: { type: CardType; meta: string; title: string; query?: string; words?: boolean }) {
+  return (
+    <span className="search-result-head">
+      <span className="search-result-type"><span className="card-dot" style={{ background: typeColor(type) }} />{meta}</span>
+      <span className="search-result-title"><Highlight text={title} query={query} words={words} /></span>
+    </span>
+  );
+}
 
 export function Search() {
   const { t, types } = useVocab();
@@ -305,13 +326,8 @@ export function Search() {
               {passages.map((p, i) => (
                 <li key={`${p.target}:${p.nth}`} id={`${ids.list}-${i}`} role="option" aria-selected={i === active}>
                   <button type="button" className={`search-result${i === active ? " is-active" : ""}`} tabIndex={-1} onClick={() => choose(i)}>
-                    <span className="search-result-head">
-                      <span className="card-dot" style={{ background: typeColor("scene") }} />
-                      {p.kind === "chapter" && <span className="search-result-type">{t.chapters.short}</span>}
-                      <span className="search-result-title">{p.title || m.untitledScene}</span>
-                      {p.context && <span className="search-result-type">{p.context}</span>}
-                    </span>
-                    <span className="search-result-text">{p.excerpt}</span>
+                    <ResultHeading type="scene" meta={[p.kind === "chapter" ? t.chapters.short : types.scene.label, p.context].filter(Boolean).join(" · ")} title={p.title || m.untitledScene} query={query} />
+                    <span className="search-result-text"><Highlight text={p.excerpt} query={query} /></span>
                   </button>
                 </li>
               ))}
@@ -321,13 +337,8 @@ export function Search() {
               {results.map((r, i) => (
                 <li key={r.id} id={`${ids.list}-${i}`} role="option" aria-selected={i === active}>
                   <button type="button" className={`search-result${i === active ? " is-active" : ""}`} tabIndex={-1} onClick={() => choose(i)}>
-                    <span className="search-result-head">
-                      <span className="card-dot" style={{ background: typeColor(r.type) }} />
-                      <span className="search-result-type">{types[r.type].label}</span>
-                      <span className="search-result-title">{r.title || t.bible.untitled}</span>
-                      {r.inText && where !== "bible" && <span className="search-result-type">{s.inText}</span>}
-                    </span>
-                    {r.excerpt && <span className="search-result-text">{r.excerpt}</span>}
+                    <ResultHeading type={r.type} meta={[types[r.type].label, r.inText && where !== "bible" && s.inText].filter(Boolean).join(" · ")} title={r.title || t.bible.untitled} query={query} words />
+                    {r.excerpt && <span className="search-result-text"><Highlight text={r.excerpt} query={query} words /></span>}
                   </button>
                 </li>
               ))}
@@ -341,12 +352,7 @@ export function Search() {
                   return (
                     <li key={c.key} id={`${ids.list}-${i}`} role="option" aria-selected={i === active}>
                       <button type="button" className={`search-result${i === active ? " is-active" : ""}`} tabIndex={-1} onClick={() => chooseHit(i)}>
-                        <span className="search-result-head">
-                          <span className="card-dot" style={{ background: typeColor(c.type) }} />
-                          <span className="search-result-type">{types[c.type].label}</span>
-                          <span className="search-result-title">{c.label || (c.type === "scene" ? m.untitledScene : t.bible.untitled)}</span>
-                          {inText && <span className="search-result-type">{c.kind === "screenplay" ? m.inScreenplay : m.inManuscript}</span>}
-                        </span>
+                        <ResultHeading type={c.type} meta={[types[c.type].label, inText && (c.kind === "screenplay" ? m.inScreenplay : m.inManuscript)].filter(Boolean).join(" · ")} title={c.label || (c.type === "scene" ? m.untitledScene : t.bible.untitled)} />
                         <span className="search-result-text">{excerptOf(c.kind === "screenplay" && c.label ? c.text.slice(c.label.length) : c.kind === "card" && c.label ? c.text.slice(c.label.length) || c.text : c.text)}</span>
                       </button>
                     </li>

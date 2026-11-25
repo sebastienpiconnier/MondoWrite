@@ -1,7 +1,7 @@
 // Séquencier (vue Plan d'un projet scénario) : les scènes dans l'ordre du fichier, avec leur
 // synopsis, leurs personnages et leur longueur. Deux présentations au choix : en liste ou en fiches.
 // Changer l'ordre ici déplace la scène entière dans scenario.fountain.
-// Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
+// La poignée déplace au doigt et au clavier ; la scène entière reste déplaçable à la souris.
 
 import { usePlotColor } from "./usePlotColor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
@@ -10,6 +10,7 @@ import { leafBeats, type PlanBeat } from "../plan";
 
 /** Gabarits proposés à un épisode : « Épisode de série » d'abord. */
 const EPISODE_TEMPLATES = ["episode", ...SCREENPLAY_TEMPLATES.filter((k) => k !== "episode")] as const;
+import { ReorderHandle } from "./ReorderHandle";
 import { MoreMenu } from "./MoreMenu";
 import { Fragment, cloneElement, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { SCENE_AT, useCosmos } from "../store";
@@ -86,16 +87,11 @@ export function Sequencier() {
   const [drafts, setDrafts] = useState<Record<number, string>>({});
   // Après un déplacement au clavier, le focus suit la scène.
   const listRef = useRef<HTMLOListElement>(null);
-  const refocus = useRef<{ index: number; way: "up" | "down" } | null>(null);
+  const refocus = useRef<number | null>(null);
   useEffect(() => {
-    const target = refocus.current;
-    if (!target) return;
+    if (refocus.current === null) return;
+    listRef.current?.querySelector<HTMLButtonElement>(`[data-reorder-index="${refocus.current}"] .reorder-handle`)?.focus();
     refocus.current = null;
-    const row = listRef.current?.querySelector(`:scope > [data-row="${target.index}"]`);
-    const button =
-      row?.querySelector<HTMLButtonElement>(`button[data-move="${target.way}"]:not(:disabled)`) ??
-      row?.querySelector<HTMLButtonElement>("button[data-move]:not(:disabled)");
-    button?.focus();
   }, [list]);
 
   if (!screenplay || !pagination) return null;
@@ -104,10 +100,10 @@ export function Sequencier() {
   const plural = (n: number, one: string, many: string) =>
     fmt(new Intl.PluralRules(lang).select(n) === "one" ? one : many, { n });
 
-  const move = (from: number, to: number, way?: "up" | "down") => {
+  const move = (from: number, to: number, focusGrip = false) => {
     const elements = moveBlock(screenplay.elements, from, to);
     if (elements === screenplay.elements) return;
-    if (way) refocus.current = { index: to, way };
+    if (focusGrip) refocus.current = to;
     const moved = blocks(elements)[to];
     setAnnounce(fmt(sq.moved, { title: moved.text || sp.untitledScene, n: moved.number ?? 0 }));
     setScreenplay({ ...screenplay, elements }, true);
@@ -219,7 +215,7 @@ export function Sequencier() {
   const withAdd = (i: number, row: ReactElement | null) => {
     if (!row) return null;
     const section = addAfter.get(i);
-    const tagged = cloneElement(row as ReactElement<{ "data-row"?: number }>, { "data-row": i });
+    const tagged = cloneElement(row as ReactElement<{ "data-reorder-index"?: number }>, { "data-reorder-index": i });
     if (section === undefined || hidden.has(section)) return tagged;
     const label = labelOf(list[section].text);
     return (
@@ -317,7 +313,7 @@ export function Sequencier() {
   const sceneCards = useMemo(() => list.filter((b) => b.kind === "scene" && b.cardId).map((b) => b.cardId as string), [list]);
 
   return (
-    <div className="sequencer">
+    <div className="sequencer" data-native-reorder>
       <div className={`sq-inner${cards || timeline ? " is-cards" : ""}`}>
         {/* Même en-tête que le Plan d'un roman (#55) : seuls le vocabulaire et les actions changent. */}
         <PlanHeader
@@ -368,7 +364,7 @@ export function Sequencier() {
           />
         )}
 
-        <ol className={`sq-list${cards ? " is-cards" : ""}`} ref={listRef} aria-label={sq.listAria}>
+        <ol className={`sq-list${cards ? " is-cards" : ""}`} ref={listRef} data-reorder-list aria-label={sq.listAria}>
           {/* Série : des scènes écrites avant le premier épisode. */}
           {inSeries && list[0]?.kind === "scene" && (
             <li className="sq-section sq-outside">
@@ -580,26 +576,10 @@ export function Sequencier() {
                 {...drop}
               >
                 <div className="sq-moves">
-                  <button
-                    type="button"
-                    className="icon-button"
-                    data-move="up"
-                    disabled={i === 0}
-                    aria-label={fmt(sq.moveUp, { title })}
-                    onClick={() => move(i, i - 1, "up")}
-                  >
-                    <span aria-hidden="true">{cards ? "←" : "↑"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    data-move="down"
-                    disabled={i === list.length - 1}
-                    aria-label={fmt(sq.moveDown, { title })}
-                    onClick={() => move(i, i + 1, "down")}
-                  >
-                    <span aria-hidden="true">{cards ? "→" : "↓"}</span>
-                  </button>
+                  <ReorderHandle index={i} count={list.length}
+                    label={fmt(t.controls.reorder, { label: title })}
+                    moveLabels={{ up: fmt(sq.moveUp, { title }), down: fmt(sq.moveDown, { title }) }}
+                    onMove={(from, to) => move(from, to, true)} />
                 </div>
                 <div className="sq-body">
                   <div className="is-slugline sq-title">

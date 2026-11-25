@@ -101,8 +101,8 @@ export function GoToPanel() {
           {found.map((place, i) => (
             <li key={place.key} id={`goto-${place.key}`} role="option" aria-selected={i === current}>
               <button type="button" className={`goto-item${i === current ? " is-active" : ""}`} tabIndex={-1} onClick={() => go(place)} onPointerEnter={() => setActive(i)}>
-                <span className="goto-kind">{g.kinds[place.kind]}</span>
                 <span className="goto-label">{place.label}</span>
+                <span className="goto-kind">{g.kinds[place.kind]}</span>
                 {place.detail && <span className="goto-detail">{place.detail}</span>}
                 <span className="goto-page">{fmt(g.pageShort, { n: number.format(place.page) })}</span>
               </button>

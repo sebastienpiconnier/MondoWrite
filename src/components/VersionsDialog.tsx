@@ -91,6 +91,8 @@ export function VersionsDialog() {
   const wordsText = (n: number) => fmt(n === 1 ? v.wordOne : v.wordMany, { n: n.toLocaleString(lang) });
 
   const version = versions?.find((x) => x.name === chosen) ?? null;
+  const comparisonTargets = versions?.filter((item) => item.name !== chosen) ?? [];
+  const defaultTarget = current ? "current" : comparisonTargets[0]?.name;
   const other = against && against !== "current" ? (versions?.find((x) => x.name === against) ?? null) : null;
   const plain = (text: string) => (kind === "scenario" ? text : markdownPlain(text));
   // Comparaison : de l'ancien (la version choisie, ou la plus ancienne des deux) au plus récent.
@@ -226,7 +228,7 @@ export function VersionsDialog() {
                   {renaming === x.name ? (
                     <RenameField version={x} label={v.renameLabel} save={v.save} cancel={v.cancel} onDone={(next) => (next === null ? setRenaming(null) : void rename(x, next))} />
                   ) : (
-                    <button type="button" className="versions-item" aria-pressed={chosen === x.name} onClick={() => setChosen(x.name)}>
+                    <button type="button" className="versions-item" aria-pressed={chosen === x.name} onClick={() => { setChosen(x.name); if (against === x.name) setAgainst(current ? "current" : ""); }}>
                       <span className="versions-item-title">{x.title || v.untitled}</span>
                       <span className="versions-item-meta">
                         {dateText(x.date)} · {wordsText(x.words)}
@@ -242,22 +244,10 @@ export function VersionsDialog() {
         {version && (
           <div className="versions-main">
             <div className="versions-tools">
-              <label className="versions-compare">
-                <span>{v.compareLabel}</span>
-                <select value={against} onChange={(e) => setAgainst(e.target.value)}>
-                  <option value="">{v.compareNone}</option>
-                  <option value="current" disabled={!current}>
-                    {v.compareCurrent}
-                  </option>
-                  {versions
-                    ?.filter((x) => x.name !== version.name)
-                    .map((x) => (
-                      <option key={x.name} value={x.name}>
-                        {label(x)}
-                      </option>
-                    ))}
-                </select>
-              </label>
+              <div className="search-modes versions-modes" role="group" aria-label={v.compareLabel}>
+                <button type="button" className={`search-mode${!against ? " is-on" : ""}`} aria-pressed={!against} onClick={() => setAgainst("")}>{v.readVersion}</button>
+                <button type="button" className={`search-mode${against ? " is-on" : ""}`} aria-pressed={!!against} disabled={!defaultTarget} onClick={() => !against && defaultTarget && setAgainst(defaultTarget)}>{v.compareMode}</button>
+              </div>
               <div className="versions-actions">
                 <button type="button" className="is-primary" disabled={busy || version.kind !== kind} title={version.kind !== kind ? v.otherKind : undefined} onClick={() => void restore()}>
                   {v.restore}
@@ -272,6 +262,18 @@ export function VersionsDialog() {
                 />
               </div>
             </div>
+
+            {against && (
+              <label className="versions-compare">
+                <span>{v.compareLabel}</span>
+                <select value={against} onChange={(e) => setAgainst(e.target.value)}>
+                  <option value="current" disabled={!current}>{v.compareCurrent}</option>
+                  {comparisonTargets.map((x) => (
+                    <option key={x.name} value={x.name}>{label(x)}</option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             {diff ? (
               <>

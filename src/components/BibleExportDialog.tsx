@@ -35,6 +35,10 @@ import { exportDocument } from "../export";
 import { bibleOf } from "../export/projectDocs";
 import type { DocImage } from "../export/doc";
 
+import { CheckIcon } from "./CheckIcon";
+import { ReorderHandle } from "./ReorderHandle";
+import { TrashIcon } from "./TrashIcon";
+
 const FORMATS = ["pdf", "docx", "md", "html"] as const;
 type Format = (typeof FORMATS)[number];
 const PREVIEW_DELAY = 350;
@@ -63,6 +67,7 @@ export function BibleExportDialog() {
   const options = state.current;
   const [format, setFormat] = useState<Format>("pdf");
   const [presetName, setPresetName] = useState("");
+  const presetDialog = useRef<HTMLDialogElement>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<{ status: "working" | "ready" | "failed" | "empty"; pages: number }>({ status: "working", pages: 0 });
@@ -249,27 +254,23 @@ export function BibleExportDialog() {
         </fieldset>
         <fieldset>
           <legend>{e.parts}</legend>
-          <ul className="bexp-parts">
+          <ul className="bexp-parts" data-reorder-list>
             {ordered.map((p) => {
               const on = options.parts.includes(p);
               const label = fmt(t.bible.partTitle, { n: partNumber(p), part: t.bible.parts[p] });
               const i = isPrivatePart(p) ? -1 : publicChecked.indexOf(p);
               return (
-                <li key={p} className={on ? "is-on" : ""}>
+                <li key={p} data-reorder-index={i >= 0 ? i : undefined} className={on ? "is-on" : ""}>
                   <label className="spdf-choice">
                     <input type="checkbox" checked={on} onChange={() => set(togglePart(options, p))} />
                     {label}
                     {!filled.has(p) && <span className="bexp-empty">{e.partEmpty}</span>}
                   </label>
-                  {on && !isPrivatePart(p) && (
-                    <span className="bexp-move">
-                      <button type="button" aria-label={fmt(e.moveUp, { part: t.bible.parts[p] })} disabled={i === 0} onClick={() => set(movePart(options, p, "up"))}>
-                        ↑
-                      </button>
-                      <button type="button" aria-label={fmt(e.moveDown, { part: t.bible.parts[p] })} disabled={i === publicChecked.length - 1} onClick={() => set(movePart(options, p, "down"))}>
-                        ↓
-                      </button>
-                    </span>
+                  {i >= 0 && (
+                    <ReorderHandle index={i} count={publicChecked.length}
+                      label={fmt(t.controls.reorder, { label: t.bible.parts[p] })}
+                      moveLabels={{ up: fmt(e.moveUp, { part: t.bible.parts[p] }), down: fmt(e.moveDown, { part: t.bible.parts[p] }) }}
+                      onMove={(_, to) => set(movePart(options, p, to))} />
                   )}
                 </li>
               );
@@ -286,6 +287,7 @@ export function BibleExportDialog() {
               </button>
             ))}
           </div>
+          <span className="bexp-accent-label">{e.accent}</span>
           <div className="bexp-accents" role="radiogroup" aria-label={e.accent}>
             {Array.from({ length: ACCENT_COUNT }, (_, i) => (
               <button
@@ -297,7 +299,7 @@ export function BibleExportDialog() {
                 className="bexp-accent"
                 style={{ background: swatch(options.theme, i) }}
                 onClick={() => set({ ...options, accent: i })}
-              />
+              >{options.accent === i && <CheckIcon />}</button>
             ))}
           </div>
           <label className="spdf-field">
@@ -379,34 +381,24 @@ export function BibleExportDialog() {
                 </option>
               ))}
             </select>
+            <button type="button" className="bexp-ghost preset-trigger" aria-haspopup="dialog" aria-label={e.savePreset} title={e.savePreset} onClick={() => presetDialog.current?.showModal()}>
+              <svg width="18" height="18" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"><path d="M4 3h13l4 4v14H3V3zm3 0v6h9V3M7 21v-8h10v8"/></svg>
+            </button>
             {preset && (
               <button type="button" className="bexp-ghost" aria-label={fmt(e.presetDelete, { name: preset.name })} onClick={() => setState(deletePreset(state, preset.name))}>
-                ×
+                <TrashIcon />
               </button>
             )}
-          </div>
-          <div className="bexp-row">
-            <input type="text" aria-label={e.presetName} placeholder={e.presetName} value={presetName} maxLength={60} onChange={(ev) => setPresetName(ev.target.value)} />
-            <button
-              type="button"
-              className="bexp-ghost"
-              disabled={!presetName.trim()}
-              onClick={() => {
-                setState(savePreset(state, presetName));
-                setPresetName("");
-              }}
-            >
-              {e.presetSave}
-            </button>
           </div>
         </fieldset>
         <fieldset>
           <legend>{e.format}</legend>
-          <div className="bexp-row">
+          <div className="bexp-formats">
             {FORMATS.map((f) => (
               <label key={f} className="spdf-choice">
                 <input type="radio" name="bexp-format" checked={format === f} onChange={() => setFormat(f)} />
                 {e[f]}
+                <small>{({ pdf: e.formatPdf, docx: e.formatDocx, md: e.formatMd, html: e.formatHtml })[f]}</small>
               </label>
             ))}
           </div>
@@ -421,11 +413,29 @@ export function BibleExportDialog() {
               {t.gallery.close}
             </button>
             <button type="submit" className="is-primary" disabled={busy || (format === "pdf" && preview.status !== "ready")}>
-              {e.export}
+              {fmt(e.exportFormat, { format: format === "docx" ? e.wordDocument : e[format] })}
             </button>
           </div>
         </div>
       </form>
+      <dialog ref={presetDialog} className="preset-dialog" aria-label={e.savePreset} closedby="any"
+        onClose={(ev) => { ev.stopPropagation(); setPresetName(""); }}>
+        <form onSubmit={(ev) => {
+          ev.preventDefault();
+          if (!presetName.trim()) return;
+          setState(savePreset(state, presetName));
+          presetDialog.current?.close();
+        }}>
+          <strong>{e.savePreset}</strong>
+          <button type="button" className="icon-button preset-close" aria-label={t.gallery.close} title={t.gallery.close} onClick={() => presetDialog.current?.close()}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+          </button>
+          <label className="spdf-field">{e.presetName}
+            <input autoFocus value={presetName} maxLength={60} onChange={(ev) => setPresetName(ev.target.value)} />
+          </label>
+          <button type="submit" className="ghost-button is-primary" disabled={!presetName.trim()}>{e.presetSave}</button>
+        </form>
+      </dialog>
       <section className="spdf-preview bexp-preview" aria-label={e.preview}>
         {format === "pdf" ? (
           <>

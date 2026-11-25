@@ -12,7 +12,7 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { isAppleKeyboard, isMobileOS, isTauri } from "../platform";
-import { nextColumn, nextHighlight, sessionDelta } from "../focusText";
+import { FOCUS_COLUMNS, FOCUS_HIGHLIGHTS, nextHighlight, sessionDelta } from "../focusText";
 import { sessionWords } from "../stats";
 
 /** Pause après la dernière touche avant que le compteur revienne. */
@@ -178,24 +178,27 @@ export function FocusBar() {
   return (
     <div className="ms-focus-bar" role="toolbar" aria-label={t.focus.aria}>
       <div className="focus-options">
-        <button
-          type="button"
-          title={fmt(t.focus.highlightKey, { mod })}
-          onClick={() => setWriting({ ...writing, highlight: nextHighlight(writing.highlight) })}
-        >
-          {fmt(t.focus.highlightButton, { mode: t.focus.highlights[writing.highlight] })}
-        </button>
-        {/* Largeur de la colonne (Manuscrit et Scénario) ; sur téléphone, le texte prend toute la largeur. */}
-        <button type="button" className="focus-column" onClick={() => setWriting({ ...writing, column: nextColumn(writing.column) })}>
-          {fmt(t.focus.columnButton, { width: t.focus.columns[writing.column] })}
-        </button>
-        <button type="button" aria-pressed={writing.typewriter} onClick={() => setWriting({ ...writing, typewriter: !writing.typewriter })}>
+        <label className="focus-select" title={fmt(t.focus.highlightKey, { mod })}>
+          {t.focus.highlight}
+          <select aria-label={t.focus.highlight} value={writing.highlight} onChange={(e) => setWriting({ ...writing, highlight: e.target.value as typeof writing.highlight })}>
+            {FOCUS_HIGHLIGHTS.map((value) => <option key={value} value={value}>{t.focus.highlights[value]}</option>)}
+          </select>
+        </label>
+        <label className="focus-select focus-column">
+          {t.settings.columnWidth}
+          <select aria-label={t.settings.columnWidth} value={writing.column} onChange={(e) => setWriting({ ...writing, column: e.target.value as typeof writing.column })}>
+            {FOCUS_COLUMNS.map((value) => <option key={value} value={value}>{t.focus.columns[value]}</option>)}
+          </select>
+        </label>
+        <label className="focus-check">
+          <input type="checkbox" checked={writing.typewriter} onChange={(e) => setWriting({ ...writing, typewriter: e.target.checked })} />
           {t.focus.typewriter}
-        </button>
+        </label>
         {canFullscreen() && (
-          <button type="button" aria-pressed={writing.fullscreen} onClick={() => setWriting({ ...writing, fullscreen: !writing.fullscreen })}>
+          <label className="focus-check">
+            <input type="checkbox" checked={writing.fullscreen} onChange={(e) => setWriting({ ...writing, fullscreen: e.target.checked })} />
             {t.focus.fullscreen}
-          </button>
+          </label>
         )}
       </div>
       <button type="button" className="focus-exit" aria-label={t.focus.exit} onClick={() => setFocusMode(false)}>

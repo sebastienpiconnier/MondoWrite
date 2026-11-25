@@ -177,11 +177,17 @@ describe("renommer un nom qui est aussi un mot", () => {
       { type: "character", text: "HOPE" },
       { type: "dialogue", text: "Hope is all we have." },
     ]);
+    const second = state().addCard({ x: 10, y: 10 }, "scene");
+    state().updateCard(second, { title: "INT. PHARE - NUIT" });
+    state().setSceneText(second, [{ type: "dialogue", text: "Hope again." }]);
     const occ = findOccurrences(state(), { find: "Hope", replacement: "Ada", wholeWord: true, nameCase: true });
     expect(occ.map((o) => [o.match, o.sentenceStart, o.label])).toEqual([
       ["HOPE", false, "INT. PHARE - NUIT"],
       ["Hope", true, "INT. PHARE - NUIT"],
+      ["Hope", true, "INT. PHARE - NUIT"],
     ]);
+    expect(occ[0].source).toBe(occ[1].source);
+    expect(occ[1].source).not.toBe(occ[2].source);
   });
 });
 

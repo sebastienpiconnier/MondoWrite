@@ -9,6 +9,7 @@ import { isInteractiveMeta } from "../interactive";
 import { plotCardBackground, plotColors, sceneBackground } from "../plotColors";
 import { canFollow } from "../threadFilter";
 import { formOf } from "../pitch";
+import { focusMenuItem } from "./focusMenuItem";
 import { autosize } from "./autosize";
 import { documentExtension, imageExtension } from "../media";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -85,7 +86,9 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   // Près du bas de l'écran (petits écrans, bouton « Nouvelle carte »), le menu s'ouvre vers le haut.
   const [menuUp, setMenuUp] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const openMenu = (menu: MenuState | null) => {
+  const typeMenuOpener = useRef<HTMLElement | null>(null);
+  const openMenu = (menu: MenuState | null, opener?: HTMLElement) => {
+    if (opener) typeMenuOpener.current = opener;
     const rect = cardRef.current?.getBoundingClientRect();
     if (menu && rect) setMenuUp(rect.bottom > window.innerHeight * 0.6);
     setSlash(menu);
@@ -110,6 +113,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const pick = (type: CardType) => {
     const s = stateRef.current.slash;
     if (s?.via === "slash" && editor) editor.chain().focus().deleteRange({ from: s.from, to: s.to }).run();
+    if (s?.via === "label") typeMenuOpener.current?.focus({ preventScroll: true });
     updateCard(id, { type });
     setSlash(null);
   };
@@ -319,7 +323,10 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   useEffect(() => {
     if (!labelMenuOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSlash(null);
+      if (e.key === "Escape") {
+        typeMenuOpener.current?.focus({ preventScroll: true });
+        setSlash(null);
+      }
     };
     const onDown = (e: PointerEvent) => {
       const target = e.target as Node;
@@ -365,6 +372,10 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
       maxHeight: Math.max(160, up ? above : below),
     });
   }, [labelMenuOpen]);
+
+  useLayoutEffect(() => {
+    if (floatAt) floatingRef.current?.querySelector<HTMLElement>('[role="option"][aria-selected="true"]')?.focus({ preventScroll: true });
+  }, [floatAt]);
 
   // Hauteur du titre ajustée à son contenu (repli si `field-sizing` n'est pas pris en charge).
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -484,9 +495,9 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           aria-haspopup="listbox"
           aria-expanded={slash?.via === "label"}
           aria-label={fmt(t.card.changeType, { type: types[data.type].label })}
-          onClick={() => {
+          onClick={(event) => {
             setActive(Math.max(0, typesFor(kind, data.type === "episode", film).indexOf(data.type)));
-            openMenu(slash?.via === "label" ? null : { via: "label", query: "" });
+            openMenu(slash?.via === "label" ? null : { via: "label", query: "" }, event.currentTarget);
           }}
         >
           <span className="card-dot" />
@@ -545,26 +556,12 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           if (pasteIntoCard(e)) e.preventDefault();
         }}
         onKeyDown={(e) => {
-          // Menu des types ouvert depuis le titre : flèches, Entrée, Échap.
-          const menu = stateRef.current;
-          if (menu.slash?.via === "label" && menu.options.length > 0) {
-            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-              e.preventDefault();
-              setActive((menu.active + (e.key === "ArrowDown" ? 1 : -1) + menu.options.length) % menu.options.length);
-              return;
-            }
-            if (e.key === "Enter") {
-              e.preventDefault();
-              pick(menu.options[menu.active]);
-              return;
-            }
-          }
           // « / » dans un titre encore vide : le menu des types, au clavier (le corps d'une carte Scène n'est
           // plus un éditeur, c'est le chemin clavier qui reste pour toutes les cartes).
           if (e.key === "/" && !data.title) {
             e.preventDefault();
             setActive(Math.max(0, typesFor(kind, data.type === "episode", film).indexOf(data.type)));
-            openMenu({ via: "label", query: "" });
+            openMenu({ via: "label", query: "" }, e.currentTarget);
             return;
           }
           if (e.key === "Enter") {
@@ -669,12 +666,21 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
         createPortal(
           <div
             ref={floatingRef}
+            onKeyDown={(event) => {
+              if (focusMenuItem(event, "option")) return;
+              if (event.key === "Tab") {
+                typeMenuOpener.current?.focus({ preventScroll: true });
+                setSlash(null);
+              }
+            }}
             className={`type-menu-float${floatAt?.up ? " is-up" : ""}`}
             style={floatAt ? { left: floatAt.left, top: floatAt.top, maxHeight: floatAt.maxHeight } : { visibility: "hidden" }}
           >
             <SuggestionMenu
               title={t.card.menuTitle}
               className="is-floating"
+              currentKey={data.type}
+              onFocusItem={setActive}
               items={options.map((type) => ({ key: type, label: types[type].label, color: typeColor(type) }))}
               active={active}
               onPick={(i) => pick(options[i])}

@@ -4,6 +4,7 @@
 // garde du manuscrit), la page « L'auteur » d'un dossier envoyé aussi.
 
 import { useId, useState, type FormEvent } from "react";
+import { SettingsDisclosure } from "./SettingsDisclosure";
 import { useT } from "../i18n";
 import { useSettings } from "../settings";
 import { cleanProfile, type AuthorProfile } from "../profile";
@@ -11,7 +12,7 @@ import { cleanProfile, type AuthorProfile } from "../profile";
 type TextField = Exclude<keyof AuthorProfile, "address" | "bio" | "works">;
 
 export function ProfileDialog({ onDone }: { onDone: () => void }) {
-  const t = useT().home.profile;
+  const { home: { profile: t }, settings } = useT();
   const profile = useSettings((s) => s.profile);
   const [draft, setDraft] = useState<AuthorProfile>(profile);
   const fieldId = useId();
@@ -59,15 +60,15 @@ export function ProfileDialog({ onDone }: { onDone: () => void }) {
           <textarea id={`${fieldId}-address`} rows={3} value={draft.address} autoComplete="street-address" onChange={(e) => set("address", e.target.value)} />
         </div>
         {/* Pour la page « L'auteur » d'un dossier envoyé (Bible) : jamais écrit dans un projet. */}
-        {(["bio", "works"] as const).map((field) => (
-          <div key={field} className={`profile-field is-address is-${field}`}>
-            <label htmlFor={`${fieldId}-${field}`}>{t[field]}</label>
-            <textarea id={`${fieldId}-${field}`} rows={3} value={draft[field]} placeholder={t[`${field}Placeholder`]} aria-describedby={`${fieldId}-${field}Hint`} onChange={(e) => set(field, e.target.value)} />
-            <p className="settings-hint" id={`${fieldId}-${field}Hint`}>
-              {t.dossierHint}
-            </p>
-          </div>
-        ))}
+        <SettingsDisclosure title={settings.aboutAuthor} summary={settings.bioAndWorks}>
+          <p className="settings-hint" id={`${fieldId}-dossierHint`}>{t.dossierHint}</p>
+          {(["bio", "works"] as const).map((field) => (
+            <div key={field} className={`profile-field is-address is-${field}`}>
+              <label htmlFor={`${fieldId}-${field}`}>{t[field]}</label>
+              <textarea id={`${fieldId}-${field}`} rows={3} value={draft[field]} placeholder={t[`${field}Placeholder`]} aria-describedby={`${fieldId}-dossierHint`} onChange={(e) => set(field, e.target.value)} />
+            </div>
+          ))}
+        </SettingsDisclosure>
         <div className="home-buttons">
           <button type="submit" className="home-create">
             {t.save}

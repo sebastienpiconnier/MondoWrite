@@ -57,7 +57,8 @@ import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
 import { LanguageToolStatus, useLanguageTool } from "./LanguageToolBubble";
 import { typeColor } from "../types";
-import { chapterNumbers, chapterOf, chapterStep, groupByChapter, type Chapter } from "../plan";
+import { flushSync } from "react-dom";
+import { chapterDropTarget, chapterNumbers, chapterOf, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
 import { citedCards, countWords, orphanTexts } from "../manuscript";
 import { Chutier } from "./Chutier";
@@ -102,6 +103,11 @@ function readPanels(): Panels {
 /** Pause dans la frappe avant de refaire « Vérifier » sur tout le livre. */
 const REVIEW_PAUSE_MS = 700;
 
+function sceneDropSide(row: HTMLElement, y: number) {
+  const box = row.getBoundingClientRect();
+  return y < box.top + box.height / 2 ? "before" : "after";
+}
+
 export function Manuscript() {
   const t = useT();
   const m = t.manuscript;
@@ -130,12 +136,11 @@ export function Manuscript() {
   const startChapterAt = useCosmos((s) => s.startChapterAt);
   const deletePlanChapter = useCosmos((s) => s.deletePlanChapter);
   const movePlanChapter = useCosmos((s) => s.movePlanChapter);
-  // Chapitre qu'on glisse dans la colonne : une ref, le dépôt peut arriver avant le rendu suivant.
-  const draggedRef = useRef<string | null>(null);
-  const [dragged, setDragged] = useState<string | null>(null);
-  const [over, setOver] = useState<string | null>(null);
+  const chapterDrag = useRef<number | null>(null);
+  const boundaryFocus = useRef<HTMLButtonElement | null>(null);
+  const [chapterOver, setChapterOver] = useState<{ index: number; side: "before" | "after" } | null>(null);
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
-  // Scène qu'on glisse dans la colonne (même raison : une ref) et l'endroit où elle irait.
+  // La scène glissée reste dans une ref : le dépôt peut précéder le rendu suivant.
   const sceneDragRef = useRef<string | null>(null);
   const plotColor = usePlotColor();
   const [sceneDrag, setSceneDrag] = useState<string | null>(null);
@@ -613,6 +618,37 @@ export function Manuscript() {
     },
   };
   const story = order.filter((id) => !isPageKind(cards.find((c) => c.id === id)?.page));
+  const storyGroups = groupByChapter(plan, story);
+  const chapterIndices = new Map(storyGroups.map(({ ids }, index) => [ids[0], index]));
+  const moveChapterGroup = (from: number, to: number) => {
+    const chapter = storyGroups[from]?.chapter;
+    const before = chapterDropTarget(storyGroups, from, to);
+    if (chapter && before !== undefined) movePlanChapter(chapter.id, before);
+  };
+  const stepChapter = (button: HTMLButtonElement, index: number, delta: number) => {
+    if (!storyGroups[index + delta]) return;
+    const sidebar = button.closest<HTMLElement>(".ms-scenes");
+    if (!sidebar) return;
+    const top = button.getBoundingClientRect().top;
+    const chapterId = storyGroups[index].chapter!.id;
+    flushSync(() => moveChapterGroup(index, index + delta));
+    // Une scène déplacée peut réunir deux fragments d'un même chapitre et recréer son en-tête.
+    const moved = button.isConnected ? button : sidebar.querySelector<HTMLButtonElement>(
+      `[data-chapter-id="${CSS.escape(chapterId)}"] [data-direction="${button.dataset.direction}"]`,
+    );
+    if (!moved) return;
+    const active = moved.disabled ? moved.parentElement?.querySelector<HTMLButtonElement>("button:enabled") : moved;
+    active?.focus({ preventScroll: true });
+    boundaryFocus.current = active && active !== moved ? active : null;
+    // Garder la commande sous le pointeur, même si le chapitre dépassé remplit plusieurs écrans.
+    const anchor = () => { sidebar.scrollTop += moved.getBoundingClientRect().top - top; };
+    anchor();
+    const scroll = sidebar.scrollTop;
+    // Sur tablette, la barre d’enregistrement peut changer de hauteur au rendu suivant.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (moved.isConnected && sidebar.scrollTop === scroll && document.activeElement === active) anchor();
+    }));
+  };
   // Roman interactif (lot 12) : le numéro de la section dans le livre-jeu, celui des cartes et des choix.
   const storyNumber = (id: string) => sections?.numbers[id] ?? story.indexOf(id) + 1;
   const pageLabel = (id: string) => {
@@ -674,7 +710,7 @@ export function Manuscript() {
       {focusMode && <FocusBar />}
       {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
       <LanguageToolStatus status={lt.status} />
-      <nav className="sp-scenes ms-scenes" aria-label={m.scenesAria}>
+      <nav className="sp-scenes ms-scenes" data-native-reorder aria-label={m.scenesAria}>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
@@ -691,61 +727,91 @@ export function Manuscript() {
             </select>
           </label>
         )}
-        {groupByChapter(plan, order).map((group) => (
-          <div
-            key={`${group.chapter?.id ?? "none"}-${group.ids[0]}`}
-            className={`${group.chapter ? "ms-chapter" : ""}${over === group.ids[0] ? " is-over" : ""}`}
-            // Dépôt d'un chapitre sur un groupe : avant lui en remontant, après lui en descendant.
-            // Le groupe se repère par sa première scène du récit : celui d'avant le premier chapitre commence par les
-            // pages du livre (titre, dédicace…), qui ne comptent pas (sinon le dépôt y était refusé).
-            onDragOver={(e) => {
-              const id = draggedRef.current;
-              if (!id || group.chapter?.id === id || !group.ids.some((x) => story.includes(x))) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-              setOver(group.ids[0]);
+        {groupByChapter(plan, order).map((group) => {
+          const chapter = group.chapter;
+          // Les pages liminaires et finales ne sont pas des destinations. Un groupe mixte se repère par sa première scène du récit.
+          const head = group.ids.find((id) => chapterIndices.has(id));
+          const index = head === undefined ? undefined : chapterIndices.get(head);
+          const movable = index !== undefined && storyGroups.length > 1;
+          const title = chapter ? chapterName(chapter) : "";
+          return <div
+            key={`${chapter?.id ?? "none"}-${group.ids[0]}`}
+            className={chapter ? "ms-chapter" : undefined}
+            data-chapter-id={chapter?.id}
+            data-drop-target={chapterOver?.index === index ? chapterOver?.side : undefined}
+            onDragOver={(event) => {
+              if (chapterDrag.current === null || index === undefined || index === chapterDrag.current) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              const side = index > chapterDrag.current ? "after" : "before";
+              setChapterOver((previous) => previous?.index === index && previous.side === side ? previous : { index, side });
             }}
-            onDragLeave={() => setOver((o) => (o === group.ids[0] ? null : o))}
-            onDrop={(e) => {
-              const id = draggedRef.current;
-              setOver(null);
-              if (!id) return;
-              e.preventDefault();
-              const groups = groupByChapter(plan, story);
-              const head = group.ids.find((x) => story.includes(x));
-              const from = groups.findIndex((g) => g.chapter?.id === id);
-              const to = groups.findIndex((g) => g.ids[0] === head);
-              if (from < 0 || to < 0) return;
-              movePlanChapter(id, to < from ? groups[to].ids[0] : (groups[to + 1]?.ids[0] ?? null));
+            onDragLeave={(event) => {
+              if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+              setChapterOver((previous) => previous?.index === index ? null : previous);
+            }}
+            onDrop={(event) => {
+              const from = chapterDrag.current;
+              if (from === null || index === undefined) return;
+              event.preventDefault();
+              setChapterOver(null);
+              chapterDrag.current = null;
+              moveChapterGroup(from, index);
             }}
           >
-            {group.chapter && (
-              <h3
-                className={`ms-chapter-title${dragged === group.chapter.id ? " is-dragged" : ""}`}
-                draggable
-                title={b.chapterDrag}
-                onDragStart={(e) => {
-                  draggedRef.current = group.chapter!.id;
-                  setDragged(group.chapter!.id);
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData("text/plain", chapterName(group.chapter!));
-                }}
-                onDragEnd={() => {
-                  draggedRef.current = null;
-                  setDragged(null);
-                }}
-              >
-                <span>{chapterName(group.chapter)}</span>
+            {chapter && (
+              <h3 className="ms-chapter-title">
+                <span
+                  draggable={movable}
+                  onDragStart={(event) => {
+                    if (index === undefined) return;
+                    chapterDrag.current = index;
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", title);
+                  }}
+                  onDragEnd={() => {
+                    chapterDrag.current = null;
+                    setChapterOver(null);
+                  }}
+                >{title}</span>
                 <span className="ms-words">{num(group.ids.reduce((sum, id) => sum + (stats.perScene.get(id) ?? 0), 0))}</span>
-                {(["up", "down"] as const).map((way) => {
-                  const to = chapterStep(plan, story, group.chapter!.id, way);
-                  const label = fmt(way === "up" ? b.chapterUp : b.chapterDown, { title: chapterName(group.chapter!) });
-                  return (
-                    <button key={way} type="button" className="icon-button ms-chapter-move" disabled={to === undefined} aria-label={label} title={label} onClick={() => to !== undefined && movePlanChapter(group.chapter!.id, to)}>
-                      <span aria-hidden="true">{way === "up" ? "↑" : "↓"}</span>
-                    </button>
-                  );
-                })}
+                {movable && (
+                  <span className="ms-chapter-order">
+                    {(["up", "down"] as const).map((direction) => {
+                      const delta = direction === "up" ? -1 : 1;
+                      const disabled = !storyGroups[index + delta];
+                      const label = fmt(direction === "up" ? b.chapterUp : b.chapterDown, { title });
+                      return (
+                        <button
+                          key={direction}
+                          type="button"
+                          className="ms-chapter-move"
+                          data-direction={direction}
+                          aria-label={label}
+                          title={label}
+                          disabled={disabled}
+                          aria-disabled={disabled}
+                          aria-keyshortcuts="ArrowUp ArrowDown"
+                          onClick={(event) => stepChapter(event.currentTarget, index, delta)}
+                          onKeyDown={(event) => {
+                            // Entrée maintenue à une extrémité ne doit pas inverser le sens du déplacement.
+                            if (event.key === "Enter" && event.repeat && boundaryFocus.current === event.currentTarget) {
+                              event.preventDefault();
+                              return;
+                            }
+                            if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+                            event.preventDefault();
+                            stepChapter(event.currentTarget, index, event.key === "ArrowUp" ? -1 : 1);
+                          }}
+                        >
+                          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d={direction === "up" ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} />
+                          </svg>
+                        </button>
+                      );
+                    })}
+                  </span>
+                )}
               </h3>
             )}
             <ol className="sp-scene-list">
@@ -807,14 +873,13 @@ export function Manuscript() {
                       e.stopPropagation();
                       e.dataTransfer.dropEffect = "move";
                       // Moitié haute : avant cette scène ; moitié basse : après (même chapitre qu'elle).
-                      const box = e.currentTarget.getBoundingClientRect();
-                      const side = e.clientY < box.top + box.height / 2 ? "before" : "after";
+                      const side = sceneDropSide(e.currentTarget, e.clientY);
                       setSceneOver((o) => (o?.id === id && o.side === side ? o : { id, side }));
                     }}
                     onDragLeave={() => setSceneOver((o) => (o?.id === id ? null : o))}
                     onDrop={(e) => {
                       const from = sceneDragRef.current;
-                      const side = sceneOver?.id === id ? sceneOver.side : "before";
+                      const side = sceneDropSide(e.currentTarget, e.clientY);
                       sceneDragRef.current = null;
                       setSceneDrag(null);
                       setSceneOver(null);
@@ -871,8 +936,8 @@ export function Manuscript() {
                 );
               })}
             </ol>
-          </div>
-        ))}
+          </div>;
+        })}
         <label className="ms-add-page">
           <span className="sr-only">{b.addPage}</span>
           <select value="" onChange={(e) => addPage(e.target.value)}>

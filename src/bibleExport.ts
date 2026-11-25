@@ -154,12 +154,13 @@ export function togglePart(options: BibleExportOptions, part: PartKey): BibleExp
 }
 
 /** Monte ou descend une partie cochée ; « Pour vous » reste à la fin. Même objet au bord. */
-export function movePart(options: BibleExportOptions, part: PartKey, way: "up" | "down"): BibleExportOptions {
+export function movePart(options: BibleExportOptions, part: PartKey, way: "up" | "down" | number): BibleExportOptions {
   const pub: PartKey[] = options.parts.filter((p) => !isPrivatePart(p));
   const i = pub.indexOf(part);
-  const j = way === "up" ? i - 1 : i + 1;
+  const j = typeof way === "number" ? way : i + (way === "up" ? -1 : 1);
   if (i < 0 || j < 0 || j >= pub.length) return options;
-  [pub[i], pub[j]] = [pub[j], pub[i]];
+  pub.splice(i, 1);
+  pub.splice(j, 0, part);
   return { ...options, parts: [...pub, ...options.parts.filter(isPrivatePart)] };
 }
 

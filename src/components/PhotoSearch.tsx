@@ -11,7 +11,6 @@ import { openExternal } from "../platform";
 import { PHOTO_SOURCES, SOURCE_INFO, type Photo, type PhotoError, type PhotoSourceId } from "../imageSources";
 import { ImageGenButton, ImageGenPanel, ImageGenUnavailable, useImageGen } from "./ImageGen";
 
-const host = (url: string) => new URL(url).hostname.replace(/^www\./, "");
 
 export function PhotoSearch() {
   const t = useT().photos;
@@ -152,9 +151,6 @@ export function PhotoSearch() {
         <>
           <h3 className="photos-key-title">{fmt(t.keyTitle, { source: info.name })}</h3>
           <p>{t.keyIntro[source]}</p>
-          <button type="button" className="link-button" onClick={() => void openExternal(info.keyPage!)}>
-            ↗ {fmt(t.keyGet, { site: host(info.keyPage!) })}
-          </button>
           <form
             className="photos-key"
             onSubmit={(e) => {
@@ -167,11 +163,17 @@ export function PhotoSearch() {
               if (query.trim()) void run(source, query, 1);
             }}
           >
-            <label htmlFor="photos-key">{fmt(t.keyLabel, { source: info.name })}</label>
+            <div className="photos-key-heading">
+              <label htmlFor="photos-key">{fmt(t.keyLabel, { source: info.name })}</label>
+              <button type="button" className="link-button" onClick={() => void openExternal(info.keyPage!)}>
+                {fmt(t.keyGet, { site: info.name })} ↗
+              </button>
+            </div>
             <input id="photos-key" type="password" autoComplete="off" spellCheck={false} value={draftKey} onChange={(e) => setDraftKey(e.target.value)} />
             <button type="submit" className="ghost-button" disabled={!draftKey.trim()}>
               {t.keySave}
             </button>
+            <small>{t.keyLocal}</small>
           </form>
           {error && <p className="photos-error" role="alert">{error}</p>}
           <button type="button" className="link-button" onClick={() => choose("openverse")}>

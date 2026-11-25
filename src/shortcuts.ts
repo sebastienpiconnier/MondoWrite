@@ -2,6 +2,18 @@
 // n'écoute rien : chaque raccourci est géré là où il agit. Le garder à jour quand on en ajoute un.
 // « Mod » vaut Cmd sur Mac et Ctrl ailleurs.
 
+import type { Messages } from "./i18n";
+
+export function shortcutKeyName(key: string, apple: boolean, t: Messages["shortcuts"]): string {
+  const names: Record<string, string> = {
+    Mod: apple ? "⌘" : "Ctrl",
+    Shift: apple ? "⇧" : t.shift,
+    Alt: apple ? "⌥" : "Alt",
+    Entrée: t.enter, Échap: t.escape, Suppr: t.delete, Glisser: t.drag, Clic: t.click,
+  };
+  return names[key] ?? key;
+}
+
 export const SHORTCUT_GROUPS = {
   everywhere: [
     ["help", ["Mod", "/"]],

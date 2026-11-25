@@ -234,6 +234,7 @@ export interface Occurrence {
   /** Clé stable tant que le texte ne change pas : lieu (`m:<scène>`, `s:<élément>`, `c:<carte>`) et rang. */
   key: string;
   /** Scène ou carte où se trouve l'occurrence (titre de la carte, ou en-tête de la scène du scénario). */
+  source: string;
   label: string;
   before: string;
   match: string;
@@ -283,7 +284,7 @@ function htmlOccurrences(html: string, re: RegExp, loc: string, label: string, o
     const text = decode(part);
     for (const m of text.matchAll(re)) {
       const ctx = contextOf(text, m.index!, m[0], blockStart);
-      out.push({ key: `${loc}#${k++}`, label, match: m[0], ...ctx });
+      out.push({ key: `${loc}#${k++}`, source: loc, label, match: m[0], ...ctx });
     }
     if (text.trim()) blockStart = false;
   }
@@ -309,15 +310,19 @@ export function findOccurrences(state: ReplaceState, req: ReplaceRequest): Occur
       to = from < 0 ? from : sceneEnd(els, from);
     }
     let heading = "";
+    let headingIndex = -1;
     els.forEach((el, i) => {
-      if (el.type === "sceneHeading") heading = el.text;
+      if (el.type === "sceneHeading") {
+        heading = el.text;
+        headingIndex = i;
+      }
       if (i < from || i >= to || !isEditableType(el.type)) return;
       let k = 0;
       for (const m of el.text.matchAll(re)) {
         const ctx = contextOf(el.text, m.index!, m[0], true);
         // Un nom en capitales (réplique, première apparition) n'est jamais un mot ordinaire.
         const sentenceStart = ctx.sentenceStart && el.type !== "character" && el.type !== "sceneHeading" && !isCapitals(m[0]);
-        out.push({ key: `s:${i}#${k++}`, label: heading, match: m[0], ...ctx, sentenceStart });
+        out.push({ key: `s:${i}#${k++}`, source: `s:${headingIndex}`, label: heading, match: m[0], ...ctx, sentenceStart });
       }
     });
   }

@@ -233,7 +233,13 @@ const scenarios = [
       await h.create("Le Phare");
       const id = await h.newCard("Inès Morvan");
       await h.node(id).locator(".card-type").click();
-      await page.getByRole("option", { name: "Personnage", exact: true }).click();
+      const selected = page.getByRole("option", { selected: true });
+      await until(() => selected.evaluate((el) => el === document.activeElement), "le type courant n’a pas le focus");
+      await page.keyboard.press("ArrowDown");
+      const candidate = page.getByRole("option", { name: "Personnage", exact: true });
+      assert(await candidate.evaluate((el) => el === document.activeElement), "la flèche ne donne pas le focus au type suivant");
+      assert(await selected.count() === 1 && await candidate.getAttribute("aria-selected") === "false", "déplacer le focus a changé le type");
+      await page.keyboard.press("Enter");
       await until(() => h.node(id).locator(".card.type-personnage").count(), "la carte n'est pas devenue Personnage");
       await h.saved((f) => /type: personnage/.test(f[`cartes/${id}.md`] ?? ""), "la carte Personnage n'a pas été enregistrée");
       await h.reloadAndOpen();
@@ -382,12 +388,66 @@ const scenarios = [
       await until(() => page.locator(".scene-setups").isVisible(), "l'onglet Scène ne montre pas les préparations");
       // Le fusil passe avant le dîner : la scène qui paie vient avant celle qui prépare, « Vérifier » le signale.
       await h.view(2);
-      await page.getByRole("button", { name: "Monter la scène « Le fusil »" }).click();
+      await page.getByRole("button", { name: /^Réordonner Le fusil/ }).press("ArrowUp");
       await h.wait(200);
       await h.view(4);
       await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
       const item = page.locator(".review-group", { hasText: "Une scène qui paie avant d’être préparée" }).locator(".review-item");
       await until(async () => (await item.count()) === 1, "« Vérifier » ne signale pas la scène qui paie avant d'être préparée");
+    },
+  },
+  {
+    name: "Plan : la poignée fait défiler un long plan jusqu’à une scène hors écran, dans une autre case",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le passage");
+      await h.view(2);
+      await page.locator('select:has(option[value="troisActes"])').selectOption("troisActes");
+      const beats = page.locator(".plan-beat.is-beat");
+      for (let b = 0; b < 2; b++) {
+        const field = beats.nth(b).locator(".plan-add input");
+        for (let i = 1; i <= 8; i++) {
+          await field.fill(`Acte ${b + 1}, scène ${i}`);
+          await field.press("Enter");
+        }
+      }
+      const ids = (list) => list.locator(".plan-scene").evaluateAll((rows) => rows.map((r) => r.dataset.scene));
+      const first = await ids(beats.first()), second = await ids(beats.nth(1));
+      const row = (id) => page.locator(`.plan-scene[data-scene="${id}"]`);
+      const source = row(first[4]).locator(".reorder-handle");
+      await source.evaluate((e) => e.scrollIntoView({ block: "center" }));
+      const handle = await source.boundingBox();
+      const list = await page.locator(".sequencer").boundingBox();
+      const x = list.x + list.width / 2, y = list.y + list.height - 5;
+      assert((await row(second[1]).boundingBox()).y > y, "la destination devrait commencer hors écran");
+      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, y, { steps: 8 });
+      // Le pointeur reste immobile : le défilement doit aussi renouveler la cible sous lui.
+      await until(async () => {
+        const id = await page.locator(".plan-scene[data-drop-target]").getAttribute("data-scene", { timeout: 200 });
+        return second.indexOf(id) >= 2;
+      }, "le bord du Plan ne fait pas apparaître les scènes de la case suivante");
+      // Revenir au centre d’une ligne désormais visible arrête le défilement avant de la déposer.
+      const target = second[1];
+      const dest = await row(target).boundingBox();
+      await page.mouse.move(x, dest.y + dest.height / 2);
+      await page.mouse.up();
+      const expected = [...second];
+      expected.splice(second.indexOf(target) + 1, 0, first[4]);
+      assert(JSON.stringify(await ids(beats.first())) === JSON.stringify(first.filter((id) => id !== first[4])), "la case de départ a changé d’ordre");
+      assert(JSON.stringify(await ids(beats.nth(1))) === JSON.stringify(expected), "la scène n’est pas déposée après la destination");
+      assert(await page.getByRole("menu").count() === 0, "le glisser a aussi ouvert le menu de la poignée");
+      const moved = await source.boundingBox();
+      await page.mouse.move(moved.x + moved.width / 2, moved.y + moved.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, list.y + 6, { steps: 8 });
+      await until(() => page.locator(".plan-beat [data-drop-target], .plan-beat[data-drop-target]").count(), "pas de cible avant l’annulation");
+      await page.keyboard.press("Escape");
+      await page.mouse.up();
+      assert(await page.locator("[data-drop-target]").count() === 0, "Échap garde le repère du dépôt");
+      assert(JSON.stringify(await ids(beats.nth(1))) === JSON.stringify(expected), "Échap a déplacé la scène");
+      assert(await page.getByRole("menu").count() === 0, "Échap a ouvert le menu de la poignée");
     },
   },
   {
@@ -409,7 +469,8 @@ const scenarios = [
       assert((await group.count()) === 0, "un enchaînement est signalé sans aucun déplacement");
       // « Quatre » monte d'un cran : Un, Deux, Quatre, Trois.
       await h.view(2);
-      await page.getByRole("button", { name: "Monter la scène « Quatre »" }).click();
+      await page.getByRole("button", { name: /^Réordonner Quatre/ }).click();
+      await page.getByRole("menuitem", { name: "Monter la scène « Quatre »" }).click();
       await h.view(4);
       await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
       const items = group.locator(".review-item");
@@ -420,7 +481,7 @@ const scenarios = [
       await h.saved((f) => (JSON.parse(f["cosmos.json"] ?? "{}").transitions ?? []).length >= 5, "les enchaînements validés ne sont pas enregistrés");
       // Remonter « Quatre » d'un cran encore puis tout valider.
       await h.view(2);
-      await page.getByRole("button", { name: "Monter la scène « Quatre »" }).click();
+      await page.getByRole("button", { name: /^Réordonner Quatre/ }).press("ArrowUp");
       await h.view(4);
       await page.locator(".side-tabs").getByRole("button", { name: /^Vérifier/ }).click();
       await until(async () => (await items.count()) >= 2, "le second déplacement n'est pas signalé");
@@ -816,6 +877,8 @@ const scenarios = [
       await h.create("Relecture");
       await openSettings(page);
       await page.getByRole("tab", { name: "Écriture", exact: true }).click();
+      await page.getByText("Saisie et correction", { exact: true }).click();
+      await page.getByText("LanguageTool", { exact: true }).click();
       await page.getByLabel("Vérification LanguageTool", { exact: true }).selectOption("public");
       await until(() => page.getByText("Le texte de la scène est envoyé au service choisi", { exact: false }).isVisible(), "l'avertissement d'envoi du texte n'apparaît pas");
       await page.keyboard.press("Escape");
@@ -1090,13 +1153,14 @@ const scenarios = [
       await dialog.getByRole("button", { name: "Fermer" }).click();
       // Réécrire, puis comparer avec le texte actuel.
       await editor.click();
-      await page.keyboard.press("Control+a");
+      await editor.selectText();
       await page.keyboard.type("Le réveil sonne à six heures et Ethan se lève aussitôt.");
       await h.wait(400);
       await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions" }).click();
       await page.getByRole("menuitem", { name: /^Versions de la scène/ }).click();
       await until(async () => (await items.count()) === 1, "la liste des versions n'est pas relue");
-      await dialog.getByLabel("Comparer avec").selectOption("current");
+      await dialog.getByRole("button", { name: "Comparer", exact: true }).click();
+      assert((await dialog.getByRole("combobox", { name: "Comparer avec" }).inputValue()) === "current", "la comparaison ne propose pas le texte actuel");
       await until(() => dialog.locator(".versions-text del", { hasText: "rêve" }).first().isVisible(), "les mots retirés ne sont pas barrés");
       await until(() => dialog.locator(".versions-text ins", { hasText: "lève" }).first().isVisible(), "les mots ajoutés ne sont pas soulignés");
       await until(async () => /mots ajoutés, \d+ retirés/.test((await dialog.locator(".versions-summary").textContent()) ?? ""), "pas de résumé de la comparaison");
@@ -1903,6 +1967,65 @@ const scenarios = [
       await h.wait(400);
       await page.keyboard.press("Control+s");
       await h.saved((f) => /\[\[cosmos:beat:e_teaser\]\]\n\nINT\. MANOIR - JOUR/i.test(f["scenario.fountain"] ?? ""), "la frappe sous la première case n'a pas fait un en-tête de scène");
+    },
+  },
+  {
+    name: "séquencier : relâcher un glisser natif sur la scène qui défile sous le pointeur",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…" }).click();
+      const scenes = Array.from({ length: 19 }, (_, i) => `INT. ATELIER ${i + 1} - JOUR\n\nUne lettre arrive.`);
+      await (await chooser).setFiles({ name: "Lettres.fountain", mimeType: "text/plain", buffer: Buffer.from(scenes.join("\n\n")) });
+      await page.locator(".views").waitFor();
+      await h.closeTour();
+      await h.view(2);
+      const pane = page.locator(".sequencer");
+      const rows = pane.locator(".sq-scene");
+      const source = await rows.first().locator(".sq-title").boundingBox();
+      const edge = await pane.boundingBox();
+      const x = edge.x + edge.width / 2, y = edge.y + edge.height - 32;
+      assert((await rows.nth(18).boundingBox()).y > y, "la cible devrait être hors écran");
+      await page.mouse.move(source.x + 8, source.y + 5);
+      await page.mouse.down();
+      await page.mouse.move(x, y, { steps: 16 });
+      // À la fin de la liste, la cible reste sous la souris même sur un navigateur lent.
+      await until(() => pane.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight <= 1), "la liste ne défile pas jusqu’à la dernière scène");
+      assert(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("[data-reorder-index]")?.getAttribute("data-reorder-index") === "18", { x, y }), "la dernière scène n’est pas sous le pointeur");
+      await page.mouse.up();
+      await until(async () => (await rows.nth(18).locator(".sq-title").innerText()).includes("ATELIER 1 - JOUR"), "le dépôt a utilisé l’ancienne ligne sous le pointeur");
+    },
+  },
+  {
+    name: "séquencier en fiches : déposer une scène sur une section conserve son bloc Fountain",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…" }).click();
+      const source = "# Acte I\n\nINT. PHARE - NUIT\n\n= La veille.\n\nLa lanterne tourne.\n\nINÈS\nJe vois le bateau.\n\n# Acte II\n\nINT. QUAI - JOUR\n\nLa foule attend.";
+      await (await chooser).setFiles({ name: "Le Phare.fountain", mimeType: "text/plain", buffer: Buffer.from(source) });
+      await page.locator(".views").waitFor();
+      await h.closeTour();
+      await h.view(2);
+      await page.getByRole("button", { name: "Fiches", exact: true }).click();
+
+      await h.saved((files) => files["scenario.fountain"]?.includes("La foule attend."), "le scénario importé n'est pas enregistré");
+      const original = (await h.files())["scenario.fountain"];
+      const expected = original.replace(/(INT\. PHARE[\s\S]*?)(# Acte II[\s\S]*?)(?=INT\. QUAI)/, "$2$1");
+      assert(expected !== original, "les deux sections du scénario manquent");
+      const cards = page.locator(".sq-list.is-cards");
+      const grip = cards.locator(".sq-scene").filter({ hasText: "INT. PHARE" }).locator(".reorder-handle");
+      // Les sections importées sont des parties de la structure (1.48) : leur titre est un champ, pris par son rang.
+      const section = cards.locator(".sq-section").nth(1);
+      const from = await grip.boundingBox();
+      const to = await section.boundingBox();
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+      await page.mouse.up();
+      await h.saved((files) => files["scenario.fountain"] === expected, "le déplacement n'a pas conservé tout le bloc de scène et ses repères");
     },
   },
   {
@@ -2809,7 +2932,7 @@ const scenarios = [
       assert(size.w > size.h * 1.15, `aperçu de ${size.w} × ${size.h}`);
       // Le petit exemple fait moins de 80 pages : pas de texte sur le dos, et c'est dit.
       await until(() => page.getByText(/Moins de 80 pages/).isVisible(), "le contrôle du dos n'est pas affiché");
-      await page.locator(".full-cover select").first().selectOption("bottom");
+      await page.getByRole("radio", { name: "En bas, ton nom en haut", exact: true }).check();
       await until(() => preview.isVisible(), "l'aperçu ne revient pas après un réglage", 30000);
       await h.saved((f) => JSON.parse(f["cosmos.json"] ?? "{}").coverDesign?.titlePlace === "bottom", "coverDesign n'est pas enregistré");
     },
@@ -2841,6 +2964,51 @@ const scenarios = [
     },
   },
   {
+    name: "Plan : déplacer une case hors écran dans la fenêtre du gabarit",
+    async run(h) {
+      const { page } = h;
+      await h.create("Les passages");
+      await h.view(2);
+      const titles = Array.from({ length: 36 }, (_, i) => `Étape ${i + 1}`);
+      const chooser = page.waitForEvent("filechooser");
+      await page.locator(".plan-template select").selectOption("__import");
+      await (await chooser).setFiles({ name: "passages.md", mimeType: "text/markdown", buffer: Buffer.from(["# Les passages", ...titles.map(t => `## ${t}`)].join("\n\n")) });
+      const dialog = page.locator("dialog.tpl-editor[open]");
+      const rows = dialog.locator(".tpl-row");
+      const order = () => rows.evaluateAll(items => items.map(row => row.querySelector("input").value));
+      await rows.last().waitFor({ state: "attached" });
+      const panel = await dialog.boundingBox();
+      const plan = page.locator(".sequencer");
+      const background = await plan.evaluate(el => el.scrollTop);
+      const source = rows.first().locator(".reorder-handle");
+      await source.scrollIntoViewIfNeeded();
+      const start = await source.boundingBox();
+      const destination = 24;
+      assert((await rows.nth(destination).boundingBox()).y >= panel.y + panel.height, "la case de destination est déjà visible");
+      const x = start.x + start.width / 2;
+      await page.mouse.move(x, start.y + start.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, panel.y + panel.height - 6, { steps: 6 });
+      await until(async () => Number(await dialog.locator("[data-drop-target]").first().getAttribute("data-reorder-index", { timeout: 200 })) >= destination + 1, "la fenêtre du gabarit ne défile pas jusqu’à la case visée");
+      const target = await rows.nth(destination).boundingBox();
+      await page.mouse.move(x, target.y + target.height / 2);
+      await page.mouse.up();
+      const expected = [...titles.slice(1, destination + 1), titles[0], ...titles.slice(destination + 1)];
+      assert(JSON.stringify(await order()) === JSON.stringify(expected), "la case n’est pas déposée à la bonne place");
+      const moved = await rows.nth(destination).locator(".reorder-handle").boundingBox();
+      const scroll = await dialog.evaluate(el => el.scrollTop);
+      await page.mouse.move(x, moved.y + moved.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, panel.y + 6, { steps: 6 });
+      await until(async () => await dialog.evaluate(el => el.scrollTop) < scroll - 50, "le bord supérieur de la fenêtre ne défile pas");
+      await page.keyboard.press("Escape");
+      await page.mouse.up();
+      assert(await dialog.isVisible() && await dialog.locator("[data-drop-target]").count() === 0, "Échap doit annuler le glisser et garder la fenêtre ouverte");
+      assert(JSON.stringify(await order()) === JSON.stringify(expected), "Échap a déplacé la case");
+      assert(await plan.evaluate(el => el.scrollTop) === background && await page.evaluate(() => window.scrollY) === 0, "le déplacement a fait défiler le fond");
+    },
+  },
+  {
     name: "Plan : gabarit imbriqué (#111), un ensemble et ses sous-cases, décalées dans l'éditeur",
     async run(h) {
       const { page } = h;
@@ -2854,7 +3022,19 @@ const scenarios = [
       await (await chooser).setFiles({ name: "actes.md", mimeType: "text/markdown", buffer: Buffer.from(md) });
       const dialog = page.locator("dialog[open]");
       await until(() => dialog.locator(".tpl-row.level-2").first().isVisible(), "les sous-cases ne sont pas en retrait dans l'éditeur");
-      // « Acte II » décalé à droite devient une sous-case d'« Acte I » ; le bouton suivant est grisé (au plus un niveau de plus).
+      // Réordonner deux cases de même niveau au clavier conserve le focus sur la poignée déplacée.
+      const rows = dialog.locator(".tpl-row");
+      const handle = rows.nth(1).locator(".reorder-handle");
+      const title = await rows.nth(1).locator("input").first().inputValue();
+      await handle.focus();
+      await page.keyboard.press("ArrowDown");
+      await until(async () => await rows.nth(2).locator("input").first().inputValue() === title && await rows.nth(2).locator(".reorder-handle").evaluate(el => el === document.activeElement), "la case ou sa poignée n’a pas suivi le déplacement");
+      // Un simple clic sur la poignée ouvre aussi les commandes utilisables sans glisser.
+      await rows.nth(2).locator(".reorder-handle").click();
+      await dialog.getByRole("menuitem", { name: /Monter l’étape/ }).click();
+      await until(async () => await rows.nth(1).locator("input").first().inputValue() === title, "la case n’est pas revenue à sa place");
+      // La ligne affiche ses actions quand son nom reçoit le focus clavier.
+      await dialog.locator(".tpl-row").last().locator("input").first().focus();
       await dialog.getByRole("button", { name: "Décaler à droite l’étape « Acte II »" }).click();
       assert((await dialog.locator(".tpl-row.level-2").count()) === 3, "Acte II n'est pas passé au niveau 2");
       await dialog.getByRole("button", { name: "Décaler à gauche l’étape « Acte II »" }).click();
@@ -2977,6 +3157,22 @@ const scenarios = [
           meta.frames?.some((fr) => fr.title === "Personnages")
         );
       }, "le projet importé de Scrivener n'est pas enregistré comme attendu");
+      // Déplacer le chapitre importé d'un cran conserve ses scènes et le focus sur ses commandes.
+      const chapters = page.locator(".ms-scenes .ms-chapter");
+      assert(await chapters.count() === 2, "deux chapitres attendus dans le sommaire");
+      // Reproduire la hauteur de deux longs chapitres sans alourdir le projet Scrivener de cet essai.
+      await page.addStyleTag({ content: ".ms-scenes .ms-chapter .sp-scene-list { min-height: 200vh; }" });
+      const movedId = await chapters.first().getAttribute("data-chapter-id");
+      const down = chapters.first().getByRole("button", { name: /^Descendre «\s*Chapitre/ });
+      await down.scrollIntoViewIfNeeded();
+      const top = await down.evaluate(el => el.getBoundingClientRect().top);
+      await down.click();
+      await until(async () => (await chapters.last().getAttribute("data-chapter-id")) === movedId, "le clic ne déplace pas le chapitre");
+      const up = chapters.last().getByRole("button", { name: /^Monter «\s*Chapitre/ });
+      await until(() => up.evaluate(el => el === document.activeElement), "le focus ne suit pas le chapitre arrivé en dernier");
+      assert(Math.abs(await up.evaluate(el => el.getBoundingClientRect().top) - top) < 2, "la commande du chapitre a quitté sa place dans le volet");
+      await page.keyboard.press("ArrowUp");
+      await until(async () => (await chapters.first().getAttribute("data-chapter-id")) === movedId, "la flèche du clavier ne remonte pas le chapitre");
     },
   },
   {
@@ -3049,8 +3245,8 @@ const scenarios = [
       const before = await page.locator(".ms-page").evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize));
       await openSettings(page);
       await page.getByRole("tab", { name: "Écriture" }).click();
-      await page.getByLabel("Police de la page (manuscrit)").selectOption("literata");
-      await page.getByLabel("Interligne de la page (manuscrit)").selectOption("double");
+      await page.getByLabel("Police du manuscrit", { exact: true }).selectOption("literata");
+      await page.getByLabel("Interligne", { exact: true }).selectOption("double");
       await page.keyboard.press("Escape");
       await until(async () => (await page.locator(".ms-page").evaluate((el) => getComputedStyle(el).fontFamily)).includes("Literata"), "la police de la page n'a pas changé");
       const after = await page.locator(".ms-page").evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize));

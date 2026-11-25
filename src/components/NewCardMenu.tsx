@@ -3,6 +3,7 @@
 // scénario). Image ouvre la fenêtre Photos (photo libre ou image de l'appareil), Document le choix d'un PDF.
 // Menu au clavier (flèches, Début, Fin, Échap), à la souris et au doigt.
 
+import { focusMenuItem } from "./focusMenuItem";
 import { useCosmos } from "../store";
 import { formOf } from "../pitch";
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -13,6 +14,12 @@ import { typesFor, typeColor, type CardType } from "../types";
 /** Types qui ouvrent une fenêtre avant de créer la carte : leur libellé finit par « … ». */
 const ASKS: CardType[] = ["image", "document"];
 
+const groups = {
+  story: ["idee", "scene", "intrigue", "episode", "theme", "question"],
+  world: ["personnage", "lieu", "groupe", "objet", "evenement", "regle", "secret"],
+  references: ["image", "lien", "document"],
+} as const satisfies Record<string, readonly CardType[]>;
+
 export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }) {
   const t = useT().toile;
   const { types, kind } = useVocab();
@@ -21,12 +28,12 @@ export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
-  const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
 
   useEffect(() => {
     if (!open) return;
-    itemsRef.current[0]?.focus();
+    menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
     const onDown = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -45,14 +52,8 @@ export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }
   };
 
   const onMenuKey = (e: ReactKeyboardEvent) => {
-    const items = itemsRef.current.filter((b): b is HTMLButtonElement => !!b);
-    const at = items.indexOf(document.activeElement as HTMLButtonElement);
-    const go = (i: number) => items[(i + items.length) % items.length]?.focus();
-    if (e.key === "ArrowDown") go(at + 1);
-    else if (e.key === "ArrowUp") go(at - 1);
-    else if (e.key === "Home") go(0);
-    else if (e.key === "End") go(items.length - 1);
-    else if (e.key === "Escape" || e.key === "Tab") {
+    if (focusMenuItem(e)) return;
+    if (e.key === "Escape" || e.key === "Tab") {
       if (e.key === "Escape") e.stopPropagation();
       close(e.key === "Escape");
       if (e.key === "Tab") return;
@@ -85,28 +86,30 @@ export function NewCardMenu({ onCreate }: { onCreate: (type: CardType) => void }
         </svg>
       </button>
       {open && (
-        <div id={menuId} className="add-card-menu" role="menu" aria-label={t.addCardMore} onKeyDown={onMenuKey}>
-          {menuTypes.map((type, i) => (
-            <button
-              key={type}
-              ref={(el) => {
-                itemsRef.current[i] = el;
-              }}
-              type="button"
-              role="menuitem"
-              tabIndex={-1}
-              className="add-card-item"
-              onClick={() => choose(type)}
-            >
-              <span className="add-card-dot" style={{ background: typeColor(type) }} aria-hidden="true" />
-              <span className="add-card-text">
-                <span className="add-card-label">
-                  {types[type].label}
-                  {ASKS.includes(type) ? "…" : ""}
-                </span>
-                {type in t.newCard && <span className="add-card-hint">{t.newCard[type as keyof typeof t.newCard]}</span>}
-              </span>
-            </button>
+        <div ref={menuRef} id={menuId} className="add-card-menu" role="menu" aria-label={t.addCardMore} onKeyDown={onMenuKey}>
+          {(Object.keys(groups) as (keyof typeof groups)[]).map((group) => (
+            <div className="add-card-group" role="group" aria-labelledby={`${menuId}-${group}`} key={group}>
+              <h3 id={`${menuId}-${group}`}>{t.cardGroups[group]}</h3>
+              {groups[group].filter((type) => menuTypes.includes(type)).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  role="menuitem"
+                  tabIndex={-1}
+                  className="add-card-item"
+                  onClick={() => choose(type)}
+                >
+                  <span className="add-card-dot" style={{ background: typeColor(type) }} aria-hidden="true" />
+                  <span className="add-card-text">
+                    <span className="add-card-label">
+                      {types[type].label}
+                      {ASKS.includes(type) ? "…" : ""}
+                    </span>
+                    {type in t.newCard && <span className="add-card-hint">{t.newCard[type as keyof typeof t.newCard]}</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}

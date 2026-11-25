@@ -62,15 +62,18 @@ export function StatsBox({
   const goalInput = (key: "daily" | "total" | "session" | "scene" | "chapter", label: string) => (
     <label className="ms-goal">
       <span>{label}</span>
-      <input
-        type="number"
-        min={0}
-        step={key === "total" ? 1000 : key === "chapter" ? 500 : 100}
-        inputMode="numeric"
-        value={goals[key] ?? ""}
-        placeholder={s.goalPlaceholder}
-        onChange={(e) => setGoals({ ...goals, [key]: Number(e.target.value) || undefined })}
-      />
+      <span className="goal-with-unit">
+        <input
+          type="number"
+          min={0}
+          step={key === "total" ? 1000 : key === "chapter" ? 500 : 100}
+          inputMode="numeric"
+          value={goals[key] ?? ""}
+          placeholder="–"
+          onChange={(e) => setGoals({ ...goals, [key]: Number(e.target.value) || undefined })}
+        />
+        <small>{s.words.toLocaleLowerCase(lang)}</small>
+      </span>
     </label>
   );
 
@@ -187,8 +190,6 @@ export function StatsBox({
           </>
         ) : null}
         <div className="ms-goal-inputs">
-          {/* Avec une échéance, l'objectif du jour est calculé : pas de champ à taper. */}
-          {target.fromDeadline ? null : goalInput("daily", s.dailyGoal)}
           {goalInput("total", s.bookGoal)}
           <label className="ms-goal">
             <span>{s.deadlineGoal}</span>
@@ -199,11 +200,13 @@ export function StatsBox({
               onChange={(e) => setGoals(withDeadline(goals, e.target.value))}
             />
           </label>
+          <p className="goal-help">{s.deadlineHelp}</p>
+          {/* Avec une échéance, l'objectif du jour est calculé : pas de champ à taper. */}
+          {target.fromDeadline ? null : goalInput("daily", s.dailyGoal)}
           {goalInput("session", s.sessionGoal)}
           {goalInput("scene", s.sceneGoal)}
           {chapterWords !== undefined ? goalInput("chapter", s.chapterGoal) : null}
         </div>
-        <p className="sp-empty">{s.deadlineHelp}</p>
         {sessionStart !== null ? (
           <button type="button" className="chip" onClick={resetSession}>
             {s.sessionNew}

@@ -219,10 +219,10 @@ export function ExportMenu() {
     build: async () => (await import("../interactive/gamebookExport")).gamebookFile(f, info().title, info().author),
   }));
 
-  type Group = { title: string; empty?: string; items: { key: string; label: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] };
+  type Group = { title: string; empty?: string; items: { key: string; label: string; extension?: string; build?: () => Promise<ExportedFile | null>; open?: () => void }[] };
   // Roman interactif : l'histoire d'abord (page web, livre-jeu, livre broché, Ink), puis le texte à la suite, qui
   // ne sert qu'à relire (il n'a pas les choix).
-  const linearItems = MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, label: x[f], build: manuscriptFile(f) }));
+  const linearItems = MANUSCRIPT_FORMATS.map((f) => ({ key: `ms-${f}`, extension: f, label: x[f], build: manuscriptFile(f) }));
   const paperbackItem = { key: "ms-paperback", label: all.paperback.menu, open: () => useCosmos.getState().setDialog("paperback") };
   const storyGroups = (withPaperback: boolean): Group[] => [
     { title: all.interactive.exports.story, items: [webItem, ...gamebookItems, ...(withPaperback ? [paperbackItem] : []), inkItem] },
@@ -234,11 +234,11 @@ export function ExportMenu() {
       : interactive
         ? storyGroups(false)
         : [{ title: x.manuscript, items: linearItems }]),
-    { title: x.bible, empty: x.emptyBible, items: (["docx", "md", "html"] as const).map((f) => ({ key: `bible-${f}`, label: x[f], build: bibleFile(f) })) },
-    { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
+    { title: x.bible, empty: x.emptyBible, items: (["docx", "md", "html"] as const).map((f) => ({ key: `bible-${f}`, extension: f, label: x[f], build: bibleFile(f) })) },
+    { title: x.project, items: [{ key: "project-zip", extension: "zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
   ];
 
-  const groups = phone ? phoneGroups : [
+  const groups: Group[] = phone ? phoneGroups : [
     ...(kind === "scenario"
       ? [{
           title: x.screenplay,
@@ -258,8 +258,8 @@ export function ExportMenu() {
           ]),
     // La Bible a sa fenêtre (pour qui, parties, rendu, aperçu, PDF, Word ou Markdown).
     { title: x.bible, items: [{ key: "bible", label: all.bibleExport.menu, open: () => useCosmos.getState().setDialog("bibleExport") }] },
-    { title: x.project, items: [{ key: "project-zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
-    { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, label: canvasLabels[f], build: canvasFile(f) })) },
+    { title: x.project, items: [{ key: "project-zip", extension: "zip", label: x.projectZip, build: () => useCosmos.getState().projectZip() }] },
+    { title: x.canvas, empty: x.emptyCanvas, items: CANVAS_FORMATS.map((f) => ({ key: `canvas-${f}`, extension: f === "pdfLarge" ? "pdf" : f, label: canvasLabels[f], build: canvasFile(f) })) },
   ] as Group[];
   const failed = message === t.failed || message === all.interactive.web.compileFailed || message === x.emptyManuscript || message === x.emptyCanvas || message === x.emptyBible;
 
@@ -295,7 +295,8 @@ export function ExportMenu() {
                       item.open();
                     } else if (item.build) void run(`${group.title}, ${item.label}`, item.build, group.empty);
                   }}>
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.extension && <small>{item.extension.toUpperCase()}</small>}
                 </button>
               ))}
             </div>

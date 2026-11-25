@@ -2,6 +2,7 @@
    Règle : aucune couleur en dur dans les composants, uniquement ces variables.
    Le thème est posé sur <html data-theme="light|dark"> par settings.ts. */
 :root {
+  --swatch-check: #fff; /* Coche sur les teintes imprimées, identiques en modes clair et sombre. */
   --ink: #1b1e2e;
   /* Identité : traits et étoile du logo (l'icône de l'app garde ses couleurs : #141B2D, #F4F0E8, #F2C14E) */
   --brand-line: #9a9dab;
@@ -102,6 +103,7 @@
 }
 
 :root[data-theme="dark"] {
+  --swatch-check: #fff;
   --ink: #cfd1da;
   --brand-line: #8e9099;
   --brand-star: #f2c14e;
@@ -298,14 +300,14 @@ html[data-app="desktop"] :is(button, select, summary, [role="button"], [role="me
 /* Flèche « déplier / replier » (1.13.1) : un chevron dessiné en trait d'encre, bien visible dans les deux thèmes
    (les triangles ▸ ▾ du texte, petits et en gris, disparaissaient en sombre). Fermé, il regarde à droite ; ouvert,
    vers le bas. Sert aux <summary> des blocs repliables et aux boutons qui replient une fiche (.disclosure). */
-.disclosure, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold) > summary::before {
+.disclosure, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold, .settings-disclosure) > summary::before {
   content: ""; display: inline-block; flex: none; box-sizing: border-box; width: 0.5rem; height: 0.5rem;
   margin: 0 0.4rem 0 0.15rem; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
   transform: rotate(-45deg); transition: transform 0.15s;
 }
-.disclosure.is-open, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold)[open] > summary::before { transform: rotate(45deg) translate(-1px, -1px); }
-:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold) > summary { list-style: none; }
-:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold) > summary::-webkit-details-marker { display: none; }
+.disclosure.is-open, :is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold, .settings-disclosure)[open] > summary::before { transform: rotate(45deg) translate(-1px, -1px); }
+:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold, .settings-disclosure) > summary { list-style: none; }
+:is(.ms-stats, .pitch-intention, .home-hidden, .tpl-library, .comments-resolved, .scriv-left, .backups-project, .ms-chutier-fold, .settings-disclosure) > summary::-webkit-details-marker { display: none; }
 .home-hidden { width: 100%; }
 /* Fenêtre « Sauvegardes » (#14, #15, BackupsDialog) */
 .backups h3 { margin: 18px 0 6px; font-size: 1rem; }

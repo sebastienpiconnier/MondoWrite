@@ -1,10 +1,12 @@
+import { focusMenuItem } from "./focusMenuItem";
+import { shortcutKeyName } from "../shortcuts";
 // Menu « ⋯ » commun (1.11.1) : les actions secondaires d'une barre ou d'une ligne, pour n'afficher que l'essentiel
 // (règles d'interface d'Apple : divulgation progressive ; même usage sous Windows, barre de commandes et « ⋯ »).
 // Posé dans <body> (au-dessus de tout, même d'une colonne qui coupe ce qui dépasse), sous le bouton ou au-dessus
 // s'il manque de place. Souris, doigt et clavier : flèches, Début, Fin, Échap rend le focus au bouton.
 // Une action destructive (`danger`) est en rouge, en dernier, séparée des autres.
 
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type ButtonHTMLAttributes } from "react";
 import { createPortal } from "react-dom";
 import { portalRoot } from "./portalRoot";
 import { useT } from "../i18n";
@@ -27,16 +29,24 @@ export interface MoreItem {
 const MENU_WIDTH = 240;
 
 /** Raccourci à afficher dans un menu : « ⌘⇧H » sur un clavier Apple, « Ctrl+Maj+H » ailleurs. */
-export function useKeyHint(): (...keys: ("Mod" | "Shift" | "Alt" | string)[]) => string {
+export function useKeyHint(): (...keys: string[]) => string {
   const t = useT();
   const apple = isAppleKeyboard();
   return (...keys) => {
-    const names = keys.map((k) => (k === "Mod" ? (apple ? "⌘" : "Ctrl") : k === "Shift" ? (apple ? "⇧" : t.shortcuts.shift) : k === "Alt" ? (apple ? "⌥" : "Alt") : k));
+    const names = keys.map(k => shortcutKeyName(k, apple, t.shortcuts));
     return apple ? names.join("") : names.join("+");
   };
 }
 
-export function MoreMenu({ items, label, className = "", icon }: { items: (MoreItem | false | null | undefined)[]; label?: string; className?: string; icon?: ReactNode }) {
+interface MoreMenuProps {
+  items: (MoreItem | false | null | undefined)[];
+  label?: string;
+  className?: string;
+  icon?: ReactNode;
+  triggerProps?: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "className" | "children" | "onClick">;
+}
+
+export function MoreMenu({ items, label, className = "", icon, triggerProps }: MoreMenuProps) {
   const t = useT();
   const name = label ?? t.app.moreActions;
   const list = items.filter((i): i is MoreItem => !!i);
@@ -86,13 +96,8 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
   }, [open]);
 
   const onKey = (e: ReactKeyboardEvent) => {
-    const all = [...(menuRef.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]:not(:disabled)") ?? [])];
-    const at = all.indexOf(document.activeElement as HTMLButtonElement);
-    if (e.key === "ArrowDown") all[(at + 1) % all.length]?.focus();
-    else if (e.key === "ArrowUp") all[(at - 1 + all.length) % all.length]?.focus();
-    else if (e.key === "Home") all[0]?.focus();
-    else if (e.key === "End") all[all.length - 1]?.focus();
-    else if (e.key === "Escape" || e.key === "Tab") {
+    if (focusMenuItem(e)) return;
+    if (e.key === "Escape" || e.key === "Tab") {
       setOpen(false);
       buttonRef.current?.focus();
       if (e.key === "Tab") return;
@@ -105,6 +110,7 @@ export function MoreMenu({ items, label, className = "", icon }: { items: (MoreI
   return (
     <>
       <button
+        {...triggerProps}
         ref={buttonRef}
         type="button"
         className={`icon-button more-button nodrag ${className}`}

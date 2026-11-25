@@ -307,7 +307,7 @@ describe("bible composée et images (recette d'octobre)", () => {
 
 describe("chapitres déplacés (recette d'octobre)", () => {
   it("un chapitre entier passe avant un autre, ou à la fin ; ses scènes prennent la case de leur voisine", async () => {
-    const { moveChapter, chapterStep, planOrder } = await import("../plan");
+    const { moveChapter, chapterDropTarget, groupByChapter, planOrder } = await import("../plan");
     const plan = {
       template: "libre" as const,
       beats: { libre: ["a", "b", "c", "d", "e"] },
@@ -322,9 +322,12 @@ describe("chapitres déplacés (recette d'octobre)", () => {
     expect(planOrder(moveChapter(plan, ids, "c1", null), ids)).toEqual(["c", "d", "e", "a", "b"]);
     expect(moveChapter(plan, ids, "c1", "a")).toBe(plan);
     expect(moveChapter(plan, ids, "c2", "d")).toBe(plan); // déjà juste avant
-    expect(chapterStep(plan, ids, "c1", "up")).toBeUndefined();
-    expect(chapterStep(plan, ids, "c1", "down")).toBe("d");
-    expect(chapterStep(plan, ids, "c2", "down")).toBeNull();
+    const groups = groupByChapter(plan, ids);
+    expect(chapterDropTarget(groups, 0, -1)).toBeUndefined();
+    expect(chapterDropTarget(groups, 0, 0)).toBeUndefined();
+    expect(chapterDropTarget(groups, 0, 1)).toBe("d");
+    expect(chapterDropTarget(groups, 0, 2)).toBeNull();
+    expect(chapterDropTarget(groups, 2, 0)).toBe("a");
     // Avec un gabarit : le chapitre passe dans la case de sa nouvelle voisine.
     const acts = { ...plan, template: "troisActes" as const, beats: { a_setup: ["a", "b"], a_confrontation: ["c"], a_resolution: ["d", "e"] } };
     const moved = moveChapter(acts, ids, "c1", "d");

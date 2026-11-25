@@ -75,6 +75,12 @@ export function ReplacePanel() {
   const count = occurrences.length - occurrences.filter((o) => skip.has(o.key)).length;
   const num = (n: number) => new Intl.NumberFormat(lang).format(n);
 
+  const status = done ?? (
+    !find ? r.hint : count === occurrences.length
+      ? fmt(count === 1 ? r.foundOne : r.foundMany, { n: num(count) })
+      : fmt(r.checked, { n: num(count), total: num(occurrences.length) })
+  );
+
   const apply = () => {
     const n = useCosmos.getState().replaceText({ ...base, skip: [...skip] });
     setDone(renamed ? fmt(r.renamedDone, { title: replacement, n: num(n) }) : fmt(n === 1 ? r.doneOne : r.doneMany, { n: num(n) }));
@@ -98,18 +104,6 @@ export function ReplacePanel() {
         <input type="text" value={replacement} autoFocus={!!renamed || fromReview} autoComplete="off" onChange={(e) => (setReplacement(e.target.value), setDone(null))} />
       </label>
       <div className="replace-options">
-        {renamed ? (
-          <label>
-            <input type="checkbox" checked={nameCase} onChange={(e) => setNameCase(e.target.checked)} /> {r.nameCase}
-          </label>
-        ) : (
-          <label>
-            <input type="checkbox" checked={matchCase} onChange={(e) => setMatchCase(e.target.checked)} /> {r.matchCase}
-          </label>
-        )}
-        <label>
-          <input type="checkbox" checked={wholeWord} onChange={(e) => setWholeWord(e.target.checked)} /> {r.wholeWord}
-        </label>
         {init?.sceneId && (
           <label>
             <span>{r.scope}</span>{" "}
@@ -125,31 +119,38 @@ export function ReplacePanel() {
           </label>
         )}
       </div>
-      <p className="replace-count" role="status">
-        {done ??
-          (!find
-            ? r.hint
-            : count === occurrences.length
-              ? fmt(count === 1 ? r.foundOne : r.foundMany, { n: num(count) })
-              : fmt(r.checked, { n: num(count), total: num(occurrences.length) }))}
-      </p>
+      <div className="replace-options">
+        {renamed ? (
+          <label>
+            <input type="checkbox" checked={nameCase} onChange={(e) => setNameCase(e.target.checked)} /> {r.nameCase}
+          </label>
+        ) : (
+          <label>
+            <input type="checkbox" checked={matchCase} onChange={(e) => setMatchCase(e.target.checked)} /> {r.matchCase}
+          </label>
+        )}
+        <label>
+          <input type="checkbox" checked={wholeWord} onChange={(e) => setWholeWord(e.target.checked)} /> {r.wholeWord}
+        </label>
+      </div>
+      {(!occurrences.length || done) && <p className="replace-count" role="status">{status}</p>}
       {find && alsoAWord && occurrences.some((o) => o.sentenceStart) && !done && (
         <p className="replace-warning">{fmt(r.alsoAWord, { word: find.trim().toLowerCase() })}</p>
       )}
       {occurrences.length > 0 && !done && (
         <div className="replace-review">
           <div className="replace-review-head">
-            <span>{r.review}</span>
+            <span role="status">{status}</span>
             <button type="button" className="link-button" onClick={() => setAll(skip.size > 0)}>
               {skip.size > 0 ? r.checkAll : r.uncheckAll}
             </button>
           </div>
           <ul className="replace-list">
-            {occurrences.slice(0, MAX_ROWS).map((o) => (
+            {occurrences.slice(0, MAX_ROWS).map((o, index) => (
               <li key={o.key}>
+                {(index === 0 || occurrences[index - 1].source !== o.source) && <div className="replace-where">{o.label || r.untitled}</div>}
                 <label className={o.sentenceStart && alsoAWord ? "is-doubtful" : undefined}>
-                  <input type="checkbox" checked={!skip.has(o.key)} onChange={() => toggle(o.key)} />
-                  <span className="replace-where">{o.label || r.untitled}</span>
+                  <input type="checkbox" aria-label={`${o.label || r.untitled}: ${o.before}${o.match}${o.after}`} checked={!skip.has(o.key)} onChange={() => toggle(o.key)} />
                   <span className="replace-context">
                     {o.before}
                     <mark>{o.match}</mark>
@@ -169,7 +170,7 @@ export function ReplacePanel() {
           </button>
         )}
         <button type="submit" className="is-primary" disabled={!find || (count === 0 && !renamed) || (!!renamed && !replacement.trim())}>
-          {renamed ? r.renameAll : r.replaceAll}
+          {renamed ? r.renameAll : fmt(count === 1 ? r.replaceOne : r.replaceMany, { n: num(count) })}
         </button>
       </div>
     </form>
