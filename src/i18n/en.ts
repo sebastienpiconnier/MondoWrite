@@ -1788,6 +1788,7 @@ export const en: Messages = {
     beforeFirst: "Before the first beat",
     scene: "{title} ({beat}, scene {n})",
     expected: "{beat}: usually around {n}% of the story",
+    startsAt: "{beat}: starts at {n}% of the story",
     caption: "{beat} · at {n}% of the story",
     hint: "Each beat takes the room its scenes take; the thin marks show where it usually begins.",
     byCount: "one share per scene while little is written",

@@ -2,7 +2,7 @@
 // ses scènes occupent vraiment (mots d'un roman, pages d'un scénario), avec, en fantôme, la position où cette
 // case commence d'ordinaire (BEAT_TARGETS). Rien n'est enregistré : tout se relit dans le projet. Fonctions pures.
 
-import { BEAT_TARGETS, PLAN_TEMPLATES, arrange, hasSubBeats, templateBeats, type Plan, type PlanBeat, type PlanTemplate } from "./plan";
+import { BEAT_TARGETS, PLAN_TEMPLATES, arrange, hasSubBeats, templateBeats, type CustomTemplate, type Plan, type PlanBeat, type PlanTemplate } from "./plan";
 import { blocks } from "./screenplay/sequence";
 import { beatOf, screenplayPlan } from "./screenplay/template";
 import type { ScreenplayElement } from "./screenplay/model";
@@ -41,7 +41,11 @@ export interface RibbonDrift {
 export interface Ribbon {
   template: PlanTemplate;
   segments: RibbonSegment[];
-  markers: { key: string; at: number }[];
+  /**
+   * Jalons : où chaque case commence d'ordinaire (structure livrée), ou, pour une structure de l'auteur
+   * (actes et séquences compris), où elle commence vraiment (`actual`), avec sa profondeur (`level`, 1 = acte).
+   */
+  markers: { key: string; at: number; level?: number; actual?: boolean }[];
   drifts: RibbonDrift[];
   /** Vrai quand le ruban suit la longueur du texte ; faux tant que le récit est trop peu écrit (une part par scène). */
   measured: boolean;
@@ -54,7 +58,7 @@ export const DRIFT_MIN_SCENES = 6;
 /** Part des scènes écrites pour mesurer le texte plutôt que compter les scènes. */
 const WRITTEN_SHARE = 0.8;
 
-export function buildRibbon(template: PlanTemplate, groups: RibbonGroup[]): Ribbon {
+export function buildRibbon(template: PlanTemplate, groups: RibbonGroup[], custom?: CustomTemplate): Ribbon {
   const scenes = groups.flatMap((g) => g.scenes);
   const written = scenes.filter((s) => s.size > 0).length;
   const measured = scenes.length > 0 && written >= scenes.length * WRITTEN_SHARE;
@@ -70,11 +74,26 @@ export function buildRibbon(template: PlanTemplate, groups: RibbonGroup[]): Ribb
     });
     return { key: g.key, start, length: total > 0 ? pos / total - start : 0, scenes: inner };
   });
-  const keys = template === "libre" ? [] : (PLAN_TEMPLATES[template] as readonly string[]);
-  const markers = keys.flatMap((key) => {
+  const keys = template === "libre" || template === "perso" ? [] : (PLAN_TEMPLATES[template] as readonly string[]);
+  const markers: Ribbon["markers"] = keys.flatMap((key) => {
     const at = BEAT_TARGETS[key as PlanBeat];
     return at === undefined ? [] : [{ key, at }];
   });
+  // Structure de l'auteur : pas de place habituelle, mais un jalon au début de chaque case (lot 17 ter). Un
+  // ensemble vide n'a pas de part : son jalon se pose au début de sa première sous-case.
+  if (template === "perso" && custom) {
+    const level = new Map(custom.beats.map((b) => [b.key, b.level ?? 1]));
+    const at = new Map<string, number>();
+    for (const seg of segments) if (seg.key && !at.has(seg.key)) at.set(seg.key, seg.start);
+    // Un ensemble sans scène à lui prend le début de sa première sous-case.
+    custom.beats.forEach((b, i) => {
+      if (at.has(b.key)) return;
+      const sub = custom.beats.slice(i + 1).find((c) => (c.level ?? 1) > (b.level ?? 1) && at.has(c.key));
+      if (sub && hasSubBeats(custom, b.key)) at.set(b.key, at.get(sub.key)!);
+    });
+    for (const b of custom.beats) if (at.has(b.key)) markers.push({ key: b.key, at: at.get(b.key)!, level: level.get(b.key) ?? 1, actual: true });
+  }
+
   const drifts: RibbonDrift[] = [];
   if (measured && scenes.length >= DRIFT_MIN_SCENES) {
     for (const seg of segments) {
@@ -101,7 +120,7 @@ export function novelGroups(plan: Plan, sceneIds: string[], words: (id: string) 
  * Scénario : les scènes dans l'ordre du fichier, regroupées par section du gabarit (vides comprises) ; celles
  * d'avant la première case forment un groupe sans case. `pages(start, end)` mesure un bloc.
  */
-export function screenplayGroups(elements: ScreenplayElement[], pages: (start: number, end: number) => number): { template: PlanTemplate; groups: RibbonGroup[] } {
+export function screenplayGroups(elements: ScreenplayElement[], pages: (start: number, end: number) => number): { template: PlanTemplate; groups: RibbonGroup[]; custom?: CustomTemplate } {
   const { template, custom } = screenplayPlan(elements);
   const keys = new Set<string>(templateBeats(template, custom));
   const groups: RibbonGroup[] = [{ key: null, scenes: [] }];
@@ -113,7 +132,7 @@ export function screenplayGroups(elements: ScreenplayElement[], pages: (start: n
     }
     groups[groups.length - 1].scenes.push({ id: b.cardId ?? `@${b.start}`, size: pages(b.start, b.end) });
   }
-  return { template, groups: groups.filter((g, i) => (i > 0 || g.scenes.length > 0) && (g.scenes.length > 0 || !g.key || !hasSubBeats(custom, g.key))) };
+  return { template, custom, groups: groups.filter((g, i) => (i > 0 || g.scenes.length > 0) && (g.scenes.length > 0 || !g.key || !hasSubBeats(custom, g.key))) };
 }
 
 /** Un point de la courbe du récit : milieu de la scène (0 à 1) et fortune du héros (−1 à 1). */

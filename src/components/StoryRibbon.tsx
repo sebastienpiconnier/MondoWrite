@@ -141,7 +141,13 @@ export function StoryRibbon({ currentId, onGo }: Props) {
           </div>
         ))}
         {ribbon.markers.map((m) => (
-          <span key={m.key} className="ribbon-mark" style={{ left: `${m.at * 100}%` }} title={fmt(r.expected, { beat: beatLabel(m.key), n: pct(m.at) })} aria-hidden="true" />
+          <span
+            key={m.key}
+            className={`ribbon-mark${m.actual ? ` is-actual is-level-${m.level ?? 1}` : ""}`}
+            style={{ left: `${m.at * 100}%` }}
+            title={m.actual ? fmt(r.startsAt, { beat: beatLabel(m.key), n: pct(m.at) }) : fmt(r.expected, { beat: beatLabel(m.key), n: pct(m.at) })}
+            aria-hidden="true"
+          />
         ))}
       </div>
       {curveOpen && curve && (

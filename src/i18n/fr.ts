@@ -1734,6 +1734,7 @@ export const fr = {
     beforeFirst: "Avant la première case",
     scene: "{title} ({beat}, scène {n})",
     expected: "{beat} : d’ordinaire vers {n} % du récit",
+    startsAt: "{beat} : commence à {n} % du récit",
     caption: "{beat} · à {n} % du récit",
     hint: "Chaque case prend la place de ses scènes ; les traits fins marquent où elle commence d’ordinaire.",
     byCount: "une part par scène tant que le récit est peu écrit",

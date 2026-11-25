@@ -1705,10 +1705,11 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 @media (max-width: 720px) { .sq-list:not(.is-cards) .sq-scene.in-seq { margin-left: 8px; } }
 
 /* Place d'une scène (#141) : séquence, épisode, case, en listes déroulantes. */
-.scene-place { display: flex; flex-direction: column; gap: 6px; }
-.scene-place-row { display: flex; align-items: center; gap: 8px; font: 0.875rem var(--font-ui); color: var(--ink-2); }
+.scene-place { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+/* La liste ne déborde jamais du volet : la colonne du choix rétrécit et coupe le nom au bout. */
+.scene-place-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; font: 0.875rem var(--font-ui); color: var(--ink-2); }
 .scene-place-row > span { flex: none; min-width: 6.5em; }
-.scene-place-row select { flex: 1; min-width: 0; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }
+.scene-place-row select { width: 100%; max-width: 100%; min-width: 0; text-overflow: ellipsis; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }
 @media (pointer: coarse) { .scene-place-row select { min-height: 44px; } }
 .scene-place-hint { margin: 0; }
 
@@ -1801,6 +1802,7 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .side-part-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0; border: 0; background: transparent; color: var(--ink); font: 600 0.875rem var(--font-ui); text-align: left; cursor: pointer; }
 .side-part-head .disclosure { flex: none; }
 @media (pointer: coarse) { .side-part-head { min-height: 44px; } }
+.side-part-body { min-width: 0; }
 .side-part-body > .sp-box { padding: 0; border: 0; background: transparent; border-radius: 0; }
 .side-part-body > .sp-box > h2.sp-box-title, .side-part-body > .sp-box > .eyebrow:first-child { display: none; }
 .side-parts-customize { align-self: flex-start; font-size: 0.8125rem; }
@@ -1810,3 +1812,8 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .side-parts-list .icon-button { width: 32px; min-height: 32px; }
 @media (pointer: coarse) { .side-parts-list label, .side-parts-list .icon-button { min-height: 44px; } .side-parts-list .icon-button { width: 44px; } }
 .side-parts-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+/* Jalons d'une structure de l'auteur (actes, séquences) : au début réel de chaque case ; l'acte dépasse plus. */
+.ribbon-mark.is-actual.is-level-2 { top: -3px; bottom: -3px; opacity: 0.8; }
+.ribbon-mark.is-actual.is-level-2::before { display: none; }
+.ribbon-mark.is-actual.is-level-3 { top: 0; bottom: 0; width: 1px; opacity: 0.6; }
+.ribbon-mark.is-actual.is-level-3::before { display: none; }
