@@ -20,9 +20,9 @@ Dernière mise à jour : 23 novembre 2026 (lot 16, collaboration, ajouté).
 ## Ordre / Order
 
 Les issues sont rangées en lots (jalons GitHub), du plus facile au plus dur, par thème. Les lots 1 (écriture :
-#23, #24, #21), 2 (sécurité : #14, #15, #30), 3 (ergonomie : #27, #26) sont faits ; le lot 4 (outils d'écriture : #20, #16, #17) le lot 9 (scénario en production : #44, #45, #46, #47) et le lot 10 (ergonomie 2 : #54 à #59) et le lot 11 (assistant externe : #62) sont faits. / Issues are grouped in
+#23, #24, #21), 2 (sécurité : #14, #15, #30), 3 (ergonomie : #27, #26) sont faits ; le lot 4 (outils d'écriture : #20, #16, #17) le lot 9 (scénario en production : #44, #45, #46, #47) et le lot 10 (ergonomie 2 : #54 à #59) le lot 11 (assistant externe : #62), le lot 14 (relire sa structure : #117 à #120, 1.47.0) et le lot 17 (la scène au centre : #137 à #148, 1.48.0) sont faits. / Issues are grouped in
 batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #24, #21), 2 (safety: #14, #15,
-#30), 3 (usability: #27, #26) are done; batch 4 (writing tools: #20, #16, #17) and batch 9 (screenplay for production: #44, #45, #46, #47) batch 10 (usability 2: #54 to #59) and batch 11 (external assistant: #62) are done.
+#30), 3 (usability: #27, #26) are done; batch 4 (writing tools: #20, #16, #17) and batch 9 (screenplay for production: #44, #45, #46, #47) batch 10 (usability 2: #54 to #59) batch 11 (external assistant: #62), batch 14 (reviewing your structure: #117 to #120, 1.47.0) and batch 17 (the scene at the centre: #137 to #148, 1.48.0) are done.
 
 1. Lot 6 · Import et narration / Import and narration : #28 finitions de
    l'import Scrivener
@@ -30,7 +30,6 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
 3. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
 4. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`),
    import de la logique de Twine (#96) dans la 1.41.0
-5. Lot 14 · Relire sa structure / Reviewing your structure : #117 à #120 faits (à publier)
-6. Lot 16 · Collaboration / Collaboration : #128 identité, #130 mode Relecteur, #131 projet partagé, #135 changements des coauteurs et #132 services de
+5. Lot 16 · Collaboration / Collaboration : #128 identité, #130 mode Relecteur, #131 projet partagé, #135 changements des coauteurs et #132 services de
    synchronisation ensemble, puis #129 iPhone et iPad (`docs/plan-collaboration.md`)
-7. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
+6. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
