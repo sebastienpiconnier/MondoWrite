@@ -1110,6 +1110,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Import et export d'un gabarit (1.12.0) : message près du choix du gabarit, origine du fichier dans l'éditeur. */
 .tpl-notice { font-size: 0.8125rem; color: var(--ink-2); }
 .tpl-notice.is-error { color: var(--danger); }
+/* Confirmation avant de remplacer actes et séquences (#154) : sous le menu, sur toute la largeur. */
+.tpl-confirm { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-left: 3px solid var(--danger); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 0.875rem; }
+.tpl-confirm > span { flex: 1 1 260px; }
+@media (pointer: coarse) { .tpl-confirm button { min-height: 44px; } }
 .tpl-imported { margin: -6px 0 14px; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--ground); font-size: 0.875rem; line-height: 1.45; }
 .tpl-file-hint { margin: 0 0 10px; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.45; }
 .tpl-actions { justify-content: flex-end; }
