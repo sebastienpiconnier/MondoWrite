@@ -444,6 +444,9 @@ const scenarios = [
       await until(() => page.locator(".ProseMirror").first().isVisible(), "le Manuscrit ne montre pas d'éditeur");
       await h.view(1);
       await until(async () => (await h.cards().count()) >= 21, "retour au canevas : cartes absentes");
+      // Lot 17 ter : « Organiser » faisait boucler React (rang d'une case recréé à chaque lecture).
+      await page.getByRole("button", { name: "Organiser le canevas" }).first().click();
+      await until(() => page.locator(".react-flow__node-frame").count(), "« Organiser » n'a posé aucun cadre");
     },
   },
   {

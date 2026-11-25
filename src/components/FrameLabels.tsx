@@ -78,12 +78,19 @@ function ranksOf(elements: ScreenplayElement[]): Map<string, CaseRank> {
 }
 
 /** Rang de la case `beat` (dans l'épisode `episode` d'une série), ou null. Même objet tant que rien ne change. */
+const novelRanks = new WeakMap<readonly string[], Map<string, CaseRank>>();
+
 export function caseRank(s: CosmosState, beat: string | undefined, episode?: string): CaseRank | null {
   if (!beat) return null;
   if (s.kind !== "scenario") {
+    // Même objet tant que les cases ne changent pas : le résultat sert de sélecteur (useCosmos).
     const keys = beatKeys(s);
-    const n = keys.indexOf(beat) + 1;
-    return n > 0 ? { n, total: keys.length, kind: null } : null;
+    let ranks = novelRanks.get(keys);
+    if (!ranks) {
+      ranks = new Map(keys.map((k, i) => [k, { n: i + 1, total: keys.length, kind: null }]));
+      novelRanks.set(keys, ranks);
+    }
+    return ranks.get(beat) ?? null;
   }
   const map = ranksOf(s.screenplay?.elements ?? []);
   return map.get(`${episode ?? ""}:${beat}`) ?? map.get(`:${beat}`) ?? null;
