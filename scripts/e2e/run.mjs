@@ -511,6 +511,30 @@ const scenarios = [
     },
   },
   {
+    name: "couleurs franches des intrigues (#157) : réglage, noms au survol des scènes, noms des couleurs dans la fiche",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await page.evaluate(() => {
+        const s = JSON.parse(localStorage.getItem("cosmos:reglages") || "{}");
+        localStorage.setItem("cosmos:reglages", JSON.stringify({ ...s, plotPalette: "bold" }));
+      });
+      await h.reloadAndOpen();
+      assert((await page.locator("html").getAttribute("data-plot-palette")) === "bold", "la palette franche n'est pas posée");
+      await h.view(2);
+      const colored = page.locator(".plan-scene.has-plot").first();
+      await until(() => colored.count(), "aucune scène colorée dans le Plan");
+      assert(/^Intrigues?\s:\s/u.test((await colored.getAttribute("title")) ?? ""), `pas de nom d'intrigue au survol : ${await colored.getAttribute("title")}`);
+      assert(/Intrigue/.test(await colored.locator(".sr-only").first().innerText()), "pas de nom d'intrigue pour un lecteur d'écran");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/plot-157-plan.png` });
+      await h.view(3);
+      await page.locator(".bible-toc").getByRole("button", { name: /Intrigues/ }).first().click();
+      await until(() => page.locator(".plot-color.is-named").count(), "la fiche d'une intrigue ne nomme pas ses couleurs");
+      await until(() => page.getByRole("radio", { name: "Vermillon" }).count(), "la couleur « Vermillon » n'est pas proposée");
+      if (process.env.E2E_SHOTS) await page.locator(".plot-color").first().screenshot({ path: `${process.env.E2E_SHOTS}/plot-157-picker.png` });
+    },
+  },
+  {
     name: "garder sa place (#144) : la scène du Manuscrit choisie sur le canevas et montrée dans le Plan, le curseur retrouvé au retour",
     async run(h) {
       const { page } = h;

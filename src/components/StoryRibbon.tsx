@@ -129,7 +129,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
                   style={{
                     left: `${seg.length > 0 ? ((s.start - seg.start) / seg.length) * 100 : 0}%`,
                     width: `${seg.length > 0 ? (s.length / seg.length) * 100 : 0}%`,
-                    ...(color ? ({ "--scene-pov": `var(--pov-${color})` } as React.CSSProperties) : {}),
+                    ...(color ? ({ "--scene-pov": `var(--${pov ? "pov" : "plot"}-${color})` } as React.CSSProperties) : {}),
                   }}
                   aria-current={s.id === currentId ? "true" : undefined}
                   aria-label={label}
@@ -162,7 +162,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
         </div>
       )}
       {lanes.map((lane) => (
-        <div key={lane.id} className="ribbon-lane" style={{ "--lane": `var(--pov-${lane.color})` } as React.CSSProperties}>
+        <div key={lane.id} className="ribbon-lane" style={{ "--lane": `var(--plot-${lane.color})` } as React.CSSProperties}>
           {/* Lire le récit fil par fil (#117) : le nom de l'intrigue ouvre ses seules scènes. */}
           <button type="button" className="ribbon-lane-name" title={fmt(t.thread.readOf, { title: lane.title })} onClick={() => useCosmos.getState().readThread(lane.id)}>
             {lane.title}

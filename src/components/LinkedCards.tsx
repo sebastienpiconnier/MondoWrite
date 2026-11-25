@@ -193,7 +193,7 @@ function LinkRow({ id, type, label, ordered, onOpen, canCreate = true, speakers 
                 </button>
               )}
               <button type="button" className="link-chip-open" onClick={() => onOpen(card)}>
-                <span className="card-dot" aria-hidden="true" style={plots?.get(card) ? { background: `var(--pov-${plots.get(card)})` } : undefined} />
+                <span className="card-dot" aria-hidden="true" style={plots?.get(card) ? { background: `var(--plot-${plots.get(card)})` } : undefined} />
                 {name(card)}
                 {speakers && speakerOf(card) && <span className="link-lines"> · {lineText(speakerOf(card)!.lines)}</span>}
               </button>

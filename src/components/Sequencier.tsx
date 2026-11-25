@@ -579,6 +579,7 @@ export function Sequencier() {
                 data-scene={block.cardId || undefined}
                 className={`sq-scene${dragged === i ? " is-dragged" : ""}${inSeq(block.start) ? " in-seq" : ""}${dropClass}${plotColor(block.cardId).className}`}
                 style={plotColor(block.cardId).style}
+                title={plotColor(block.cardId).label}
                 draggable
                 onDragStart={(e) => {
                   // Pas en tirant dans le champ du synopsis : on y sélectionne du texte.
@@ -593,6 +594,7 @@ export function Sequencier() {
                 }}
                 {...drop}
               >
+                {plotColor(block.cardId).label && <span className="sr-only">{plotColor(block.cardId).label}</span>}
                 <div className="sq-moves">
                   <ReorderHandle index={i} count={list.length}
                     label={fmt(t.controls.reorder, { label: title })}

@@ -92,3 +92,16 @@ describe("scène en cours visible sans la couleur (#156)", () => {
     }
   }
 });
+
+// Couleurs franches des intrigues (#157) : texte noir sur chacune, 4,5:1 au moins, dans les deux thèmes ; huit couleurs.
+describe("couleurs franches des intrigues", () => {
+  for (const [mode, tokens] of [["clair", lightBase], ["sombre", darkBase]] as const) {
+    it(mode, () => {
+      const slots = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => tokens[`plot-bold-${n}`]);
+      expect(slots.every(Boolean)).toBe(true);
+      expect(new Set(slots).size).toBe(8);
+      const failures = slots.filter((c) => contrast(c, tokens["plot-bold-ink"]) < 4.5);
+      expect(failures).toEqual([]);
+    });
+  }
+});

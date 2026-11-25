@@ -852,6 +852,7 @@ export function Manuscript() {
                     key={id}
                     className={`${sceneDrag === id ? "is-dragged" : ""}${drop}${plotColor(id).className}`}
                     style={plotColor(id).style}
+                    title={plotColor(id).label}
                     draggable={movable}
                     onDragStart={(e) => {
                       if (!movable) return;
@@ -889,6 +890,7 @@ export function Manuscript() {
                       if (useCosmos.getState().moveBookScene(from, id, side)) setSaid(fmt(m.sceneMoved, { title: cards.find((x) => x.id === from)?.title.trim() || m.untitled }));
                     }}
                   >
+                    {plotColor(id).label && <span className="sr-only">{plotColor(id).label}</span>}
                     <button
                       type="button"
                       className={`${id === current ? "is-current" : ""}${movable ? " is-movable" : ""}`}

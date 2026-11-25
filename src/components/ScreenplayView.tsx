@@ -1673,6 +1673,7 @@ export function ScreenplayView() {
               key={s.index}
               className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}${plotColor(s.cardId).className}`}
               style={plotColor(s.cardId).style}
+              title={plotColor(s.cardId).label}
               // Glisser une scène dans la liste la déplace dans le scénario (texte compris).
               draggable
               onDragStart={(e) => {
@@ -1708,6 +1709,7 @@ export function ScreenplayView() {
                 if (from !== null) moveScene(from, s.index);
               }}
             >
+              {plotColor(s.cardId).label && <span className="sr-only">{plotColor(s.cardId).label}</span>}
               <button
                 type="button"
                 className={s.index === scene?.index ? "is-current" : ""}

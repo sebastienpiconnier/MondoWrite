@@ -23,7 +23,7 @@ import { REPO } from "../updates";
 
 /** Guide des traducteurs sur GitHub. */
 const TRANSLATE_URL = `https://github.com/${REPO}/blob/main/TRANSLATING.md`;
-import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type ThemePref, type WheelMode } from "../settings";
+import { useSettings, PAGE_ZOOMS, PAGE_FONTS, LINE_SPACINGS, PALETTES, type LineSpacing, type PageFont, type ThemePref, type WheelMode, type PlotPalette } from "../settings";
 import { FOCUS_HIGHLIGHTS } from "../focusText";
 import { useCosmos } from "../store";
 import { PROJECT_KINDS, isProjectKind } from "../types";
@@ -133,6 +133,7 @@ export function Settings({ project = true }: { project?: boolean }) {
   // Barre des menus du Mac (Réglages…) et Cmd/Ctrl + virgule : ouvrir.
   useCommand("settings", () => setOpen(true));
   const wheelMode = useSettings((s) => s.wheelMode);
+  const plotPalette = useSettings((s) => s.plotPalette);
   const finePointer = typeof window !== "undefined" && !!window.matchMedia?.("(any-pointer: fine)").matches;
   // Augmenter le contraste (réglage du système) : la palette Contraste s'impose, on le dit sous le choix.
   const [moreContrast, setMoreContrast] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-contrast: more)").matches);
@@ -144,7 +145,7 @@ export function Settings({ project = true }: { project?: boolean }) {
     return () => q.removeEventListener("change", on);
   }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
+  const ids = { panel: useId(), lang: useId(), theme: useId(), palette: useId(), kind: useId(), kindHint: useId(), paper: useId(), paperHint: useId(), numbers: useId(), numbersHint: useId(), author: useId(), pixabay: useId(), unsplash: useId(), photosHint: useId(), ai: useId(), aiModel: useId(), aiHint: useId(), aiEmbed: useId(), aiEmbedHint: useId(), updates: useId(), copies: useId(), copiesHint: useId(), typography: useId(), typographyHint: useId(), spell: useId(), spellHint: useId(), suggestions: useId(), suggestionsHint: useId(), focusHl: useId(), focusTw: useId(), icloud: useId(), icloudHint: useId(), wheel: useId(), plotPalette: useId(), plotPaletteHint: useId(), pageZoom: useId(), pageFont: useId(), lineSpacing: useId(), pageLookHint: useId(), writerHint: useId(), atelierHint: useId(), experimental: useId(), experimentalHint: useId(), lt: useId(), ltHint: useId(), ltUser: useId(), ltKey: useId(), ltKeyHint: useId(), ltUrl: useId(), ltUrlHint: useId(), ltLive: useId(), ltLiveHint: useId() };
 
   // Fermeture : Échap (retour du focus sur le bouton) ou clic/appui à l'extérieur.
   useEffect(() => {
@@ -423,6 +424,13 @@ export function Settings({ project = true }: { project?: boolean }) {
             ))}
           </div>
           {moreContrast && <p className="settings-hint">{t.settings.paletteSystemContrast}</p>}
+          {/* Couleurs des intrigues pour les daltoniens (#157), réglage de l'appareil. */}
+          <label htmlFor={ids.plotPalette}>{t.settings.plotPalette}</label>
+          <select id={ids.plotPalette} aria-describedby={ids.plotPaletteHint} value={plotPalette} onChange={(e) => useSettings.getState().setPlotPalette(e.target.value as PlotPalette)}>
+            <option value="standard">{t.settings.plotPaletteStandard}</option>
+            <option value="bold">{t.settings.plotPaletteBold}</option>
+          </select>
+          <p className="settings-hint" id={ids.plotPaletteHint}>{t.settings.plotPaletteHint}</p>
           {/* Seulement avec une souris ou un trackpad : au doigt, déplacer et pincer ne changent pas. */}
           {finePointer && (
             <>

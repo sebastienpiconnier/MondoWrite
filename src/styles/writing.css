@@ -1883,7 +1883,11 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 /* Couleur d'une intrigue (#143) : huit pastilles, celle choisie (ou attribuée) cerclée. */
 .plot-color { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; }
 .plot-color-label { font: 600 0.8125rem var(--font-ui); color: var(--ink-2); margin-right: 4px; }
-.plot-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; padding: 0; }
+.plot-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; padding: 0; background: var(--swatch); }
+/* Palette franche (#157) : la pastille et le nom de la couleur, écrit en noir sur elle. */
+.plot-color.is-named .plot-swatch { width: auto; height: auto; min-height: 32px; border-radius: 16px; padding: 0 12px; }
+.plot-swatch-name { font: 500 0.8125rem var(--font-ui); color: var(--plot-fg); }
+@media (pointer: coarse) { .plot-color.is-named .plot-swatch { width: auto; height: auto; min-height: 44px; } }
 .plot-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
 @media (pointer: coarse) { .plot-swatch { width: 40px; height: 40px; } }
 
