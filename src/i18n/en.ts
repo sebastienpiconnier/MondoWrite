@@ -2056,6 +2056,10 @@ export const en: Messages = {
     },
     sequencer: {
       partTitleAria: "Title of “{kind} {n}”",
+      partMoveUp: "Move “{title}” up with its scenes",
+      partMoveDown: "Move “{title}” down with its scenes",
+      partMoved: "“{title}” moved with its scenes.",
+      partMenu: "Actions for “{title}”",
       partScenesOne: "{n} scene",
       partScenesMany: "{n} scenes",
       modeAria: "Outline layout",

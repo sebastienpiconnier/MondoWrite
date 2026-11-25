@@ -441,3 +441,32 @@ export function moveStructurePart(elements: ScreenplayElement[], at: number, way
   if (prev === -1 || sectionEnd(elements, prev) !== parent || !sameKindNeighbour(prev)) return elements;
   return [...elements.slice(0, parent), ...chunk, ...elements.slice(parent, at), ...elements.slice(end)];
 }
+
+/**
+ * Glisser une partie (#159) : elle avance d'un cran à la fois (`moveStructurePart`, mêmes règles) vers l'élément du
+ * rang `target` (une autre ligne du séquencier ou de la liste des scènes), jusqu'à le dépasser. Même tableau si elle ne
+ * peut pas bouger.
+ */
+export function moveStructurePartTo(elements: ScreenplayElement[], at: number, target: number): ScreenplayElement[] {
+  const moving = elements[at];
+  const goal = elements[target];
+  if (!moving || !goal || at === target) return elements;
+  let current = elements;
+  for (let step = 0; step < 200; step++) {
+    const from = current.indexOf(moving);
+    const to = current.indexOf(goal);
+    const end = sectionEnd(current, from);
+    if (to >= from && to < end) {
+      // La cible est dans la partie : fini si elle y est arrivée en descendant, sinon rien à faire.
+      return current;
+    }
+    const way: -1 | 1 = to > from ? 1 : -1;
+    const next = moveStructurePart(current, from, way);
+    if (next === current) return current;
+    current = next;
+    const after = current.indexOf(moving);
+    const goalAt = current.indexOf(goal);
+    if (way > 0 ? after > goalAt : after <= goalAt) return current;
+  }
+  return current;
+}

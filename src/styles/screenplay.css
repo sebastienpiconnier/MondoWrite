@@ -55,6 +55,10 @@
 .sp-scene-list .sp-scene-group .sp-part-title { flex: 1; min-width: 0; width: auto; text-align: left; }
 .sp-part-count { font-weight: 400; color: var(--ink-2); }
 @media (pointer: coarse) { .sp-scene-list .sp-scene-group .sp-part-fold { width: 44px; min-height: 44px; } }
+/* Menu ⋯ d'une partie (#159 : monter, descendre avec ses scènes) ; la partie glissée passe au-dessus d'une ligne. */
+.sp-scene-list .sp-scene-group .more-button { flex: none; width: 32px; min-height: 32px; font-weight: 400; }
+@media (pointer: coarse) { .sp-scene-list .sp-scene-group .more-button { width: 44px; min-height: 44px; } }
+.sp-scene-list .sp-scene-group.is-over { box-shadow: 0 -2px 0 var(--accent); }
 .sp-scene-list .sp-scene-omitted .ms-name { color: var(--muted); font-style: italic; }
 .sp-scene-moves { display: flex; gap: 4px; padding: 2px 0 2px 10px; }
 .sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 0.8125rem; }

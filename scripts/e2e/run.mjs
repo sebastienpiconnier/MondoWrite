@@ -1668,6 +1668,35 @@ const scenarios = [
     },
   },
   {
+    name: "partie entière (#159) : une séquence monte avec ses scènes (liste des scènes, séquencier), Ctrl Z rend l'ordre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Movers", "scenario");
+      await h.wait(1200);
+      const fountain = ["# Acte un [[cosmos:act:a1]]", "## Matin [[cosmos:seq:s1]]", ".INT. CHAMBRE - JOUR", "Elle dort.", "## Soir [[cosmos:seq:s2]]", ".EXT. ROUTE - NUIT", "Il roule.", ""].join("\n\n");
+      await page.evaluate((text) => {
+        const key = Object.keys(localStorage).find((k) => k.startsWith("cosmos:projet:"));
+        const files = JSON.parse(localStorage.getItem(key));
+        files["scenario.fountain"] = text;
+        localStorage.setItem(key, JSON.stringify(files));
+      }, fountain);
+      await h.reloadAndOpen();
+      await h.view(4);
+      const order = (f) => (f["scenario.fountain"] ?? "").match(/^## (Matin|Soir)|^\.?(INT|EXT)\. \w+/gm)?.join("|") ?? "";
+      await page.getByRole("button", { name: "Actions de « Soir »" }).click();
+      await page.getByRole("menuitem", { name: "Monter « Soir » avec ses scènes" }).click();
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin\|\.?INT\. CHAMBRE/.test(order(f)), "la séquence n'a pas monté avec sa scène");
+      // Le séquencier : la poignée de la partie la redescend.
+      await h.view(2);
+      await page.getByRole("button", { name: "Réordonner Soir. Utilise les flèches haut et bas." }).click();
+      await page.getByRole("menuitem", { name: "Descendre « Soir » avec ses scènes" }).click();
+      await h.saved((f) => /Matin\|\.?INT\. CHAMBRE\|## Soir\|\.?EXT\. ROUTE/.test(order(f)), "la séquence n'est pas redescendue");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/part-159.png` });
+      await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin/.test(order(f)), "Ctrl Z ne rend pas l'ordre d'avant");
+    },
+  },
+  {
     name: "séquence choisie dans la fiche (#141) : la liste de l'onglet Scène déplace la scène, Ctrl Z rend l'ordre",
     async run(h) {
       const { page } = h;

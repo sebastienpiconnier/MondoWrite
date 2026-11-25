@@ -73,7 +73,7 @@ import { newId, structureCaseText } from "../projectState";
 import { storage } from "../storage";
 import { markSectionsAsked, sectionsAsked } from "../sectionsAsked";
 import { plainSection, resolveEpisode, seriesOf } from "../screenplay/series";
-import { adoptUnmarkedSections, convertSection, insertionPoint, nextNumber, partLabel, renameStructure, structureMark, structureOf, structureSection, unmarkedSections, type StructureKind } from "../screenplay/structure";
+import { adoptUnmarkedSections, convertSection, insertionPoint, moveStructurePart, moveStructurePartTo, nextNumber, partLabel, renameStructure, structureMark, structureOf, structureSection, unmarkedSections, type StructureKind } from "../screenplay/structure";
 import { adoptStructureCases, customizeRange, scopeAt, usedCaseKeys } from "../screenplay/structureCases";
 import { SCREENPLAY_TEMPLATES, beatOf } from "../screenplay/template";
 import { PLAN_TEMPLATES, isCustomBeat, nextCustomKey, type PlanBeat } from "../plan";
@@ -514,6 +514,8 @@ export function ScreenplayView() {
   const phone = usePhone();
   // Scène glissée dans la liste (ref : le dépôt peut arriver avant le rendu suivant).
   const dragRef = useRef<number | null>(null);
+  // Acte, séquence ou sous-séquence glissés dans la liste (#159) : rang de leur section.
+  const dragPartRef = useRef<{ at: number; title: string } | null>(null);
   const [dragScene, setDragScene] = useState<number | null>(null);
   const [overScene, setOverScene] = useState<number | null>(null);
   const [announce, setAnnounce] = useState("");
@@ -1143,6 +1145,24 @@ export function ScreenplayView() {
     if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
   };
 
+  // Acte, séquence ou sous-séquence entière (#159) : la section et ses scènes, en une étape, l'éditeur rechargé ici.
+  const movePart = (at: number, title: string, change: (elements: ScreenplayElement[], at: number) => ScreenplayElement[], keepFocus = false) => {
+    emit();
+    const current = currentScript(useCosmos.getState());
+    if (!current) return;
+    const moving = current.elements[at];
+    const elements = change(current.elements, at);
+    if (elements === current.elements || !moving) return;
+    setAnnounce(fmt(sp.sequencer.partMoved, { title }));
+    const next = { ...current, elements };
+    synced.current = next;
+    useCosmos.getState().setScript(next, true);
+    editor.commands.setContent(toDoc(next), { emitUpdate: false });
+    const dom = editor.view.nodeDOM(posOf(editor.state.doc, elements.indexOf(moving)));
+    if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
+    if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(`.sp-scene-group[data-part-at="${elements.indexOf(moving)}"] .sp-part-title`)?.focus());
+  };
+
   const goToFinding = (f: Finding) => goToElement(f.at);
   // Question de l'IA : l'élément de la scène qui contient le passage cité, sinon son en-tête.
   const goToAiScene = (ref: SceneRef, quote?: string) => {
@@ -1547,7 +1567,35 @@ export function ScreenplayView() {
               </button>
             </li>
           )) : row.kind === "act" || row.kind === "seq" || row.kind === "sub" ? (
-            <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
+            <li
+              key={`${row.kind}:${row.id}`}
+              className={`sp-scene-group is-${row.kind}${overScene === row.at && dragPartRef.current?.at !== row.at ? " is-over" : ""}`}
+              data-part-at={row.at}
+              draggable={renamingPart !== row.id}
+              onDragStart={(e) => {
+                if ((e.target as HTMLElement).closest("input")) return e.preventDefault();
+                dragPartRef.current = { at: row.at, title: row.title };
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", row.title);
+              }}
+              onDragEnd={() => {
+                dragPartRef.current = null;
+                setOverScene(null);
+              }}
+              onDragOver={(e) => {
+                if (dragPartRef.current === null) return;
+                e.preventDefault();
+                setOverScene(row.at);
+              }}
+              onDrop={(e) => {
+                const from = dragPartRef.current;
+                if (from === null) return;
+                e.preventDefault();
+                dragPartRef.current = null;
+                setOverScene(null);
+                movePart(from.at, from.title, (els, at) => moveStructurePartTo(els, at, row.at));
+              }}
+            >
               <button
                 type="button"
                 className="icon-button sp-part-fold"
@@ -1578,7 +1626,19 @@ export function ScreenplayView() {
                   }}
                 />
               ) : (
-                <button type="button" className="sp-part-title" onClick={() => goTo(row.at)} onDoubleClick={() => setRenamingPart(row.id)}>
+                <button
+                  type="button"
+                  className="sp-part-title"
+                  aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                  onClick={() => goTo(row.at)}
+                  onDoubleClick={() => setRenamingPart(row.id)}
+                  onKeyDown={(e) => {
+                    // Au clavier : Alt + flèche déplace la partie entière d'un cran.
+                    if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+                    e.preventDefault();
+                    movePart(row.at, row.title, (els, at) => moveStructurePart(els, at, e.key === "ArrowUp" ? -1 : 1), true);
+                  }}
+                >
                   {row.title} <span className="sp-part-count">· {row.count}</span>
                 </button>
               )}
@@ -1589,6 +1649,18 @@ export function ScreenplayView() {
                   </svg>
                 </button>
               )}
+              {renamingPart !== row.id && (() => {
+                const els = currentScript(useCosmos.getState())?.elements ?? [];
+                return (
+                  <MoreMenu
+                    label={fmt(sp.sequencer.partMenu, { title: row.title })}
+                    items={[
+                      { label: fmt(sp.sequencer.partMoveUp, { title: row.title }), disabled: moveStructurePart(els, row.at, -1) === els, onSelect: () => movePart(row.at, row.title, (e, at) => moveStructurePart(e, at, -1)) },
+                      { label: fmt(sp.sequencer.partMoveDown, { title: row.title }), disabled: moveStructurePart(els, row.at, 1) === els, onSelect: () => movePart(row.at, row.title, (e, at) => moveStructurePart(e, at, 1)) },
+                    ]}
+                  />
+                );
+              })()}
             </li>
           ) : row.kind !== "scene" ? (
             <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
@@ -1616,12 +1688,19 @@ export function ScreenplayView() {
                 setOverScene(null);
               }}
               onDragOver={(e) => {
-                if (dragRef.current === null) return;
+                if (dragRef.current === null && dragPartRef.current === null) return;
                 e.preventDefault();
                 setOverScene(s.index);
               }}
               onDrop={(e) => {
                 e.preventDefault();
+                const part = dragPartRef.current;
+                if (part !== null) {
+                  dragPartRef.current = null;
+                  setOverScene(null);
+                  movePart(part.at, part.title, (els, at) => moveStructurePartTo(els, at, s.index));
+                  return;
+                }
                 const from = dragRef.current;
                 dragRef.current = null;
                 setDragScene(null);

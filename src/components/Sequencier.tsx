@@ -32,7 +32,7 @@ import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
-import { describeCount, holdersOf, partLabel, renameStructure, replacedParts, structureOf, type StructurePart } from "../screenplay/structure";
+import { describeCount, holdersOf, moveStructurePart, moveStructurePartTo, partLabel, renameStructure, replacedParts, structureOf, type StructurePart } from "../screenplay/structure";
 import { REVEAL_SCENE } from "./revealRow";
 import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
 import { foldedPartsNow, toggleFoldedPart, useFoldedParts } from "../structureFold";
@@ -107,6 +107,15 @@ export function Sequencier() {
     const moved = blocks(elements)[to];
     setAnnounce(fmt(sq.moved, { title: moved.text || sp.untitledScene, n: moved.number ?? 0 }));
     setScreenplay({ ...screenplay, elements }, true);
+  };
+
+  // Acte, séquence ou sous-séquence entière (#159) : d'un cran (menu, flèches) ou jusqu'à une ligne (glisser).
+  const movePart = (part: StructurePart, title: string, elements: typeof screenplay.elements) => {
+    if (elements === screenplay.elements) return;
+    setAnnounce(fmt(sq.partMoved, { title }));
+    setScreenplay({ ...screenplay, elements }, true);
+    // La ligne de la partie a changé de rang : la poignée qui garde le focus est la sienne.
+    requestAnimationFrame(() => listRef.current?.querySelector<HTMLButtonElement>(`[data-part="${part.key}"] .reorder-handle`)?.focus());
   };
 
   // Gabarit : ses cases sont des sections du scénario. Une section écrite par l'auteur garde son texte.
@@ -487,6 +496,15 @@ export function Sequencier() {
                   data-beat={caseKey ?? undefined}
                   {...drop}
                 >
+                  <ReorderHandle index={i} count={list.length}
+                    label={fmt(t.controls.reorder, { label: name })}
+                    canStep={{
+                      up: moveStructurePart(screenplay.elements, part.at, -1) !== screenplay.elements,
+                      down: moveStructurePart(screenplay.elements, part.at, 1) !== screenplay.elements,
+                    }}
+                    moveLabels={{ up: fmt(sq.partMoveUp, { title: name }), down: fmt(sq.partMoveDown, { title: name }) }}
+                    onStep={(way) => movePart(part, name, moveStructurePart(screenplay.elements, part.at, way === "up" ? -1 : 1))}
+                    onMove={(_, to) => movePart(part, name, moveStructurePartTo(screenplay.elements, part.at, list[to]?.start ?? part.at))} />
                   <button type="button" className="icon-button sq-fold" aria-expanded={open} aria-label={fmt(open ? ts.fold : ts.unfold, { title: name })} onClick={() => toggleFoldedPart(part.key)}>
                     <span className={`disclosure${open ? " is-open" : ""}`} aria-hidden="true" />
                   </button>

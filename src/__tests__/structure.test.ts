@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parse as parseFountain } from "../screenplay/parse";
 import { serialize as serializeFountain } from "../screenplay/serialize";
 import { LAYOUTS } from "../screenplay/layout";
-import { adoptUnmarkedSections, convertSection, moveStructurePart, describeCount, holdersOf, insertStructure, insertionPoint, nextNumber, partChapters, partOfScene, renameStructure, replacedParts, structureDepth, structureOf, unmarkedSections } from "../screenplay/structure";
+import { adoptUnmarkedSections, convertSection, moveStructurePart, moveStructurePartTo, describeCount, holdersOf, insertStructure, insertionPoint, nextNumber, partChapters, partOfScene, renameStructure, replacedParts, structureDepth, structureOf, unmarkedSections } from "../screenplay/structure";
 import { paginate } from "../screenplay/paginate";
 import type { ScreenplayElement } from "../screenplay/model";
 
@@ -224,5 +224,30 @@ describe("déplacer un acte, une séquence ou une sous-séquence (#159)", () => 
     ];
     expect(moveStructurePart(series, 2, 1)).toBe(series);
     expect(moveStructurePart(series, 5, -1)).toBe(series);
+  });
+});
+
+describe("glisser une partie (#159)", () => {
+  it("va jusqu'à la ligne visée, en avançant d'un cran à la fois", () => {
+    const els = parseFountain([
+      "# Acte 1 [[cosmos:act:a1]]",
+      "",
+      "## Séquence 1 [[cosmos:seq:s1]]",
+      "",
+      "INT. A - JOUR",
+      "",
+      "## Séquence 2 [[cosmos:seq:s2]]",
+      "",
+      "INT. B - JOUR",
+      "",
+      "## Séquence 3 [[cosmos:seq:s3]]",
+      "",
+      "INT. C - JOUR",
+    ].join("\n")).elements;
+    const s1 = els.findIndex((e) => e.text.includes("seq:s1"));
+    const c = els.findIndex((e) => e.text === "INT. C - JOUR");
+    const out = moveStructurePartTo(els, s1, c);
+    expect(out.filter((e) => e.type === "section").map((e) => e.text.match(/seq:(\w+)/)?.[1] ?? "act")).toEqual(["act", "s2", "s3", "s1"]);
+    expect(moveStructurePartTo(els, s1, s1 + 1)).toBe(els);
   });
 });

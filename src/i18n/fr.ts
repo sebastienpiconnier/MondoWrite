@@ -2010,6 +2010,10 @@ export const fr = {
     },
     sequencer: {
       partTitleAria: "Titre de « {kind} {n} »",
+      partMoveUp: "Monter « {title} » avec ses scènes",
+      partMoveDown: "Descendre « {title} » avec ses scènes",
+      partMoved: "« {title} » déplacé avec ses scènes.",
+      partMenu: "Actions de « {title} »",
       partScenesOne: "{n} scène",
       partScenesMany: "{n} scènes",
       modeAria: "Présentation du séquencier",
