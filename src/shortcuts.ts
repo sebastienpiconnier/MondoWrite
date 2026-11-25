@@ -71,6 +71,7 @@ export const SHORTCUT_GROUPS = {
     ["moveLines", ["Alt", "Shift", "↑ ↓"]],
     ["insertAct", ["Mod", "Alt", "Shift", "A"]],
     ["insertSequence", ["Mod", "Alt", "Shift", "S"]],
+    ["insertSubsequence", ["Mod", "Alt", "Shift", "U"]],
   ],
 } as const;
 

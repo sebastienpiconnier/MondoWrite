@@ -11,14 +11,14 @@ import { beatOf } from "./template";
 import { seriesMark } from "./series";
 import { isCustomBeat, nextCustomKey, type ScriptBeats } from "../plan";
 
-const STRUCTURE_NOTE_RE = /\[\[cosmos:(act|seq):[A-Za-z0-9_-]+\]\]/;
+const STRUCTURE_NOTE_RE = /\[\[cosmos:(act|seq|sub):[A-Za-z0-9_-]+\]\]/;
 const BEAT_NOTE_RE = /\s*\[\[cosmos:beat:[A-Za-z0-9_]+\]\]/;
 
 /** Acte ou séquence (note) de cette section, sinon null. */
-const partKindOf = (el: ScreenplayElement | undefined): "act" | "seq" | null => {
+const partKindOf = (el: ScreenplayElement | undefined): "act" | "seq" | "sub" | null => {
   if (el?.type !== "section") return null;
   const m = STRUCTURE_NOTE_RE.exec(el.text);
-  return m ? (m[1] as "act" | "seq") : null;
+  return m ? (m[1] as "act" | "seq" | "sub") : null;
 };
 
 /** Clés de case de l'auteur déjà prises : dans le texte et dans `plan.scriptBeats`. */
@@ -135,7 +135,33 @@ export function adoptStructureCases(
 export const isPartCase = (el: ScreenplayElement | undefined): boolean => !!partKindOf(el) && !!(el && el.type === "section" && beatOf(el.text));
 
 /** Acte ou séquence de la case `key` (rang « Séquence 3 sur 8 »), sinon null. */
-export function caseKind(elements: readonly ScreenplayElement[], key: string): "act" | "seq" | null {
+export function caseKind(elements: readonly ScreenplayElement[], key: string): "act" | "seq" | "sub" | null {
   for (const el of elements) if (el.type === "section" && beatOf(el.text) === key) return partKindOf(el);
   return null;
 }
+
+export interface KindRank {
+  n: number;
+  total: number;
+  /** Acte, séquence ou sous-séquence ; null pour l'étape d'une structure (livrée ou non notée). */
+  kind: "act" | "seq" | "sub" | null;
+}
+
+/**
+ * Rang de chaque étape finale (`leaves`, sans les ensembles) : un acte parmi les actes, une séquence parmi les
+ * séquences, une sous-séquence parmi les sous-séquences, une étape parmi les autres étapes (lot 17 ter :
+ * « Séquence 3 sur 8 », jamais « Étape 3 sur 8 » pour une séquence).
+ */
+export function kindRanks(elements: readonly ScreenplayElement[], leaves: readonly string[]): Map<string, KindRank> {
+  const kinds = leaves.map((key) => ({ key, kind: caseKind(elements, key) }));
+  const out = new Map<string, KindRank>();
+  for (const { key, kind } of kinds) {
+    const same = kinds.filter((k) => k.kind === kind);
+    out.set(key, { n: same.findIndex((k) => k.key === key) + 1, total: same.length, kind });
+  }
+  return out;
+}
+
+/** Libellé d'un rang selon sa sorte. */
+export const rankLabel = (t: { beatRank: string; seqRank: string; subRank: string; actRank: string }, kind: KindRank["kind"]): string =>
+  kind === "act" ? t.actRank : kind === "seq" ? t.seqRank : kind === "sub" ? t.subRank : t.beatRank;

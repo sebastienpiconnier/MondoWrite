@@ -25,7 +25,8 @@ export function ScenePlace({ id, compact }: { id: string; compact?: boolean }) {
     const heading = els.findIndex((el) => el.type === "sceneHeading" && el.cardId === id);
     if (heading < 0) return null;
     const parts = structureOf(els);
-    const seqs = parts.filter((p) => p.kind === "seq");
+    // Séquences et leurs sous-séquences (lot 17 ter), sinon les actes.
+    const seqs = parts.filter((p) => p.kind === "seq" || p.kind === "sub");
     const choices = seqs.length > 0 ? seqs : parts;
     const part = partOfScene(choices, heading);
     const episodes = allEpisodes(els);
@@ -63,7 +64,7 @@ export function ScenePlace({ id, compact }: { id: string; compact?: boolean }) {
             {!info.part && <option value="">{sp.placeNone}</option>}
             {info.choices.map((p) => (
               <option key={p.key} value={p.key}>
-                {partLabel(p, sp.preserved)}
+                {p.kind === "sub" ? `\u2003${partLabel(p, sp.preserved)}` : partLabel(p, sp.preserved)}
               </option>
             ))}
           </select>

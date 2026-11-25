@@ -76,3 +76,27 @@ describe("actes et séquences (#140)", () => {
     expect(structureOf(again.elements)[0]).toMatchObject({ kind: "seq", id: "s1", title: "Le départ" });
   });
 });
+
+describe("sous-séquences (lot 17 ter)", () => {
+  it("acte › séquence › sous-séquence : profondeurs, parents, scène rangée dans la plus fine", () => {
+    let els: ScreenplayElement[] = [heading("INT. A", "a"), heading("INT. B", "b")];
+    els = insertStructure(els, 0, "act", "a1", "Acte 1");
+    els = insertStructure(els, 1, "seq", "s1", "Séquence 1");
+    expect(structureDepth(els, 2, "sub")).toBe(3);
+    els = insertStructure(els, 2, "sub", "u1", "Sous-séquence 1");
+    const parts = structureOf(els);
+    expect(parts.map((p) => [p.kind, p.depth])).toEqual([
+      ["act", 1],
+      ["seq", 2],
+      ["sub", 3],
+    ]);
+    expect(parts[2].seq).toBe("s1");
+    expect(parts[2].act).toBe("a1");
+    expect(partOfScene(parts, 3)?.key).toBe("u1");
+  });
+
+  it("un Fountain à trois niveaux de sections : le troisième est une sous-séquence", () => {
+    const sp = parseFountain("# Acte\n\n## Séquence\n\n### Détail\n\nINT. A - JOUR\n\nx\n");
+    expect(structureOf(sp.elements).map((p) => p.kind)).toEqual(["act", "seq", "sub"]);
+  });
+});

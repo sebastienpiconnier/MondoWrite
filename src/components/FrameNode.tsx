@@ -12,6 +12,7 @@ import { frameDepth, frameLevel, titleBoost } from "../frameLevels";
 import { caseRank, zoomStep } from "./FrameLabels";
 import { beatText, type CustomTemplate } from "../plan";
 import { customOf } from "../screenplay/template";
+import { rankLabel } from "../screenplay/structureCases";
 import type { CosmosState } from "../store";
 
 /** Cases de l'auteur d'un scénario, relues une fois par texte et par aides (chaque cadre de case les lit à chaque changement du store). */
@@ -36,7 +37,7 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
   const caseInfo = useCosmos((s) => caseRank(s, data.beat, data.episode));
   const rank = caseInfo?.n ?? 0;
   const total = caseInfo?.total ?? 0;
-  const rankText = useT().plan.seqRank;
+  const planT = useT().plan;
   // Ce qu'on met dans la case (aide d'un gabarit livré, ou texte écrit par l'auteur dans « Mes gabarits ») : la
   // description du cadre. Une chaîne : le cadre ne se redessine que si elle change.
   const beatsDict = useT().plan.beats as Record<string, { label: string; hint: string }>;
@@ -88,7 +89,7 @@ function FrameNodeImpl({ id, data, selected }: NodeProps<FrameNodeT>) {
         {/* Rang de la case, à côté du titre : l'en-tête garde la hauteur d'une ligne (les cases déjà rangées n'ont que 64 px). */}
         {rank > 0 && (
           <span className="frame-kicker" aria-hidden="true">
-            {fmt(caseInfo?.seq ? rankText : t.beatRank, { n: rank, total })}
+            {fmt(rankLabel(planT, caseInfo?.kind ?? null), { n: rank, total })}
           </span>
         )}
         {/* Verrou : « Organiser » laisse ce cadre et ses cartes à leur place ; il ne bouge plus par mégarde. */}

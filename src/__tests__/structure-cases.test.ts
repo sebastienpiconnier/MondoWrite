@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parse as parseFountain } from "../screenplay/parse";
 import type { ScreenplayElement } from "../screenplay/model";
 import { adoptStructureCases, caseKind, customizeRange, scopeAt, usedCaseKeys, withCaseNote } from "../screenplay/structureCases";
 import { applyCustom, customOf, screenplayPlan } from "../screenplay/template";
@@ -75,5 +76,17 @@ describe("actes et séquences = cases de la structure (#148)", () => {
     const next = applyCustom(sp, { ...custom, beats: custom.beats.map((b) => (b.key === "u1" ? { ...b, label: "Ouverture" } : b)) });
     expect(next.elements[0]).toEqual(sec("Ouverture [[cosmos:beat:u1]] [[cosmos:act:a]]"));
     expect(structureOf(next.elements)[0].kind).toBe("act");
+  });
+});
+
+describe("rangs par sorte (lot 17 ter)", () => {
+  it("une séquence se compte parmi les séquences, une étape parmi les étapes", async () => {
+    const { kindRanks, rankLabel } = await import("../screenplay/structureCases");
+    const els = parseFountain("# Acte 1 [[cosmos:beat:u1]] [[cosmos:act:a1]]\n\n## Séquence 1 [[cosmos:beat:u2]] [[cosmos:seq:s1]]\n\n### Détail [[cosmos:beat:u3]] [[cosmos:sub:x1]]\n\n## Séquence 2 [[cosmos:beat:u4]] [[cosmos:seq:s2]]\n").elements;
+    const ranks = kindRanks(els, ["u3", "u4"]);
+    expect(ranks.get("u3")).toEqual({ n: 1, total: 1, kind: "sub" });
+    expect(ranks.get("u4")).toEqual({ n: 1, total: 1, kind: "seq" });
+    expect(rankLabel({ beatRank: "E", seqRank: "S", subRank: "U", actRank: "A" }, "sub")).toBe("U");
+    expect(rankLabel({ beatRank: "E", seqRank: "S", subRank: "U", actRank: "A" }, null)).toBe("E");
   });
 });

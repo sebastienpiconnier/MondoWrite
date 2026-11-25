@@ -9,7 +9,7 @@ import { partLabel, structureOf } from "./screenplay/structure";
 import { chapterNumbers, chapterOf, type Plan } from "./plan";
 import type { Block, ExportDoc } from "./export/doc";
 
-export type SynopsisKind = "season" | "episode" | "act" | "seq" | "chapter" | "scene";
+export type SynopsisKind = "season" | "episode" | "act" | "seq" | "sub" | "chapter" | "scene";
 
 export interface SynopsisRow {
   kind: SynopsisKind;

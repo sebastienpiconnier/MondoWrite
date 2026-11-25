@@ -393,7 +393,7 @@ export function ScreenplayView() {
         if (event.key === "Tab" && !event.ctrlKey && !event.metaKey && !event.altKey) noteUse("screenplayKeys", TAB_USES);
         if (event.key === "Enter" && !event.shiftKey && _view.state.selection instanceof NodeSelection) {
           const dom = _view.nodeDOM(_view.state.selection.from);
-          if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"]') && openSheetRenameRef.current(dom)) return true;
+          if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]') && openSheetRenameRef.current(dom)) return true;
         }
         const open = menuRef.current;
         if (!open) return false;
@@ -535,7 +535,7 @@ export function ScreenplayView() {
       | { kind: "season"; id: string; at: number; title: string }
       | { kind: "episode"; id: string; at: number; title: string }
       | { kind: "omitted"; id: string; at: number; title: string; number: number }
-      | { kind: "act" | "seq"; id: string; at: number; title: string; count: number }
+      | { kind: "act" | "seq" | "sub"; id: string; at: number; title: string; count: number }
       | { kind: "scene"; at: number; k: number };
     const rows: Row[] = scenes.map((sc, k) => ({ kind: "scene", at: sc.index, k }));
     // Scènes omises (#46) : « OMIS » à sa place, en grisé, avec son rang.
@@ -640,7 +640,7 @@ export function ScreenplayView() {
     }
     const top = ed.state.doc.resolve(Math.min(from, ed.state.doc.content.size)).index(0);
     const at = insertionPoint(els, top);
-    const label = kind === "act" ? sp.preserved.act : sp.preserved.seq;
+    const label = kind === "act" ? sp.preserved.act : kind === "sub" ? sp.preserved.sub : sp.preserved.seq;
     // #148 : l'acte ou la séquence est aussi une case de la structure de l'auteur. Une structure livrée de cet
     // épisode devient d'abord la sienne (« d'après » elle), ses cases gardent leurs scènes.
     const st = useCosmos.getState();
@@ -741,7 +741,7 @@ export function ScreenplayView() {
     const dom = editor?.view.dom;
     if (!dom) return;
     const onDbl = (e: MouseEvent) => {
-      const el = (e.target as HTMLElement | null)?.closest?.('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"]');
+      const el = (e.target as HTMLElement | null)?.closest?.('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]');
       if (el instanceof HTMLElement && openSheetRenameRef.current(el)) e.preventDefault();
     };
     dom.addEventListener("dblclick", onDbl);
@@ -759,10 +759,11 @@ export function ScreenplayView() {
         e.preventDefault();
         openVersionsRef.current(true);
       }
-      // Acte et séquence (#140) : Cmd/Ctrl + Alt + Maj + A ou S (Maj : jamais une lettre d'AltGr sous Windows).
-      if ((e.metaKey || e.ctrlKey) && e.altKey && e.shiftKey && (e.code === "KeyA" || e.code === "KeyS")) {
+      // Acte, séquence, sous-séquence (#140, lot 17 ter) : Cmd/Ctrl + Alt + Maj + A, S ou U (Maj : jamais une
+      // lettre d'AltGr sous Windows).
+      if ((e.metaKey || e.ctrlKey) && e.altKey && e.shiftKey && (e.code === "KeyA" || e.code === "KeyS" || e.code === "KeyU")) {
         e.preventDefault();
-        insertPartRef.current(e.code === "KeyA" ? "act" : "seq");
+        insertPartRef.current(e.code === "KeyA" ? "act" : e.code === "KeyU" ? "sub" : "seq");
       }
       // Commenter l'élément où est le curseur (Cmd/Ctrl + Alt + M, comme dans le manuscrit).
       if ((e.metaKey || e.ctrlKey) && e.altKey && !e.shiftKey && e.code === "KeyM") {
@@ -1445,7 +1446,7 @@ export function ScreenplayView() {
                 </span>
               </button>
             </li>
-          )) : row.kind === "act" || row.kind === "seq" ? (
+          )) : row.kind === "act" || row.kind === "seq" || row.kind === "sub" ? (
             <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
               <button
                 type="button"
@@ -1638,6 +1639,9 @@ export function ScreenplayView() {
           </button>
           <button type="button" className="sp-part" title={sp.addPartHint} onPointerDown={(e) => e.preventDefault()} onClick={() => { insertPart("seq"); setToolsOpen(false); }}>
             {sp.addSeq}
+          </button>
+          <button type="button" className="sp-part" title={sp.addPartHint} onPointerDown={(e) => e.preventDefault()} onClick={() => { insertPart("sub"); setToolsOpen(false); }}>
+            {sp.addSub}
           </button>
           {/* Rappel des touches, jusqu'à ce qu'elles soient apprises (#59) : la barre tient alors sur une ligne. */}
           {!keysLearned && (

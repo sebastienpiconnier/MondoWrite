@@ -125,6 +125,7 @@ export const COMMANDS: AppCommandItem[] = [
   // Acte et séquence au-dessus de la scène du curseur (#140) : scénario seulement, raccourci rejoué vers la vue.
   { id: "insert-act", group: "edit", label: (t) => t.appMenu.insertAct, accelerator: "CmdOrCtrl+Alt+Shift+A", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("A", "KeyA", true, true) },
   { id: "insert-sequence", group: "edit", label: (t) => t.appMenu.insertSequence, accelerator: "CmdOrCtrl+Alt+Shift+S", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("S", "KeyS", true, true) },
+  { id: "insert-subsequence", group: "edit", label: (t) => t.appMenu.insertSubsequence, accelerator: "CmdOrCtrl+Alt+Shift+U", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("U", "KeyU", true, true) },
   // Onglet « Vérifier » du Manuscrit ou du Scénario.
   { id: "review", group: "edit", label: (t) => t.appMenu.review, enabled: writing, run: () => sendCommand("review") },
 

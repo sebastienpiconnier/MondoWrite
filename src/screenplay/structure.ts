@@ -11,9 +11,11 @@ import type { ScreenplayElement } from "./model";
 import { beatOf } from "./template";
 import { plainSection, seriesMark } from "./series";
 
-export type StructureKind = "act" | "seq";
+/** Acte, séquence, sous-séquence (lot 17 ter : trois niveaux, comme Acte › Séquence › Scène des logiciels de
+ *  scénario, la scène restant l'en-tête INT./EXT.). */
+export type StructureKind = "act" | "seq" | "sub";
 
-const MARK_RE = /\s*\[\[cosmos:(act|seq):([A-Za-z0-9_-]+)\]\]/;
+const MARK_RE = /\s*\[\[cosmos:(act|seq|sub):([A-Za-z0-9_-]+)\]\]/;
 
 /** Acte ou séquence posé par MondoWrite (note), sinon null. */
 export function structureMark(el: ScreenplayElement | undefined): { kind: StructureKind; id: string } | null {
@@ -41,8 +43,10 @@ export interface StructurePart {
   number: number;
   /** Premier élément après la partie. */
   end: number;
-  /** Acte qui contient la séquence. */
+  /** Acte qui contient la séquence (ou la sous-séquence). */
   act?: string;
+  /** Séquence qui contient la sous-séquence. */
+  seq?: string;
   /** Scènes de la partie : rang de l'en-tête et carte. */
   scenes: { index: number; cardId?: string }[];
 }
@@ -67,8 +71,12 @@ function classify(elements: ScreenplayElement[]) {
     stack.push({ depth, frame });
   });
   const kinds = new Map<number, StructureKind>();
-  const twoLevels = authorRel.size > 1;
-  for (const [i, r] of rel) kinds.set(i, twoLevels && r <= 1 ? "act" : "seq");
+  // Un niveau : des séquences ; deux : actes et séquences ; trois et plus : sous-séquences en dessous.
+  const levels = [...authorRel].sort((a, b) => a - b);
+  for (const [i, r] of rel) {
+    const rank = levels.indexOf(r);
+    kinds.set(i, levels.length === 1 ? "seq" : rank === 0 ? "act" : rank === 1 ? "seq" : "sub");
+  }
   return kinds;
 }
 
@@ -104,7 +112,8 @@ export function structureOf(elements: ScreenplayElement[]): StructurePart[] {
     const counter = `${scope}:${kind}`;
     const number = (counters.get(counter) ?? 0) + 1;
     counters.set(counter, number);
-    const act = kind === "seq" ? [...open].reverse().find((o) => o.part?.kind === "act")?.part?.key : undefined;
+    const act = kind !== "act" ? [...open].reverse().find((o) => o.part?.kind === "act")?.part?.key : undefined;
+    const seq = kind === "sub" ? [...open].reverse().find((o) => o.part?.kind === "seq")?.part?.key : undefined;
     const part: StructurePart = {
       kind,
       id: mark?.id ?? null,
@@ -115,6 +124,7 @@ export function structureOf(elements: ScreenplayElement[]): StructurePart[] {
       number,
       end: elements.length,
       ...(act ? { act } : {}),
+      ...(seq ? { seq } : {}),
       scenes: [],
     };
     parts.push(part);
@@ -124,24 +134,32 @@ export function structureOf(elements: ScreenplayElement[]): StructurePart[] {
 }
 
 /** Titre à afficher : celui de l'auteur, sinon « Séquence 3 ». */
-export const partLabel = (part: Pick<StructurePart, "kind" | "title" | "number">, labels: { act: string; seq: string }): string =>
-  part.title || `${part.kind === "act" ? labels.act : labels.seq} ${part.number}`;
+export const partLabel = (part: Pick<StructurePart, "kind" | "title" | "number">, labels: { act: string; seq: string; sub?: string }): string =>
+  part.title || `${part.kind === "act" ? labels.act : part.kind === "sub" ? (labels.sub ?? labels.seq) : labels.seq} ${part.number}`;
 
 /**
  * Profondeur d'un acte ou d'une séquence posé au rang `at` : un cran sous les sections notées qui le contiennent
  * (épisode, case) pour un acte ; sous l'acte ouvert, sinon deux crans, pour une séquence.
  */
 export function structureDepth(elements: ScreenplayElement[], at: number, kind: StructureKind): number {
-  const stack: { depth: number; frame: boolean; beat: boolean; act: boolean }[] = [];
+  const stack: { depth: number; frame: boolean; beat: boolean; act: boolean; seq: boolean }[] = [];
   const guessed = classify(elements);
   elements.slice(0, at).forEach((el, i) => {
     if (el.type !== "section") return;
     const depth = el.depth ?? 1;
     while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop();
-    stack.push({ depth, frame: isFrame(el), beat: isFrame(el) && !seriesMark(el), act: (structureMark(el)?.kind ?? guessed.get(i)) === "act" });
+    const k = structureMark(el)?.kind ?? guessed.get(i);
+    stack.push({ depth, frame: isFrame(el), beat: isFrame(el) && !seriesMark(el), act: k === "act", seq: k === "seq" });
   });
   const base = Math.max(0, ...stack.filter((s) => s.frame).map((s) => s.depth));
   // Dans une case d'une structure (#148) : une sous-case, un cran sous elle.
+  if (kind === "sub") {
+    // Sous la séquence ouverte ; sans elle, sous l'acte (deux crans), sinon trois crans.
+    const seq = [...stack].reverse().find((s) => s.seq);
+    if (seq) return seq.depth + 1;
+    const act = [...stack].reverse().find((s) => s.act);
+    return act ? act.depth + 2 : base + 3;
+  }
   const innermost = [...stack].reverse().find((s) => s.frame || s.act);
   if (innermost?.frame && innermost.beat) return base + 1;
   if (kind === "act") return base + 1;
@@ -197,7 +215,7 @@ export function renameStructure(elements: ScreenplayElement[], at: number, title
 /** Séquence (sinon acte) qui contient la scène dont l'en-tête est au rang `heading`. */
 export function partOfScene(parts: StructurePart[], heading: number, kind?: StructureKind): StructurePart | undefined {
   const holding = parts.filter((p) => p.scenes.some((s) => s.index === heading) && (!kind || p.kind === kind));
-  return holding.find((p) => p.kind === "seq") ?? holding[0];
+  return holding.find((p) => p.kind === "sub") ?? holding.find((p) => p.kind === "seq") ?? holding[0];
 }
 
 /**

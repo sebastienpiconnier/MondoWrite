@@ -15,7 +15,7 @@ import { fitBoost, frameDepth, frameLevel, titleBoost, titleSize } from "../fram
 import { leafBeats, templateBeats } from "../plan";
 import { screenplayPlan } from "../screenplay/template";
 import { seriesMark } from "../screenplay/series";
-import { caseKind } from "../screenplay/structureCases";
+import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
 import type { ScreenplayElement } from "../screenplay/model";
 
 type CosmosState = ReturnType<typeof useCosmos.getState>;
@@ -48,11 +48,7 @@ export function beatKeys(s: CosmosState): readonly string[] {
 }
 
 /** Rang d'une case (#148) : n sur total parmi les cases sans sous-case de SON épisode, et si c'est une séquence. */
-export interface CaseRank {
-  n: number;
-  total: number;
-  seq: boolean;
-}
+export type CaseRank = KindRank;
 const scriptRanks = new WeakMap<ScreenplayElement[], Map<string, CaseRank>>();
 function ranksOf(elements: ScreenplayElement[]): Map<string, CaseRank> {
   let map = scriptRanks.get(elements);
@@ -75,7 +71,7 @@ function ranksOf(elements: ScreenplayElement[]): Map<string, CaseRank> {
     const plan = screenplayPlan(part);
     if (plan.template === "libre") continue;
     const leaves = leafBeats(plan.template, plan.custom);
-    leaves.forEach((key, i) => map!.set(`${ep}:${key}`, { n: i + 1, total: leaves.length, seq: caseKind(part, key) === "seq" }));
+    for (const [key, rank] of kindRanks(part, leaves)) map!.set(`${ep}:${key}`, rank);
   }
   scriptRanks.set(elements, map);
   return map;
@@ -87,7 +83,7 @@ export function caseRank(s: CosmosState, beat: string | undefined, episode?: str
   if (s.kind !== "scenario") {
     const keys = beatKeys(s);
     const n = keys.indexOf(beat) + 1;
-    return n > 0 ? { n, total: keys.length, seq: false } : null;
+    return n > 0 ? { n, total: keys.length, kind: null } : null;
   }
   const map = ranksOf(s.screenplay?.elements ?? []);
   return map.get(`${episode ?? ""}:${beat}`) ?? map.get(`:${beat}`) ?? null;
@@ -200,7 +196,7 @@ function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
       const far = titleBoost(zoom, level);
       const boost = far > 1 ? fitBoost(title, box.width, titleSize(level, !!data.beat || !!data.season), far) : 1;
       const rank = caseRank(useCosmos.getState(), data.beat, data.episode);
-      return [{ ...box, level, far: far > 1, boost, title, beat: !!data.beat || !!data.season, kicker: rank ? fmt(rank.seq ? plan.seqRank : t.beatRank, { n: rank.n, total: rank.total }) : "" }];
+      return [{ ...box, level, far: far > 1, boost, title, beat: !!data.beat || !!data.season, kicker: rank ? fmt(rankLabel(plan, rank.kind), { n: rank.n, total: rank.total }) : "" }];
     });
   }, [frames, zoom, keys, state, t, plan, hidden]);
 

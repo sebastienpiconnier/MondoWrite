@@ -86,6 +86,7 @@ async function buildMenu() {
       await item("omit-scene"),
       await item("insert-act"),
       await item("insert-sequence"),
+      await item("insert-subsequence"),
       await item("review"),
     ],
   });

@@ -2620,9 +2620,9 @@ const scenarios = [
       const dialog = page.locator("dialog[open]");
       await until(() => dialog.locator(".tpl-row.level-2").first().isVisible(), "les sous-cases ne sont pas en retrait dans l'éditeur");
       // « Acte II » décalé à droite devient une sous-case d'« Acte I » ; le bouton suivant est grisé (au plus un niveau de plus).
-      await dialog.getByRole("button", { name: "Décaler à droite la case « Acte II »" }).click();
+      await dialog.getByRole("button", { name: "Décaler à droite l’étape « Acte II »" }).click();
       assert((await dialog.locator(".tpl-row.level-2").count()) === 3, "Acte II n'est pas passé au niveau 2");
-      await dialog.getByRole("button", { name: "Décaler à gauche la case « Acte II »" }).click();
+      await dialog.getByRole("button", { name: "Décaler à gauche l’étape « Acte II »" }).click();
       await dialog.getByRole("button", { name: "Utiliser dans ce projet" }).click();
       await h.saved((f) => {
         const beats = JSON.parse(f["cosmos.json"] ?? "{}").plan?.custom?.beats ?? [];
@@ -2634,7 +2634,7 @@ const scenarios = [
       assert(!(await group.locator(".beat-rank").count()), "un ensemble ne doit pas avoir de rang");
       assert(!(await group.locator(".plan-add").count()), "un ensemble ne doit pas avoir de champ « Nouvelle scène »");
       assert((await page.locator(".plan-beat.level-2").count()) === 2, "les sous-cases ne sont pas en retrait dans le Plan");
-      await until(() => page.getByText("Case 3 sur 3").isVisible(), "le rang ne compte pas que les cases du bas");
+      await until(() => page.getByText("Étape 3 sur 3").isVisible(), "le rang ne compte pas que les cases du bas");
     },
   },
   {

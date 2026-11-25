@@ -32,6 +32,7 @@ import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
 import { partLabel, renameStructure, structureOf, type StructurePart } from "../screenplay/structure";
+import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
 import { toggleFoldedPart, useFoldedParts } from "../structureFold";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
@@ -231,15 +232,17 @@ export function Sequencier() {
     );
   };
   // Rang d'une case dans le gabarit de son épisode (« Case 3 sur 6 »), ou dans le gabarit du scénario.
-  const rankOf = (start: number): { n: number; total: number } | null => {
+  // Un acte parmi les actes, une séquence parmi les séquences… (kindRanks, lot 17 ter).
+  const rankOf = (start: number): KindRank | null => {
     const key = beatOf(screenplay.elements[start]?.text ?? "");
     if (!key) return null;
-    if (!inSeries) return beatKeys.includes(key) ? { n: beatKeys.indexOf(key) + 1, total: beatKeys.length } : null;
+    if (!inSeries) return kindRanks(screenplay.elements, beatKeys).get(key) ?? null;
     const ep = episodeAt(screenplay, start);
     if (!ep) return null;
-    const plan = screenplayPlan(episodeScript(screenplay, ep).elements);
+    const own = episodeScript(screenplay, ep).elements;
+    const plan = screenplayPlan(own);
     const keys = plan.template === "libre" ? [] : leafBeats(plan.template, plan.custom);
-    return keys.includes(key) ? { n: keys.indexOf(key) + 1, total: keys.length } : null;
+    return kindRanks(own, keys).get(key) ?? null;
   };
   const setTemplate = (value: string) =>
     setScreenplay(applyTemplate(screenplay, isScreenplayTemplate(value) ? value : null, (key) => t.plan.beats[key as PlanBeat].label), true);
@@ -452,11 +455,11 @@ export function Sequencier() {
               const open = !foldedParts.has(part.key);
               const name = partName(part);
               const pages = pagesBetween(pagination, part.at + 1, part.end);
-              const kindLabel = part.kind === "act" ? sp.preserved.act : sp.preserved.seq;
+              const kindLabel = part.kind === "act" ? sp.preserved.act : part.kind === "sub" ? sp.preserved.sub : sp.preserved.seq;
               // #148 : un acte ou une séquence est aussi une case de la structure, et se montre comme elle.
               const caseKey = beatOf(block.text);
               const rank = caseKey ? rankOf(block.start) : null;
-              const kicker = rank ? fmt(part.kind === "seq" ? t.plan.seqRank : t.plan.beatRank, rank) : `${kindLabel} ${part.number}`;
+              const kicker = rank ? fmt(rankLabel(t.plan, rank.kind), { n: rank.n, total: rank.total }) : `${kindLabel} ${part.number}`;
               return (
                 <li
                   key={`part-${part.key}`}
@@ -496,7 +499,7 @@ export function Sequencier() {
               return (
                 <li key={`section-${block.start}`} className={`sq-section${beatOf(block.text) ? " is-beat" : ""}${inSeries && beatOf(block.text) ? " in-episode" : ""}${nestClass(block.start)}${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
                   <span className="sq-section-name">
-                    {rankOf(block.start) && <span className="beat-rank">{fmt(t.plan.beatRank, rankOf(block.start)!)}</span>}
+                    {rankOf(block.start) && <span className="beat-rank">{fmt(rankLabel(t.plan, rankOf(block.start)!.kind), { n: rankOf(block.start)!.n, total: rankOf(block.start)!.total })}</span>}
                     <span className="beat-title">{labelOf(block.text)}</span>
                     {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}
                     {beatOf(block.text) && beatInfo(beatOf(block.text)!).hint && <span className="sq-section-hint">{beatInfo(beatOf(block.text)!).hint}</span>}

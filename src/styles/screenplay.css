@@ -43,12 +43,14 @@
 .sp-scene-list .sp-scene-group.is-episode { margin-top: 6px; }
 .sp-scene-list .sp-scene-group.is-episode button { color: var(--accent-ink); font-size: 0.8125rem; }
 /* Actes et séquences (#140, #142) : un intertitre avec sa flèche pour replier. */
-.sp-scene-list li.sp-scene-group.is-act, .sp-scene-list li.sp-scene-group.is-seq { display: flex; flex-direction: row; align-items: center; gap: 2px; }
+.sp-scene-list li.sp-scene-group.is-act, .sp-scene-list li.sp-scene-group.is-seq, .sp-scene-list li.sp-scene-group.is-sub { display: flex; flex-direction: row; align-items: center; gap: 2px; }
 /* writing.css, chargée après, met les lignes de la liste en colonne : l'intertitre garde sa rangée. */
 .sp-scene-list .sp-scene-group.is-act { margin-top: 10px; }
 .sp-scene-list .sp-scene-group.is-act .sp-part-title { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.875rem; }
 .sp-scene-list .sp-scene-group.is-seq { margin-top: 4px; }
 .sp-scene-list .sp-scene-group.is-seq .sp-part-title { background: var(--ground); font-size: 0.8125rem; }
+.sp-scene-list .sp-scene-group.is-sub { margin-top: 2px; padding-left: 12px; }
+.sp-scene-list .sp-scene-group.is-sub .sp-part-title { font-size: 0.8125rem; font-style: italic; }
 .sp-scene-list .sp-scene-group .sp-part-fold { flex: none; width: 32px; min-height: 32px; }
 .sp-scene-list .sp-scene-group .sp-part-title { flex: 1; min-width: 0; width: auto; text-align: left; }
 .sp-part-count { font-weight: 400; color: var(--ink-2); }
@@ -197,6 +199,8 @@
 .sp-preserved[data-series="seq"]::before { content: var(--sp-label-seq); }
 .sp-preserved[data-series="act"] { margin-top: 2em; border-left-color: var(--accent); font-size: 16px; }
 .sp-preserved[data-series="seq"] { border-left-color: var(--ink-2); }
+.sp-preserved[data-series="sub"]::before { content: var(--sp-label-sub); }
+.sp-preserved[data-series="sub"] { border-left-style: dashed; border-left-color: var(--ink-2); }
 .sp-preserved[data-series]:empty::after { content: var(--sp-label-episodeUntitled); font-weight: 400; font-style: italic; color: var(--muted); }
 /* Une saison et un épisode ouvrent une partie : plus d'air au-dessus, et l'accent pour les distinguer des cases. */
 .sp-preserved[data-series="season"], .sp-preserved[data-series="episode"] { margin-top: 2.4em; border-left-color: var(--accent); }
