@@ -7,7 +7,7 @@ import { readSpot, type Spot } from "../resume";
 import { storage } from "../storage";
 import { SCENE_AT, useCosmos, type CosmosState } from "../store";
 import type { View } from "../projectState";
-import { revealPlanRow } from "./revealRow";
+import { revealPlanRowSoon } from "./revealRow";
 import { episodeAt, episodeOfCard } from "../screenplay/series";
 
 const shown = (v: View): View => (v === "carnet" ? "toile" : v);
@@ -69,13 +69,8 @@ export function keepPlace(s: CosmosState, prev: CosmosState) {
       // Centrée (focusId, comme « Voir sur le canevas ») et choisie, sans estomper les autres cartes.
       if (!st.focusId) useCosmos.setState({ focusId: action.scene, nodes: st.nodes.map((n) => (n.selected === (n.id === action.scene) ? n : { ...n, selected: n.id === action.scene })) });
     } else {
-      // La ligne n'existe qu'une fois le Plan dessiné : quelques images d'attente.
-      let tries = 0;
-      const show = () => {
-        if (shown(useCosmos.getState().view) !== "plan") return;
-        if (!revealPlanRow(action.scene, false) && tries++ < 20) requestAnimationFrame(show);
-      };
-      requestAnimationFrame(show);
+      // La ligne n'existe qu'une fois le Plan dessiné (et son bloc déplié, #153) : quelques images d'attente.
+      revealPlanRowSoon(action.scene, false, () => shown(useCosmos.getState().view) === "plan");
     }
   });
 }

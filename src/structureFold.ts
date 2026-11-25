@@ -30,6 +30,9 @@ export function toggleFoldedPart(key: string): void {
   for (const l of listeners) l();
 }
 
+/** Parties repliées en ce moment (hors de React). */
+export const foldedPartsNow = (): ReadonlySet<string> => folded;
+
 /** Parties repliées (même ensemble tant que rien ne change). */
 export function useFoldedParts(): ReadonlySet<string> {
   return useSyncExternalStore(

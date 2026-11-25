@@ -31,9 +31,10 @@ import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
-import { describeCount, partLabel, renameStructure, replacedParts, structureOf, type StructurePart } from "../screenplay/structure";
+import { describeCount, holdersOf, partLabel, renameStructure, replacedParts, structureOf, type StructurePart } from "../screenplay/structure";
+import { REVEAL_SCENE } from "./revealRow";
 import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
-import { toggleFoldedPart, useFoldedParts } from "../structureFold";
+import { foldedPartsNow, toggleFoldedPart, useFoldedParts } from "../structureFold";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
 import { ArrangeToggle, PlanHeader } from "./PlanHeader";
@@ -134,6 +135,21 @@ export function Sequencier() {
   const parts = useMemo(() => structureOf(screenplay.elements), [screenplay.elements]);
   const partAt = useMemo(() => new Map(parts.map((p) => [p.at, p])), [parts]);
   const foldedParts = useFoldedParts();
+  // Une scène à montrer dans un bloc replié (#153 : retour du canevas, recherche) : ce qui la contient se déplie.
+  const elementsRef = useRef(screenplay.elements);
+  elementsRef.current = screenplay.elements;
+  useEffect(() => {
+    const onReveal = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (typeof id !== "string") return;
+      const holders = holdersOf(elementsRef.current, id);
+      for (const key of holders.parts) if (foldedPartsNow().has(key)) toggleFoldedPart(key);
+      if (holders.series.length > 0)
+        setFolded((before) => (holders.series.some((x) => before.has(x)) ? new Set([...before].filter((x) => !holders.series.includes(x))) : before));
+    };
+    window.addEventListener(REVEAL_SCENE, onReveal);
+    return () => window.removeEventListener(REVEAL_SCENE, onReveal);
+  }, []);
   const plotColor = usePlotColor();
   const partName = (p: StructurePart) => partLabel(p, sp.preserved);
   // Scène rangée dans une séquence : son bloc a un fond (#142).

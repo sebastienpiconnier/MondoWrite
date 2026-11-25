@@ -20,7 +20,7 @@ import { fmt } from "../i18n";
 import { goToHit, useCanSearchBySense, useSemanticSearch } from "./SemanticSearch";
 import { sceneSynopsis } from "../screenplay/scenes";
 import { PASSAGE_LIMIT, goToPassage, nextIndex, writingUnits } from "../writingFind";
-import { revealPlanRow } from "./revealRow";
+import { revealPlanRowSoon } from "./revealRow";
 import type { SemanticHit } from "../ai/semantic";
 
 /** Résultats montrés dans la liste du canevas, de la Bible et du Plan. */
@@ -176,7 +176,7 @@ export function Search() {
   /** Montre une carte dans la vue où l'on est, sans en changer (#85). */
   const showCard = (id: string) => {
     if (where === "bible") useCosmos.getState().openInBible(id);
-    else if (where === "plan") revealPlanRow(id);
+    else if (where === "plan") revealPlanRowSoon(id);
     else {
       // La carte trouvée est centrée et mise en avant : le reste du canevas s'estompe (Échap ou un clic sur le fond le rend).
       revealCard(id);

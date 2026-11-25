@@ -39,7 +39,10 @@ export function placeOnSwitch({ from, to, spot, picked, targetPending, exists }:
     if (spot?.scene && exists(spot.scene)) return spot.offset === undefined ? { kind: "open", scene: spot.scene } : { kind: "open", scene: spot.scene, caret: { el: spot.el, offset: spot.offset } };
     return null;
   }
-  // Seulement en quittant la vue d'écriture : passer du Plan au canevas ne déplace pas la vue du canevas.
+  // Du canevas au Plan (#153) : la scène choisie sur le canevas (une seule carte Scène) y est montrée. C'est
+  // aussi celle que le retour de la vue d'écriture vient de choisir (Scénario › Canevas › Séquencier).
+  if (from === "toile" && to === "plan") return picked && !picked.startsWith("@") && exists(picked) ? { kind: "plan", scene: picked } : null;
+  // Sinon seulement en quittant la vue d'écriture : passer du Plan au canevas ne déplace pas la vue du canevas.
   if (from !== "manuscrit") return null;
   // Une scène sans carte (`@` + rang) n'a ni carte ni ligne à montrer.
   const scene = spot?.scene;

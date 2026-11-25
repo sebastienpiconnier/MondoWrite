@@ -478,6 +478,43 @@ const scenarios = [
     },
   },
   {
+    name: "garder sa place (#153) : Scénario › Canevas › Séquencier montre la scène, la séquence repliée qui la contient se déplie",
+    async run(h) {
+      const { page } = h;
+      await h.create("Place", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. QUAI – NUIT", "La pluie."], ["INT. CUISINE – JOUR", "Le café."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      await page.locator(".sp-editor [data-el=action]", { hasText: "Le café." }).click();
+      await page.locator(".sp-bar").getByRole("button", { name: "+ Séquence" }).click();
+      await h.saved((f) => /\[\[cosmos:seq:[^\]]+\]\]\s*\n+\s*INT\. CUISINE/.test(f["scenario.fountain"] ?? ""), "la séquence n'est pas posée au-dessus de la troisième scène");
+      // La séquence repliée dans le séquencier : la scène n'y a plus de ligne.
+      await h.view(2);
+      const row = page.locator(".sq-section.sq-part");
+      await row.getByRole("button", { name: /^Replier/ }).click();
+      await until(async () => (await page.locator(".sq-scene").count()) === 2, "replier la séquence ne cache pas sa scène");
+      await h.view(4);
+      await page.locator(".sp-editor [data-el=action]", { hasText: "Le café." }).click();
+      await page.keyboard.press("End");
+      await h.wait(300);
+      await h.view(1);
+      const picked = page.locator(".react-flow__node.selected");
+      await until(() => picked.count(), "le canevas n'a pas choisi la carte de la scène");
+      const id = await picked.first().getAttribute("data-id");
+      await h.view(2);
+      await until(
+        () => page.evaluate((sid) => document.activeElement?.closest("[data-scene]")?.getAttribute("data-scene") === sid, id),
+        `le séquencier ne montre pas la scène ${id} : ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 160))}`,
+      );
+      assert((await page.locator(".sq-scene").count()) === 3, "la séquence ne s'est pas dépliée");
+    },
+  },
+  {
     name: "déplacer des lignes (#145) : Alt Maj ↑ monte le paragraphe du Manuscrit, enregistré dans le nouvel ordre",
     async run(h) {
       const { page } = h;
