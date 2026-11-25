@@ -91,3 +91,22 @@ describe("courbe du récit", () => {
     expect(fortuneCurve(scenes, (id) => (id === "a" ? "pire" : undefined))).toBeNull();
   });
 });
+
+describe("jalons d'une structure de l'auteur (actes et séquences)", () => {
+  it("pose un jalon au début réel de chaque case, l'ensemble au début de sa première sous-case", () => {
+    const custom = { name: "Ma structure", beats: [
+      { key: "u1", label: "Acte 1", hint: "" },
+      { key: "u2", label: "Séquence 1", hint: "", level: 2 as const },
+      { key: "u3", label: "Séquence 2", hint: "", level: 2 as const },
+    ] };
+    const r = buildRibbon("perso", [
+      { key: "u2", scenes: [{ id: "a", size: 1 }] },
+      { key: "u3", scenes: [{ id: "b", size: 1 }, { id: "c", size: 2 }] },
+    ], custom);
+    expect(r.markers).toEqual([
+      { key: "u1", at: 0, level: 1, actual: true },
+      { key: "u2", at: 0, level: 2, actual: true },
+      { key: "u3", at: 0.25, level: 2, actual: true },
+    ]);
+  });
+});

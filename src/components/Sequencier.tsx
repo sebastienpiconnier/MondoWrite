@@ -3,6 +3,7 @@
 // Changer l'ordre ici déplace la scène entière dans scenario.fountain.
 // Trois chemins : glisser à la souris, boutons de déplacement au doigt et au clavier.
 
+import { usePlotColor } from "./usePlotColor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { leafBeats, type PlanBeat } from "../plan";
@@ -30,6 +31,9 @@ import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
 import { Timeline } from "./Timeline";
+import { partLabel, renameStructure, structureOf, type StructurePart } from "../screenplay/structure";
+import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
+import { toggleFoldedPart, useFoldedParts } from "../structureFold";
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
 import { ArrangeToggle, PlanHeader } from "./PlanHeader";
@@ -126,7 +130,17 @@ export function Sequencier() {
   const inSeries = isSeries(screenplay);
   // Une série se commence ici dès que le scénario n'est pas un film (format pas encore choisi compris).
   const offerSeries = inSeries || isSeriesPitch(pitch) || formOf("scenario", pitch) !== "film";
-  const labelOf = (text: string) => {
+  // Actes et séquences écrits dans le texte (#140), repliables (#142, état de l'appareil).
+  const parts = useMemo(() => structureOf(screenplay.elements), [screenplay.elements]);
+  const partAt = useMemo(() => new Map(parts.map((p) => [p.at, p])), [parts]);
+  const foldedParts = useFoldedParts();
+  const plotColor = usePlotColor();
+  const partName = (p: StructurePart) => partLabel(p, sp.preserved);
+  // Scène rangée dans une séquence : son bloc a un fond (#142).
+  const inSeq = (start: number) => parts.some((p) => p.kind === "seq" && start > p.at && start < p.end);
+  const labelOf = (text: string, at?: number) => {
+    const part = at !== undefined ? partAt.get(at) : undefined;
+    if (part) return partName(part);
     const mark = seriesMark({ type: "section", text });
     if (mark?.kind === "episode" && episodeById.has(mark.id)) return episodeLabel(episodeById.get(mark.id)!);
     if (mark?.kind === "season") return seasonById.get(mark.id)?.title || t.season.seasonUntitled;
@@ -135,7 +149,7 @@ export function Sequencier() {
   };
   // Série : une case porte le nom de son épisode dans « Ranger dans » (chaque épisode a les mêmes cases).
   const sectionLabelAt = (b: (typeof list)[number]) => {
-    const label = labelOf(b.text);
+    const label = labelOf(b.text, b.start);
     if (!inSeries || !beatOf(b.text)) return label;
     const ep = episodeAt(screenplay, b.start);
     return ep && episodeById.has(ep) ? `${episodeLabel(episodeById.get(ep)!)} · ${label}` : label;
@@ -218,15 +232,17 @@ export function Sequencier() {
     );
   };
   // Rang d'une case dans le gabarit de son épisode (« Case 3 sur 6 »), ou dans le gabarit du scénario.
-  const rankOf = (start: number): { n: number; total: number } | null => {
+  // Un acte parmi les actes, une séquence parmi les séquences… (kindRanks, lot 17 ter).
+  const rankOf = (start: number): KindRank | null => {
     const key = beatOf(screenplay.elements[start]?.text ?? "");
     if (!key) return null;
-    if (!inSeries) return beatKeys.includes(key) ? { n: beatKeys.indexOf(key) + 1, total: beatKeys.length } : null;
+    if (!inSeries) return kindRanks(screenplay.elements, beatKeys).get(key) ?? null;
     const ep = episodeAt(screenplay, start);
     if (!ep) return null;
-    const plan = screenplayPlan(episodeScript(screenplay, ep).elements);
+    const own = episodeScript(screenplay, ep).elements;
+    const plan = screenplayPlan(own);
     const keys = plan.template === "libre" ? [] : leafBeats(plan.template, plan.custom);
-    return keys.includes(key) ? { n: keys.indexOf(key) + 1, total: keys.length } : null;
+    return kindRanks(own, keys).get(key) ?? null;
   };
   const setTemplate = (value: string) =>
     setScreenplay(applyTemplate(screenplay, isScreenplayTemplate(value) ? value : null, (key) => t.plan.beats[key as PlanBeat].label), true);
@@ -267,6 +283,13 @@ export function Sequencier() {
       }
       if (episode) hidden.add(i);
     });
+    // Acte ou séquence replié : ce qu'il contient se cache, sa ligne reste.
+    for (const p of parts) {
+      if (!foldedParts.has(p.key)) continue;
+      list.forEach((b, i) => {
+        if (b.start > p.at && b.start < p.end) hidden.add(i);
+      });
+    }
   }
   const cards = !phoneSq() && mode === "cards";
   const sceneCards = useMemo(() => list.filter((b) => b.kind === "scene" && b.cardId).map((b) => b.cardId as string), [list]);
@@ -426,11 +449,57 @@ export function Sequencier() {
               );
             }
 
+            // Acte ou séquence (#140, #142) : un bloc repliable, son titre modifiable sur place.
+            const part = block.kind === "section" ? partAt.get(block.start) : undefined;
+            if (part) {
+              const open = !foldedParts.has(part.key);
+              const name = partName(part);
+              const pages = pagesBetween(pagination, part.at + 1, part.end);
+              const kindLabel = part.kind === "act" ? sp.preserved.act : part.kind === "sub" ? sp.preserved.sub : sp.preserved.seq;
+              // #148 : un acte ou une séquence est aussi une case de la structure, et se montre comme elle.
+              const caseKey = beatOf(block.text);
+              const rank = caseKey ? rankOf(block.start) : null;
+              const kicker = rank ? fmt(rankLabel(t.plan, rank.kind), { n: rank.n, total: rank.total }) : `${kindLabel} ${part.number}`;
+              return (
+                <li
+                  key={`part-${part.key}`}
+                  className={`sq-section sq-part${caseKey ? ` is-beat${inSeries ? " in-episode" : ""}${nestClass(block.start)}` : ` sq-${part.kind}`}${dropClass}`}
+                  data-part={part.key}
+                  data-beat={caseKey ?? undefined}
+                  {...drop}
+                >
+                  <button type="button" className="icon-button sq-fold" aria-expanded={open} aria-label={fmt(open ? ts.fold : ts.unfold, { title: name })} onClick={() => toggleFoldedPart(part.key)}>
+                    <span className={`disclosure${open ? " is-open" : ""}`} aria-hidden="true" />
+                  </button>
+                  <span className="sq-section-name">
+                    <span className="beat-rank">{kicker}</span>
+                    <input
+                      key={`${part.key}:${part.title}`}
+                      className="sq-series-title beat-title"
+                      defaultValue={part.title}
+                      placeholder={`${kindLabel} ${part.number}`}
+                      aria-label={fmt(sq.partTitleAria, { kind: kindLabel, n: part.number })}
+                      onBlur={(e) => {
+                        const elements = renameStructure(screenplay.elements, part.at, e.target.value);
+                        if (elements !== screenplay.elements) setScreenplay({ ...screenplay, elements }, true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      }}
+                    />
+                  </span>
+                  <span className="sq-section-length">
+                    {plural(part.scenes.length, sq.partScenesOne, sq.partScenesMany)}
+                    {pages > 0 && <> · {fmt(sp.lengthShort, { n: number.format(pages) })}</>}
+                  </span>
+                </li>
+              );
+            }
             if (block.kind === "section") {
               return (
                 <li key={`section-${block.start}`} className={`sq-section${beatOf(block.text) ? " is-beat" : ""}${inSeries && beatOf(block.text) ? " in-episode" : ""}${nestClass(block.start)}${dropClass}`} data-beat={beatOf(block.text) ?? undefined} {...drop}>
                   <span className="sq-section-name">
-                    {rankOf(block.start) && <span className="beat-rank">{fmt(t.plan.beatRank, rankOf(block.start)!)}</span>}
+                    {rankOf(block.start) && <span className="beat-rank">{fmt(rankLabel(t.plan, rankOf(block.start)!.kind), { n: rankOf(block.start)!.n, total: rankOf(block.start)!.total })}</span>}
                     <span className="beat-title">{labelOf(block.text)}</span>
                     {/* Case d'un gabarit : ce qu'on y met, en une ligne. */}
                     {beatOf(block.text) && beatInfo(beatOf(block.text)!).hint && <span className="sq-section-hint">{beatInfo(beatOf(block.text)!).hint}</span>}
@@ -471,7 +540,8 @@ export function Sequencier() {
               <li
                 key={`scene-${block.start}`}
                 data-scene={block.cardId || undefined}
-                className={`sq-scene${dragged === i ? " is-dragged" : ""}${dropClass}`}
+                className={`sq-scene${dragged === i ? " is-dragged" : ""}${inSeq(block.start) ? " in-seq" : ""}${dropClass}${plotColor(block.cardId).className}`}
+                style={plotColor(block.cardId).style}
                 draggable
                 onDragStart={(e) => {
                   // Pas en tirant dans le champ du synopsis : on y sélectionne du texte.

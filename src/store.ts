@@ -58,8 +58,9 @@ import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./
 import { interviewKey, isParked, placeAnswer } from "./assistant";
 import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
 import { addEntries, breakdownEntries } from "./ai/structure";
-import { EMPTY_PLAN, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate } from "./plan";
-import { applyCustom, beatOf, customOf, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
+import { EMPTY_PLAN, beatLevel, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate, type ScriptBeats } from "./plan";
+import { applyCustom, beatOf, customOf, moveToSection, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
+import { blocks } from "./screenplay/sequence";
 import { organize, reorderSlots } from "./organize";
 import { toggleTask } from "./todos";
 import { readPitch, setPitchField, setPitchFieldIa, setPitchVisual, withoutPitchIa, type Pitch, type PitchField, type PitchText } from "./pitch";
@@ -81,6 +82,7 @@ import { htmlToMarkdown, markdownToHtml } from "./storage/markdown";
 import { readTitleField, writeTitleField, type TitleField } from "./screenplay/titlePage";
 import { appendScene, headingTitles, releaseCard, renameHeading } from "./screenplay/link";
 import { addEpisode, addSeason, allEpisodes, seriesMark as seriesMarkOf, episodeScenes, placeSceneInEpisode, seriesOf as readSeries, episodeAt, episodeOfCard, episodeOffset, episodeScript, inEpisode, moveSeriesPart, removeSeriesPart, renameSeriesPart, resolveEpisode, seriesOf, setEpisodeSynopsis, withEpisodeScript, withEpisodeTemplate } from "./screenplay/series";
+import { partChapters, structureMark, structureOf } from "./screenplay/structure";
 import { fmt, getT } from "./i18n";
 import { demoProject } from "./demo";
 import { fileName } from "./screenplay/export";
@@ -146,6 +148,8 @@ export interface CosmosState {
   placeInBeat: (id: string, beat: string, index?: number) => void;
   /** Série : range la scène de cette carte dans un épisode, avec son texte (à la fin sans index). */
   placeInEpisode: (id: string, episode: string, index?: number) => void;
+  /** Scénario : range la scène de cette carte à la fin d'un acte ou d'une séquence (#141), avec son texte. */
+  placeInPart: (id: string, part: string) => void;
   /** Monte ou descend une scène d'un cran dans le plan. Rend faux si elle ne peut pas bouger. */
   stepInPlan: (id: string, way: "up" | "down") => boolean;
   /** Scénario : le corps d'une scène (après son en-tête et son synopsis), écrit depuis sa carte agrandie. */
@@ -333,8 +337,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -699,6 +703,8 @@ export interface CosmosState {
   toggleLink: (a: string, b: string) => void;
   /** Tire un fil étiqueté entre deux cartes, s'il n'y en a pas déjà un. */
   linkCards: (source: string, target: string, label: string) => void;
+  /** Crée une carte de ce type et la relie à `id`, en une étape (fiche de scène reliée, #137). Rend son identifiant. */
+  addLinkedCard: (id: string, type: CardType, title: string) => string;
   updateCard: (id: string, patch: Partial<Omit<CardData, "id">>) => void;
   /** Élargit ou rétrécit une carte (clavier) ; la hauteur suit le contenu. */
   resizeCard: (id: string, delta: number) => void;
@@ -728,6 +734,11 @@ export interface CosmosState {
   setWireFiche: (id: string, field: WireField, value: string) => void;
   /** Préparer et payer (#119) : la scène qui prépare l'autre bout du fil, ou null pour retirer le sens. */
   setLinkSetup: (id: string, setup: string | null) => void;
+  /** « Prépare… » / « Payée par… » de l'onglet Scène : le fil entre les deux scènes (tiré s'il n'existe pas, gardé
+   *  avec son étiquette s'il existe) dit laquelle prépare l'autre. Une étape d'historique. */
+  setSceneSetup: (setup: string, payoff: string, label?: string) => void;
+  /** Aides et nom de structure de cases nouvelles de l'auteur (#148, `plan.scriptBeats`). */
+  addScriptBeats: (entries: ScriptBeats) => void;
 
   setView: (view: View, focusId?: string | null) => void;
   /** Ouvre le projet sélectionné dans le stockage, ou démarre le projet d'exemple si l'emplacement est vide. */
@@ -1080,7 +1091,9 @@ export const useCosmos = create<CosmosState>((set, get) => {
     const types = kind === "scenario" ? { ...t.types, ...t.scenario.types } : t.types;
     const sizes = boxes(arranged);
     // Un scénario a son plan dans le fichier Fountain : ses sections de gabarit font les cases.
-    const story = kind === "scenario" ? screenplayPlan(get().screenplay?.elements ?? []) : plan;
+    // Actes et séquences (#140) : lus comme des chapitres le temps du rangement, un cadre chacun.
+    const partsAsChapters = kind === "scenario" ? partChapters(get().screenplay?.elements ?? [], t.screenplay.preserved) : [];
+    const story = kind === "scenario" ? { ...screenplayPlan(get().screenplay?.elements ?? []), ...(partsAsChapters.length > 0 ? { chapters: partsAsChapters } : {}) } : plan;
     // Série : cadres saison › épisode, d'après les sections du Fountain (screenplay/series.ts).
     const sp = get().screenplay;
     const series =
@@ -1095,7 +1108,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
                   // Cases du gabarit de l'épisode (lot 3) : lues dans son texte seul.
                   const own = screenplayPlan(episodeScript(sp, ep.id).elements);
                   const keys = own.template === "libre" ? [] : templateBeats(own.template, own.custom);
-                  const beats = keys.map((key) => ({ key, label: beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, own.custom).label, scenes: own.beats[key] ?? [] }));
+                  const beats = keys.map((key) => ({ key, label: beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, own.custom).label, scenes: own.beats[key] ?? [], level: own.template === "perso" ? beatLevel(own.custom, key) : 1 }));
                   return { id: ep.id, title: ep.title, number: ep.number, scenes: byEpisode.get(ep.id) ?? [], ...(beats.length > 0 ? { beats } : {}) };
                 }),
               })),
@@ -1136,7 +1149,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       labels: {
         groups: Object.fromEntries(Object.entries(types).map(([k, v]) => [k, v.section])) as Record<CardType, string>,
         beat: (key) => beatText(key, t.plan.beats as Record<string, { label: string; hint: string }>, story.custom).label,
-        chapter: (n, title) => (title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
+        chapter: (n, title) => (kind === "scenario" && title ? title : title ? fmt(t.chapters.numberedTitle, { n, title }) : fmt(t.chapters.numbered, { n })),
         continued: (label) => fmt(t.organize.continued, { label }),
         unplaced: t.plan.unplaced,
         story: types.scene.section,
@@ -1208,6 +1221,12 @@ export const useCosmos = create<CosmosState>((set, get) => {
       t.scenario.types.scene?.section ?? t.types.scene.section,
     ]);
     known.add(t.season.outside);
+    // Cadres des actes et séquences (#140) : leur titre, et sa suite.
+    if (get().kind === "scenario")
+      for (const c of partChapters(get().screenplay?.elements ?? [], t.screenplay.preserved)) {
+        known.add(c.title).add(fmt(t.organize.continued, { label: c.title }));
+        if (c.act) known.add(c.act.title);
+      }
     const organized =
       storyFrames.length > 0 &&
       storyFrames.every((f) => f.data.season || f.data.episode || known.has(f.data.title) || chapterTitle.some((re) => re.test(f.data.title)));
@@ -2589,6 +2608,21 @@ export const useCosmos = create<CosmosState>((set, get) => {
       if (elements === script.elements) return;
       get().setScript({ ...script, elements }, true, episode);
     },
+    placeInPart: (id, key) => {
+      const { screenplay } = get();
+      if (!screenplay) return;
+      const els = screenplay.elements;
+      const part = structureOf(els).find((p) => p.key === key);
+      const heading = els.findIndex((el) => el.type === "sceneHeading" && el.cardId === id);
+      if (!part || heading < 0) return;
+      const list = blocks(els);
+      const from = list.findIndex((b) => b.start === heading);
+      // Un acte qui a des séquences : la scène va après sa dernière séquence, sinon juste sous l'acte.
+      const last = list.reduce((acc, b, i) => (b.kind === "section" && b.start >= part.at && b.start < part.end ? i : acc), -1);
+      const elements = moveToSection(els, from, last);
+      // Le canevas suit (setScreenplay voit que l'ordre des scènes a changé).
+      if (elements !== els) get().setScreenplay({ ...screenplay, elements }, true);
+    },
     placeInEpisode: (id, episode, index) => {
       const { screenplay } = get();
       if (!screenplay) return;
@@ -3116,7 +3150,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         sp
           ? sp.elements
               .flatMap((el) =>
-                el.type === "sceneHeading" ? [el.cardId ?? ""] : seriesMarkOf(el) || (el.type === "section" && beatOf(el.text)) ? [`|${el.text}`] : [],
+                el.type === "sceneHeading" ? [el.cardId ?? ""] : seriesMarkOf(el) || structureMark(el) || (el.type === "section" && beatOf(el.text)) ? [`|${el.text}`] : [],
               )
               .join(" ")
           : "";
@@ -3732,6 +3766,11 @@ export const useCosmos = create<CosmosState>((set, get) => {
       set({ edges: get().edges.filter((e) => !between(e)) });
       touch();
     },
+    addLinkedCard: (id, type, title) => {
+      const created = get().addTitledCard(type, title);
+      get().linkCards(id, created, "");
+      return created;
+    },
     linkCards: (source, target, label) => {
       const linked = get().edges.some(
         (e) => (e.source === source && e.target === target) || (e.source === target && e.target === source),
@@ -3968,6 +4007,26 @@ export const useCosmos = create<CosmosState>((set, get) => {
         }),
       });
       touch();
+    },
+
+    addScriptBeats: (entries) => {
+      const plan = get().plan;
+      const scriptBeats = { ...(plan.scriptBeats ?? {}), ...entries };
+      for (const k of Object.keys(scriptBeats)) if (Object.keys(scriptBeats[k]).length === 0) delete scriptBeats[k];
+      set({ plan: { ...plan, ...(Object.keys(scriptBeats).length > 0 ? { scriptBeats } : {}) } });
+      touch();
+    },
+
+    setSceneSetup: (setup, payoff, label) => {
+      if (setup === payoff) return;
+      const name = (label ?? "").trim().slice(0, 60);
+      const between = (e: { source: string; target: string }) => (e.source === setup && e.target === payoff) || (e.source === payoff && e.target === setup);
+      // Un fil déjà tiré est gardé, avec son étiquette, sauf si l'auteur en donne une nouvelle.
+      if (!get().edges.some(between)) get().linkCards(setup, payoff, name);
+      const edge = get().edges.find(between);
+      if (!edge) return;
+      if (name) get().renameLink(edge.id, name);
+      get().setLinkSetup(edge.id, setup);
     },
 
     // Quitter la Bible autrement que par « Retour au manuscrit » oublie le retour proposé.

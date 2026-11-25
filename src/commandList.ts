@@ -64,6 +64,8 @@ export const COMMANDS: AppCommandItem[] = [
   // MondoWrite
   { id: "about", group: "app", label: (t) => t.appMenu.about, run: () => s().setDialog("about") },
   { id: "settings", group: "app", label: (t) => t.appMenu.settings, accelerator: "CmdOrCtrl+,", run: () => sendCommand("settings") },
+  { id: "synopsis-view", group: "view", menu: false, label: (t) => t.synopsisView.menu, enabled: inProject, run: () => s().setDialog("synopsis") },
+  { id: "plot-colors", group: "view", menu: false, label: (t) => t.plan.plotColors, enabled: inProject, run: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
   { id: "profile", group: "app", menu: false, label: (t) => t.palette.items.profile, run: () => s().setDialog("profile") },
   // Pas l'élément « Quitter » du système : il fermait l'app sans laisser enregistrer la dernière frappe.
   { id: "quit", group: "app", label: (t) => t.appMenu.quit, accelerator: "CmdOrCtrl+Q", available: desktop, run: () => void quitApp() },
@@ -120,6 +122,10 @@ export const COMMANDS: AppCommandItem[] = [
   { id: "merge-next", group: "edit", label: (t) => t.appMenu.mergeNext, enabled: writing, run: () => sendCommand("merge-next") },
   // Omettre la scène en cours (#46) : scénario aux pages verrouillées seulement, la vue sait quelle scène.
   { id: "omit-scene", group: "edit", label: (t) => t.appMenu.omitScene, enabled: (c) => writing(c) && c.kind === "scenario" && !!s().revisions.locked, run: () => sendCommand("omit-scene") },
+  // Acte et séquence au-dessus de la scène du curseur (#140) : scénario seulement, raccourci rejoué vers la vue.
+  { id: "insert-act", group: "edit", label: (t) => t.appMenu.insertAct, accelerator: "CmdOrCtrl+Alt+Shift+A", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("A", "KeyA", true, true) },
+  { id: "insert-sequence", group: "edit", label: (t) => t.appMenu.insertSequence, accelerator: "CmdOrCtrl+Alt+Shift+S", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("S", "KeyS", true, true) },
+  { id: "insert-subsequence", group: "edit", label: (t) => t.appMenu.insertSubsequence, accelerator: "CmdOrCtrl+Alt+Shift+U", enabled: (c) => writing(c) && c.kind === "scenario", run: () => replayShortcut("U", "KeyU", true, true) },
   // Onglet « Vérifier » du Manuscrit ou du Scénario.
   { id: "review", group: "edit", label: (t) => t.appMenu.review, enabled: writing, run: () => sendCommand("review") },
 

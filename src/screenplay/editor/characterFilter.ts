@@ -17,7 +17,9 @@ export const characterFilterKey = new PluginKey<FilterState>("characterFilter");
 
 /** Un nœud de premier niveau lu comme un élément du scénario (type et texte). */
 const asElement = (node: PMNode) =>
-  node.type.name === PRESERVED ? { type: String(node.attrs.kind), text: String(node.attrs.text ?? "") } : { type: node.type.name, text: node.textContent };
+  node.type.name === PRESERVED
+    ? { type: String(node.attrs.kind), text: String(node.attrs.text ?? "") }
+    : { type: node.type.name, text: node.textContent, cardId: node.type.name === "sceneHeading" ? (node.attrs.cardId ?? undefined) : undefined };
 
 function decorate(doc: PMNode, filter: CharacterFilter | null): DecorationSet {
   if (!filter) return DecorationSet.empty;

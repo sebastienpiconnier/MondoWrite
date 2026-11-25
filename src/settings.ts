@@ -84,6 +84,8 @@ const KEY = "cosmos:reglages";
 export interface WritingSettings {
   /** La ligne en cours reste à mi-hauteur de l'écran, comme sur une machine à écrire. */
   typewriter: boolean;
+  /** Scénario : synopsis de chaque scène montré sous son en-tête (#147), hors pages ; non par défaut. */
+  showSynopsis: boolean;
   /** Ce qui reste en pleine encre ; le reste s'estompe. */
   highlight: FocusHighlight;
   /** Typographie automatique à la frappe : selon la langue de l'interface, celle d'une langue de typoRules.ts, ou aucune. */
@@ -158,6 +160,7 @@ function readWriting(raw: unknown): WritingSettings {
   const w = (raw ?? {}) as Partial<Record<keyof WritingSettings, unknown>>;
   return {
     typewriter: w.typewriter === true,
+    showSynopsis: w.showSynopsis === true,
     highlight: isFocusHighlight(w.highlight) ? w.highlight : "off",
     typography: isTypographySetting(w.typography) ? w.typography : "auto",
     zoom: readZoom(w.zoom),
@@ -188,6 +191,9 @@ interface SettingsState {
   /** Ruban du récit coloré par narrateur (point de vue des scènes), 1.13.0. */
   ribbonPov: boolean;
   setRibbonPov: (on: boolean) => void;
+  /** Scènes colorées par leur intrigue principale (#143) : Plan, séquencier, listes des scènes ; non par défaut. */
+  plotColors: boolean;
+  setPlotColors: (on: boolean) => void;
   /** Synopsis sous chaque scène du volet des scènes (Manuscrit et Scénario, #58) ; non par défaut. */
   /** Aides déjà apprises (#59) : la consigne du canevas, les touches du scénario… ne s'affichent plus. */
   learned: LearnedHint[];
@@ -293,7 +299,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown; languageTool?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; plotColors?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown; languageTool?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -321,6 +327,8 @@ export const useSettings = create<SettingsState>((set) => ({
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   ribbonPov: saved.ribbonPov === true,
   setRibbonPov: (ribbonPov) => set({ ribbonPov }),
+  plotColors: saved.plotColors !== false,
+  setPlotColors: (plotColors) => set({ plotColors }),
   learned: readLearned(saved.learned),
   learn: (hint) => set((s) => (s.learned.includes(hint) ? s : { learned: [...s.learned, hint] })),
   unlearnAll: () => set({ learned: [] }),
@@ -393,7 +401,7 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental, languageTool }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, plotColors, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental, languageTool }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
@@ -412,7 +420,7 @@ export function initSettings() {
       const stored = keysElsewhere
         ? { ai: { ...savedAi, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } }, languageTool: { ...languageTool, key: "" } }
         : { ai: savedAi, photos, languageTool };
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, plotColors, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

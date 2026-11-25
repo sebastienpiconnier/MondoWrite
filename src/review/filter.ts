@@ -12,6 +12,8 @@ export interface CharacterFilter {
   mode: CharacterFilterMode;
   /** Second personnage (« Qui croise qui ») : seulement les scènes où les deux paraissent. */
   with?: string;
+  /** Cartes Scène reliées par un fil au personnage (#137) : il y est, même sans parler ni être nommé. */
+  linked?: string[];
 }
 
 /** Ce que devient chaque élément : montré, estompé ou caché. */
@@ -20,6 +22,8 @@ export type Visibility = "show" | "dim" | "hide";
 interface El {
   type: ElementType | string;
   text: string;
+  /** En-tête de scène : la carte Scène qu'il porte. */
+  cardId?: string;
 }
 
 const isSpeaker = (el: El, key: string) => el.type === "character" && foldName(characterName(el.text)) === key;
@@ -64,7 +68,9 @@ export function scenesWith(elements: El[], name: string): number[] {
 
 /** Index des en-têtes des scènes gardées par un filtre (les deux personnages ensemble, s'il y en a deux). */
 export function keptScenes(elements: El[], filter: CharacterFilter): number[] {
-  const own = scenesWith(elements, filter.name);
+  const linked = new Set(filter.linked ?? []);
+  const wired = linked.size ? elements.flatMap((el, i) => (el.type === "sceneHeading" && el.cardId && linked.has(el.cardId) ? [i] : [])) : [];
+  const own = wired.length ? [...new Set([...scenesWith(elements, filter.name), ...wired])].sort((a, b) => a - b) : scenesWith(elements, filter.name);
   if (!filter.with?.trim()) return own;
   const other = new Set(scenesWith(elements, filter.with));
   return own.filter((i) => other.has(i));

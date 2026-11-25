@@ -243,6 +243,24 @@ const scenarios = [
     },
   },
   {
+    name: "clic droit sur le canevas (#146) : un menu, pas de carte ; « Créer ici : Personnage » crée la carte, Échap ferme",
+    async run(h) {
+      const { page } = h;
+      await h.create("Le Phare");
+      const pane = page.locator(".react-flow__pane");
+      await pane.click({ button: "right", position: { x: 300, y: 220 } });
+      const menu = page.getByRole("menu", { name: "Menu du canevas" });
+      await until(() => menu.count(), "le clic droit n'a pas ouvert de menu");
+      assert((await h.cardList()).length === 0, "le clic droit a créé une carte");
+      await page.keyboard.press("Escape");
+      await until(async () => (await menu.count()) === 0, "Échap n'a pas fermé le menu");
+      await pane.click({ button: "right", position: { x: 300, y: 220 } });
+      await menu.getByRole("menuitem", { name: "Créer ici : Personnage" }).click();
+      await until(() => page.locator(".card.type-personnage").count(), "le menu n'a pas créé de carte Personnage");
+      assert((await h.cardList()).length === 1, "une seule carte attendue");
+    },
+  },
+  {
     name: "menus ⋯ (1.11.1) : une carte part à la corbeille par son menu, la corbeille en dernier et en rouge ; Annuler la remet",
     async run(h) {
       const { page } = h;
@@ -426,6 +444,81 @@ const scenarios = [
       await until(() => page.locator(".ProseMirror").first().isVisible(), "le Manuscrit ne montre pas d'éditeur");
       await h.view(1);
       await until(async () => (await h.cards().count()) >= 21, "retour au canevas : cartes absentes");
+      // Lot 17 ter : « Organiser » faisait boucler React (rang d'une case recréé à chaque lecture).
+      await page.getByRole("button", { name: "Organiser le canevas" }).first().click();
+      await until(() => page.locator(".react-flow__node-frame").count(), "« Organiser » n'a posé aucun cadre");
+    },
+  },
+  {
+    name: "garder sa place (#144) : la scène du Manuscrit choisie sur le canevas et montrée dans le Plan, le curseur retrouvé au retour",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      const rows = page.locator(".ms-scenes [data-scene], [data-scene].is-movable, button[data-scene]");
+      await until(() => rows.count(), "le volet des scènes est vide");
+      const id = await rows.nth(2).getAttribute("data-scene");
+      await rows.nth(2).click();
+      await h.wait(500);
+      // Le curseur dans le premier paragraphe de la scène, au bout.
+      await page.locator(`.ProseMirror [data-scene-id="${id}"]`).locator("xpath=following-sibling::p[1]").click();
+      await page.keyboard.press("End");
+      await page.keyboard.type("ZZZ");
+      await h.wait(300);
+      await h.view(1);
+      await until(() => page.locator(`.react-flow__node.selected[data-id="${id}"]`).count(), "le canevas n'a pas choisi la carte de la scène où l'on écrivait");
+      await h.view(4);
+      await h.wait(300);
+      await h.view(2);
+      await until(() => page.evaluate((sid) => document.activeElement?.closest("[data-scene]")?.getAttribute("data-scene") === sid, id), `le Plan ne montre pas la ligne de la scène ${id} : ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 200))}`);
+      await h.view(4);
+      await h.wait(500);
+      await page.keyboard.type("QQQ");
+      await h.saved((f) => (f[`manuscrit/${id}.md`] ?? "").includes("ZZZQQQ"), "le curseur n'est pas revenu à sa place dans la scène");
+    },
+  },
+  {
+    name: "déplacer des lignes (#145) : Alt Maj ↑ monte le paragraphe du Manuscrit, enregistré dans le nouvel ordre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Lignes");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Premier.");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Second.");
+      await page.keyboard.press("Alt+Shift+ArrowUp");
+      await page.keyboard.type(" Monté.");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("manuscrit/") && /Second\. Monté\.\s+Premier\./.test(v)), "le paragraphe n'est pas monté avec le curseur");
+    },
+  },
+  {
+    name: "fiche de scène reliée (#137 à #139) : un personnage créé depuis l'onglet Scène est relié ; double-clic sur sa carte, ses scènes ; délier",
+    async run(h) {
+      const { page } = h;
+      await h.create("Liens");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      await page.locator(".ProseMirror[contenteditable=true]").first().waitFor();
+      await page.getByRole("button", { name: "Ajouter : Personnages" }).click();
+      await page.getByRole("combobox", { name: "Ajouter : Personnages" }).fill("Inès");
+      await page.keyboard.press("Enter");
+      await until(() => page.locator(".scene-links .link-pill", { hasText: "Inès" }).count(), "la pastille du personnage n'apparaît pas");
+      await h.saved((f) => Object.values(f).some((v) => /type: personnage/.test(v) && /Inès/.test(v)) && /"links":\s*\[\s*\{/.test(f["cosmos.json"] ?? ""), "le personnage et son fil ne sont pas enregistrés");
+      const charId = Object.entries(await h.files()).find(([k, v]) => k.startsWith("cartes/") && /type: personnage/.test(v))[0].slice(7, -3);
+      await h.view(1);
+      const card = h.node(charId).locator(".card");
+      await card.waitFor();
+      const box = await card.boundingBox();
+      await page.mouse.dblclick(box.x + box.width - 4, box.y + box.height / 2);
+      await until(() => page.locator(".expanded-card .card-scenes .link-pill", { hasText: "Le phare" }).count(), "la carte agrandie du personnage ne montre pas sa scène");
+      await page.locator(".expanded-card .card-scenes").getByRole("button", { name: "Délier de « Le phare »" }).click();
+      await until(async () => (await page.locator(".expanded-card .card-scenes .link-pill").count()) === 0, "délier n'a pas retiré la pastille");
     },
   },
   {
@@ -1155,6 +1248,32 @@ const scenarios = [
     },
   },
   {
+    name: "collage depuis Word : un paragraphe du scénario reste d'un seul tenant",
+    async run(h) {
+      const { page } = h;
+      // Word coupe le code source HTML de ses paragraphes par de vrais retours à la ligne.
+      const word = '<html><body><p class=MsoNormal>Il pleuvait sur la ville depuis\r\ntrois jours, et personne ne\r\nsortait plus.</p></body></html>';
+      const paste = (selector) =>
+        page.evaluate(
+          ([sel, html]) => {
+            const el = document.querySelector(sel);
+            const data = new DataTransfer();
+            data.setData("text/html", html);
+            data.setData("text/plain", "Il pleuvait sur la ville depuis trois jours, et personne ne sortait plus.");
+            el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+          },
+          [selector, word],
+        );
+      await h.create("Collage", "scenario");
+      await h.view(4);
+      const editor = page.getByRole("textbox", { name: "Texte du scénario" });
+      await editor.click();
+      await paste(".sp-editor");
+      const text = await until(() => page.evaluate(() => [...document.querySelectorAll(".sp-editor > [data-el]")].map((e) => e.textContent).join("|")).then((t) => (t.includes("pleuvait") ? t : null)), "le collage n'arrive pas dans le scénario");
+      assert(!/[\r\n]/.test(text) && text.includes("depuis trois jours, et personne ne sortait"), `scénario coupé : ${JSON.stringify(text)}`);
+    },
+  },
+  {
     name: "scénario : en-tête, action et réplique donnent leurs cartes Scène, Décor et Personnage",
     async run(h) {
       const { page } = h;
@@ -1184,6 +1303,223 @@ const scenarios = [
       assert(has("personnage", "Inès"), `pas de carte Personnage : ${JSON.stringify(cards)}`);
       assert(cards.length === 3, `3 cartes attendues : ${JSON.stringify(cards)}`);
       await h.saved((f) => /INT\. PHARE – NUIT \[\[cosmos:/.test(f["scenario.fountain"] ?? ""), "le scénario n'a pas été enregistré avec le lien de sa scène");
+    },
+  },
+  {
+    name: "actes et séquences (#140, #142) : « + Séquence » regroupe les scènes, bloc repliable du séquencier, renommée, cadre du canevas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Séquences", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "La lanterne tourne."], ["EXT. QUAI – NUIT", "La pluie."], ["INT. CUISINE – JOUR", "Le café."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      // Le curseur dans la première scène : la séquence se pose au-dessus de son en-tête.
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await page.locator(".sp-bar").getByRole("button", { name: "+ Séquence" }).click();
+      await until(() => page.locator('.sp-editor [data-series="seq"]').count(), "la ligne Séquence n'apparaît pas dans la feuille");
+      await h.saved((f) => /^## Séquence 1 \[\[cosmos:beat:u1\]\] \[\[cosmos:seq:[A-Za-z0-9_-]+\]\]\s*\n+\s*INT\. PHARE/m.test(f["scenario.fountain"] ?? ""), "la séquence n'est pas enregistrée au-dessus de la première scène");
+      await until(() => page.locator(".sp-scene-group.is-seq").count(), "la liste des scènes ne montre pas la séquence");
+      await h.view(2);
+      // #148 : la séquence est aussi une case de la structure, montrée comme elle (« Séquence 1 sur 1 »).
+      const row = page.locator(".sq-section.sq-part.is-beat");
+      await row.waitFor();
+      assert(/3 scènes/.test(await row.innerText()), `la séquence ne compte pas trois scènes : ${await row.innerText()}`);
+      assert(/Séquence 1 sur 1/i.test(await row.innerText()), `pas de rang de séquence : ${await row.innerText()}`);
+      await row.locator("input").fill("La nuit");
+      await row.locator("input").press("Enter");
+      await h.saved((f) => /^## La nuit \[\[cosmos:beat:u1\]\] \[\[cosmos:seq:/m.test(f["scenario.fountain"] ?? ""), "le titre de la séquence n'est pas enregistré");
+      await row.getByRole("button", { name: /^Replier/ }).click();
+      await until(async () => (await page.locator(".sq-scene").count()) === 0, "replier la séquence ne cache pas ses scènes");
+      await row.getByRole("button", { name: /^Déplier/ }).click();
+      await h.view(1);
+      await page.getByRole("button", { name: "Organiser le canevas" }).first().click();
+      await until(async () => (await page.locator(".frame-title").evaluateAll((els) => els.map((e) => e.value))).includes("La nuit"), "pas de cadre pour la séquence après « Organiser »");
+      await until(async () => (await page.locator(".frame-kicker").allInnerTexts()).some((x) => /Séquence 1 sur 1/i.test(x)), "le cadre de la séquence n'a pas son rang");
+    },
+  },
+  {
+    name: "actes et séquences = structure (#148) : reprise d'une série, l'acte contient ses séquences sur le canevas, rang « Séquence 1 sur 2 »",
+    async run(h) {
+      const { page } = h;
+      await h.create("Série", "scenario");
+      await h.wait(1200);
+      // Un fichier d'avant : actes et séquences sans note de case dans l'épisode 1, une structure livrée dans le 2.
+      const fountain = [
+        "# Saison 1 [[cosmos:season:s1]]",
+        "## Pilote [[cosmos:episode:e1]]",
+        "### Acte 1 [[cosmos:act:a1]]",
+        "#### Séquence 1 [[cosmos:seq:q1]]",
+        ".INT. PHARE - NUIT",
+        "La lanterne.",
+        "#### Séquence 2 [[cosmos:seq:q2]]",
+        ".EXT. QUAI - NUIT",
+        "La pluie.",
+        "## Tempête [[cosmos:episode:e2]]",
+        "### Ouverture [[cosmos:beat:e_teaser]]",
+        ".INT. CUISINE - JOUR",
+        "Le café.",
+        "",
+      ].join("\n\n");
+      await page.evaluate((text) => {
+        const key = Object.keys(localStorage).find((k) => k.startsWith("cosmos:projet:"));
+        const files = JSON.parse(localStorage.getItem(key));
+        files["scenario.fountain"] = text;
+        localStorage.setItem(key, JSON.stringify(files));
+      }, fountain);
+      await h.reloadAndOpen();
+      await h.saved((f) => /### Acte 1 \[\[cosmos:beat:u\d+\]\] \[\[cosmos:act:a1\]\]/.test(f["scenario.fountain"] ?? "") && /#### Séquence 2 \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:q2\]\]/.test(f["scenario.fountain"] ?? ""), "les actes et séquences ne sont pas devenus des cases");
+      // L'épisode 2 garde sa structure livrée (il n'a ni acte ni séquence).
+      assert(/\[\[cosmos:beat:e_teaser\]\]/.test((await h.files())["scenario.fountain"] ?? ""), "la structure livrée de l'épisode 2 a changé");
+      await page.getByRole("button", { name: "Organiser le canevas" }).first().click();
+      await until(async () => (await page.locator(".frame-kicker").allInnerTexts()).some((x) => /Séquence 1 sur 2/i.test(x)), "le cadre de la séquence 1 n'a pas son rang");
+      // Le cadre de l'acte contient ceux de ses séquences.
+      const inside = await page.evaluate(() => {
+        const frames = [...document.querySelectorAll(".react-flow__node-frame")].map((n) => ({ title: n.querySelector(".frame-title")?.value, r: n.getBoundingClientRect() }));
+        const act = frames.find((f) => f.title === "Acte 1");
+        const seq = frames.find((f) => f.title === "Séquence 2");
+        return !!act && !!seq && seq.r.left >= act.r.left && seq.r.right <= act.r.right && seq.r.top >= act.r.top && seq.r.bottom <= act.r.bottom;
+      });
+      assert(inside, "le cadre de la séquence 2 n'est pas dans celui de l'acte 1");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/structure-148.png` });
+      // « + Séquence » dans l'épisode 2 : sa structure livrée devient celle de l'auteur, la séquence une sous-case.
+      await h.view(4);
+      await page.locator(".sp-editor [data-el=action]", { hasText: "Le café." }).click();
+      await page.locator(".sp-bar").getByRole("button", { name: "+ Séquence" }).click();
+      await h.saved((f) => {
+        const text = f["scenario.fountain"] ?? "";
+        return !/e_teaser/.test(text) && /### Pré-générique \[\[cosmos:beat:u\d+\]\]/.test(text) && /#### Séquence 1 \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:[A-Za-z0-9_-]+\]\]\s*\n+\s*\.?INT\. CUISINE/.test(text);
+      }, "la structure livrée de l'épisode 2 n'est pas devenue celle de l'auteur avec la séquence dessous");
+      assert(/d’après Épisode de série/.test(JSON.stringify(JSON.parse((await h.files())["cosmos.json"]).plan?.scriptBeats ?? {})), "le nom « d'après » n'est pas gardé");
+    },
+  },
+  {
+    name: "séquence choisie dans la fiche (#141) : la liste de l'onglet Scène déplace la scène, Ctrl Z rend l'ordre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Places", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, act] of [["INT. PHARE – NUIT", "Un."], ["EXT. QUAI – NUIT", "Deux."], ["INT. CUISINE – JOUR", "Trois."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(act);
+        await page.keyboard.press("Enter");
+      }
+      // Les cartes des scènes naissent un instant après la frappe (l'éditeur se recharge alors).
+      await h.wait(800);
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await page.keyboard.press("Control+Alt+Shift+S");
+      await page.locator(".sp-editor [data-el=action]").nth(1).click();
+      await page.keyboard.press("Control+Alt+Shift+S");
+      await until(async () => (await page.locator('.sp-editor [data-series="seq"]').count()) === 2, "les deux séquences ne sont pas posées");
+      // Le curseur reste dans la scène où il était.
+      await page.keyboard.type("Z");
+      await until(async () => (await page.locator(".sp-editor [data-el=action]").nth(1).innerText()) === "Deux.Z", "le curseur n'est pas resté dans la scène");
+      // Curseur dans la deuxième scène (QUAI), qui ouvre la séquence 2 : on la range dans la séquence 1, après CUISINE.
+      await h.wait(500);
+      await page.locator(".sp-editor [data-el=action]").nth(1).click();
+      await until(async () => /QUAI/.test(await page.locator(".sp-side").first().innerText().catch(() => "")), "l'onglet Scène ne montre pas la scène du quai");
+      // « Place de la scène » est masquée d'office (lot 17 ter) : on la montre par « Personnaliser le volet ».
+      await page.locator(".sp-side .side-parts-customize").click();
+      await page.locator(".side-parts-list label", { hasText: "Place de la scène" }).locator("input").check();
+      await page.locator(".sp-side").getByRole("button", { name: "Terminé" }).click();
+      const select = page.locator(".scene-place select").first();
+      await select.waitFor();
+      await select.selectOption({ label: "Séquence 1" });
+      await h.saved((f) => /## Séquence 1[\s\S]*PHARE[\s\S]*QUAI[\s\S]*## Séquence 2/.test(f["scenario.fountain"] ?? ""), "la scène n'a pas rejoint la séquence 1");
+      await h.view(1);
+      await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+      await page.keyboard.press("Control+z");
+      await h.saved((f) => /## Séquence 1[\s\S]*PHARE[\s\S]*## Séquence 2[\s\S]*QUAI/.test(f["scenario.fountain"] ?? ""), "Ctrl Z n'a pas rendu l'ordre d'avant");
+    },
+  },
+  {
+    name: "synopsis (#147) : montré sous l'en-tête sans changer les pages, lu seul dans sa fenêtre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Synopsis", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      await page.keyboard.type("INT. PHARE – NUIT");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("La lanterne tourne.");
+      await h.wait(800);
+      await page.getByRole("button", { name: /^Ajouter un synopsis/ }).first().click();
+      await page.keyboard.type("Inès veille seule.");
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await until(async () => (await page.locator(".sp-editor .sp-sceneHeading").first().getAttribute("data-synopsis")) === "Inès veille seule.", "l'en-tête ne porte pas son synopsis");
+      const pagesBefore = await page.locator(".sp-statusbar, .sp-foot").first().innerText().catch(() => "");
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Afficher le synopsis sous l’en-tête" }).click();
+      await until(() => page.locator(".screenplay.show-synopsis").count(), "l'option n'est pas posée sur la feuille");
+      const shown = await page.evaluate(() => getComputedStyle(document.querySelector(".sp-sceneHeading[data-synopsis]"), "::before").content);
+      assert(/Inès veille seule/.test(shown), `le synopsis n'est pas dessiné sous l'en-tête : ${shown}`);
+      const pagesAfter = await page.locator(".sp-statusbar, .sp-foot").first().innerText().catch(() => "");
+      assert(pagesBefore === pagesAfter, `les pages ont changé : ${pagesBefore} → ${pagesAfter}`);
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Lire le synopsis seul" }).click();
+      await until(() => page.locator(".synopsis-row.is-scene", { hasText: "Inès veille seule." }).count(), "la fenêtre du synopsis ne montre pas la scène");
+    },
+  },
+  {
+    name: "fiche de scène (lot 17 bis) : qui parle dans Personnages, « Prépare… » tire le fil, numéros et couleurs sur le canevas",
+    async run(h) {
+      const { page } = h;
+      await h.create("Fiche", "scenario");
+      await h.view(4);
+      await page.getByRole("textbox", { name: "Texte du scénario" }).click();
+      for (const [head, who, line] of [["INT. PHARE – NUIT", "INÈS", "Il pleut."], ["EXT. QUAI – NUIT", "YANN", "Le bateau."]]) {
+        await page.keyboard.type(head);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type("Le vent.");
+        await page.keyboard.press("Enter");
+        await page.keyboard.press("Tab");
+        await page.keyboard.type(who);
+        await page.keyboard.press("Enter");
+        await page.keyboard.type(line);
+        await page.keyboard.press("Enter");
+        await page.keyboard.press("Enter");
+      }
+      await h.wait(800);
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      const pill = page.locator(".sp-side .scene-links .link-pill", { hasText: "INÈS" });
+      await until(() => pill.count(), "le personnage qui parle n'est pas dans la rangée Personnages");
+      assert(/1 réplique/.test(await pill.innerText()), `pas de nombre de répliques : ${await pill.innerText()}`);
+      await page.locator(".sp-side .scene-setups").getByRole("button", { name: "Prépare…" }).click();
+      await page.getByRole("searchbox", { name: "Chercher par numéro, titre ou synopsis" }).fill("2");
+      await page.locator(".scene-setups-choices button", { hasText: "EXT. QUAI" }).click();
+      await page.getByRole("textbox", { name: "Nom du lien (facultatif)" }).fill("le bateau");
+      await page.getByRole("button", { name: "Relier", exact: true }).click();
+      await h.saved((f) => /"setups"/.test(f["cosmos.json"] ?? "") && /le bateau/.test(f["cosmos.json"] ?? ""), "la préparation n'est pas enregistrée avec son nom");
+      await until(() => page.locator(".sp-side .scene-setups-linklabel", { hasText: "le bateau" }).count(), "le nom du lien n'est pas montré");
+      // Volet de droite (lot 17 ter) : une rubrique se replie par son en-tête, se masque par « Personnaliser le volet ».
+      await page.locator(".sp-side .side-part-head", { hasText: "Synopsis" }).click();
+      await until(async () => (await page.locator('.sp-side .side-part[data-part="synopsis"] .side-part-body').count()) === 0, "le synopsis ne se replie pas");
+      await page.locator(".sp-side").getByRole("button", { name: "Personnaliser le volet" }).click();
+      await page.locator(".side-parts-list label", { hasText: "Préparations" }).locator("input").uncheck();
+      await until(async () => (await page.locator('.sp-side .side-part[data-part="setups"]').count()) === 0, "les préparations ne se masquent pas");
+      assert(/"hidden":\["setups"\]/.test(await page.evaluate(() => localStorage.getItem("mondowrite.sidePanel") ?? "")), "le volet n'est pas gardé sur l'appareil");
+      await page.locator(".side-parts-list label", { hasText: "Préparations" }).locator("input").check();
+      await page.locator(".sp-side").getByRole("button", { name: "Terminé" }).click();
+      // Renommer une séquence dans la feuille : double-clic sur sa ligne.
+      await page.locator(".sp-editor [data-el=action]").first().click();
+      await page.keyboard.press("Control+Alt+Shift+KeyS");
+      await until(() => page.locator('.sp-editor [data-series="seq"]').count(), "la séquence n'est pas posée");
+      await page.locator('.sp-editor [data-series="seq"]').first().dblclick();
+      await page.locator(".sp-sheet-rename").fill("La tempête");
+      await page.locator(".sp-sheet-rename").press("Enter");
+      await until(async () => /La tempête/.test(await page.locator('.sp-editor [data-series="seq"]').first().innerText()), "la séquence n'est pas renommée dans la feuille");
+      await h.saved((f) => /## La tempête \[\[cosmos:beat:u\d+\]\] \[\[cosmos:seq:/.test(f["scenario.fountain"] ?? ""), "le nouveau titre perd ses notes");
+      // Le volet des scènes filtre aussi par décor (lot 17).
+      await page.locator("#sp-filter-name").selectOption({ label: "Quai" });
+      await until(() => page.locator(".thread-banner").count(), "le filtre par décor ne pose pas de bandeau");
+      await h.view(1);
+      await until(async () => (await page.locator(".card-scene-number").allInnerTexts()).sort().join(",") === "1,2", "les cartes Scène n'ont pas leur numéro");
     },
   },
   {
@@ -1337,7 +1673,7 @@ const scenarios = [
       await second.fill("Tempête");
       await second.press("Enter");
       // Gabarit de l'épisode 2 seul : « Épisode de série ».
-      await page.getByLabel("Gabarit de l’épisode").nth(1).selectOption("episode");
+      await page.getByLabel("Structure de l’épisode").nth(1).selectOption("episode");
       await h.saved((f) => {
         const text = f["scenario.fountain"] ?? "";
         const ep2 = text.indexOf("Tempête [[cosmos:episode:");
@@ -2313,9 +2649,9 @@ const scenarios = [
       const dialog = page.locator("dialog[open]");
       await until(() => dialog.locator(".tpl-row.level-2").first().isVisible(), "les sous-cases ne sont pas en retrait dans l'éditeur");
       // « Acte II » décalé à droite devient une sous-case d'« Acte I » ; le bouton suivant est grisé (au plus un niveau de plus).
-      await dialog.getByRole("button", { name: "Décaler à droite la case « Acte II »" }).click();
+      await dialog.getByRole("button", { name: "Décaler à droite l’étape « Acte II »" }).click();
       assert((await dialog.locator(".tpl-row.level-2").count()) === 3, "Acte II n'est pas passé au niveau 2");
-      await dialog.getByRole("button", { name: "Décaler à gauche la case « Acte II »" }).click();
+      await dialog.getByRole("button", { name: "Décaler à gauche l’étape « Acte II »" }).click();
       await dialog.getByRole("button", { name: "Utiliser dans ce projet" }).click();
       await h.saved((f) => {
         const beats = JSON.parse(f["cosmos.json"] ?? "{}").plan?.custom?.beats ?? [];
@@ -2327,7 +2663,7 @@ const scenarios = [
       assert(!(await group.locator(".beat-rank").count()), "un ensemble ne doit pas avoir de rang");
       assert(!(await group.locator(".plan-add").count()), "un ensemble ne doit pas avoir de champ « Nouvelle scène »");
       assert((await page.locator(".plan-beat.level-2").count()) === 2, "les sous-cases ne sont pas en retrait dans le Plan");
-      await until(() => page.getByText("Case 3 sur 3").isVisible(), "le rang ne compte pas que les cases du bas");
+      await until(() => page.getByText("Étape 3 sur 3").isVisible(), "le rang ne compte pas que les cases du bas");
     },
   },
   {
@@ -2364,13 +2700,13 @@ const scenarios = [
       await manage.waitFor();
       const forget = async () => {
         await manage.getByRole("button", { name: "Actions pour « Mon polar »" }).click();
-        const item = page.getByRole("menuitem", { name: "Retirer de mes gabarits" });
+        const item = page.getByRole("menuitem", { name: "Retirer de mes structures" });
         await item.waitFor();
         assert(await item.evaluate((el) => !!el.closest("dialog")), "le menu ⋯ n'est pas dans la fenêtre (il passerait dessous)");
         await item.click();
       };
       await forget();
-      await until(() => manage.getByText("est retiré de tes gabarits", { exact: false }).isVisible(), "pas de message après le retrait");
+      await until(() => manage.getByText("est retirée de tes structures", { exact: false }).isVisible(), "pas de message après le retrait");
       await manage.getByRole("button", { name: "Annuler", exact: true }).click();
       await until(() => manage.getByRole("button", { name: "Actions pour « Mon polar »" }).isVisible(), "Annuler n'a pas remis le gabarit");
       await forget();

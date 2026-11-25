@@ -9,6 +9,7 @@
 // scène encore vide, en fait l'ouverture d'un nouveau chapitre. Retour arrière dans la scène vide annule
 // la coupure. Une scène peut aussi devenir une page du livre (page de titre, dédicace, prologue…, voir book.ts).
 
+import { usePlotColor } from "./usePlotColor";
 import { useInteractive } from "../interactive/useInteractive";
 import { projectSections } from "../interactive/projectSections";
 import { openPlay } from "../interactive/playState";
@@ -23,6 +24,8 @@ import { usePageSpell } from "./usePageSpell";
 import { sceneStatus } from "../character";
 import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
 import { SceneSetupsBox } from "./SceneSetups";
+import { SceneLinks } from "./LinkedCards";
+import { SideParts, type SidePart } from "./SideParts";
 import { PovPicker } from "./PovPicker";
 import { narratorCounts } from "../pov";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
@@ -134,6 +137,7 @@ export function Manuscript() {
   const setSceneChapter = useCosmos((s) => s.setSceneChapter);
   // Scène qu'on glisse dans la colonne (même raison : une ref) et l'endroit où elle irait.
   const sceneDragRef = useRef<string | null>(null);
+  const plotColor = usePlotColor();
   const [sceneDrag, setSceneDrag] = useState<string | null>(null);
   const [sceneOver, setSceneOver] = useState<{ id: string; side: "before" | "after" } | null>(null);
   const b = t.book;
@@ -349,12 +353,16 @@ export function Manuscript() {
   }, [target]);
 
   // Où est le curseur (#27) : lu au moment où l'on relève la position (changement de vue, enregistrement, retour
-  // aux projets). La scène choisie dans le volet l'emporte ; le curseur ne compte que s'il est dans cette scène.
+  // aux projets). La scène choisie dans le volet l'emporte, sauf quand on écrit dans le livre ; le curseur ne compte
+  // que s'il est dans cette scène.
   useEffect(() => {
     setCaretSource(() => {
-      const id = currentRef.current;
-      if (!id) return null;
       const caret = bookApi.current?.caret();
+      // Curseur dans le livre (on écrit) : sa scène l'emporte sur celle du volet, que le défilement peut avoir
+      // fait passer à la précédente (#144, le curseur au milieu de l'écran, le haut de l'écran sur la scène d'avant).
+      const writing = !!caret && !!document.activeElement?.closest(".ProseMirror") && useCosmos.getState().nodes.some((n) => n.id === caret.id && n.data.type === "scene");
+      const id = writing ? caret.id : currentRef.current;
+      if (!id) return null;
       const label = useCosmos.getState().nodes.find((n) => n.id === id)?.data.title.trim() || undefined;
       return { scene: id, offset: caret && caret.id === id ? caret.offset : undefined, label };
     });
@@ -776,7 +784,8 @@ export function Manuscript() {
                 return (
                   <li
                     key={id}
-                    className={`${sceneDrag === id ? "is-dragged" : ""}${drop}`}
+                    className={`${sceneDrag === id ? "is-dragged" : ""}${drop}${plotColor(id).className}`}
+                    style={plotColor(id).style}
                     draggable={movable}
                     onDragStart={(e) => {
                       if (!movable) return;
@@ -950,6 +959,8 @@ export function Manuscript() {
                 { label: t.replace.button, title: t.replace.buttonHint, hint: key("Mod", "Shift", "H"), onSelect: () => useCosmos.getState().openReplace({ sceneId: current }) },
                 { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
                 { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
+                { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
+                { label: useSettings.getState().plotColors ? t.plan.plotColorsOff : t.plan.plotColorsOn, onSelect: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
                 !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
                 {
                   // La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle.
@@ -1014,8 +1025,9 @@ export function Manuscript() {
             onAiScene={goToAiScene}
           />
         ) : (
-        <>
-        {/* La scène elle-même (#54) : type de page, statut, point de vue, sortis de la barre au-dessus de la page. */}
+        (() => {
+          const P = t.sidePanel.parts;
+          const parts: SidePart[] = [{ key: "props", title: P.props, node: (
         <section className="sp-box ms-scene-props" aria-label={b.sceneProps}>
           <label className="ms-kind">
             <span className="sr-only">{b.pageKind}</span>
@@ -1035,7 +1047,11 @@ export function Manuscript() {
             </span>
           )}
         </section>
-        {!pageKind && <SceneSetupsBox id={card.id} />}
+          ) }];
+          if (!pageKind) parts.push({ key: "setups", title: P.setups, node: <SceneSetupsBox id={card.id} /> });
+          // Personnages, intrigues, lieu de la scène, reliés sans tirer de fil (#137).
+          if (!pageKind) parts.push({ key: "links", title: P.links, node: <SceneLinks id={card.id} /> });
+          parts.push({ key: "cited", title: P.cited, node: (
         <section className="sp-box">
           <h2 className="sp-box-title">{m.cited}</h2>
           {detected.length === 0 ? (
@@ -1053,6 +1069,8 @@ export function Manuscript() {
             </ul>
           )}
         </section>
+          ) });
+          parts.push({ key: "synopsis", title: P.synopsis, node: (
         <section className="sp-box">
           <h2 className="sp-box-title">{m.synopsis}</h2>
           {/* Le synopsis de la scène (ses anciennes notes y sont passées) : il s'affiche aussi en filigrane dans une scène vide. */}
@@ -1068,9 +1086,13 @@ export function Manuscript() {
             {fmt(m.show, { title })}
           </button>
         </section>
-        <Chutier passages={chutier} cards={cards} onPutBack={putBack} />
+          ) });
+          parts.push({ key: "chutier", title: P.chutier, ownFold: true, node: <Chutier passages={chutier} cards={cards} onPutBack={putBack} /> });
+          parts.push({ key: "stats", title: P.stats, ownFold: true, node: (
         <StatsBox stats={stats} done={story.filter((id) => sceneStatus(cards.find((c) => c.id === id) ?? { type: "idee" }) === "fini").length} chapters={numbers.size} sceneWords={sceneWords} place={place} chapterWords={chapter ? order.reduce((sum, id) => sum + (chapterOf(plan, id)?.id === chapter.id ? (stats.perScene.get(id) ?? 0) : 0), 0) : undefined} />
-        </>
+          ) });
+          return <SideParts parts={parts} />;
+        })()
         )}
       </aside>
     </div>

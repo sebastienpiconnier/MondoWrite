@@ -14,6 +14,8 @@ import { frameBox } from "../projectState";
 import { fitBoost, frameDepth, frameLevel, titleBoost, titleSize } from "../frameLevels";
 import { leafBeats, templateBeats } from "../plan";
 import { screenplayPlan } from "../screenplay/template";
+import { seriesMark } from "../screenplay/series";
+import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
 import type { ScreenplayElement } from "../screenplay/model";
 
 type CosmosState = ReturnType<typeof useCosmos.getState>;
@@ -43,6 +45,55 @@ export function beatKeys(s: CosmosState): readonly string[] {
     screenplayKeys.set(elements, keys);
   }
   return keys;
+}
+
+/** Rang d'une case (#148) : n sur total parmi les cases sans sous-case de SON épisode, et si c'est une séquence. */
+export type CaseRank = KindRank;
+const scriptRanks = new WeakMap<ScreenplayElement[], Map<string, CaseRank>>();
+function ranksOf(elements: ScreenplayElement[]): Map<string, CaseRank> {
+  let map = scriptRanks.get(elements);
+  if (map) return map;
+  map = new Map();
+  // Un épisode à la fois : chacun a sa structure (une livrée, une de l'auteur…).
+  const bounds: [number, number, string][] = [];
+  let start = 0;
+  let scope = "";
+  elements.forEach((el, i) => {
+    const mark = seriesMark(el);
+    if (!mark) return;
+    bounds.push([start, i, scope]);
+    start = i + 1;
+    scope = mark.kind === "episode" ? mark.id : "";
+  });
+  bounds.push([start, elements.length, scope]);
+  for (const [a, b, ep] of bounds) {
+    const part = elements.slice(a, b);
+    const plan = screenplayPlan(part);
+    if (plan.template === "libre") continue;
+    const leaves = leafBeats(plan.template, plan.custom);
+    for (const [key, rank] of kindRanks(part, leaves)) map!.set(`${ep}:${key}`, rank);
+  }
+  scriptRanks.set(elements, map);
+  return map;
+}
+
+/** Rang de la case `beat` (dans l'épisode `episode` d'une série), ou null. Même objet tant que rien ne change. */
+const novelRanks = new WeakMap<readonly string[], Map<string, CaseRank>>();
+
+export function caseRank(s: CosmosState, beat: string | undefined, episode?: string): CaseRank | null {
+  if (!beat) return null;
+  if (s.kind !== "scenario") {
+    // Même objet tant que les cases ne changent pas : le résultat sert de sélecteur (useCosmos).
+    const keys = beatKeys(s);
+    let ranks = novelRanks.get(keys);
+    if (!ranks) {
+      ranks = new Map(keys.map((k, i) => [k, { n: i + 1, total: keys.length, kind: null }]));
+      novelRanks.set(keys, ranks);
+    }
+    return ranks.get(beat) ?? null;
+  }
+  const map = ranksOf(s.screenplay?.elements ?? []);
+  return map.get(`${episode ?? ""}:${beat}`) ?? map.get(`:${beat}`) ?? null;
 }
 
 /** Zoom par crans d'un vingtième : la couche ne se redessine pas à chaque image d'un zoom. Le même pour
@@ -138,6 +189,9 @@ function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
   const zoom = useStore(zoomStep);
   const frames = useCosmos((s) => s.frames);
   const keys = useCosmos(beatKeys);
+  // Rangs par épisode (#148) : relus quand le scénario ou le plan changent.
+  const state = useCosmos((s) => (s.kind === "scenario" ? s.screenplay : s.plan));
+  const plan = useT().plan;
   const editing = useEditingFrame();
   const labels = useMemo(() => {
     const boxes = frames.map((f) => ({ id: f.id, ...frameBox(f) }));
@@ -148,10 +202,10 @@ function FrameLabelsImpl({ hidden }: { hidden?: ReadonlySet<string> }) {
       if (hidden?.has(box.id) || !title) return [];
       const far = titleBoost(zoom, level);
       const boost = far > 1 ? fitBoost(title, box.width, titleSize(level, !!data.beat || !!data.season), far) : 1;
-      const rank = data.beat ? keys.indexOf(data.beat) + 1 : 0;
-      return [{ ...box, level, far: far > 1, boost, title, beat: !!data.beat || !!data.season, kicker: rank > 0 ? fmt(t.beatRank, { n: rank, total: keys.length }) : "" }];
+      const rank = caseRank(useCosmos.getState(), data.beat, data.episode);
+      return [{ ...box, level, far: far > 1, boost, title, beat: !!data.beat || !!data.season, kicker: rank ? fmt(rankLabel(plan, rank.kind), { n: rank.n, total: rank.total }) : "" }];
     });
-  }, [frames, zoom, keys, t, hidden]);
+  }, [frames, zoom, keys, state, t, plan, hidden]);
 
   // De près : place du titre dans l'en-tête de chaque cadre, mesurée après le dessin (la largeur suit le texte).
   const [heads, setHeads] = useState<Record<string, HeadRect>>({});

@@ -50,7 +50,7 @@ export interface OrganizeSeries {
     id: string | null;
     title: string;
     /** `beats` : cases du gabarit de l'épisode (lot 3), dans l'ordre, avec leurs scènes. */
-    episodes: { id: string; title: string; number: number; scenes: string[]; beats?: { key: string; label: string; scenes: string[] }[] }[];
+    episodes: { id: string; title: string; number: number; scenes: string[]; beats?: { key: string; label: string; scenes: string[]; level?: number }[] }[];
   }[];
   /** Scènes écrites avant le premier épisode. */
   outside: string[];
@@ -208,7 +208,25 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
   // Les chapitres d'un groupe se suivent de gauche à droite, leurs scènes aussi.
   // Un chapitre réparti sur plusieurs cases du gabarit : son titre complet dans la première, « (suite) » ensuite.
   const titled = new Set<string>();
-  const chaptered = (ids: string[]): { item: Item; count: number }[] =>
+  const chaptered = (ids: string[]): { item: Item; count: number }[] => withActs(chapterGroups(ids));
+  // Actes d'un scénario (#140) : les séquences qui se suivent sous un même acte vont dans son cadre.
+  const withActs = (groups: { item: Item; count: number; act?: { id: string; title: string } }[]): { item: Item; count: number }[] => {
+    const out: { item: Item; count: number }[] = [];
+    let i = 0;
+    while (i < groups.length) {
+      const act = groups[i].act;
+      if (!act) {
+        out.push(groups[i]);
+        i++;
+        continue;
+      }
+      const run: typeof groups = [];
+      while (i < groups.length && groups[i].act?.id === act.id) run.push(groups[i++]);
+      out.push({ item: { kind: "frame", title: act.title, body: { items: run.map((g) => g.item), columns: Math.max(1, run.length), gap: GROUP_GAP } }, count: run.reduce((n, g) => n + g.count, 0) });
+    }
+    return out;
+  };
+  const chapterGroups = (ids: string[]): { item: Item; count: number; act?: { id: string; title: string } }[] =>
     groupByChapter(plan, ids).map((g) => {
       const body: Layout = { items: g.ids.flatMap(cardItem), columns: sceneColumns(g.ids.length), gap: GAP };
       let item: Item = { kind: "box", body };
@@ -218,9 +236,11 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
         titled.add(g.chapter.id);
         item = { kind: "frame", title: first ? labels.chapter(n, g.chapter.title.trim()) : labels.continued(labels.chapter(n, "")), body };
       }
-      return { item, count: g.ids.length };
+      const act = (g.chapter as { act?: { id: string; title: string } } | null)?.act;
+      return { item, count: g.ids.length, ...(act ? { act } : {}) };
     });
-  const free = !series && (plan.template === "libre" || templateBeats(plan.template, plan.custom).length <= 1);
+  // Une seule case de l'auteur (une séquence posée, #148) garde son cadre.
+  const free = !series && (plan.template === "libre" || (plan.template !== "perso" && templateBeats(plan.template, plan.custom).length <= 1));
   let story: Item[];
   let seriesOrder: string[] = [];
   if (series) {
@@ -241,16 +261,34 @@ function build({ cards, plan, sceneIds, labels, series }: OrganizeInput, perRow:
           // Cases du gabarit de l'épisode, de gauche à droite, chacune avec ses scènes ; une case vide compte pour une.
           const inBeats = new Set(ep.beats.flatMap((b) => b.scenes));
           const loose = ids.filter((id) => !inBeats.has(id));
-          const beatItems: Item[] = ep.beats.map((b) => {
-            const own = keep(b.scenes);
-            return { kind: "frame", title: b.label, beat: b.key, episode: ep.id, body: { items: own.flatMap(cardItem), columns: sceneColumns(own.length), gap: GAP } };
-          });
+          // Structure imbriquée (#111, #148 : actes et séquences) : une case qui a des sous-cases les contient.
+          type EpNode = { b: NonNullable<typeof ep.beats>[number]; children: EpNode[] };
+          const roots: EpNode[] = [];
+          const stack: EpNode[] = [];
+          for (const b of ep.beats) {
+            const node: EpNode = { b, children: [] };
+            while (stack.length > 0 && (stack[stack.length - 1].b.level ?? 1) >= (b.level ?? 1)) stack.pop();
+            (stack.length > 0 ? stack[stack.length - 1].children : roots).push(node);
+            stack.push(node);
+          }
+          const beatItem = (node: EpNode): Item => {
+            const inner = chaptered(keep(node.b.scenes));
+            const kids = node.children.map(beatItem);
+            const items: Item[] = [...inner.map((g) => g.item), ...kids];
+            return { kind: "frame", title: node.b.label, beat: node.b.key, episode: ep.id, body: { items, columns: Math.max(1, items.length), gap: GROUP_GAP } };
+          };
+          const beatItems: Item[] = roots.map(beatItem);
           const items: Item[] = [...(loose.length > 0 ? [{ kind: "box" as const, body: { items: loose.flatMap(cardItem), columns: sceneColumns(loose.length), gap: GAP } }] : []), ...beatItems];
           const count = loose.length + ep.beats.reduce((a, b) => a + Math.max(1, keep(b.scenes).length), 0);
           const item: Item = { kind: "frame", title, episode: ep.id, body: { items, columns: items.length, gap: GROUP_GAP } };
           return { item, count };
         }
-        const item: Item = { kind: "frame", title, episode: ep.id, body: { items: ids.flatMap(cardItem), columns: sceneColumns(ids.length), gap: GAP } };
+        // Séquences de l'épisode (#140) : un cadre chacune, dans le cadre de l'épisode.
+        const groups = chaptered(ids);
+        const body: Layout = groups.some((g) => g.item.kind === "frame")
+          ? { items: groups.map((g) => g.item), columns: groups.length, gap: GROUP_GAP }
+          : { items: ids.flatMap(cardItem), columns: sceneColumns(ids.length), gap: GAP };
+        const item: Item = { kind: "frame", title, episode: ep.id, body };
         return { item, count: Math.max(1, ids.length) };
       });
       const rows = inRows(episodes);

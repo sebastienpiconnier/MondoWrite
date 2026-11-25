@@ -66,6 +66,8 @@ export function CanvasFilterMenu() {
     };
   }, [open]);
 
+  const plotOn = useSettings((s) => s.plotColors);
+  const plotLabel = useT().plan.plotColors;
   return (
     <div className="canvas-filter" ref={rootRef}>
       <button
@@ -86,6 +88,11 @@ export function CanvasFilterMenu() {
       </button>
       {open && (
         <div id={panelId} className="canvas-filter-panel" role="group" aria-label={t.button}>
+          {/* Couleurs des intrigues (#143) : un affichage de l'appareil, le même que celui du Plan et du séquencier. */}
+          <label className="canvas-filter-item canvas-filter-plots">
+            <input type="checkbox" checked={plotOn} onChange={() => useSettings.getState().setPlotColors(!plotOn)} />
+            {plotLabel}
+          </label>
           <p className="canvas-filter-title">{t.title}</p>
           {menuTypes.map((type) => {
             const shown = !filter.types.includes(type);

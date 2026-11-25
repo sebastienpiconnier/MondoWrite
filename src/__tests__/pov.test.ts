@@ -19,7 +19,7 @@ const scene = (id: string, pov?: string, extra: Partial<CardData> = {}): CardDat
 
 describe("Champs-références", () => {
   it("pivot et pov désignent une carte Personnage", () => {
-    expect(CARD_REF_FIELDS).toEqual({ pivot: "personnage", pov: "personnage" });
+    expect(CARD_REF_FIELDS).toEqual({ pivot: "personnage", pov: "personnage", intrigue: "intrigue" });
     expect(isCardRefField("pov")).toBe(true);
     expect(isCardRefField("synopsis")).toBe(false);
     expect(isCardRefField("toString")).toBe(false);

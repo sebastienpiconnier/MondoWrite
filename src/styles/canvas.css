@@ -452,7 +452,6 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
      L'aide au clavier devient le saut de ligne (pleine largeur, sans hauteur). */
   .sp-bar { justify-content: center; }
   .sp-bar-hint { display: block; flex: 0 0 100%; height: 0; padding: 0; overflow: hidden; font-size: 0; line-height: 0; }
-  .sp-bar .sp-bar-hint + .sp-option { margin-left: 0; }
 }
 
 
@@ -565,3 +564,9 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
   .card-setups { min-height: 44px; }
 }
 .toile .react-flow__edge.is-setup.selected .react-flow__edge-path { stroke-width: 3 !important; }
+
+/* Numéro de la scène dans le récit, à côté de son type (lot 17). */
+.card-handle > .card-type:has(+ .card-scene-number) { margin-right: 0; }
+.card-handle > .card-scene-number { margin-right: auto; flex: none; padding: 1px 7px; border-radius: 999px; font: 600 11px var(--font-ui); color: var(--ink-2); background: var(--ground); font-variant-numeric: tabular-nums; }
+/* Fond aux couleurs des intrigues de la scène (#143, réglage « Couleurs des intrigues ») : par-dessus la surface. */
+.card.has-plot { background-image: var(--plot-bg); background-color: transparent; }

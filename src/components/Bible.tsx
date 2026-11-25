@@ -10,6 +10,7 @@ import { panelAfterSwipe } from "../touchGestures";
 import { formOf } from "../pitch";
 import { autosize } from "./autosize";
 import { BibleLinks } from "./BibleLinks";
+import { CardScenes, SceneLinks } from "./LinkedCards";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker, PovScenes } from "./PovPicker";
 import { headingOf } from "../screenplay/sceneText";
@@ -469,6 +470,9 @@ export function Bible() {
                 </>
               )}
               {type === "personnage" && <CharacterAssistant card={card} startOpen={assisted?.id === card.id} openKey={assisted?.id === card.id ? assisted.at : 0} />}
+              {/* Relier sans tirer de fil (#137, #138) : une scène choisit ses personnages, intrigues et lieu ; une
+                  intrigue, un personnage, un lieu… choisissent leurs scènes. */}
+              {type === "scene" ? !card.page && <SceneLinks id={card.id} /> : <CardScenes id={card.id} type={type} />}
               <BibleLinks cardId={card.id} links={links} titleOf={titleOf} />
               {/* En bas de la fiche : dans l'en-tête, il prenait la place du titre sur téléphone. */}
               <button type="button" className="link-button bible-see-canvas" onClick={() => revealCard(card.id)}>

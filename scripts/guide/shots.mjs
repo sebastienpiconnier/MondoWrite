@@ -628,7 +628,7 @@ await step("vérifier et filtre", async () => {
   await page.locator(".sp-editor").first().click();
   for (let i = 0; i < 4; i++) await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
   await wait(600);
-  await page.selectOption("#sp-filter-name", T("LE LOUP", "THE WOLF", "EL LOBO"));
+  await page.selectOption("#sp-filter-name", T("c:LE LOUP", "c:THE WOLF", "c:EL LOBO"));
   await page.getByRole("button", { name: T("Ses répliques", "Their lines", "Sus réplicas"), exact: true }).click();
   await wait(800);
   await shot("scenario-filtre");

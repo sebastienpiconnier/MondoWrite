@@ -2,6 +2,7 @@
 // texte et sa fiche, avec la place d'écrire. C'est la même carte que sur le canevas (même état du store,
 // rien n'est recopié) : ce qu'on écrit ici y est aussitôt. Échap ou un clic à côté ferme.
 
+import { SceneSetupsBox } from "./SceneSetups";
 import { useEffect, useRef } from "react";
 import { useT } from "../i18n";
 import { useVocab } from "../vocab";
@@ -17,6 +18,8 @@ import { ScriptSceneEditor } from "./ScriptSceneEditor";
 import { SceneStatusPicker } from "./SceneStatusPicker";
 import { PovPicker } from "./PovPicker";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
+import { CardScenes, SceneLinks } from "./LinkedCards";
+import { ScenePlace } from "./ScenePlace";
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -87,6 +90,14 @@ export function ExpandedCard({ card }: { card: CardData }) {
           body?.focus();
         }}
       />
+      {/* Scène : personnages, intrigues, décor et place dans le récit en tête, avant le texte (lot 17). */}
+      {(scriptScene || novelScene) && !card.page && (
+        <div className="expanded-scene-head">
+          <SceneLinks id={card.id} compact />
+          <ScenePlace id={card.id} compact />
+          <SceneSetupsBox id={card.id} />
+        </div>
+      )}
       {imageUrl && <img className="expanded-image" src={imageUrl} alt="" />}
       {scriptScene ? (
         <>
@@ -129,6 +140,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
             <BibleBody card={card} />
           </div>
           <CardSheet card={card} />
+          <CardScenes id={card.id} type={card.type} />
         </>
       )}
     </div>

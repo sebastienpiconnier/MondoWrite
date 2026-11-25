@@ -4,7 +4,7 @@
 
 import { EDITABLE, eventElement } from "../eventTarget";
 import { isCardCopy } from "../cardClipboard";
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -48,6 +48,8 @@ import { junctionOrder, projectSetupLetters } from "../projectJunctions";
 import { setupCircle, setupOf } from "../setups";
 import { END_TARGET } from "../interactive/choices";
 import { EdgeEditor, STORY_CHOICE_EVENT, TargetPicker, type StoryChoiceAsk } from "./StoryChoices";
+import { PaneMenu, type PaneMenuItem } from "./PaneMenu";
+import { useVocab } from "../vocab";
 
 /** Fichiers qui deviennent une carte quand on les dépose ou les colle sur le canevas. */
 const isIncomingFile = (f: File) =>
@@ -123,6 +125,10 @@ export function Toile() {
     useCosmos();
   const frames = useCosmos((s) => s.frames);
   const addFrame = useCosmos((s) => s.addFrame);
+  const vocabTypes = useVocab().types;
+  // Menu du clic droit sur le fond (#146) : point du clic, à l'écran.
+  const [paneMenu, setPaneMenu] = useState<{ x: number; y: number } | null>(null);
+  const closePaneMenu = useCallback(() => setPaneMenu(null), []);
   // Cartes enfin mesurées (le canevas s'ouvre, ou une carte vient de naître) : une scène posée dans son cadre
   // d'après une hauteur estimée (écrite dans la vue Scénario, canevas fermé) et qui en dépasse fait ranger de nouveau.
   const measured = useNodesInitialized();
@@ -421,6 +427,33 @@ export function Toile() {
     });
     return () => setCanvasCenter(null);
   }, [screenToFlowPosition]);
+  // Choix du menu du clic droit (#146) : tout se pose au point du clic.
+  const paneMenuItems = (x: number, y: number): PaneMenuItem[] => {
+    const store = useCosmos.getState();
+    const at = screenToFlowPosition({ x, y });
+    const typed = (type: CardType): PaneMenuItem => ({
+      label: fmt(t.toile.paneMenu.createType, { type: vocabTypes[type].label }),
+      onSelect: () => {
+        lastCreated.current = Date.now();
+        useCosmos.getState().addCard({ x: at.x - 20, y: at.y - 20 }, type);
+      },
+    });
+    const items: PaneMenuItem[] = [
+      { label: t.toile.paneMenu.newHere, hint: "N", onSelect: () => createAt(x, y) },
+      typed("scene"),
+      typed("personnage"),
+      typed("lieu"),
+      typed("intrigue"),
+    ];
+    if (store.cardCopy) items.push({ label: t.toile.paneMenu.paste, rule: true, onSelect: () => useCosmos.getState().pasteCards(at) });
+    items.push(
+      { label: t.toile.addFrame, hint: "C", rule: !store.cardCopy, onSelect: () => addFrame(at) },
+      { label: t.organize.button, onSelect: () => useCosmos.getState().organizeCanvas() },
+      { label: t.toile.paneMenu.fit, onSelect: () => void fitView({ padding: 0.12, duration: 500 }) },
+    );
+    return items;
+  };
+
   const createInCenterRef = useRef(createInCenter);
   createInCenterRef.current = createInCenter;
   const createFrameRef = useRef(createFrame);
@@ -836,16 +869,25 @@ export function Toile() {
           if (s.cardMenu) s.setCardMenu(null);
           setChoiceSel(null);
         }}
+        // Double-clic sur une carte, hors de son titre et de son texte (#139) : elle s'ouvre en grand, la même fenêtre
+        // pour tous les types (texte, fiche, liens), comme une scène. Dans le texte, le double-clic choisit un mot.
+        onNodeDoubleClick={(event, node) => {
+          if (node.type !== "card") return;
+          const target = event.target as HTMLElement;
+          if (target.closest(".card-title, .card-body:not(.is-scene), textarea, input, button, a, [contenteditable=true], .card-links")) return;
+          useCosmos.getState().expandCard(node.id);
+        }}
         // Clic droit sur une carte, hors de son texte (le menu du navigateur y reste, pour l'orthographe) : son menu.
         onNodeContextMenu={(event, node) => {
           if (node.type !== "card" || (event.target as HTMLElement).closest(".card-body, .card-title")) return;
           event.preventDefault();
           useCosmos.getState().setCardMenu(node.id);
         }}
-        // Clic droit sur le canevas : nouvelle carte à cet endroit (le menu du navigateur reste sur les cartes).
+        // Clic droit sur le canevas : un menu (#146), dont le premier choix crée une carte à cet endroit. Il créait
+        // la carte d'un seul geste, et ceux qui attendent un menu au clic droit en créaient sans le vouloir.
         onPaneContextMenu={(event) => {
           event.preventDefault();
-          createAt(event.clientX, event.clientY);
+          setPaneMenu({ x: event.clientX, y: event.clientY });
         }}
         onConnectEnd={(event, state) => {
           // Roman interactif : une flèche partie d'une scène et lâchée dans le vide crée la scène suivante et son choix.
@@ -993,6 +1035,8 @@ export function Toile() {
           </button>
         </div>
       )}
+
+      {paneMenu && <PaneMenu x={paneMenu.x} y={paneMenu.y} label={t.toile.paneMenu.label} items={paneMenuItems(paneMenu.x, paneMenu.y)} onClose={closePaneMenu} />}
 
       {/* Une seule rangée en bas à gauche : « Nouvelle carte » puis les outils. Son menu s'ouvre au-dessus. */}
       <div className="canvas-dock">

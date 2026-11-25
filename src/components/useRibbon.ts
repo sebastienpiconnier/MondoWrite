@@ -29,14 +29,14 @@ export function useRibbon(evenFree = false): Ribbon | null {
     if (kind === "scenario") {
       if (!screenplay) return null;
       const pagination = paginate(screenplay.elements, LAYOUTS[paper]);
-      const { template, groups } = screenplayGroups(screenplay.elements, (start, end) => pagesBetween(pagination, start, end));
+      const { template, groups, custom } = screenplayGroups(screenplay.elements, (start, end) => pagesBetween(pagination, start, end));
       if (!groups.some((g) => g.scenes.length > 0)) return null;
       if (template === "libre" || wholeSeries) return evenFree ? buildRibbon("libre", [{ key: null, scenes: groups.flatMap((g) => g.scenes) }]) : null;
-      return buildRibbon(template, groups);
+      return buildRibbon(template, groups, custom);
     }
     if (plan.template === "libre" && !evenFree) return null;
     const ids = sceneKey ? sceneKey.split(" ") : [];
     if (ids.length === 0) return null;
-    return buildRibbon(plan.template, novelGroups(plan, ids, (id) => countWords(manuscript[id])));
+    return buildRibbon(plan.template, novelGroups(plan, ids, (id) => countWords(manuscript[id])), plan.custom);
   }, [kind, screenplay, paper, plan, manuscript, sceneKey, evenFree, wholeSeries]);
 }
