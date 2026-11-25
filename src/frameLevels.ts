@@ -26,8 +26,8 @@ export function frameDepth(id: string, frames: readonly Box[]): number {
 
 export const frameLevel = (depth: number): FrameLevel => (depth <= 0 ? 0 : depth === 1 ? 1 : 2);
 
-/** Plafond de l'agrandissement des titres selon le niveau : de loin, on lit d'abord les grands cadres. */
-const BOOST_MAX: Record<FrameLevel, number> = { 0: 4, 1: 2.5, 2: 1.5 };
+/** Plafond de l'agrandissement des titres selon le niveau : de loin, on lit d'abord les grands cadres ; les séquences d'un épisode (trois cadres au-dessus) se lisent encore (lot 17 ter). */
+const BOOST_MAX: Record<FrameLevel, number> = { 0: 5, 1: 3.5, 2: 3 };
 
 /**
  * Agrandissement du titre quand on recule : le titre garde à l'écran à peu près sa taille de 70 % de zoom,

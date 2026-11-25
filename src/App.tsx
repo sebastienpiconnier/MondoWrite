@@ -4,6 +4,7 @@ import { listenForNativeDragScroll } from "./components/nativeDragScroll";
 import { sendCommand } from "./commands";
 import { openPalette } from "./commandList";
 import { captureSpot } from "./resume";
+import { forgetPlace, keepPlace } from "./components/keepPlaceRun";
 import { reviewProjectClosed, reviewProjectOpened } from "./storeReview";
 import { nextZoom, useSettings } from "./settings";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -69,11 +70,16 @@ export function App() {
     start();
   }, [start]);
 
-  // « Reprendre là où j'en étais » (#27) : la vue (et la scène de la vue qu'on quitte) relevées à chaque changement.
+  // « Reprendre là où j'en étais » (#27) : la vue (et la scène de la vue qu'on quitte) relevées à chaque changement ;
+  // la même position fait suivre la scène en cours d'une vue à l'autre (#144).
   useEffect(
     () =>
       useCosmos.subscribe((s, prev) => {
-        if (s.screen === "project" && prev.screen === "project" && s.view !== prev.view) captureSpot(storage.current?.(), s.view);
+        if (s.screen === "project" && prev.screen !== "project") forgetPlace();
+        if (s.screen !== "project" || prev.screen !== "project" || s.view === prev.view) return;
+        captureSpot(storage.current?.(), s.view);
+        // Garder sa place (#144) : la scène où l'on écrivait suit d'une vue à l'autre.
+        keepPlace(s, prev);
       }),
     [],
   );

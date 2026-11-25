@@ -18,12 +18,21 @@ import Highlight from "@tiptap/extension-highlight";
 import Strike from "@tiptap/extension-strike";
 import { markdownToHtml } from "../storage/markdown";
 import { looksLikeMarkdown, markdownSource } from "../markdownText";
+import { flattenSourceNewlines } from "../pasteHtml";
 import { useSettings } from "../settings";
 import { smartType, typographyMode } from "../typography";
 import { IaMark } from "./iaMark";
 import { CommentMark } from "./commentMark";
 import { Footnote } from "./footnote";
 import { openSynonyms } from "../synonymsState";
+
+/** HTML collé depuis Word ou un autre traitement de texte : ses retours du code source ne coupent plus le texte. */
+export const PastedHtml = Extension.create({
+  name: "cosmosPastedHtml",
+  addProseMirrorPlugins() {
+    return [new Plugin({ key: new PluginKey("cosmosPastedHtml"), props: { transformPastedHTML: (html) => flattenSourceNewlines(html) } })];
+  },
+});
 
 /** Texte brut collé en Markdown : converti en texte mis en forme. Le HTML collé garde son chemin habituel. */
 export const MarkdownPaste = Extension.create({
@@ -144,6 +153,7 @@ export function richTextExtensions({ link = true, prose = false }: { link?: bool
     // Passage proposé par l'IA (mode Atelier), marqué jusqu'à « Je l'ai repris ».
     IaMark,
     MarkdownPaste,
+    PastedHtml,
     Typography,
     Synonyms,
   ];

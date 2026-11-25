@@ -9,12 +9,13 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Autodetect } from "./autodetect";
 import { ScreenplayKeymap } from "./keymap";
+import { MoveBlocks, SCREENPLAY_MOVE } from "../../components/moveBlocks";
 import { Pages, type PagesOptions } from "./pages";
 import { Continued, type ContinuedOptions } from "./continued";
 import { Revisions } from "./revisions";
 import { HiddenSynopsis } from "./hiddenSynopsis";
 import { ReadingMark } from "../../components/readingMark";
-import { Synonyms } from "../../components/editorKit";
+import { PastedHtml, Synonyms } from "../../components/editorKit";
 import {
   Action,
   Character,
@@ -28,7 +29,7 @@ import {
   type EditableType,
 } from "./nodes";
 
-export { toDoc, fromDoc } from "./convert";
+export { toDoc, fromDoc, toNode } from "./convert";
 export { currentElement, setElementType } from "./keymap";
 export { isEditableType, type EditableType, type PreservedKind } from "./nodes";
 
@@ -85,6 +86,8 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
       placeholder: ({ node }) => (isEditableType(node.type.name) ? options.placeholder(node.type.name) : ""),
     }),
     ScreenplayKeymap.configure({ onEscape: options.onEscape }),
+    // Alt Maj ↑ ↓ : la ligne ou la réplique entière monte ou descend (#145).
+    MoveBlocks.configure({ rules: SCREENPLAY_MOVE }),
     // Synonymes (#16) : dans les actions et les répliques, pas dans les noms ni les en-têtes.
     Synonyms.configure({ allow: (type) => type === "action" || type === "dialogue" }),
     Autodetect.configure({ locale: options.locale }),
@@ -98,5 +101,7 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
       start: (node) => (node.type.name === "sceneHeading" ? (node.attrs.cardId && node.attrs.omitted == null ? String(node.attrs.cardId) : null) : undefined),
     }),
     ReadingMark,
+    // Texte collé depuis Word : les retours du code source HTML ne coupent plus un paragraphe.
+    PastedHtml,
   ];
 }

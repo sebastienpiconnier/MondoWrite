@@ -2,7 +2,7 @@
 // (« getSnapshot should be cached ») et la fenêtre reste vide. Cas réel : roman en gabarit libre (1.7.0 à 1.7.2).
 
 import { describe, expect, it } from "vitest";
-import { beatKeys } from "../components/FrameLabels";
+import { beatKeys, caseRank } from "../components/FrameLabels";
 
 type S = Parameters<typeof beatKeys>[0];
 const state = (plan: object, kind = "roman") => ({ kind, plan, screenplay: { titlePage: {}, elements: [] } }) as unknown as S;
@@ -24,5 +24,16 @@ describe("beatKeys rend un tableau stable", () => {
   it("scénario sans gabarit", () => {
     const s = state({ template: "libre", beats: {} }, "scenario");
     expect(beatKeys(s)).toBe(beatKeys(s));
+  });
+});
+
+// Lot 17 ter : le rang d'une case est devenu un objet ; recréé à chaque appel pour un roman, « Organiser »
+// faisait boucler React sur le canevas du projet d'exemple.
+describe("caseRank rend un objet stable", () => {
+  it("roman, gabarit livré", () => {
+    const s = state({ template: "troisActes", beats: {} });
+    const key = beatKeys(s)[1];
+    expect(caseRank(s, key)).toBe(caseRank(s, key));
+    expect(caseRank(s, key)).toMatchObject({ n: 2 });
   });
 });

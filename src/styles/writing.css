@@ -1096,10 +1096,12 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* ---------- Ruban du récit (Manuscrit, Scénario) ---------- */
 .ribbon { flex: none; width: 100%; max-width: 980px; margin: 6px auto 4px; padding: 10px 16px 0; box-sizing: border-box; }
 .ms-meta > .ribbon { flex-basis: 100%; max-width: none; margin: 2px 0 6px; padding: 0 4px; }
-.ribbon-track { position: relative; height: 12px; margin-top: 6px; border-radius: 6px; background: var(--ground); }
+/* Lot 17 ter : le ruban se voit sur tous les fonds (--line), les scènes sont séparées par un jour de la couleur du fond,
+   et les repères de la structure (jalons) sont des traits d'accent qui dépassent, coiffés d'un petit triangle. */
+.ribbon-track { position: relative; height: 12px; margin-top: 12px; border-radius: 6px; background: var(--line); }
 .ribbon-beat { position: absolute; top: 0; bottom: 0; background: var(--accent-soft); box-shadow: inset -1px 0 0 var(--surface); }
 .ribbon-beat.is-odd { background: var(--line); }
-.ribbon-beat.is-free { background: var(--ground); }
+.ribbon-beat.is-free { background: transparent; }
 .ribbon-beat:first-child { border-radius: 6px 0 0 6px; }
 .ribbon-beat:last-of-type { border-radius: 0 6px 6px 0; }
 .ribbon-scene { position: absolute; top: 0; bottom: 0; min-width: 3px; margin: 0; padding: 0; border: 0; border-right: 2px solid var(--surface); background: transparent; cursor: pointer; }
@@ -1109,15 +1111,16 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ribbon-scene:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (any-hover: hover) { .ribbon-scene:hover { background: var(--accent-ink); opacity: 0.5; } .ribbon-scene.is-current:hover { opacity: 1; } }
 @media (pointer: coarse) { .ribbon-scene::after { inset: -16px 0; } }
-.ribbon-mark { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink-2); opacity: 0.55; pointer-events: none; }
+.ribbon-mark { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent-ink); pointer-events: none; z-index: 2; }
+.ribbon-mark::before { content: ""; position: absolute; top: -6px; left: -4px; border: 5px solid transparent; border-top-color: var(--accent-ink); border-bottom: 0; }
 .ribbon-caption { margin: 8px 0 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.4; }
 .ribbon-note { font-style: italic; }
 .ribbon-toggle { padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 @media (pointer: coarse) { .ribbon-toggle { min-height: 44px; } }
 /* Chaque intrigue a toute la largeur, pour que ses scènes tombent sous celles du ruban ; son nom au-dessus. */
 /* Ruban par point de vue (1.13.0) : chaque scène de la couleur de son narrateur, les cases en fond neutre. */
-.ribbon.is-pov .ribbon-beat { background: var(--ground); }
-.ribbon.is-pov .ribbon-beat.is-odd { background: var(--line); }
+.ribbon.is-pov .ribbon-beat { background: var(--line); }
+.ribbon.is-pov .ribbon-beat.is-odd { background: var(--line-2); }
 .ribbon-scene.has-pov { background: var(--scene-pov); }
 .ribbon-scene.has-pov.is-current { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); border-radius: 2px; z-index: 1; }
 @media (any-hover: hover) { .ribbon-scene.has-pov:hover { background: var(--scene-pov); opacity: 0.75; } }
@@ -1126,10 +1129,17 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 .ribbon-legend-swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--scene-pov); }
 .ribbon-legend .is-none .ribbon-legend-swatch { background: transparent; border: 1.5px solid var(--line-2); box-sizing: border-box; }
 .ribbon-lane { margin-top: 4px; }
+/* Pistes ouvertes : le nom de chaque intrigue à gauche de son trait, sur la même ligne ; le ruban et la courbe
+   laissent la même place à gauche, pour que chaque trait tombe exactement sous ses scènes. */
+.ribbon.has-lanes { --lane-name: clamp(5.5em, 22%, 10em); }
+.ribbon.has-lanes .ribbon-track, .ribbon.has-lanes .ribbon-curve { margin-left: calc(var(--lane-name) + 8px); }
+.ribbon.has-lanes .ribbon-lane { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.ribbon.has-lanes .ribbon-lane-name { flex: none; width: var(--lane-name); text-align: right; }
+.ribbon.has-lanes .ribbon-lane-track { flex: 1; min-width: 0; }
 .ribbon-lane-name { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 0.75rem; line-height: 1.4; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 @media (any-hover: hover) { .ribbon-lane-name:hover { color: var(--ink); text-decoration: underline; } }
-.ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--ground); }
-.ribbon-lane-mark { position: absolute; top: 0; bottom: 0; min-width: 3px; border-right: 2px solid var(--surface); background: var(--type-intrigue); }
+.ribbon-lane-track { position: relative; height: 6px; border-radius: 3px; background: var(--line); }
+.ribbon-lane-mark { position: absolute; top: 0; bottom: 0; min-width: 3px; border-right: 2px solid var(--surface); background: var(--lane, var(--type-intrigue)); }
 .ribbon-lane-mark.is-cited { opacity: 0.45; }
 .ribbon-curve { position: relative; height: 44px; margin-top: 6px; }
 .ribbon-curve svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -1201,6 +1211,10 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px sol
 /* Import et export d'un gabarit (1.12.0) : message près du choix du gabarit, origine du fichier dans l'éditeur. */
 .tpl-notice { font-size: 0.8125rem; color: var(--ink-2); }
 .tpl-notice.is-error { color: var(--danger); }
+/* Confirmation avant de remplacer actes et séquences (#154) : sous le menu, sur toute la largeur. */
+.tpl-confirm { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-left: 3px solid var(--danger); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 0.875rem; }
+.tpl-confirm > span { flex: 1 1 260px; }
+@media (pointer: coarse) { .tpl-confirm button { min-height: 44px; } }
 .tpl-imported { margin: -6px 0 14px; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--ground); font-size: 0.875rem; line-height: 1.45; }
 .tpl-file-hint { margin: 0 0 10px; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.45; }
 .tpl-actions { justify-content: flex-end; }
@@ -1777,3 +1791,156 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .wpage-advanced summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 .wpage textarea { width: 100%; min-height: 8em; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: 0.875rem/1.45 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
 .wpage textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Relier sans tirer de fil (#137, #138) : rangées de pastilles d'une scène (personnages, intrigues, lieu) et
+   scènes d'une carte, avec leur recherche. */
+.scene-links, .card-scenes { gap: 12px; align-items: stretch; }
+.link-row { display: flex; flex-direction: column; gap: 6px; }
+.link-row + .link-row { border-top: 1px solid var(--line); padding-top: 10px; }
+.link-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.link-row-head .eyebrow { color: var(--type); }
+.link-row-add { width: 32px; height: 32px; }
+@media (pointer: coarse) { .link-row-add { width: 44px; height: 44px; } }
+.link-pill { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 10px; }
+.link-pill .card-dot { background: var(--type); }
+.link-picker { display: flex; flex-direction: column; gap: 4px; }
+.link-picker input { width: 100%; min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--page); color: var(--ink); font: inherit; }
+.link-picker-list { list-style: none; margin: 0; padding: 4px; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.link-picker-list [role="option"] { padding: 8px 10px; border-radius: 6px; cursor: pointer; min-height: 36px; display: flex; align-items: center; }
+.link-picker-list [role="option"].is-active { background: var(--accent-soft); color: var(--accent-ink); }
+@media (any-hover: hover) { .link-picker-list [role="option"]:hover { background: var(--hover); } }
+@media (pointer: coarse) { .link-picker-list [role="option"] { min-height: 44px; } }
+.card-scenes-foot { margin: 0; }
+
+/* Actes et séquences dans le séquencier (#140, #142) : un acte a un grand titre, une séquence forme un bloc. */
+.sq-section.sq-part { align-items: center; flex-wrap: nowrap; border-radius: 0; }
+.sq-section.sq-act { margin-top: 28px; padding: 12px 4px 6px; border-top: 3px solid var(--accent); font-size: 1.5rem; font-weight: 700; }
+.sq-section.sq-seq { margin-top: 14px; padding: 8px 6px 6px; background: var(--ground); border-top: 1px solid var(--line-2); border-radius: 8px 8px 0 0; }
+.sq-section.sq-part .sq-section-name { flex: 1; }
+.sq-section.sq-part .sq-section-length { white-space: nowrap; }
+.sq-list:not(.is-cards) .sq-scene.in-seq { margin-left: 16px; border-left: 3px solid var(--line-2); }
+.sq-list.is-cards .sq-scene.in-seq { border-top: 3px solid var(--line-2); }
+@media (max-width: 720px) { .sq-list:not(.is-cards) .sq-scene.in-seq { margin-left: 8px; } }
+
+/* Place d'une scène (#141) : séquence, épisode, case, en listes déroulantes. */
+.scene-place { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+/* La liste ne déborde jamais du volet : la colonne du choix rétrécit et coupe le nom au bout. */
+.scene-place-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; font: 0.875rem var(--font-ui); color: var(--ink-2); }
+.scene-place-row > span { flex: none; min-width: 6.5em; }
+.scene-place-row select { width: 100%; max-width: 100%; min-width: 0; text-overflow: ellipsis; min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }
+@media (pointer: coarse) { .scene-place-row select { min-height: 44px; } }
+.scene-place-hint { margin: 0; }
+
+/* Fond aux couleurs des intrigues de la scène (#143) : une bande pleine par intrigue, la principale à gauche.
+   Chaque couleur de type est à 4,5:1 de la surface dans toutes les palettes : le texte prend la surface
+   (`--plot-fg`), et ce qui était posé sur la surface (pastilles) s'inverse. */
+.has-plot {
+  background-image: var(--plot-bg);
+  color: var(--plot-fg);
+  --ink: var(--plot-fg); --ink-2: var(--plot-fg); --muted: var(--plot-fg); --placeholder: var(--plot-fg);
+  --accent: var(--plot-fg); --accent-ink: var(--plot-fg); --type: var(--plot-fg);
+  --surface: var(--plot-fg-swap); --ground: var(--plot-fg-swap); --accent-soft: transparent;
+  --line: var(--plot-fg); --line-2: var(--plot-fg);
+}
+/* Survol d'une scène colorée : jamais le fond clair de --hover (le texte, couleur de la surface, disparaissait). */
+@media (any-hover: hover) { .has-plot button:hover, .has-plot a:hover { background: color-mix(in srgb, var(--plot-fg-swap) 22%, transparent); } }
+.has-plot button.is-current { background: color-mix(in srgb, var(--plot-fg-swap) 30%, transparent); }
+/* Scène en cours sans dépendre de la couleur (#156) : une barre épaisse à gauche, à l'encre du thème ; sur une scène
+   colorée, l'encre est la surface (4,5:1 sur chaque couleur) bordée de l'encre inverse. */
+.sp-scene-list button.is-current, .ms-scenes button.is-current { box-shadow: inset 5px 0 0 var(--ink); }
+.has-plot button.is-current { box-shadow: none; }
+/* Trait de la scène en cours dans la marge de la feuille et de la page : un dessin, jamais imprimé. */
+.scene-rail { position: absolute; width: 3px; border-radius: 2px; background: color-mix(in srgb, var(--page-ink) 55%, var(--page)); pointer-events: none; z-index: 1; }
+@media print { .scene-rail { display: none; } }
+.has-plot.is-current, .has-plot[aria-current="true"], .has-plot:has(> [aria-current="true"]) { box-shadow: inset 0 0 0 3px var(--plot-fg), inset 0 0 0 5px var(--plot-fg-swap); }
+/* Liste des scènes (#156) : en plus du cadre, la même barre à gauche que sur une scène sans couleur. */
+.sp-scene-list .has-plot:has(> [aria-current="true"]) { box-shadow: inset 8px 0 0 var(--plot-fg), inset 11px 0 0 var(--plot-fg-swap), inset 0 0 0 3px var(--plot-fg), inset 0 0 0 5px var(--plot-fg-swap); }
+.plan-plot-colors[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
+.link-pill .link-star { min-width: 28px; border: 0; background: transparent; color: var(--ink-2); font-size: 1rem; cursor: pointer; }
+.link-pill .link-star[aria-pressed="true"] { color: var(--accent); }
+@media (pointer: coarse) { .link-pill .link-star { min-width: 44px; min-height: 44px; } }
+
+/* « Lire le synopsis seul » (#147) */
+.synopsis-list { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: min(60dvh, 640px); overflow: auto; }
+.synopsis-row h3 { margin: 12px 0 0; font: 600 1.0625rem var(--font-display); color: var(--ink); }
+.synopsis-row.is-act h3, .synopsis-row.is-season h3 { font-size: 1.25rem; border-top: 2px solid var(--accent); padding-top: 8px; }
+.synopsis-row.is-seq h3, .synopsis-row.is-chapter h3 { font-size: 1rem; }
+.synopsis-row p { margin: 2px 0 0; color: var(--ink-2); line-height: 1.5; }
+.synopsis-row p.is-empty { font-style: italic; color: var(--muted); }
+.synopsis-title { font-weight: 600; text-align: left; }
+.synopsis-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+/* Couleur d'une intrigue (#143) : huit pastilles, celle choisie (ou attribuée) cerclée. */
+.plot-color { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; }
+.plot-color-label { font: 600 0.8125rem var(--font-ui); color: var(--ink-2); margin-right: 4px; }
+.plot-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; padding: 0; }
+.plot-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+@media (pointer: coarse) { .plot-swatch { width: 40px; height: 40px; } }
+
+/* Carte Scène agrandie : personnages, intrigues, décor et place dans le récit en tête, en rangées compactes. */
+.expanded-scene-head { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.scene-links.is-compact { gap: 0; padding: 6px 12px; }
+.scene-links.is-compact .link-row { display: grid; grid-template-columns: minmax(8.5em, auto) 1fr; align-items: center; column-gap: 12px; padding: 4px 0; }
+.scene-links.is-compact .link-row + .link-row { padding-top: 4px; }
+.scene-links.is-compact .link-row-head { justify-content: flex-start; }
+.scene-links.is-compact .link-row > .sp-empty { margin: 0; }
+.scene-links.is-compact .link-picker { grid-column: 1 / -1; }
+.scene-place.is-compact { flex-direction: row; flex-wrap: wrap; gap: 8px 16px; padding: 8px 12px; }
+.scene-place.is-compact .scene-place-row > span { min-width: 0; }
+/* Personnages qui parlent sans être reliés : pointillé, « + » les relie. */
+.link-pill.is-loose { border-style: dashed; background: transparent; }
+.link-pill.is-loose .link-chip-open { display: inline-flex; align-items: center; padding: 4px 2px; }
+.link-lines { color: var(--ink-2); font-size: 0.85em; }
+
+/* Préparations : « Prépare… » et « Payée par… » de l'onglet Scène (lot 17). */
+.scene-setups-add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.scene-setups-pick { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; font: 0.8125rem var(--font-ui); color: var(--ink-2); }
+.scene-setups-pick input, .scene-setups-rename { min-height: 36px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px; padding: 0 8px; }
+.scene-setups-choices { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.scene-setups-choices li + li { border-top: 1px solid var(--line); }
+.scene-setups-choices button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: 6px 10px; border: 0; background: transparent; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.scene-setups-choices button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); }
+.scene-setups-choices button[aria-pressed="true"] .scene-setups-hint, .scene-setups-choices button[aria-pressed="true"] .scene-setups-num { color: inherit; }
+@media (any-hover: hover) { .scene-setups-choices button:hover:not([aria-pressed="true"]) { background: var(--ground); } }
+.scene-setups-title { font-weight: 600; }
+.scene-setups-hint { color: var(--ink-2); font-size: 0.8125rem; line-height: 1.35; }
+.scene-setups-num { display: inline-block; min-width: 2em; margin-right: 6px; color: var(--ink-2); font-variant-numeric: tabular-nums; font-weight: 600; }
+.scene-setups-none { padding: 8px 10px; color: var(--ink-2); }
+.scene-setups-name { display: flex; flex-direction: column; gap: 4px; }
+.scene-setups-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.scene-setups-links li { display: flex; align-items: center; gap: 4px; }
+/* Une préparation tient dans la colonne : lettre et numéro, titre coupé, nom du lien sur la ligne dessous ; le crayon reste visible. */
+.scene-setups-links .chip.is-setup {
+  flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 6px; row-gap: 0;
+  border: 0; border-radius: 10px; text-align: left; font: inherit; font-size: 0.8125rem; cursor: pointer; min-height: 36px;
+}
+.scene-setups-links .chip.is-setup .scene-setups-num { min-width: 0; margin: 0 6px 0 0; }
+.scene-setups-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scene-setups-linklabel { grid-column: 1 / -1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); font-style: italic; font-size: 0.75rem; }
+.scene-setups-pen { flex: none; width: 36px; min-height: 36px; }
+@media (pointer: coarse) { .scene-setups-pen { width: 44px; min-height: 44px; } }
+
+/* Volet de droite en rubriques (lot 17 ter) : chacune se replie par son en-tête, l'ordre et les rubriques masquées
+   sont un réglage de l'appareil (sidePanel.ts). Le contenu garde son composant ; son cadre et son titre cèdent la place. */
+.side-part { display: flex; flex-direction: column; gap: 6px; padding: 8px 14px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.side-part.is-folded { padding-bottom: 8px; }
+.side-part.is-own { padding: 0; border: 0; background: transparent; }
+.side-part-title { margin: 0; font-size: 0.875rem; }
+.side-part-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0; border: 0; background: transparent; color: var(--ink); font: 600 0.875rem var(--font-ui); text-align: left; cursor: pointer; }
+.side-part-head .disclosure { flex: none; }
+@media (pointer: coarse) { .side-part-head { min-height: 44px; } }
+.side-part-body { min-width: 0; }
+.side-part-body > .sp-box { padding: 0; border: 0; background: transparent; border-radius: 0; }
+.side-part-body > .sp-box > h2.sp-box-title, .side-part-body > .sp-box > .eyebrow:first-child { display: none; }
+.side-parts-customize { align-self: flex-start; font-size: 0.8125rem; }
+.side-parts-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.side-parts-list li { display: flex; align-items: center; gap: 4px; }
+.side-parts-list label { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 0.8125rem; color: var(--ink); cursor: pointer; }
+.side-parts-list .icon-button { width: 32px; min-height: 32px; }
+@media (pointer: coarse) { .side-parts-list label, .side-parts-list .icon-button { min-height: 44px; } .side-parts-list .icon-button { width: 44px; } }
+.side-parts-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+/* Jalons d'une structure de l'auteur (actes, séquences) : au début réel de chaque case ; l'acte dépasse plus. */
+.ribbon-mark.is-actual.is-level-2 { top: -3px; bottom: -3px; opacity: 0.8; }
+.ribbon-mark.is-actual.is-level-2::before { display: none; }
+.ribbon-mark.is-actual.is-level-3 { top: 0; bottom: 0; width: 1px; opacity: 0.6; }
+.ribbon-mark.is-actual.is-level-3::before { display: none; }

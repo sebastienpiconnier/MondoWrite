@@ -12,6 +12,7 @@ import { useRibbon } from "./useRibbon";
 import { fortuneCurve } from "../ribbon";
 import { useBeatText } from "./useBeatText";
 import { narratorColors } from "../pov";
+import { plotColors } from "../plotColors";
 import { usePhone } from "./usePhone";
 
 interface Props {
@@ -28,14 +29,19 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   const nodes = useCosmos((s) => s.nodes);
   // Point de vue (1.13.0) : le ruban existe aussi en plan libre dès qu'une scène a un narrateur.
   const anyPov = useMemo(() => nodes.some((n) => n.data.type === "scene" && n.data.fiche?.pov), [nodes]);
-  const ribbon = useRibbon(anyPov);
+  // Intrigues (lot 17) : le ruban existe aussi en plan libre dès qu'il y a une carte Intrigue, pour leurs pistes.
+  const hasPlots = useMemo(() => nodes.some((n) => n.data.type === "intrigue" && n.data.title.trim()), [nodes]);
+  const ribbon = useRibbon(anyPov || hasPlots);
   const beatInfo = useBeatText();
   const povPref = useSettings((s) => s.ribbonPov);
   const setPovPref = useSettings((s) => s.setRibbonPov);
   const titles = useMemo(() => new Map(nodes.map((n) => [n.id, n.data.title.trim()])), [nodes]);
   // Piste des intrigues (dépliée à la demande) : où paraît chaque carte Intrigue, par fil ou citée dans la scène.
-  const [lanesOpen, setLanesOpen] = useState(false);
-  const hasPlots = useMemo(() => nodes.some((n) => n.data.type === "intrigue" && n.data.title.trim()), [nodes]);
+  // null : d'office, ouvertes en plan libre sans point de vue (le ruban n'est là que pour elles).
+  const [lanesChoice, setLanesOpen] = useState<boolean | null>(null);
+  const autoLanes = !!ribbon && ribbon.template === "libre" && !anyPov;
+  const lanesOpen = lanesChoice ?? autoLanes;
+  const plotOn = useSettings((s) => s.plotColors);
   const edges = useCosmos((s) => s.edges);
   const manuscript = useCosmos((s) => s.manuscript);
   const screenplay = useCosmos(currentScript);
@@ -51,8 +57,18 @@ export function StoryRibbon({ currentId, onGo }: Props) {
       scenes.map((s) => s.id),
       lang,
     ).find((g) => g.type === "intrigue");
-    return (plots?.rows ?? []).map((row) => ({ id: row.card.id, title: row.card.title.trim(), cells: row.cells.map((presence, i) => ({ presence, scene: scenes[i] })) }));
+    const colors = plotColors(nodes, edges).plots;
+    return (plots?.rows ?? []).map((row) => ({ id: row.card.id, title: row.card.title.trim(), color: colors.get(row.card.id) ?? 1, cells: row.cells.map((presence, i) => ({ presence, scene: scenes[i] })) }));
   }, [lanesOpen, ribbon, hasPlots, kind, screenplay, manuscript, nodes, edges, lang]);
+  // Couleurs des intrigues allumées, ou pistes des intrigues ouvertes : chaque scène du ruban prend celle de son intrigue principale.
+  const plotOf = useMemo(() => {
+    if (!plotOn && !(lanesOpen && hasPlots)) return null;
+    const c = plotColors(nodes, edges);
+    return (id: string) => {
+      const main = c.main.get(id);
+      return main ? c.plots.get(main) : undefined;
+    };
+  }, [plotOn, lanesOpen, hasPlots, nodes, edges]);
   // Courbe du récit : d'après « Pour le héros, la scène finit » des fiches de scène.
   const [curveOpen, setCurveOpen] = useState(false);
   const curve = useMemo(() => {
@@ -92,7 +108,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   const here = ribbon.segments.flatMap((seg) => seg.scenes.map((s) => ({ seg, s }))).find((x) => x.s.id === currentId);
 
   return (
-    <nav className={`ribbon${povMode ? " is-pov" : ""}`} aria-label={r.aria}>
+    <nav className={`ribbon${povMode ? " is-pov" : ""}${lanes.length > 0 ? " has-lanes" : ""}`} aria-label={r.aria}>
       <div className="ribbon-track">
         {ribbon.segments.map((seg, i) => (
           <div
@@ -104,15 +120,16 @@ export function StoryRibbon({ currentId, onGo }: Props) {
             {seg.scenes.map((s, j) => {
               const label = sceneLabel(s.id, fmt(r.scene, { title: titles.get(s.id) || t.plan.untitled, beat: beatLabel(seg.key), n: j + 1 }));
               const pov = povMode ? povs.of.get(s.id) : undefined;
+              const color = pov ? povs.colors.get(pov) : plotOf?.(s.id);
               return (
                 <button
                   key={s.id}
                   type="button"
-                  className={`ribbon-scene${s.id === currentId ? " is-current" : ""}${pov ? " has-pov" : ""}`}
+                  className={`ribbon-scene${s.id === currentId ? " is-current" : ""}${color ? " has-pov" : ""}`}
                   style={{
                     left: `${seg.length > 0 ? ((s.start - seg.start) / seg.length) * 100 : 0}%`,
                     width: `${seg.length > 0 ? (s.length / seg.length) * 100 : 0}%`,
-                    ...(pov ? ({ "--scene-pov": `var(--pov-${povs.colors.get(pov)})` } as React.CSSProperties) : {}),
+                    ...(color ? ({ "--scene-pov": `var(--pov-${color})` } as React.CSSProperties) : {}),
                   }}
                   aria-current={s.id === currentId ? "true" : undefined}
                   aria-label={label}
@@ -124,7 +141,13 @@ export function StoryRibbon({ currentId, onGo }: Props) {
           </div>
         ))}
         {ribbon.markers.map((m) => (
-          <span key={m.key} className="ribbon-mark" style={{ left: `${m.at * 100}%` }} title={fmt(r.expected, { beat: beatLabel(m.key), n: pct(m.at) })} aria-hidden="true" />
+          <span
+            key={m.key}
+            className={`ribbon-mark${m.actual ? ` is-actual is-level-${m.level ?? 1}` : ""}`}
+            style={{ left: `${m.at * 100}%` }}
+            title={m.actual ? fmt(r.startsAt, { beat: beatLabel(m.key), n: pct(m.at) }) : fmt(r.expected, { beat: beatLabel(m.key), n: pct(m.at) })}
+            aria-hidden="true"
+          />
         ))}
       </div>
       {curveOpen && curve && (
@@ -139,7 +162,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
         </div>
       )}
       {lanes.map((lane) => (
-        <div key={lane.id} className="ribbon-lane">
+        <div key={lane.id} className="ribbon-lane" style={{ "--lane": `var(--pov-${lane.color})` } as React.CSSProperties}>
           {/* Lire le récit fil par fil (#117) : le nom de l'intrigue ouvre ses seules scènes. */}
           <button type="button" className="ribbon-lane-name" title={fmt(t.thread.readOf, { title: lane.title })} onClick={() => useCosmos.getState().readThread(lane.id)}>
             {lane.title}
@@ -170,7 +193,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
         </ul>
       )}
       <p className="ribbon-caption">
-        {here ? sceneLabel(here.s.id, free ? fmt(r.freeCaption, { n: pct(here.s.start) }) : fmt(r.caption, { beat: beatLabel(here.seg.key), n: pct(here.s.start) })) : free ? r.povHint : r.hint}
+        {here ? sceneLabel(here.s.id, free ? fmt(r.freeCaption, { n: pct(here.s.start) }) : fmt(r.caption, { beat: beatLabel(here.seg.key), n: pct(here.s.start) })) : free ? (anyPov ? r.povHint : r.plotsHint) : r.hint}
         {!ribbon.measured && !phone && <span className="ribbon-note"> · {r.byCount}</span>}
         {anyPov && !free && (
           <>

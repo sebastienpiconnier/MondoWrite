@@ -5,9 +5,32 @@
 
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, NodeSelection, TextSelection, type EditorState } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { Node as PmNode } from "@tiptap/pm/model";
 
 const key = new PluginKey("hiddenSynopsis");
+const shownKey = new PluginKey("shownSynopsis");
+
+/**
+ * Synopsis montré sous l'en-tête (#147, réglage `writing.showSynopsis`) : le texte est porté par l'en-tête
+ * (`data-synopsis`) et dessiné par la feuille de style dans la ligne vide qui le suit, en petit et en gris ; il
+ * n'occupe aucune place, donc les pages ne changent pas. Le synopsis s'écrit toujours dans l'onglet Scène.
+ */
+function synopsisDecorations(doc: PmNode): DecorationSet {
+  const decos: Decoration[] = [];
+  let pos = 0;
+  for (let i = 0; i < doc.childCount; i++) {
+    const node = doc.child(i);
+    if (node.type.name === "sceneHeading") {
+      const lines: string[] = [];
+      for (let k = i + 1; k < doc.childCount && isSceneSynopsis(doc, k); k++) lines.push(String(doc.child(k).attrs.text ?? "").replace(/\s*\[\[[^\]]*\]\]/g, "").trim());
+      const text = lines.filter(Boolean).join(" ");
+      if (text) decos.push(Decoration.node(pos, pos + node.nodeSize, { "data-synopsis": text }));
+    }
+    pos += node.nodeSize;
+  }
+  return DecorationSet.create(doc, decos);
+}
 
 /** Ce nœud de premier niveau est-il le synopsis d'une scène (sous son en-tête, ou sous un autre synopsis de scène) ? */
 export function isSceneSynopsis(doc: PmNode, index: number): boolean {
@@ -94,6 +117,14 @@ export const HiddenSynopsis = Extension.create({
           const next = moveOff(newState, oldState.selection.head);
           return next ? newState.tr.setSelection(next) : null;
         },
+      }),
+      new Plugin({
+        key: shownKey,
+        state: {
+          init: (_, state) => synopsisDecorations(state.doc),
+          apply: (tr, old) => (tr.docChanged ? synopsisDecorations(tr.doc) : old),
+        },
+        props: { decorations: (state) => shownKey.getState(state) },
       }),
     ];
   },

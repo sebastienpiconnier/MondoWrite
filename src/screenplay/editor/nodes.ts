@@ -3,6 +3,7 @@
 
 import { Node, mergeAttributes } from "@tiptap/react";
 import { beatOf, sectionLabel } from "../template";
+import { structureMark } from "../structure";
 import { seriesMark } from "../series";
 import { isCommentId } from "../../comments";
 import { EDITABLE_TYPES, type ElementType } from "../model";
@@ -139,7 +140,7 @@ export const Preserved = Node.create({
     // Section d'une série ou case d'un gabarit : son libellé dit ce qu'elle est (Saison, Épisode 2, Case).
     if (kind === "section") {
       const series = seriesMark({ type: "section", text: content });
-      const role = series?.kind ?? (beatOf(content) ? "beat" : null);
+      const role = series?.kind ?? structureMark({ type: "section", text: content })?.kind ?? (beatOf(content) ? "beat" : null);
       if (role) attrs["data-series"] = role;
     }
     if (ia) attrs["data-ia"] = "";

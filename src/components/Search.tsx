@@ -20,8 +20,11 @@ import { fmt } from "../i18n";
 import { goToHit, useCanSearchBySense, useSemanticSearch } from "./SemanticSearch";
 import { sceneSynopsis } from "../screenplay/scenes";
 import { PASSAGE_LIMIT, goToPassage, nextIndex, writingUnits } from "../writingFind";
-import { revealPlanRow } from "./revealRow";
+import { revealPlanRowSoon } from "./revealRow";
 import type { SemanticHit } from "../ai/semantic";
+
+/** Résultats montrés dans la liste du canevas, de la Bible et du Plan. */
+const RESULT_LIMIT = 20;
 
 /** Mode de la dernière recherche, gardé pour la session (l'auteur qui cherche par le sens y revient). */
 let lastMode: "words" | "sense" = "words";
@@ -120,10 +123,12 @@ export function Search() {
     const all = nodes.map((n) => n.data);
     return where === "plan" ? all.filter((c) => c.type === "scene") : all;
   }, [nodes, where]);
-  const results = useMemo(
-    () => (open && mode === "words" && !inWriting ? searchCards(cards, query, lang, 20, where === "bible" ? synopses : texts) : []),
+  // Toutes les cartes trouvées (leur nombre est dit à côté du champ, #160) ; la liste en montre les 20 premières.
+  const found = useMemo(
+    () => (open && mode === "words" && !inWriting ? searchCards(cards, query, lang, Infinity, where === "bible" ? synopses : texts) : []),
     [open, mode, inWriting, cards, query, lang, where, synopses, texts],
   );
+  const results = useMemo(() => found.slice(0, RESULT_LIMIT), [found]);
 
   // Manuscrit et Scénario : les scènes dans l'ordre du livre (et les titres des chapitres), comme l'éditeur les montre.
   const units = useMemo(
@@ -144,6 +149,22 @@ export function Search() {
   // Liste affichée : résultats par les mots, ou passages par le sens (calculés sur Entrée ou « Chercher »).
   const senseFresh = sense.status.step === "done" && sense.status.query === query;
   const count = mode === "words" ? (inWriting ? passages.length : results.length) : senseFresh ? senseHits.length : 0;
+  // Nombre de résultats (#160) : « 12 passages » dans le texte, « 3 cartes » sur le canevas, « 2 fiches » dans la
+  // Bible, « 2 scènes » dans le Plan ; rien tant qu'il n'y a rien (le message dessous le dit).
+  const total = mode === "words" ? (inWriting ? passages.length : found.length) : count;
+  const counted = (n: number, one: string, many: string) => (n === 1 ? one : fmt(many, { n }));
+  const countText =
+    !query.trim() || total === 0
+      ? ""
+      : mode === "words" && inWriting && total >= PASSAGE_LIMIT
+        ? fmt(s.countPassagesMore, { n: PASSAGE_LIMIT })
+        : where === "plan"
+          ? counted(total, s.countScene, s.countScenes)
+          : inWriting || mode === "sense"
+            ? counted(total, s.countPassage, s.countPassages)
+            : where === "bible"
+              ? counted(total, s.countEntry, s.countEntries)
+              : counted(total, s.countCard, s.countCards);
 
   // Cmd/Ctrl+F ouvre la recherche, d'où que l'on soit dans le projet.
   useEffect(() => {
@@ -176,7 +197,7 @@ export function Search() {
   /** Montre une carte dans la vue où l'on est, sans en changer (#85). */
   const showCard = (id: string) => {
     if (where === "bible") useCosmos.getState().openInBible(id);
-    else if (where === "plan") revealPlanRow(id);
+    else if (where === "plan") revealPlanRowSoon(id);
     else {
       // La carte trouvée est centrée et mise en avant : le reste du canevas s'estompe (Échap ou un clic sur le fond le rend).
       revealCard(id);
@@ -245,42 +266,48 @@ export function Search() {
               ))}
             </div>
           )}
-          <input
-            ref={inputRef}
-            type="search"
-            className="search-input"
-            value={query}
-            placeholder={mode === "sense" ? m.placeholder : s.placeholder}
-            aria-label={inWriting ? s.buttonText : s.button}
-            role="combobox"
-            aria-expanded={count > 0}
-            aria-controls={ids.list}
-            aria-activedescendant={active < count ? `${ids.list}-${active}` : undefined}
-            autoComplete="off"
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActive(0);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-                e.preventDefault();
-                if (count > 0) setActive((active + (e.key === "ArrowDown" ? 1 : -1) + count) % count);
-              } else if (e.key === "Enter" && mode === "sense") {
-                // Par le sens : Entrée lance la recherche ; sur une liste à jour, elle ouvre le passage choisi.
-                e.preventDefault();
-                if (senseFresh && senseHits[active]) chooseHit(active);
-                else if (!sense.busy) {
-                  setActive(0);
-                  void sense.run(query);
+          <div className="search-field">
+            <input
+              ref={inputRef}
+              type="search"
+              className="search-input"
+              value={query}
+              placeholder={mode === "sense" ? m.placeholder : s.placeholder}
+              aria-label={inWriting ? s.buttonText : s.button}
+              role="combobox"
+              aria-expanded={count > 0}
+              aria-controls={ids.list}
+              aria-activedescendant={active < count ? `${ids.list}-${active}` : undefined}
+              autoComplete="off"
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActive(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                  e.preventDefault();
+                  if (count > 0) setActive((active + (e.key === "ArrowDown" ? 1 : -1) + count) % count);
+                } else if (e.key === "Enter" && mode === "sense") {
+                  // Par le sens : Entrée lance la recherche ; sur une liste à jour, elle ouvre le passage choisi.
+                  e.preventDefault();
+                  if (senseFresh && senseHits[active]) chooseHit(active);
+                  else if (!sense.busy) {
+                    setActive(0);
+                    void sense.run(query);
+                  }
+                } else if (e.key === "Enter" && active < count) {
+                  choose(active);
+                } else if (e.key === "Escape") {
+                  e.stopPropagation();
+                  close(true);
                 }
-              } else if (e.key === "Enter" && active < count) {
-                choose(active);
-              } else if (e.key === "Escape") {
-                e.stopPropagation();
-                close(true);
-              }
-            }}
-          />
+              }}
+            />
+            {/* Annoncé poliment aux lecteurs d'écran quand il change (#160). */}
+            <span className="search-count" aria-live="polite" aria-atomic="true">
+              {countText}
+            </span>
+          </div>
           {mode === "sense" && (
             <div className="search-sense-bar">
               {sense.busy ? (

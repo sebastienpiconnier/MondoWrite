@@ -4,6 +4,9 @@
 // (souris, doigt, et sans clavier physique sur mobile).
 // « @ » dans le texte cite une autre carte : un menu propose les cartes du projet, et un fil est tiré.
 
+import { sceneNumbers } from "../sceneNumbers";
+import { isInteractiveMeta } from "../interactive";
+import { plotCardBackground, plotColors, sceneBackground } from "../plotColors";
 import { canFollow } from "../threadFilter";
 import { formOf } from "../pitch";
 import { focusMenuItem } from "./focusMenuItem";
@@ -73,6 +76,10 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   const sceneBody = useCosmos((s) => data.type === "scene" && (s.kind !== "scenario" || !!s.screenplay?.elements.some((el) => el.type === "sceneHeading" && el.cardId === id)));
   const novelScene = sceneBody;
   const lang = useSettings((s) => s.lang);
+  // Scène : son numéro dans le récit, et le fond aux couleurs de ses intrigues (#143, réglage `plotColors`).
+  const plotOn = useSettings((s) => s.plotColors);
+  const sceneNumber = useCosmos((s) => (data.type === "scene" && !data.page && !isInteractiveMeta(s.metaKeep) ? sceneNumbers(s).get(id) : undefined));
+  const plotBg = useCosmos((s) => (!plotOn ? undefined : data.type === "scene" ? sceneBackground(plotColors(s.nodes, s.edges), id) : data.type === "intrigue" ? plotCardBackground(plotColors(s.nodes, s.edges), id) : undefined));
 
   const [slash, setSlash] = useState<MenuState | null>(null);
   const [active, setActive] = useState(0);
@@ -437,7 +444,7 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
   }, [pendingFocus]);
 
   return (
-    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${lifted ? " is-lifted" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}${data.inbox ? " is-inbox" : ""}`} style={{ ["--type" as string]: typeColor(data.type) }}>
+    <div ref={cardRef} className={`card type-${data.type}${selected ? " is-selected" : ""}${lifted ? " is-lifted" : ""}${data.type === "image" || data.type === "lien" || data.type === "document" ? ` is-${data.type}-card` : ""}${data.inbox ? " is-inbox" : ""}${plotBg ? " has-plot" : ""}`} style={plotBg ? { ["--plot-bg" as string]: plotBg } : { ["--type" as string]: typeColor(data.type) }}>
       {(["top", "right", "bottom", "left"] as const).map((side) => (
         <Handle
           key={side}
@@ -497,6 +504,11 @@ function CardNodeImpl({ id, data, selected, width }: NodeProps<CardNodeT>) {
           {types[data.type].label}
         </button>
         {data.type === "scene" && <StorySection id={id} />}
+        {sceneNumber && (
+          <span className="card-scene-number" title={fmt(t.card.sceneNumber, { n: sceneNumber })}>
+            {sceneNumber}
+          </span>
+        )}
         {/* Fiche dans la Bible : toutes les cartes typées en ont une (les idées en vrac n'y sont qu'une liste). */}
         {data.type !== "idee" && (
           <button

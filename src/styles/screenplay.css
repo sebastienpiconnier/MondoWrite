@@ -42,6 +42,19 @@
 .sp-scene-list .sp-scene-group.is-season button { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.9375rem; }
 .sp-scene-list .sp-scene-group.is-episode { margin-top: 6px; }
 .sp-scene-list .sp-scene-group.is-episode button { color: var(--accent-ink); font-size: 0.8125rem; }
+/* Actes et séquences (#140, #142) : un intertitre avec sa flèche pour replier. */
+.sp-scene-list li.sp-scene-group.is-act, .sp-scene-list li.sp-scene-group.is-seq, .sp-scene-list li.sp-scene-group.is-sub { display: flex; flex-direction: row; align-items: center; gap: 2px; }
+/* writing.css, chargée après, met les lignes de la liste en colonne : l'intertitre garde sa rangée. */
+.sp-scene-list .sp-scene-group.is-act { margin-top: 10px; }
+.sp-scene-list .sp-scene-group.is-act .sp-part-title { border-bottom: 2px solid var(--accent); border-radius: 8px 8px 0 0; font-size: 0.875rem; }
+.sp-scene-list .sp-scene-group.is-seq { margin-top: 4px; }
+.sp-scene-list .sp-scene-group.is-seq .sp-part-title { background: var(--ground); font-size: 0.8125rem; }
+.sp-scene-list .sp-scene-group.is-sub { margin-top: 2px; padding-left: 12px; }
+.sp-scene-list .sp-scene-group.is-sub .sp-part-title { font-size: 0.8125rem; font-style: italic; }
+.sp-scene-list .sp-scene-group .sp-part-fold { flex: none; width: 32px; min-height: 32px; }
+.sp-scene-list .sp-scene-group .sp-part-title { flex: 1; min-width: 0; width: auto; text-align: left; }
+.sp-part-count { font-weight: 400; color: var(--ink-2); }
+@media (pointer: coarse) { .sp-scene-list .sp-scene-group .sp-part-fold { width: 44px; min-height: 44px; } }
 .sp-scene-list .sp-scene-omitted .ms-name { color: var(--muted); font-style: italic; }
 .sp-scene-moves { display: flex; gap: 4px; padding: 2px 0 2px 10px; }
 .sp-scene-moves .icon-button { width: 32px; height: 32px; font-size: 0.8125rem; }
@@ -64,13 +77,16 @@
 @media (any-hover: hover) { .sp-bar button:hover { background: var(--hover); } }
 /* Au doigt : 44 px. Ici et pas seulement dans canvas.css, chargé avant : la règle ci-dessus l'emportait (36 px). */
 @media (pointer: coarse) { .sp-bar button { min-height: 44px; padding: 0 14px; } }
+/* Acte et séquence (#140) : après les éléments, séparés d'un filet. */
+.sp-bar .sp-part:not(.sp-part + .sp-part) { margin-left: 6px; box-shadow: inset 1px 0 0 var(--line); border-radius: 0 8px 8px 0; }
 .sp-bar button[aria-pressed="true"] { background: var(--strong-bg); color: var(--strong-fg); font-weight: 600; }
-.sp-bar-hint { padding: 0 10px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.sp-bar-hint { flex: 1 1 0; min-width: min(18em, 100%); overflow: hidden; text-overflow: ellipsis; padding: 0 10px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+/* Mode focus, lecture, révision, ⋯ et Atelier : un bloc à droite, qui passe à la ligne d'un seul tenant. */
+.sp-bar-end { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 4px; margin-left: auto; }
 .sp-focus { border: 1px solid var(--line) !important; }
-.sp-bar .focus-button { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; padding: 0 10px; }
+.sp-bar .focus-button { display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; }
 /* Options du scénario (numéros, soulignement) : à droite de la barre, avant le mode focus. */
 .sp-option { border: 1px solid var(--line) !important; }
-.sp-bar-hint + .sp-option { margin-left: auto; }
 /* Mode focus, comme dans le manuscrit : seule la feuille reste, avec la barre flottante (machine à écrire, quitter).
    La phrase ou le paragraphe en cours reste en pleine encre, le reste s'estompe ; en mode « ligne », un voile couvre le reste. */
 .screenplay.is-focus, .screenplay.is-focus.hide-scenes, .screenplay.is-focus.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-areas: "center"; }
@@ -178,6 +194,13 @@
 .sp-preserved[data-series="season"]::before { content: var(--sp-label-season); }
 .sp-preserved[data-series="episode"]::before { content: var(--sp-label-episode) " " counter(episode); }
 .sp-preserved[data-series="beat"]::before { content: var(--sp-label-beat); }
+/* Actes et séquences (#140) : un acte ouvre une partie (accent), une séquence se lit en retrait. */
+.sp-preserved[data-series="act"]::before { content: var(--sp-label-act); }
+.sp-preserved[data-series="seq"]::before { content: var(--sp-label-seq); }
+.sp-preserved[data-series="act"] { margin-top: 2em; border-left-color: var(--accent); font-size: 16px; }
+.sp-preserved[data-series="seq"] { border-left-color: var(--ink-2); }
+.sp-preserved[data-series="sub"]::before { content: var(--sp-label-sub); }
+.sp-preserved[data-series="sub"] { border-left-style: dashed; border-left-color: var(--ink-2); }
 .sp-preserved[data-series]:empty::after { content: var(--sp-label-episodeUntitled); font-weight: 400; font-style: italic; color: var(--muted); }
 /* Une saison et un épisode ouvrent une partie : plus d'air au-dessus, et l'accent pour les distinguer des cases. */
 .sp-preserved[data-series="season"], .sp-preserved[data-series="episode"] { margin-top: 2.4em; border-left-color: var(--accent); }
@@ -192,6 +215,14 @@
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"],
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"],
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] { display: none; }
+/* Synopsis montré sous l'en-tête (#147, réglage de l'appareil) : un bloc à part, plus grand, espacé et tenu par un
+   trait d'accent. Il prend sa place à l'écran (les coupures de page de la feuille bougent), jamais dans le PDF ni
+   dans le compte des pages. L'en-tête passe en colonne pour que le synopsis vienne après son texte. */
+.screenplay.show-synopsis .sp-sceneHeading[data-synopsis] { display: flex; flex-direction: column; }
+.screenplay.show-synopsis .sp-sceneHeading[data-synopsis]::before {
+  content: attr(data-synopsis); order: 2; margin: 0.6em 0 0.4em; padding: 0.15em 0 0.15em 0.7em; border-left: 3px solid var(--accent);
+  font: italic 400 0.9em/1.45 var(--font-ui); text-transform: none; text-decoration: none; letter-spacing: 0; color: var(--ink-2); white-space: normal; pointer-events: none;
+}
 .sp-preserved[data-preserved="centered"] { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
 .sp-preserved[data-preserved="pageBreak"] { padding: 6px 0 0; border: 0; border-top: 1px dashed var(--line-2); border-radius: 0; background: none; text-align: center; }
 .sp-preserved.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -290,3 +321,18 @@
 
 /* Nom d'un personnage ou d'un décor du volet « Scène » qui ouvre sa fiche de la Bible (au doigt comme à la souris). */
 .sp-sheet-link { font: inherit; text-align: left; min-height: 44px; padding: 0; text-transform: inherit; }
+
+/* Renommer un acte ou une séquence dans la liste des scènes (lot 17). */
+.sp-scene-list .sp-scene-group .sp-part-rename { flex: none; width: 36px; min-height: 36px; opacity: 0.85; }
+.sp-scene-list .sp-scene-group .sp-part-input { flex: 1; min-width: 0; font: inherit; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--ink); }
+@media (pointer: coarse) { .sp-scene-list .sp-scene-group .sp-part-rename { width: 44px; min-height: 44px; } }
+/* Renommer un acte ou une séquence dans la feuille (double-clic, ou Entrée sur la ligne choisie). */
+.sp-sheet-rename { position: fixed; z-index: 60; box-sizing: border-box; min-height: 36px; padding: 4px 10px; font: 600 1rem var(--font-ui); color: var(--ink); background: var(--surface); border: 2px solid var(--accent); border-radius: 8px; box-shadow: 0 6px 20px -8px rgba(20, 24, 40, 0.4); }
+@media (pointer: coarse) { .sp-sheet-rename { min-height: 44px; } }
+/* « Transformer en… » d'une section venue d'ailleurs (#155) : sous sa ligne. */
+.sp-sheet-convert { position: fixed; z-index: 60; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: min(520px, calc(100vw - 24px)); padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-pop); font: 0.875rem var(--font-ui); }
+.sp-sheet-convert-title { padding: 0 6px; color: var(--ink-2); }
+.sp-sheet-convert button { min-height: 36px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--ground); color: var(--ink); font: inherit; cursor: pointer; }
+.sp-sheet-convert button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (any-hover: hover) { .sp-sheet-convert button:hover { background: var(--hover); } }
+@media (pointer: coarse) { .sp-sheet-convert button { min-height: 44px; } }
