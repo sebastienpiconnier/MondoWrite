@@ -296,6 +296,16 @@ span.tl-cell.is-pov { cursor: default; }
   .sq-list:not(.is-cards) .plan-scene .plan-detail { grid-column: 1 / -1; grid-row: 2; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; }
   .sq-list:not(.is-cards) .plan-detail .sq-desc { margin: 2px 0 0; }
 }
+/* Plan en liste, fenêtre étroite (téléphone, PR #133) : la poignée à côté du titre, pas seule sur sa ligne ; le
+   détail puis les actions dessous, sur toute la largeur. */
+@media (max-width: 699px) {
+  .sq-list:not(.is-cards) .plan-scene:has(> .sq-moves) { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 8px; }
+  .sq-list:not(.is-cards) .plan-scene:has(> .sq-moves) .sq-body { display: contents; }
+  .sq-list:not(.is-cards) .plan-scene:has(> .sq-moves) .sq-moves { grid-column: 1; grid-row: 1; }
+  .sq-list:not(.is-cards) .plan-scene:has(> .sq-moves) .bible-title { grid-column: 2; grid-row: 1; min-width: 0; }
+  .sq-list:not(.is-cards) .plan-scene:has(> .sq-moves) > :not(.sq-moves):not(.sq-body),
+  .sq-list:not(.is-cards) .plan-scene:has(> .sq-moves) .sq-body > :not(.bible-title) { grid-column: 1 / -1; }
+}
 /* Sections du livre (roman interactif, lot 11, #91) : le numéro imprimé à la place des flèches. */
 .plan-section-number { flex-shrink: 0; display: inline-grid; place-items: center; min-width: 2.6rem; height: 2rem; padding: 0 0.4rem; border-radius: 8px; border: 1px solid var(--line-2); color: var(--ink); font: 600 0.9375rem/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 @media (min-width: 700px) { .sq-list:not(.is-cards) .plan-scene .plan-section-number { grid-column: 1; grid-row: 1; } }
