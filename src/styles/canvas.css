@@ -381,6 +381,11 @@ ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-t
 .search-panel { width: min(360px, calc(100vw - 32px)); }
 .search-input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.9375rem; }
 .search-input::placeholder { color: var(--placeholder); }
+/* Champ et nombre de résultats à côté (#160) ; le nombre passe dessous si la place manque (langue plus longue). */
+.search-field { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.search-field .search-input { flex: 1 1 180px; min-width: 0; }
+.search-count { flex-shrink: 0; font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
+.search-count:empty { display: none; }
 /* Lien vers la palette de commandes, au pied de la recherche (son chemin à la souris et au doigt). */
 .search-commands { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 0.8125rem; color: var(--ink-2); }
 .search-commands .link-button { min-height: 44px; }

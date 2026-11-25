@@ -76,6 +76,15 @@ export const en: Messages = {
     promptBible: "Searches the Bible’s sheets.",
     promptPlan: "Searches scene titles, synopses and text.",
     emptyScenes: "No scene matches.",
+    countPassage: "1 match",
+    countPassages: "{n} matches",
+    countPassagesMore: "{n} matches or more",
+    countCard: "1 card",
+    countCards: "{n} cards",
+    countEntry: "1 entry",
+    countEntries: "{n} entries",
+    countScene: "1 scene",
+    countScenes: "{n} scenes",
   },
 
   // Home screen: choose the project to work on.

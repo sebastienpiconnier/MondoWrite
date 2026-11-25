@@ -558,6 +558,35 @@ const scenarios = [
     },
   },
   {
+    name: "recherche (#160) : le nombre de passages, de cartes et de scènes à côté du champ, annoncé poliment",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      await until(() => page.locator(".manuscript .ProseMirror").first().isVisible(), "le Manuscrit ne s'ouvre pas");
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("loup");
+      const count = page.locator(".search-count");
+      await until(async () => /^\d+ passages$/.test(await count.innerText()), "pas de nombre de passages à côté du champ");
+      const n = Number((await count.innerText()).split(" ")[0]);
+      assert(n === (await page.locator(".search-result").count()), `${n} passages annoncés, ${await page.locator(".search-result").count()} listés`);
+      assert((await count.getAttribute("aria-live")) === "polite", "le nombre n'est pas annoncé poliment");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/search-160.png` });
+      await page.locator(".search-input").fill("zzzz");
+      await until(async () => (await count.innerText()) === "", "un nombre reste affiché sans résultat");
+      await page.keyboard.press("Escape");
+      await h.view(1);
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("loup");
+      await until(async () => /^\d+ cartes?$/.test(await count.innerText()), `pas de nombre de cartes : « ${await count.innerText()} »`);
+      await page.keyboard.press("Escape");
+      await h.view(2);
+      await page.keyboard.press("Control+f");
+      await page.locator(".search-input").fill("loup");
+      await until(async () => /^\d+ scènes?$/.test(await count.innerText()), `pas de nombre de scènes : « ${await count.innerText()} »`);
+    },
+  },
+  {
     name: "recherche dans le Manuscrit (#85) : un mot tapé sans accent ni majuscule, sélectionné au milieu de l'écran, sans changer de vue",
     async run(h) {
       const { page } = h;

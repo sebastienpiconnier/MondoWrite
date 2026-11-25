@@ -80,6 +80,16 @@ export const fr = {
     promptBible: "Cherche dans les fiches de la Bible.",
     promptPlan: "Cherche dans les titres, les synopsis et le texte des scènes.",
     emptyScenes: "Aucune scène ne correspond.",
+    // Nombre de résultats à côté du champ (#160).
+    countPassage: "1 passage",
+    countPassages: "{n} passages",
+    countPassagesMore: "{n} passages ou plus",
+    countCard: "1 carte",
+    countCards: "{n} cartes",
+    countEntry: "1 fiche",
+    countEntries: "{n} fiches",
+    countScene: "1 scène",
+    countScenes: "{n} scènes",
   },
 
   // Écran d'accueil : choisir le projet sur lequel travailler.
