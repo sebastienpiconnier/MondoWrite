@@ -535,6 +535,24 @@ const scenarios = [
     },
   },
   {
+    name: "ruban expliqué (#163) : « Lire le ruban » montre la légende, toucher un trait dit le nom de l'étape ; aide des préparations",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      const ribbon = page.locator("nav.ribbon").first();
+      await until(() => ribbon.isVisible(), "pas de ruban dans le Manuscrit");
+      await ribbon.getByRole("button", { name: "Lire le ruban" }).click();
+      await until(() => ribbon.locator(".ribbon-key li").count(), "la légende du ruban ne s'ouvre pas");
+      const mark = ribbon.locator(".ribbon-mark").nth(1);
+      await mark.click({ force: true });
+      await until(async () => /%/.test((await ribbon.locator(".ribbon-peek").innerText().catch(() => "")) ?? ""), "toucher un trait ne dit pas le nom de l'étape");
+      if (process.env.E2E_SHOTS) await ribbon.screenshot({ path: `${process.env.E2E_SHOTS}/ribbon-163.png` });
+      const hint = page.locator(".scene-setups-hint");
+      if (await hint.count()) assert(/prépare ce qu’une autre paie/.test(await hint.first().innerText()), "l'aide des préparations manque");
+    },
+  },
+  {
     name: "garder sa place (#144) : la scène du Manuscrit choisie sur le canevas et montrée dans le Plan, le curseur retrouvé au retour",
     async run(h) {
       const { page } = h;

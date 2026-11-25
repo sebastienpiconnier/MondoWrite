@@ -1958,3 +1958,19 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 .ribbon-mark.is-actual.is-level-2::before { display: none; }
 .ribbon-mark.is-actual.is-level-3 { top: 0; bottom: 0; width: 1px; opacity: 0.6; }
 .ribbon-mark.is-actual.is-level-3::before { display: none; }
+
+/* Ruban (#163) : un trait se survole ou se touche (zone plus large que lui), son nom passe dans la légende. */
+.ribbon-mark { pointer-events: auto; cursor: help; }
+.ribbon-mark::after { content: ""; position: absolute; top: 0; bottom: 0; left: -6px; right: -6px; }
+@media (pointer: coarse) { .ribbon-mark::after { left: -10px; right: -10px; } }
+.ribbon-mark.is-peeked { box-shadow: 0 0 0 2px var(--accent-soft); }
+.ribbon-peek { color: var(--ink); font-weight: 600; }
+.ribbon-key { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8125rem; color: var(--ink-2); }
+.ribbon-key li { display: flex; align-items: center; gap: 8px; }
+.ribbon-key-mark { position: relative; flex: none; width: 12px; height: 18px; }
+.ribbon-key-mark::before { content: ""; position: absolute; left: 5px; top: 4px; bottom: 0; width: 2px; background: var(--accent-ink); }
+.ribbon-key-mark::after { content: ""; position: absolute; left: 1px; top: 0; border: 5px solid transparent; border-top-color: var(--accent-ink); border-bottom: 0; }
+.ribbon-key-mark.is-actual.is-level-2::before { top: 4px; bottom: 3px; opacity: 0.8; }
+.ribbon-key-mark.is-actual.is-level-2::after, .ribbon-key-mark.is-actual.is-level-3::after { display: none; }
+.ribbon-key-mark.is-actual.is-level-3::before { top: 6px; bottom: 5px; width: 1px; opacity: 0.6; }
+.scene-setups-hint { margin: 0 0 8px; font-size: 0.8125rem; line-height: 1.45; color: var(--muted); }

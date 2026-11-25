@@ -511,6 +511,7 @@ export const fr = {
     setupsRename: "Nommer le lien avec « {title} »",
     setupsChoose: "Choisir une scène",
     setupsTitle: "Préparations",
+    setupsEmptyHint: "Une scène prépare ce qu’une autre paie : l’objet montré tôt qui servira plus tard, la promesse tenue à la fin. Relie-les ici, la flèche du canevas suit.",
     setupsPrepares: "Prépare",
     setupsPaidBy: "Payée par",
     prepares: "prépare",
@@ -1788,6 +1789,13 @@ export const fr = {
 
   // Ruban du récit (Manuscrit, Scénario) : la longueur réelle de chaque étape du gabarit, et sa place habituelle.
   ribbon: {
+    keyToggle: "Lire le ruban",
+    key: {
+      level1: "Trait haut coiffé d’un triangle : début d’un acte ou d’une étape",
+      level2: "Trait moyen : début d’une séquence",
+      level3: "Trait fin : début d’une sous-séquence",
+      expected: "Triangle : où l’étape commence d’ordinaire dans cette structure",
+    },
     aria: "Ruban du récit",
     beforeFirst: "Avant la première étape",
     scene: "{title} ({beat}, scène {n})",

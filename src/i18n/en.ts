@@ -502,6 +502,7 @@ export const en: Messages = {
     setupsRename: "Name the link with “{title}”",
     setupsChoose: "Choose a scene",
     setupsTitle: "Setups",
+    setupsEmptyHint: "A scene sets up what another pays off: the object shown early that matters later, the promise kept at the end. Link them here; the arrow on the canvas follows.",
     setupsPrepares: "Sets up",
     setupsPaidBy: "Paid off by",
     prepares: "sets up",
@@ -1840,6 +1841,13 @@ export const en: Messages = {
   },
 
   ribbon: {
+    keyToggle: "Reading the ribbon",
+    key: {
+      level1: "Tall line with a triangle: start of an act or a step",
+      level2: "Medium line: start of a sequence",
+      level3: "Thin line: start of a beat",
+      expected: "Triangle: where the step usually starts in this structure",
+    },
     aria: "Story ribbon",
     beforeFirst: "Before the first beat",
     scene: "{title} ({beat}, scene {n})",
