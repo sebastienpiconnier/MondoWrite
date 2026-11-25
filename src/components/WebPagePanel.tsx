@@ -1,13 +1,15 @@
-// Fenêtre « Page web jouable » (menu Exporter d'un roman interactif, #122) : thème de la page et CSS personnalisé,
-// gardés dans le projet (`webPage` de cosmos.json), puis enregistrement de la page. Sur téléphone, le menu
-// fabrique la page directement avec les réglages gardés.
+// Fenêtre « Page web jouable » (menu Exporter d'un roman interactif, #122, #124, #125) : forme (page seule ou
+// archive pour itch.io), qualité des images et poids estimé, retour au choix précédent, thème et CSS personnalisé,
+// gardés dans le projet (`webPage` de cosmos.json), puis enregistrement. Sur téléphone, le menu fabrique la page
+// directement avec les réglages gardés.
 
-import { useState, type CSSProperties } from "react";
-import { useT } from "../i18n";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { fmt, useT } from "../i18n";
 import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { storage } from "../storage";
-import { WEB_THEMES, WEB_THEME_DEFS, readWebPage, type WebTheme } from "../interactive/webThemes";
+import { WEB_FORMATS, WEB_QUALITIES, WEB_THEMES, WEB_THEME_DEFS, readWebPage, type WebTheme } from "../interactive/webThemes";
+import type { PreparedWeb } from "../interactive/webExport";
 
 /** Aperçu d'un thème : ses couleurs et sa police, en clair et en sombre (données du thème, pas de l'interface). */
 function ThemeSwatch({ theme }: { theme: WebTheme }) {
@@ -32,28 +34,61 @@ export function WebPagePanel() {
   const [css, setCss] = useState(options.css);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  // Histoire compilée et images encodées à la qualité choisie (#125) : refait quand la qualité change.
+  const [prepared, setPrepared] = useState<PreparedWeb | null>(null);
+  const [preparing, setPreparing] = useState(true);
+  const lang = useSettings((st) => st.lang);
+  const title = () => useCosmos.getState().title.trim() || t.home.untitled;
+
+  useEffect(() => {
+    let live = true;
+    setPreparing(true);
+    setPrepared(null);
+    void (async () => {
+      const { prepareStoryWeb, StoryCompileError } = await import("../interactive/webExport");
+      try {
+        const next = await prepareStoryWeb(title(), useSettings.getState().author.trim(), options.quality);
+        if (!live) return;
+        setPrepared(next);
+        if (!next) setMessage(t.exports.emptyManuscript);
+      } catch (err) {
+        if (!live) return;
+        if (err instanceof StoryCompileError) setMessage(w.compileFailed);
+        else {
+          console.error(err);
+          setMessage(done.failed);
+        }
+      } finally {
+        if (live) setPreparing(false);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [options.quality]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poids du fichier qui sera enregistré : la page ou l'archive est assemblée pour le mesurer (rapide).
+  const [buildWeb, setBuildWeb] = useState<typeof import("../interactive/webExport").buildStoryWeb | null>(null);
+  useEffect(() => {
+    void import("../interactive/webExport").then((m) => setBuildWeb(() => m.buildStoryWeb));
+  }, []);
+  const file = useMemo(
+    () => (prepared && buildWeb ? buildWeb(prepared, { theme: options.theme, css, back: options.back, format: options.format }) : null),
+    [prepared, buildWeb, options.theme, options.back, options.format, css],
+  );
+  const size = file ? new Intl.NumberFormat(lang, { style: "unit", unit: file.data.length >= 1e6 ? "megabyte" : "kilobyte", maximumFractionDigits: 1 }).format(file.data.length / (file.data.length >= 1e6 ? 1e6 : 1e3)) : "";
 
   const save = async () => {
-    if (saving) return;
+    if (saving || !file) return;
     setWebPage({ css });
     setSaving(true);
     setMessage(done.working);
-    const { storyWebFile, StoryCompileError } = await import("../interactive/webExport");
     try {
-      const title = useCosmos.getState().title.trim() || t.home.untitled;
-      const file = await storyWebFile(title, useSettings.getState().author.trim());
-      if (!file) {
-        setMessage(t.exports.emptyManuscript);
-        return;
-      }
       const saved = await storage.saveAs(file, w.menu);
       setMessage(saved ? done.done : "");
     } catch (err) {
-      if (err instanceof StoryCompileError) setMessage(w.compileFailed);
-      else {
-        console.error(err);
-        setMessage(done.failed);
-      }
+      console.error(err);
+      setMessage(done.failed);
     } finally {
       setSaving(false);
     }
@@ -70,6 +105,39 @@ export function WebPagePanel() {
       >
         <h2 id="app-dialog-title">{k.title}</h2>
         <p className="spdf-hint">{k.intro}</p>
+        <fieldset>
+          <legend>{k.formatLegend}</legend>
+          {WEB_FORMATS.map((format) => (
+            <label key={format} className="spdf-choice wpage-choice">
+              <input type="radio" name="wpage-format" value={format} checked={options.format === format} onChange={() => setWebPage({ format })} />
+              <span>
+                {k.formats[format]}
+                <span className="spdf-hint"> {k.formatHints[format]}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <fieldset>
+          <legend>{k.qualityLegend}</legend>
+          <div className="wpage-quality">
+            {WEB_QUALITIES.map((quality) => (
+              <label key={quality} className="spdf-choice wpage-choice">
+                <input type="radio" name="wpage-quality" value={quality} checked={options.quality === quality} onChange={() => setWebPage({ quality })} />
+                {k.qualities[quality]}
+              </label>
+            ))}
+          </div>
+          <p className="spdf-hint" aria-live="polite">
+            {preparing ? k.weighing : size ? fmt(k.weight, { size }) : ""}
+          </p>
+        </fieldset>
+        <label className="spdf-choice wpage-choice">
+          <input type="checkbox" checked={options.back} onChange={(e) => setWebPage({ back: e.target.checked })} />
+          <span>
+            {k.back}
+            <span className="spdf-hint"> {k.backHint}</span>
+          </span>
+        </label>
         <fieldset>
           <legend>{k.themeLegend}</legend>
           <div className="wpage-themes">
@@ -103,7 +171,7 @@ export function WebPagePanel() {
             <button type="button" className="spdf-close" onClick={() => useCosmos.getState().setDialog(null)}>
               {t.gallery.close}
             </button>
-            <button type="submit" className="is-primary" disabled={saving}>
+            <button type="submit" className="is-primary" disabled={saving || !file}>
               {k.save}
             </button>
           </div>

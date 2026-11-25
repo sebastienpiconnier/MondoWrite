@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 // Roman interactif, lot 7 : page web jouable. La page est fabriquée avec le vrai moteur d'inkjs, puis jouée ici.
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Compiler } from "inkjs/full";
 import { choicesHtml, sceneSlugs } from "../interactive/choices";
 import { projectToInk } from "../interactive/ink";
-import { jsonForScript, progressKey, scriptSafe, storyImageNames, storyPage, type WebPageInput } from "../interactive/webPage";
+import { bookId, jsonForScript, progressKey, scriptSafe, storyImageNames, storyPage, type WebPageInput } from "../interactive/webPage";
+import { dedupeImages, imageWeight, pickFormat, type WebImage } from "../interactive/webImages";
 
 // Les mêmes fichiers que l'app.
 import runtime from "../../node_modules/inkjs/dist/ink.js?raw";
@@ -49,6 +50,18 @@ const texts = {
   sizeSmall: "Petit texte",
   sizeMedium: "Texte normal",
   sizeLarge: "Grand texte",
+  endingsFound: "Fins découvertes : {n} sur {total}",
+  endingsGood: "bonnes : {n} sur {total}",
+  endingsBad: "mauvaises : {n} sur {total}",
+  endGood: "Bonne fin",
+  endBad: "Mauvaise fin",
+  exportSave: "Exporter ma partie",
+  importSave: "Importer une partie",
+  importDone: "Partie reprise.",
+  importOther: "Autre livre.",
+  importVersion: "Autre version.",
+  importBad: "Pas une partie.",
+  noStorage: "Pas de stockage.",
 };
 const input = (over: Partial<WebPageInput> = {}): WebPageInput => ({
   title: "La <grille>",
@@ -57,7 +70,8 @@ const input = (over: Partial<WebPageInput> = {}): WebPageInput => ({
   storyJson,
   runtime,
   runtimeLicense: license,
-  images: { "grille.jpg": "data:image/jpeg;base64,AAAA" },
+  sources: { "a1.jpg": "data:image/jpeg;base64,AAAA" },
+  images: { "grille.jpg": "a1.jpg" },
   facts: [{ name: "cle", label: "La clé" }],
   texts,
   ...over,
@@ -166,11 +180,13 @@ describe("page web d'un roman interactif", () => {
   });
 
   it("s'ouvre sur l'accueil : couverture, titre, auteur, accroche, Commencer", () => {
-    const page = load(storyPage(input({ cover: { src: "data:image/jpeg;base64,QUJD", alt: "Couverture : Le puits" }, tagline: "Ne regarde pas en bas." })));
+    const page = load(
+      storyPage(input({ sources: { "a1.jpg": "data:image/jpeg;base64,AAAA", "c1.webp": "data:image/webp;base64,QUJD" }, cover: { file: "c1.webp", alt: "Couverture : Le puits" }, tagline: "Ne regarde pas en bas." })),
+    );
     expect(page.shown("mw-home")).toBe(true);
     expect(page.shown("mw-reader")).toBe(false);
     const cover = document.querySelector<HTMLImageElement>(".cover img")!;
-    expect(cover.getAttribute("src")).toBe("data:image/jpeg;base64,QUJD");
+    expect(cover.getAttribute("src")).toBe("data:image/webp;base64,QUJD");
     expect(cover.alt).toBe("Couverture : Le puits");
     expect(document.querySelector("#mw-home h1")!.textContent).toBe("La <grille>");
     expect(document.querySelector(".tagline")!.textContent).toBe("Ne regarde pas en bas.");
@@ -186,9 +202,11 @@ describe("page web d'un roman interactif", () => {
     expect(document.querySelector(".cover")).toBeNull();
     expect(document.querySelector(".tagline")).toBeNull();
     expect(document.querySelector("#mw-home .author")!.textContent).toBe("Sébastien");
-    // Une couverture qui n'est pas une image en data: n'entre pas dans la page.
-    load(storyPage(input({ cover: { src: "javascript:alert(1)", alt: "x" } })));
+    // Une adresse qui n'est ni une image en data: ni un fichier images/ n'entre pas dans la page.
+    load(storyPage(input({ sources: { "c1.jpg": "javascript:alert(1)" }, cover: { file: "c1.jpg", alt: "x" } })));
     expect(document.querySelector(".cover")).toBeNull();
+    const page = load(storyPage(input({ sources: { "a1.jpg": "../../etc/x.jpg" } })));
+    expect(page.images()).toEqual([]);
   });
 
   it("Continuer ramène au dernier choix, Recommencer repart du début", () => {
@@ -298,5 +316,153 @@ describe("page web d'un roman interactif", () => {
     // Sans réglage : le thème Classique, comme avant.
     expect(storyPage(input())).toContain("--paper: #fdfcf9;");
     expect(storyPage(input())).not.toContain("mw-custom");
+  });
+});
+
+// Fins découvertes et partie à emporter (#124) : l'Ink de la page note la scène en cours.
+const endScenes = [
+  { id: "e1", title: "Le seuil" },
+  { id: "e2", title: "Le trésor" },
+  { id: "e3", title: "Le gouffre" },
+  { id: "e4", title: "La route" },
+];
+const endManuscript = {
+  e1: `<p>Trois chemins.</p>${choicesHtml("* [Descendre] -> le_tresor\n* [Sauter] -> le_gouffre\n* [Partir] -> la_route")}`,
+  e2: `<p>De l’or.</p>${choicesHtml("* [Finir] -> END #good")}`,
+  e3: `<p>Le vide.</p>${choicesHtml("* [Tomber] -> END #bad")}`,
+  e4: "<p>La route continue.</p>",
+};
+const endSource = projectToInk(endScenes, sceneSlugs(endScenes), endManuscript, {}, "…", { track: true });
+const endJson = new Compiler(endSource.ink).Compile().ToJson()!;
+const endings = [
+  { id: "le_tresor", kind: "good" as const },
+  { id: "le_gouffre", kind: "bad" as const },
+  { id: "la_route", kind: null },
+];
+const endInput = (over: Partial<WebPageInput> = {}) => input({ storyJson: endJson, title: "Trois fins", facts: [], book: bookId("p1"), endings, ...over });
+
+describe("page web : fins découvertes et partie à emporter (#124)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("compte les fins trouvées, bonnes et mauvaises, même après Recommencer", () => {
+    const html = storyPage(endInput());
+    const page = load(html);
+    page.button("mw-start").click();
+    page.choose("Descendre");
+    page.choose("Finir");
+    expect(document.querySelector("#story .end-kind")!.textContent).toBe("Bonne fin");
+    expect(document.querySelector("#story .found")!.textContent).toBe("Fins découvertes : 1 sur 3 (bonnes : 1 sur 1, mauvaises : 0 sur 1)");
+    page.restart();
+    page.choose("Partir");
+    // Une fin sans type : pas d'étiquette, mais comptée.
+    expect(document.querySelector("#story .end-kind")).toBeNull();
+    expect(document.querySelector("#story .found")!.textContent).toBe("Fins découvertes : 2 sur 3 (bonnes : 1 sur 1, mauvaises : 0 sur 1)");
+    // Sur l'accueil d'une page rouverte.
+    const again = load(html);
+    expect(again.shown("mw-found")).toBe(true);
+    expect(document.getElementById("mw-found")!.textContent).toContain("2 sur 3");
+  });
+
+  it("n'affiche rien tant qu'aucune fin n'est trouvée, ni pour une seule fin", () => {
+    const page = load(storyPage(endInput()));
+    expect(page.shown("mw-found")).toBe(false);
+    expect(page.shown("mw-export")).toBe(false);
+    page.button("mw-start").click();
+    page.choose("Descendre");
+    page.choose("Finir");
+    const one = load(storyPage(endInput({ endings: [endings[0]], book: bookId("p2") })));
+    expect(one.shown("mw-found")).toBe(false);
+  });
+
+  it("exporte une partie et la reprend au même endroit, faits compris", async () => {
+    let blob: Blob | null = null;
+    vi.spyOn(URL, "createObjectURL").mockImplementation((b) => ((blob = b as Blob), "blob:partie"));
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    const html = storyPage(input({ book: bookId("p1"), saveName: "grille (partie).json" }));
+    const page = load(html);
+    page.button("mw-start").click();
+    page.choose("Pousser la grille");
+    page.button("mw-home-btn").click();
+    expect(page.shown("mw-export")).toBe(true);
+    page.button("mw-export").click();
+    const text = await blob!.text();
+    expect(JSON.parse(text)).toMatchObject({ mondowrite: "playthrough", version: 1, book: bookId("p1") });
+    // Un navigateur qui a tout oublié reprend la partie importée.
+    localStorage.clear();
+    const fresh = load(html);
+    expect(fresh.shown("mw-continue")).toBe(false);
+    await importFile(text);
+    expect(document.getElementById("mw-status")!.textContent).toBe("Partie reprise.");
+    expect(fresh.shown("mw-continue")).toBe(true);
+    fresh.button("mw-continue").click();
+    expect(fresh.choices()).toEqual(["Ouvrir la porte", "Repartir"]);
+    expect(fresh.known()).toBe("Ce que sait le lecteur : La clé");
+  });
+
+  it("refuse la partie d'un autre livre, d'une autre version, ou un fichier quelconque", async () => {
+    load(storyPage(input({ book: bookId("p1") })));
+    const file = (over: object) => JSON.stringify({ mondowrite: "playthrough", version: 1, book: bookId("p1"), key: progressKey("La <grille>", storyJson), state: "{}", log: [], steps: [], ...over });
+    await importFile(file({ book: bookId("autre") }));
+    expect(document.getElementById("mw-status")!.textContent).toBe("Autre livre.");
+    await importFile(file({ key: "mondowrite-story-ancienne" }));
+    expect(document.getElementById("mw-status")!.textContent).toBe("Autre version.");
+    await importFile("pas du JSON");
+    expect(document.getElementById("mw-status")!.textContent).toBe("Pas une partie.");
+  });
+
+  it("peut retirer « Revenir au choix précédent »", () => {
+    const page = load(storyPage(input({ allowBack: false })));
+    page.button("mw-start").click();
+    page.choose("Rentrer");
+    expect(page.shown("mw-back")).toBe(false);
+    expect(page.shown("mw-restart")).toBe(true);
+  });
+
+  it("dit discrètement que le navigateur ne garde rien, et reste jouable", () => {
+    vi.spyOn(localStorage, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    const page = load(storyPage(input()));
+    expect(page.shown("mw-nostore")).toBe(true);
+    page.button("mw-start").click();
+    page.choose("Rentrer");
+    expect(page.choices()).toEqual(["Dormir"]);
+  });
+
+  it("charge les images de l'histoire à mesure (#125)", () => {
+    load(storyPage(input()));
+    expect(document.querySelector<HTMLImageElement>("#story img")!.getAttribute("loading")).toBe("lazy");
+  });
+});
+
+/** Choisit un fichier dans le champ caché « Importer une partie », comme le ferait le lecteur. */
+async function importFile(text: string) {
+  const field = document.getElementById("mw-file") as HTMLInputElement;
+  Object.defineProperty(field, "files", { configurable: true, value: [new File([text], "partie.json", { type: "application/json" })] });
+  field.dispatchEvent(new Event("change"));
+  await new Promise((r) => setTimeout(r, 20));
+}
+
+describe("images de la page web (#125)", () => {
+  const img = (bytes: number[], ext: WebImage["ext"] = "webp"): WebImage => ({ data: new Uint8Array(bytes), ext, mime: ext === "webp" ? "image/webp" : ext === "png" ? "image/png" : "image/jpeg" });
+
+  it("choisit WebP s'il sait l'écrire, sinon PNG pour une image transparente et JPEG pour les autres", () => {
+    expect(pickFormat(true, true)).toBe("webp");
+    expect(pickFormat(false, true)).toBe("png");
+    expect(pickFormat(false, false)).toBe("jpg");
+  });
+
+  it("ne garde qu'une fois une même image, sous un nom tiré de son contenu", () => {
+    const set = dedupeImages({ "Portrait A.jpg": img([1, 2, 3]), "copie.jpg": img([1, 2, 3]), "autre.png": img([4, 5], "png") });
+    expect(Object.keys(set.files)).toHaveLength(2);
+    expect(set.byName["Portrait A.jpg"]).toBe(set.byName["copie.jpg"]);
+    for (const file of Object.keys(set.files)) expect(file).toMatch(/^[0-9a-f]{8}(-\d+)?\.(webp|png|jpg)$/);
+    // Le même contenu donne le même nom d'un export à l'autre.
+    expect(dedupeImages({ x: img([1, 2, 3]) }).byName.x).toBe(set.byName["copie.jpg"]);
+  });
+
+  it("compte le tiers de plus d'une image en data:", () => {
+    expect(imageWeight(img([1, 2, 3, 4, 5, 6]), true)).toBe(8);
+    expect(imageWeight(img([1, 2, 3, 4, 5, 6]), false)).toBe(6);
   });
 });

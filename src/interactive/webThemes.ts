@@ -117,17 +117,37 @@ export function safeCss(css: string): string {
     .replace(/(-moz-binding|behavior)\s*:/gi, "/* */:");
 }
 
+/** Qualité des images de la page (#125) : poids contre finesse. */
+export const WEB_QUALITIES = ["light", "standard", "high"] as const;
+export type WebQuality = (typeof WEB_QUALITIES)[number];
+/** Plus grand côté et qualité d'encodage (WebP ou JPEG) de chaque niveau. */
+export const QUALITY_SETTINGS: Readonly<Record<WebQuality, { side: number; quality: number }>> = {
+  light: { side: 1000, quality: 0.7 },
+  standard: { side: 1400, quality: 0.8 },
+  high: { side: 2000, quality: 0.9 },
+};
+
+/** Forme de l'export (#125) : une seule page, ou une archive avec les images à part (itch.io). */
+export const WEB_FORMATS = ["html", "zip"] as const;
+export type WebFormat = (typeof WEB_FORMATS)[number];
+
 /** Réglages de la page web gardés dans le projet. */
 export interface WebPageOptions {
   theme: WebTheme;
   /** CSS de l'auteur, appliqué après le thème. */
   css: string;
+  /** Le lecteur peut revenir au choix précédent (#124). */
+  back: boolean;
+  quality: WebQuality;
+  format: WebFormat;
 }
 
 export const WEB_PAGE_KEY = "webPage";
-export const DEFAULT_WEB_PAGE: WebPageOptions = { theme: "classique", css: "" };
+export const DEFAULT_WEB_PAGE: WebPageOptions = { theme: "classique", css: "", back: true, quality: "standard", format: "html" };
 
-/** Réglages relus dans `metaKeep` : un thème inconnu redevient Classique, un CSS qui n'est pas un texte est ignoré. */
+const isOne = <T extends string>(list: readonly T[], v: unknown): v is T => typeof v === "string" && (list as readonly string[]).includes(v);
+
+/** Réglages relus dans `metaKeep` : une valeur inconnue redevient celle par défaut, un CSS qui n'est pas un texte est ignoré. */
 export function readWebPage(metaKeep: Readonly<Record<string, unknown>>): WebPageOptions {
   const raw = metaKeep[WEB_PAGE_KEY];
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return DEFAULT_WEB_PAGE;
@@ -135,27 +155,36 @@ export function readWebPage(metaKeep: Readonly<Record<string, unknown>>): WebPag
   return {
     theme: isWebTheme(r.theme) ? r.theme : DEFAULT_WEB_PAGE.theme,
     css: typeof r.css === "string" ? r.css.slice(0, MAX_CUSTOM_CSS) : "",
+    back: r.back !== false,
+    quality: isOne(WEB_QUALITIES, r.quality) ? r.quality : DEFAULT_WEB_PAGE.quality,
+    format: isOne(WEB_FORMATS, r.format) ? r.format : DEFAULT_WEB_PAGE.format,
   };
 }
 
 /**
- * `metaKeep` après un changement des réglages : la clé disparaît quand tout revient au défaut (un projet sans réglage
- * s'exporte comme avant). Même objet si rien ne change. Les clés qu'une version future aurait ajoutées restent.
+ * `metaKeep` après un changement des réglages : seules les valeurs qui diffèrent du défaut sont écrites, et la clé
+ * disparaît quand tout revient au défaut (un projet sans réglage s'exporte comme avant). Même objet si rien ne change.
+ * Les clés qu'une version future aurait ajoutées restent.
  */
 export function withWebPage(metaKeep: Readonly<Record<string, unknown>>, patch: Partial<WebPageOptions>): Record<string, unknown> {
   const before = readWebPage(metaKeep);
   const next: WebPageOptions = {
     theme: patch.theme !== undefined && isWebTheme(patch.theme) ? patch.theme : before.theme,
     css: patch.css !== undefined ? patch.css.slice(0, MAX_CUSTOM_CSS) : before.css,
+    back: patch.back !== undefined ? !!patch.back : before.back,
+    quality: isOne(WEB_QUALITIES, patch.quality) ? patch.quality : before.quality,
+    format: isOne(WEB_FORMATS, patch.format) ? patch.format : before.format,
   };
-  if (next.theme === before.theme && next.css === before.css) return metaKeep as Record<string, unknown>;
+  const keys = Object.keys(DEFAULT_WEB_PAGE) as (keyof WebPageOptions)[];
+  if (keys.every((k) => next[k] === before[k])) return metaKeep as Record<string, unknown>;
   const raw = metaKeep[WEB_PAGE_KEY];
-  const kept = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...(raw as Record<string, unknown>) } : {};
-  delete kept.theme;
-  delete kept.css;
-  const value: Record<string, unknown> = { ...kept };
+  const value: Record<string, unknown> = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...(raw as Record<string, unknown>) } : {};
+  for (const k of keys) delete value[k];
   if (next.theme !== DEFAULT_WEB_PAGE.theme) value.theme = next.theme;
   if (next.css.trim()) value.css = next.css;
+  if (!next.back) value.back = false;
+  if (next.quality !== DEFAULT_WEB_PAGE.quality) value.quality = next.quality;
+  if (next.format !== DEFAULT_WEB_PAGE.format) value.format = next.format;
   const out: Record<string, unknown> = { ...metaKeep };
   if (Object.keys(value).length) out[WEB_PAGE_KEY] = value;
   else delete out[WEB_PAGE_KEY];
