@@ -339,6 +339,7 @@ export function ScreenplayView() {
   const pickRef = useRef<(index: number) => void>(() => {});
   const editorRef = useRef<Editor | null>(null);
   const openSheetRenameRef = useRef<(el: HTMLElement) => boolean>(() => false);
+  const movePartRef = useRef<(at: number, way: -1 | 1) => void>(() => undefined);
   // Section de l'auteur sans note (#155) : « Transformer en… » au double-clic ou à Entrée.
   const openSheetConvertRef = useRef<(el: HTMLElement) => boolean>(() => false);
 
@@ -400,6 +401,16 @@ export function ScreenplayView() {
       handleKeyDown: (_view, event) => {
         // Touches du scénario (#59) : au cinquième changement d'élément par Tab, leur rappel quitte la barre.
         if (event.key === "Tab" && !event.ctrlKey && !event.metaKey && !event.altKey) noteUse("screenplayKeys", TAB_USES);
+        // Ligne d'un acte, d'une séquence ou d'une sous-séquence choisie (clic sur la ligne) : Alt (⌥ sur Mac) + ↑/↓ déplace
+        // la partie avec ses scènes (#159). Sur Mac, un clic ne donne pas le focus au titre de la liste des scènes.
+        if (event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown") && _view.state.selection instanceof NodeSelection) {
+          const dom = _view.nodeDOM(_view.state.selection.from);
+          if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]')) {
+            const at = _view.state.doc.resolve(_view.state.selection.from).index(0);
+            movePartRef.current(at, event.key === "ArrowUp" ? -1 : 1);
+            return true;
+          }
+        }
         if (event.key === "Enter" && !event.shiftKey && _view.state.selection instanceof NodeSelection) {
           const dom = _view.nodeDOM(_view.state.selection.from);
           if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]') && openSheetRenameRef.current(dom)) return true;
@@ -787,6 +798,11 @@ export function ScreenplayView() {
     return false;
   };
   openSheetRenameRef.current = openSheetRename;
+  movePartRef.current = (at, way) => {
+    const els = currentScript(useCosmos.getState())?.elements ?? [];
+    const title = plainSection(els[at]?.text ?? "");
+    movePart(at, title, (e, i) => moveStructurePart(e, i, way), false, true);
+  };
   // « Transformer en… » (#155) : petit menu posé sur la ligne d'une section de l'auteur sans note.
   const [sheetConvert, setSheetConvert] = useState<{ at: number; title: string; kind: StructureKind; top: number; left: number; lineTop: number; width: number } | null>(null);
   const openSheetConvert = (el: HTMLElement) => {
@@ -1146,7 +1162,7 @@ export function ScreenplayView() {
   };
 
   // Acte, séquence ou sous-séquence entière (#159) : la section et ses scènes, en une étape, l'éditeur rechargé ici.
-  const movePart = (at: number, title: string, change: (elements: ScreenplayElement[], at: number) => ScreenplayElement[], keepFocus = false) => {
+  const movePart = (at: number, title: string, change: (elements: ScreenplayElement[], at: number) => ScreenplayElement[], keepFocus = false, keepSelected = false) => {
     emit();
     const current = currentScript(useCosmos.getState());
     if (!current) return;
@@ -1158,8 +1174,11 @@ export function ScreenplayView() {
     synced.current = next;
     useCosmos.getState().setScript(next, true);
     editor.commands.setContent(toDoc(next), { emitUpdate: false });
-    const dom = editor.view.nodeDOM(posOf(editor.state.doc, elements.indexOf(moving)));
+    const pos = posOf(editor.state.doc, elements.indexOf(moving));
+    const dom = editor.view.nodeDOM(pos);
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
+    // Depuis la feuille : la ligne reste choisie, pour enchaîner les crans.
+    if (keepSelected) editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, pos)));
     if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(`.sp-scene-group[data-part-at="${elements.indexOf(moving)}"] .sp-part-title`)?.focus());
   };
 

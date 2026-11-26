@@ -1725,6 +1725,12 @@ const scenarios = [
       await h.reloadAndOpen();
       await h.view(4);
       const order = (f) => (f["scenario.fountain"] ?? "").match(/^## (Matin|Soir)|^\.?(INT|EXT)\. \w+/gm)?.join("|") ?? "";
+      // Dans la feuille : clic sur la ligne de la séquence, puis Alt (⌥) + ↑, deux fois de suite (la ligne reste choisie).
+      await page.locator('.sp-preserved[data-series="seq"]', { hasText: "Soir" }).click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin\|\.?INT\. CHAMBRE/.test(order(f)), "Alt + ↑ sur la ligne de la séquence ne la monte pas");
+      await page.keyboard.press("Alt+ArrowDown");
+      await h.saved((f) => /Matin\|\.?INT\. CHAMBRE\|## Soir/.test(order(f)), "la ligne n'est pas restée choisie pour un second cran");
       await page.getByRole("button", { name: "Actions de « Soir »" }).click();
       await page.getByRole("menuitem", { name: "Monter « Soir » avec ses scènes" }).click();
       await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin\|\.?INT\. CHAMBRE/.test(order(f)), "la séquence n'a pas monté avec sa scène");
