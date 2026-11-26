@@ -1751,6 +1751,37 @@ const scenarios = [
     },
   },
   {
+    name: "scène entière au clavier : Alt + ↑/↓ dans la feuille ou après un clic dans la liste des scènes",
+    async run(h) {
+      const { page } = h;
+      await h.create("Scenes", "scenario");
+      await h.wait(1200);
+      const fountain = [".INT. CHAMBRE - JOUR", "Elle dort.", ".EXT. ROUTE - NUIT", "Il roule.", ".INT. GARE - NUIT", "Le train part.", ""].join("\n\n");
+      await page.evaluate((text) => {
+        const key = Object.keys(localStorage).find((k) => k.startsWith("cosmos:projet:"));
+        const files = JSON.parse(localStorage.getItem(key));
+        files["scenario.fountain"] = text;
+        localStorage.setItem(key, JSON.stringify(files));
+      }, fountain);
+      await h.reloadAndOpen();
+      await h.view(4);
+      const order = (f) => (f["scenario.fountain"] ?? "").match(/^\.?(INT|EXT)\. \w+/gm)?.join("|") ?? "";
+      // Curseur dans le texte de la deuxième scène : elle monte, puis redescend deux fois (le curseur la suit).
+      await page.locator(".sp-editor p, .sp-editor div", { hasText: "Il roule." }).last().click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /ROUTE\|.*CHAMBRE\|.*GARE/.test(order(f)), "Alt + ↑ dans la scène ne la monte pas");
+      await page.keyboard.press("Alt+ArrowDown");
+      await page.keyboard.press("Alt+ArrowDown");
+      await h.saved((f) => /CHAMBRE\|.*GARE\|.*ROUTE/.test(order(f)), "le curseur n'a pas suivi la scène pour deux crans");
+      // Depuis la liste des scènes : clic sur la scène, puis Alt + ↑ (le focus passe dans la feuille).
+      await page.locator(".sp-scene-list li button", { hasText: "GARE" }).first().click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /GARE\|.*CHAMBRE\|.*ROUTE/.test(order(f)), "clic dans la liste puis Alt + ↑ ne monte pas la scène");
+      await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
+      await h.saved((f) => /CHAMBRE\|.*GARE\|.*ROUTE/.test(order(f)), "Ctrl Z ne rend pas l'ordre d'avant");
+    },
+  },
+  {
     name: "séquence choisie dans la fiche (#141) : la liste de l'onglet Scène déplace la scène, Ctrl Z rend l'ordre",
     async run(h) {
       const { page } = h;

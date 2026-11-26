@@ -341,6 +341,7 @@ export function ScreenplayView() {
   const openSheetRenameRef = useRef<(el: HTMLElement) => boolean>(() => false);
   const movePartRef = useRef<(at: number, way: -1 | 1) => void>(() => undefined);
   const pickedPart = useRef<number | null>(null);
+  const moveSceneRef = useRef<(index: number, way: -1 | 1) => boolean>(() => false);
   // Section de l'auteur sans note (#155) : « Transformer en… » au double-clic ou à Entrée.
   const openSheetConvertRef = useRef<(el: HTMLElement) => boolean>(() => false);
 
@@ -415,6 +416,25 @@ export function ScreenplayView() {
           if (at !== null) {
             event.preventDefault();
             movePartRef.current(at, event.key === "ArrowUp" ? -1 : 1);
+            return true;
+          }
+        }
+        // Curseur dans une scène : Alt (⌥ sur Mac) + ↑/↓ déplace la scène entière (en-tête, synopsis, texte) d'un cran,
+        // comme dans la liste des scènes, et le curseur la suit pour enchaîner.
+        if (event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+          // Le curseur lu dans la sélection de la page : celle de ProseMirror n'a pas toujours relu le dernier clic.
+          const dom = document.getSelection();
+          let from = _view.state.selection.from;
+          if (dom?.anchorNode && _view.dom.contains(dom.anchorNode)) {
+            try {
+              from = _view.posAtDOM(dom.anchorNode, dom.anchorOffset);
+            } catch {
+              /* position introuvable : celle de ProseMirror */
+            }
+          }
+          const index = _view.state.doc.resolve(Math.min(from, _view.state.doc.content.size)).index(0);
+          if (moveSceneRef.current(index, event.key === "ArrowUp" ? -1 : 1)) {
+            event.preventDefault();
             return true;
           }
         }
@@ -1195,6 +1215,20 @@ export function ScreenplayView() {
     const dom = editor.view.nodeDOM(posOf(editor.state.doc, blocks(elements)[b].start));
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
     if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
+  };
+
+  moveSceneRef.current = (index, way) => {
+    emit();
+    const els = currentScript(useCosmos.getState())?.elements ?? [];
+    const list = listScenes(els);
+    const here = sceneAt(listScenes(els, true), index);
+    if (!here || here.omitted) return false;
+    const k = list.findIndex((x) => x.index === here.index);
+    const other = list[k + way];
+    // Première ou dernière scène : la touche est prise quand même (rien ne bouge, le curseur ne saute pas).
+    if (k < 0) return false;
+    if (other) moveScene(here.index, other.index);
+    return true;
   };
 
   // Acte, séquence ou sous-séquence entière (#159) : la section et ses scènes, en une étape, l'éditeur rechargé ici.

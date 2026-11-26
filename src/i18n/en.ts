@@ -2903,7 +2903,7 @@ export const en: Messages = {
       elementType: "Change element",
       nextElement: "Next element",
       elementBar: "Element bar",
-      moveScene: "Move the scene (scene list)",
+      moveScene: "Move the whole scene (caret in the scene, or scene list)",
       moveLines: "Move the paragraph, selection or line of dialogue up or down",
       insertAct: "Add an act above the scene",
       insertSequence: "Add a sequence above the scene",

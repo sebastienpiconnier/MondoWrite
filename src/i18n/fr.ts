@@ -2869,7 +2869,7 @@ export const fr = {
       elementType: "Changer d’élément",
       nextElement: "Élément suivant",
       elementBar: "Barre des éléments",
-      moveScene: "Déplacer la scène (liste des scènes)",
+      moveScene: "Déplacer la scène entière (curseur dans la scène, ou liste des scènes)",
       moveLines: "Monter ou descendre le paragraphe, la sélection ou la réplique",
       insertAct: "Poser un acte au-dessus de la scène",
       insertSequence: "Poser une séquence au-dessus de la scène",
