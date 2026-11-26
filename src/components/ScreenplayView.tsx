@@ -340,6 +340,7 @@ export function ScreenplayView() {
   const editorRef = useRef<Editor | null>(null);
   const openSheetRenameRef = useRef<(el: HTMLElement) => boolean>(() => false);
   const movePartRef = useRef<(at: number, way: -1 | 1) => void>(() => undefined);
+  const pickedPart = useRef<number | null>(null);
   // Section de l'auteur sans note (#155) : « Transformer en… » au double-clic ou à Entrée.
   const openSheetConvertRef = useRef<(el: HTMLElement) => boolean>(() => false);
 
@@ -403,14 +404,22 @@ export function ScreenplayView() {
         if (event.key === "Tab" && !event.ctrlKey && !event.metaKey && !event.altKey) noteUse("screenplayKeys", TAB_USES);
         // Ligne d'un acte, d'une séquence ou d'une sous-séquence choisie (clic sur la ligne) : Alt (⌥ sur Mac) + ↑/↓ déplace
         // la partie avec ses scènes (#159). Sur Mac, un clic ne donne pas le focus au titre de la liste des scènes.
-        if (event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown") && _view.state.selection instanceof NodeSelection) {
-          const dom = _view.nodeDOM(_view.state.selection.from);
-          if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]')) {
-            const at = _view.state.doc.resolve(_view.state.selection.from).index(0);
+        // WebKit (app Mac) ne pose pas toujours la NodeSelection au clic : la ligne touchée en dernier est retenue
+        // (`pickedPart`, posée au clic sur la ligne de la feuille ou sur le titre de la liste des scènes).
+        if (event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+          let at = pickedPart.current;
+          if (at === null && _view.state.selection instanceof NodeSelection) {
+            const dom = _view.nodeDOM(_view.state.selection.from);
+            if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]')) at = _view.state.doc.resolve(_view.state.selection.from).index(0);
+          }
+          if (at !== null) {
+            event.preventDefault();
             movePartRef.current(at, event.key === "ArrowUp" ? -1 : 1);
             return true;
           }
         }
+        // Toute autre touche (frappe, flèche seule) oublie la ligne retenue.
+        if (event.key !== "Alt" && event.key !== "Shift") pickedPart.current = null;
         if (event.key === "Enter" && !event.shiftKey && _view.state.selection instanceof NodeSelection) {
           const dom = _view.nodeDOM(_view.state.selection.from);
           if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]') && openSheetRenameRef.current(dom)) return true;
@@ -801,7 +810,12 @@ export function ScreenplayView() {
   movePartRef.current = (at, way) => {
     const els = currentScript(useCosmos.getState())?.elements ?? [];
     const title = plainSection(els[at]?.text ?? "");
+    const moving = els[at];
     movePart(at, title, (e, i) => moveStructurePart(e, i, way), false, true);
+    // La partie a changé de rang : la retenir à sa nouvelle place pour enchaîner les crans.
+    const after = currentScript(useCosmos.getState())?.elements ?? [];
+    pickedPart.current = moving ? after.indexOf(moving) : null;
+    if (pickedPart.current === -1) pickedPart.current = null;
   };
   // « Transformer en… » (#155) : petit menu posé sur la ligne d'une section de l'auteur sans note.
   const [sheetConvert, setSheetConvert] = useState<{ at: number; title: string; kind: StructureKind; top: number; left: number; lineTop: number; width: number } | null>(null);
@@ -862,8 +876,30 @@ export function ScreenplayView() {
       const section = (e.target as HTMLElement | null)?.closest?.(AUTHOR_SECTION);
       if (section instanceof HTMLElement && openSheetConvertRef.current(section)) e.preventDefault();
     };
+    // Clic sur la ligne d'un acte, d'une séquence ou d'une sous-séquence : elle est retenue pour ⌥ + flèche, et choisie.
+    const onDown = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]');
+      if (!(el instanceof HTMLElement)) return void (pickedPart.current = null);
+      let pos = 0;
+      for (let i = 0; i < editor.state.doc.childCount; i++) {
+        if (editor.view.nodeDOM(pos) === el) {
+          pickedPart.current = i;
+          const at = pos;
+          requestAnimationFrame(() => {
+            if (editor.isDestroyed || at >= editor.state.doc.content.size) return;
+            editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, at)));
+          });
+          return;
+        }
+        pos += editor.state.doc.child(i).nodeSize;
+      }
+    };
     dom.addEventListener("dblclick", onDbl);
-    return () => dom.removeEventListener("dblclick", onDbl);
+    dom.addEventListener("mousedown", onDown);
+    return () => {
+      dom.removeEventListener("dblclick", onDbl);
+      dom.removeEventListener("mousedown", onDown);
+    };
   }, [editor]);
   const insertPartRef = useRef(insertPart);
   insertPartRef.current = insertPart;
@@ -1649,7 +1685,11 @@ export function ScreenplayView() {
                   type="button"
                   className="sp-part-title"
                   aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                  onClick={() => goTo(row.at)}
+                  onClick={() => {
+                    goTo(row.at);
+                    // Sur Mac le titre ne garde pas le focus : ⌥ + flèche, tapé ensuite dans la feuille, déplace cette partie.
+                    pickedPart.current = row.at;
+                  }}
                   onDoubleClick={() => setRenamingPart(row.id)}
                   onKeyDown={(e) => {
                     // Au clavier : Alt + flèche déplace la partie entière d'un cran.

@@ -1731,6 +1731,12 @@ const scenarios = [
       await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin\|\.?INT\. CHAMBRE/.test(order(f)), "Alt + ↑ sur la ligne de la séquence ne la monte pas");
       await page.keyboard.press("Alt+ArrowDown");
       await h.saved((f) => /Matin\|\.?INT\. CHAMBRE\|## Soir/.test(order(f)), "la ligne n'est pas restée choisie pour un second cran");
+      // Depuis la liste des scènes : clic sur le titre de la partie, puis ⌥ + ↑ (le focus est passé dans la feuille).
+      await page.locator(".sp-scene-group .sp-part-title", { hasText: "Soir" }).click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin/.test(order(f)), "clic sur le titre puis Alt + ↑ ne monte pas la séquence");
+      await page.keyboard.press("Alt+ArrowDown");
+      await h.saved((f) => /Matin\|\.?INT\. CHAMBRE\|## Soir/.test(order(f)), "second cran après le clic sur le titre");
       await page.getByRole("button", { name: "Actions de « Soir »" }).click();
       await page.getByRole("menuitem", { name: "Monter « Soir » avec ses scènes" }).click();
       await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin\|\.?INT\. CHAMBRE/.test(order(f)), "la séquence n'a pas monté avec sa scène");
