@@ -353,3 +353,120 @@ export function describeCount(c: StructureCount, labels: CountLabels, lang: stri
     return items.join(", ");
   }
 }
+
+/** Fin d'une section : la prochaine section de même niveau ou plus haute, sinon la fin du texte. */
+function sectionEnd(elements: ScreenplayElement[], at: number): number {
+  const depth = elements[at]?.type === "section" ? (elements[at].depth ?? 1) : 1;
+  for (let i = at + 1; i < elements.length; i++) {
+    const el = elements[i];
+    if (el.type === "section" && (el.depth ?? 1) <= depth) return i;
+  }
+  return elements.length;
+}
+
+/** Section qui contient celle du rang `at` (la dernière avant elle, moins profonde), ou -1. */
+function sectionParent(elements: ScreenplayElement[], at: number): number {
+  const depth = elements[at]?.type === "section" ? (elements[at].depth ?? 1) : 1;
+  for (let i = at - 1; i >= 0; i--) {
+    const el = elements[i];
+    if (el.type === "section" && (el.depth ?? 1) < depth) return i;
+  }
+  return -1;
+}
+
+/**
+ * Déplace un acte, une séquence ou une sous-séquence entière (#159), avec sa section et tout ce qui la suit jusqu'à
+ * la section de même niveau ou plus haute : d'un cran vers le haut (`way` -1) ou le bas (1). Elle prend la place de
+ * sa voisine de même niveau dans la même partie ; au bord, elle passe dans la partie voisine de même sorte (une
+ * séquence en fin d'acte devient la première de l'acte suivant), comme les épisodes d'une série. Jamais à travers
+ * un épisode, une saison ou une étape d'une structure livrée. Même tableau si elle ne peut pas bouger.
+ */
+export function moveStructurePart(elements: ScreenplayElement[], at: number, way: -1 | 1): ScreenplayElement[] {
+  const parts = structureOf(elements);
+  const byAt = new Map(parts.map((p) => [p.at, p]));
+  const part = byAt.get(at);
+  if (!part) return elements;
+  const depth = part.depth;
+  const end = sectionEnd(elements, at);
+  const chunk = elements.slice(at, end);
+  const parent = sectionParent(elements, at);
+  const isSibling = (i: number) => {
+    const el = elements[i];
+    return el?.type === "section" && (el.depth ?? 1) === depth && byAt.has(i) && sectionParent(elements, i) === parent;
+  };
+  // Partie voisine de même sorte que le parent (acte suivant ou précédent), dans la même partie qui la contient.
+  const parentPart = parent >= 0 ? byAt.get(parent) : undefined;
+  const sameKindNeighbour = (i: number) => !!parentPart && byAt.get(i)?.kind === parentPart.kind && (elements[i].depth ?? 1) === parentPart.depth && sectionParent(elements, i) === sectionParent(elements, parent);
+  if (way > 0) {
+    if (isSibling(end)) {
+      const next = sectionEnd(elements, end);
+      return [...elements.slice(0, at), ...elements.slice(end, next), ...chunk, ...elements.slice(next)];
+    }
+    if (!parentPart) return elements;
+    const parentEnd = sectionEnd(elements, parent);
+    // Dernière de son parent : elle devient la première de la partie suivante, avant ses premières parties de ce
+    // niveau (ses scènes d'en tête restent à elle).
+    if (end !== parentEnd || !sameKindNeighbour(parentEnd)) return elements;
+    const nextEnd = sectionEnd(elements, parentEnd);
+    let to = nextEnd;
+    for (let i = parentEnd + 1; i < nextEnd; i++) {
+      const el = elements[i];
+      if (el.type === "section" && (el.depth ?? 1) <= depth) {
+        to = i;
+        break;
+      }
+    }
+    return [...elements.slice(0, at), ...elements.slice(end, to), ...chunk, ...elements.slice(to)];
+  }
+  // Vers le haut : la voisine de même niveau qui finit où elle commence.
+  for (let i = at - 1; i > parent; i--) {
+    const el = elements[i];
+    if (el.type !== "section") continue;
+    if ((el.depth ?? 1) < depth) break;
+    if ((el.depth ?? 1) === depth) {
+      if (!isSibling(i) || sectionEnd(elements, i) !== at) return elements;
+      return [...elements.slice(0, i), ...chunk, ...elements.slice(i, at), ...elements.slice(end)];
+    }
+  }
+  // Première de son parent : elle devient la dernière de la partie précédente de même sorte.
+  if (!parentPart) return elements;
+  let prev = -1;
+  for (let i = parent - 1; i >= 0; i--) {
+    const el = elements[i];
+    if (el.type === "section" && (el.depth ?? 1) <= parentPart.depth) {
+      prev = i;
+      break;
+    }
+  }
+  if (prev === -1 || sectionEnd(elements, prev) !== parent || !sameKindNeighbour(prev)) return elements;
+  return [...elements.slice(0, parent), ...chunk, ...elements.slice(parent, at), ...elements.slice(end)];
+}
+
+/**
+ * Glisser une partie (#159) : elle avance d'un cran à la fois (`moveStructurePart`, mêmes règles) vers l'élément du
+ * rang `target` (une autre ligne du séquencier ou de la liste des scènes), jusqu'à le dépasser. Même tableau si elle ne
+ * peut pas bouger.
+ */
+export function moveStructurePartTo(elements: ScreenplayElement[], at: number, target: number): ScreenplayElement[] {
+  const moving = elements[at];
+  const goal = elements[target];
+  if (!moving || !goal || at === target) return elements;
+  let current = elements;
+  for (let step = 0; step < 200; step++) {
+    const from = current.indexOf(moving);
+    const to = current.indexOf(goal);
+    const end = sectionEnd(current, from);
+    if (to >= from && to < end) {
+      // La cible est dans la partie : fini si elle y est arrivée en descendant, sinon rien à faire.
+      return current;
+    }
+    const way: -1 | 1 = to > from ? 1 : -1;
+    const next = moveStructurePart(current, from, way);
+    if (next === current) return current;
+    current = next;
+    const after = current.indexOf(moving);
+    const goalAt = current.indexOf(goal);
+    if (way > 0 ? after > goalAt : after <= goalAt) return current;
+  }
+  return current;
+}

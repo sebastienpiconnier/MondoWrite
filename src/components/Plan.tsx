@@ -223,6 +223,7 @@ export function Plan() {
         data-reorder-index={bySection ? undefined : beat === null ? unplacedTarget : at}
         className={`sq-scene plan-scene${dragged === id ? " is-dragged" : ""}${over === id && dragged !== id ? " is-over" : ""}${plotColor(id).className}`}
         style={plotColor(id).style}
+        title={plotColor(id).label}
         draggable={!bySection}
         onDragStart={(e) => {
           // Pas en tirant dans un champ : on y sélectionne du texte.
@@ -238,6 +239,7 @@ export function Plan() {
         // Déposer sur une scène rangée : juste avant elle. Sur une scène à placer : on sort du plan.
         {...dropOn(id, beat, beat === null ? undefined : index)}
       >
+        {plotColor(id).label && <span className="sr-only">{plotColor(id).label}</span>}
         {bySection && <SectionNumber id={id} n={book.numbers.get(id)} title={title} locked={book.locked.has(id)} start={!!book.marks.get(id)?.start} />}
         {beat !== null && !bySection && (
           <div className="sq-moves">

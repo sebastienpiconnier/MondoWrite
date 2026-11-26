@@ -30,6 +30,9 @@ export const isPalette = (v: unknown): v is Palette => (PALETTES as readonly unk
  */
 export type WheelMode = "pan" | "zoom";
 /** Présentation du séquencier : en liste ou en fiches. */
+/** Palette des couleurs des intrigues (#157). */
+export type PlotPalette = "standard" | "bold";
+
 export type SequencerMode = "outline" | "cards";
 /** Aides qui s'effacent une fois apprises (#59) : consigne du canevas, touches du scénario (voir learn.ts). */
 export const LEARNED_HINTS = ["canvasHint", "screenplayKeys"] as const;
@@ -194,6 +197,9 @@ interface SettingsState {
   /** Scènes colorées par leur intrigue principale (#143) : Plan, séquencier, listes des scènes ; non par défaut. */
   plotColors: boolean;
   setPlotColors: (on: boolean) => void;
+  /** Couleurs des intrigues franches, pour les daltoniens (#157) : palette d'Okabe et Ito, texte noir dessus. */
+  plotPalette: PlotPalette;
+  setPlotPalette: (palette: PlotPalette) => void;
   /** Synopsis sous chaque scène du volet des scènes (Manuscrit et Scénario, #58) ; non par défaut. */
   /** Aides déjà apprises (#59) : la consigne du canevas, les touches du scénario… ne s'affichent plus. */
   learned: LearnedHint[];
@@ -299,7 +305,7 @@ function readPhotos(raw: unknown): PhotoSettings {
   return { source, keys: { pixabay: cleanKey(keys.pixabay), unsplash: cleanKey(keys.unsplash) } };
 }
 
-function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; plotColors?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown; languageTool?: unknown } {
+function readSaved(): { lang?: unknown; themePref?: unknown; palette?: unknown; sequencerMode?: unknown; ribbonPov?: unknown; plotColors?: unknown; plotPalette?: unknown; learned?: unknown; wheelMode?: unknown; author?: unknown; ai?: unknown; bibleSections?: unknown; writing?: unknown; photos?: unknown; profile?: unknown; updates?: unknown; reading?: unknown; templates?: unknown; mcp?: unknown; experimental?: unknown; languageTool?: unknown } {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}");
   } catch {
@@ -329,6 +335,8 @@ export const useSettings = create<SettingsState>((set) => ({
   setRibbonPov: (ribbonPov) => set({ ribbonPov }),
   plotColors: saved.plotColors !== false,
   setPlotColors: (plotColors) => set({ plotColors }),
+  plotPalette: saved.plotPalette === "bold" ? "bold" : "standard",
+  setPlotPalette: (plotPalette) => set({ plotPalette }),
   learned: readLearned(saved.learned),
   learn: (hint) => set((s) => (s.learned.includes(hint) ? s : { learned: [...s.learned, hint] })),
   unlearnAll: () => set({ learned: [] }),
@@ -401,12 +409,14 @@ export function setKeysInKeychain(on: boolean) {
 
 /** Applique les réglages au document et les mémorise. À appeler une fois, avant le premier rendu. */
 export function initSettings() {
-  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, plotColors, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental, languageTool }: SettingsState) => {
+  const apply = ({ lang, theme, themePref, palette, sequencerMode, ribbonPov, plotColors, plotPalette, learned, wheelMode, profile, ai, bibleSections, writing, photos, updates, reading, templates, mcp, experimental, languageTool }: SettingsState) => {
     const root = document.documentElement;
     root.lang = lang;
     root.dataset.theme = theme;
     root.dataset.palette = shownPalette(palette, !!contrastQuery()?.matches);
     root.style.colorScheme = theme; // barres de défilement, listes déroulantes natives
+    if (plotPalette === "bold") root.dataset.plotPalette = "bold";
+    else delete root.dataset.plotPalette;
     // Zoom de la page (manuscrit, scénario) : une variable CSS ; agrandie, la page peut défiler de côté.
     root.style.setProperty("--page-zoom", String(writing.zoom));
     // Police et interligne de la page du Manuscrit (#24) : deux variables CSS, lues seulement par .ms-page.
@@ -420,7 +430,7 @@ export function initSettings() {
       const stored = keysElsewhere
         ? { ai: { ...savedAi, keys: {} }, photos: { ...photos, keys: { pixabay: "", unsplash: "" } }, languageTool: { ...languageTool, key: "" } }
         : { ai: savedAi, photos, languageTool };
-      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, plotColors, learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
+      localStorage.setItem(KEY, JSON.stringify({ lang, themePref, palette, sequencerMode, ribbonPov, plotColors, ...(plotPalette === "bold" ? { plotPalette } : {}), learned, wheelMode, profile, ...stored, bibleSections, writing, updates, reading, templates, mcp, experimental }));
     } catch {
       /* réglage non mémorisé, sans gravité */
     }

@@ -140,6 +140,8 @@ export function SceneSetupsBox({ id }: { id: string | null | undefined }) {
     return (
       <section className="sp-box scene-setups">
         <h2 className="sp-box-title">{t.toile.setupsTitle}</h2>
+        {/* Rien encore (#163) : ce qu'est une préparation, en une phrase. */}
+        {!picker && <p className="scene-setups-hint">{t.toile.setupsEmptyHint}</p>}
         {picker || addButtons}
       </section>
     );

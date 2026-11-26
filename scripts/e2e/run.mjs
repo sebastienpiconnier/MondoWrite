@@ -511,6 +511,48 @@ const scenarios = [
     },
   },
   {
+    name: "couleurs franches des intrigues (#157) : réglage, noms au survol des scènes, noms des couleurs dans la fiche",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await page.evaluate(() => {
+        const s = JSON.parse(localStorage.getItem("cosmos:reglages") || "{}");
+        localStorage.setItem("cosmos:reglages", JSON.stringify({ ...s, plotPalette: "bold" }));
+      });
+      await h.reloadAndOpen();
+      assert((await page.locator("html").getAttribute("data-plot-palette")) === "bold", "la palette franche n'est pas posée");
+      await h.view(2);
+      const colored = page.locator(".plan-scene.has-plot").first();
+      await until(() => colored.count(), "aucune scène colorée dans le Plan");
+      assert(/^Intrigues?\s:\s/u.test((await colored.getAttribute("title")) ?? ""), `pas de nom d'intrigue au survol : ${await colored.getAttribute("title")}`);
+      assert(/Intrigue/.test(await colored.locator(".sr-only").first().innerText()), "pas de nom d'intrigue pour un lecteur d'écran");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/plot-157-plan.png` });
+      await h.view(3);
+      await page.locator(".bible-toc").getByRole("button", { name: /Intrigues/ }).first().click();
+      await until(() => page.locator(".plot-color.is-named").count(), "la fiche d'une intrigue ne nomme pas ses couleurs");
+      await until(() => page.getByRole("radio", { name: "Vermillon" }).count(), "la couleur « Vermillon » n'est pas proposée");
+      if (process.env.E2E_SHOTS) await page.locator(".plot-color").first().screenshot({ path: `${process.env.E2E_SHOTS}/plot-157-picker.png` });
+    },
+  },
+  {
+    name: "ruban expliqué (#163) : « Lire le ruban » montre la légende, toucher un trait dit le nom de l'étape ; aide des préparations",
+    async run(h) {
+      const { page } = h;
+      await h.example();
+      await h.view(4);
+      const ribbon = page.locator("nav.ribbon").first();
+      await until(() => ribbon.isVisible(), "pas de ruban dans le Manuscrit");
+      await ribbon.getByRole("button", { name: "Lire le ruban" }).click();
+      await until(() => ribbon.locator(".ribbon-key li").count(), "la légende du ruban ne s'ouvre pas");
+      const mark = ribbon.locator(".ribbon-mark").nth(1);
+      await mark.click({ force: true });
+      await until(async () => /%/.test((await ribbon.locator(".ribbon-peek").innerText().catch(() => "")) ?? ""), "toucher un trait ne dit pas le nom de l'étape");
+      if (process.env.E2E_SHOTS) await ribbon.screenshot({ path: `${process.env.E2E_SHOTS}/ribbon-163.png` });
+      const hint = page.locator(".scene-setups-hint");
+      if (await hint.count()) assert(/prépare ce qu’une autre paie/.test(await hint.first().innerText()), "l'aide des préparations manque");
+    },
+  },
+  {
     name: "garder sa place (#144) : la scène du Manuscrit choisie sur le canevas et montrée dans le Plan, le curseur retrouvé au retour",
     async run(h) {
       const { page } = h;
@@ -1665,6 +1707,78 @@ const scenarios = [
       await h.view(4);
       await h.wait(800);
       assert((await page.locator(".sp-sections-ask").count()) === 0, "la proposition revient après « Non »");
+    },
+  },
+  {
+    name: "partie entière (#159) : une séquence monte avec ses scènes (liste des scènes, séquencier), Ctrl Z rend l'ordre",
+    async run(h) {
+      const { page } = h;
+      await h.create("Movers", "scenario");
+      await h.wait(1200);
+      const fountain = ["# Acte un [[cosmos:act:a1]]", "## Matin [[cosmos:seq:s1]]", ".INT. CHAMBRE - JOUR", "Elle dort.", "## Soir [[cosmos:seq:s2]]", ".EXT. ROUTE - NUIT", "Il roule.", ""].join("\n\n");
+      await page.evaluate((text) => {
+        const key = Object.keys(localStorage).find((k) => k.startsWith("cosmos:projet:"));
+        const files = JSON.parse(localStorage.getItem(key));
+        files["scenario.fountain"] = text;
+        localStorage.setItem(key, JSON.stringify(files));
+      }, fountain);
+      await h.reloadAndOpen();
+      await h.view(4);
+      const order = (f) => (f["scenario.fountain"] ?? "").match(/^## (Matin|Soir)|^\.?(INT|EXT)\. \w+/gm)?.join("|") ?? "";
+      // Dans la feuille : clic sur la ligne de la séquence, puis Alt (⌥) + ↑, deux fois de suite (la ligne reste choisie).
+      await page.locator('.sp-preserved[data-series="seq"]', { hasText: "Soir" }).click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin\|\.?INT\. CHAMBRE/.test(order(f)), "Alt + ↑ sur la ligne de la séquence ne la monte pas");
+      await page.keyboard.press("Alt+ArrowDown");
+      await h.saved((f) => /Matin\|\.?INT\. CHAMBRE\|## Soir/.test(order(f)), "la ligne n'est pas restée choisie pour un second cran");
+      // Depuis la liste des scènes : clic sur le titre de la partie, puis ⌥ + ↑ (le focus est passé dans la feuille).
+      await page.locator(".sp-scene-group .sp-part-title", { hasText: "Soir" }).click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin/.test(order(f)), "clic sur le titre puis Alt + ↑ ne monte pas la séquence");
+      await page.keyboard.press("Alt+ArrowDown");
+      await h.saved((f) => /Matin\|\.?INT\. CHAMBRE\|## Soir/.test(order(f)), "second cran après le clic sur le titre");
+      await page.getByRole("button", { name: "Actions de « Soir »" }).click();
+      await page.getByRole("menuitem", { name: "Monter « Soir » avec ses scènes" }).click();
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin\|\.?INT\. CHAMBRE/.test(order(f)), "la séquence n'a pas monté avec sa scène");
+      // Le séquencier : la poignée de la partie la redescend.
+      await h.view(2);
+      await page.getByRole("button", { name: "Réordonner Soir. Utilise les flèches haut et bas." }).click();
+      await page.getByRole("menuitem", { name: "Descendre « Soir » avec ses scènes" }).click();
+      await h.saved((f) => /Matin\|\.?INT\. CHAMBRE\|## Soir\|\.?EXT\. ROUTE/.test(order(f)), "la séquence n'est pas redescendue");
+      if (process.env.E2E_SHOTS) await page.screenshot({ path: `${process.env.E2E_SHOTS}/part-159.png` });
+      await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
+      await h.saved((f) => /Soir\|\.?EXT\. ROUTE\|## Matin/.test(order(f)), "Ctrl Z ne rend pas l'ordre d'avant");
+    },
+  },
+  {
+    name: "scène entière au clavier : Alt + ↑/↓ dans la feuille ou après un clic dans la liste des scènes",
+    async run(h) {
+      const { page } = h;
+      await h.create("Scenes", "scenario");
+      await h.wait(1200);
+      const fountain = [".INT. CHAMBRE - JOUR", "Elle dort.", ".EXT. ROUTE - NUIT", "Il roule.", ".INT. GARE - NUIT", "Le train part.", ""].join("\n\n");
+      await page.evaluate((text) => {
+        const key = Object.keys(localStorage).find((k) => k.startsWith("cosmos:projet:"));
+        const files = JSON.parse(localStorage.getItem(key));
+        files["scenario.fountain"] = text;
+        localStorage.setItem(key, JSON.stringify(files));
+      }, fountain);
+      await h.reloadAndOpen();
+      await h.view(4);
+      const order = (f) => (f["scenario.fountain"] ?? "").match(/^\.?(INT|EXT)\. \w+/gm)?.join("|") ?? "";
+      // Curseur dans le texte de la deuxième scène : elle monte, puis redescend deux fois (le curseur la suit).
+      await page.locator(".sp-editor p, .sp-editor div", { hasText: "Il roule." }).last().click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /ROUTE\|.*CHAMBRE\|.*GARE/.test(order(f)), "Alt + ↑ dans la scène ne la monte pas");
+      await page.keyboard.press("Alt+ArrowDown");
+      await page.keyboard.press("Alt+ArrowDown");
+      await h.saved((f) => /CHAMBRE\|.*GARE\|.*ROUTE/.test(order(f)), "le curseur n'a pas suivi la scène pour deux crans");
+      // Depuis la liste des scènes : clic sur la scène, puis Alt + ↑ (le focus passe dans la feuille).
+      await page.locator(".sp-scene-list li button", { hasText: "GARE" }).first().click();
+      await page.keyboard.press("Alt+ArrowUp");
+      await h.saved((f) => /GARE\|.*CHAMBRE\|.*ROUTE/.test(order(f)), "clic dans la liste puis Alt + ↑ ne monte pas la scène");
+      await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
+      await h.saved((f) => /CHAMBRE\|.*GARE\|.*ROUTE/.test(order(f)), "Ctrl Z ne rend pas l'ordre d'avant");
     },
   },
   {

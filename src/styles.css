@@ -74,6 +74,18 @@
   /* Texte posé sur une couleur d'intrigue pleine (#143) : la surface, à 4,5:1 de chaque couleur de type (testé). */
   --plot-fg: var(--surface);
   --plot-fg-swap: var(--ink);
+  /* Couleurs des intrigues (#157) : celles des points de vue, ou la palette franche pour les daltoniens (Okabe et Ito,
+     bleu éclairci) : texte noir dessus, 4,5:1 au moins sur chacune (testé), les mêmes dans les deux thèmes. */
+  --plot-bold-1: #1a80c4;
+  --plot-bold-2: #e69f00;
+  --plot-bold-3: #009e73;
+  --plot-bold-4: #cc79a7;
+  --plot-bold-5: #f0e442;
+  --plot-bold-6: #56b4e9;
+  --plot-bold-7: #d55e00;
+  --plot-bold-8: #bbbbbb;
+  --plot-bold-ink: #000000;
+  --plot-bold-swap: #ffffff;
   /* Statut d'une scène (pastilles) : à écrire, brouillon, à revoir, révisée, terminée */
   --status-todo: #5a5fc0;
   --status-draft: #6e7388;
@@ -176,7 +188,30 @@
   --cover-muted: #c4c6ee;
   --cover-chip: rgb(255 255 255 / 0.1);
   --cover-line: rgb(255 255 255 / 0.24);
+  /* Couleurs des intrigues (#157) : celles des points de vue, ou la palette franche pour les daltoniens (Okabe et Ito,
+     bleu éclairci) : texte noir dessus, 4,5:1 au moins sur chacune (testé), les mêmes dans les deux thèmes. */
+  --plot-bold-1: #1a80c4;
+  --plot-bold-2: #e69f00;
+  --plot-bold-3: #009e73;
+  --plot-bold-4: #cc79a7;
+  --plot-bold-5: #f0e442;
+  --plot-bold-6: #56b4e9;
+  --plot-bold-7: #d55e00;
+  --plot-bold-8: #bbbbbb;
+  --plot-bold-ink: #000000;
+  --plot-bold-swap: #ffffff;
 }
+/* Couleurs des intrigues (#157) : huit jetons lus par le code (`var(--plot-N)`), ceux des points de vue par défaut. */
+:root {
+  --plot-1: var(--pov-1); --plot-2: var(--pov-2); --plot-3: var(--pov-3); --plot-4: var(--pov-4);
+  --plot-5: var(--pov-5); --plot-6: var(--pov-6); --plot-7: var(--pov-7); --plot-8: var(--pov-8);
+}
+:root[data-plot-palette="bold"] {
+  --plot-1: var(--plot-bold-1); --plot-2: var(--plot-bold-2); --plot-3: var(--plot-bold-3); --plot-4: var(--plot-bold-4);
+  --plot-5: var(--plot-bold-5); --plot-6: var(--plot-bold-6); --plot-7: var(--plot-bold-7); --plot-8: var(--plot-bold-8);
+  --plot-fg: var(--plot-bold-ink); --plot-fg-swap: var(--plot-bold-swap);
+}
+
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }

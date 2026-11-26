@@ -2,7 +2,7 @@
 // prennent vraiment, et en fantôme la position où elle commence d'ordinaire. Toucher une scène y mène.
 // Discret : il n'apparaît qu'avec un gabarit, et le mode focus le cache.
 
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { currentScript, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { screenplaySceneTexts, timeline } from "../timeline";
@@ -71,6 +71,17 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   }, [plotOn, lanesOpen, hasPlots, nodes, edges]);
   // Courbe du récit : d'après « Pour le héros, la scène finit » des fiches de scène.
   const [curveOpen, setCurveOpen] = useState(false);
+  // Légende des traits, et nom d'une partie montré un instant au toucher d'un trait (#163).
+  const [keyOpen, setKeyOpen] = useState(false);
+  const keyId = useId();
+  const [peek, setPeek] = useState<string | null>(null);
+  const peekTimer = useRef<number | undefined>(undefined);
+  const showPeek = (text: string) => {
+    setPeek(text);
+    window.clearTimeout(peekTimer.current);
+    peekTimer.current = window.setTimeout(() => setPeek(null), 4000);
+  };
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
   const curve = useMemo(() => {
     if (!ribbon) return null;
     const fiche = new Map(nodes.map((n) => [n.id, n.data.fiche?.issue]));
@@ -88,6 +99,9 @@ export function StoryRibbon({ currentId, onGo }: Props) {
     return { of, colors, name: (id: string) => people.get(id) || t.plan.untitled };
   }, [nodes, t.plan.untitled]);
   if (!ribbon) return null;
+  const marksKinds = (["level1", "level2", "level3", "expected"] as const).filter((k) =>
+    ribbon.markers.some((m) => (k === "expected" ? !m.actual : m.actual && `level${m.level ?? 1}` === k)),
+  );
   // Plan libre : pas de case à montrer, le ruban n'est là que pour les points de vue.
   const free = ribbon.template === "libre";
   const povMode = anyPov && (povPref || free);
@@ -129,7 +143,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
                   style={{
                     left: `${seg.length > 0 ? ((s.start - seg.start) / seg.length) * 100 : 0}%`,
                     width: `${seg.length > 0 ? (s.length / seg.length) * 100 : 0}%`,
-                    ...(color ? ({ "--scene-pov": `var(--pov-${color})` } as React.CSSProperties) : {}),
+                    ...(color ? ({ "--scene-pov": `var(--${pov ? "pov" : "plot"}-${color})` } as React.CSSProperties) : {}),
                   }}
                   aria-current={s.id === currentId ? "true" : undefined}
                   aria-label={label}
@@ -140,15 +154,22 @@ export function StoryRibbon({ currentId, onGo }: Props) {
             })}
           </div>
         ))}
-        {ribbon.markers.map((m) => (
-          <span
-            key={m.key}
-            className={`ribbon-mark${m.actual ? ` is-actual is-level-${m.level ?? 1}` : ""}`}
-            style={{ left: `${m.at * 100}%` }}
-            title={m.actual ? fmt(r.startsAt, { beat: beatLabel(m.key), n: pct(m.at) }) : fmt(r.expected, { beat: beatLabel(m.key), n: pct(m.at) })}
-            aria-hidden="true"
-          />
-        ))}
+        {ribbon.markers.map((m) => {
+          const text = m.actual ? fmt(r.startsAt, { beat: beatLabel(m.key), n: pct(m.at) }) : fmt(r.expected, { beat: beatLabel(m.key), n: pct(m.at) });
+          // Nom de la partie au survol et au toucher (#163) : dit dans la légende sous le ruban, pas seulement en infobulle.
+          return (
+            <span
+              key={m.key}
+              className={`ribbon-mark${m.actual ? ` is-actual is-level-${m.level ?? 1}` : ""}${peek === text ? " is-peeked" : ""}`}
+              style={{ left: `${m.at * 100}%` }}
+              title={text}
+              aria-hidden="true"
+              onPointerEnter={(e) => e.pointerType === "mouse" && setPeek(text)}
+              onPointerLeave={(e) => e.pointerType === "mouse" && setPeek(null)}
+              onClick={() => showPeek(text)}
+            />
+          );
+        })}
       </div>
       {curveOpen && curve && (
         <div className="ribbon-curve" role="img" aria-label={r.curveAria}>
@@ -162,7 +183,7 @@ export function StoryRibbon({ currentId, onGo }: Props) {
         </div>
       )}
       {lanes.map((lane) => (
-        <div key={lane.id} className="ribbon-lane" style={{ "--lane": `var(--pov-${lane.color})` } as React.CSSProperties}>
+        <div key={lane.id} className="ribbon-lane" style={{ "--lane": `var(--plot-${lane.color})` } as React.CSSProperties}>
           {/* Lire le récit fil par fil (#117) : le nom de l'intrigue ouvre ses seules scènes. */}
           <button type="button" className="ribbon-lane-name" title={fmt(t.thread.readOf, { title: lane.title })} onClick={() => useCosmos.getState().readThread(lane.id)}>
             {lane.title}
@@ -192,8 +213,8 @@ export function StoryRibbon({ currentId, onGo }: Props) {
           )}
         </ul>
       )}
-      <p className="ribbon-caption">
-        {here ? sceneLabel(here.s.id, free ? fmt(r.freeCaption, { n: pct(here.s.start) }) : fmt(r.caption, { beat: beatLabel(here.seg.key), n: pct(here.s.start) })) : free ? (anyPov ? r.povHint : r.plotsHint) : r.hint}
+      <p className="ribbon-caption" aria-live="polite">
+        {peek ? <span className="ribbon-peek">{peek}</span> : here ? sceneLabel(here.s.id, free ? fmt(r.freeCaption, { n: pct(here.s.start) }) : fmt(r.caption, { beat: beatLabel(here.seg.key), n: pct(here.s.start) })) : free ? (anyPov ? r.povHint : r.plotsHint) : r.hint}
         {!ribbon.measured && !phone && <span className="ribbon-note"> · {r.byCount}</span>}
         {anyPov && !free && (
           <>
@@ -219,7 +240,26 @@ export function StoryRibbon({ currentId, onGo }: Props) {
             </button>
           </>
         )}
+        {marksKinds.length > 0 && (
+          <>
+            {" · "}
+            <button type="button" className="ribbon-toggle" aria-expanded={keyOpen} aria-controls={keyId} onClick={() => setKeyOpen(!keyOpen)}>
+              {r.keyToggle}
+            </button>
+          </>
+        )}
       </p>
+      {/* Ce que disent les traits du ruban (#163) : seulement ceux qu'il montre. */}
+      {keyOpen && marksKinds.length > 0 && (
+        <ul className="ribbon-key" id={keyId}>
+          {marksKinds.map((k) => (
+            <li key={k}>
+              <span className={`ribbon-key-mark ${k === "expected" ? "" : `is-actual is-level-${k.slice(-1)}`}`} aria-hidden="true" />
+              {r.key[k]}
+            </li>
+          ))}
+        </ul>
+      )}
     </nav>
   );
 }

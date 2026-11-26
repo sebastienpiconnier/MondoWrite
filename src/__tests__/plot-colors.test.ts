@@ -20,8 +20,8 @@ describe("couleur d'une scène par son intrigue principale (#143)", () => {
   it("deux intrigues, deux couleurs ; une scène sans intrigue reste neutre", () => {
     const c = plotColors(nodes, edges);
     expect(c.plots.get("a")).not.toBe(c.plots.get("b"));
-    expect(sceneColor(c, "s1")).toBe(`var(--pov-${c.plots.get("a")})`);
-    expect(sceneColor(c, "s2")).toBe(`var(--pov-${c.plots.get("b")})`);
+    expect(sceneColor(c, "s1")).toBe(`var(--plot-${c.plots.get("a")})`);
+    expect(sceneColor(c, "s2")).toBe(`var(--plot-${c.plots.get("b")})`);
     expect(sceneColor(c, "s3")).toBeUndefined();
     expect(plotColors(nodes, edges)).toBe(c);
     // Toutes les intrigues de la scène en bandes, la principale d'abord ; une couleur choisie l'emporte.

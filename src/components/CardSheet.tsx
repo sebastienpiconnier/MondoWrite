@@ -10,6 +10,7 @@ import { PLOT_COLORS } from "../character";
 import { BufferedInput, BufferedTextarea } from "./BufferedField";
 import { IaFieldNote } from "./Atelier";
 import { useEffect, useId, useState } from "react";
+import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { useInteractive } from "../interactive/useInteractive";
 import { fmt, useT } from "../i18n";
@@ -165,8 +166,11 @@ export function PlotColorPicker({ card }: { card: CardData }) {
   const id = useCosmos((s) => s.nodes.find((n) => n.data === card)?.id);
   const chosen = card.fiche?.couleur ?? "";
   const set = (v: string) => id && useCosmos.getState().setFiche(id, "couleur", v);
+  // Palette franche (#157) : chaque couleur porte son nom, écrit à côté de sa pastille.
+  const bold = useSettings((s) => s.plotPalette === "bold");
+  const nameOf = (c: string) => (bold ? t.plotBoldNames[Number(c) - 1] : fmt(t.plotColorN, { n: c }));
   return (
-    <div className="plot-color" role="radiogroup" aria-label={t.plotColor}>
+    <div className={`plot-color${bold ? " is-named" : ""}`} role="radiogroup" aria-label={t.plotColor}>
       <span className="plot-color-label">{t.plotColor}</span>
       {PLOT_COLORS.map((c) => (
         <button
@@ -175,11 +179,13 @@ export function PlotColorPicker({ card }: { card: CardData }) {
           role="radio"
           aria-checked={chosen === c || (!chosen && String(auto) === c)}
           className={`plot-swatch${chosen === c ? " is-chosen" : ""}`}
-          style={{ background: `var(--pov-${c})` }}
-          aria-label={fmt(t.plotColorN, { n: c })}
-          title={fmt(t.plotColorN, { n: c })}
+          style={{ ["--swatch" as string]: `var(--plot-${c})` }}
+          aria-label={nameOf(c)}
+          title={nameOf(c)}
           onClick={() => set(chosen === c ? "" : c)}
-        />
+        >
+          {bold && <span className="plot-swatch-name">{nameOf(c)}</span>}
+        </button>
       ))}
       {chosen && (
         <button type="button" className="link-button" onClick={() => set("")}>

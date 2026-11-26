@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parse as parseFountain } from "../screenplay/parse";
 import { serialize as serializeFountain } from "../screenplay/serialize";
 import { LAYOUTS } from "../screenplay/layout";
-import { adoptUnmarkedSections, convertSection, describeCount, holdersOf, insertStructure, insertionPoint, nextNumber, partChapters, partOfScene, renameStructure, replacedParts, structureDepth, structureOf, unmarkedSections } from "../screenplay/structure";
+import { adoptUnmarkedSections, convertSection, moveStructurePart, moveStructurePartTo, describeCount, holdersOf, insertStructure, insertionPoint, nextNumber, partChapters, partOfScene, renameStructure, replacedParts, structureDepth, structureOf, unmarkedSections } from "../screenplay/structure";
 import { paginate } from "../screenplay/paginate";
 import type { ScreenplayElement } from "../screenplay/model";
 
@@ -172,5 +172,82 @@ describe("lot 18 : structure de l'auteur et sections importées", () => {
     expect(holdersOf(els, "a")).toEqual({ parts: ["a1", "q1"], series: ["s", "e"] });
     expect(holdersOf(els, "b")).toEqual({ parts: ["a1", "q2"], series: ["s", "e"] });
     expect(holdersOf(els, "zz")).toEqual({ parts: [], series: [] });
+  });
+});
+
+describe("déplacer un acte, une séquence ou une sous-séquence (#159)", () => {
+  const sec = (depth: number, text: string): ScreenplayElement => ({ type: "section", depth, text });
+  const titles = (els: ScreenplayElement[]) => els.map((el) => (el.type === "section" ? `${"#".repeat(el.depth ?? 1)}${plain(el.text)}` : el.text));
+  const plain = (t: string) => t.replace(/\s*\[\[[^\]]*\]\]/g, "");
+  const film: ScreenplayElement[] = [
+    sec(1, "A1 [[cosmos:act:a1]]"),
+    sec(2, "S1 [[cosmos:seq:s1]]"),
+    heading("INT. UN", "1"),
+    sec(2, "S2 [[cosmos:seq:s2]]"),
+    heading("INT. DEUX", "2"),
+    sec(1, "A2 [[cosmos:act:a2]]"),
+    heading("INT. LIBRE", "l"),
+    sec(2, "S3 [[cosmos:seq:s3]]"),
+    heading("INT. TROIS", "3"),
+  ];
+
+  it("une séquence change de place avec sa voisine, scènes comprises", () => {
+    const down = moveStructurePart(film, 1, 1);
+    expect(titles(down)).toEqual(["#A1", "##S2", "INT. DEUX", "##S1", "INT. UN", "#A2", "INT. LIBRE", "##S3", "INT. TROIS"]);
+    expect(moveStructurePart(down, 3, -1)).toEqual(film);
+  });
+
+  it("au bord de son acte, elle passe dans l'acte voisin, sans prendre ses scènes d'en tête", () => {
+    const down = moveStructurePart(film, 3, 1);
+    expect(titles(down)).toEqual(["#A1", "##S1", "INT. UN", "#A2", "INT. LIBRE", "##S2", "INT. DEUX", "##S3", "INT. TROIS"]);
+    const up = moveStructurePart(film, 7, -1);
+    expect(titles(up)).toEqual(["#A1", "##S1", "INT. UN", "##S2", "INT. DEUX", "##S3", "INT. TROIS", "#A2", "INT. LIBRE"]);
+  });
+
+  it("un acte entier, avec ses séquences ; rien au bord du texte", () => {
+    expect(titles(moveStructurePart(film, 0, 1))).toEqual(["#A2", "INT. LIBRE", "##S3", "INT. TROIS", "#A1", "##S1", "INT. UN", "##S2", "INT. DEUX"]);
+    expect(moveStructurePart(film, 0, -1)).toBe(film);
+    expect(moveStructurePart(film, 5, 1)).toBe(film);
+    expect(moveStructurePart(film, 7, 1)).toBe(film);
+    expect(moveStructurePart(film, 2, 1)).toBe(film);
+  });
+
+  it("jamais à travers un épisode", () => {
+    const series: ScreenplayElement[] = [
+      sec(1, "Saison 1 [[cosmos:season:s]]"),
+      sec(2, "Pilote [[cosmos:episode:e1]]"),
+      sec(3, "A1 [[cosmos:act:a1]]"),
+      heading("INT. UN", "1"),
+      sec(2, "Tempête [[cosmos:episode:e2]]"),
+      sec(3, "A2 [[cosmos:act:a2]]"),
+      heading("INT. DEUX", "2"),
+    ];
+    expect(moveStructurePart(series, 2, 1)).toBe(series);
+    expect(moveStructurePart(series, 5, -1)).toBe(series);
+  });
+});
+
+describe("glisser une partie (#159)", () => {
+  it("va jusqu'à la ligne visée, en avançant d'un cran à la fois", () => {
+    const els = parseFountain([
+      "# Acte 1 [[cosmos:act:a1]]",
+      "",
+      "## Séquence 1 [[cosmos:seq:s1]]",
+      "",
+      "INT. A - JOUR",
+      "",
+      "## Séquence 2 [[cosmos:seq:s2]]",
+      "",
+      "INT. B - JOUR",
+      "",
+      "## Séquence 3 [[cosmos:seq:s3]]",
+      "",
+      "INT. C - JOUR",
+    ].join("\n")).elements;
+    const s1 = els.findIndex((e) => e.text.includes("seq:s1"));
+    const c = els.findIndex((e) => e.text === "INT. C - JOUR");
+    const out = moveStructurePartTo(els, s1, c);
+    expect(out.filter((e) => e.type === "section").map((e) => e.text.match(/seq:(\w+)/)?.[1] ?? "act")).toEqual(["act", "s2", "s3", "s1"]);
+    expect(moveStructurePartTo(els, s1, s1 + 1)).toBe(els);
   });
 });

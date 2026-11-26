@@ -70,7 +70,7 @@ export function plotColors(nodes: readonly NodeLike[], edges: readonly EdgeLike[
 export function sceneBackground(colors: PlotColors, sceneId: string | undefined): string | undefined {
   const list = sceneId ? colors.all.get(sceneId) : undefined;
   if (!list || list.length === 0) return undefined;
-  const tints = list.map((p) => `var(--pov-${colors.plots.get(p) ?? 1})`);
+  const tints = list.map((p) => `var(--plot-${colors.plots.get(p) ?? 1})`);
   if (tints.length === 1) return `linear-gradient(${tints[0]}, ${tints[0]})`;
   const step = 100 / tints.length;
   return `linear-gradient(90deg, ${tints.map((c, i) => `${c} ${(i * step).toFixed(2)}% ${((i + 1) * step).toFixed(2)}%`).join(", ")})`;
@@ -80,11 +80,11 @@ export function sceneBackground(colors: PlotColors, sceneId: string | undefined)
 export function sceneColor(colors: PlotColors, sceneId: string | undefined): string | undefined {
   const plot = sceneId ? colors.main.get(sceneId) : undefined;
   const slot = plot ? colors.plots.get(plot) : undefined;
-  return slot ? `var(--pov-${slot})` : undefined;
+  return slot ? `var(--plot-${slot})` : undefined;
 }
 
 /** Fond d'une carte Intrigue : sa propre couleur, pleine. */
 export function plotCardBackground(colors: PlotColors, plotId: string): string | undefined {
   const n = colors.plots.get(plotId);
-  return n ? `linear-gradient(var(--pov-${n}), var(--pov-${n}))` : undefined;
+  return n ? `linear-gradient(var(--plot-${n}), var(--plot-${n}))` : undefined;
 }

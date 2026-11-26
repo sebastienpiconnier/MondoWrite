@@ -73,7 +73,7 @@ import { newId, structureCaseText } from "../projectState";
 import { storage } from "../storage";
 import { markSectionsAsked, sectionsAsked } from "../sectionsAsked";
 import { plainSection, resolveEpisode, seriesOf } from "../screenplay/series";
-import { adoptUnmarkedSections, convertSection, insertionPoint, nextNumber, partLabel, renameStructure, structureMark, structureOf, structureSection, unmarkedSections, type StructureKind } from "../screenplay/structure";
+import { adoptUnmarkedSections, convertSection, insertionPoint, moveStructurePart, moveStructurePartTo, nextNumber, partLabel, renameStructure, structureMark, structureOf, structureSection, unmarkedSections, type StructureKind } from "../screenplay/structure";
 import { adoptStructureCases, customizeRange, scopeAt, usedCaseKeys } from "../screenplay/structureCases";
 import { SCREENPLAY_TEMPLATES, beatOf } from "../screenplay/template";
 import { PLAN_TEMPLATES, isCustomBeat, nextCustomKey, type PlanBeat } from "../plan";
@@ -339,6 +339,9 @@ export function ScreenplayView() {
   const pickRef = useRef<(index: number) => void>(() => {});
   const editorRef = useRef<Editor | null>(null);
   const openSheetRenameRef = useRef<(el: HTMLElement) => boolean>(() => false);
+  const movePartRef = useRef<(at: number, way: -1 | 1) => void>(() => undefined);
+  const pickedPart = useRef<number | null>(null);
+  const moveSceneRef = useRef<(index: number, way: -1 | 1) => boolean>(() => false);
   // Section de l'auteur sans note (#155) : « Transformer en… » au double-clic ou à Entrée.
   const openSheetConvertRef = useRef<(el: HTMLElement) => boolean>(() => false);
 
@@ -400,6 +403,43 @@ export function ScreenplayView() {
       handleKeyDown: (_view, event) => {
         // Touches du scénario (#59) : au cinquième changement d'élément par Tab, leur rappel quitte la barre.
         if (event.key === "Tab" && !event.ctrlKey && !event.metaKey && !event.altKey) noteUse("screenplayKeys", TAB_USES);
+        // Ligne d'un acte, d'une séquence ou d'une sous-séquence choisie (clic sur la ligne) : Alt (⌥ sur Mac) + ↑/↓ déplace
+        // la partie avec ses scènes (#159). Sur Mac, un clic ne donne pas le focus au titre de la liste des scènes.
+        // WebKit (app Mac) ne pose pas toujours la NodeSelection au clic : la ligne touchée en dernier est retenue
+        // (`pickedPart`, posée au clic sur la ligne de la feuille ou sur le titre de la liste des scènes).
+        if (event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+          let at = pickedPart.current;
+          if (at === null && _view.state.selection instanceof NodeSelection) {
+            const dom = _view.nodeDOM(_view.state.selection.from);
+            if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]')) at = _view.state.doc.resolve(_view.state.selection.from).index(0);
+          }
+          if (at !== null) {
+            event.preventDefault();
+            movePartRef.current(at, event.key === "ArrowUp" ? -1 : 1);
+            return true;
+          }
+        }
+        // Curseur dans une scène : Alt (⌥ sur Mac) + ↑/↓ déplace la scène entière (en-tête, synopsis, texte) d'un cran,
+        // comme dans la liste des scènes, et le curseur la suit pour enchaîner.
+        if (event.altKey && !event.shiftKey && !event.metaKey && !event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+          // Le curseur lu dans la sélection de la page : celle de ProseMirror n'a pas toujours relu le dernier clic.
+          const dom = document.getSelection();
+          let from = _view.state.selection.from;
+          if (dom?.anchorNode && _view.dom.contains(dom.anchorNode)) {
+            try {
+              from = _view.posAtDOM(dom.anchorNode, dom.anchorOffset);
+            } catch {
+              /* position introuvable : celle de ProseMirror */
+            }
+          }
+          const index = _view.state.doc.resolve(Math.min(from, _view.state.doc.content.size)).index(0);
+          if (moveSceneRef.current(index, event.key === "ArrowUp" ? -1 : 1)) {
+            event.preventDefault();
+            return true;
+          }
+        }
+        // Toute autre touche (frappe, flèche seule) oublie la ligne retenue.
+        if (event.key !== "Alt" && event.key !== "Shift") pickedPart.current = null;
         if (event.key === "Enter" && !event.shiftKey && _view.state.selection instanceof NodeSelection) {
           const dom = _view.nodeDOM(_view.state.selection.from);
           if (dom instanceof HTMLElement && dom.matches('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]') && openSheetRenameRef.current(dom)) return true;
@@ -514,6 +554,8 @@ export function ScreenplayView() {
   const phone = usePhone();
   // Scène glissée dans la liste (ref : le dépôt peut arriver avant le rendu suivant).
   const dragRef = useRef<number | null>(null);
+  // Acte, séquence ou sous-séquence glissés dans la liste (#159) : rang de leur section.
+  const dragPartRef = useRef<{ at: number; title: string } | null>(null);
   const [dragScene, setDragScene] = useState<number | null>(null);
   const [overScene, setOverScene] = useState<number | null>(null);
   const [announce, setAnnounce] = useState("");
@@ -785,6 +827,16 @@ export function ScreenplayView() {
     return false;
   };
   openSheetRenameRef.current = openSheetRename;
+  movePartRef.current = (at, way) => {
+    const els = currentScript(useCosmos.getState())?.elements ?? [];
+    const title = plainSection(els[at]?.text ?? "");
+    const moving = els[at];
+    movePart(at, title, (e, i) => moveStructurePart(e, i, way), false, true);
+    // La partie a changé de rang : la retenir à sa nouvelle place pour enchaîner les crans.
+    const after = currentScript(useCosmos.getState())?.elements ?? [];
+    pickedPart.current = moving ? after.indexOf(moving) : null;
+    if (pickedPart.current === -1) pickedPart.current = null;
+  };
   // « Transformer en… » (#155) : petit menu posé sur la ligne d'une section de l'auteur sans note.
   const [sheetConvert, setSheetConvert] = useState<{ at: number; title: string; kind: StructureKind; top: number; left: number; lineTop: number; width: number } | null>(null);
   const openSheetConvert = (el: HTMLElement) => {
@@ -844,8 +896,30 @@ export function ScreenplayView() {
       const section = (e.target as HTMLElement | null)?.closest?.(AUTHOR_SECTION);
       if (section instanceof HTMLElement && openSheetConvertRef.current(section)) e.preventDefault();
     };
+    // Clic sur la ligne d'un acte, d'une séquence ou d'une sous-séquence : elle est retenue pour ⌥ + flèche, et choisie.
+    const onDown = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.('.sp-preserved[data-series="act"], .sp-preserved[data-series="seq"], .sp-preserved[data-series="sub"]');
+      if (!(el instanceof HTMLElement)) return void (pickedPart.current = null);
+      let pos = 0;
+      for (let i = 0; i < editor.state.doc.childCount; i++) {
+        if (editor.view.nodeDOM(pos) === el) {
+          pickedPart.current = i;
+          const at = pos;
+          requestAnimationFrame(() => {
+            if (editor.isDestroyed || at >= editor.state.doc.content.size) return;
+            editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, at)));
+          });
+          return;
+        }
+        pos += editor.state.doc.child(i).nodeSize;
+      }
+    };
     dom.addEventListener("dblclick", onDbl);
-    return () => dom.removeEventListener("dblclick", onDbl);
+    dom.addEventListener("mousedown", onDown);
+    return () => {
+      dom.removeEventListener("dblclick", onDbl);
+      dom.removeEventListener("mousedown", onDown);
+    };
   }, [editor]);
   const insertPartRef = useRef(insertPart);
   insertPartRef.current = insertPart;
@@ -1141,6 +1215,41 @@ export function ScreenplayView() {
     const dom = editor.view.nodeDOM(posOf(editor.state.doc, blocks(elements)[b].start));
     if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
     if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(".sp-scene-list button.is-current")?.focus());
+  };
+
+  moveSceneRef.current = (index, way) => {
+    emit();
+    const els = currentScript(useCosmos.getState())?.elements ?? [];
+    const list = listScenes(els);
+    const here = sceneAt(listScenes(els, true), index);
+    if (!here || here.omitted) return false;
+    const k = list.findIndex((x) => x.index === here.index);
+    const other = list[k + way];
+    // Première ou dernière scène : la touche est prise quand même (rien ne bouge, le curseur ne saute pas).
+    if (k < 0) return false;
+    if (other) moveScene(here.index, other.index);
+    return true;
+  };
+
+  // Acte, séquence ou sous-séquence entière (#159) : la section et ses scènes, en une étape, l'éditeur rechargé ici.
+  const movePart = (at: number, title: string, change: (elements: ScreenplayElement[], at: number) => ScreenplayElement[], keepFocus = false, keepSelected = false) => {
+    emit();
+    const current = currentScript(useCosmos.getState());
+    if (!current) return;
+    const moving = current.elements[at];
+    const elements = change(current.elements, at);
+    if (elements === current.elements || !moving) return;
+    setAnnounce(fmt(sp.sequencer.partMoved, { title }));
+    const next = { ...current, elements };
+    synced.current = next;
+    useCosmos.getState().setScript(next, true);
+    editor.commands.setContent(toDoc(next), { emitUpdate: false });
+    const pos = posOf(editor.state.doc, elements.indexOf(moving));
+    const dom = editor.view.nodeDOM(pos);
+    if (dom instanceof HTMLElement) dom.scrollIntoView({ block: "nearest" });
+    // Depuis la feuille : la ligne reste choisie, pour enchaîner les crans.
+    if (keepSelected) editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, pos)));
+    if (keepFocus) requestAnimationFrame(() => rootRef.current?.querySelector<HTMLButtonElement>(`.sp-scene-group[data-part-at="${elements.indexOf(moving)}"] .sp-part-title`)?.focus());
   };
 
   const goToFinding = (f: Finding) => goToElement(f.at);
@@ -1547,7 +1656,35 @@ export function ScreenplayView() {
               </button>
             </li>
           )) : row.kind === "act" || row.kind === "seq" || row.kind === "sub" ? (
-            <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
+            <li
+              key={`${row.kind}:${row.id}`}
+              className={`sp-scene-group is-${row.kind}${overScene === row.at && dragPartRef.current?.at !== row.at ? " is-over" : ""}`}
+              data-part-at={row.at}
+              draggable={renamingPart !== row.id}
+              onDragStart={(e) => {
+                if ((e.target as HTMLElement).closest("input")) return e.preventDefault();
+                dragPartRef.current = { at: row.at, title: row.title };
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", row.title);
+              }}
+              onDragEnd={() => {
+                dragPartRef.current = null;
+                setOverScene(null);
+              }}
+              onDragOver={(e) => {
+                if (dragPartRef.current === null) return;
+                e.preventDefault();
+                setOverScene(row.at);
+              }}
+              onDrop={(e) => {
+                const from = dragPartRef.current;
+                if (from === null) return;
+                e.preventDefault();
+                dragPartRef.current = null;
+                setOverScene(null);
+                movePart(from.at, from.title, (els, at) => moveStructurePartTo(els, at, row.at));
+              }}
+            >
               <button
                 type="button"
                 className="icon-button sp-part-fold"
@@ -1578,7 +1715,23 @@ export function ScreenplayView() {
                   }}
                 />
               ) : (
-                <button type="button" className="sp-part-title" onClick={() => goTo(row.at)} onDoubleClick={() => setRenamingPart(row.id)}>
+                <button
+                  type="button"
+                  className="sp-part-title"
+                  aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                  onClick={() => {
+                    goTo(row.at);
+                    // Sur Mac le titre ne garde pas le focus : ⌥ + flèche, tapé ensuite dans la feuille, déplace cette partie.
+                    pickedPart.current = row.at;
+                  }}
+                  onDoubleClick={() => setRenamingPart(row.id)}
+                  onKeyDown={(e) => {
+                    // Au clavier : Alt + flèche déplace la partie entière d'un cran.
+                    if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+                    e.preventDefault();
+                    movePart(row.at, row.title, (els, at) => moveStructurePart(els, at, e.key === "ArrowUp" ? -1 : 1), true);
+                  }}
+                >
                   {row.title} <span className="sp-part-count">· {row.count}</span>
                 </button>
               )}
@@ -1589,6 +1742,18 @@ export function ScreenplayView() {
                   </svg>
                 </button>
               )}
+              {renamingPart !== row.id && (() => {
+                const els = currentScript(useCosmos.getState())?.elements ?? [];
+                return (
+                  <MoreMenu
+                    label={fmt(sp.sequencer.partMenu, { title: row.title })}
+                    items={[
+                      { label: fmt(sp.sequencer.partMoveUp, { title: row.title }), disabled: moveStructurePart(els, row.at, -1) === els, onSelect: () => movePart(row.at, row.title, (e, at) => moveStructurePart(e, at, -1)) },
+                      { label: fmt(sp.sequencer.partMoveDown, { title: row.title }), disabled: moveStructurePart(els, row.at, 1) === els, onSelect: () => movePart(row.at, row.title, (e, at) => moveStructurePart(e, at, 1)) },
+                    ]}
+                  />
+                );
+              })()}
             </li>
           ) : row.kind !== "scene" ? (
             <li key={`${row.kind}:${row.id}`} className={`sp-scene-group is-${row.kind}`}>
@@ -1601,6 +1766,7 @@ export function ScreenplayView() {
               key={s.index}
               className={`${dragScene === s.index ? "is-dragged" : ""}${overScene === s.index && dragScene !== s.index ? " is-over" : ""}${plotColor(s.cardId).className}`}
               style={plotColor(s.cardId).style}
+              title={plotColor(s.cardId).label}
               // Glisser une scène dans la liste la déplace dans le scénario (texte compris).
               draggable
               onDragStart={(e) => {
@@ -1616,12 +1782,19 @@ export function ScreenplayView() {
                 setOverScene(null);
               }}
               onDragOver={(e) => {
-                if (dragRef.current === null) return;
+                if (dragRef.current === null && dragPartRef.current === null) return;
                 e.preventDefault();
                 setOverScene(s.index);
               }}
               onDrop={(e) => {
                 e.preventDefault();
+                const part = dragPartRef.current;
+                if (part !== null) {
+                  dragPartRef.current = null;
+                  setOverScene(null);
+                  movePart(part.at, part.title, (els, at) => moveStructurePartTo(els, at, s.index));
+                  return;
+                }
                 const from = dragRef.current;
                 dragRef.current = null;
                 setDragScene(null);
@@ -1629,6 +1802,7 @@ export function ScreenplayView() {
                 if (from !== null) moveScene(from, s.index);
               }}
             >
+              {plotColor(s.cardId).label && <span className="sr-only">{plotColor(s.cardId).label}</span>}
               <button
                 type="button"
                 className={s.index === scene?.index ? "is-current" : ""}
