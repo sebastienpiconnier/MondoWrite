@@ -318,10 +318,20 @@ describe("export", () => {
     expect(new TextDecoder().decode(rewritten.data)).toBe("INT. PHARE - NUIT\n\nLa lampe.\n");
   });
 
+  it("Fountain : sans les notes de MondoWrite, avec celles de l'auteur", async () => {
+    const source = "# Saison 1 [[cosmos:season:s1]]\n\n## [[cosmos:episode:e1]]\n\nEXT. COUR - SUITE [[cosmos:Msa0Br3n_c]] #2#\n\n= Sarah demande à Louis. [[ia]]\n\nLa lampe. [[cosmos:comment:c1]] [[À revoir]]\n";
+    const out = await exportScreenplay(parse(source), "fountain", { ...options, source });
+    const text = new TextDecoder().decode(out.data);
+    expect(text).toBe("# Saison 1\n\n## \n\nEXT. COUR - SUITE #2#\n\n= Sarah demande à Louis.\n\nLa lampe. [[À revoir]]\n");
+    expect(text).not.toContain("cosmos");
+  });
+
   it("les trois formats de la fixture française s'ouvrent", async () => {
     const screenplay = parse(courtFr);
     const fountain = await exportScreenplay(screenplay, "fountain", options);
-    expect(parse(new TextDecoder().decode(fountain.data))).toEqual(screenplay);
+    // Même scénario, moins le lien vers la carte (retiré de l'export).
+    const unlinked = { ...screenplay, elements: screenplay.elements.map(({ cardId: _, ...el }) => el) };
+    expect(parse(new TextDecoder().decode(fountain.data))).toEqual(unlinked);
 
     const fdx = await exportScreenplay(screenplay, "fdx", options);
     expect(fdx.name).toBe("Le Phare des Absents.fdx");

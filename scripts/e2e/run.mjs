@@ -1841,7 +1841,7 @@ const scenarios = [
       await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
       await page.getByRole("menuitem", { name: "Afficher le synopsis sous l’en-tête" }).click();
       await until(() => page.locator(".screenplay.show-synopsis").count(), "l'option n'est pas posée sur la feuille");
-      const shown = await page.evaluate(() => getComputedStyle(document.querySelector(".sp-sceneHeading[data-synopsis]"), "::before").content);
+      const shown = await page.locator(".sp-editor .sp-shown-synopsis").first().innerText();
       assert(/Inès veille seule/.test(shown), `le synopsis n'est pas dessiné sous l'en-tête : ${shown}`);
       const pagesAfter = await page.locator(".sp-statusbar, .sp-foot").first().innerText().catch(() => "");
       assert(pagesBefore === pagesAfter, `les pages ont changé : ${pagesBefore} → ${pagesAfter}`);
