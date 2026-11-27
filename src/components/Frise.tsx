@@ -577,6 +577,8 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
         <div className="frise-body">
           <div className="frise-scroll" ref={scrollRef}>
             <div className="frise-lanes">
+              {/* Règle et scènes restent en haut : les pistes qui défilent verticalement passent dessous. */}
+              <div className="frise-pin">
               <div className="frise-lane is-ruler">
                 <div className="frise-lane-head">{kind === "scenario" ? f.rulerScript : f.rulerNovel}</div>
                 <div
@@ -642,6 +644,7 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
                   {decor}
                   {placed.map(sceneCard)}
                 </div>
+              </div>
               </div>
               {ribbon ? (
                 <>

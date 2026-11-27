@@ -19,8 +19,10 @@
 .frise-lane-head { position: sticky; left: 0; z-index: 6; flex: none; display: flex; align-items: center; gap: 8px; width: 200px; padding: 0 10px; background: var(--ground); border-right: 1px solid var(--line); font-size: 0.8125rem; font-weight: 500; }
 .frise-lane-track { position: relative; flex: none; min-height: 44px; margin: 0 10px; }
 
-/* La règle, comme sur un banc de montage : pages en haut, minutes (ou temps de lecture) dessous. Collée en haut. */
-.frise-lane.is-ruler { position: sticky; top: 0; z-index: 8; background: var(--ground); }
+/* La règle et la ligne des scènes, collées en haut ensemble : quand on fait défiler les pistes vers le bas, elles
+   passent dessous (fond opaque, au-dessus des têtes de piste et des titres de groupe). */
+.frise-pin { position: sticky; top: 0; z-index: 8; background: var(--ground); box-shadow: var(--shadow-card); clip-path: inset(0 0 -16px 0); }
+.frise-lane.is-ruler { background: var(--ground); }
 .frise-lane.is-ruler .frise-lane-head { color: var(--ink-2); font-weight: 400; font-size: 0.75rem; }
 .frise-ruler { min-height: 56px; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .frise-tick { position: absolute; bottom: 0; height: 6px; border-left: 1px solid var(--line-2); pointer-events: none; }
@@ -86,8 +88,8 @@
   position: absolute; grid-row: 1 / -1; grid-column: 1 / -1; top: 0; bottom: 0; z-index: 12; width: min(var(--board-panel-w), 85vw); background: var(--ground);
 }
 .has-board { --board-panel-w: 300px; }
-.manuscript.has-board > .ms-scenes, .screenplay.has-board > .sp-scenes { left: 0; box-shadow: 6px 0 18px -6px rgba(20, 24, 40, 0.35); }
-.manuscript.has-board > .sp-side, .screenplay.has-board > .sp-side { right: 0; box-shadow: -6px 0 18px -6px rgba(20, 24, 40, 0.35); }
+.manuscript.has-board > .ms-scenes, .screenplay.has-board > .sp-scenes { left: 0; box-shadow: var(--shadow-pop); clip-path: inset(0 -32px 0 0); }
+.manuscript.has-board > .sp-side, .screenplay.has-board > .sp-side { right: 0; box-shadow: var(--shadow-pop); clip-path: inset(0 0 0 -32px); }
 .has-board > .edge-handle.is-left, .has-board > .edge-handle.is-right { z-index: 13; }
 .has-board:not(.hide-scenes) > .edge-handle.is-left { left: calc(min(var(--board-panel-w), 85vw) - 1px); }
 .has-board:not(.hide-side) > .edge-handle.is-right { right: calc(min(var(--board-panel-w), 85vw) - 1px); }
