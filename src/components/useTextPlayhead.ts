@@ -26,9 +26,12 @@ export function useTextPlayhead(enabled: boolean, read: () => TextPlaces | null,
   const [spot, setSpot] = useState<Playhead>(null);
   const readRef = useRef(read);
   readRef.current = read;
+  // Dernière valeur posée : un ruban fermé ne redemande pas de rendu à chaque frappe (`key` change à chaque fois).
+  const spotRef = useRef<Playhead>(null);
+  spotRef.current = spot;
   useEffect(() => {
     if (!enabled) {
-      setSpot(null);
+      if (spotRef.current !== null) setSpot(null);
       return;
     }
     let frame = 0;

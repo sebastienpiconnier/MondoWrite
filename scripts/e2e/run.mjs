@@ -4134,10 +4134,31 @@ try {
     await context.route(/^(?!https?:\/\/(127\.0\.0\.1|localhost)[:/])/, (r) => r.abort());
     const page = await context.newPage();
     page.setDefaultTimeout(10_000);
+    // E2E_THROTTLE=6 : processeur ralenti, comme pendant la suite complète sur une machine chargée (les boucles
+    // de rendus ne s'y montrent souvent qu'à ce moment-là).
+    if (process.env.E2E_THROTTLE) {
+      const cdp = await context.newCDPSession(page);
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.E2E_THROTTLE) });
+    }
     const errors = [];
+    // E2E_TRACE=1 : la pile JavaScript des deux premiers « Maximum update depth », pour trouver le setState en cause.
+    if (process.env.E2E_TRACE) {
+      await page.addInitScript(() => {
+        const error = console.error;
+        let shown = 0;
+        console.error = (...args) => {
+          if (shown < 2 && /Maximum update/.test(String(args[0]))) {
+            shown++;
+            error.call(console, `STACK ${new Error().stack}`);
+          }
+          error.apply(console, args);
+        };
+      });
+    }
     page.on("pageerror", (e) => errors.push(`erreur de la page : ${e.message}`));
     page.on("console", (m) => {
       const text = m.text();
+      if (process.env.E2E_TRACE && text.startsWith("STACK")) console.log(text.slice(0, 5000));
       if (NOISE.some((r) => r.test(text))) return;
       if (m.type() === "error" || (m.type() === "warning" && REACT_ERRORS.some((r) => r.test(text)))) errors.push(`console.${m.type()} : ${text.split("\n")[0].slice(0, 300)}`);
     });
