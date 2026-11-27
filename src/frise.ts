@@ -387,3 +387,32 @@ export function playheadAt(line: number, tops: readonly SceneTop[], end: number)
   const frac = next > top ? (line - top) / (next - top) : 0;
   return { id: tops[i].id, frac: Math.min(1, Math.max(0, frac)) };
 }
+
+/** Crans du ruban agrandi plus serrés que « Toute la largeur » : part de la largeur disponible occupée par la ligne. */
+export const RIBBON_NARROW = [0.35, 0.5, 0.75] as const;
+
+/** Un cran du ruban agrandi : pixels par page, largeur minimale d'une carte, espace entre deux cartes. */
+export interface RibbonLevel {
+  px: number;
+  min: number;
+  gap: number;
+}
+
+/**
+ * Crans du ruban agrandi, du plus serré au plus large, et le rang de « Toute la largeur » (`fit`). Avant lui, la ligne
+ * se resserre sous la largeur de l'écran (cartes sans largeur minimale, la hauteur ne change jamais) ; après lui,
+ * seulement les crans de `FRISE_ZOOMS` vraiment plus larges que l'écran : « − » ne peut jamais élargir la ligne.
+ */
+export function ribbonLevels(scenes: readonly FriseScene[], room: number): { levels: RibbonLevel[]; fit: number } {
+  const fitLine = { min: FIT_MIN_CARD, gap: 3 };
+  const fitPx = fitPxPerPage(scenes, room, fitLine);
+  const fitWidth = layoutScenes(scenes, fitPx, fitLine).width;
+  const narrowLine = { min: 2, gap: 2 };
+  const base = fitPxPerPage(scenes, room, narrowLine);
+  const narrow = RIBBON_NARROW.map((f) => ({ px: base * f, ...narrowLine })).filter((l) => layoutScenes(scenes, l.px, l).width < fitWidth - 1);
+  const wide = FRISE_ZOOMS.map((_, i) => {
+    const z = zoomLine(i, RIBBON_MIN_CARD);
+    return { px: z.px, min: z.min, gap: 4 };
+  }).filter((l) => layoutScenes(scenes, l.px, l).width > fitWidth * 1.15);
+  return { levels: [...narrow, { px: fitPx, ...fitLine }, ...wide], fit: narrow.length };
+}

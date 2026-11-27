@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "../screenplay/parse";
 import { EMPTY_PLAN, type Plan } from "../plan";
 import { characterColors } from "../plotColors";
-import { MIN_CARD, CARD_GAP, FRISE_ZOOMS, BASE_PX, playheadAt, zoomLine, characterIssues, fitPxPerPage, spacedOut, spreadCurves, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, pageToX, rulerMarks, sceneAtX, timecode, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
+import { MIN_CARD, CARD_GAP, FRISE_ZOOMS, ribbonLevels, BASE_PX, playheadAt, zoomLine, characterIssues, fitPxPerPage, spacedOut, spreadCurves, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, pageToX, rulerMarks, sceneAtX, timecode, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
 
 const script = parse(
   [
@@ -222,5 +222,18 @@ describe("frise : zoom et tête de lecture", () => {
     expect(playheadAt(400, tops, 500)).toEqual({ id: "b", frac: 0.5 });
     expect(playheadAt(900, tops, 500)).toEqual({ id: "b", frac: 1 });
     expect(playheadAt(10, [], 0)).toBeNull();
+  });
+});
+
+describe("frise : crans du ruban agrandi", () => {
+  it("vont toujours du plus serré au plus large, « Toute la largeur » remplit la place", () => {
+    const scenes = Array.from({ length: 12 }, (_, i) => ({ id: `s${i}`, title: "", size: i % 3 === 0 ? 2 : 0.4 }));
+    const room = 900;
+    const { levels, fit } = ribbonLevels(scenes, room);
+    const widths = levels.map((l) => layoutScenes(scenes, l.px, l).width);
+    for (let i = 1; i < widths.length; i++) expect(widths[i]).toBeGreaterThan(widths[i - 1]);
+    expect(widths[fit]).toBeLessThanOrEqual(room);
+    expect(widths[fit]).toBeGreaterThan(room * 0.95);
+    expect(fit).toBeGreaterThan(0);
   });
 });

@@ -59,11 +59,10 @@ import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
 import { LanguageToolStatus, useLanguageTool } from "./LanguageToolBubble";
-import { typeColor } from "../types";
 import { flushSync } from "react-dom";
 import { chapterDropTarget, chapterNumbers, chapterOf, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
-import { citedCards, countWords, orphanTexts } from "../manuscript";
+import { countWords, orphanTexts } from "../manuscript";
 import { Chutier } from "./Chutier";
 import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
 import { FOCUS_COLUMN_EM } from "../focusText";
@@ -716,7 +715,6 @@ export function Manuscript() {
   const prevId = order.slice(0, Math.max(at, 0)).reverse().find(inView) ?? null;
   const nextId = order.slice(at + 1).find(inView) ?? null;
   const title = card.title.trim() || m.untitled;
-  const detected = citedCards(manuscript[current], cards);
   const chapter = chapterOf(plan, current);
   // La scène ouvre son chapitre : le titre du chapitre s'affiche au-dessus, comme dans un livre.
   const opensChapter = !pageKind && !!chapter && (at === 0 || chapterOf(plan, order[at - 1])?.id !== chapter.id);
@@ -1157,25 +1155,7 @@ export function Manuscript() {
           if (!pageKind) parts.push({ key: "setups", title: P.setups, node: <SceneSetupsBox id={card.id} /> });
           // Personnages, intrigues, lieu de la scène, reliés sans tirer de fil (#137).
           if (!pageKind) parts.push({ key: "links", title: P.links, node: <SceneLinks id={card.id} /> });
-          parts.push({ key: "cited", title: P.cited, node: (
-        <section className="sp-box">
-          <h2 className="sp-box-title">{m.cited}</h2>
-          {detected.length === 0 ? (
-            <p className="sp-empty">{m.nothingDetected}</p>
-          ) : (
-            <ul className="ms-chips">
-              {detected.map((c) => (
-                <li key={c.id}>
-                  <button type="button" className="chip" title={fmt(t.bible.openSheet, { title: c.title })} onClick={() => useCosmos.getState().openInBible(c.id)}>
-                    <span className="card-dot" style={{ background: typeColor(c.type) }} />
-                    {c.title}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-          ) });
+          // « Cités dans le texte » retiré : les rubriques reliées (#137) disent déjà qui et quoi.
           parts.push({ key: "synopsis", title: P.synopsis, node: (
         <section className="sp-box">
           <h2 className="sp-box-title">{m.synopsis}</h2>

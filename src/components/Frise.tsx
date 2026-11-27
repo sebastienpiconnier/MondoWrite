@@ -32,10 +32,8 @@ import {
   CARD_GAP,
   DEFAULT_SCALE,
   FRISE_ZOOMS,
-  FIT_MIN_CARD,
-  RIBBON_MIN_CARD,
+  ribbonLevels,
   zoomLine,
-  fitPxPerPage,
   characterIssues,
   friseTotal,
   layoutScenes,
@@ -57,7 +55,7 @@ import {
   type LineFit,
   type Slot,
 } from "../frise";
-import { BOARD_MIN, COMPACT_ZOOM, FIT_ZOOM, useBoard } from "../boardState";
+import { BOARD_MIN, useBoard } from "../boardState";
 import { characterColors, plotColors } from "../plotColors";
 import { useBeatText } from "./useBeatText";
 import { usePlotColor } from "./usePlotColor";
@@ -231,13 +229,11 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
   const setOpen = useBoard((s) => s.setOpen);
 
   const ribbon = mode === "ribbon";
-  // Zoom : rang dans FRISE_ZOOMS ; le ruban agrandi descend jusqu'à « toute la largeur » (FIT_ZOOM), gardé sur l'appareil.
+  // Zoom. Plan : rang dans FRISE_ZOOMS. Ruban agrandi : écart au cran « Toute la largeur » dans `ribbonLevels`
+  // (gardé sur l'appareil), toujours du plus serré au plus large.
   const boardZoom = useBoard((s) => s.zoom);
   const setBoardZoom = useBoard((s) => s.setZoom);
   const [planScale, setPlanScale] = useState(DEFAULT_SCALE);
-  const scale = ribbon ? boardZoom : planScale;
-  const setScale = (next: number) => (ribbon ? setBoardZoom(next) : setPlanScale(next));
-  const minScale = ribbon ? COMPACT_ZOOM : 0;
   const [room, setRoom] = useState(0);
   const [peek, setPeek] = useState<string | null>(null);
   const peekTimer = useRef<number>(0);
@@ -249,16 +245,21 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
   const refocus = useRef<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const fitting = ribbon && scale <= FIT_ZOOM;
-  // Cartes réduites : toute la largeur, chaque scène un simple trait ; le ruban tient en peu de hauteur.
-  const compact = ribbon && scale === COMPACT_ZOOM;
-  const zoomed = zoomLine(scale, ribbon ? RIBBON_MIN_CARD : undefined);
-  const line: LineFit = compact ? { min: 2, gap: 2 } : fitting ? { min: FIT_MIN_CARD, gap: 3 } : { min: zoomed.min, gap: ribbon ? 4 : undefined };
 
   // Sur la ligne : les scènes, et une place pour chaque partie encore vide.
   const lineRows = useMemo(() => rows.map((r, i) => (r.scenes.length > 0 || r.key === null ? r : { ...r, scenes: [{ id: `${PART}${i}`, title: "", size: 0 }] })), [rows]);
   const placed = useMemo(() => lineRows.flatMap((r) => r.scenes), [lineRows]);
-  const px = useMemo(() => (fitting ? fitPxPerPage(placed, room, line) : zoomed.px), [fitting, placed, room, zoomed.px, line.min, line.gap]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ribbonZoom = useMemo(() => (ribbon ? ribbonLevels(placed, room) : null), [ribbon, placed, room]);
+  // Cran en cours : borné aux crans du moment (la place disponible change avec la fenêtre).
+  const level = ribbonZoom ? Math.min(ribbonZoom.levels.length - 1, Math.max(0, ribbonZoom.fit + boardZoom)) : planScale;
+  const maxLevel = ribbonZoom ? ribbonZoom.levels.length - 1 : FRISE_ZOOMS.length - 1;
+  const setLevel = (next: number) => (ribbonZoom ? setBoardZoom(next - ribbonZoom.fit) : setPlanScale(next));
+  // Toute la largeur ou plus serré : la ligne tient sans défiler de côté.
+  const fitting = !!ribbonZoom && level <= ribbonZoom.fit;
+  const planLine = zoomLine(planScale);
+  const current = ribbonZoom?.levels[level];
+  const line: LineFit = current ? { min: current.min, gap: current.gap } : { min: planLine.min };
+  const px = current ? current.px : planLine.px;
   const { slots, width } = useMemo(() => layoutScenes(placed, px, line), [placed, px, line.min, line.gap]); // eslint-disable-line react-hooks/exhaustive-deps
   const bounds = useMemo(() => (rows.length > 1 ? rowStarts(lineRows, slots) : []), [rows.length, lineRows, slots]);
   // Règle : pages d'un roman, minutage d'un scénario. Repères placés sur la vraie ligne (les cartes ont une largeur
@@ -490,7 +491,7 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
       : `${fmt(p.summaryMany, { n: all.length })} · ${fmt(f.words, { n: all.reduce((a, s) => a + (s.words ?? 0), 0).toLocaleString(lang) })} · ${fmt(f.pages, { n: pagesTotal })}`;
   // Une seule unité par règle : les pages d'un roman, le minutage d'un scénario.
   const markLabel = (page: number) => (kind === "scenario" ? timecode(clock(page)) : fmt(f.page, { n: Math.round(page) + 1 }));
-  const zoomOutLabel = ribbon && scale === 0 ? f.zoomFit : ribbon && scale === FIT_ZOOM ? f.zoomCompact : f.zoomOut;
+  const zoomOutLabel = ribbonZoom && level - 1 === ribbonZoom.fit ? f.zoomFit : f.zoomOut;
 
   // Ruban agrandi : titre repliable d'un groupe de pistes (courbe, intrigues, personnages), gardé sur l'appareil.
   const groupHead = (key: string, name: string, count?: number) => {
@@ -548,14 +549,14 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
   };
 
   return (
-    <div className={`frise-board is-${mode}${fitting ? " is-fit" : ""}${compact ? " is-compact" : ""}`} ref={rootRef}>
+    <div className={`frise-board is-${mode}${fitting ? " is-fit" : ""}`} ref={rootRef}>
       <div className="frise-tools">
         {ribbon && <span className="frise-tools-title">{f.ribbonTitle}</span>}
         <div className="frise-zoom" role="group" aria-label={f.zoomAria}>
-          <button type="button" className="icon-button" aria-label={zoomOutLabel} title={zoomOutLabel} disabled={scale <= minScale} onClick={() => setScale(Math.max(minScale, scale - 1))}>
+          <button type="button" className="icon-button" aria-label={zoomOutLabel} title={zoomOutLabel} disabled={level <= 0} onClick={() => setLevel(Math.max(0, level - 1))}>
             −
           </button>
-          <button type="button" className="icon-button" aria-label={f.zoomIn} title={f.zoomIn} disabled={scale >= FRISE_ZOOMS.length - 1} onClick={() => setScale(Math.min(FRISE_ZOOMS.length - 1, scale + 1))}>
+          <button type="button" className="icon-button" aria-label={f.zoomIn} title={f.zoomIn} disabled={level >= maxLevel} onClick={() => setLevel(Math.min(maxLevel, level + 1))}>
             +
           </button>
         </div>

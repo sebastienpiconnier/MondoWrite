@@ -166,12 +166,7 @@
 .frise-plot-cell.is-cited .frise-plot-mark { background: var(--lane); opacity: 0.45; }
 @media (any-hover: hover) { .frise-plot-cell.is-none:hover .frise-plot-mark { background: var(--lane); opacity: 0.25; } }
 @media (pointer: coarse) { .frise-lane.is-plot .frise-lane-track, .frise-plot-cell { min-height: 32px; height: 32px; } .frise-lane.is-plot .frise-lane-track::before, .frise-plot-mark { top: 13px; } }
-/* Cartes réduites : chaque scène n'est plus qu'un trait ; le ruban tient en peu de hauteur et la courbe se lit d'un coup. */
-.frise-board.is-compact .frise-lane.is-scenes .frise-lane-track { min-height: 22px; }
-.frise-board.is-compact .frise-card { top: 5px; height: 12px; padding: 0; border-radius: 2px; }
-.frise-board.is-compact .frise-card > span { display: none; }
-.frise-board.is-compact .frise-end { top: 5px; height: 12px; padding: 0; border-radius: 2px; }
 /* Groupes de pistes du ruban (courbe, intrigues, personnages) : un titre qui replie, collé à gauche. */
+.frise-lane-group-title.is-ribbon { display: block; width: fit-content; z-index: 6; }
 .frise-lane-group-title.is-ribbon button { min-height: 28px; padding: 4px 10px 2px; }
 @media (pointer: coarse) { .frise-lane-group-title.is-ribbon button { min-height: 44px; } }
-@media (pointer: coarse) { .frise-board.is-compact .frise-card, .frise-board.is-compact .frise-end { height: 20px; } .frise-board.is-compact .frise-lane.is-scenes .frise-lane-track { min-height: 30px; } }

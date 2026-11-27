@@ -1249,11 +1249,22 @@ const scenarios = [
       await splitter.focus();
       await page.keyboard.press("ArrowDown");
       await until(async () => Number(await splitter.getAttribute("aria-valuenow")) > before, "le séparateur ne répond pas aux flèches");
-      // Zoom « toute la largeur », puis « Cartes réduites » : toute la ligne tient sans défiler, les cartes en traits.
-      const zoomOut = board.getByRole("button", { name: /Resserrer la frise|Toute la largeur|Cartes réduites/ });
-      while (await zoomOut.isEnabled()) await zoomOut.click();
+      // « − » jusqu'au bout : la ligne ne fait que se resserrer, passe par « Toute la largeur » et finit plus étroite
+      // que l'écran, sans que les cartes perdent leur hauteur.
+      const lineWidth = () => board.locator(".frise-lane.is-scenes .frise-lane-track").evaluate((el) => el.getBoundingClientRect().width);
+      const cardHeight = () => board.locator(".frise-card").first().evaluate((el) => el.getBoundingClientRect().height);
+      const tall = await cardHeight();
+      const zoomOut = board.getByRole("button", { name: /Resserrer la frise|Toute la largeur/ });
+      let last = await lineWidth();
+      while (await zoomOut.isEnabled()) {
+        await zoomOut.click();
+        await h.wait(100);
+        const now = await lineWidth();
+        assert(now <= last + 1, `« − » a élargi la ligne (${last} → ${now})`);
+        last = now;
+      }
       await until(() => board.locator(".frise-scroll").evaluate((el) => el.scrollWidth <= el.clientWidth + 1), "le zoom le plus petit ne tient pas dans la largeur");
-      assert(await page.locator(".frise-board.is-compact").isVisible(), "les cartes réduites ne sont pas proposées");
+      assert(Math.abs((await cardHeight()) - tall) < 1, "le zoom a changé la hauteur des cartes");
       await board.getByRole("button", { name: "Réduire le ruban" }).click();
       await until(async () => (await board.count()) === 0, "le ruban agrandi ne se referme pas");
       await until(() => page.locator(".manuscript:not(.hide-scenes)").isVisible(), "les volets d'avant ne reviennent pas");
