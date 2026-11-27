@@ -1187,6 +1187,19 @@ const scenarios = [
       const order = async () => (await cards.locator(".frise-card-title").allTextContents()).join(",");
       assert((await order()) === "Alpha,Bravo,Charlie", "la frise ne suit pas l'ordre du plan");
       assert((await page.locator(".frise-ruler .frise-tick.is-major").count()) > 0, "la règle n'a pas de repère");
+      // Zoom : même des scènes vides (à leur largeur minimale) s'élargissent ; la tête des pistes reste devant les cartes.
+      const firstWidth = () => cards.first().evaluate((el) => el.getBoundingClientRect().width);
+      const w0 = await firstWidth();
+      await page.getByRole("button", { name: "Élargir la frise" }).click();
+      await until(async () => (await firstWidth()) > w0, "« Élargir la frise » ne change rien");
+      await page.getByRole("button", { name: "Resserrer la frise" }).click();
+      await until(async () => Math.abs((await firstWidth()) - w0) < 1, "« Resserrer la frise » ne revient pas");
+      const covered = await page.locator(".frise-lane.is-scenes .frise-lane-head").evaluate((head) => {
+        const r = head.getBoundingClientRect();
+        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!top && !head.contains(top);
+      });
+      assert(!covered, "une carte passe par-dessus la tête de la piste des scènes");
       // Clavier : Alt + ← déplace la carte choisie, le focus la suit.
       await cards.nth(2).focus();
       await page.keyboard.press("Alt+ArrowLeft");
@@ -1212,22 +1225,35 @@ const scenarios = [
       await page.getByRole("menuitem", { name: "Agrandir le ruban" }).click();
       const board = page.locator(".frise-board.is-ribbon");
       await until(() => board.isVisible(), "le ruban agrandi n'apparaît pas");
-      // Les volets se ferment pour lui laisser la place ; toucher une carte mène à la scène dans le texte, et le
-      // volet de gauche, rouvert à la main, tient sa fiche.
+      // Les volets se ferment pour lui laisser la place ; toucher une carte mène à la scène dans le texte. Rouverts à
+      // la main, les volets d'origine passent par-dessus le texte sans le décaler.
       await until(() => page.locator(".manuscript.hide-scenes.hide-side").isVisible(), "les volets ne se ferment pas avec le ruban agrandi");
       await board.getByRole("button", { name: /^Scène 3 : Bravo/ }).click();
       await until(async () => (await page.locator(".ms-title").inputValue()) === "Bravo", "la carte du ruban ne mène pas à la scène");
+      const mainBox = () => page.locator(".ms-main").evaluate((el) => { const r = el.getBoundingClientRect(); return `${Math.round(r.left)},${Math.round(r.width)}`; });
+      const placeBefore = await mainBox();
+      await page.locator(".edge-handle.is-right").click();
+      await until(() => page.locator(".manuscript:not(.hide-side) > .sp-side").isVisible(), "le volet de droite ne s'ouvre pas");
+      assert((await mainBox()) === placeBefore, "le volet de droite décale le texte");
+      await page.locator(".edge-handle.is-right").click();
       await page.locator(".edge-handle.is-left").click();
-      await until(() => page.locator(".sp-scenes .frise-panel-title").filter({ hasText: "Bravo" }).isVisible(), "le volet de gauche ne montre pas la fiche de la scène");
+      await until(() => page.locator(".manuscript:not(.hide-scenes) .ms-scenes .ms-total").isVisible(), "le volet de gauche d'origine ne s'ouvre pas");
+      assert((await mainBox()) === placeBefore, "le volet de gauche décale le texte");
+      await page.locator(".edge-handle.is-left").click();
+      // La tête de lecture suit le texte : en bas du livre, elle est sur la dernière scène.
+      await page.locator(".ms-main").evaluate((el) => el.scrollTo(0, el.scrollHeight));
+      await until(() => board.locator(".frise-card.is-selected").filter({ hasText: "Bravo" }).count().then((n) => n === 1), "le ruban ne suit pas le défilement du texte");
       // Le séparateur se règle au clavier.
       const splitter = page.getByRole("separator", { name: /Hauteur du ruban/ });
       const before = Number(await splitter.getAttribute("aria-valuenow"));
       await splitter.focus();
       await page.keyboard.press("ArrowDown");
       await until(async () => Number(await splitter.getAttribute("aria-valuenow")) > before, "le séparateur ne répond pas aux flèches");
-      // Zoom « toute la largeur » : toute la ligne tient sans défiler.
-      while (await board.getByRole("button", { name: /Resserrer la frise|Toute la largeur/ }).isEnabled()) await board.getByRole("button", { name: /Resserrer la frise|Toute la largeur/ }).click();
+      // Zoom « toute la largeur », puis « Cartes réduites » : toute la ligne tient sans défiler, les cartes en traits.
+      const zoomOut = board.getByRole("button", { name: /Resserrer la frise|Toute la largeur|Cartes réduites/ });
+      while (await zoomOut.isEnabled()) await zoomOut.click();
       await until(() => board.locator(".frise-scroll").evaluate((el) => el.scrollWidth <= el.clientWidth + 1), "le zoom le plus petit ne tient pas dans la largeur");
+      assert(await page.locator(".frise-board.is-compact").isVisible(), "les cartes réduites ne sont pas proposées");
       await board.getByRole("button", { name: "Réduire le ruban" }).click();
       await until(async () => (await board.count()) === 0, "le ruban agrandi ne se referme pas");
       await until(() => page.locator(".manuscript:not(.hide-scenes)").isVisible(), "les volets d'avant ne reviennent pas");

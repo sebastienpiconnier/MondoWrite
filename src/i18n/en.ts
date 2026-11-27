@@ -1698,6 +1698,7 @@ export const en: Messages = {
     modeAria: "Outline layout",
     timeline: "Timeline",
     plotColor: "Plot colour",
+    characterColor: "Character colour",
     plotColorN: "Colour {n}",
     plotColorAuto: "Automatic colour",
     plotNameOne: "Plot: {name}",
@@ -3601,6 +3602,7 @@ export const en: Messages = {
     zoomOut: "Tighten the timeline",
     zoomIn: "Widen the timeline",
     zoomFit: "Fit to width",
+    zoomCompact: "Thin cards",
     empty: "No scene yet. Create a Scene card on the canvas, or write your first scene: it will have its place here.",
     whole: "The whole story",
     noChapter: "No chapter",
@@ -3617,7 +3619,6 @@ export const en: Messages = {
     dropHere: "Drop here",
     moved: "“{title}”: scene {n} of {total}.",
     splitter: "Ribbon height (up and down arrows)",
-    sheetTitle: "Scene sheet",
     panel: {
       aria: "The chosen scene",
       close: "Close",
@@ -3635,6 +3636,9 @@ export const en: Messages = {
       story: "Story curve",
       noCards: "Create Plot, Theme, Character or Place cards and link them to their scenes: each will get its lane here.",
       curveOf: "Curve of {name}",
+      plots: "Plotlines",
+      characters: "Characters",
+      showCurve: "Story curve",
     },
   },
   cast: {

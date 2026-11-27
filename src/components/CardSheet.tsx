@@ -5,7 +5,7 @@
 // Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; les autres attendent
 // derrière « Ajouter si utile », une pastille par champ (Bible v2), ou tous d'un coup par « Afficher les champs vides ». Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
-import { plotColors } from "../plotColors";
+import { characterColors, plotColors } from "../plotColors";
 import { PLOT_COLORS } from "../character";
 import { BufferedInput, BufferedTextarea } from "./BufferedField";
 import { IaFieldNote } from "./Atelier";
@@ -111,7 +111,7 @@ export function CardSheet({ card, startOpen, omit }: { card: CardData; startOpen
 
   return (
     <>
-    {card.type === "intrigue" && <PlotColorPicker card={card} />}
+    {(card.type === "intrigue" || card.type === "personnage") && <PlotColorPicker card={card} />}
     <section className="sheet" aria-label={title}>
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
         <span>{title}</span>
@@ -162,10 +162,16 @@ export function CardSheet({ card, startOpen, omit }: { card: CardData; startOpen
 /**
  * Couleur d'une intrigue (#143) : huit pastilles de la palette des points de vue, et « Auto ». Elle colore les
  * scènes reliées (Plan, séquencier, listes des scènes, canevas) quand « Couleurs des intrigues » est allumé.
+ * Couleur d'un personnage (#173) : ses traits dans le ruban agrandi.
  */
 export function PlotColorPicker({ card }: { card: CardData }) {
   const t = useT().plan;
-  const auto = useCosmos((s) => plotColors(s.nodes, s.edges).plots.get(s.nodes.find((n) => n.data === card)?.id ?? ""));
+  const person = card.type === "personnage";
+  const auto = useCosmos((s) => {
+    const id = s.nodes.find((n) => n.data === card)?.id ?? "";
+    return person ? characterColors(s.nodes).get(id) : plotColors(s.nodes, s.edges).plots.get(id);
+  });
+  const label = person ? t.characterColor : t.plotColor;
   const id = useCosmos((s) => s.nodes.find((n) => n.data === card)?.id);
   const chosen = card.fiche?.couleur ?? "";
   const set = (v: string) => id && useCosmos.getState().setFiche(id, "couleur", v);
@@ -173,8 +179,8 @@ export function PlotColorPicker({ card }: { card: CardData }) {
   const bold = useSettings((s) => s.plotPalette === "bold");
   const nameOf = (c: string) => (bold ? t.plotBoldNames[Number(c) - 1] : fmt(t.plotColorN, { n: c }));
   return (
-    <div className={`plot-color${bold ? " is-named" : ""}`} role="radiogroup" aria-label={t.plotColor}>
-      <span className="plot-color-label">{t.plotColor}</span>
+    <div className={`plot-color${bold ? " is-named" : ""}`} role="radiogroup" aria-label={label}>
+      <span className="plot-color-label">{label}</span>
       {PLOT_COLORS.map((c) => (
         <button
           key={c}

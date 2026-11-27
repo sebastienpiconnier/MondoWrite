@@ -84,7 +84,7 @@ export function bandFields(card: Pick<CardData, "type" | "fiche">): ReadonlySet<
   if (card.type === "scene") return new Set<string>(["statut", "pov", "intrigue", ...BREAKDOWN_FIELDS]);
   // Couleur d'une intrigue : sa rangée de pastilles à elle (PlotColorPicker), jamais un champ de texte.
   if (card.type === "intrigue") return new Set<string>(["couleur"]);
-  return card.type === "personnage" ? new Set<string>([...motorFields(card), ...CHARACTER_HEAD_FIELDS]) : new Set<string>();
+  return card.type === "personnage" ? new Set<string>([...motorFields(card), ...CHARACTER_HEAD_FIELDS, "couleur"]) : new Set<string>();
 }
 
 /** Valeur d'un champ telle qu'on la lit (le type d'arc est une clé, montrée par son libellé). */
@@ -163,7 +163,8 @@ export const sceneStatus = (card: Pick<CardData, "type" | "fiche">): SceneStatus
 
 export const SHEET_FIELDS: Partial<Record<CardType, readonly string[]>> = {
   scene: SCENE_FIELDS,
-  personnage: CHARACTER_FIELDS,
+  // Couleur d'un personnage (#173) : ses traits dans le ruban agrandi, comme une intrigue.
+  personnage: [...CHARACTER_FIELDS, "couleur"],
   lieu: PLACE_FIELDS,
   intrigue: PLOT_FIELDS,
   episode: EPISODE_FIELDS,

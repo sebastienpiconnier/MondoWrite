@@ -31,8 +31,10 @@ import { useInteractive } from "../interactive/useInteractive";
 import {
   CARD_GAP,
   DEFAULT_SCALE,
-  FRISE_SCALES,
+  FRISE_ZOOMS,
   FIT_MIN_CARD,
+  RIBBON_MIN_CARD,
+  zoomLine,
   fitPxPerPage,
   characterIssues,
   friseTotal,
@@ -55,9 +57,8 @@ import {
   type LineFit,
   type Slot,
 } from "../frise";
-import { BOARD_MIN, FIT_ZOOM, useBoard } from "../boardState";
-import { plotColors } from "../plotColors";
-import { narratorColors } from "../pov";
+import { BOARD_MIN, COMPACT_ZOOM, FIT_ZOOM, useBoard } from "../boardState";
+import { characterColors, plotColors } from "../plotColors";
 import { useBeatText } from "./useBeatText";
 import { usePlotColor } from "./usePlotColor";
 import { StatusDot, SceneStatusPicker } from "./SceneStatusPicker";
@@ -193,8 +194,10 @@ function useMoves(scope: "whole" | "current", beforeMove?: () => void, onMoved?:
 
 interface BoardProps {
   mode: "plan" | "ribbon";
-  /** Ruban : scène du curseur (carte, ou `@<rang>` d'une scène de scénario sans carte). */
+  /** Ruban : scène en cours (carte, ou `@<rang>` d'une scène de scénario sans carte). */
   currentId?: string | null;
+  /** Ruban : part de la scène en cours déjà passée dans le texte qui défile (0 à 1), pour la tête de lecture. */
+  progress?: number;
   /** Ruban : aller à la scène dans le texte. */
   onGo?: (id: string) => void;
   /** Scénario : envoyer au store ce que l'éditeur n'a pas encore rendu, avant de déplacer une scène. */
@@ -205,7 +208,7 @@ const LANE_TYPES: CardType[] = ["intrigue", "theme", "personnage", "lieu"];
 /** Écart minimal entre deux valeurs écrites de la règle. */
 const LABEL_ROOM = 110;
 
-export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardProps) {
+export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeMove }: BoardProps) {
   const t = useT();
   const f = t.frise;
   const p = t.plan;
@@ -228,13 +231,13 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
   const setOpen = useBoard((s) => s.setOpen);
 
   const ribbon = mode === "ribbon";
-  // Zoom : rang dans FRISE_SCALES ; le ruban agrandi descend jusqu'à « toute la largeur » (FIT_ZOOM), gardé sur l'appareil.
+  // Zoom : rang dans FRISE_ZOOMS ; le ruban agrandi descend jusqu'à « toute la largeur » (FIT_ZOOM), gardé sur l'appareil.
   const boardZoom = useBoard((s) => s.zoom);
   const setBoardZoom = useBoard((s) => s.setZoom);
   const [planScale, setPlanScale] = useState(DEFAULT_SCALE);
   const scale = ribbon ? boardZoom : planScale;
   const setScale = (next: number) => (ribbon ? setBoardZoom(next) : setPlanScale(next));
-  const minScale = ribbon ? FIT_ZOOM : 0;
+  const minScale = ribbon ? COMPACT_ZOOM : 0;
   const [room, setRoom] = useState(0);
   const [peek, setPeek] = useState<string | null>(null);
   const peekTimer = useRef<number>(0);
@@ -246,13 +249,16 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
   const refocus = useRef<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const fitting = scale === FIT_ZOOM;
-  const line: LineFit = ribbon ? (fitting ? { min: FIT_MIN_CARD, gap: 3 } : { gap: 4 }) : {};
+  const fitting = ribbon && scale <= FIT_ZOOM;
+  // Cartes réduites : toute la largeur, chaque scène un simple trait ; le ruban tient en peu de hauteur.
+  const compact = ribbon && scale === COMPACT_ZOOM;
+  const zoomed = zoomLine(scale, ribbon ? RIBBON_MIN_CARD : undefined);
+  const line: LineFit = compact ? { min: 2, gap: 2 } : fitting ? { min: FIT_MIN_CARD, gap: 3 } : { min: zoomed.min, gap: ribbon ? 4 : undefined };
 
   // Sur la ligne : les scènes, et une place pour chaque partie encore vide.
   const lineRows = useMemo(() => rows.map((r, i) => (r.scenes.length > 0 || r.key === null ? r : { ...r, scenes: [{ id: `${PART}${i}`, title: "", size: 0 }] })), [rows]);
   const placed = useMemo(() => lineRows.flatMap((r) => r.scenes), [lineRows]);
-  const px = useMemo(() => (fitting ? fitPxPerPage(placed, room, line) : FRISE_SCALES[Math.max(0, scale)]), [fitting, placed, room, scale, line.min, line.gap]); // eslint-disable-line react-hooks/exhaustive-deps
+  const px = useMemo(() => (fitting ? fitPxPerPage(placed, room, line) : zoomed.px), [fitting, placed, room, zoomed.px, line.min, line.gap]); // eslint-disable-line react-hooks/exhaustive-deps
   const { slots, width } = useMemo(() => layoutScenes(placed, px, line), [placed, px, line.min, line.gap]); // eslint-disable-line react-hooks/exhaustive-deps
   const bounds = useMemo(() => (rows.length > 1 ? rowStarts(lineRows, slots) : []), [rows.length, lineRows, slots]);
   // Règle : pages d'un roman, minutage d'un scénario. Repères placés sur la vraie ligne (les cartes ont une largeur
@@ -269,23 +275,29 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
   const byId = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
   const order = useMemo(() => all.map((s) => s.id).filter((id) => !id.startsWith(SCENE_AT)), [all]);
   const texts = useMemo(() => (kind === "scenario" && screenplay ? screenplaySceneTexts(screenplay.elements) : manuscript), [kind, screenplay, manuscript]);
-  const groups = useMemo(() => timeline(cards, edges, texts, order, lang).filter((g) => (ribbon ? g.type === "intrigue" : LANE_TYPES.includes(g.type)) && g.rows.length > 0), [cards, edges, texts, order, lang, ribbon]);
+  const groups = useMemo(() => timeline(cards, edges, texts, order, lang).filter((g) => (ribbon ? g.type === "intrigue" || g.type === "personnage" : LANE_TYPES.includes(g.type)) && g.rows.length > 0), [cards, edges, texts, order, lang, ribbon]);
   const storyCurve = useMemo(() => laneCurve(all, slots, heroIssues(cards)), [all, slots, cards]);
-  // Ruban agrandi : la courbe du récit, et celle des deux premiers personnages principaux qui racontent des scènes.
+  // Ruban agrandi : une couleur par intrigue et par personnage (choisie dans sa fiche, sinon attribuée).
   const plotHues = useMemo(() => plotColors(nodes, edges).plots, [nodes, edges]);
+  const charHues = useMemo(() => characterColors(nodes), [nodes]);
+  // Ruban agrandi : la courbe du récit, et celle des deux premiers personnages principaux qui racontent des scènes.
   const curveSet = useMemo(() => {
     if (!ribbon) return [];
     const out: { id: string; label: string; color: string; points: CurvePoint[] }[] = [];
     if (storyCurve) out.push({ id: "", label: f.lanes.story, color: "var(--accent)", points: storyCurve });
-    const principals = cards.filter((c) => c.type === "personnage" && c.fiche?.principal === "oui");
-    const hues = narratorColors(principals.map((c) => c.id));
-    for (const c of principals) {
+    for (const c of cards.filter((x) => x.type === "personnage" && x.fiche?.principal === "oui")) {
       if (out.length >= 3) break;
       const points = laneCurve(all, slots, characterIssues(cards, c.id, false));
-      if (points) out.push({ id: c.id, label: c.title.trim() || p.untitled, color: `var(--pov-${(hues.get(c.id) ?? 0) + 1})`, points });
+      if (points) out.push({ id: c.id, label: c.title.trim() || p.untitled, color: `var(--plot-${charHues.get(c.id) ?? 1})`, points });
     }
     return out;
-  }, [ribbon, storyCurve, cards, all, slots, f.lanes.story, p.untitled]);
+  }, [ribbon, storyCurve, cards, all, slots, charHues, f.lanes.story, p.untitled]);
+  // Ruban agrandi : intrigues, puis personnages (les principaux d'abord, ceux qui ont au moins une scène).
+  const ribbonPlots = useMemo(() => groups.find((g) => g.type === "intrigue")?.rows ?? [], [groups]);
+  const ribbonChars = useMemo(() => {
+    const rows = (groups.find((g) => g.type === "personnage")?.rows ?? []).filter((r) => r.count > 0 || r.card.fiche?.principal === "oui");
+    return [...rows.filter((r) => r.card.fiche?.principal === "oui"), ...rows.filter((r) => r.card.fiche?.principal !== "oui")];
+  }, [groups]);
 
   // Largeur disponible pour la ligne (zoom « toute la largeur »).
   useEffect(() => {
@@ -308,7 +320,9 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
   };
 
   const active = mode === "ribbon" ? currentId : selected && index.has(selected) ? selected : null;
-  const playX = active && slots.get(active) ? slots.get(active)!.x : null;
+  const activeSlot = active ? slots.get(active) : undefined;
+  // Tête de lecture : au début de la scène choisie (Plan), à la place du texte qui défile (ruban agrandi).
+  const playX = activeSlot ? activeSlot.x + (ribbon ? Math.min(1, Math.max(0, progress)) * activeSlot.w : 0) : null;
 
   const moves = useMoves(scope, beforeMove, (id) => {
     refocus.current = id;
@@ -330,17 +344,17 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
     rootRef.current?.querySelector<HTMLElement>(`[data-scene-id="${CSS.escape(id)}"]`)?.focus();
   });
 
-  // Ruban : la scène du curseur reste en vue.
+  // Ruban : la ligne défile avec le texte, la tête de lecture reste au milieu (comme sur un banc de montage). Le
+  // ruban qu'on fait défiler à la main reste où on l'a mis, jusqu'à ce que le texte bouge.
   useEffect(() => {
-    if (mode !== "ribbon" || !currentId) return;
+    if (!ribbon || playX === null) return;
     const box = scrollRef.current;
-    const card = rootRef.current?.querySelector<HTMLElement>(`[data-scene-id="${CSS.escape(currentId)}"]`);
-    if (!box || !card) return;
+    if (!box) return;
     const head = box.querySelector<HTMLElement>(".frise-lane-head")?.offsetWidth ?? 0;
-    const b = box.getBoundingClientRect();
-    const c = card.getBoundingClientRect();
-    if (c.left < b.left + head || c.right > b.right) box.scrollBy({ left: c.left - b.left - head - 24 });
-  }, [mode, currentId, px]);
+    const view = box.clientWidth - head;
+    // La piste commence après la tête de piste et sa marge de 10 px.
+    box.scrollLeft = Math.max(0, 10 + playX - view / 2);
+  }, [ribbon, playX]);
 
   const titleOf = (s: FriseScene) => s.title || (byId.get(s.id)?.title.trim() ?? "") || p.untitled;
   const lengthOf = (s: FriseScene) => (kind === "scenario" ? fmt(f.pages, { n: formatEighths(eighthsOf(s.size)) || "0" }) : fmt(f.words, { n: (s.words ?? 0).toLocaleString(lang) }));
@@ -476,17 +490,72 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
       : `${fmt(p.summaryMany, { n: all.length })} · ${fmt(f.words, { n: all.reduce((a, s) => a + (s.words ?? 0), 0).toLocaleString(lang) })} · ${fmt(f.pages, { n: pagesTotal })}`;
   // Une seule unité par règle : les pages d'un roman, le minutage d'un scénario.
   const markLabel = (page: number) => (kind === "scenario" ? timecode(clock(page)) : fmt(f.page, { n: Math.round(page) + 1 }));
-  const zoomOutLabel = ribbon && scale === 0 ? f.zoomFit : f.zoomOut;
+  const zoomOutLabel = ribbon && scale === 0 ? f.zoomFit : ribbon && scale === FIT_ZOOM ? f.zoomCompact : f.zoomOut;
+
+  // Ruban agrandi : titre repliable d'un groupe de pistes (courbe, intrigues, personnages), gardé sur l'appareil.
+  const groupHead = (key: string, name: string, count?: number) => {
+    const closed = folded.includes(key);
+    return (
+      <h3 key={`h${key}`} className="frise-lane-group-title is-ribbon">
+        <button type="button" aria-expanded={!closed} onClick={() => toggleFold(key)}>
+          <span className={`disclosure${closed ? "" : " is-open"}`} aria-hidden="true" />
+          {name}
+          {count !== undefined && <span className="frise-group-count">{count}</span>}
+        </button>
+      </h3>
+    );
+  };
+  // Une intrigue ou un personnage : une ligne fine, un trait de sa couleur sous chaque scène reliée (plus pâle si
+  // elle le nomme seulement ; plein pour une scène qu'il raconte). Toucher un trait tire ou retire le fil.
+  const markLane = (row: { card: CardData; cells: string[] }, hue: number | undefined, fallback: string) => {
+    const label = row.card.title.trim() || p.untitled;
+    return (
+      <div key={row.card.id} className="frise-lane is-plot" style={{ "--lane": hue ? `var(--plot-${hue})` : fallback } as CSSProperties}>
+        <div className="frise-lane-head">
+          <button type="button" className="frise-plot-name" title={fmt(t.thread.readOf, { title: label })} onClick={() => readThread(row.card.id)}>
+            {label}
+          </button>
+        </div>
+        <div className="frise-lane-track" style={trackStyle}>
+          {playX !== null && <span className="frise-playhead" style={{ left: playX }} aria-hidden="true" />}
+          {row.cells.map((cell, i) => {
+            const slot = slots.get(order[i]);
+            if (!slot) return null;
+            const names = { card: label, scene: byId.get(order[i])?.title.trim() || p.untitled };
+            if (cell === "pov")
+              return (
+                <span key={order[i]} className="frise-plot-cell is-linked" style={{ left: slot.x, width: slot.w + gap }} role="img" aria-label={fmt(p.timelinePovCell, names)} title={fmt(p.timelinePovCell, names)}>
+                  <span className="frise-plot-mark" style={{ width: slot.w }} aria-hidden="true" />
+                </span>
+              );
+            return (
+              <button
+                key={order[i]}
+                type="button"
+                className={`frise-plot-cell is-${cell}`}
+                style={{ left: slot.x, width: slot.w + gap }}
+                aria-pressed={cell === "linked"}
+                aria-label={fmt(cell === "linked" ? p.timelineOn : cell === "cited" ? p.timelineCitedCell : p.timelineOff, names)}
+                onClick={() => toggleLink(order[i], row.card.id)}
+              >
+                <span className="frise-plot-mark" style={{ width: slot.w }} aria-hidden="true" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className={`frise-board is-${mode}${ribbon && fitting ? " is-fit" : ""}`} ref={rootRef}>
+    <div className={`frise-board is-${mode}${fitting ? " is-fit" : ""}${compact ? " is-compact" : ""}`} ref={rootRef}>
       <div className="frise-tools">
         {ribbon && <span className="frise-tools-title">{f.ribbonTitle}</span>}
         <div className="frise-zoom" role="group" aria-label={f.zoomAria}>
           <button type="button" className="icon-button" aria-label={zoomOutLabel} title={zoomOutLabel} disabled={scale <= minScale} onClick={() => setScale(Math.max(minScale, scale - 1))}>
             −
           </button>
-          <button type="button" className="icon-button" aria-label={f.zoomIn} title={f.zoomIn} disabled={scale >= FRISE_SCALES.length - 1} onClick={() => setScale(Math.min(FRISE_SCALES.length - 1, scale + 1))}>
+          <button type="button" className="icon-button" aria-label={f.zoomIn} title={f.zoomIn} disabled={scale >= FRISE_ZOOMS.length - 1} onClick={() => setScale(Math.min(FRISE_ZOOMS.length - 1, scale + 1))}>
             +
           </button>
         </div>
@@ -573,70 +642,45 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
                   {placed.map(sceneCard)}
                 </div>
               </div>
-              {ribbon
-                ? curveSet.length > 0 && (
-                    <div className="frise-lane is-curve">
-                      <div className="frise-lane-head frise-curve-key">
-                        {curveSet.map((c) => (
-                          <span key={c.id || "story"} className="frise-curve-name" style={{ "--curve": c.color } as CSSProperties}>
-                            {c.label}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="frise-lane-track" style={trackStyle}>
-                        {decor}
-                        <CurveSet curves={curveSet} width={width} />
-                      </div>
-                    </div>
-                  )
-                : storyCurve && (
-                    <div className="frise-lane is-curve">
-                      <div className="frise-lane-head">{f.lanes.story}</div>
-                      <div className="frise-lane-track" style={trackStyle}>
-                        {decor}
-                        <Curve points={storyCurve} width={width} label={f.lanes.story} />
-                      </div>
-                    </div>
+              {ribbon ? (
+                <>
+                  {curveSet.length > 0 && (
+                    <>
+                      {groupHead("r:curve", f.lanes.showCurve)}
+                      {!folded.includes("r:curve") && (
+                        <div className="frise-lane is-curve">
+                          <div className="frise-lane-head frise-curve-key">
+                            {curveSet.map((c) => (
+                              <span key={c.id || "story"} className="frise-curve-name" style={{ "--curve": c.color } as CSSProperties}>
+                                {c.label}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="frise-lane-track" style={trackStyle}>
+                            {decor}
+                            <CurveSet curves={curveSet} width={width} />
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
+                  {ribbonPlots.length > 0 && groupHead("r:plots", f.lanes.plots, ribbonPlots.length)}
+                  {!folded.includes("r:plots") && ribbonPlots.map((row) => markLane(row, plotHues.get(row.card.id), "var(--type-intrigue)"))}
+                  {ribbonChars.length > 0 && groupHead("r:chars", f.lanes.characters, ribbonChars.length)}
+                  {!folded.includes("r:chars") && ribbonChars.map((row) => markLane(row, charHues.get(row.card.id), "var(--type-personnage)"))}
+                </>
+              ) : (
+                storyCurve && (
+                  <div className="frise-lane is-curve">
+                    <div className="frise-lane-head">{f.lanes.story}</div>
+                    <div className="frise-lane-track" style={trackStyle}>
+                      {decor}
+                      <Curve points={storyCurve} width={width} label={f.lanes.story} />
+                    </div>
+                  </div>
+                )
+              )}
               {groups.length === 0 && !ribbon && <p className="sp-empty frise-hint">{f.lanes.noCards}</p>}
-              {ribbon &&
-                groups.flatMap((g) =>
-                  g.rows.map((row) => {
-                    // Ruban agrandi : une ligne fine par intrigue, un trait de sa couleur sous chaque scène reliée.
-                    const label = row.card.title.trim() || p.untitled;
-                    const hue = plotHues.get(row.card.id);
-                    return (
-                      <div key={row.card.id} className="frise-lane is-plot" style={{ "--lane": hue ? `var(--plot-${hue})` : "var(--type-intrigue)" } as CSSProperties}>
-                        <div className="frise-lane-head">
-                          <button type="button" className="frise-plot-name" title={fmt(t.thread.readOf, { title: label })} onClick={() => readThread(row.card.id)}>
-                            {label}
-                          </button>
-                        </div>
-                        <div className="frise-lane-track" style={trackStyle}>
-                          {playX !== null && <span className="frise-playhead" style={{ left: playX }} aria-hidden="true" />}
-                          {row.cells.map((cell, i) => {
-                            const slot = slots.get(order[i]);
-                            if (!slot || cell === "pov") return null;
-                            const names = { card: label, scene: byId.get(order[i])?.title.trim() || p.untitled };
-                            return (
-                              <button
-                                key={order[i]}
-                                type="button"
-                                className={`frise-plot-cell is-${cell}`}
-                                style={{ left: slot.x, width: slot.w + gap }}
-                                aria-pressed={cell === "linked"}
-                                aria-label={fmt(cell === "linked" ? p.timelineOn : cell === "cited" ? p.timelineCitedCell : p.timelineOff, names)}
-                                onClick={() => toggleLink(order[i], row.card.id)}
-                              >
-                                <span className="frise-plot-mark" style={{ width: slot.w }} aria-hidden="true" />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  }),
-                )}
               {!ribbon &&
                 groups.map((g) => {
                   const closed = folded.includes(g.type);
@@ -876,7 +920,7 @@ function FrisePanel({ id, start, writeView, onStep, onClose }: { id: string; sta
 // ---------- Ruban agrandi : la frise au-dessus du texte, et le séparateur qui règle sa hauteur ----------
 
 /** Le ruban agrandi d'une vue d'écriture : la frise, puis un séparateur à tirer (souris, doigt, flèches du clavier). */
-export function RibbonBoard({ currentId, onGo, beforeMove }: { currentId: string | null; onGo: (id: string) => void; beforeMove?: () => void }) {
+export function RibbonBoard({ currentId, progress, onGo, beforeMove }: { currentId: string | null; progress?: number; onGo: (id: string) => void; beforeMove?: () => void }) {
   const f = useT().frise;
   const height = useBoard((s) => s.height);
   const setHeight = useBoard((s) => s.setHeight);
@@ -888,7 +932,7 @@ export function RibbonBoard({ currentId, onGo, beforeMove }: { currentId: string
   return (
     <div className="frise-ribbon">
       <div className="frise-ribbon-box" style={{ maxHeight: h }}>
-        <FriseBoard mode="ribbon" currentId={currentId} onGo={onGo} beforeMove={beforeMove} />
+        <FriseBoard mode="ribbon" currentId={currentId} progress={progress} onGo={onGo} beforeMove={beforeMove} />
       </div>
       <div
         className="frise-splitter"

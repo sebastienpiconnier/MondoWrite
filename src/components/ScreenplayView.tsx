@@ -48,7 +48,7 @@ import { elementFor, type SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
-import { RibbonBoard, SceneSheet, useBoard } from "./Frise";
+import { RibbonBoard, useBoard } from "./Frise";
 import { startReading } from "./useReader";
 import { screenplayUtterances, type ReadNode } from "../reading";
 import { PRESERVED } from "../screenplay/editor/nodes";
@@ -110,6 +110,7 @@ import { ScreenplayAtelier, ScreenplayDirections, screenplaySceneText } from "./
 import { findInText, nthMatch } from "../search";
 import { centerSelection } from "./centerSelection";
 import { LanguageTool } from "../languagetool/extension";
+import { useTextPlayhead } from "./useTextPlayhead";
 import { LanguageToolBubble, LanguageToolLive, LanguageToolStatus, useLanguageTool, type LtScope } from "./LanguageToolBubble";
 import {
   currentElement,
@@ -618,6 +619,27 @@ export function ScreenplayView() {
   // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone.
   const boardOpen = useBoard((s) => s.open);
   const board = boardOpen && !focusMode && !phone;
+  // Sa tête de lecture suit le texte qu'on fait défiler : la scène dont l'en-tête est passé sous la ligne de lecture,
+  // et la part de la scène déjà passée.
+  const playhead = useTextPlayhead(
+    board,
+    () => {
+      if (!editor || editor.isDestroyed) return null;
+      const box = editor.view.dom.closest<HTMLElement>(".sp-scroll");
+      if (!box) return null;
+      const ids = new Map(scenes.map((x) => [x.index, x.cardId ?? `@${x.index}`]));
+      const tops: { id: string; top: number }[] = [];
+      editor.state.doc.forEach((_node, offset, i) => {
+        const id = ids.get(i);
+        if (id === undefined) return;
+        const dom = editor.view.nodeDOM(offset);
+        if (dom instanceof HTMLElement) tops.push({ id, top: dom.getBoundingClientRect().top });
+      });
+      return { box, tops, end: editor.view.dom.getBoundingClientRect().bottom };
+    },
+    scenes,
+  );
+  const boardCurrent = playhead?.id ?? ribbonCurrent;
   // Ruban agrandi : les volets se ferment pour lui laisser toute la largeur ; ceux d'avant reviennent en le réduisant.
   const [boardPanels, setBoardPanels] = useState({ scenes: false, side: false });
   useEffect(() => {
@@ -1619,15 +1641,6 @@ export function ScreenplayView() {
         />
       )}
       <nav className="sp-scenes ms-scenes" data-native-reorder aria-label={sp.scenesAria}>
-        {/* Ruban agrandi (#173) : la frise montre déjà les scènes ; le volet tient la fiche de la scène en cours. */}
-        {board ? (
-          <>
-            <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
-            <h2 className="sp-box-title">{t.frise.sheetTitle}</h2>
-            {ribbonCurrent && <SceneSheet id={ribbonCurrent} scope="current" />}
-          </>
-        ) : (
-          <>
         <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
         {/* Même en-tête que le volet du Manuscrit (#58). */}
         <h2 className="sp-box-title">{sp.scenesTitle}</h2>
@@ -1914,13 +1927,11 @@ export function ScreenplayView() {
             </ul>
           </>
         )}
-          </>
-        )}
       </nav>
 
       {board && (
         <div className="sp-board">
-          <RibbonBoard currentId={ribbonCurrent} onGo={goToRibbon} beforeMove={emit} />
+          <RibbonBoard currentId={boardCurrent} progress={playhead?.frac ?? 0} onGo={goToRibbon} beforeMove={emit} />
         </div>
       )}
       <div className="sp-center">
@@ -2050,7 +2061,7 @@ export function ScreenplayView() {
         </div>
 
         {/* Ruban du récit : chaque case du gabarit à la place que ses scènes prennent (caché en mode focus). */}
-        {!focusMode && !board && <StoryRibbon currentId={ribbonCurrent} onGo={goToRibbon} />}
+        {!focusMode && !board && !phone && <StoryRibbon currentId={ribbonCurrent} onGo={goToRibbon} />}
         <div className="sp-scroll">
           {!focusMode && !charFilter && <TitlePage paper={paper} onChange={setTitleField} />}
           <div

@@ -1,13 +1,17 @@
-// Ruban agrandi (#173) : ouvert ou non, sa hauteur, groupes de pistes repliés. Réglage de l'appareil, jamais dans le projet.
+// Ruban agrandi (#173) : ouvert ou non, sa hauteur, son zoom, groupes de pistes repliés (dans le ruban : `r:curve`,
+// `r:plots`, `r:chars`). Réglage de l'appareil, jamais dans le projet.
 
 import { create } from "zustand";
+import { FRISE_ZOOMS } from "./frise";
 
 const BOARD_KEY = "mondowrite.board";
 export const BOARD_MIN = 140;
 const BOARD_DEFAULT = 240;
 
-/** Zoom du ruban agrandi : rang dans `FRISE_SCALES`, ou −1 pour « toute la largeur ». */
+/** Zoom du ruban agrandi : rang dans `FRISE_ZOOMS`, ou −1 pour « toute la largeur ». */
 export const FIT_ZOOM = -1;
+/** Plus serré encore : toute la largeur, les cartes réduites à un trait (la courbe du récit se voit d'un coup d'œil). */
+export const COMPACT_ZOOM = -2;
 
 interface BoardState {
   open: boolean;
@@ -27,7 +31,7 @@ function readBoard(): Pick<BoardState, "open" | "height" | "folded" | "zoom"> {
       open: raw.open === true,
       height: typeof raw.height === "number" && raw.height >= BOARD_MIN ? Math.round(raw.height) : BOARD_DEFAULT,
       folded: Array.isArray(raw.folded) ? raw.folded.filter((g): g is string => typeof g === "string").slice(0, 12) : [],
-      zoom: Number.isInteger(raw.zoom) && (raw.zoom as number) >= FIT_ZOOM && (raw.zoom as number) <= 3 ? (raw.zoom as number) : FIT_ZOOM,
+      zoom: Number.isInteger(raw.zoom) && (raw.zoom as number) >= COMPACT_ZOOM && (raw.zoom as number) < FRISE_ZOOMS.length ? (raw.zoom as number) : FIT_ZOOM,
     };
   } catch {
     return { open: false, height: BOARD_DEFAULT, folded: [], zoom: FIT_ZOOM };

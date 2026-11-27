@@ -88,3 +88,22 @@ export function plotCardBackground(colors: PlotColors, plotId: string): string |
   const n = colors.plots.get(plotId);
   return n ? `linear-gradient(var(--plot-${n}), var(--plot-${n}))` : undefined;
 }
+
+const charCache = new WeakMap<readonly NodeLike[], Map<string, number>>();
+
+/**
+ * Couleur de chaque personnage (ruban agrandi, #173) : celle choisie dans sa fiche (`fiche.couleur`, de 1 à 8),
+ * sinon une couleur attribuée, stable, de la même palette que les intrigues.
+ */
+export function characterColors(nodes: readonly NodeLike[]): Map<string, number> {
+  const hit = charCache.get(nodes);
+  if (hit) return hit;
+  const people = nodes.filter((n) => n.data.type === "personnage");
+  const out = narratorColors(people.map((n) => n.id));
+  for (const n of people) {
+    const chosen = Number(n.data.fiche?.couleur);
+    if (chosen >= 1 && chosen <= 8) out.set(n.id, chosen);
+  }
+  charCache.set(nodes, out);
+  return out;
+}

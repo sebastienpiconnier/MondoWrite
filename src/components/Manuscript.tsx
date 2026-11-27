@@ -53,7 +53,8 @@ import type { SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
-import { RibbonBoard, SceneSheet, useBoard } from "./Frise";
+import { RibbonBoard, useBoard } from "./Frise";
+import { useTextPlayhead } from "./useTextPlayhead";
 import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
@@ -230,13 +231,26 @@ export function Manuscript() {
   // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone ni dans un roman interactif.
   const boardOpen = useBoard((s) => s.open);
   const board = boardOpen && !focusMode && !phone && !interactive;
-  // Ruban agrandi : les volets se ferment pour lui laisser la place ; on les rouvre à la main le temps qu'il est
-  // ouvert (fiche de la scène à gauche), et les volets d'avant reviennent quand on le réduit.
+  // Ruban agrandi : les volets se ferment pour lui laisser la place ; rouverts à la main, ils passent par-dessus le
+  // texte sur toute la hauteur (frise.css) sans le décaler, et les volets d'avant reviennent quand on le réduit.
   const [boardPanels, setBoardPanels] = useState({ scenes: false, side: false });
   useEffect(() => {
     if (board) setBoardPanels({ scenes: false, side: false });
   }, [board]);
   const panels: Panels = board ? { ...savedPanels, ...boardPanels } : savedPanels;
+  // Sa tête de lecture suit le livre qu'on fait défiler : la scène passée sous la ligne de lecture, et sa part déjà lue.
+  const manuscriptText = useCosmos((s) => s.manuscript);
+  const playhead = useTextPlayhead(
+    board,
+    () => {
+      const dom = bookApi.current?.editor()?.view.dom;
+      const box = dom?.closest<HTMLElement>(".ms-main");
+      if (!dom || !box) return null;
+      const tops = [...dom.querySelectorAll<HTMLElement>("[data-scene-id]")].map((el) => ({ id: el.dataset.sceneId ?? "", top: el.getBoundingClientRect().top })).filter((x) => x.id);
+      return { box, tops, end: dom.getBoundingClientRect().bottom };
+    },
+    manuscriptText,
+  );
   const togglePanel = (key: keyof Panels) => {
     if (board && key !== "meta") setBoardPanels((b) => ({ ...b, [key]: !b[key] }));
     else toggleSaved(key);
@@ -727,14 +741,6 @@ export function Manuscript() {
       {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
       <LanguageToolStatus status={lt.status} />
       <nav className="sp-scenes ms-scenes" data-native-reorder aria-label={m.scenesAria}>
-        {/* Ruban agrandi (#173) : la frise montre déjà toutes les scènes ; le volet tient la fiche de la scène en cours. */}
-        {board ? (
-          <>
-            <h2 className="sp-box-title">{t.frise.sheetTitle}</h2>
-            <SceneSheet id={current} />
-          </>
-        ) : (
-          <>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
@@ -976,8 +982,6 @@ export function Manuscript() {
           </select>
         </label>
         <Orphans ids={orphans} manuscript={manuscript} onRestore={restoreScene} />
-          </>
-        )}
       </nav>
 
       {/* Poignées sur les bords : plan à gauche, infos à droite, barre de la scène en haut. */}
@@ -986,7 +990,7 @@ export function Manuscript() {
 
       {board && (
         <div className="ms-board">
-          <RibbonBoard currentId={current} onGo={go} />
+          <RibbonBoard currentId={playhead?.id ?? current} progress={playhead?.frac ?? 0} onGo={go} />
         </div>
       )}
       {!panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
@@ -999,7 +1003,8 @@ export function Manuscript() {
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             {/* Ruban du récit, en tête de la barre (il reste en vue en défilant) : chaque case du gabarit à la place
                 que ses scènes prennent. */}
-            {!interactive && !board && <StoryRibbon currentId={current} onGo={go} />}
+            {/* Pas de ruban sur téléphone : la place va au texte. */}
+            {!interactive && !board && !phone && <StoryRibbon currentId={current} onGo={go} />}
             <button type="button" className="icon-button" disabled={!prevId} aria-label={m.previous} title={m.previous} onClick={() => prevId && go(prevId)}>
               <span aria-hidden="true">←</span>
             </button>

@@ -1644,6 +1644,7 @@ export const fr = {
     modeAria: "Présentation du plan",
     timeline: "Chronologie",
     plotColor: "Couleur de l’intrigue",
+    characterColor: "Couleur du personnage",
     plotColorN: "Couleur {n}",
     plotColorAuto: "Couleur automatique",
     plotNameOne: "Intrigue : {name}",
@@ -3666,6 +3667,7 @@ export const fr = {
     zoomOut: "Resserrer la frise",
     zoomIn: "Élargir la frise",
     zoomFit: "Toute la largeur",
+    zoomCompact: "Cartes réduites",
     empty: "Pas encore de scène. Crée une carte Scène sur le canevas, ou écris ta première scène : elle aura sa place ici.",
     whole: "Tout le récit",
     noChapter: "Sans chapitre",
@@ -3682,7 +3684,6 @@ export const fr = {
     dropHere: "Dépose ici",
     moved: "« {title} » : scène {n} sur {total}.",
     splitter: "Hauteur du ruban (flèches haut et bas)",
-    sheetTitle: "Fiche de la scène",
     panel: {
       aria: "La scène choisie",
       close: "Fermer",
@@ -3700,6 +3701,9 @@ export const fr = {
       story: "Courbe du récit",
       noCards: "Crée des cartes Intrigue, Thème, Personnage ou Lieu et relie-les à leurs scènes : chacune aura sa piste ici.",
       curveOf: "Courbe de {name}",
+      plots: "Intrigues",
+      characters: "Personnages",
+      showCurve: "Courbe du récit",
     },
   },
   cast: {

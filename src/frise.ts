@@ -34,9 +34,19 @@ export interface FriseRow {
 export type FriseGroup = "story" | "plots" | "chars";
 export const FRISE_GROUPS: FriseGroup[] = ["story", "plots", "chars"];
 
-/** Pixels par page, du plus serré au plus large (boutons − et +). */
-export const FRISE_SCALES = [8, 16, 32, 64] as const;
-export const DEFAULT_SCALE = 1;
+/** Zoom de la frise (boutons − et +) : un facteur appliqué à la fois aux pixels par page et à la largeur minimale
+ * d'une carte. Sur les seuls pixels par page, les scènes courtes, toutes à leur largeur minimale, ne bougeaient pas. */
+export const FRISE_ZOOMS = [0.5, 0.75, 1, 1.5, 2, 3] as const;
+export const DEFAULT_SCALE = 2;
+/** Pixels par page au zoom 1. */
+export const BASE_PX = 24;
+/** Largeur minimale d'une carte du ruban agrandi au zoom 1 (elle n'y montre que son numéro quand elle est étroite). */
+export const RIBBON_MIN_CARD = 48;
+/** Pixels par page et largeur minimale d'une carte à un rang de zoom (borné à la liste). */
+export function zoomLine(zoom: number, minBase: number = MIN_CARD): { px: number; min: number } {
+  const f = FRISE_ZOOMS[Math.min(FRISE_ZOOMS.length - 1, Math.max(0, Math.round(zoom)))];
+  return { px: BASE_PX * f, min: Math.round(minBase * f) };
+}
 /** Largeur la plus petite d'une carte (une scène de deux lignes reste lisible et se touche au doigt). */
 export const MIN_CARD = 112;
 /** Espace entre deux cartes. */
@@ -351,4 +361,29 @@ export function timecode(minutes: number): string {
   const s = total % 60;
   const two = (n: number) => String(n).padStart(2, "0");
   return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`;
+}
+
+/** Haut d'une scène dans un texte qui défile (coordonnées de l'écran). */
+export interface SceneTop {
+  id: string;
+  top: number;
+}
+
+/**
+ * Tête de lecture du ruban agrandi, comme sur un banc de montage : la scène dont le haut est passé au-dessus de la
+ * ligne de lecture `line`, et la part de cette scène déjà passée (0 à 1), d'après le haut de la scène suivante (ou
+ * `end`, le bas du texte). Avant la première scène : la première, au début. `tops` dans l'ordre du texte.
+ */
+export function playheadAt(line: number, tops: readonly SceneTop[], end: number): { id: string; frac: number } | null {
+  if (tops.length === 0) return null;
+  let i = -1;
+  for (let k = 0; k < tops.length; k++) {
+    if (tops[k].top <= line) i = k;
+    else break;
+  }
+  if (i < 0) return { id: tops[0].id, frac: 0 };
+  const top = tops[i].top;
+  const next = i + 1 < tops.length ? tops[i + 1].top : end;
+  const frac = next > top ? (line - top) / (next - top) : 0;
+  return { id: tops[i].id, frac: Math.min(1, Math.max(0, frac)) };
 }

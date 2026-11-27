@@ -3976,7 +3976,6 @@ export const es = {
     dropHere: "Suelta aquí",
     moved: "«{title}»: escena {n} de {total}.",
     splitter: "Altura de la cinta (flechas arriba y abajo)",
-    sheetTitle: "Ficha de la escena",
     panel: {
       aria: "La escena elegida",
       close: "Cerrar",

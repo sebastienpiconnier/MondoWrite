@@ -3,7 +3,8 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../screenplay/parse";
 import { EMPTY_PLAN, type Plan } from "../plan";
-import { MIN_CARD, CARD_GAP, characterIssues, fitPxPerPage, spacedOut, spreadCurves, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, pageToX, rulerMarks, sceneAtX, timecode, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
+import { characterColors } from "../plotColors";
+import { MIN_CARD, CARD_GAP, FRISE_ZOOMS, BASE_PX, playheadAt, zoomLine, characterIssues, fitPxPerPage, spacedOut, spreadCurves, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, pageToX, rulerMarks, sceneAtX, timecode, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
 
 const script = parse(
   [
@@ -184,5 +185,42 @@ describe("frise : ruban agrandi", () => {
     expect(scale(1)).toBe(1);
     expect(zero).toBe(0);
     expect(spreadCurves([[{ y: 0.2 }, { y: 0.2 }]]).zero).toBeNull();
+  });
+});
+
+describe("frise : couleur des personnages", () => {
+  it("garde la couleur choisie, attribue une couleur stable sinon", () => {
+    const nodes = [
+      { id: "p1", data: { type: "personnage" as const, fiche: { couleur: "5" } } },
+      { id: "p2", data: { type: "personnage" as const } },
+      { id: "s1", data: { type: "scene" as const } },
+    ];
+    const colors = characterColors(nodes);
+    expect(colors.get("p1")).toBe(5);
+    expect(colors.get("p2")).toBeGreaterThanOrEqual(1);
+    expect(colors.get("p2")).toBeLessThanOrEqual(8);
+    expect(colors.has("s1")).toBe(false);
+  });
+});
+
+describe("frise : zoom et tête de lecture", () => {
+  it("le zoom agrandit aussi la largeur minimale des cartes", () => {
+    const small = zoomLine(0);
+    const big = zoomLine(FRISE_ZOOMS.length - 1);
+    expect(small.px).toBe(BASE_PX * FRISE_ZOOMS[0]);
+    expect(big.min).toBeGreaterThan(small.min);
+    const scenes = [{ id: "a", title: "A", size: 1 }, { id: "b", title: "B", size: 1 }];
+    const w = (z: number) => layoutScenes(scenes, zoomLine(z).px, { min: zoomLine(z).min }).width;
+    // Des scènes d'une page, toutes à la largeur minimale : chaque cran change quand même la longueur de la ligne.
+    for (let z = 1; z < FRISE_ZOOMS.length; z++) expect(w(z)).toBeGreaterThan(w(z - 1));
+    expect(zoomLine(99)).toEqual(big);
+  });
+  it("la tête de lecture suit la scène passée sous la ligne de lecture", () => {
+    const tops = [{ id: "a", top: 100 }, { id: "b", top: 300 }];
+    expect(playheadAt(50, tops, 500)).toEqual({ id: "a", frac: 0 });
+    expect(playheadAt(200, tops, 500)).toEqual({ id: "a", frac: 0.5 });
+    expect(playheadAt(400, tops, 500)).toEqual({ id: "b", frac: 0.5 });
+    expect(playheadAt(900, tops, 500)).toEqual({ id: "b", frac: 1 });
+    expect(playheadAt(10, [], 0)).toBeNull();
   });
 });
