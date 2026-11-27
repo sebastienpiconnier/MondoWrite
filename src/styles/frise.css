@@ -23,9 +23,7 @@
 .frise-lane.is-ruler .frise-lane-head { color: var(--ink-2); font-weight: 400; font-size: 0.75rem; }
 .frise-ruler { min-height: 56px; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .frise-tick { position: absolute; bottom: 0; height: 6px; border-left: 1px solid var(--line-2); pointer-events: none; }
-.frise-tick.is-major { height: 30px; padding-left: 3px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.15; white-space: nowrap; }
-.frise-tick-page { font-size: 0.6875rem; color: var(--ink-2); }
-.frise-tick-time { font: 0.6875rem var(--font-mono, ui-monospace, monospace); color: var(--ink); font-variant-numeric: tabular-nums; }
+.frise-tick.is-major { height: 24px; padding: 4px 0 0 3px; font: 0.6875rem var(--font-ui); color: var(--ink-2); font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
 .frise-bound-label { position: absolute; top: 4px; font: 600 0.75rem var(--font-ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; border-left: 3px solid var(--accent); }
 .frise-bound-label.is-over { background: var(--accent-soft); }
 .frise-bound { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--line-2); pointer-events: none; }
@@ -72,17 +70,23 @@
 
 /* Ruban agrandi : la frise au-dessus du texte, puis le séparateur à tirer. */
 .frise-ribbon { flex: none; display: flex; flex-direction: column; min-height: 0; }
-.frise-ribbon-box { padding: 8px 12px 0; overflow: hidden; background: var(--ground); }
+.frise-ribbon-box { display: flex; flex-direction: column; padding: 8px 12px 0; overflow: hidden; background: var(--ground); }
+.frise-ribbon-box > .frise-board { flex: 1 1 auto; height: auto; min-height: 0; }
 .frise-splitter { flex: none; display: grid; place-items: center; height: 12px; cursor: row-resize; touch-action: none; border-bottom: 1px solid var(--line); background: var(--ground); }
 .frise-splitter:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .frise-splitter-grip { width: 44px; height: 4px; border-radius: 2px; background: var(--line-2); }
 @media (any-hover: hover) { .frise-splitter:hover .frise-splitter-grip { background: var(--ink-2); } }
-/* Manuscrit : une rangée de plus dans la grille, au-dessus de la page. */
-.manuscript.has-board { grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "scenes board side" "scenes main side"; }
-.manuscript.has-board.hide-scenes { grid-template-areas: "board side" "main side"; }
-.manuscript.has-board.hide-side { grid-template-areas: "scenes board" "scenes main"; }
+/* Ruban agrandi : une rangée de toute la largeur au-dessus des volets et du texte. */
+.manuscript.has-board, .screenplay.has-board { grid-template-rows: auto minmax(0, 1fr); }
+.manuscript.has-board { grid-template-areas: "board board board" "scenes main side"; }
+.manuscript.has-board.hide-scenes { grid-template-areas: "board board" "main side"; }
+.manuscript.has-board.hide-side { grid-template-areas: "board board" "scenes main"; }
 .manuscript.has-board.hide-scenes.hide-side { grid-template-areas: "board" "main"; }
-.ms-board { grid-area: board; min-width: 0; }
+.screenplay.has-board { grid-template-areas: "board board board" "scenes center side"; }
+.screenplay.has-board.hide-scenes { grid-template-areas: "board board" "center side"; }
+.screenplay.has-board.hide-side { grid-template-areas: "board board" "scenes center"; }
+.screenplay.has-board.hide-scenes.hide-side { grid-template-areas: "board" "center"; }
+.ms-board, .sp-board { grid-area: board; min-width: 0; }
 /* Le volet de gauche tient la fiche de la scène en cours. */
 .sp-scenes .frise-sheet { display: flex; flex-direction: column; gap: 10px; padding: 0 2px 16px; }
 
@@ -109,3 +113,52 @@
   .frise-lane-head { width: 132px; }
   .frise-panel { width: auto; max-width: none; }
 }
+
+/* ---------- Ruban agrandi : au plus près du petit ruban (jalons, traits d'intrigue, courbe étalée) ---------- */
+.frise-board.is-ribbon { gap: 4px; }
+.frise-board.is-ribbon .frise-tools { gap: 4px 10px; }
+.frise-board.is-ribbon .frise-zoom .icon-button { min-width: 32px; min-height: 32px; }
+.frise-total.is-peek { color: var(--ink); font-weight: 600; }
+.frise-board.is-ribbon .frise-lane-head { width: 150px; font-size: 0.75rem; }
+.frise-board.is-ribbon .frise-lane { border-bottom: 0; }
+.frise-board.is-ribbon .frise-ruler { min-height: 30px; }
+.frise-board.is-ribbon .frise-tick.is-major { height: 18px; padding-top: 2px; }
+/* Jalon : un trait coiffé d'un triangle, comme le petit ruban ; son nom passe dans la barre au survol ou au toucher. */
+.frise-jalon { position: absolute; top: 0; bottom: -6px; width: 2px; margin-left: -1px; padding: 0; border: 0; border-radius: 1px; background: var(--accent-ink); cursor: help; z-index: 3; }
+.frise-jalon::before { content: ""; position: absolute; top: 0; left: -4px; border: 5px solid transparent; border-top-color: var(--accent-ink); border-bottom: 0; }
+.frise-jalon::after { content: ""; position: absolute; top: 0; bottom: 0; left: -8px; right: -8px; }
+.frise-jalon:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.frise-jalon.is-peeked, .frise-jalon.is-over { box-shadow: 0 0 0 2px var(--accent-soft); }
+@media (pointer: coarse) { .frise-jalon::after { left: -14px; right: -14px; } }
+/* Cartes plus basses ; étroites, elles ne gardent que leur numéro (le titre est dans l'infobulle et le nom lu). */
+.frise-board.is-ribbon .frise-lane.is-scenes .frise-lane-track { min-height: 58px; }
+.frise-board.is-ribbon .frise-card { top: 4px; height: 50px; padding: 5px 8px; gap: 2px; }
+.frise-board.is-ribbon .frise-card-len { display: none; }
+.frise-board.is-ribbon .frise-card-title { -webkit-line-clamp: 1; }
+.frise-board.is-ribbon .frise-end { top: 4px; height: 50px; }
+.frise-card.is-narrow { padding: 5px 3px; align-items: center; }
+.frise-card.is-narrow .frise-card-title, .frise-card.is-narrow .frise-card-len, .frise-card.is-narrow .status-dot { display: none; }
+.frise-card.is-tiny { padding: 0; }
+.frise-card.is-tiny .frise-card-top { display: none; }
+.frise-board.is-fit .frise-card { border-radius: 4px; }
+/* Courbes : la courbe du récit à l'accent, celles des personnages à leur couleur ; leurs noms servent de légende. */
+.frise-board.is-ribbon .frise-lane.is-curve .frise-lane-track { min-height: 68px; }
+.frise-curve.is-set { top: 2px; }
+.frise-curve.is-set .frise-curve-line { stroke: var(--curve); }
+.frise-curve.is-set .frise-curve-dot { fill: var(--curve); }
+.frise-curve.is-set .is-character .frise-curve-line { stroke-width: 1.5; stroke-dasharray: 5 3; }
+.frise-curve-key { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
+.frise-curve-name { display: flex; align-items: center; gap: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frise-curve-name::before { content: ""; flex: none; width: 14px; height: 0; border-top: 2px solid var(--curve); }
+/* Intrigues : une ligne fine par intrigue, un trait de sa couleur sous chaque scène reliée (plus pâle si elle la nomme). */
+.frise-lane.is-plot .frise-lane-track { min-height: 22px; }
+.frise-lane.is-plot .frise-lane-track::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 6px; border-radius: 3px; background: var(--line); }
+.frise-plot-name { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; text-align: right; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; margin-left: auto; }
+@media (any-hover: hover) { .frise-plot-name:hover { color: var(--ink); text-decoration: underline; } }
+.frise-plot-cell { position: absolute; top: 0; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; }
+.frise-plot-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.frise-plot-mark { position: absolute; left: 0; top: 8px; height: 6px; border-radius: 1px; }
+.frise-plot-cell.is-linked .frise-plot-mark { background: var(--lane); }
+.frise-plot-cell.is-cited .frise-plot-mark { background: var(--lane); opacity: 0.45; }
+@media (any-hover: hover) { .frise-plot-cell.is-none:hover .frise-plot-mark { background: var(--lane); opacity: 0.25; } }
+@media (pointer: coarse) { .frise-lane.is-plot .frise-lane-track, .frise-plot-cell { min-height: 32px; height: 32px; } .frise-lane.is-plot .frise-lane-track::before, .frise-plot-mark { top: 13px; } }

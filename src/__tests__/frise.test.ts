@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../screenplay/parse";
 import { EMPTY_PLAN, type Plan } from "../plan";
-import { MIN_CARD, CARD_GAP, characterIssues, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, pageToX, rulerMarks, sceneAtX, timecode, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
+import { MIN_CARD, CARD_GAP, characterIssues, fitPxPerPage, spacedOut, spreadCurves, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, pageToX, rulerMarks, sceneAtX, timecode, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
 
 const script = parse(
   [
@@ -158,5 +158,31 @@ describe("règle de montage", () => {
     expect(timecode(0)).toBe("0:00");
     expect(timecode(12)).toBe("12:00");
     expect(timecode(65.5)).toBe("1:05:30");
+  });
+});
+
+describe("frise : ruban agrandi", () => {
+  const scenes = [
+    { id: "a", title: "A", size: 1 },
+    { id: "b", title: "B", size: 3 },
+    { id: "c", title: "C", size: 0 },
+  ];
+  it("fait tenir toutes les scènes dans la largeur donnée", () => {
+    const px = fitPxPerPage(scenes, 600, { min: 10, gap: 2 });
+    const { width } = layoutScenes(scenes, px, { min: 10, gap: 2 });
+    expect(width).toBeLessThanOrEqual(600);
+    expect(width).toBeGreaterThan(590);
+    expect(fitPxPerPage(scenes, 20, { min: 10, gap: 2 })).toBe(0);
+  });
+  it("espace les repères de la règle", () => {
+    const kept = spacedOut([{ x: 0 }, { x: 30 }, { x: 90 }, { x: 120 }, { x: 200 }], 80);
+    expect(kept.map((m) => m.x)).toEqual([0, 90, 200]);
+  });
+  it("étale une courbe sur l'étendue qu'elle atteint", () => {
+    const { scale, zero } = spreadCurves([[{ y: 0 }, { y: 0.5 }, { y: 1 }]]);
+    expect(scale(0)).toBe(0);
+    expect(scale(1)).toBe(1);
+    expect(zero).toBe(0);
+    expect(spreadCurves([[{ y: 0.2 }, { y: 0.2 }]]).zero).toBeNull();
   });
 });

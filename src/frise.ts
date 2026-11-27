@@ -41,6 +41,8 @@ export const DEFAULT_SCALE = 1;
 export const MIN_CARD = 112;
 /** Espace entre deux cartes. */
 export const CARD_GAP = 6;
+/** Largeur minimale d'une carte quand le ruban agrandi tient toute la largeur. */
+export const FIT_MIN_CARD = 8;
 
 const sizeOf = (rows: FriseRow[]) => rows.reduce((a, r) => a + r.scenes.reduce((b, s) => b + s.size, 0), 0);
 export const rowSize = (row: FriseRow) => row.scenes.reduce((a, s) => a + s.size, 0);
@@ -109,19 +111,74 @@ export interface Slot {
   w: number;
 }
 
-/** Largeur d'une carte : sa longueur à l'échelle, jamais moins que `MIN_CARD`. */
-export const cardWidth = (size: number, pxPerPage: number) => Math.max(MIN_CARD, Math.round(size * pxPerPage));
+/** Largeur d'une carte : sa longueur à l'échelle, jamais moins que `min` (`MIN_CARD` par défaut). */
+export const cardWidth = (size: number, pxPerPage: number, min: number = MIN_CARD) => Math.max(min, Math.round(size * pxPerPage));
+
+/** Réglage d'une ligne : largeur minimale d'une carte et écart entre deux cartes. */
+export interface LineFit {
+  min?: number;
+  gap?: number;
+}
 
 /** Les scènes l'une après l'autre, sur une seule ligne. */
-export function layoutScenes(scenes: readonly FriseScene[], pxPerPage: number): { slots: Map<string, Slot>; width: number } {
+export function layoutScenes(scenes: readonly FriseScene[], pxPerPage: number, fit: LineFit = {}): { slots: Map<string, Slot>; width: number } {
+  const min = fit.min ?? MIN_CARD;
+  const gap = fit.gap ?? CARD_GAP;
   const slots = new Map<string, Slot>();
   let x = 0;
   for (const s of scenes) {
-    const w = cardWidth(s.size, pxPerPage);
+    const w = cardWidth(s.size, pxPerPage, min);
     slots.set(s.id, { x, w });
-    x += w + CARD_GAP;
+    x += w + gap;
   }
-  return { slots, width: Math.max(0, x - CARD_GAP) };
+  return { slots, width: Math.max(0, x - gap) };
+}
+
+/**
+ * Zoom « toute la largeur » : l'échelle (pixels par page) qui fait tenir toutes les scènes dans `room` pixels, chaque
+ * carte gardant au moins `min` pixels. 0 si la largeur ne suffit même pas aux cartes à leur minimum.
+ */
+export function fitPxPerPage(scenes: readonly FriseScene[], room: number, fit: LineFit = {}): number {
+  const min = fit.min ?? MIN_CARD;
+  const gap = fit.gap ?? CARD_GAP;
+  const width = (px: number) => scenes.reduce((a, s) => a + cardWidth(s.size, px, min), 0) + gap * Math.max(0, scenes.length - 1);
+  if (scenes.length === 0 || width(0) > room) return 0;
+  let lo = 0;
+  let hi = 1;
+  while (width(hi) <= room && hi < 1e6) hi *= 2;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (width(mid) <= room) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/** Garde les repères qui laissent au moins `room` pixels depuis le dernier gardé (le premier l'est toujours). */
+export function spacedOut<T extends { x: number }>(marks: readonly T[], room: number): T[] {
+  const out: T[] = [];
+  let last = -Infinity;
+  for (const m of marks) {
+    if (m.x - last < room) continue;
+    out.push(m);
+    last = m.x;
+  }
+  return out;
+}
+
+/**
+ * Courbe posée dans une hauteur : ramène les valeurs (de −1 à 1) à l'étendue réellement atteinte, pour que la
+ * progression se voie même quand le récit ne descend jamais sous zéro. Rend aussi la place du zéro (null s'il est hors
+ * de l'étendue). Les courbes passées ensemble partagent la même échelle.
+ */
+export function spreadCurves(curves: readonly (readonly { y: number }[])[]): { scale: (y: number) => number; zero: number | null } {
+  const ys = curves.flatMap((c) => c.map((p) => p.y));
+  if (ys.length === 0) return { scale: () => 0.5, zero: null };
+  const lo = Math.min(...ys);
+  const hi = Math.max(...ys);
+  if (hi - lo < 1e-9) return { scale: () => 0.5, zero: null };
+  const scale = (y: number) => (y - lo) / (hi - lo);
+  return { scale, zero: lo <= 0 && hi >= 0 ? scale(0) : null };
 }
 
 /**

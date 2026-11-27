@@ -32,7 +32,8 @@ import {
   CARD_GAP,
   DEFAULT_SCALE,
   FRISE_SCALES,
-  cardWidth,
+  FIT_MIN_CARD,
+  fitPxPerPage,
   characterIssues,
   friseTotal,
   layoutScenes,
@@ -41,6 +42,8 @@ import {
   moveSceneToRowEnd,
   novelRows,
   pageToX,
+  spacedOut,
+  spreadCurves,
   rowStarts,
   rulerMarks,
   sceneAtX,
@@ -49,9 +52,12 @@ import {
   timecode,
   type FriseRow,
   type FriseScene,
+  type LineFit,
   type Slot,
 } from "../frise";
-import { BOARD_MIN, useBoard } from "../boardState";
+import { BOARD_MIN, FIT_ZOOM, useBoard } from "../boardState";
+import { plotColors } from "../plotColors";
+import { narratorColors } from "../pov";
 import { useBeatText } from "./useBeatText";
 import { usePlotColor } from "./usePlotColor";
 import { StatusDot, SceneStatusPicker } from "./SceneStatusPicker";
@@ -196,6 +202,8 @@ interface BoardProps {
 }
 
 const LANE_TYPES: CardType[] = ["intrigue", "theme", "personnage", "lieu"];
+/** Écart minimal entre deux valeurs écrites de la règle. */
+const LABEL_ROOM = 110;
 
 export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardProps) {
   const t = useT();
@@ -219,7 +227,17 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
   const toggleFold = useBoard((s) => s.toggleFold);
   const setOpen = useBoard((s) => s.setOpen);
 
-  const [scale, setScale] = useState(DEFAULT_SCALE);
+  const ribbon = mode === "ribbon";
+  // Zoom : rang dans FRISE_SCALES ; le ruban agrandi descend jusqu'à « toute la largeur » (FIT_ZOOM), gardé sur l'appareil.
+  const boardZoom = useBoard((s) => s.zoom);
+  const setBoardZoom = useBoard((s) => s.setZoom);
+  const [planScale, setPlanScale] = useState(DEFAULT_SCALE);
+  const scale = ribbon ? boardZoom : planScale;
+  const setScale = (next: number) => (ribbon ? setBoardZoom(next) : setPlanScale(next));
+  const minScale = ribbon ? FIT_ZOOM : 0;
+  const [room, setRoom] = useState(0);
+  const [peek, setPeek] = useState<string | null>(null);
+  const peekTimer = useRef<number>(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [over, setOver] = useState<string | null>(null);
@@ -228,22 +246,66 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
   const refocus = useRef<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const px = FRISE_SCALES[scale];
+  const fitting = scale === FIT_ZOOM;
+  const line: LineFit = ribbon ? (fitting ? { min: FIT_MIN_CARD, gap: 3 } : { gap: 4 }) : {};
 
   // Sur la ligne : les scènes, et une place pour chaque partie encore vide.
   const lineRows = useMemo(() => rows.map((r, i) => (r.scenes.length > 0 || r.key === null ? r : { ...r, scenes: [{ id: `${PART}${i}`, title: "", size: 0 }] })), [rows]);
   const placed = useMemo(() => lineRows.flatMap((r) => r.scenes), [lineRows]);
-  const { slots, width } = useMemo(() => layoutScenes(placed, px), [placed, px]);
+  const px = useMemo(() => (fitting ? fitPxPerPage(placed, room, line) : FRISE_SCALES[Math.max(0, scale)]), [fitting, placed, room, scale, line.min, line.gap]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { slots, width } = useMemo(() => layoutScenes(placed, px, line), [placed, px, line.min, line.gap]); // eslint-disable-line react-hooks/exhaustive-deps
   const bounds = useMemo(() => (rows.length > 1 ? rowStarts(lineRows, slots) : []), [rows.length, lineRows, slots]);
-  // Repères au pas que la ligne donne vraiment (les cartes ont une largeur minimale) : px par page en moyenne.
-  const marks = useMemo(() => rulerMarks(total, total > 0 ? width / total : px), [total, width, px]);
+  // Règle : pages d'un roman, minutage d'un scénario. Repères placés sur la vraie ligne (les cartes ont une largeur
+  // minimale), puis espacés : quelques valeurs lisibles, de petits traits entre elles.
+  const marks = useMemo(() => {
+    const all2 = rulerMarks(total, total > 0 ? Math.max(1, width / total) : 16, LABEL_ROOM).map((m) => ({ ...m, x: pageToX(all, slots, m.page) }));
+    const labels = spacedOut(all2.filter((m) => m.major), LABEL_ROOM);
+    const keep = new Set(labels.map((m) => m.page));
+    const ticks = spacedOut(all2.filter((m) => !keep.has(m.page)), 10);
+    return [...ticks.map((m) => ({ ...m, major: false })), ...labels];
+  }, [total, width, all, slots]);
   const index = useMemo(() => new Map(all.map((s, i) => [s.id, i])), [all]);
   const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
   const byId = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
   const order = useMemo(() => all.map((s) => s.id).filter((id) => !id.startsWith(SCENE_AT)), [all]);
   const texts = useMemo(() => (kind === "scenario" && screenplay ? screenplaySceneTexts(screenplay.elements) : manuscript), [kind, screenplay, manuscript]);
-  const groups = useMemo(() => timeline(cards, edges, texts, order, lang).filter((g) => LANE_TYPES.includes(g.type) && g.rows.length > 0), [cards, edges, texts, order, lang]);
+  const groups = useMemo(() => timeline(cards, edges, texts, order, lang).filter((g) => (ribbon ? g.type === "intrigue" : LANE_TYPES.includes(g.type)) && g.rows.length > 0), [cards, edges, texts, order, lang, ribbon]);
   const storyCurve = useMemo(() => laneCurve(all, slots, heroIssues(cards)), [all, slots, cards]);
+  // Ruban agrandi : la courbe du récit, et celle des deux premiers personnages principaux qui racontent des scènes.
+  const plotHues = useMemo(() => plotColors(nodes, edges).plots, [nodes, edges]);
+  const curveSet = useMemo(() => {
+    if (!ribbon) return [];
+    const out: { id: string; label: string; color: string; points: CurvePoint[] }[] = [];
+    if (storyCurve) out.push({ id: "", label: f.lanes.story, color: "var(--accent)", points: storyCurve });
+    const principals = cards.filter((c) => c.type === "personnage" && c.fiche?.principal === "oui");
+    const hues = narratorColors(principals.map((c) => c.id));
+    for (const c of principals) {
+      if (out.length >= 3) break;
+      const points = laneCurve(all, slots, characterIssues(cards, c.id, false));
+      if (points) out.push({ id: c.id, label: c.title.trim() || p.untitled, color: `var(--pov-${(hues.get(c.id) ?? 0) + 1})`, points });
+    }
+    return out;
+  }, [ribbon, storyCurve, cards, all, slots, f.lanes.story, p.untitled]);
+
+  // Largeur disponible pour la ligne (zoom « toute la largeur »).
+  useEffect(() => {
+    const box = scrollRef.current;
+    if (!ribbon || !box) return;
+    const measure = () => {
+      const head = box.querySelector<HTMLElement>(".frise-lane-head")?.offsetWidth ?? 0;
+      setRoom(Math.max(0, box.clientWidth - head - 24));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [ribbon, all.length]);
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
+  const showPeek = (name: string, touch = false) => {
+    setPeek(name);
+    window.clearTimeout(peekTimer.current);
+    if (touch) peekTimer.current = window.setTimeout(() => setPeek(null), 4000);
+  };
 
   const active = mode === "ribbon" ? currentId : selected && index.has(selected) ? selected : null;
   const playX = active && slots.get(active) ? slots.get(active)!.x : null;
@@ -365,12 +427,12 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
         key={s.id}
         type="button"
         data-scene-id={s.id}
-        className={`frise-card${active === s.id ? " is-selected" : ""}${over === s.id ? " is-over" : ""}${look.className}`}
-        style={{ left: slot.x, width: cardWidth(s.size, px), ...look.style }}
+        className={`frise-card${active === s.id ? " is-selected" : ""}${over === s.id ? " is-over" : ""}${slot.w < 72 ? " is-narrow" : ""}${slot.w < 26 ? " is-tiny" : ""}${look.className}`}
+        style={{ left: slot.x, width: slot.w, ...look.style }}
         aria-current={mode === "ribbon" && active === s.id ? "true" : undefined}
         aria-pressed={mode === "plan" ? active === s.id : undefined}
         aria-label={fmt(f.sceneAria, { n, title, length }) + (look.label ? `. ${look.label}` : "")}
-        title={look.label}
+        title={slot.w < 72 ? [title, look.label].filter(Boolean).join(" · ") : look.label}
         draggable={can}
         onDragStart={(e) => {
           dragRef.current = s.id;
@@ -398,33 +460,42 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
   };
 
   const trackStyle = { width } as CSSProperties;
+  const gap = line.gap ?? CARD_GAP;
   const decor = (
     <>
       {bounds.map((b, i) => (
-        <span key={`b${i}`} className="frise-bound" style={{ left: b.x - CARD_GAP / 2 }} aria-hidden="true" />
+        <span key={`b${i}`} className="frise-bound" style={{ left: b.x - gap / 2 }} aria-hidden="true" />
       ))}
       {playX !== null && <span className="frise-playhead" style={{ left: playX }} aria-hidden="true" />}
     </>
   );
+  const pagesTotal = Math.round(total);
   const totalLabel =
     kind === "scenario"
-      ? `${fmt(t.screenplay.minutes, { n: Math.round(total) })} · ${fmt(Math.round(total) === 1 ? t.screenplay.pagesOne : t.screenplay.pagesMany, { n: Math.round(total) })}`
-      : `${fmt(p.summaryMany, { n: all.length })} · ${fmt(f.words, { n: all.reduce((a, s) => a + (s.words ?? 0), 0).toLocaleString(lang) })} · ${fmt(f.reading, { time: timecode(clock(total)) })}`;
+      ? `${fmt(t.screenplay.minutes, { n: pagesTotal })} · ${fmt(pagesTotal === 1 ? t.screenplay.pagesOne : t.screenplay.pagesMany, { n: pagesTotal })}`
+      : `${fmt(p.summaryMany, { n: all.length })} · ${fmt(f.words, { n: all.reduce((a, s) => a + (s.words ?? 0), 0).toLocaleString(lang) })} · ${fmt(f.pages, { n: pagesTotal })}`;
+  // Une seule unité par règle : les pages d'un roman, le minutage d'un scénario.
+  const markLabel = (page: number) => (kind === "scenario" ? timecode(clock(page)) : fmt(f.page, { n: Math.round(page) + 1 }));
+  const zoomOutLabel = ribbon && scale === 0 ? f.zoomFit : f.zoomOut;
 
   return (
-    <div className={`frise-board is-${mode}`} ref={rootRef}>
+    <div className={`frise-board is-${mode}${ribbon && fitting ? " is-fit" : ""}`} ref={rootRef}>
       <div className="frise-tools">
-        {mode === "ribbon" && <span className="frise-tools-title">{f.ribbonTitle}</span>}
+        {ribbon && <span className="frise-tools-title">{f.ribbonTitle}</span>}
         <div className="frise-zoom" role="group" aria-label={f.zoomAria}>
-          <button type="button" className="icon-button" aria-label={f.zoomOut} title={f.zoomOut} disabled={scale === 0} onClick={() => setScale((v) => Math.max(0, v - 1))}>
+          <button type="button" className="icon-button" aria-label={zoomOutLabel} title={zoomOutLabel} disabled={scale <= minScale} onClick={() => setScale(Math.max(minScale, scale - 1))}>
             −
           </button>
-          <button type="button" className="icon-button" aria-label={f.zoomIn} title={f.zoomIn} disabled={scale === FRISE_SCALES.length - 1} onClick={() => setScale((v) => Math.min(FRISE_SCALES.length - 1, v + 1))}>
+          <button type="button" className="icon-button" aria-label={f.zoomIn} title={f.zoomIn} disabled={scale >= FRISE_SCALES.length - 1} onClick={() => setScale(Math.min(FRISE_SCALES.length - 1, scale + 1))}>
             +
           </button>
         </div>
-        {all.length > 0 && <span className="frise-total">{totalLabel}</span>}
-        {mode === "ribbon" && (
+        {all.length > 0 && (
+          <span className={`frise-total${peek ? " is-peek" : ""}`} aria-live={ribbon ? "polite" : undefined}>
+            {peek ?? totalLabel}
+          </span>
+        )}
+        {ribbon && (
           <button type="button" className="ghost-button frise-shrink" onClick={() => setOpen(false)}>
             {f.shrink}
           </button>
@@ -443,7 +514,7 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
                   style={trackStyle}
                   title={f.rulerHint}
                   onPointerDown={(e) => {
-                    if ((e.target as HTMLElement).closest(".frise-bound-label")) return;
+                    if ((e.target as HTMLElement).closest(".frise-bound-label, .frise-jalon")) return;
                     e.currentTarget.setPointerCapture(e.pointerId);
                     scrubbing.current = null;
                     scrubAt(e);
@@ -458,24 +529,40 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
                   {bounds.map((b, i) => {
                     const row = lineRows.find((r) => r.key === b.key && r.kind === b.kind);
                     const name = row ? rowLabel(row) : "";
+                    const drop = row ? dropHandlers(`row:${i}`, (id) => moves.toEnd(id, row)) : {};
+                    // Ruban agrandi : un jalon coiffé d'un triangle, son nom au survol ou au toucher (comme le petit ruban).
+                    if (ribbon)
+                      return (
+                        <button
+                          key={`l${i}`}
+                          type="button"
+                          className={`frise-jalon${over === `row:${i}` ? " is-over" : ""}${peek === name ? " is-peeked" : ""}`}
+                          style={{ left: b.x - gap / 2 }}
+                          aria-label={name}
+                          onMouseEnter={() => showPeek(name)}
+                          onMouseLeave={() => setPeek(null)}
+                          onFocus={() => showPeek(name)}
+                          onBlur={() => setPeek(null)}
+                          onClick={() => showPeek(name, true)}
+                          {...drop}
+                        />
+                      );
                     const next = bounds[i + 1]?.x ?? width + 400;
                     return (
-                      <span key={`l${i}`} className={`frise-bound-label${over === `row:${i}` ? " is-over" : ""}`} style={{ left: b.x, maxWidth: Math.max(24, next - b.x - 8) }} title={name} {...(row ? dropHandlers(`row:${i}`, (id) => moves.toEnd(id, row)) : {})}>
+                      <span key={`l${i}`} className={`frise-bound-label${over === `row:${i}` ? " is-over" : ""}`} style={{ left: b.x, maxWidth: Math.max(24, next - b.x - 8) }} title={name} {...drop}>
                         {name}
                       </span>
                     );
                   })}
-                  {marks.map((m) => {
-                    const x = pageToX(all, slots, m.page);
-                    return m.major ? (
-                      <span key={m.page} className="frise-tick is-major" style={{ left: x }} aria-hidden="true">
-                        <span className="frise-tick-page">{fmt(f.page, { n: Math.round(m.page) + 1 })}</span>
-                        <span className="frise-tick-time">{timecode(clock(m.page))}</span>
+                  {marks.map((m) =>
+                    m.major ? (
+                      <span key={`M${m.page}`} className="frise-tick is-major" style={{ left: m.x }} aria-hidden="true">
+                        {markLabel(m.page)}
                       </span>
                     ) : (
-                      <span key={m.page} className="frise-tick" style={{ left: x }} aria-hidden="true" />
-                    );
-                  })}
+                      <span key={`m${m.page}`} className="frise-tick" style={{ left: m.x }} aria-hidden="true" />
+                    ),
+                  )}
                   {playX !== null && <span className="frise-playhead is-head" style={{ left: playX }} aria-hidden="true" />}
                 </div>
               </div>
@@ -486,81 +573,136 @@ export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardPr
                   {placed.map(sceneCard)}
                 </div>
               </div>
-              {storyCurve && (
-                <div className="frise-lane is-curve">
-                  <div className="frise-lane-head">{f.lanes.story}</div>
-                  <div className="frise-lane-track" style={trackStyle}>
-                    {decor}
-                    <Curve points={storyCurve} width={width} label={f.lanes.story} />
-                  </div>
-                </div>
-              )}
-              {groups.length === 0 && <p className="sp-empty frise-hint">{f.lanes.noCards}</p>}
-              {groups.map((g) => {
-                const closed = folded.includes(g.type);
-                const name = types[g.type].section;
-                return (
-                  <section key={g.type} className="frise-lane-group" aria-label={name}>
-                    <h3 className="frise-lane-group-title">
-                      <button type="button" aria-expanded={!closed} onClick={() => toggleFold(g.type)}>
-                        <span className={`disclosure${closed ? "" : " is-open"}`} aria-hidden="true" />
-                        {name}
-                        <span className="frise-group-count">{g.rows.length}</span>
-                      </button>
-                    </h3>
-                    {!closed &&
-                      g.rows.map((row) => {
-                        const curve = g.type === "personnage" ? laneCurve(all, slots, characterIssues(cards, row.card.id, row.card.fiche?.principal === "oui")) : null;
-                        const label = row.card.title.trim() || p.untitled;
-                        return (
-                          <div key={row.card.id} className={`frise-lane${curve ? " has-curve" : ""}`}>
-                            <div className="frise-lane-head">
-                              <button type="button" className="tl-card" title={fmt(p.show, { title: label })} onClick={() => revealCard(row.card.id)}>
-                                <span className="card-dot" style={{ background: typeColor(g.type) }} />
-                                {label}
+              {ribbon
+                ? curveSet.length > 0 && (
+                    <div className="frise-lane is-curve">
+                      <div className="frise-lane-head frise-curve-key">
+                        {curveSet.map((c) => (
+                          <span key={c.id || "story"} className="frise-curve-name" style={{ "--curve": c.color } as CSSProperties}>
+                            {c.label}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="frise-lane-track" style={trackStyle}>
+                        {decor}
+                        <CurveSet curves={curveSet} width={width} />
+                      </div>
+                    </div>
+                  )
+                : storyCurve && (
+                    <div className="frise-lane is-curve">
+                      <div className="frise-lane-head">{f.lanes.story}</div>
+                      <div className="frise-lane-track" style={trackStyle}>
+                        {decor}
+                        <Curve points={storyCurve} width={width} label={f.lanes.story} />
+                      </div>
+                    </div>
+                  )}
+              {groups.length === 0 && !ribbon && <p className="sp-empty frise-hint">{f.lanes.noCards}</p>}
+              {ribbon &&
+                groups.flatMap((g) =>
+                  g.rows.map((row) => {
+                    // Ruban agrandi : une ligne fine par intrigue, un trait de sa couleur sous chaque scène reliée.
+                    const label = row.card.title.trim() || p.untitled;
+                    const hue = plotHues.get(row.card.id);
+                    return (
+                      <div key={row.card.id} className="frise-lane is-plot" style={{ "--lane": hue ? `var(--plot-${hue})` : "var(--type-intrigue)" } as CSSProperties}>
+                        <div className="frise-lane-head">
+                          <button type="button" className="frise-plot-name" title={fmt(t.thread.readOf, { title: label })} onClick={() => readThread(row.card.id)}>
+                            {label}
+                          </button>
+                        </div>
+                        <div className="frise-lane-track" style={trackStyle}>
+                          {playX !== null && <span className="frise-playhead" style={{ left: playX }} aria-hidden="true" />}
+                          {row.cells.map((cell, i) => {
+                            const slot = slots.get(order[i]);
+                            if (!slot || cell === "pov") return null;
+                            const names = { card: label, scene: byId.get(order[i])?.title.trim() || p.untitled };
+                            return (
+                              <button
+                                key={order[i]}
+                                type="button"
+                                className={`frise-plot-cell is-${cell}`}
+                                style={{ left: slot.x, width: slot.w + gap }}
+                                aria-pressed={cell === "linked"}
+                                aria-label={fmt(cell === "linked" ? p.timelineOn : cell === "cited" ? p.timelineCitedCell : p.timelineOff, names)}
+                                onClick={() => toggleLink(order[i], row.card.id)}
+                              >
+                                <span className="frise-plot-mark" style={{ width: slot.w }} aria-hidden="true" />
                               </button>
-                              <span className="tl-count">{row.count}</span>
-                              {row.count > 0 && (
-                                <button type="button" className="icon-button tl-read" aria-label={fmt(t.thread.readOf, { title: label })} title={fmt(t.thread.readOf, { title: label })} onClick={() => readThread(row.card.id)}>
-                                  <ReadIcon />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }),
+                )}
+              {!ribbon &&
+                groups.map((g) => {
+                  const closed = folded.includes(g.type);
+                  const name = types[g.type].section;
+                  return (
+                    <section key={g.type} className="frise-lane-group" aria-label={name}>
+                      <h3 className="frise-lane-group-title">
+                        <button type="button" aria-expanded={!closed} onClick={() => toggleFold(g.type)}>
+                          <span className={`disclosure${closed ? "" : " is-open"}`} aria-hidden="true" />
+                          {name}
+                          <span className="frise-group-count">{g.rows.length}</span>
+                        </button>
+                      </h3>
+                      {!closed &&
+                        g.rows.map((row) => {
+                          const curve = g.type === "personnage" ? laneCurve(all, slots, characterIssues(cards, row.card.id, row.card.fiche?.principal === "oui")) : null;
+                          const label = row.card.title.trim() || p.untitled;
+                          return (
+                            <div key={row.card.id} className={`frise-lane${curve ? " has-curve" : ""}`}>
+                              <div className="frise-lane-head">
+                                <button type="button" className="tl-card" title={fmt(p.show, { title: label })} onClick={() => revealCard(row.card.id)}>
+                                  <span className="card-dot" style={{ background: typeColor(g.type) }} />
+                                  {label}
                                 </button>
-                              )}
-                            </div>
-                            <div className="frise-lane-track" style={trackStyle}>
-                              {decor}
-                              {curve && <Curve points={curve} width={width} label={fmt(f.lanes.curveOf, { name: label })} />}
-                              {row.cells.map((cell, i) => {
-                                const slot = slots.get(order[i]);
-                                if (!slot) return null;
-                                const names = { card: label, scene: byId.get(order[i])?.title.trim() || p.untitled };
-                                const style = { left: slot.x, width: slot.w };
-                                if (cell === "pov")
-                                  return (
-                                    <span key={order[i]} className="tl-cell frise-cell is-pov" style={style} role="img" aria-label={fmt(p.timelinePovCell, names)} title={fmt(p.timelinePovCell, names)}>
-                                      <span className="tl-mark is-pov" aria-hidden="true" />
-                                    </span>
-                                  );
-                                return (
-                                  <button
-                                    key={order[i]}
-                                    type="button"
-                                    className={`tl-cell frise-cell is-${cell}`}
-                                    style={style}
-                                    aria-pressed={cell === "linked"}
-                                    aria-label={fmt(cell === "linked" ? p.timelineOn : cell === "cited" ? p.timelineCitedCell : p.timelineOff, names)}
-                                    onClick={() => toggleLink(order[i], row.card.id)}
-                                  >
-                                    <span className={`tl-mark is-${cell}`} aria-hidden="true" />
+                                <span className="tl-count">{row.count}</span>
+                                {row.count > 0 && (
+                                  <button type="button" className="icon-button tl-read" aria-label={fmt(t.thread.readOf, { title: label })} title={fmt(t.thread.readOf, { title: label })} onClick={() => readThread(row.card.id)}>
+                                    <ReadIcon />
                                   </button>
-                                );
-                              })}
+                                )}
+                              </div>
+                              <div className="frise-lane-track" style={trackStyle}>
+                                {decor}
+                                {curve && <Curve points={curve} width={width} label={fmt(f.lanes.curveOf, { name: label })} />}
+                                {row.cells.map((cell, i) => {
+                                  const slot = slots.get(order[i]);
+                                  if (!slot) return null;
+                                  const names = { card: label, scene: byId.get(order[i])?.title.trim() || p.untitled };
+                                  const style = { left: slot.x, width: slot.w };
+                                  if (cell === "pov")
+                                    return (
+                                      <span key={order[i]} className="tl-cell frise-cell is-pov" style={style} role="img" aria-label={fmt(p.timelinePovCell, names)} title={fmt(p.timelinePovCell, names)}>
+                                        <span className="tl-mark is-pov" aria-hidden="true" />
+                                      </span>
+                                    );
+                                  return (
+                                    <button
+                                      key={order[i]}
+                                      type="button"
+                                      className={`tl-cell frise-cell is-${cell}`}
+                                      style={style}
+                                      aria-pressed={cell === "linked"}
+                                      aria-label={fmt(cell === "linked" ? p.timelineOn : cell === "cited" ? p.timelineCitedCell : p.timelineOff, names)}
+                                      onClick={() => toggleLink(order[i], row.card.id)}
+                                    >
+                                      <span className={`tl-mark is-${cell}`} aria-hidden="true" />
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                  </section>
-                );
-              })}
+                          );
+                        })}
+                    </section>
+                  );
+                })}
             </div>
           </div>
           {mode === "plan" && active && (
@@ -601,6 +743,29 @@ function Curve({ points, width, label }: { points: CurvePoint[]; width: number; 
         .map((pt) => (
           <circle key={pt.id} cx={pt.x} cy={y(pt.y)} r={3} className="frise-curve-dot" />
         ))}
+    </svg>
+  );
+}
+
+/** Ruban agrandi : la courbe du récit et celles des personnages principaux, sur une même échelle étalée à l'étendue
+ * qu'elles atteignent vraiment (la progression se voit même si le récit ne descend jamais sous zéro). */
+function CurveSet({ curves, width }: { curves: { id: string; label: string; color: string; points: CurvePoint[] }[]; width: number }) {
+  const h = 64;
+  const { scale, zero } = spreadCurves(curves.map((c) => c.points));
+  const y = (v: number) => h - 6 - scale(v) * (h - 12);
+  return (
+    <svg className="frise-curve is-set" width={width} height={h} viewBox={`0 0 ${width} ${h}`} role="img" aria-label={curves.map((c) => c.label).join(", ")}>
+      {zero !== null && <line x1={0} x2={width} y1={h - 6 - zero * (h - 12)} y2={h - 6 - zero * (h - 12)} className="frise-curve-zero" />}
+      {curves.map((c, i) => (
+        <g key={c.id || "story"} style={{ "--curve": c.color } as CSSProperties} className={i === 0 && !c.id ? "is-story" : "is-character"}>
+          <path d={c.points.map((pt, k) => `${k === 0 ? "M" : "L"}${pt.x.toFixed(1)} ${y(pt.y).toFixed(1)}`).join(" ")} className="frise-curve-line" />
+          {c.points
+            .filter((pt) => pt.set)
+            .map((pt) => (
+              <circle key={pt.id} cx={pt.x} cy={y(pt.y)} r={i === 0 && !c.id ? 3 : 2.5} className="frise-curve-dot" />
+            ))}
+        </g>
+      ))}
     </svg>
   );
 }
@@ -722,7 +887,7 @@ export function RibbonBoard({ currentId, onGo, beforeMove }: { currentId: string
   const h = Math.min(height, max);
   return (
     <div className="frise-ribbon">
-      <div className="frise-ribbon-box" style={{ height: h }}>
+      <div className="frise-ribbon-box" style={{ maxHeight: h }}>
         <FriseBoard mode="ribbon" currentId={currentId} onGo={onGo} beforeMove={beforeMove} />
       </div>
       <div

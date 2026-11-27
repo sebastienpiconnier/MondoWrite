@@ -114,8 +114,8 @@ export function Manuscript() {
   const t = useT();
   const m = t.manuscript;
   // Volets escamotables (plan à gauche, infos à droite) : on garde le choix d'une fois sur l'autre.
-  const [panels, setPanels] = useState(readPanels);
-  const togglePanel = (key: keyof Panels) =>
+  const [savedPanels, setPanels] = useState(readPanels);
+  const toggleSaved = (key: keyof Panels) =>
     setPanels((p) => {
       const next = { ...p, [key]: !p[key] };
       try {
@@ -230,6 +230,17 @@ export function Manuscript() {
   // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone ni dans un roman interactif.
   const boardOpen = useBoard((s) => s.open);
   const board = boardOpen && !focusMode && !phone && !interactive;
+  // Ruban agrandi : les volets se ferment pour lui laisser la place ; on les rouvre à la main le temps qu'il est
+  // ouvert (fiche de la scène à gauche), et les volets d'avant reviennent quand on le réduit.
+  const [boardPanels, setBoardPanels] = useState({ scenes: false, side: false });
+  useEffect(() => {
+    if (board) setBoardPanels({ scenes: false, side: false });
+  }, [board]);
+  const panels: Panels = board ? { ...savedPanels, ...boardPanels } : savedPanels;
+  const togglePanel = (key: keyof Panels) => {
+    if (board && key !== "meta") setBoardPanels((b) => ({ ...b, [key]: !b[key] }));
+    else toggleSaved(key);
+  };
   const sections = useCosmos((s) => (interactive ? projectSections(s) : null));
   const insertImage = () => {
     const ed = bookApi.current?.editor();

@@ -1212,9 +1212,12 @@ const scenarios = [
       await page.getByRole("menuitem", { name: "Agrandir le ruban" }).click();
       const board = page.locator(".frise-board.is-ribbon");
       await until(() => board.isVisible(), "le ruban agrandi n'apparaît pas");
-      // Toucher une carte mène à la scène dans le texte ; le volet de gauche tient sa fiche.
+      // Les volets se ferment pour lui laisser la place ; toucher une carte mène à la scène dans le texte, et le
+      // volet de gauche, rouvert à la main, tient sa fiche.
+      await until(() => page.locator(".manuscript.hide-scenes.hide-side").isVisible(), "les volets ne se ferment pas avec le ruban agrandi");
       await board.getByRole("button", { name: /^Scène 3 : Bravo/ }).click();
       await until(async () => (await page.locator(".ms-title").inputValue()) === "Bravo", "la carte du ruban ne mène pas à la scène");
+      await page.locator(".edge-handle.is-left").click();
       await until(() => page.locator(".sp-scenes .frise-panel-title").filter({ hasText: "Bravo" }).isVisible(), "le volet de gauche ne montre pas la fiche de la scène");
       // Le séparateur se règle au clavier.
       const splitter = page.getByRole("separator", { name: /Hauteur du ruban/ });
@@ -1222,8 +1225,12 @@ const scenarios = [
       await splitter.focus();
       await page.keyboard.press("ArrowDown");
       await until(async () => Number(await splitter.getAttribute("aria-valuenow")) > before, "le séparateur ne répond pas aux flèches");
+      // Zoom « toute la largeur » : toute la ligne tient sans défiler.
+      while (await board.getByRole("button", { name: /Resserrer la frise|Toute la largeur/ }).isEnabled()) await board.getByRole("button", { name: /Resserrer la frise|Toute la largeur/ }).click();
+      await until(() => board.locator(".frise-scroll").evaluate((el) => el.scrollWidth <= el.clientWidth + 1), "le zoom le plus petit ne tient pas dans la largeur");
       await board.getByRole("button", { name: "Réduire le ruban" }).click();
       await until(async () => (await board.count()) === 0, "le ruban agrandi ne se referme pas");
+      await until(() => page.locator(".manuscript:not(.hide-scenes)").isVisible(), "les volets d'avant ne reviennent pas");
     },
   },
   {

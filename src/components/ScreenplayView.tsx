@@ -208,7 +208,7 @@ export function ScreenplayView() {
   const writing = useSettings((s) => s.writing);
   const chutier = useCosmos((s) => s.chutier);
   // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
-  const [panels, togglePanel] = usePanels();
+  const [savedPanels, toggleSaved] = usePanels();
   // Présentation › volets (barre des menus du Mac, 1.11.1).
   useCommand("toggle-scenes", () => togglePanel("scenes"));
   useCommand("toggle-side", () => togglePanel("side"));
@@ -618,6 +618,16 @@ export function ScreenplayView() {
   // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone.
   const boardOpen = useBoard((s) => s.open);
   const board = boardOpen && !focusMode && !phone;
+  // Ruban agrandi : les volets se ferment pour lui laisser toute la largeur ; ceux d'avant reviennent en le réduisant.
+  const [boardPanels, setBoardPanels] = useState({ scenes: false, side: false });
+  useEffect(() => {
+    if (board) setBoardPanels({ scenes: false, side: false });
+  }, [board]);
+  const panels = board ? boardPanels : savedPanels;
+  const togglePanel = (key: keyof typeof savedPanels) => {
+    if (board) setBoardPanels((b) => ({ ...b, [key]: !b[key] }));
+    else toggleSaved(key);
+  };
   const sceneCards = useMemo<SceneCard[]>(
     () => nodes.filter((n) => n.data.type === "scene").map((n) => ({ id: n.id, title: n.data.title })),
     [nodes],
@@ -1908,6 +1918,11 @@ export function ScreenplayView() {
         )}
       </nav>
 
+      {board && (
+        <div className="sp-board">
+          <RibbonBoard currentId={ribbonCurrent} onGo={goToRibbon} beforeMove={emit} />
+        </div>
+      )}
       <div className="sp-center">
         <div className={`sp-bar${toolsOpen ? " is-open" : ""}`} role="toolbar" aria-label={sp.barAria} ref={barRef}>
           {/* Téléphone seulement (CSS) : le type de l'élément en cours ouvre ou ferme le volet, sans quitter le texte. */}
@@ -2036,7 +2051,6 @@ export function ScreenplayView() {
 
         {/* Ruban du récit : chaque case du gabarit à la place que ses scènes prennent (caché en mode focus). */}
         {!focusMode && !board && <StoryRibbon currentId={ribbonCurrent} onGo={goToRibbon} />}
-        {board && <RibbonBoard currentId={ribbonCurrent} onGo={goToRibbon} beforeMove={emit} />}
         <div className="sp-scroll">
           {!focusMode && !charFilter && <TitlePage paper={paper} onChange={setTitleField} />}
           <div
