@@ -58,6 +58,22 @@ export function fileName(title: string, fallback: string): string {
   return safe || fallback;
 }
 
+/**
+ * Fountain exporté : sans les notes propres à MondoWrite (lien vers la carte `[[cosmos:<id>]]`, saisons, épisodes,
+ * cases, actes, commentaires, scènes omises, révisions, marque `[[ia]]`), qui ne servent qu'à l'app et
+ * encombreraient le fichier dans un autre logiciel. Les notes de l'auteur restent. Une section qui n'aurait plus
+ * de titre garde son marqueur suivi d'une espace.
+ */
+export function fountainForExport(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => {
+      const clean = line.replace(/[ \t]*\[\[(?:cosmos:[^\]]*|ia)\]\]/g, "");
+      return clean === line ? line : /^#+$/.test(clean.trim()) ? `${clean.trim()} ` : clean;
+    })
+    .join("\n");
+}
+
 export async function exportScreenplay(
   screenplay: Screenplay,
   format: ExportFormat,
@@ -66,8 +82,8 @@ export async function exportScreenplay(
   const encode = (text: string) => new TextEncoder().encode(text);
   let data: Uint8Array;
   if (format === "fountain") {
-    // Le fichier tel quel.
-    data = encode(options.source ?? serialize(screenplay));
+    // Le fichier tel quel, moins les notes propres à MondoWrite.
+    data = encode(fountainForExport(options.source ?? serialize(screenplay)));
   } else if (format === "fdx") {
     const { buildFdx } = await import("./fdx");
     data = encode(buildFdx(screenplay, options.locale, options.numberScenes, options.underlineHeadings, options.revisions));

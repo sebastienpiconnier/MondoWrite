@@ -219,14 +219,16 @@
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"],
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"],
 .sp-sceneHeading + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] + .sp-preserved[data-preserved="synopsis"] { display: none; }
-/* Synopsis montré sous l'en-tête (#147, réglage de l'appareil) : un bloc à part, plus grand, espacé et tenu par un
-   trait d'accent. Il prend sa place à l'écran (les coupures de page de la feuille bougent), jamais dans le PDF ni
-   dans le compte des pages. L'en-tête passe en colonne pour que le synopsis vienne après son texte. */
-.screenplay.show-synopsis .sp-sceneHeading[data-synopsis] { display: flex; flex-direction: column; }
-.screenplay.show-synopsis .sp-sceneHeading[data-synopsis]::before {
-  content: attr(data-synopsis); order: 2; margin: 0.6em 0 0.4em; padding: 0.15em 0 0.15em 0.7em; border-left: 3px solid var(--accent);
-  font: italic 400 0.9em/1.45 var(--font-ui); text-transform: none; text-decoration: none; letter-spacing: 0; color: var(--ink-2); white-space: normal; pointer-events: none;
+/* Synopsis montré sous l'en-tête (#147, réglage de l'appareil) : un bloc à part (widget de hiddenSynopsis.ts), présenté
+   comme le synopsis d'un épisode (encadré gris, libellé « Synopsis », italique). Il prend sa place à l'écran (les
+   coupures de page de la feuille bougent), jamais dans le PDF ni dans le compte des pages. */
+.sp-shown-synopsis { display: none; }
+.screenplay.show-synopsis .sp-shown-synopsis {
+  display: block; margin: 0.6em 0 0.4em; padding: 6px 10px; border-left: 3px solid var(--line-2); border-radius: 0 6px 6px 0;
+  background: var(--ground); color: var(--ink-2); font: italic 14px/1.45 var(--font-ui); white-space: pre-wrap; cursor: default; user-select: none;
 }
+.sp-shown-synopsis::before { content: var(--sp-label-synopsis); display: block; font-size: 0.6875rem; font-style: normal; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.screenplay.is-focus .sp-shown-synopsis { background: none; border-left-color: var(--line); }
 .sp-preserved[data-preserved="centered"] { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; }
 .sp-preserved[data-preserved="pageBreak"] { padding: 6px 0 0; border: 0; border-top: 1px dashed var(--line-2); border-radius: 0; background: none; text-align: center; }
 .sp-preserved.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }

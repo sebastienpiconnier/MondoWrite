@@ -13,8 +13,10 @@ const shownKey = new PluginKey("shownSynopsis");
 
 /**
  * Synopsis montré sous l'en-tête (#147, réglage `writing.showSynopsis`) : le texte est porté par l'en-tête
- * (`data-synopsis`) et dessiné par la feuille de style dans la ligne vide qui le suit, en petit et en gris ; il
- * n'occupe aucune place, donc les pages ne changent pas. Le synopsis s'écrit toujours dans l'onglet Scène.
+ * (`data-synopsis`) et montré juste après lui par un bloc à part (widget `.sp-shown-synopsis`), présenté comme le
+ * synopsis d'un épisode : encadré gris et libellé « Synopsis ». Le bloc n'est visible qu'avec `.show-synopsis` sur la
+ * feuille ; il n'est pas un nœud du document, donc ni le PDF ni le compte des pages ne le voient. Le synopsis s'écrit
+ * toujours dans l'onglet Scène.
  */
 function synopsisDecorations(doc: PmNode): DecorationSet {
   const decos: Decoration[] = [];
@@ -23,13 +25,31 @@ function synopsisDecorations(doc: PmNode): DecorationSet {
     const node = doc.child(i);
     if (node.type.name === "sceneHeading") {
       const lines: string[] = [];
-      for (let k = i + 1; k < doc.childCount && isSceneSynopsis(doc, k); k++) lines.push(String(doc.child(k).attrs.text ?? "").replace(/\s*\[\[[^\]]*\]\]/g, "").trim());
+      // Le bloc montré se pose après les synopsis cachés : posé entre l'en-tête et eux, il casserait la règle CSS
+      // qui les cache (`.sp-sceneHeading + .sp-preserved`).
+      let after = pos + node.nodeSize;
+      for (let k = i + 1; k < doc.childCount && isSceneSynopsis(doc, k); k++) {
+        lines.push(String(doc.child(k).attrs.text ?? "").replace(/\s*\[\[[^\]]*\]\]/g, "").trim());
+        after += doc.child(k).nodeSize;
+      }
       const text = lines.filter(Boolean).join(" ");
-      if (text) decos.push(Decoration.node(pos, pos + node.nodeSize, { "data-synopsis": text }));
+      if (text) {
+        decos.push(Decoration.node(pos, pos + node.nodeSize, { "data-synopsis": text }));
+        decos.push(Decoration.widget(after, () => shownSynopsis(text), { side: -1, key: `synopsis:${text}`, ignoreSelection: true }));
+      }
     }
     pos += node.nodeSize;
   }
   return DecorationSet.create(doc, decos);
+}
+
+/** Bloc du synopsis montré sous l'en-tête : texte seul, libellé posé par la feuille de style (`--sp-label-synopsis`). */
+function shownSynopsis(text: string): HTMLElement {
+  const box = document.createElement("div");
+  box.className = "sp-shown-synopsis";
+  box.contentEditable = "false";
+  box.textContent = text;
+  return box;
 }
 
 /** Ce nœud de premier niveau est-il le synopsis d'une scène (sous son en-tête, ou sous un autre synopsis de scène) ? */
