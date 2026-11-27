@@ -25,11 +25,17 @@ function synopsisDecorations(doc: PmNode): DecorationSet {
     const node = doc.child(i);
     if (node.type.name === "sceneHeading") {
       const lines: string[] = [];
-      for (let k = i + 1; k < doc.childCount && isSceneSynopsis(doc, k); k++) lines.push(String(doc.child(k).attrs.text ?? "").replace(/\s*\[\[[^\]]*\]\]/g, "").trim());
+      // Le bloc montré se pose après les synopsis cachés : posé entre l'en-tête et eux, il casserait la règle CSS
+      // qui les cache (`.sp-sceneHeading + .sp-preserved`).
+      let after = pos + node.nodeSize;
+      for (let k = i + 1; k < doc.childCount && isSceneSynopsis(doc, k); k++) {
+        lines.push(String(doc.child(k).attrs.text ?? "").replace(/\s*\[\[[^\]]*\]\]/g, "").trim());
+        after += doc.child(k).nodeSize;
+      }
       const text = lines.filter(Boolean).join(" ");
       if (text) {
         decos.push(Decoration.node(pos, pos + node.nodeSize, { "data-synopsis": text }));
-        decos.push(Decoration.widget(pos + node.nodeSize, () => shownSynopsis(text), { side: -1, key: `synopsis:${text}`, ignoreSelection: true }));
+        decos.push(Decoration.widget(after, () => shownSynopsis(text), { side: -1, key: `synopsis:${text}`, ignoreSelection: true }));
       }
     }
     pos += node.nodeSize;
