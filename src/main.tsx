@@ -28,6 +28,7 @@ import "./styles/canvas.css";
 import "./styles/bible.css";
 import "./styles/screenplay.css";
 import "./styles/writing.css";
+import "./styles/frise.css";
 import "./styles/settings.css";
 import "./styles/phone.css";
 import { App } from "./App";

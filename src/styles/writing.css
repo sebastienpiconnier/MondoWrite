@@ -204,26 +204,12 @@
   .ms-chips button.chip { min-height: 44px; padding: 0 14px; }
 }
 
-/* ---------- Chronologie par intrigue : scènes en colonnes, cartes en lignes ---------- */
-.tl-scroll { overflow: auto; max-height: calc(100vh - 260px); max-height: calc(100dvh - 260px); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
-.tl-table { border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
-.tl-table th, .tl-table td { padding: 0; border-bottom: 1px solid var(--line); }
-.tl-table thead th, .tl-table thead td { position: sticky; top: 0; z-index: 2; background: var(--surface); vertical-align: bottom; }
-.tl-table thead td, .tl-table tbody th[scope="row"] { position: sticky; left: 0; z-index: 3; background: var(--surface); }
-.tl-table thead td { z-index: 4; }
-.tl-table thead th button { display: flex; flex-direction: column; gap: 2px; width: 96px; min-height: 44px; padding: 8px 6px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.tl-number { font-weight: 700; color: var(--ink-2); }
-.tl-scene { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; overflow-wrap: anywhere; }
-/* Colonne des cartes figée à gauche : la cellule reste une vraie cellule de tableau (le flex est dans .tl-rowhead), sinon Safari ne la fige pas. */
-.tl-table tbody th[scope="row"] { width: 200px; min-width: 200px; max-width: 200px; border-right: 1px solid var(--line); font-weight: 500; text-align: left; }
-.tl-rowhead { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; }
+/* ---------- Pistes de la frise (#173) : cartes, compte, cases et marques, repris de l'ancienne chronologie ---------- */
 .tl-card { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
-@media (any-hover: hover) { .tl-card:hover, .tl-table thead th button:hover .tl-scene { text-decoration: underline; } }
+@media (any-hover: hover) { .tl-card:hover { text-decoration: underline; } }
 .tl-count { font-size: 0.75rem; color: var(--ink-2); }
 .tl-read { flex: none; width: 28px; height: 28px; min-height: 0; color: var(--ink-2); }
 @media (pointer: coarse) { .tl-read { width: 44px; height: 44px; } }
-.tl-group-label { position: sticky; left: 10px; display: inline-block; }
-.tl-group th { padding: 10px 10px 6px; background: var(--ground); font: 600 11px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); text-align: left; }
 .tl-cell { display: grid; place-items: center; width: 100%; min-width: 96px; height: 44px; border: 0; background: transparent; cursor: pointer; }
 @media (any-hover: hover) { .tl-cell:hover { background: var(--hover); } }
 .tl-mark { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid transparent; vertical-align: -3px; }

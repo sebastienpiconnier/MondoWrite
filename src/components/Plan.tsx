@@ -30,7 +30,6 @@ import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { NOVEL_TEMPLATES, arrange, beatLevel, chapterNumbers, chapterOf, groupByChapter, hasSubBeats, isPlanTemplate, leafBeats, type Chapter, type PlanTemplate } from "../plan";
 import { plainText } from "../search";
-import { Timeline } from "./Timeline";
 import { StoryCircle } from "./StoryCircle";
 import { TemplatePicker } from "./TemplatePicker";
 import { ArrangeToggle, PlanHeader } from "./PlanHeader";
@@ -105,10 +104,6 @@ export function Plan() {
   };
   const [over, setOver] = useState<string | null>(null);
   const [announce, setAnnounce] = useState("");
-  // Chronologie par intrigue : une troisième lecture du plan, non mémorisée.
-  const [timeline, setTimeline] = useState(false);
-  // Pas de chronologie dans un roman interactif : ses colonnes suivent l'ordre du livre.
-  const showTimeline = timeline && !interactive;
   // La scène dont « Ranger » est ouvert (chapitre et case) : un affichage, une seule à la fois.
   const [arranging, setArranging] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -355,12 +350,9 @@ export function Plan() {
 
   return (
     <div className="sequencer" data-native-reorder ref={rootRef} data-reorder-list>
-      <div className={`sq-inner${asCards || showTimeline ? " is-cards" : ""}`}>
+      <div className={`sq-inner${asCards ? " is-cards" : ""}`}>
         <PlanHeader
           title={interactive ? t.interactive.plan.sectionsTitle : p.title}
-          timeline={showTimeline}
-          onTimeline={setTimeline}
-          noTimeline={interactive}
           modeAria={p.modeAria}
           actions={
             <>
@@ -404,10 +396,6 @@ export function Plan() {
           }
           about={interactive && free ? t.interactive.plan.startHint : p.templateAbout[plan.template]}
         />
-        {showTimeline ? (
-          <Timeline order={[...order, ...arranged.unplaced]} />
-        ) : (
-          <>
         {/* Sections du livre : ni case où glisser ni flèches, l'aide du Plan ne s'y applique pas. */}
         {(sceneIds.length === 0 || !bySection) && <p className="sp-empty">{sceneIds.length === 0 ? p.empty : p.hint}</p>}
         {/* Le cercle de Dan Harmon se lit en cercle : ses huit étapes, et les trous. */}
@@ -501,8 +489,6 @@ export function Plan() {
           </section>
         )}
 
-          </>
-        )}
         <div className="sr-only" aria-live="polite">
           {announce}
         </div>

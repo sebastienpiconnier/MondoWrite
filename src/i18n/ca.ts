@@ -257,6 +257,7 @@ export const ca = {
     plan: "Esquema",
     bible: "Bíblia",
     manuscrit: "Manuscrit",
+    frise: "Línia de temps",
     carnet: "Quadern",
   },
   carnet: {
@@ -3977,6 +3978,14 @@ export const ca = {
     unknownName: "Aquest nom encara no és al projecte: {names}",
     noName: "Posa primer un nom a aquest personatge.",
     answerTag: "dit pel personatge",
+  },
+  frise: {
+    title: "Línia de temps",
+    groups: { story: "Relat", plots: "Trames", chars: "Personatges" },
+    whole: "Tot el relat",
+    words: "{n} paraules",
+    panel: { close: "Tanca", earlier: "Abans", later: "Després", showCanvas: "Mostra al llenç", synopsis: "Sinopsi" },
+    lanes: { scenes: "Escenes", story: "Corba del relat" },
   },
   cast: {
     menu: "Troba els personatges del text…",

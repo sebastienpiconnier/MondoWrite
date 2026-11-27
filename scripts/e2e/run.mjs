@@ -1169,6 +1169,45 @@ const scenarios = [
     },
   },
   {
+    name: "frise (#173) : une vue, cartes à la longueur, déplacer au clavier et au volet, annuler, pistes",
+    async run(h) {
+      const { page } = h;
+      await h.create("Frise");
+      await h.view(2);
+      for (const title of ["Alpha", "Bravo", "Charlie"]) {
+        await page.getByPlaceholder("Nouvelle scène…").fill(title);
+        await page.getByPlaceholder("Nouvelle scène…").press("Enter");
+        await h.wait(150);
+      }
+      await h.view(5);
+      const cards = page.locator(".frise-card");
+      await until(async () => (await cards.count()) === 3, "la frise ne montre pas les trois scènes");
+      const order = async () => (await cards.locator(".frise-card-title").allTextContents()).join(",");
+      assert((await order()) === "Alpha,Bravo,Charlie", "la frise ne suit pas l'ordre du plan");
+      // Clavier : Alt + ← déplace la carte choisie, le focus la suit.
+      await cards.nth(2).focus();
+      await page.keyboard.press("Alt+ArrowLeft");
+      await until(async () => (await order()) === "Alpha,Charlie,Bravo", "Alt + ← n'a pas déplacé la scène");
+      await until(() => page.evaluate(() => document.activeElement?.textContent?.includes("Charlie")), "le focus n'a pas suivi la scène");
+      // Volet : « Plus tard » au doigt comme à la souris.
+      await page.getByRole("button", { name: /^Scène 2 : Charlie/ }).click();
+      await until(() => page.getByRole("complementary", { name: "La scène choisie" }).isVisible(), "le volet de la scène ne s'ouvre pas");
+      await page.getByRole("button", { name: "Plus tard →" }).click();
+      await until(async () => (await order()) === "Alpha,Bravo,Charlie", "« Plus tard » n'a pas déplacé la scène");
+      // Le Plan suit, et Annuler défait le dernier déplacement.
+      await page.locator(".frise-head h1").click();
+      await page.keyboard.press("Control+z");
+      await until(async () => (await order()) === "Alpha,Charlie,Bravo", "Annuler n'a pas remis la scène");
+      // Pistes : sans personnage, une phrase le dit ; la chronologie du Plan n'existe plus.
+      await page.getByRole("button", { name: "Personnages", exact: true }).click();
+      await until(() => page.getByText("Crée des cartes Personnage").isVisible(), "la piste des personnages vide n'est pas expliquée");
+      await h.view(2);
+      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 0, "le Plan garde la chronologie");
+      const rows = await page.locator(".sequencer .sq-scene .bible-title").evaluateAll((els) => els.map((el) => el.value).join(","));
+      assert(rows === "Alpha,Charlie,Bravo", `le Plan ne suit pas la frise (${rows})`);
+    },
+  },
+  {
     name: "point de vue (1.13.0) : narrateur créé depuis le Manuscrit, annulé, rétabli, vu dans la Bible et sur le canevas",
     async run(h) {
       const { page } = h;
@@ -3537,9 +3576,9 @@ const scenarios = [
       await page.getByRole("menuitem", { name: /^Commandes…/ }).click();
       await page.getByRole("searchbox", { name: "Commande à lancer" }).waitFor();
       await page.keyboard.press("Escape");
-      // #56 : les mêmes vues, dans le même ordre, avec Cmd/Ctrl + 1 à 4.
+      // #56 : les mêmes vues, dans le même ordre, avec Cmd/Ctrl + 1 à 5.
       const order = await page.locator(".topbar .views button").allTextContents();
-      assert(order.join("|") === "Canevas|Plan|Bible|Manuscrit", `ordre des vues : ${order.join(", ")}`);
+      assert(order.join("|") === "Canevas|Plan|Bible|Manuscrit|Frise", `ordre des vues : ${order.join(", ")}`);
       // #54 : au-dessus de la page, ni statut ni point de vue ; ils sont dans l'onglet « Scène ».
       await h.view(4);
       await page.locator(".ms-meta").waitFor();
@@ -3595,7 +3634,7 @@ const scenarios = [
       // Sections du livre (Plan) : une première scène ; ni chronologie ni carte des choix à part (lot 11).
       await h.view(2);
       await until(() => page.getByRole("heading", { name: "Sections du livre" }).isVisible(), "le Plan d'un roman interactif ne s'appelle pas « Sections du livre »");
-      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 0, "la chronologie est proposée dans un roman interactif");
+      assert((await page.locator(".topbar").getByRole("button", { name: "Frise", exact: true }).count()) === 0, "la frise est proposée dans un roman interactif");
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "la carte des choix est encore une présentation du Plan");
       await page.getByPlaceholder("Nouvelle scène…").fill("La cour");
       await page.getByPlaceholder("Nouvelle scène…").press("Enter");
@@ -3708,7 +3747,7 @@ const scenarios = [
       await h.canvas();
       await h.view(2);
       await h.wait(300);
-      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 1, "un roman ordinaire n'a plus la chronologie");
+      assert((await page.locator(".topbar").getByRole("button", { name: "Frise", exact: true }).count()) === 1, "un roman ordinaire n'a pas la frise");
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "un roman ordinaire montre la carte des choix");
       await h.view(4);
       await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");

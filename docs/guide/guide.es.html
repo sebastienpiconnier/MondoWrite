@@ -30,14 +30,15 @@
 
 <p class="lead">MondoWrite es un taller de escritura para novelistas y guionistas a quienes les gusta construir su historia antes de escribirla. Empiezas soltando tus ideas en cualquier parte, las relacionas, las ordenas poco a poco y luego escribes. De ahí su lema: <em>del caos a un mundo ordenado</em>.</p>
 
-<h3>Un solo contenido, cuatro vistas</h3>
-<p>Tu proyecto es un único conjunto de tarjetas y de textos. Las cuatro vistas de la barra superior son cuatro maneras de leerlo: nunca se copia nada de una a otra.</p>
+<h3>Un solo contenido, cinco vistas</h3>
+<p>Tu proyecto es un único conjunto de tarjetas y de textos. Las cinco vistas de la barra superior son cinco maneras de leerlo: nunca se copia nada de una a otra.</p>
 <table>
   <tr><th>Vista</th><th>Para qué sirve</th></tr>
   <tr><td><span class="ui">Lienzo</span></td><td>La pizarra libre donde nacen las ideas: tarjetas que sueltas, unes con hilos y agrupas en marcos.</td></tr>
   <tr><td><span class="ui">Biblia</span></td><td>Las fichas de tu mundo (personajes, lugares, tramas, temas…), ordenadas solas por tipo, con la portada del proyecto en cabeza.</td></tr>
-  <tr><td><span class="ui">Esquema</span></td><td>El orden del relato: estructuras (tres actos, Save the Cat…) en las que colocar las escenas, capítulos y una cronología.</td></tr>
+  <tr><td><span class="ui">Esquema</span></td><td>El orden del relato: estructuras (tres actos, Save the Cat…) en las que colocar las escenas, y capítulos.</td></tr>
   <tr><td><span class="ui">Manuscrito</span></td><td>El texto, escena a escena, maquetado como un libro. En un proyecto de guion, esta vista se convierte en <span class="ui">Guion</span>, y el Esquema en <span class="ui">Escaleta</span>, que lista las escenas en el orden del guion.</td></tr>
+  <tr><td><span class="ui">Línea de tiempo</span></td><td>El relato en una línea, cada escena a su longitud: por paso, por trama o por personaje.</td></tr>
 </table>
 <p>Una escena creada en el Esquema tiene enseguida su tarjeta en el lienzo; un personaje escrito en el guion tiene su ficha en la Biblia; el texto escrito en una tarjeta Escena es el texto del Manuscrito.</p>
 
@@ -140,7 +141,7 @@
 <ul>
   <li>a la izquierda, <span class="ui">‹ Proyectos</span>, que guarda y vuelve a la lista;</li>
   <li>el <strong>título del proyecto</strong>, que se edita con un clic;</li>
-  <li>las <strong>cuatro vistas</strong> (<kbd>Ctrl</kbd> <kbd>1</kbd> a <kbd>4</kbd>);</li>
+  <li>las <strong>cinco vistas</strong> (<kbd>Ctrl</kbd> <kbd>1</kbd> a <kbd>5</kbd>);</li>
   <li>el <strong>estado del guardado</strong> (<span class="ui">Guardado</span>, <span class="ui">Sin guardar</span>, <span class="ui">Guardando…</span>): un clic guarda enseguida, como <kbd>Ctrl</kbd> <kbd>S</kbd>;</li>
   <li><span class="ui">Exportar</span>; <span class="ui">Pendientes</span> (la marca de verificación, con el número de cosas que esperan); la lupa de búsqueda (<kbd>Ctrl</kbd> <kbd>F</kbd>); <span class="ui">Ajustes</span>; y el botón <span class="ui">IA</span> si has conectado una.</li>
 </ul>
@@ -497,21 +498,40 @@
 <h3>Los capítulos</h3>
 <p>Los capítulos dividen el relato. El menú <span class="ui">Capítulo</span> de una escena propone <span class="ui">Capítulo nuevo a partir de aquí</span>; cada capítulo puede tener un título (opcional). Los capítulos se numeran solos, según su lugar. Eliminar un capítulo devuelve sus escenas al capítulo anterior: no se elimina ninguna escena. En el Manuscrito, también puedes empezar un capítulo desde el teclado (ver más abajo).</p>
 
-<h3>Lista, fichas, cronología</h3>
-<p>Tres presentaciones del mismo esquema:</p>
+<h3>Lista y fichas</h3>
+<p>Dos presentaciones del mismo esquema:</p>
 <ul>
   <li><span class="ui">Lista</span>, para leer y reordenar;</li>
-  <li><span class="ui">Fichas</span>, como tarjetas extendidas sobre una mesa;</li>
-  <li><span class="ui">Cronología</span>: una columna por escena, una fila por trama, tema, personaje y lugar. Un punto lleno indica un hilo entre la tarjeta y la escena; un punto hueco, que la escena la nombra en su texto. Toca una celda para tirar o quitar el hilo. La columna de las tarjetas se queda fija a la izquierda mientras las escenas se desplazan por debajo.</li>
+  <li><span class="ui">Fichas</span>, como tarjetas extendidas sobre una mesa.</li>
 </ul>
-<div class="pair">
-  <figure><img src="images/es/plan-fiches.jpg"><figcaption>Las fichas.</figcaption></figure>
-  <figure><img src="images/es/plan-chronologie.jpg"><figcaption>La cronología por trama.</figcaption></figure>
-</div>
+<figure><img src="images/es/plan-fiches.jpg"><figcaption>Las fichas.</figcaption></figure>
+<p>La cronología por trama se ha convertido en una vista propia, la <span class="ui">Línea de tiempo</span> (capítulo siguiente).</p>
 <p><span class="ui">Organizar el lienzo</span> ordena también el lienzo a partir del esquema: una casilla de la estructura y luego un capítulo por marco.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="manuscrito"><span class="num">Capítulo 8</span>El Manuscrito</h2>
+<h2 id="linea-de-tiempo"><span class="num">Capítulo 8</span>La Línea de tiempo</h2>
+
+<p class="lead">La Línea de tiempo muestra todo el relato en una línea: cada tarjeta es una escena, y su anchura sigue su longitud (las páginas de un guion, las palabras de una novela convertidas en páginas). De un vistazo ves dónde el relato se alarga, dónde se precipita, qué paso sigue vacío.</p>
+<p>Se abre con la pestaña <span class="ui">Línea de tiempo</span> de la barra superior (<kbd>Ctrl</kbd> <kbd>5</kbd>), o con <span class="ui">Ver la línea de tiempo</span> bajo la cinta del relato.</p>
+
+<h3>Tres lecturas</h3>
+<ul>
+  <li><span class="ui">Relato</span>: las partes una al lado de otra (una por paso de la estructura, por capítulo en un esquema libre, o por episodio en una serie), cada una tan ancha como sus escenas, con su número de escenas y su parte del relato. Un paso todavía vacío conserva su sitio.</li>
+  <li><span class="ui">Tramas</span>: todas las escenas en una misma línea, la regla de las páginas arriba y los límites de los pasos en punteado; debajo, una pista por trama y por tema. Un punto lleno indica un hilo entre la tarjeta y la escena; un punto hueco, que la escena la nombra. Toca una celda para tirar o quitar el hilo. La <span class="ui">Curva del relato</span> sigue las respuestas «Para el héroe, la escena termina».</li>
+  <li><span class="ui">Personajes</span>: la misma línea, una pista por personaje, con su curva, sacada de las escenas que narra (y, para un personaje principal, de las escenas sin punto de vista).</li>
+</ul>
+<p>El nombre de una pista muestra su tarjeta en el lienzo; el librito de al lado abre el Manuscrito o el Guion solo con sus escenas. Los botones <span class="ui">−</span> y <span class="ui">+</span> estrechan o ensanchan la línea de tiempo.</p>
+<figure><img src="images/es/frise.jpg"><figcaption>La línea de tiempo de un relato en tres actos.</figcaption></figure>
+
+<h3>Mover una escena</h3>
+<p>Arrastra una tarjeta sobre otra: pasa justo delante, con su texto. Durante el arrastre, el final de cada parte también acepta la escena, que cambia entonces de paso, de capítulo o de episodio. Con el teclado, las flechas pasan de una tarjeta a otra, y <kbd>Alt</kbd> <kbd>←</kbd> o <kbd>Alt</kbd> <kbd>→</kbd> mueve la tarjeta elegida. Con el dedo, toca la tarjeta y luego <span class="ui">Antes</span> o <span class="ui">Después</span>. El Esquema, el Manuscrito y el lienzo siguen al instante, y <kbd>Ctrl</kbd> <kbd>Z</kbd> deshace.</p>
+
+<h3>El panel de la escena</h3>
+<p>Toca una tarjeta: a la derecha (abajo en un teléfono) aparecen su rango, su longitud, la página donde empieza, su estado, su punto de vista, su sinopsis, cómo termina y lo que tiene relacionado. <span class="ui">Ver en el lienzo</span> y <span class="ui">Abrir en «Manuscrito»</span> te llevan allí. Con los colores de las tramas, cada tarjeta toma el color de su trama principal.</p>
+<p>No hay Línea de tiempo en una novela interactiva: el orden del libro no es el de la lectura.</p>
+
+<!-- ===================================================================================== -->
+<h2 id="manuscrito"><span class="num">Capítulo 9</span>El Manuscrito</h2>
 
 <p class="lead">El Manuscrito es donde escribes: todo el libro, escena tras escena en el orden del esquema, en páginas maquetadas como las de un libro. Las escenas se suceden sin corte, y lo que escribes va a la escena donde está el cursor.</p>
 <figure><img src="images/es/manuscrit.jpg"><figcaption>La vista Manuscrito: las escenas a la izquierda, la página en el centro, las estadísticas y la escena en curso a la derecha.</figcaption></figure>
@@ -555,7 +575,7 @@
 <p>Cuando varios personajes cuentan la historia, la etiqueta <span class="ui">Punto de vista</span>, junto al estado, dice quién narra la escena. Escribe un nombre para buscar entre tus personajes, o para crear uno (<span class="ui">Crear «nombre»</span>). El narrador aparece en la tarjeta, en el Esquema y en color en la cinta del relato. En la lista de escenas, <span class="ui">Sus escenas en punto de vista</span> conserva solo las escenas de un narrador (las demás se pliegan en una sola línea), y el lienzo se puede filtrar del mismo modo. La ficha de un personaje en la Biblia dice cuántas escenas narra.</p>
 
 <h3>Leer un hilo</h3>
-<p>Para reescribir una trama, reléela sola. <span class="ui">Leer estas escenas</span>, en el menú <span class="ui">⋯</span> de una tarjeta Trama, Tema, Personaje, Lugar u Objeto (o con clic derecho sobre la tarjeta), abre el Manuscrito o el Guion solo con las escenas unidas a esa tarjeta por un hilo. También se llega con el librito al final de cada fila de la cronología, o tocando el nombre de una trama bajo la cinta del relato. Entre dos escenas conservadas, una línea indica la distancia («3 escenas más adelante · unas 12 páginas»); en la columna de escenas, las demás se pliegan en una línea. La banda bajo la barra recuerda la tarjeta seguida; <span class="ui">También las que la mencionan</span> añade las escenas que la nombran sin hilo, y <span class="ui">Mostrar todo</span> devuelve todo el texto. El texto sigue siendo editable y la hoja pasa a continua mientras dura el filtro. No se escribe nada en el proyecto.</p>
+<p>Para reescribir una trama, reléela sola. <span class="ui">Leer estas escenas</span>, en el menú <span class="ui">⋯</span> de una tarjeta Trama, Tema, Personaje, Lugar u Objeto (o con clic derecho sobre la tarjeta), abre el Manuscrito o el Guion solo con las escenas unidas a esa tarjeta por un hilo. También se llega con el librito junto a cada pista de la línea de tiempo, o tocando el nombre de una trama bajo la cinta del relato. Entre dos escenas conservadas, una línea indica la distancia («3 escenas más adelante · unas 12 páginas»); en la columna de escenas, las demás se pliegan en una línea. La banda bajo la barra recuerda la tarjeta seguida; <span class="ui">También las que la mencionan</span> añade las escenas que la nombran sin hilo, y <span class="ui">Mostrar todo</span> devuelve todo el texto. El texto sigue siendo editable y la hoja pasa a continua mientras dura el filtro. No se escribe nada en el proyecto.</p>
 
 <h3>Las versiones de una escena</h3>
 <p>Antes de reescribir una escena, guarda el texto de hoy: en el menú <span class="ui">⋯</span> de la barra, <span class="ui">Conservar esta versión…</span> (<kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>S</kbd>). Dale un nombre si quieres («Antes de cortar el sueño»). <span class="ui">Versiones de la escena…</span> abre la lista: elige una versión para leerla, o <span class="ui">Comparar con</span> el texto actual u otra versión (las palabras quitadas, tachadas en rojo; las añadidas, subrayadas en verde). <span class="ui">Volver a esta versión</span> vuelve a poner su texto en la escena; el texto anterior se guarda antes como versión, así que nada se pierde. El menú <span class="ui">⋯</span> de la versión la copia, la renombra o la elimina (un mensaje permite deshacer). Cada versión es un archivo de la carpeta <code>versions/</code> del proyecto, legible fuera de la app.</p>
@@ -639,7 +659,7 @@
 <p>Eliminar una tarjeta Escena nunca elimina su texto. Si una escena ha perdido su tarjeta, aparece en <span class="ui">Textos sin tarjeta</span>, al final de la columna: <span class="ui">Volver a crear la tarjeta</span> la devuelve al libro.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="guion"><span class="num">Capítulo 9</span>El Guion</h2>
+<h2 id="guion"><span class="num">Capítulo 10</span>El Guion</h2>
 
 <p class="lead">En un proyecto de guion, el Manuscrito se convierte en la vista <span class="ui">Guion</span>: un editor en formato de cine estándar, que guarda el texto en Fountain, un formato abierto que leen Highland, Fade In, WriterSolo, Slugline o Trelby. La <span class="ui">Escaleta</span> lista las escenas en el orden del guion.</p>
 
@@ -739,7 +759,7 @@
 <figure class="medium"><img src="images/es/carte-agrandie-scenario.jpg"><figcaption>La escena «EXT. BOSQUE - DÍA» escrita en su tarjeta.</figcaption></figure>
 
 <!-- ===================================================================================== -->
-<h2 id="novela-interactiva"><span class="num">Capítulo 10</span>La novela interactiva</h2>
+<h2 id="novela-interactiva"><span class="num">Capítulo 11</span>La novela interactiva</h2>
 
 <p class="lead">Una novela interactiva es una novela cuyo lector elige cómo sigue: al final de cada escena, unas cuantas opciones llevan cada una a otra escena. MondoWrite la escribe con las mismas vistas que una novela (lienzo, Biblia, Esquema, Manuscrito) y la publica como librojuego impreso, en EPUB o como página web jugable.</p>
 
@@ -774,7 +794,7 @@
   <li><span class="ui">Make it the start</span> (menú <span class="ui">⋯</span> de una escena) cambia la primera sección.</li>
   <li>La cabecera cuenta los finales: buenos, malos y neutros.</li>
 </ul>
-<p>Las herramientas de la novela que se lee en un solo orden (estructuras, capítulos, cronología, cinta del relato) no se proponen: en un librojuego, el orden del libro no es el de la lectura.</p>
+<p>Las herramientas de la novela que se lee en un solo orden (estructuras, capítulos, línea de tiempo, cinta del relato) no se proponen: en un librojuego, el orden del libro no es el de la lectura.</p>
 
 <h3>Revisar</h3>
 <p>La pestaña <span class="ui">Revisar</span> del Manuscrito empieza por los puntos propios de la historia, siguiendo todos los caminos desde el comienzo: ningún final alcanzable, ningún buen final alcanzable, una escena a la que no llega ninguna opción, una opción sin destino, una escena que puede bloquear (todas sus opciones piden un hecho que puede faltar), un hecho que nada da o que se da demasiado tarde, un número que ninguna sección lleva, una opción que el libro impreso no sabe escribir. Tras componer el libro en rústica, también señala una sección cuya continuación se lee en la misma doble página. Cada punto lleva a la escena.</p>
@@ -796,7 +816,7 @@
 <p>El asistente IA (ver «La IA, opcional») también sabe leer y escribir las opciones y los hechos de una novela interactiva.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="ia"><span class="num">Capítulo 11</span>La IA, opcional</h2>
+<h2 id="ia"><span class="num">Capítulo 12</span>La IA, opcional</h2>
 
 <p class="lead">MondoWrite funciona por completo sin IA. Si conectas una, hace preguntas y propuestas; nunca escribe tu texto, y nada cambia sin tu decisión.</p>
 
@@ -895,7 +915,7 @@
 <p>En Claude Desktop, el botón «+» ofrece también cinco instrucciones de MondoWrite: relectura beta (las reacciones de un lector, sin reescribir), coherencia (las contradicciones entre las escenas y la Biblia, en forma de preguntas), desglose (accesorios, vestuario, figurantes… escena por escena), interrogar a un personaje (que solo responde con lo que escribiste) y punto del proyecto (dónde estás, qué falta).</p>
 
 <!-- ===================================================================================== -->
-<h2 id="exportar"><span class="num">Capítulo 12</span>Exportar y publicar</h2>
+<h2 id="exportar"><span class="num">Capítulo 13</span>Exportar y publicar</h2>
 
 <p class="lead">El botón <span class="ui">Exportar</span> fabrica tus archivos dentro de la app, sin herramienta externa. Elige el formato: el archivo se guarda donde decidas.</p>
 <figure class="small"><img src="images/es/exporter.jpg"><figcaption>El menú Exportar de una novela.</figcaption></figure>
@@ -972,7 +992,7 @@
 <p>El <strong>lienzo</strong> se exporta como imagen PNG de toda la pizarra, en PDF normal (A4, para enviar) o en gran formato (A1, para imprimir y colgar en la pared), o como texto de las tarjetas (Word, Markdown), una parte por marco.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="archivos"><span class="num">Capítulo 13</span>Tus archivos</h2>
+<h2 id="archivos"><span class="num">Capítulo 14</span>Tus archivos</h2>
 
 <p class="lead">Un proyecto de MondoWrite es una carpeta normal, llena de archivos de texto que puedes abrir, copiar, respaldar o versionar a tu gusto.</p>
 
@@ -1024,7 +1044,7 @@
 <div class="tip" data-label="Copias de seguridad"><p>Las copias automáticas se quedan en el dispositivo: guarda también tus proyectos en una carpeta sincronizada (iCloud Drive, Dropbox, OneDrive) o cópialos en otro sitio de vez en cuando. Como son archivos de texto, ocupan muy poco espacio.</p></div>
 
 <!-- ===================================================================================== -->
-<h2 id="ajustes"><span class="num">Capítulo 14</span>Ajustes y apariencia</h2>
+<h2 id="ajustes"><span class="num">Capítulo 15</span>Ajustes y apariencia</h2>
 
 <p>El botón <span class="ui">Ajustes</span> (los controles deslizantes, arriba a la derecha) abre primero el menú de la app, el mismo en computadora, iPad e iPhone: <span class="ui">Ajustes…</span>, <span class="ui">Papelera (n)</span> (proyecto abierto), <span class="ui">Copias de seguridad…</span> (app instalada), <span class="ui">Comandos…</span> (la paleta), luego <span class="ui">Visita guiada</span>, <span class="ui">Guía del usuario</span>, <span class="ui">Atajos de teclado</span> y <span class="ui">Acerca de MondoWrite</span>. <span class="ui">Ajustes…</span> (<kbd>Ctrl</kbd> <kbd>,</kbd>) abre cuatro pestañas, que solo contienen ajustes: <span class="ui">Este proyecto</span> (cuando hay un proyecto abierto), <span class="ui">General</span>, <span class="ui">Escritura</span> e <span class="ui">IA</span>.</p>
 <figure><img src="images/es/reglages.jpg"><figcaption>Los Ajustes.</figcaption></figure>
@@ -1062,13 +1082,13 @@
 <p>Las notas tomadas con la Libreta de una versión anterior siguen siendo tarjetas «por ordenar»: <span class="ui">Por ordenar · N</span>, en el lienzo, las lista, con un punteado alrededor de cada una; en cuanto mueves una o la unes a otra tarjeta, sale de la lista.</p>
 
 <!-- ===================================================================================== -->
-<h2 id="atajos"><span class="num">Capítulo 15</span>Atajos de teclado</h2>
+<h2 id="atajos"><span class="num">Capítulo 16</span>Atajos de teclado</h2>
 <p>La lista completa se abre en cualquier momento con <kbd>Ctrl</kbd> <kbd>/</kbd>. En un Mac, <kbd>Ctrl</kbd> se convierte en <kbd>⌘</kbd> y <kbd>Alt</kbd> en <kbd>⌥</kbd>. En la lista, escribe el nombre de una acción o una combinación de teclas. Puedes omitir las tildes.</p>
 
 <h3>En todas partes</h3>
 <table>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>/</kbd></td><td>La lista de los atajos</td></tr>
-  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>1</kbd> … <kbd>4</kbd></td><td>Lienzo, Esquema, Biblia, Manuscrito</td></tr>
+  <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>1</kbd> … <kbd>5</kbd></td><td>Lienzo, Esquema, Biblia, Manuscrito, Línea de tiempo</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>F</kbd></td><td>Buscar una tarjeta o un pasaje</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></td><td>Zoom de la página (Manuscrito, Guion): ampliar, reducir, tamaño normal</td></tr>
   <tr><td class="keys"><kbd>Ctrl</kbd> <kbd>Mayús</kbd> <kbd>H</kbd></td><td>Buscar y reemplazar en el texto</td></tr>
@@ -1126,7 +1146,7 @@
 </table>
 
 <!-- ===================================================================================== -->
-<h2 id="preguntas-frecuentes"><span class="num">Capítulo 16</span>Preguntas frecuentes</h2>
+<h2 id="preguntas-frecuentes"><span class="num">Capítulo 17</span>Preguntas frecuentes</h2>
 
 <h4>¿Dónde se guardan mis textos?</h4>
 <p>En la carpeta que elegiste al crear el proyecto. La ruta no se muestra en la app: encuéntrala con <span class="ui">Abrir una carpeta…</span>, o busca en tu computadora el archivo <code>cosmos.json</code>.</p>

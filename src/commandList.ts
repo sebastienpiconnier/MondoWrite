@@ -58,7 +58,7 @@ const writing = (c: CommandContext) => c.screen === "project" && c.view === "man
 const onCanvas = (c: CommandContext) => c.screen === "project" && c.view === "toile";
 const desktop = () => isTauri() && !isMobileOS();
 const s = () => useCosmos.getState();
-const view = (v: "toile" | "plan" | "bible" | "manuscrit") => () => s().setView(v);
+const view = (v: "toile" | "plan" | "bible" | "manuscrit" | "frise") => () => s().setView(v);
 
 export const COMMANDS: AppCommandItem[] = [
   // MondoWrite
@@ -144,6 +144,7 @@ export const COMMANDS: AppCommandItem[] = [
   { id: "view-plan", group: "view", label: (_t, v) => v.plan, accelerator: "CmdOrCtrl+2", enabled: inProject, run: view("plan") },
   { id: "view-bible", group: "view", label: (_t, v) => v.bible, accelerator: "CmdOrCtrl+3", enabled: inProject, run: view("bible") },
   { id: "view-manuscrit", group: "view", label: (_t, v) => v.manuscrit, accelerator: "CmdOrCtrl+4", enabled: inProject, run: view("manuscrit") },
+  { id: "view-frise", group: "view", label: (_t, v) => v.frise, accelerator: "CmdOrCtrl+5", enabled: (c) => inProject(c) && !(c.kind !== "scenario" && showsInteractive(s().metaKeep, useSettings.getState().experimental)), run: view("frise") },
   // Volets du Manuscrit et du Scénario, mode focus (1.11.1 : toute commande de l'interface est aussi dans un menu).
   { id: "toggle-scenes", group: "view", label: (t) => t.appMenu.toggleScenes, enabled: writing, run: () => sendCommand("toggle-scenes") },
   { id: "toggle-side", group: "view", label: (t) => t.appMenu.toggleSide, enabled: writing, run: () => sendCommand("toggle-side") },

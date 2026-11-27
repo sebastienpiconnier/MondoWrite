@@ -21,7 +21,7 @@ export const SHORTCUT_GROUPS = {
     ["fullscreen", ["F11"]],
     ["commands", ["Mod", "K"]],
     ["settings", ["Mod", ","]],
-    ["views", ["Mod", "1…4"]],
+    ["views", ["Mod", "1…5"]],
     ["search", ["Mod", "F"]],
     ["replace", ["Mod", "Shift", "H"]],
     ["goto", ["Mod", "G"]],

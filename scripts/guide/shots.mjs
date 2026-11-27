@@ -398,10 +398,15 @@ await step("plan", async () => {
   await page.getByRole("button", { name: T("Fiches", "Index cards", "Fichas"), exact: true }).click();
   await wait(800);
   await shot("plan-fiches");
-  await page.getByRole("button", { name: T("Chronologie", "Timeline", "Cronología"), exact: true }).click();
-  await wait(800);
-  await shot("plan-chronologie");
   await page.getByRole("button", { name: T("Liste", "List", "Lista"), exact: true }).click();
+});
+// La frise (#173) : une vue à part, lecture « Récit », une scène choisie pour montrer son volet.
+await step("frise", async () => {
+  await view(T("Frise", "Timeline", "Línea de tiempo"));
+  await page.locator(".frise-card").nth(2).click();
+  await wait(800);
+  await shot("frise");
+  await page.keyboard.press("Escape");
 });
 await view(T("Manuscrit", "Manuscript", "Manuscrito"));
 await shot("manuscrit");

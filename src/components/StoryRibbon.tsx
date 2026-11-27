@@ -249,6 +249,11 @@ export function StoryRibbon({ currentId, onGo }: Props) {
             </button>
           </>
         )}
+        {/* Le ruban en grand : la frise, une vue à part (#173). */}
+        {" · "}
+        <button type="button" className="ribbon-toggle" onClick={() => useCosmos.getState().setView("frise")}>
+          {t.frise.ribbonOpen}
+        </button>
       </p>
       {/* Ce que disent les traits du ruban (#163) : seulement ceux qu'il montre. */}
       {keyOpen && marksKinds.length > 0 && (

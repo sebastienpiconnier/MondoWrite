@@ -18,6 +18,7 @@ export const GUIDE_SECTIONS = {
   plan: { fr: "plan", en: "outline", es: "esquema" },
   manuscript: { fr: "manuscrit", en: "manuscript", es: "manuscrito" },
   screenplay: { fr: "scenario", en: "screenplay", es: "guion" },
+  timeline: { fr: "frise", en: "timeline", es: "linea-de-tiempo" },
   export: { fr: "exporter", en: "export", es: "exportar" },
   settings: { fr: "reglages", en: "settings", es: "ajustes" },
   shortcuts: { fr: "raccourcis", en: "shortcuts", es: "atajos" },
@@ -49,6 +50,8 @@ export function currentSection(phone = isPhone()): GuideSection {
       return kind === "scenario" ? "screenplay" : "plan";
     case "manuscrit":
       return kind === "scenario" ? "screenplay" : "manuscript";
+    case "frise":
+      return "timeline";
     default:
       return "canvas";
   }

@@ -1,5 +1,5 @@
 // En-tête commun du Plan (roman) et du séquencier (scénario), #55 : une seule mise en page, lue avec le vocabulaire
-// du projet. Première ligne : titre de la vue, présentation (Liste, Fiches, Chronologie), actions, total à droite ;
+// du projet. Première ligne : titre de la vue, présentation (Liste, Fiches ; la chronologie est devenue la Frise, #173), actions, total à droite ;
 // seconde ligne : le gabarit et ce qu'il raconte. Les deux vues ne diffèrent que par ce qu'elles y mettent.
 
 import type { ReactNode } from "react";
@@ -10,11 +10,6 @@ const MODES: SequencerMode[] = ["outline", "cards"];
 
 interface Props {
   title: string;
-  /** Chronologie affichée (état de la vue). */
-  timeline: boolean;
-  onTimeline: (on: boolean) => void;
-  /** Pas de chronologie (roman interactif : l'ordre du livre n'y est pas celui de la lecture). */
-  noTimeline?: boolean;
   /** Libellé du groupe des présentations. */
   modeAria: string;
   /** Boutons d'action après les présentations (Organiser le canevas, Nouvel épisode…). */
@@ -38,7 +33,7 @@ export function ArrangeToggle({ open, title, onToggle }: { open: boolean; title:
   );
 }
 
-export function PlanHeader({ title, timeline, onTimeline, noTimeline = false, modeAria, actions, total, template, about }: Props) {
+export function PlanHeader({ title, modeAria, actions, total, template, about }: Props) {
   const t = useT();
   const sq = t.screenplay.sequencer;
   const mode = useSettings((s) => s.sequencerMode);
@@ -53,26 +48,12 @@ export function PlanHeader({ title, timeline, onTimeline, noTimeline = false, mo
           <button
             key={m}
             type="button"
-            aria-pressed={!timeline && mode === m}
-            onClick={() => {
-              setMode(m);
-              onTimeline(false);
-            }}
+            aria-pressed={mode === m}
+            onClick={() => setMode(m)}
           >
             {sq[m]}
           </button>
         ))}
-        {/* La chronologie suit l'ordre du livre : pas dans un roman interactif. */}
-        {!noTimeline && (
-        <button
-          type="button"
-          className="plan-timeline-tab"
-          aria-pressed={timeline}
-          onClick={() => onTimeline(true)}
-        >
-          {t.plan.timeline}
-        </button>
-        )}
       </div>
       {actions}
       {/* Couleur des scènes par leur intrigue principale (#143), réglage de l'appareil, coupé par défaut. */}
