@@ -19,7 +19,7 @@ import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isCardRefField, i
 import type { CardData } from "../types";
 import { openNamesForCard } from "../namesState";
 
-export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boolean }) {
+export function CardSheet({ card, startOpen, omit }: { card: CardData; startOpen?: boolean; /** Champs montrés ailleurs dans la même fenêtre. */ omit?: readonly string[] }) {
   const all = useT();
   const t = all.character;
   const typeLabels = all.fiche.typeLabels as Partial<Record<string, Record<string, string>>>;
@@ -35,7 +35,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   const interactive = useInteractive();
   // « Pour Sarah, la scène finit » quand la scène a un point de vue (#171).
   const issueLabel = useIssueLabel(card);
-  const fields = sheetFields(card.type).filter((key) => !band.has(key) && !(interactive && key === "issue" && !card.fiche?.issue));
+  const fields = sheetFields(card.type).filter((key) => !band.has(key) && !omit?.includes(key) && !(interactive && key === "issue" && !card.fiche?.issue));
   const setFiche = useCosmos((s) => s.setFiche);
   // Épisode : le personnage pivot se choisit parmi les cartes Personnage (la fiche garde son identifiant).
   const nodes = useCosmos((s) => (card.type === "episode" ? s.nodes : null));

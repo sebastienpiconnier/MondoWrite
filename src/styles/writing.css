@@ -496,6 +496,9 @@ input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); ou
 .scene-issue { display: flex; flex-direction: column; gap: 4px; align-self: stretch; font-size: 0.8125rem; color: var(--ink-2); }
 .scene-issue select { width: 100%; min-height: 36px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.8125rem; }
 @media (pointer: coarse) { .scene-issue select { min-height: 44px; } }
+/* Carte Scène agrandie : libellé et liste sur une ligne, sous le statut et le point de vue. */
+.scene-issue.is-inline { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 4px; font-size: 0.875rem; }
+.scene-issue.is-inline select { width: auto; min-width: 10em; }
 .sp-scene-props { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 10px; }
 /* Lecture à voix haute sans lecture en cours : un simple repère pour le panneau des voix, sans place dans la barre. */
 .reader.is-anchor { display: inline-block; width: 0; height: 36px; margin: 0 -4px; overflow: visible; }

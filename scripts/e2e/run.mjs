@@ -1160,6 +1160,12 @@ const scenarios = [
       const sarah = page.getByLabel("Pour Sarah, la scène finit");
       await until(() => sarah.isVisible(), "la question n'est pas posée au personnage du point de vue");
       assert((await sarah.inputValue()) === "pire", "la réponse a changé avec le point de vue");
+      // Carte Scène agrandie : la même question en tête, une seule fois (pas répétée dans la fiche).
+      await h.view(1);
+      await page.locator(".react-flow__node-card .card.type-scene .card-handle").first().dblclick();
+      const inCard = page.locator("dialog[open]").getByLabel("Pour Sarah, la scène finit");
+      await until(() => inCard.isVisible(), "la fin de scène n'est pas dans la carte agrandie");
+      assert((await inCard.count()) === 1, "la question est posée deux fois dans la carte agrandie");
     },
   },
   {
