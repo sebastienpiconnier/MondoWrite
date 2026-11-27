@@ -1149,18 +1149,23 @@ export function ScreenplayView() {
   // Lire le récit fil par fil (#117) : seulement les scènes d'une carte, l'écart entre elles en pages.
   const threadFilter = useCosmos((s) => s.threadFilter);
   // Cartes qu'on peut suivre depuis le volet des scènes (lot 17), par type, sauf les personnages (filtre à part).
+  // Une Idée n'y est que reliée à une scène : elle sert alors d'étiquette (« flashback », #170).
+  const edgesForFilter = useCosmos((s) => s.edges);
   const filterGroups = useMemo(
-    () =>
-      THREAD_TYPES.filter((type) => type !== "personnage")
+    () => {
+      const sceneIds = new Set(nodes.filter((n) => n.data.type === "scene").map((n) => n.id));
+      const tagged = new Set(edgesForFilter.flatMap((e) => (sceneIds.has(e.source) ? [e.target] : sceneIds.has(e.target) ? [e.source] : [])));
+      return [...THREAD_TYPES.filter((type) => type !== "personnage"), "idee" as const]
         .map((type) => ({
           type,
           cards: nodes
-            .filter((n) => n.data.type === type && n.data.title.trim())
+            .filter((n) => n.data.type === type && n.data.title.trim() && (type !== "idee" || tagged.has(n.id)))
             .map((n) => ({ id: n.id, title: n.data.title.trim() }))
             .sort((a, b) => a.title.localeCompare(b.title, lang)),
         }))
-        .filter((g) => g.cards.length > 0),
-    [nodes, lang],
+        .filter((g) => g.cards.length > 0);
+    },
+    [nodes, lang, edgesForFilter],
   );
   const edges = useCosmos((s) => s.edges);
   const eighths = useSceneEighths();

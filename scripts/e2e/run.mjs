@@ -1125,6 +1125,22 @@ const scenarios = [
     },
   },
   {
+    name: "étiquettes (#170) : relier un thème créé à la volée depuis l'onglet Scène",
+    async run(h) {
+      const { page } = h;
+      await h.create("Étiquettes");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le réveil");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      await page.getByRole("button", { name: "Ajouter : Thèmes et idées" }).click();
+      await page.keyboard.type("Flashback");
+      await until(() => page.getByRole("option", { name: /Flashback/ }).isVisible(), "pas d'option pour créer l'étiquette");
+      await page.keyboard.press("Enter");
+      await until(() => page.locator(".scene-links .link-pill", { hasText: "Flashback" }).isVisible(), "l'étiquette n'est pas reliée à la scène");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("cartes/") && v.includes("type: theme") && v.includes('title: "Flashback"')), "le thème n'a pas été créé");
+    },
+  },
+  {
     name: "fin de scène (#171) : « Pour X, la scène finit » dans l'onglet Scène, au point de vue de la scène",
     async run(h) {
       const { page } = h;
@@ -3475,7 +3491,7 @@ const scenarios = [
       await h.view(4);
       await page.locator(".ms-meta").waitFor();
       assert((await page.locator(".ms-meta .status-picker, .ms-meta select").count()) === 0, "statut, point de vue ou type de page encore au-dessus de la page");
-      await until(() => page.locator(".ms-scene-props select").isVisible(), "le type de page n'est pas dans l'onglet Scène");
+      await until(() => page.locator(".ms-scene-props .ms-kind select").isVisible(), "le type de page n'est pas dans l'onglet Scène");
       await page.locator(".ms-meta .more-button").click();
       await page.getByRole("menuitem", { name: /^Mode focus/ }).click();
       await until(() => page.locator(".manuscript.is-focus").count(), "Mode focus du menu ⋯ sans effet");
