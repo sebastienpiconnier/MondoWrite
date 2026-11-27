@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { addNicknames, CAST_FIELDS, type CastField } from "./ai/cast";
 import { interactiveMeta } from "./interactive";
 import { deliverTextImage, forgetTextImage } from "./textImageState";
 import { manuscriptImages } from "./sceneImages";
@@ -337,8 +338,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | "cast" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | "cast" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -705,6 +706,12 @@ export interface CosmosState {
   linkCards: (source: string, target: string, label: string) => void;
   /** Crée une carte de ce type et la relie à `id`, en une étape (fiche de scène reliée, #137). Rend son identifiant. */
   addLinkedCard: (id: string, type: CardType, title: string) => string;
+  /**
+   * « Trouver les personnages » (#172) : un personnage accepté, en une étape. Fiche existante (`cardId`) ou créée
+   * (`title`) ; faits posés seulement dans un champ vide, surnoms ajoutés sans doublon, fils tirés vers les scènes
+   * qui n'en ont pas encore (jamais retiré ni remplacé). Rend l'identifiant de la fiche, ou null.
+   */
+  acceptCast: (input: { cardId?: string; title?: string; fiche: Partial<Record<CastField, string>>; nicknames: string[]; scenes: string[] }) => string | null;
   updateCard: (id: string, patch: Partial<Omit<CardData, "id">>) => void;
   /** Élargit ou rétrécit une carte (clavier) ; la hauteur suit le contenu. */
   resizeCard: (id: string, delta: number) => void;
@@ -3776,6 +3783,27 @@ export const useCosmos = create<CosmosState>((set, get) => {
       const created = get().addTitledCard(type, title);
       get().linkCards(id, created, "");
       return created;
+    },
+    acceptCast: ({ cardId, title, fiche, nicknames, scenes }) => {
+      const isCharacter = (id: string) => get().nodes.some((n) => n.id === id && n.data.type === "personnage");
+      let id = cardId && isCharacter(cardId) ? cardId : null;
+      if (!id) {
+        const name = title?.trim().slice(0, 300);
+        if (cardId || !name) return null;
+        id = get().addTitledCard("personnage", name);
+      }
+      const card = () => get().nodes.find((n) => n.id === id)!.data;
+      for (const field of CAST_FIELDS) {
+        const value = fiche[field]?.trim();
+        if (value && !card().fiche?.[field]?.trim()) get().setFiche(id, field, value);
+      }
+      if (nicknames.length > 0) {
+        const before = card().fiche?.surnoms ?? "";
+        const after = addNicknames(before, nicknames, card().title);
+        if (after !== before) get().setFiche(id, "surnoms", after);
+      }
+      for (const scene of scenes) if (get().nodes.some((n) => n.id === scene && n.data.type === "scene")) get().linkCards(scene, id, "");
+      return id;
     },
     linkCards: (source, target, label) => {
       const linked = get().edges.some(

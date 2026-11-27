@@ -2570,6 +2570,53 @@ const scenarios = [
     },
   },
   {
+    name: "IA : trouver les personnages du texte (#172), proposition citée, fiche créée et reliée, Ctrl+Z",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => localStorage.setItem("cosmos:reglages", JSON.stringify({ ai: { provider: "anthropic", keys: { anthropic: "sk-test" }, models: {}, urls: {} } })));
+      let asked = null;
+      await page.route("https://api.anthropic.com/**", async (route) => {
+        asked = JSON.parse(route.request().postData() ?? "{}");
+        const { excerpts } = JSON.parse(asked.messages[0].content);
+        if (!excerpts.includes("Inès Morvan")) throw new Error("texte absent de la requête");
+        const characters = [
+          { name: "Inès Morvan", variants: ["Inès", "Ninou"], scenes: [{ ref: "s1", speaks: true }], quote: "Inès Morvan pousse la porte du phare", facts: [{ field: "age", value: "34 ans", quote: "Elle a trente-quatre ans" }] },
+          // Personnage inventé : écarté par la relecture.
+          { name: "Paul", quote: "Paul arrive au phare en bateau" },
+        ];
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ characters }) }] }) });
+      });
+      await h.create("Personnages");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Inès Morvan pousse la porte du phare. Elle a trente-quatre ans.");
+      await h.wait(400);
+      await page.getByRole("button", { name: "IA", exact: true }).click();
+      await page.getByRole("button", { name: "Trouver les personnages du texte…" }).click();
+      await page.getByRole("button", { name: "Lancer la lecture" }).click();
+      const row = page.locator(".cast-item", { hasText: "Nouveau personnage" });
+      await until(() => row.isVisible(), "le personnage proposé n'apparaît pas");
+      assert((await page.locator(".cast-item").count()) === 1, "le personnage inventé est proposé");
+      await until(() => page.getByText(/Propositions écartées.*1/).isVisible(), "le personnage inventé n'est pas signalé comme écarté");
+      assert(!(await page.getByRole("checkbox", { name: "Ajouter « Ninou » aux surnoms" }).count()), "un nom absent du texte est proposé");
+      assert(await page.getByRole("checkbox", { name: "Relier à la scène « Le phare »" }).isChecked(), "la scène où il parle n'est pas cochée");
+      await row.getByRole("button", { name: "Créer la fiche" }).click();
+      await until(() => page.getByText("Ajouté à la Bible : Inès Morvan").isVisible(), "la fiche n'est pas annoncée");
+      await page.getByRole("button", { name: "Fermer" }).click();
+      await h.view(1);
+      await until(async () => (await h.cardList()).some((c) => c.type === "personnage" && c.title === "Inès Morvan"), "la fiche n'est pas créée");
+      await until(async () => (await h.edges().count()) === 1, "la fiche n'est pas reliée à la scène");
+      await h.saved((f) => Object.values(f).some((v) => v.includes('title: "Inès Morvan"') && v.includes('"age":"34 ans"') && !v.includes("surnoms")), "la fiche n'est pas enregistrée avec ses faits (sans le prénom en surnom)");
+      await h.pane();
+      await page.keyboard.press("Control+z");
+      await until(async () => !(await h.cardList()).some((c) => c.type === "personnage") && (await h.edges().count()) === 0, "Ctrl+Z ne retire pas tout en une fois");
+    },
+  },
+  {
     name: "IA : ranger les fils, fil proposé avec son passage, tiré sur le canevas, Ctrl+Z",
     async run(h) {
       const { page } = h;
