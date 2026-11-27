@@ -807,6 +807,9 @@ export interface CosmosState {
   dismissScrivenerReport: () => void;
   /** Ce que l'import d'une histoire Twee ou Ink a converti et gardé (#96), affiché après l'import. État d'affichage. */
   storyReport: StoryReport | null;
+  /** Import d'un scénario (#169) : synopsis en trop changés en notes (état d'affichage, jamais enregistré). */
+  notesReport: number;
+  dismissNotesReport: () => void;
   dismissStoryReport: () => void;
   setRetroInvite: (on: boolean) => void;
 }
@@ -1360,6 +1363,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       retroInvite: false,
       scrivenerReport: null,
       storyReport: null,
+      notesReport: 0,
       screen: "project",
       view: firstView(),
       focusId: null,
@@ -1607,7 +1611,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
   /** Message de l'accueil après un import manqué : projet Scrivener illisible, trop ancien, ou rien de lisible. */
   const noticeFor = (err: unknown): "scrivener" | "scrivenerOld" | "empty" =>
     err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : err instanceof Error && err.message === "scrivener-old" ? "scrivenerOld" : "empty";
-  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null, versions: [string, string, string][] = [], story: StoryReport | null = null) => {
+  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null, versions: [string, string, string][] = [], story: StoryReport | null = null, notes = 0) => {
     if (!(await storage.create(project.meta.title))) return;
     // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
     if (await storage.readAll().catch(() => null)) {
@@ -1640,6 +1644,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       retroInvite: true,
       scrivenerReport: report,
       storyReport: story,
+      notesReport: notes,
       screen: "project",
       view: "manuscrit",
       focusId: null,
@@ -3294,6 +3299,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         retroInvite: false,
         scrivenerReport: null,
         storyReport: null,
+        notesReport: 0,
         screen: "project",
         view: firstView(),
         focusId: null,
@@ -3401,7 +3407,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ scrivenerChoice: { source: outcome.scrivener, folders: scrivenerFolders(outcome.scrivener.binder) } });
         return;
       }
-      await finishImport(outcome.project, outcome.medias, null, [], outcome.story ?? null);
+      await finishImport(outcome.project, outcome.medias, null, [], outcome.story ?? null, outcome.notes ?? 0);
     },
 
     tryExample: async () => {
@@ -4068,6 +4074,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         retroInvite: false,
         scrivenerReport: null,
         storyReport: null,
+        notesReport: 0,
         loaded: true,
         screen: "project",
         view: firstView(),
@@ -4335,6 +4342,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     dismissScrivenerReport: () => set({ scrivenerReport: null }),
     storyReport: null,
     dismissStoryReport: () => set({ storyReport: null }),
+    notesReport: 0,
+    dismissNotesReport: () => set({ notesReport: 0 }),
     cancelScrivenerImport: () => set({ scrivenerChoice: null }),
     confirmScrivenerImport: async (exclude) => {
       const choice = get().scrivenerChoice;

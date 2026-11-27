@@ -1904,6 +1904,10 @@ export const en: Messages = {
 
   // Screenplay editor (Screenplay view of a screenplay project).
   screenplay: {
+    notesShow: "Show notes",
+    notesHide: "Hide notes",
+    notesImportedTitle: "Screenplay imported:",
+    notesImported: ["1 extra synopsis turned into a note, in place in its scene. The first “=” line of each scene stays its synopsis.", "{n} extra synopses turned into notes, in place in their scenes. The first “=” line of each scene stays its synopsis."],
     editorAria: "Screenplay text",
     barAria: "Element type",
     elements: {

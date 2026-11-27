@@ -9,6 +9,7 @@ import type { StoryReport } from "../interactive/storyImport";
 import { importFountain, importScreenplayModel, type ImportOptions } from "../screenplay/import";
 import { parse } from "../screenplay/parse";
 import { parseFdx, parseFdxRevisions } from "../screenplay/fdxImport";
+import { synopsesToNotes } from "../screenplay/extraSynopses";
 import { bookToProject, chapterize, textParagraphs } from "./manuscript";
 
 export const IMPORT_EXTENSIONS = ["docx", "md", "markdown", "txt", "fountain", "spmd", "fdx", "pdf", "zip"];
@@ -28,7 +29,7 @@ export const looksLikeScreenplay = (text: string) => parse(text).elements.filter
  * Ce qu'un fichier importé donne : un projet et ses médias ; un projet Scrivener lu, dont l'auteur choisit encore
  * les dossiers (`buildScrivener` le convertit) ; rien de lisible ; ou un .zip qui n'est pas de Scrivener.
  */
-export type ImportOutcome = { project: Project; medias: [string, Uint8Array][]; story?: StoryReport } | { scrivener: ScrivenerSource } | null | "project-zip";
+export type ImportOutcome = { project: Project; medias: [string, Uint8Array][]; story?: StoryReport; notes?: number } | { scrivener: ScrivenerSource } | null | "project-zip";
 
 /**
  * Import complet : comme `projectFromFile`, plus les médias à copier dans medias/. Un .zip qui contient un projet
@@ -48,7 +49,13 @@ export async function importFromFile(file: { name: string; data: Uint8Array }, o
     return read ? { project: read.project, medias: [], story: read.report } : null;
   }
   const project = await projectFromFile(file, options);
-  return project ? { project, medias: [] } : null;
+  if (!project) return null;
+  // Scénario (#169) : une ligne « = » par étape d'une scène, la première reste le synopsis, les autres deviennent des notes.
+  if (project.screenplay) {
+    const { elements, converted } = synopsesToNotes(project.screenplay.elements);
+    if (converted) return { project: { ...project, screenplay: { ...project.screenplay, elements } }, medias: [], notes: converted };
+  }
+  return { project, medias: [] };
 }
 
 /** Histoire Twee ou Ink (#84, lot 9) : le projet et ce que l'import en dit (#96). */

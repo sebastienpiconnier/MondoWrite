@@ -2084,6 +2084,30 @@ const scenarios = [
     },
   },
   {
+    name: "import Fountain (#169) : synopsis en trop changés en notes, « Cacher les notes »",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…" }).click();
+      const source = "INT. PHARE - NUIT\n\n= Inès monte à la lanterne.\n\n= Elle trouve le cahier.\n\nLa lampe est froide.\n\n= Le cahier parle d'elle.\n\nElle lit à voix haute.";
+      await (await chooser).setFiles({ name: "Le Phare.fountain", mimeType: "text/plain", buffer: Buffer.from(source) });
+      await page.locator(".views").waitFor();
+      await h.closeTour();
+      await until(() => page.getByRole("status").filter({ hasText: "2 synopsis en trop changés en notes" }).count(), "le message de l'import ne dit pas les notes");
+      await h.saved((f) => /= Inès monte à la lanterne\.\s+\[\[Elle trouve le cahier\.\]\]\s+La lampe est froide\.\s+\[\[Le cahier parle d'elle\.\]\]/.test(f["scenario.fountain"] ?? ""), "les synopsis en trop ne sont pas devenus des notes à leur place");
+      await h.view(4);
+      const notes = page.locator('.sp-editor .sp-preserved[data-preserved="note"]');
+      await until(async () => (await notes.count()) === 2 && (await notes.first().isVisible()), "les notes ne sont pas montrées dans la feuille");
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Cacher les notes" }).click();
+      await until(async () => !(await notes.first().isVisible()), "les notes restent visibles");
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Afficher les notes" }).click();
+      await until(() => notes.first().isVisible(), "les notes ne reviennent pas");
+    },
+  },
+  {
     name: "séquencier : relâcher un glisser natif sur la scène qui défile sous le pointeur",
     async run(h) {
       const { page } = h;

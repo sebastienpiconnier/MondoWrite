@@ -1853,6 +1853,10 @@ export const fr = {
 
   // Éditeur de scénario (vue Scénario d'un projet scénario).
   screenplay: {
+    notesShow: "Afficher les notes",
+    notesHide: "Cacher les notes",
+    notesImportedTitle: "Scénario importé :",
+    notesImported: ["1 synopsis en trop changé en note, à sa place dans la scène. La première ligne « = » de chaque scène reste son synopsis.", "{n} synopsis en trop changés en notes, à leur place dans les scènes. La première ligne « = » de chaque scène reste son synopsis."],
     editorAria: "Texte du scénario",
     barAria: "Type de l’élément",
     elements: {

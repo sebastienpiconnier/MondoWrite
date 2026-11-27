@@ -373,6 +373,8 @@ export function ScreenplayView() {
         continued: { resumes: () => useCosmos.getState().scriptPdf.resumes, contd: () => getT().screenplay.contd },
         // Passe de révision ouverte : ce qui est tapé reçoit sa marque (#18).
         revision: () => useCosmos.getState().revisions.current,
+        // « Afficher les notes » décoché (#169) : le curseur saute les notes cachées.
+        notesHidden: () => !useSettings.getState().writing.showNotes,
         // Mode focus : Échap le quitte, comme dans le manuscrit. Sinon il rend la main à la barre d'éléments.
         onEscape: () => {
           if (useCosmos.getState().focusMode) return setFocusMode(false);
@@ -1359,6 +1361,11 @@ export function ScreenplayView() {
     const at0 = target.startsWith(SCENE_AT) && at < 0 && elements.length > 0 ? 0 : at;
     const index = at0 >= 0 ? (at0 < elements.length ? at0 : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
     if (index < 0) return;
+    // « Aller à » une note alors que les notes sont cachées (#169) : on les montre, sinon on n'y arriverait pas.
+    if (elements[index]?.type === "note" && !useSettings.getState().writing.showNotes) {
+      const st = useSettings.getState();
+      st.setWriting({ ...st.writing, showNotes: true });
+    }
     // Arrivée depuis la recherche (#85) : le mot sélectionné dans l'élément de la scène qui le contient.
     const selectNeedle = () => {
       if (!needle || editor.isDestroyed) return false;
@@ -1571,7 +1578,7 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${writing.showSynopsis && !focusMode ? " show-synopsis" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${writing.showSynopsis && !focusMode ? " show-synopsis" : ""}${writing.showNotes ? "" : " hide-notes"}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       // Largeur de la colonne du mode focus, comme dans le Manuscrit : la taille du texte ne change pas, la colonne
       // s'élargit (réglage de l'appareil, en caractères).
@@ -1969,6 +1976,7 @@ export function ScreenplayView() {
               { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
               // Synopsis (#147) : sous chaque en-tête (hors pages), ou lu seul dans sa fenêtre.
               { label: writing.showSynopsis ? t.synopsisView.hide : t.synopsisView.show, onSelect: () => { const st = useSettings.getState(); st.setWriting({ ...st.writing, showSynopsis: !st.writing.showSynopsis }); } },
+              { label: writing.showNotes ? t.screenplay.notesHide : t.screenplay.notesShow, onSelect: () => { const st = useSettings.getState(); st.setWriting({ ...st.writing, showNotes: !st.writing.showNotes }); } },
               { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
               { label: useSettings.getState().plotColors ? t.plan.plotColorsOff : t.plan.plotColorsOn, onSelect: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
               { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
