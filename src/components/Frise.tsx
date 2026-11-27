@@ -1,19 +1,22 @@
-// La frise (#173) : une vue du projet au même titre que le canevas. Le récit en cartes sur une ligne, la largeur de
-// chaque carte suit la longueur de sa scène (pages d'un scénario, mots d'un roman ramenés en pages). Trois lectures :
-// Récit (une rangée par étape de la structure, chapitre ou épisode), Intrigues et Personnages (une ligne commune, une
-// piste par carte, comme l'ancienne chronologie du Plan). Rien n'est enregistré à part : déplacer une carte déplace la
-// scène dans le récit (Plan ou Fountain), toucher une case tire ou retire le fil du canevas.
-// Trois chemins : glisser à la souris, Alt + ← → au clavier, « Plus tôt » et « Plus tard » dans le volet au doigt.
+// La frise (#173) : le récit sur une ligne de montage. Chaque carte est une scène, sa largeur suit sa longueur
+// (pages d'un scénario, mots d'un roman ramenés en pages) ; dessous, la courbe du récit, puis une piste par intrigue,
+// thème, personnage (avec sa courbe) et lieu ou décor. Deux places :
+// - le ruban agrandi du Manuscrit et du Scénario (`mode="ribbon"`), au-dessus du texte, hauteur réglée par un
+//   séparateur : toucher une carte ou la règle mène à la scène dans le texte ;
+// - la troisième présentation du Plan et du séquencier (`mode="plan"`), avec le volet de la scène choisie.
+// Rien n'est enregistré : déplacer une carte déplace la scène dans le récit (Plan ou Fountain), toucher une case
+// d'une piste tire ou retire le fil du canevas. Trois chemins : glisser à la souris, Alt + ← → au clavier,
+// « Plus tôt » / « Plus tard » dans le volet au doigt.
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from "react";
-import { planScenes, SCENE_AT, useCosmos } from "../store";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { currentScript, planScenes, SCENE_AT, useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { fmt, useT } from "../i18n";
 import { useVocab } from "../vocab";
 import { typeColor, type CardData, type CardType } from "../types";
 import { chapterNumbers, hasSubBeats, templateBeats } from "../plan";
 import { countWords } from "../manuscript";
-import { WORDS_PER_PAGE } from "../stats";
+import { WORDS_PER_MINUTE, WORDS_PER_PAGE } from "../stats";
 import { paginate, pagesBetween } from "../screenplay/paginate";
 import { LAYOUTS } from "../screenplay/layout";
 import { blocks } from "../screenplay/sequence";
@@ -21,13 +24,13 @@ import { screenplayPlan } from "../screenplay/template";
 import { allEpisodes, isSeries } from "../screenplay/series";
 import { sceneSynopsis } from "../screenplay/scenes";
 import { eighthsOf, formatEighths } from "../screenplay/eighths";
-import { heroIssues } from "../ribbon";
+import type { Screenplay, ScreenplayElement } from "../screenplay/model";
+import { heroIssues, type CurvePoint } from "../ribbon";
 import { screenplaySceneTexts, timeline } from "../timeline";
 import { useInteractive } from "../interactive/useInteractive";
 import {
   CARD_GAP,
   DEFAULT_SCALE,
-  FRISE_GROUPS,
   FRISE_SCALES,
   cardWidth,
   characterIssues,
@@ -37,17 +40,18 @@ import {
   moveSceneBefore,
   moveSceneToRowEnd,
   novelRows,
-  rowSize,
+  pageToX,
   rowStarts,
-  rulerTicks,
+  rulerMarks,
+  sceneAtX,
   screenplayRows,
   stepScene,
-  type FriseGroup,
+  timecode,
   type FriseRow,
   type FriseScene,
   type Slot,
 } from "../frise";
-import type { CurvePoint } from "../ribbon";
+import { BOARD_MIN, useBoard } from "../boardState";
 import { useBeatText } from "./useBeatText";
 import { usePlotColor } from "./usePlotColor";
 import { StatusDot, SceneStatusPicker } from "./SceneStatusPicker";
@@ -56,10 +60,16 @@ import { SceneIssue } from "./SceneIssue";
 import { SceneLinks } from "./LinkedCards";
 import { SynopsisField } from "./SynopsisField";
 
-/** Ce que la vue lit du projet : rangées, scènes à la suite, longueur totale. */
-function useFriseData() {
+// ---------- État de l'appareil (boardState.ts) ----------
+
+export { BOARD_MIN, useBoard } from "../boardState";
+
+// ---------- Données ----------
+
+/** Rangées (parties du récit), scènes à la suite, longueur totale, rang de l'en-tête de chaque scène d'un scénario. */
+export function useFriseData(scope: "whole" | "current" = "whole") {
   const kind = useCosmos((s) => s.kind);
-  const screenplay = useCosmos((s) => s.screenplay);
+  const screenplay = useCosmos((s) => (scope === "current" ? currentScript(s) : s.screenplay));
   const paper = useCosmos((s) => s.paper);
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
@@ -84,71 +94,24 @@ function useFriseData() {
       rows = novelRows(plan, ids, (id) => titles.get(id) ?? "", (id) => countWords(manuscript[id]), WORDS_PER_PAGE);
     }
     const all = rows.flatMap((r) => r.scenes);
-    return { rows, all, total: friseTotal(rows), starts };
+    return { rows, all, total: friseTotal(rows), starts, screenplay };
   }, [kind, screenplay, paper, plan, manuscript, sceneKey, titles]);
 }
 
-export function Frise() {
+/** Une partie vide garde une place sur la ligne (on y dépose une scène) : une pseudo-scène `part:<rang>`. */
+const PART = "part:";
+const isPart = (id: string) => id.startsWith(PART);
+
+/** Nom de chaque partie : étape de la structure, chapitre numéroté, épisode, ou ce qui est hors de tout cela. */
+function useRowLabel(rows: FriseRow[], all: FriseScene[], screenplay: Screenplay | null) {
   const t = useT();
   const f = t.frise;
-  const lang = useSettings((s) => s.lang);
-  const vocab = useVocab();
   const kind = useCosmos((s) => s.kind);
   const plan = useCosmos((s) => s.plan);
-  const nodes = useCosmos((s) => s.nodes);
-  const screenplay = useCosmos((s) => s.screenplay);
-  const interactive = useInteractive();
   const beatText = useBeatText();
-  const plotColor = usePlotColor();
-  const { rows, all, total, starts } = useFriseData();
-
-  const [group, setGroup] = useState<FriseGroup>("story");
-  const [scale, setScale] = useState(DEFAULT_SCALE);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const [over, setOver] = useState<string | null>(null);
-  const [announce, setAnnounce] = useState("");
-  const dragRef = useRef<string | null>(null);
-  const refocus = useRef<string | null>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const px = FRISE_SCALES[scale];
-
-  // Un roman interactif n'a pas de frise (le menu ne la propose pas) : une position « Reprendre » qui y mène revient au canevas.
-  useEffect(() => {
-    if (interactive) useCosmos.getState().setView("toile");
-  }, [interactive]);
-
-  const cards = useMemo(() => new Map(nodes.map((n) => [n.id, n.data])), [nodes]);
-  const index = useMemo(() => new Map(all.map((s, i) => [s.id, i])), [all]);
-  // Page où commence chaque scène (0 au début du récit).
-  const before = useMemo(() => {
-    const out = new Map<string, number>();
-    let acc = 0;
-    for (const s of all) {
-      out.set(s.id, acc);
-      acc += s.size;
-    }
-    return out;
-  }, [all]);
   const chapterNo = useMemo(() => (kind === "scenario" ? new Map<string, number>() : chapterNumbers(plan, all.map((s) => s.id))), [kind, plan, all]);
   const episodes = useMemo(() => new Map((screenplay ? allEpisodes(screenplay.elements) : []).map((e) => [e.id, e])), [screenplay]);
-
-  // Une scène retirée ailleurs (corbeille, autre vue) ferme le volet.
-  const shown = selected && index.has(selected) ? selected : null;
-
-  // Après un déplacement, le focus suit la carte.
-  useEffect(() => {
-    const id = refocus.current;
-    if (!id) return;
-    refocus.current = null;
-    rootRef.current?.querySelector<HTMLElement>(`[data-scene-id="${CSS.escape(id)}"]`)?.focus();
-  });
-
-  const titleOf = (s: FriseScene) => s.title || (cards.get(s.id)?.title.trim() ?? "") || t.plan.untitled;
-  const lengthOf = (s: FriseScene) => (kind === "scenario" ? fmt(f.pages, { n: formatEighths(eighthsOf(s.size)) || "0" }) : fmt(f.words, { n: (s.words ?? 0).toLocaleString(lang) }));
-  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
-
-  const rowLabel = (row: FriseRow): string => {
+  return (row: FriseRow): string => {
     if (row.kind === "beat" && row.key) return beatText(row.key).label;
     if (row.kind === "chapter" && row.key) {
       const chapter = plan.chapters?.find((c) => c.id === row.key);
@@ -161,86 +124,186 @@ export function Frise() {
       return ep.title.trim() ? fmt(t.season.episodeTitled, { n: ep.number, title: ep.title.trim() }) : fmt(t.season.episodeNumber, { n: ep.number });
     }
     if (rows.length === 1) return f.whole;
-    if (kind === "scenario") return isSeries(screenplay) ? t.season.outside : f.beforeFirst;
+    if (kind === "scenario") return screenplay && isSeries(screenplay) ? t.season.outside : f.beforeFirst;
     return plan.template === "libre" ? f.noChapter : t.plan.unplaced;
   };
+}
 
-  const say = (id: string) => {
-    // Lu après le rendu : le rang a changé.
-    setTimeout(() => {
+/** Minutes d'un point de la règle : 1 page ≈ 1 minute d'écran ; pour un roman, le temps de lecture. */
+function useClock() {
+  const kind = useCosmos((s) => s.kind);
+  return (pages: number) => (kind === "scenario" ? pages : (pages * WORDS_PER_PAGE) / WORDS_PER_MINUTE);
+}
+
+// ---------- Déplacements ----------
+
+function useMoves(scope: "whole" | "current", beforeMove?: () => void, onMoved?: (id: string) => void) {
+  const kind = useCosmos((s) => s.kind);
+  const template = useCosmos((s) => s.plan.template);
+  const writeScript = (change: (els: ScreenplayElement[]) => ScreenplayElement[]) => {
+    beforeMove?.();
+    const st = useCosmos.getState();
+    const script = scope === "current" ? currentScript(st) : st.screenplay;
+    if (!script) return false;
+    const next = change(script.elements);
+    if (next === script.elements) return false;
+    if (scope === "current") st.setScript({ ...script, elements: next }, true);
+    else st.setScreenplay({ ...script, elements: next }, true);
+    return true;
+  };
+  const done = (id: string, moved: boolean) => {
+    if (moved && !id.startsWith(SCENE_AT)) onMoved?.(id);
+  };
+  return {
+    before: (id: string, target: string) => {
+      if (id === target) return;
       const st = useCosmos.getState();
-      const title = st.nodes.find((n) => n.id === id)?.data.title.trim() || t.plan.untitled;
-      const list = rootRef.current?.querySelectorAll("[data-scene-id]");
-      const ids = list ? [...list].map((el) => (el as HTMLElement).dataset.sceneId) : [];
+      done(id, kind === "scenario" ? writeScript((els) => moveSceneBefore(els, id, target)) : st.moveBookScene(id, target, "before"));
+    },
+    toEnd: (id: string, row: FriseRow) => {
+      const st = useCosmos.getState();
+      let moved = false;
+      if (kind === "scenario") moved = writeScript((els) => moveSceneToRowEnd(els, id, { ...row, scenes: row.scenes.filter((s) => !isPart(s.id)) }));
+      else if (row.kind === "beat" && row.key) {
+        st.placeInPlan(id, row.key);
+        moved = true;
+      } else if (row.kind === "none" && template !== "libre") {
+        st.placeInPlan(id, null);
+        moved = true;
+      } else {
+        const last = row.scenes.filter((s) => s.id !== id && !isPart(s.id)).at(-1);
+        if (last) moved = st.moveBookScene(id, last.id, "after");
+      }
+      done(id, moved);
+    },
+    step: (id: string, way: -1 | 1) => {
+      const st = useCosmos.getState();
+      done(id, kind === "scenario" ? writeScript((els) => stepScene(els, id, way < 0 ? "earlier" : "later")) : st.stepBookScene(id, way < 0 ? "up" : "down"));
+    },
+  };
+}
+
+// ---------- La frise ----------
+
+interface BoardProps {
+  mode: "plan" | "ribbon";
+  /** Ruban : scène du curseur (carte, ou `@<rang>` d'une scène de scénario sans carte). */
+  currentId?: string | null;
+  /** Ruban : aller à la scène dans le texte. */
+  onGo?: (id: string) => void;
+  /** Scénario : envoyer au store ce que l'éditeur n'a pas encore rendu, avant de déplacer une scène. */
+  beforeMove?: () => void;
+}
+
+const LANE_TYPES: CardType[] = ["intrigue", "theme", "personnage", "lieu"];
+
+export function FriseBoard({ mode, currentId = null, onGo, beforeMove }: BoardProps) {
+  const t = useT();
+  const f = t.frise;
+  const p = t.plan;
+  const { types, views } = useVocab();
+  const lang = useSettings((s) => s.lang);
+  const kind = useCosmos((s) => s.kind);
+  const nodes = useCosmos((s) => s.nodes);
+  const edges = useCosmos((s) => s.edges);
+  const manuscript = useCosmos((s) => s.manuscript);
+  const toggleLink = useCosmos((s) => s.toggleLink);
+  const revealCard = useCosmos((s) => s.revealCard);
+  const readThread = useCosmos((s) => s.readThread);
+  const plotColor = usePlotColor();
+  const clock = useClock();
+  const scope = mode === "ribbon" ? "current" : "whole";
+  const { rows, all, total, starts, screenplay } = useFriseData(scope);
+  const rowLabel = useRowLabel(rows, all, screenplay);
+  const folded = useBoard((s) => s.folded);
+  const toggleFold = useBoard((s) => s.toggleFold);
+  const setOpen = useBoard((s) => s.setOpen);
+
+  const [scale, setScale] = useState(DEFAULT_SCALE);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [over, setOver] = useState<string | null>(null);
+  const [announce, setAnnounce] = useState("");
+  const dragRef = useRef<string | null>(null);
+  const refocus = useRef<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const px = FRISE_SCALES[scale];
+
+  // Sur la ligne : les scènes, et une place pour chaque partie encore vide.
+  const lineRows = useMemo(() => rows.map((r, i) => (r.scenes.length > 0 || r.key === null ? r : { ...r, scenes: [{ id: `${PART}${i}`, title: "", size: 0 }] })), [rows]);
+  const placed = useMemo(() => lineRows.flatMap((r) => r.scenes), [lineRows]);
+  const { slots, width } = useMemo(() => layoutScenes(placed, px), [placed, px]);
+  const bounds = useMemo(() => (rows.length > 1 ? rowStarts(lineRows, slots) : []), [rows.length, lineRows, slots]);
+  // Repères au pas que la ligne donne vraiment (les cartes ont une largeur minimale) : px par page en moyenne.
+  const marks = useMemo(() => rulerMarks(total, total > 0 ? width / total : px), [total, width, px]);
+  const index = useMemo(() => new Map(all.map((s, i) => [s.id, i])), [all]);
+  const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
+  const byId = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
+  const order = useMemo(() => all.map((s) => s.id).filter((id) => !id.startsWith(SCENE_AT)), [all]);
+  const texts = useMemo(() => (kind === "scenario" && screenplay ? screenplaySceneTexts(screenplay.elements) : manuscript), [kind, screenplay, manuscript]);
+  const groups = useMemo(() => timeline(cards, edges, texts, order, lang).filter((g) => LANE_TYPES.includes(g.type) && g.rows.length > 0), [cards, edges, texts, order, lang]);
+  const storyCurve = useMemo(() => laneCurve(all, slots, heroIssues(cards)), [all, slots, cards]);
+
+  const active = mode === "ribbon" ? currentId : selected && index.has(selected) ? selected : null;
+  const playX = active && slots.get(active) ? slots.get(active)!.x : null;
+
+  const moves = useMoves(scope, beforeMove, (id) => {
+    refocus.current = id;
+    setTimeout(() => {
+      const ids = [...(rootRef.current?.querySelectorAll<HTMLElement>("[data-scene-id]") ?? [])].map((el) => el.dataset.sceneId);
+      const title = useCosmos.getState().nodes.find((n) => n.id === id)?.data.title.trim() || p.untitled;
       const n = ids.indexOf(id) + 1;
       if (n > 0) setAnnounce(fmt(f.moved, { title, n, total: ids.length }));
     }, 0);
-  };
+  });
+  // Ruban d'un épisode : une scène sans carte n'a pas de rang sûr dans tout le texte, elle ne bouge pas d'ici.
+  const movable = (id: string) => !(mode === "ribbon" && id.startsWith(SCENE_AT));
 
-  const writeScript = (next: ReturnType<typeof moveSceneBefore>) => {
-    const sp = useCosmos.getState().screenplay;
-    if (!sp || next === sp.elements) return false;
-    useCosmos.getState().setScreenplay({ ...sp, elements: next }, true);
-    return true;
-  };
+  // Après un déplacement, le focus suit la carte.
+  useEffect(() => {
+    const id = refocus.current;
+    if (!id) return;
+    refocus.current = null;
+    rootRef.current?.querySelector<HTMLElement>(`[data-scene-id="${CSS.escape(id)}"]`)?.focus();
+  });
 
-  const moveBefore = (id: string, target: string) => {
-    if (id === target) return;
-    const st = useCosmos.getState();
-    const moved = kind === "scenario" ? writeScript(moveSceneBefore(st.screenplay?.elements ?? [], id, target)) : st.moveBookScene(id, target, "before");
-    if (moved && !id.startsWith(SCENE_AT)) {
-      refocus.current = id;
-      say(id);
-    }
-  };
+  // Ruban : la scène du curseur reste en vue.
+  useEffect(() => {
+    if (mode !== "ribbon" || !currentId) return;
+    const box = scrollRef.current;
+    const card = rootRef.current?.querySelector<HTMLElement>(`[data-scene-id="${CSS.escape(currentId)}"]`);
+    if (!box || !card) return;
+    const head = box.querySelector<HTMLElement>(".frise-lane-head")?.offsetWidth ?? 0;
+    const b = box.getBoundingClientRect();
+    const c = card.getBoundingClientRect();
+    if (c.left < b.left + head || c.right > b.right) box.scrollBy({ left: c.left - b.left - head - 24 });
+  }, [mode, currentId, px]);
 
-  const moveToEnd = (id: string, row: FriseRow) => {
-    const st = useCosmos.getState();
-    let moved = false;
-    if (kind === "scenario") moved = writeScript(moveSceneToRowEnd(st.screenplay?.elements ?? [], id, row));
-    else if (row.kind === "beat" && row.key) {
-      st.placeInPlan(id, row.key);
-      moved = true;
-    } else if (row.kind === "none" && plan.template !== "libre") {
-      st.placeInPlan(id, null);
-      moved = true;
-    } else {
-      const last = row.scenes.filter((s) => s.id !== id).at(-1);
-      if (last) moved = st.moveBookScene(id, last.id, "after");
-    }
-    if (moved && !id.startsWith(SCENE_AT)) {
-      refocus.current = id;
-      say(id);
-    }
+  const titleOf = (s: FriseScene) => s.title || (byId.get(s.id)?.title.trim() ?? "") || p.untitled;
+  const lengthOf = (s: FriseScene) => (kind === "scenario" ? fmt(f.pages, { n: formatEighths(eighthsOf(s.size)) || "0" }) : fmt(f.words, { n: (s.words ?? 0).toLocaleString(lang) }));
+  const pick = (id: string) => {
+    if (mode === "ribbon") onGo?.(id);
+    else setSelected((v) => (v === id ? null : id));
   };
-
-  const step = (id: string, way: -1 | 1) => {
-    const st = useCosmos.getState();
-    const moved = kind === "scenario" ? writeScript(stepScene(st.screenplay?.elements ?? [], id, way < 0 ? "earlier" : "later")) : st.stepBookScene(id, way < 0 ? "up" : "down");
-    if (moved && !id.startsWith(SCENE_AT)) {
-      refocus.current = id;
-      say(id);
-    }
-  };
-
   const focusScene = (id: string | undefined) => {
     if (id) rootRef.current?.querySelector<HTMLElement>(`[data-scene-id="${CSS.escape(id)}"]`)?.focus();
   };
-
   const onCardKey = (e: KeyboardEvent, s: FriseScene) => {
     const i = index.get(s.id) ?? 0;
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();
       const way = e.key === "ArrowRight" ? 1 : -1;
-      if (e.altKey) step(s.id, way);
-      else focusScene(all[i + way]?.id);
+      if (e.altKey) {
+        if (movable(s.id)) moves.step(s.id, way);
+      } else focusScene(all[i + way]?.id);
     } else if (e.key === "Home") {
       e.preventDefault();
       focusScene(all[0]?.id);
     } else if (e.key === "End") {
       e.preventDefault();
       focusScene(all.at(-1)?.id);
-    } else if (e.key === "Escape" && shown) {
+    } else if (e.key === "Escape" && mode === "plan" && selected) {
       setSelected(null);
     }
   };
@@ -250,30 +313,65 @@ export function Frise() {
     setDragging(false);
     setOver(null);
   };
-  const dropOn = (e: DragEvent, run: (id: string) => void) => {
-    e.preventDefault();
-    const id = dragRef.current;
-    endDrag();
-    if (id) run(id);
+  const dropHandlers = (key: string, run: (id: string) => void) => ({
+    onDragOver: (e: DragEvent) => {
+      if (!dragRef.current) return;
+      e.preventDefault();
+      if (over !== key) setOver(key);
+    },
+    onDragLeave: () => {
+      if (over === key) setOver(null);
+    },
+    onDrop: (e: DragEvent) => {
+      e.preventDefault();
+      const id = dragRef.current;
+      endDrag();
+      if (id) run(id);
+    },
+  });
+  const rowOfPart = (id: string) => lineRows[Number(id.slice(PART.length))];
+
+  // Règle : un clic ou un glisser va à la scène sous le pointeur, comme la tête de lecture d'un banc de montage.
+  const scrubbing = useRef<string | null>(null);
+  const scrubAt = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    const id = sceneAtX(all, slots, e.clientX - box.left);
+    if (id && id !== scrubbing.current) {
+      scrubbing.current = id;
+      if (mode === "ribbon") onGo?.(id);
+      else setSelected(id);
+    }
   };
 
-  const sceneCard = (s: FriseScene, style?: CSSProperties) => {
-    const card = cards.get(s.id);
+  const sceneCard = (s: FriseScene) => {
+    const slot = slots.get(s.id) as Slot;
+    if (isPart(s.id)) {
+      const row = rowOfPart(s.id);
+      const name = row ? rowLabel(row) : "";
+      return (
+        <div key={s.id} className={`frise-end${over === s.id ? " is-over" : ""}`} style={{ left: slot.x, width: slot.w }} aria-label={fmt(f.dropEnd, { name })} {...dropHandlers(s.id, (id) => row && moves.toEnd(id, row))}>
+          {dragging ? f.dropHere : ""}
+        </div>
+      );
+    }
+    const card = byId.get(s.id);
     const look = plotColor(card ? s.id : undefined);
     const n = (index.get(s.id) ?? 0) + 1;
     const title = titleOf(s);
     const length = lengthOf(s);
+    const can = movable(s.id);
     return (
       <button
         key={s.id}
         type="button"
         data-scene-id={s.id}
-        className={`frise-card${shown === s.id ? " is-selected" : ""}${over === s.id ? " is-over" : ""}${look.className}`}
-        style={{ width: cardWidth(s.size, px), ...look.style, ...style }}
-        aria-pressed={shown === s.id}
+        className={`frise-card${active === s.id ? " is-selected" : ""}${over === s.id ? " is-over" : ""}${look.className}`}
+        style={{ left: slot.x, width: cardWidth(s.size, px), ...look.style }}
+        aria-current={mode === "ribbon" && active === s.id ? "true" : undefined}
+        aria-pressed={mode === "plan" ? active === s.id : undefined}
         aria-label={fmt(f.sceneAria, { n, title, length }) + (look.label ? `. ${look.label}` : "")}
         title={look.label}
-        draggable
+        draggable={can}
         onDragStart={(e) => {
           dragRef.current = s.id;
           e.dataTransfer.effectAllowed = "move";
@@ -281,14 +379,8 @@ export function Frise() {
           setDragging(true);
         }}
         onDragEnd={endDrag}
-        onDragOver={(e) => {
-          if (!dragRef.current) return;
-          e.preventDefault();
-          if (over !== s.id) setOver(s.id);
-        }}
-        onDragLeave={() => over === s.id && setOver(null)}
-        onDrop={(e) => dropOn(e, (id) => moveBefore(id, s.id))}
-        onClick={() => setSelected(shown === s.id ? null : s.id)}
+        {...dropHandlers(s.id, (id) => moves.before(id, s.id))}
+        onClick={() => pick(s.id)}
         onKeyDown={(e) => onCardKey(e, s)}
       >
         <span className="frise-card-top" aria-hidden="true">
@@ -305,25 +397,25 @@ export function Frise() {
     );
   };
 
+  const trackStyle = { width } as CSSProperties;
+  const decor = (
+    <>
+      {bounds.map((b, i) => (
+        <span key={`b${i}`} className="frise-bound" style={{ left: b.x - CARD_GAP / 2 }} aria-hidden="true" />
+      ))}
+      {playX !== null && <span className="frise-playhead" style={{ left: playX }} aria-hidden="true" />}
+    </>
+  );
   const totalLabel =
     kind === "scenario"
       ? `${fmt(t.screenplay.minutes, { n: Math.round(total) })} · ${fmt(Math.round(total) === 1 ? t.screenplay.pagesOne : t.screenplay.pagesMany, { n: Math.round(total) })}`
-      : `${fmt(t.plan.summaryMany, { n: all.length })} · ${fmt(f.words, { n: all.reduce((a, s) => a + (s.words ?? 0), 0).toLocaleString(lang) })}`;
-
-  if (interactive) return <div className="frise"><p className="sp-empty">{f.interactive}</p></div>;
+      : `${fmt(p.summaryMany, { n: all.length })} · ${fmt(f.words, { n: all.reduce((a, s) => a + (s.words ?? 0), 0).toLocaleString(lang) })} · ${fmt(f.reading, { time: timecode(clock(total)) })}`;
 
   return (
-    <div className="frise" ref={rootRef}>
-      <header className="frise-head">
-        <h1>{f.title}</h1>
-        <div className="sq-modes" role="group" aria-label={f.groupsAria}>
-          {FRISE_GROUPS.map((g) => (
-            <button key={g} type="button" aria-pressed={group === g} onClick={() => setGroup(g)}>
-              {f.groups[g]}
-            </button>
-          ))}
-        </div>
-        <div className="frise-zoom" role="group">
+    <div className={`frise-board is-${mode}`} ref={rootRef}>
+      <div className="frise-tools">
+        {mode === "ribbon" && <span className="frise-tools-title">{f.ribbonTitle}</span>}
+        <div className="frise-zoom" role="group" aria-label={f.zoomAria}>
           <button type="button" className="icon-button" aria-label={f.zoomOut} title={f.zoomOut} disabled={scale === 0} onClick={() => setScale((v) => Math.max(0, v - 1))}>
             −
           </button>
@@ -331,74 +423,158 @@ export function Frise() {
             +
           </button>
         </div>
-        {all.length > 0 && <p className="sq-total">{totalLabel}</p>}
-      </header>
+        {all.length > 0 && <span className="frise-total">{totalLabel}</span>}
+        {mode === "ribbon" && (
+          <button type="button" className="ghost-button frise-shrink" onClick={() => setOpen(false)}>
+            {f.shrink}
+          </button>
+        )}
+      </div>
       {all.length === 0 ? (
         <p className="sp-empty">{f.empty}</p>
       ) : (
-        <div className={`frise-body${shown ? " has-panel" : ""}`}>
-          <div className="frise-scroll" role="region" aria-label={f.title} tabIndex={-1}>
-            {group === "story" ? (
-              <>
-                <p className="sp-empty frise-hint">{f.hint}</p>
-                <div className="frise-story">
-                {rows.map((row, r) => {
-                  const name = rowLabel(row);
-                  // Chaque partie a la largeur de ses scènes (au moins celle d'une carte et demie, pour son titre).
-                  const width = Math.max(168, row.scenes.reduce((a, s) => a + cardWidth(s.size, px), 0) + CARD_GAP * Math.max(0, row.scenes.length - 1));
-                  return (
-                    <section key={`${row.kind}:${row.key ?? r}`} className={`frise-row is-${row.kind}`} aria-label={name} style={{ width }}>
-                      <h2 className="frise-row-head">
-                        <span className="frise-row-name">{name}</span>
-                        <span className="frise-row-meta">
-                          {fmt(row.scenes.length === 1 ? t.plan.summaryOne : t.plan.summaryMany, { n: row.scenes.length })}
-                          {total > 0 && <> · {fmt(f.share, { pct: pct(rowSize(row)) })}</>}
-                        </span>
-                      </h2>
-                      <div className="frise-track">
-                        {row.scenes.map((s) => sceneCard(s))}
-                        {(dragging || row.scenes.length === 0) && (
-                          <div
-                            className={`frise-end${over === `end:${r}` ? " is-over" : ""}`}
-                            aria-label={fmt(f.dropEnd, { name })}
-                            onDragOver={(e) => {
-                              if (!dragRef.current) return;
-                              e.preventDefault();
-                              setOver(`end:${r}`);
-                            }}
-                            onDragLeave={() => over === `end:${r}` && setOver(null)}
-                            onDrop={(e) => dropOn(e, (id) => moveToEnd(id, row))}
-                          >
-                            {dragging ? f.dropHere : ""}
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  );
-                })}
+        <div className="frise-body">
+          <div className="frise-scroll" ref={scrollRef}>
+            <div className="frise-lanes">
+              <div className="frise-lane is-ruler">
+                <div className="frise-lane-head">{kind === "scenario" ? f.rulerScript : f.rulerNovel}</div>
+                <div
+                  className="frise-lane-track frise-ruler"
+                  style={trackStyle}
+                  title={f.rulerHint}
+                  onPointerDown={(e) => {
+                    if ((e.target as HTMLElement).closest(".frise-bound-label")) return;
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    scrubbing.current = null;
+                    scrubAt(e);
+                  }}
+                  onPointerMove={(e) => {
+                    if (e.buttons === 1 && e.currentTarget.hasPointerCapture(e.pointerId)) scrubAt(e);
+                  }}
+                  onPointerUp={() => {
+                    scrubbing.current = null;
+                  }}
+                >
+                  {bounds.map((b, i) => {
+                    const row = lineRows.find((r) => r.key === b.key && r.kind === b.kind);
+                    const name = row ? rowLabel(row) : "";
+                    const next = bounds[i + 1]?.x ?? width + 400;
+                    return (
+                      <span key={`l${i}`} className={`frise-bound-label${over === `row:${i}` ? " is-over" : ""}`} style={{ left: b.x, maxWidth: Math.max(24, next - b.x - 8) }} title={name} {...(row ? dropHandlers(`row:${i}`, (id) => moves.toEnd(id, row)) : {})}>
+                        {name}
+                      </span>
+                    );
+                  })}
+                  {marks.map((m) => {
+                    const x = pageToX(all, slots, m.page);
+                    return m.major ? (
+                      <span key={m.page} className="frise-tick is-major" style={{ left: x }} aria-hidden="true">
+                        <span className="frise-tick-page">{fmt(f.page, { n: Math.round(m.page) + 1 })}</span>
+                        <span className="frise-tick-time">{timecode(clock(m.page))}</span>
+                      </span>
+                    ) : (
+                      <span key={m.page} className="frise-tick" style={{ left: x }} aria-hidden="true" />
+                    );
+                  })}
+                  {playX !== null && <span className="frise-playhead is-head" style={{ left: playX }} aria-hidden="true" />}
                 </div>
-              </>
-            ) : (
-              <FriseLanes group={group} rows={rows} all={all} px={px} rowLabel={rowLabel} sceneCard={sceneCard} />
-            )}
+              </div>
+              <div className="frise-lane is-scenes">
+                <div className="frise-lane-head">{f.lanes.scenes}</div>
+                <div className="frise-lane-track" style={trackStyle}>
+                  {decor}
+                  {placed.map(sceneCard)}
+                </div>
+              </div>
+              {storyCurve && (
+                <div className="frise-lane is-curve">
+                  <div className="frise-lane-head">{f.lanes.story}</div>
+                  <div className="frise-lane-track" style={trackStyle}>
+                    {decor}
+                    <Curve points={storyCurve} width={width} label={f.lanes.story} />
+                  </div>
+                </div>
+              )}
+              {groups.length === 0 && <p className="sp-empty frise-hint">{f.lanes.noCards}</p>}
+              {groups.map((g) => {
+                const closed = folded.includes(g.type);
+                const name = types[g.type].section;
+                return (
+                  <section key={g.type} className="frise-lane-group" aria-label={name}>
+                    <h3 className="frise-lane-group-title">
+                      <button type="button" aria-expanded={!closed} onClick={() => toggleFold(g.type)}>
+                        <span className={`disclosure${closed ? "" : " is-open"}`} aria-hidden="true" />
+                        {name}
+                        <span className="frise-group-count">{g.rows.length}</span>
+                      </button>
+                    </h3>
+                    {!closed &&
+                      g.rows.map((row) => {
+                        const curve = g.type === "personnage" ? laneCurve(all, slots, characterIssues(cards, row.card.id, row.card.fiche?.principal === "oui")) : null;
+                        const label = row.card.title.trim() || p.untitled;
+                        return (
+                          <div key={row.card.id} className={`frise-lane${curve ? " has-curve" : ""}`}>
+                            <div className="frise-lane-head">
+                              <button type="button" className="tl-card" title={fmt(p.show, { title: label })} onClick={() => revealCard(row.card.id)}>
+                                <span className="card-dot" style={{ background: typeColor(g.type) }} />
+                                {label}
+                              </button>
+                              <span className="tl-count">{row.count}</span>
+                              {row.count > 0 && (
+                                <button type="button" className="icon-button tl-read" aria-label={fmt(t.thread.readOf, { title: label })} title={fmt(t.thread.readOf, { title: label })} onClick={() => readThread(row.card.id)}>
+                                  <ReadIcon />
+                                </button>
+                              )}
+                            </div>
+                            <div className="frise-lane-track" style={trackStyle}>
+                              {decor}
+                              {curve && <Curve points={curve} width={width} label={fmt(f.lanes.curveOf, { name: label })} />}
+                              {row.cells.map((cell, i) => {
+                                const slot = slots.get(order[i]);
+                                if (!slot) return null;
+                                const names = { card: label, scene: byId.get(order[i])?.title.trim() || p.untitled };
+                                const style = { left: slot.x, width: slot.w };
+                                if (cell === "pov")
+                                  return (
+                                    <span key={order[i]} className="tl-cell frise-cell is-pov" style={style} role="img" aria-label={fmt(p.timelinePovCell, names)} title={fmt(p.timelinePovCell, names)}>
+                                      <span className="tl-mark is-pov" aria-hidden="true" />
+                                    </span>
+                                  );
+                                return (
+                                  <button
+                                    key={order[i]}
+                                    type="button"
+                                    className={`tl-cell frise-cell is-${cell}`}
+                                    style={style}
+                                    aria-pressed={cell === "linked"}
+                                    aria-label={fmt(cell === "linked" ? p.timelineOn : cell === "cited" ? p.timelineCitedCell : p.timelineOff, names)}
+                                    onClick={() => toggleLink(order[i], row.card.id)}
+                                  >
+                                    <span className={`tl-mark is-${cell}`} aria-hidden="true" />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </section>
+                );
+              })}
+            </div>
           </div>
-          {shown && (
+          {mode === "plan" && active && (
             <FrisePanel
-              key={shown}
-              scene={all[index.get(shown) ?? 0]}
-              n={(index.get(shown) ?? 0) + 1}
-              total={all.length}
-              startPage={Math.floor(before.get(shown) ?? 0) + 1}
-              share={pct(before.get(shown) ?? 0)}
-              rowName={rowLabel(rows.find((r) => r.scenes.some((s) => s.id === shown)) ?? rows[0])}
-              title={titleOf(all[index.get(shown) ?? 0])}
-              length={lengthOf(all[index.get(shown) ?? 0])}
-              start={starts.get(shown)}
-              writeView={vocab.views.manuscrit}
-              onStep={(way) => step(shown, way)}
+              key={active}
+              id={active}
+              start={starts.get(active)}
+              writeView={views.manuscrit}
+              onStep={(way) => {
+                if (movable(active)) moves.step(active, way);
+              }}
               onClose={() => {
                 setSelected(null);
-                focusScene(shown);
+                focusScene(active);
               }}
             />
           )}
@@ -407,144 +583,6 @@ export function Frise() {
       <div className="sr-only" aria-live="polite">
         {announce}
       </div>
-    </div>
-  );
-}
-
-interface LanesProps {
-  group: FriseGroup;
-  rows: FriseRow[];
-  all: FriseScene[];
-  px: number;
-  rowLabel: (row: FriseRow) => string;
-  sceneCard: (s: FriseScene, style?: CSSProperties) => React.ReactNode;
-}
-
-const LANE_TYPES: Record<Exclude<FriseGroup, "story">, CardType[]> = { plots: ["intrigue", "theme"], chars: ["personnage"] };
-
-/** Vues Intrigues et Personnages : une ligne commune, une piste par carte, la règle des pages en haut. */
-function FriseLanes({ group, rows, all, px, rowLabel, sceneCard }: LanesProps) {
-  const t = useT();
-  const f = t.frise;
-  const p = t.plan;
-  const { types } = useVocab();
-  const lang = useSettings((s) => s.lang);
-  const nodes = useCosmos((s) => s.nodes);
-  const edges = useCosmos((s) => s.edges);
-  const manuscript = useCosmos((s) => s.manuscript);
-  const kind = useCosmos((s) => s.kind);
-  const screenplay = useCosmos((s) => s.screenplay);
-  const toggleLink = useCosmos((s) => s.toggleLink);
-  const revealCard = useCosmos((s) => s.revealCard);
-  const readThread = useCosmos((s) => s.readThread);
-
-  const { slots, width } = useMemo(() => layoutScenes(all, px), [all, px]);
-  const ticks = useMemo(() => rulerTicks(all, slots), [all, slots]);
-  const bounds = useMemo(() => (rows.length > 1 ? rowStarts(rows, slots) : []), [rows, slots]);
-  const cards = useMemo(() => nodes.map((n) => n.data), [nodes]);
-  const order = useMemo(() => all.map((s) => s.id).filter((id) => !id.startsWith(SCENE_AT)), [all]);
-  const texts = useMemo(() => (kind === "scenario" && screenplay ? screenplaySceneTexts(screenplay.elements) : manuscript), [kind, screenplay, manuscript]);
-  const groups = useMemo(() => timeline(cards, edges, texts, order, lang).filter((g) => (LANE_TYPES[group as Exclude<FriseGroup, "story">] ?? []).includes(g.type)), [cards, edges, texts, order, lang, group]);
-  const storyCurve = useMemo(() => (group === "plots" ? laneCurve(all, slots, heroIssues(cards)) : null), [group, all, slots, cards]);
-  const titleOf = (id: string) => cards.find((c) => c.id === id)?.title.trim() || p.untitled;
-  const trackStyle = { width } as CSSProperties;
-
-  const boundLines = bounds.map((b) => <span key={`${b.kind}:${b.key}`} className="frise-bound" style={{ left: b.x - CARD_GAP / 2 }} aria-hidden="true" />);
-
-  return (
-    <div className="frise-lanes">
-      <p className="sp-empty frise-hint">{f.lanes.hint}</p>
-      <div className="frise-lane is-ruler" aria-hidden="true">
-        <div className="frise-lane-head">{f.ruler}</div>
-        <div className="frise-lane-track" style={trackStyle}>
-          {bounds.map((b, i) => (
-            // Le nom d'une partie s'arrête avant la suivante (coupé, en entier au survol).
-            <span key={`${b.kind}:${b.key}:${i}`} className="frise-bound-label" style={{ left: b.x, maxWidth: Math.max(24, (bounds[i + 1]?.x ?? width + 400) - b.x - 8) }} title={rowLabel(rows.find((r) => r.key === b.key && r.kind === b.kind) ?? rows[0])}>
-              {rowLabel(rows.find((r) => r.key === b.key && r.kind === b.kind) ?? rows[0])}
-            </span>
-          ))}
-          {ticks.map((tk) =>
-            tk.label ? (
-              <span key={tk.x} className="frise-tick" style={{ left: tk.x }}>
-                {Math.floor(tk.page) + 1}
-              </span>
-            ) : null,
-          )}
-        </div>
-      </div>
-      <div className="frise-lane is-scenes">
-        <div className="frise-lane-head">{f.lanes.scenes}</div>
-        <div className="frise-lane-track" style={trackStyle}>
-          {boundLines}
-          {all.map((s) => {
-            const slot = slots.get(s.id) as Slot;
-            return sceneCard(s, { position: "absolute", left: slot.x, width: slot.w });
-          })}
-        </div>
-      </div>
-      {storyCurve && (
-        <div className="frise-lane is-curve">
-          <div className="frise-lane-head">{f.lanes.story}</div>
-          <div className="frise-lane-track" style={trackStyle}>
-            {boundLines}
-            <Curve points={storyCurve} width={width} label={f.lanes.story} />
-          </div>
-        </div>
-      )}
-      {groups.length === 0 && <p className="sp-empty">{group === "plots" ? f.lanes.noPlots : f.lanes.noChars}</p>}
-      {groups.map((g) => (
-        <section key={g.type} className="frise-lane-group" aria-label={types[g.type].section}>
-          <h2 className="frise-lane-group-title">{types[g.type].section}</h2>
-          {g.rows.map((row) => {
-            const curve = group === "chars" ? laneCurve(all, slots, characterIssues(cards, row.card.id, row.card.fiche?.principal === "oui")) : null;
-            return (
-              <div key={row.card.id} className={`frise-lane${curve ? " has-curve" : ""}`}>
-                <div className="frise-lane-head">
-                  <button type="button" className="tl-card" title={fmt(p.show, { title: row.card.title })} onClick={() => revealCard(row.card.id)}>
-                    <span className="card-dot" style={{ background: typeColor(g.type) }} />
-                    {row.card.title.trim() || p.untitled}
-                  </button>
-                  <span className="tl-count">{row.count}</span>
-                  {row.count > 0 && (
-                    <button type="button" className="icon-button tl-read" aria-label={fmt(t.thread.readOf, { title: row.card.title })} title={fmt(t.thread.readOf, { title: row.card.title })} onClick={() => readThread(row.card.id)}>
-                      <ReadIcon />
-                    </button>
-                  )}
-                </div>
-                <div className="frise-lane-track" style={trackStyle}>
-                  {boundLines}
-                  {curve && <Curve points={curve} width={width} label={fmt(f.lanes.curveOf, { name: row.card.title.trim() || p.untitled })} />}
-                  {row.cells.map((cell, i) => {
-                    const slot = slots.get(order[i]);
-                    if (!slot) return null;
-                    const names = { card: row.card.title, scene: titleOf(order[i]) };
-                    const style = { left: slot.x, width: slot.w };
-                    if (cell === "pov")
-                      return (
-                        <span key={order[i]} className="tl-cell frise-cell is-pov" style={style} role="img" aria-label={fmt(p.timelinePovCell, names)} title={fmt(p.timelinePovCell, names)}>
-                          <span className="tl-mark is-pov" aria-hidden="true" />
-                        </span>
-                      );
-                    return (
-                      <button
-                        key={order[i]}
-                        type="button"
-                        className={`tl-cell frise-cell is-${cell}`}
-                        style={style}
-                        aria-pressed={cell === "linked"}
-                        aria-label={fmt(cell === "linked" ? p.timelineOn : cell === "cited" ? p.timelineCitedCell : p.timelineOff, names)}
-                        onClick={() => toggleLink(order[i], row.card.id)}
-                      >
-                        <span className={`tl-mark is-${cell}`} aria-hidden="true" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </section>
-      ))}
     </div>
   );
 }
@@ -567,47 +605,50 @@ function Curve({ points, width, label }: { points: CurvePoint[]; width: number; 
   );
 }
 
-interface PanelProps {
-  scene: FriseScene;
-  n: number;
-  total: number;
-  startPage: number;
-  share: number;
-  rowName: string;
-  title: string;
-  length: string;
-  /** Scénario : rang de l'en-tête de la scène. */
-  start?: number;
-  writeView: string;
-  onStep: (way: -1 | 1) => void;
-  onClose: () => void;
+// ---------- La scène : fiche commune au volet de gauche (ruban agrandi) et au volet de la frise du Plan ----------
+
+/** Rang, longueur, page et part du récit d'une scène, lus dans la frise. */
+function useScenePlace(id: string, scope: "whole" | "current") {
+  const { all, total, starts } = useFriseData(scope);
+  const kind = useCosmos((s) => s.kind);
+  const lang = useSettings((s) => s.lang);
+  const f = useT().frise;
+  return useMemo(() => {
+    const i = all.findIndex((s) => s.id === id);
+    if (i < 0) return null;
+    const before = all.slice(0, i).reduce((a, s) => a + s.size, 0);
+    const s = all[i];
+    return {
+      n: i + 1,
+      total: all.length,
+      page: Math.floor(before) + 1,
+      share: total > 0 ? Math.round((before / total) * 100) : 0,
+      length: kind === "scenario" ? fmt(f.pages, { n: formatEighths(eighthsOf(s.size)) || "0" }) : fmt(f.words, { n: (s.words ?? 0).toLocaleString(lang) }),
+      start: starts.get(id),
+      title: s.title,
+    };
+  }, [all, total, starts, id, kind, lang, f]);
 }
 
-/** Volet de la scène choisie : ce qu'on règle d'elle sans quitter la frise, et les chemins vers les autres vues. */
-function FrisePanel({ scene, n, total, startPage, share, rowName, title, length, start, writeView, onStep, onClose }: PanelProps) {
+/** Fiche de la scène : rang et place, statut, point de vue, synopsis, fin de scène, ce qui lui est relié. */
+export function SceneSheet({ id, scope = "whole", children }: { id: string; scope?: "whole" | "current"; children?: ReactNode }) {
   const t = useT();
   const f = t.frise;
   const kind = useCosmos((s) => s.kind);
-  const card = useCosmos((s) => s.nodes.find((x) => x.id === scene.id)?.data) as CardData | undefined;
-  const screenplay = useCosmos((s) => s.screenplay);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const card = useCosmos((s) => s.nodes.find((x) => x.id === id)?.data) as CardData | undefined;
+  const screenplay = useCosmos((s) => (scope === "current" ? currentScript(s) : s.screenplay));
+  const place = useScenePlace(id, scope);
+  const title = card?.title.trim() || place?.title || t.plan.untitled;
+  const start = place?.start;
   const synopsis = kind === "scenario" ? (start !== undefined && screenplay ? sceneSynopsis(screenplay.elements, start) : "") : card?.fiche?.synopsis ?? "";
-  const target = card ? scene.id : start !== undefined ? `${SCENE_AT}${start}` : null;
-
   return (
-    <aside className="frise-panel" aria-label={f.panel.aria} onKeyDown={(e) => e.key === "Escape" && onClose()}>
-      <div className="frise-panel-head">
+    <div className="frise-sheet">
+      {place && (
         <p className="frise-panel-kicker">
-          {fmt(f.panel.kicker, { n, total })} · {rowName}
+          {fmt(f.panel.kicker, { n: place.n, total: place.total })} · {place.length} · {fmt(f.panel.position, { page: place.page, pct: place.share })}
         </p>
-        <button ref={closeRef} type="button" className="icon-button" aria-label={f.panel.close} title={f.panel.close} onClick={onClose}>
-          ×
-        </button>
-      </div>
+      )}
       <h2 className="frise-panel-title">{title}</h2>
-      <p className="frise-panel-meta">
-        {length} · {fmt(f.panel.position, { page: startPage, pct: share })}
-      </p>
       {card ? (
         <>
           <div className="scene-pills">
@@ -616,39 +657,103 @@ function FrisePanel({ scene, n, total, startPage, share, rowName, title, length,
           </div>
           <div className="frise-panel-field">
             <span className="frise-panel-label">{f.panel.synopsis}</span>
-            <SynopsisField
-              value={synopsis}
-              scene={title}
-              onSave={(v) => (kind === "scenario" ? useCosmos.getState().setCardSceneSynopsis(scene.id, v) : useCosmos.getState().setFiche(scene.id, "synopsis", v))}
-            />
+            <SynopsisField value={synopsis} scene={title} onSave={(v) => (kind === "scenario" ? useCosmos.getState().setCardSceneSynopsis(id, v) : useCosmos.getState().setFiche(id, "synopsis", v))} />
           </div>
           <SceneIssue card={card} />
-          <SceneLinks id={scene.id} compact />
+          <SceneLinks id={id} />
         </>
       ) : (
         <p className="sp-empty">{f.panel.noCard}</p>
       )}
-      <div className="frise-panel-actions">
-        <button type="button" className="ghost-button" disabled={n <= 1} onClick={() => onStep(-1)}>
-          ← {f.panel.earlier}
-        </button>
-        <button type="button" className="ghost-button" disabled={n >= total} onClick={() => onStep(1)}>
-          {f.panel.later} →
-        </button>
-      </div>
-      <div className="frise-panel-actions">
-        {card && (
-          <button type="button" className="ghost-button" onClick={() => useCosmos.getState().revealCard(scene.id)}>
-            {f.panel.showCanvas}
+      {children}
+    </div>
+  );
+}
+
+/** Volet de la frise du Plan et du séquencier : la fiche, puis « Plus tôt », « Plus tard » et les chemins vers les autres vues. */
+function FrisePanel({ id, start, writeView, onStep, onClose }: { id: string; start?: number; writeView: string; onStep: (way: -1 | 1) => void; onClose: () => void }) {
+  const t = useT();
+  const f = t.frise;
+  const card = useCosmos((s) => s.nodes.some((x) => x.id === id));
+  const place = useScenePlace(id, "whole");
+  const target = card ? id : start !== undefined ? `${SCENE_AT}${start}` : null;
+  return (
+    <aside className="frise-panel" aria-label={f.panel.aria} onKeyDown={(e) => e.key === "Escape" && onClose()}>
+      <button type="button" className="icon-button frise-panel-close" aria-label={f.panel.close} title={f.panel.close} onClick={onClose}>
+        ×
+      </button>
+      <SceneSheet id={id}>
+        <div className="frise-panel-actions">
+          <button type="button" className="ghost-button" disabled={!place || place.n <= 1} onClick={() => onStep(-1)}>
+            ← {f.panel.earlier}
           </button>
-        )}
-        {target && (
-          <button type="button" className="ghost-button" onClick={() => useCosmos.getState().openInManuscript(target)}>
-            {fmt(f.panel.open, { view: writeView })}
+          <button type="button" className="ghost-button" disabled={!place || place.n >= place.total} onClick={() => onStep(1)}>
+            {f.panel.later} →
           </button>
-        )}
-      </div>
+        </div>
+        <div className="frise-panel-actions">
+          {card && (
+            <button type="button" className="ghost-button" onClick={() => useCosmos.getState().revealCard(id)}>
+              {f.panel.showCanvas}
+            </button>
+          )}
+          {target && (
+            <button type="button" className="ghost-button" onClick={() => useCosmos.getState().openInManuscript(target)}>
+              {fmt(f.panel.open, { view: writeView })}
+            </button>
+          )}
+        </div>
+      </SceneSheet>
     </aside>
+  );
+}
+
+// ---------- Ruban agrandi : la frise au-dessus du texte, et le séparateur qui règle sa hauteur ----------
+
+/** Le ruban agrandi d'une vue d'écriture : la frise, puis un séparateur à tirer (souris, doigt, flèches du clavier). */
+export function RibbonBoard({ currentId, onGo, beforeMove }: { currentId: string | null; onGo: (id: string) => void; beforeMove?: () => void }) {
+  const f = useT().frise;
+  const height = useBoard((s) => s.height);
+  const setHeight = useBoard((s) => s.setHeight);
+  const interactive = useInteractive();
+  const start = useRef<{ y: number; h: number } | null>(null);
+  if (interactive) return null;
+  const max = typeof window === "undefined" ? 800 : Math.max(BOARD_MIN, Math.round(window.innerHeight * 0.75));
+  const h = Math.min(height, max);
+  return (
+    <div className="frise-ribbon">
+      <div className="frise-ribbon-box" style={{ height: h }}>
+        <FriseBoard mode="ribbon" currentId={currentId} onGo={onGo} beforeMove={beforeMove} />
+      </div>
+      <div
+        className="frise-splitter"
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label={f.splitter}
+        aria-valuemin={BOARD_MIN}
+        aria-valuemax={max}
+        aria-valuenow={h}
+        tabIndex={0}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          start.current = { y: e.clientY, h };
+        }}
+        onPointerMove={(e) => {
+          if (start.current) setHeight(Math.min(max, start.current.h + e.clientY - start.current.y));
+        }}
+        onPointerUp={() => {
+          start.current = null;
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            e.preventDefault();
+            setHeight(Math.min(max, h + (e.key === "ArrowDown" ? 40 : -40)));
+          }
+        }}
+      >
+        <span className="frise-splitter-grip" aria-hidden="true" />
+      </div>
+    </div>
   );
 }
 

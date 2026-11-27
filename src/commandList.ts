@@ -22,6 +22,7 @@ import { openPlay } from "./interactive/playState";
 import { unlearnAll } from "./learn";
 import { nextHighlight } from "./focusText";
 import { findOrSearch } from "./writingFind";
+import { useBoard } from "./boardState";
 import type { View } from "./projectState";
 import type { ProjectKind } from "./types";
 
@@ -58,13 +59,15 @@ const writing = (c: CommandContext) => c.screen === "project" && c.view === "man
 const onCanvas = (c: CommandContext) => c.screen === "project" && c.view === "toile";
 const desktop = () => isTauri() && !isMobileOS();
 const s = () => useCosmos.getState();
-const view = (v: "toile" | "plan" | "bible" | "manuscrit" | "frise") => () => s().setView(v);
+const view = (v: "toile" | "plan" | "bible" | "manuscrit") => () => s().setView(v);
 
 export const COMMANDS: AppCommandItem[] = [
   // MondoWrite
   { id: "about", group: "app", label: (t) => t.appMenu.about, run: () => s().setDialog("about") },
   { id: "settings", group: "app", label: (t) => t.appMenu.settings, accelerator: "CmdOrCtrl+,", run: () => sendCommand("settings") },
   { id: "synopsis-view", group: "view", menu: false, label: (t) => t.synopsisView.menu, enabled: inProject, run: () => s().setDialog("synopsis") },
+  // Ruban agrandi (#173) : la frise au-dessus du texte du Manuscrit ou du Scénario.
+  { id: "ribbon-board", group: "view", menu: false, label: (t) => (useBoard.getState().open ? t.frise.shrink : t.frise.expand), enabled: (c) => writing(c) && !(c.kind !== "scenario" && showsInteractive(s().metaKeep, useSettings.getState().experimental)), available: () => !isMobileOS(), run: () => useBoard.getState().setOpen(!useBoard.getState().open) },
   { id: "plot-colors", group: "view", menu: false, label: (t) => t.plan.plotColors, enabled: inProject, run: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
   { id: "profile", group: "app", menu: false, label: (t) => t.palette.items.profile, run: () => s().setDialog("profile") },
   // Pas l'élément « Quitter » du système : il fermait l'app sans laisser enregistrer la dernière frappe.
@@ -144,7 +147,6 @@ export const COMMANDS: AppCommandItem[] = [
   { id: "view-plan", group: "view", label: (_t, v) => v.plan, accelerator: "CmdOrCtrl+2", enabled: inProject, run: view("plan") },
   { id: "view-bible", group: "view", label: (_t, v) => v.bible, accelerator: "CmdOrCtrl+3", enabled: inProject, run: view("bible") },
   { id: "view-manuscrit", group: "view", label: (_t, v) => v.manuscrit, accelerator: "CmdOrCtrl+4", enabled: inProject, run: view("manuscrit") },
-  { id: "view-frise", group: "view", label: (_t, v) => v.frise, accelerator: "CmdOrCtrl+5", enabled: (c) => inProject(c) && !(c.kind !== "scenario" && showsInteractive(s().metaKeep, useSettings.getState().experimental)), run: view("frise") },
   // Volets du Manuscrit et du Scénario, mode focus (1.11.1 : toute commande de l'interface est aussi dans un menu).
   { id: "toggle-scenes", group: "view", label: (t) => t.appMenu.toggleScenes, enabled: writing, run: () => sendCommand("toggle-scenes") },
   { id: "toggle-side", group: "view", label: (t) => t.appMenu.toggleSide, enabled: writing, run: () => sendCommand("toggle-side") },

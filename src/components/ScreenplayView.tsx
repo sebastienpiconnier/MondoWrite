@@ -48,6 +48,7 @@ import { elementFor, type SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
+import { RibbonBoard, SceneSheet, useBoard } from "./Frise";
 import { startReading } from "./useReader";
 import { screenplayUtterances, type ReadNode } from "../reading";
 import { PRESERVED } from "../screenplay/editor/nodes";
@@ -610,6 +611,13 @@ export function ScreenplayView() {
   // Scène en cours pour le ruban : la dernière dont l'en-tête est avant le curseur.
   const ribbonScene = scenes.filter((s) => s.index <= current.index).pop();
   const ribbonCurrent = ribbonScene ? (ribbonScene.cardId ?? `@${ribbonScene.index}`) : null;
+  const goToRibbon = (id: string) => {
+    const s = scenes.find((x) => (x.cardId ?? `@${x.index}`) === id);
+    if (s) goTo(s.index);
+  };
+  // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone.
+  const boardOpen = useBoard((s) => s.open);
+  const board = boardOpen && !focusMode && !phone;
   const sceneCards = useMemo<SceneCard[]>(
     () => nodes.filter((n) => n.data.type === "scene").map((n) => ({ id: n.id, title: n.data.title })),
     [nodes],
@@ -1585,7 +1593,7 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${writing.showSynopsis && !focusMode ? " show-synopsis" : ""}${writing.showNotes ? "" : " hide-notes"}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${board ? " has-board" : ""}${writing.showSynopsis && !focusMode ? " show-synopsis" : ""}${writing.showNotes ? "" : " hide-notes"}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       // Largeur de la colonne du mode focus, comme dans le Manuscrit : la taille du texte ne change pas, la colonne
       // s'élargit (réglage de l'appareil, en caractères).
@@ -1601,6 +1609,15 @@ export function ScreenplayView() {
         />
       )}
       <nav className="sp-scenes ms-scenes" data-native-reorder aria-label={sp.scenesAria}>
+        {/* Ruban agrandi (#173) : la frise montre déjà les scènes ; le volet tient la fiche de la scène en cours. */}
+        {board ? (
+          <>
+            <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
+            <h2 className="sp-box-title">{t.frise.sheetTitle}</h2>
+            {ribbonCurrent && <SceneSheet id={ribbonCurrent} scope="current" />}
+          </>
+        ) : (
+          <>
         <EpisodePicker beforeSwitch={emit} onNotice={(text) => setNotice({ text })} />
         {/* Même en-tête que le volet du Manuscrit (#58). */}
         <h2 className="sp-box-title">{sp.scenesTitle}</h2>
@@ -1887,6 +1904,8 @@ export function ScreenplayView() {
             </ul>
           </>
         )}
+          </>
+        )}
       </nav>
 
       <div className="sp-center">
@@ -1986,6 +2005,7 @@ export function ScreenplayView() {
               { label: writing.showNotes ? t.screenplay.notesHide : t.screenplay.notesShow, onSelect: () => { const st = useSettings.getState(); st.setWriting({ ...st.writing, showNotes: !st.writing.showNotes }); } },
               { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
               { label: useSettings.getState().plotColors ? t.plan.plotColorsOff : t.plan.plotColorsOn, onSelect: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
+              !phone && { label: boardOpen ? t.frise.shrink : t.frise.expand, onSelect: () => useBoard.getState().setOpen(!boardOpen) },
               { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
               !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
               // Pages verrouillées (#46) : la scène laisse « OMIS » à sa place ; en rouge, en dernier (elle part à la corbeille).
@@ -2015,15 +2035,8 @@ export function ScreenplayView() {
         </div>
 
         {/* Ruban du récit : chaque case du gabarit à la place que ses scènes prennent (caché en mode focus). */}
-        {!focusMode && (
-          <StoryRibbon
-            currentId={ribbonCurrent}
-            onGo={(id) => {
-              const s = scenes.find((x) => (x.cardId ?? `@${x.index}`) === id);
-              if (s) goTo(s.index);
-            }}
-          />
-        )}
+        {!focusMode && !board && <StoryRibbon currentId={ribbonCurrent} onGo={goToRibbon} />}
+        {board && <RibbonBoard currentId={ribbonCurrent} onGo={goToRibbon} beforeMove={emit} />}
         <div className="sp-scroll">
           {!focusMode && !charFilter && <TitlePage paper={paper} onChange={setTitleField} />}
           <div

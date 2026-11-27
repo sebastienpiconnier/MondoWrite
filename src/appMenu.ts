@@ -99,7 +99,6 @@ async function buildMenu() {
       await item("view-plan"),
       await item("view-bible"),
       await item("view-manuscrit"),
-      await item("view-frise"),
       await sep(),
       await item("toggle-scenes"),
       await item("toggle-side"),

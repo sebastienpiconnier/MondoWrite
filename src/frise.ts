@@ -240,3 +240,58 @@ export function moveSceneToRowEnd(elements: ScreenplayElement[], id: string, row
 
 /** Libellé de rangée à résoudre par la vue : structure (clé et gabarit), chapitre, épisode. */
 export type RowLabelSource = { template: PlanTemplate; custom?: CustomTemplate };
+
+/**
+ * Abscisse d'une page de la ligne commune : linéaire à l'intérieur de chaque carte (une carte élargie à `MIN_CARD`
+ * étire seulement son morceau de règle), au bout de la dernière carte au-delà.
+ */
+export function pageToX(scenes: readonly FriseScene[], slots: ReadonlyMap<string, Slot>, page: number): number {
+  let start = 0;
+  for (const s of scenes) {
+    const slot = slots.get(s.id);
+    if (!slot) continue;
+    const end = start + s.size;
+    if (page <= end || s === scenes[scenes.length - 1]) {
+      const share = s.size > 0 ? Math.min(1, Math.max(0, (page - start) / s.size)) : 0;
+      return Math.round(slot.x + share * slot.w);
+    }
+    start = end;
+  }
+  return 0;
+}
+
+/** Scène sous l'abscisse `x` (la plus proche, l'espace entre deux cartes compte pour la suivante). */
+export function sceneAtX(scenes: readonly FriseScene[], slots: ReadonlyMap<string, Slot>, x: number): string | null {
+  let last: string | null = null;
+  for (const s of scenes) {
+    const slot = slots.get(s.id);
+    if (!slot) continue;
+    if (x < slot.x + slot.w) return s.id;
+    last = s.id;
+  }
+  return last;
+}
+
+/** Graduations d'une règle de montage : grandes (avec étiquette) et petites, à un pas qui laisse au moins `room` pixels. */
+export function rulerMarks(total: number, pxPerPage: number, room = 72): { page: number; major: boolean }[] {
+  const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500];
+  const step = steps.find((s) => s * pxPerPage >= room) ?? steps[steps.length - 1];
+  const minor = step >= 5 ? step / 5 : step / 2;
+  const out: { page: number; major: boolean }[] = [];
+  const end = Math.max(0, total);
+  for (let i = 0; i * minor <= end + 1e-9; i++) {
+    const page = Math.round(i * minor * 100) / 100;
+    out.push({ page, major: Math.abs(page / step - Math.round(page / step)) < 1e-9 });
+  }
+  return out;
+}
+
+/** Durée en minutes écrite comme un code temporel de montage : « 0:00 », « 12:00 », « 1:05:00 ». */
+export function timecode(minutes: number): string {
+  const total = Math.max(0, Math.round(minutes * 60));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const two = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`;
+}

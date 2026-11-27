@@ -257,7 +257,6 @@ export const ca = {
     plan: "Esquema",
     bible: "Bíblia",
     manuscrit: "Manuscrit",
-    frise: "Línia de temps",
     carnet: "Quadern",
   },
   carnet: {
@@ -2357,6 +2356,7 @@ export const ca = {
       modeAria: "Disposició de l’esquema",
       outline: "Llista",
       cards: "Fitxes",
+      timeline: "Línia de temps",
       charactersAria: "Personatges a l’escena",
       showCharacter: "Mostra la targeta de {name} al llenç",
       show: "Mostra la targeta «{title}» al llenç",
@@ -3981,7 +3981,9 @@ export const ca = {
   },
   frise: {
     title: "Línia de temps",
-    groups: { story: "Relat", plots: "Trames", chars: "Personatges" },
+    ribbonTitle: "Cinta del relat",
+    expand: "Amplia la cinta",
+    shrink: "Redueix la cinta",
     whole: "Tot el relat",
     words: "{n} paraules",
     panel: { close: "Tanca", earlier: "Abans", later: "Després", showCanvas: "Mostra al llenç", synopsis: "Sinopsi" },

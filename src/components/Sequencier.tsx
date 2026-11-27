@@ -38,6 +38,7 @@ import { foldedPartsNow, toggleFoldedPart, useFoldedParts } from "../structureFo
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
 import { ArrangeToggle, PlanHeader } from "./PlanHeader";
+import { FriseBoard } from "./Frise";
 import { useBeatText } from "./useBeatText";
 import { BeatQuestion } from "./StructureTools";
 import { StoryCircle } from "./StoryCircle";
@@ -316,10 +317,12 @@ export function Sequencier() {
     }
   }
   const cards = !phoneSq() && mode === "cards";
+  // Frise (#173) : la troisième présentation, jamais au téléphone.
+  const asFrise = !phoneSq() && mode === "timeline";
 
   return (
     <div className="sequencer" data-native-reorder>
-      <div className={`sq-inner${cards ? " is-cards" : ""}`}>
+      <div className={`sq-inner${cards ? " is-cards" : ""}${asFrise ? " is-frise" : ""}`}>
         {/* Même en-tête que le Plan d'un roman (#55) : seuls le vocabulaire et les actions changent. */}
         <PlanHeader
           title={sq.title}
@@ -354,6 +357,10 @@ export function Sequencier() {
           template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements, scriptBeats) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} replaceWarning={replaceWarning(screenplay.elements)} />}
           about={template && !inSeries ? t.plan.templateAbout[template] : undefined}
         />
+        {asFrise ? (
+          <FriseBoard mode="plan" />
+        ) : (
+          <>
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : inSeries ? <p className="sp-empty">{ts.hint}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}
         {template && !inSeries && <p className="sp-empty">{sq.templateHint}</p>}
         {template === "cercleHarmon" && (
@@ -683,6 +690,8 @@ export function Sequencier() {
             );
           })()))}
         </ol>
+          </>
+        )}
         <div className="sr-only" aria-live="polite">
           {announce}
         </div>

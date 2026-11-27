@@ -12,11 +12,10 @@ import { TodoPanel } from "./TodoPanel";
 import { useTopbarFit } from "./useTopbarFit";
 import { useSettings } from "../settings";
 import { shownView, usePhone } from "./usePhone";
-import { useInteractive } from "../interactive/useInteractive";
 
-/** Les cinq vues, dans le même ordre partout (#56) : barre du haut, onglets du téléphone, Cmd/Ctrl + 1 à 5. Sur
+/** Les quatre vues, dans le même ordre partout (#56) : barre du haut, onglets du téléphone, Cmd/Ctrl + 1 à 4. Sur
  *  téléphone, elles sont en onglets avec une icône (Plan et Manuscrit prennent leur nom de scénario). */
-const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit", "frise"];
+const VIEWS: View[] = ["toile", "plan", "bible", "manuscrit"];
 
 /** Icônes de la barre d'onglets du téléphone (1.11.2) : une barre d'onglets d'iPhone montre une icône et son nom. */
 const tabIcon = (d: string) => (
@@ -33,8 +32,6 @@ const PHONE_ICONS: Partial<Record<View, React.ReactNode>> = {
   bible: tabIcon("M12 6.5C10.5 5 8 4.5 4 4.5v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-14c-4 0-6.5.5-8 2zM12 6.5v14"),
   // Trois cartes posées en vrac, reliées.
   toile: tabIcon("M3 4h7v6H3zM14 3h7v6h-7zM8 15h8v6H8zM10 7h4M7 10l3 5M17 9l-3 6"),
-  // Des scènes posées sur une ligne du temps (la frise, #173).
-  frise: tabIcon("M3 12h18M5 7h5v10H5zM12 9h3v6h-3zM17 6h3v12h-3z"),
 };
 
 export function TopBar() {
@@ -53,10 +50,7 @@ export function TopBar() {
   // « Juste écrire » (discussion #61) : seule la vue d'écriture (et celle où l'on est), « Toutes les vues » pour le reste.
   const writerMode = useSettings((s) => s.writing.writerMode);
   const [allViews, setAllViews] = useState(false);
-  // Roman interactif : pas de frise (#173), l'ordre du livre n'y est pas celui de la lecture.
-  const interactive = useInteractive();
-  const offered = interactive ? VIEWS.filter((v) => v !== "frise") : VIEWS;
-  const shownViews = writerMode && !allViews ? offered.filter((v) => v === "manuscrit" || v === current) : offered;
+  const shownViews = writerMode && !allViews ? VIEWS.filter((v) => v === "manuscrit" || v === current) : VIEWS;
 
   // Téléphone : les actions se rangent derrière « ⋯ » ; les vues passent en barre d'onglets en bas (CSS).
   const [more, setMore] = useState(false);
@@ -124,7 +118,7 @@ export function TopBar() {
             <span className="view-label">{views[v]}</span>
           </button>
         ))}
-        {shownViews.length < offered.length && (
+        {shownViews.length < VIEWS.length && (
           <button type="button" className="views-all" onClick={() => setAllViews(true)}>
             <span className="view-label">{t.views.others}</span>
           </button>

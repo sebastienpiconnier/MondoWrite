@@ -15,8 +15,6 @@ import { Bible } from "./components/Bible";
 import { ScreenplayView } from "./components/ScreenplayView";
 import { Sequencier } from "./components/Sequencier";
 import { Plan } from "./components/Plan";
-import { Frise } from "./components/Frise";
-import { showsInteractive } from "./interactive";
 import { Manuscript } from "./components/Manuscript";
 import { Home } from "./components/Home";
 import { Tour } from "./components/Tour";
@@ -198,9 +196,9 @@ export function App() {
         return;
       }
       if (useCosmos.getState().screen !== "project") return;
-      // Cmd/Ctrl + 1 à 5 : Canevas, Plan, Bible, Manuscrit, Frise (#173 ; pas de frise dans un roman interactif).
-      const views = ["toile", "plan", "bible", "manuscrit", "frise"] as const;
-      const digit = /^Digit([1-5])$/.exec(e.code)?.[1] ?? (/^[1-5]$/.test(key) ? key : null);
+      // Cmd/Ctrl + 1 à 4 : Canevas, Plan, Bible, Manuscrit.
+      const views = ["toile", "plan", "bible", "manuscrit"] as const;
+      const digit = /^Digit([1-4])$/.exec(e.code)?.[1] ?? (/^[1-4]$/.test(key) ? key : null);
       // Rechercher et remplacer : les vues Manuscrit et Scénario l'ouvrent elles-mêmes, avec la scène en cours.
       if (e.shiftKey && !e.altKey && key === "h" && useCosmos.getState().view !== "manuscrit") {
         e.preventDefault();
@@ -230,9 +228,7 @@ export function App() {
       }
       if (digit && !e.shiftKey && !e.altKey) {
         e.preventDefault();
-        const st = useCosmos.getState();
-        if (digit === "5" && st.kind !== "scenario" && showsInteractive(st.metaKeep, useSettings.getState().experimental)) return;
-        st.setView(views[Number(digit) - 1]);
+        useCosmos.getState().setView(views[Number(digit) - 1]);
         return;
       }
       if (key === "s") {
@@ -320,7 +316,6 @@ export function App() {
           {view === "plan" && (kind === "scenario" ? <Sequencier /> : <Plan />)}
           {/* Même vue, deux ateliers : prose pour un roman (à venir), format cinéma pour un scénario. */}
           {view === "manuscrit" && (kind === "scenario" ? <ScreenplayView /> : <Manuscript />)}
-          {view === "frise" && <Frise />}
         </main>
       </div>
       <Tour />

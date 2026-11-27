@@ -33,6 +33,7 @@ import { plainText } from "../search";
 import { StoryCircle } from "./StoryCircle";
 import { TemplatePicker } from "./TemplatePicker";
 import { ArrangeToggle, PlanHeader } from "./PlanHeader";
+import { FriseBoard } from "./Frise";
 import { useBeatText } from "./useBeatText";
 import { BeatQuestion } from "./StructureTools";
 
@@ -53,6 +54,8 @@ export function Plan() {
   // Même réglage d'appareil que le séquencier : liste ou fiches.
   const mode = useSettings((s) => s.sequencerMode);
   const asCards = !phoneSq() && mode === "cards";
+  // Frise (#173) : la troisième présentation, jamais au téléphone ni dans un roman interactif.
+  const asFrise = !phoneSq() && mode === "timeline";
   const nodes = useCosmos((s) => s.nodes);
   const plan = useCosmos((s) => s.plan);
   const setPlanTemplate = useCosmos((s) => s.setPlanTemplate);
@@ -350,8 +353,9 @@ export function Plan() {
 
   return (
     <div className="sequencer" data-native-reorder ref={rootRef} data-reorder-list>
-      <div className={`sq-inner${asCards ? " is-cards" : ""}`}>
+      <div className={`sq-inner${asCards ? " is-cards" : ""}${asFrise && !interactive ? " is-frise" : ""}`}>
         <PlanHeader
+          timeline={!interactive}
           title={interactive ? t.interactive.plan.sectionsTitle : p.title}
           modeAria={p.modeAria}
           actions={
@@ -396,6 +400,10 @@ export function Plan() {
           }
           about={interactive && free ? t.interactive.plan.startHint : p.templateAbout[plan.template]}
         />
+        {asFrise && !interactive ? (
+          <FriseBoard mode="plan" />
+        ) : (
+          <>
         {/* Sections du livre : ni case où glisser ni flèches, l'aide du Plan ne s'y applique pas. */}
         {(sceneIds.length === 0 || !bySection) && <p className="sp-empty">{sceneIds.length === 0 ? p.empty : p.hint}</p>}
         {/* Le cercle de Dan Harmon se lit en cercle : ses huit étapes, et les trous. */}
@@ -489,6 +497,8 @@ export function Plan() {
           </section>
         )}
 
+          </>
+        )}
         <div className="sr-only" aria-live="polite">
           {announce}
         </div>

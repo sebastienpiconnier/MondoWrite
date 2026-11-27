@@ -1,28 +1,44 @@
-/* ---------- La frise (#173) : le récit en cartes sur une ligne, une vue comme le canevas ---------- */
-.frise { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px max(24px, env(safe-area-inset-right)) 0 max(24px, env(safe-area-inset-left)); overflow: hidden; }
-.frise-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.frise-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.75rem; }
-.frise-head .sq-total { margin: 0 0 0 auto; color: var(--ink-2); font-size: 0.875rem; }
+/* ---------- La frise (#173) : le récit sur une ligne de montage. Ruban agrandi du Manuscrit et du Scénario,
+   et troisième présentation du Plan et du séquencier ---------- */
+.frise-board { display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%; }
+.frise-tools { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.frise-tools-title { font: 600 0.8125rem var(--font-ui); color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.frise-total { color: var(--ink-2); font-size: 0.8125rem; }
+.frise-shrink { margin-left: auto; }
 .frise-zoom { display: flex; gap: 4px; }
 .frise-zoom .icon-button { font-size: 1.125rem; }
 .frise-body { flex: 1; min-height: 0; display: flex; gap: 16px; }
-.frise-scroll { flex: 1; min-width: 0; overflow: auto; padding-bottom: calc(max(24px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)); }
-.frise-hint { margin: 0 0 12px; }
+.frise-scroll { flex: 1; min-width: 0; overflow: auto; overscroll-behavior: contain; }
+.frise-board.is-plan .frise-scroll { padding-bottom: calc(max(24px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)); }
+.frise-hint { margin: 10px; }
 
-/* Vue Récit : les parties (étape, chapitre, épisode) côte à côte sur une seule ligne, chacune à la largeur de ses scènes ;
-   une fine ligne d'accent au-dessus de chaque partie la délimite. */
-.frise-story { display: flex; align-items: flex-start; gap: 18px; width: max-content; padding-bottom: 12px; }
-.frise-row { flex: none; display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 3px solid var(--line-2); }
-.frise-row.is-beat, .frise-row.is-chapter, .frise-row.is-episode { border-top-color: var(--accent); }
-.frise-row-head { display: flex; flex-direction: column; gap: 2px; min-height: 2.8em; margin: 0; font: 600 0.9375rem var(--font-ui); overflow-wrap: anywhere; }
-.frise-row-meta { font-weight: 400; font-size: 0.8125rem; color: var(--ink-2); }
-.frise-track { display: flex; gap: 6px; align-items: stretch; min-height: 76px; }
+/* Les pistes : la tête de chaque piste figée à gauche, une ligne commune où chaque scène a sa place. */
+.frise-lanes { width: max-content; min-width: 100%; }
+.frise-lane { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); }
+.frise-lane-head { position: sticky; left: 0; z-index: 2; flex: none; display: flex; align-items: center; gap: 8px; width: 200px; padding: 0 10px; background: var(--ground); border-right: 1px solid var(--line); font-size: 0.8125rem; font-weight: 500; }
+.frise-lane-track { position: relative; flex: none; min-height: 44px; margin: 0 10px; }
+
+/* La règle, comme sur un banc de montage : pages en haut, minutes (ou temps de lecture) dessous. Collée en haut. */
+.frise-lane.is-ruler { position: sticky; top: 0; z-index: 3; background: var(--ground); }
+.frise-lane.is-ruler .frise-lane-head { color: var(--ink-2); font-weight: 400; font-size: 0.75rem; }
+.frise-ruler { min-height: 56px; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.frise-tick { position: absolute; bottom: 0; height: 6px; border-left: 1px solid var(--line-2); pointer-events: none; }
+.frise-tick.is-major { height: 30px; padding-left: 3px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.15; white-space: nowrap; }
+.frise-tick-page { font-size: 0.6875rem; color: var(--ink-2); }
+.frise-tick-time { font: 0.6875rem var(--font-mono, ui-monospace, monospace); color: var(--ink); font-variant-numeric: tabular-nums; }
+.frise-bound-label { position: absolute; top: 4px; font: 600 0.75rem var(--font-ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; border-left: 3px solid var(--accent); }
+.frise-bound-label.is-over { background: var(--accent-soft); }
+.frise-bound { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--line-2); pointer-events: none; }
+/* Tête de lecture : la scène en cours (ruban) ou choisie (Plan), sur toutes les pistes. */
+.frise-playhead { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); pointer-events: none; z-index: 1; }
+.frise-playhead.is-head::before { content: ""; position: absolute; top: 0; left: -7px; border: 6px solid transparent; border-top: 8px solid var(--accent); }
 
 /* Une scène : sa largeur suit sa longueur (posée en ligne), jamais moins de 112 px. */
+.frise-lane.is-scenes .frise-lane-track { min-height: 92px; }
 .frise-card {
-  flex: none; display: flex; flex-direction: column; gap: 4px; min-height: 76px; padding: 8px 10px;
+  position: absolute; top: 8px; display: flex; flex-direction: column; gap: 4px; height: 76px; padding: 8px 10px;
   border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
-  font: inherit; font-size: 0.8125rem; text-align: left; cursor: pointer; overflow: hidden;
+  font: inherit; font-size: 0.8125rem; text-align: left; cursor: pointer; overflow: hidden; z-index: 2;
 }
 .frise-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (any-hover: hover) {
@@ -39,49 +55,57 @@
 .frise-num { font-weight: 700; color: var(--ink-2); }
 .frise-card-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; overflow-wrap: anywhere; font-weight: 500; }
 .frise-card-len { margin-top: auto; font-size: 0.75rem; color: var(--ink-2); white-space: nowrap; }
-/* Fin d'une rangée : là où l'on dépose une scène pendant un glisser, ou une étape encore vide. */
-.frise-end { flex: none; display: grid; place-items: center; min-width: 112px; min-height: 76px; padding: 0 10px; border: 1px dashed var(--line-2); border-radius: 10px; color: var(--ink-2); font-size: 0.8125rem; }
+/* Une partie encore vide : là où l'on dépose une scène pendant un glisser. */
+.frise-end { position: absolute; top: 8px; display: grid; place-items: center; height: 76px; padding: 0 10px; border: 1px dashed var(--line-2); border-radius: 10px; color: var(--ink-2); font-size: 0.8125rem; }
 .frise-end.is-over { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
 
-/* Vues Intrigues et Personnages : une ligne commune, la tête de chaque piste figée à gauche. */
-.frise-lanes { width: max-content; min-width: 100%; }
-.frise-lane { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); }
-.frise-lane-head { position: sticky; left: 0; z-index: 2; flex: none; display: flex; align-items: center; gap: 8px; width: 200px; padding: 0 10px; background: var(--ground); border-right: 1px solid var(--line); font-size: 0.8125rem; font-weight: 500; }
-.frise-lane-track { position: relative; flex: none; min-height: 44px; margin-left: 10px; }
-.frise-lane.is-ruler { position: sticky; top: 0; z-index: 3; background: var(--ground); }
-.frise-lane.is-ruler .frise-lane-head { color: var(--ink-2); font-weight: 400; }
-.frise-lane.is-ruler .frise-lane-track { min-height: 52px; }
-.frise-tick { position: absolute; bottom: 4px; font-size: 0.75rem; color: var(--ink-2); border-left: 1px solid var(--line-2); padding-left: 3px; line-height: 1; }
-.frise-bound-label { position: absolute; top: 4px; font: 600 0.75rem var(--font-ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; border-left: 3px solid var(--accent); }
-.frise-bound { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--line-2); pointer-events: none; }
-.frise-lane.is-scenes .frise-lane-track { min-height: 92px; }
-.frise-lane.is-scenes .frise-card { top: 8px; }
+/* Cases des pistes et courbes. */
 .frise-cell { position: absolute; top: 0; min-width: 0; height: 100%; }
 .frise-lane.has-curve .frise-lane-track, .frise-lane.is-curve .frise-lane-track { min-height: 48px; }
 .frise-curve { position: absolute; top: 4px; left: 0; pointer-events: none; overflow: visible; }
 .frise-curve-zero { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; }
 .frise-curve-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .frise-curve-dot { fill: var(--accent); }
-.frise-lane-group-title { position: sticky; left: 0; display: inline-block; margin: 0; padding: 14px 10px 6px; font: 600 0.6875rem var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.frise-lane-group-title { position: sticky; left: 0; display: inline-block; margin: 0; }
+.frise-lane-group-title button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 8px 10px 4px; border: 0; background: none; font: 600 0.6875rem var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); cursor: pointer; }
+.frise-group-count { font-weight: 400; letter-spacing: 0; }
 
-/* Volet de la scène choisie, à droite (en bas sur un téléphone). */
-.frise-panel { flex: none; width: 320px; max-width: 40%; align-self: stretch; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); margin-bottom: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.frise-panel-head { display: flex; align-items: flex-start; gap: 8px; }
-.frise-panel-kicker { flex: 1; margin: 0; font-size: 0.75rem; color: var(--ink-2); }
+/* Ruban agrandi : la frise au-dessus du texte, puis le séparateur à tirer. */
+.frise-ribbon { flex: none; display: flex; flex-direction: column; min-height: 0; }
+.frise-ribbon-box { padding: 8px 12px 0; overflow: hidden; background: var(--ground); }
+.frise-splitter { flex: none; display: grid; place-items: center; height: 12px; cursor: row-resize; touch-action: none; border-bottom: 1px solid var(--line); background: var(--ground); }
+.frise-splitter:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.frise-splitter-grip { width: 44px; height: 4px; border-radius: 2px; background: var(--line-2); }
+@media (any-hover: hover) { .frise-splitter:hover .frise-splitter-grip { background: var(--ink-2); } }
+/* Manuscrit : une rangée de plus dans la grille, au-dessus de la page. */
+.manuscript.has-board { grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "scenes board side" "scenes main side"; }
+.manuscript.has-board.hide-scenes { grid-template-areas: "board side" "main side"; }
+.manuscript.has-board.hide-side { grid-template-areas: "scenes board" "scenes main"; }
+.manuscript.has-board.hide-scenes.hide-side { grid-template-areas: "board" "main"; }
+.ms-board { grid-area: board; min-width: 0; }
+/* Le volet de gauche tient la fiche de la scène en cours. */
+.sp-scenes .frise-sheet { display: flex; flex-direction: column; gap: 10px; padding: 0 2px 16px; }
+
+/* Fiche de la scène (volet de gauche, volet de la frise du Plan). */
+.frise-sheet { display: flex; flex-direction: column; gap: 10px; }
+.frise-panel { position: relative; flex: none; width: 320px; max-width: 40%; align-self: stretch; overflow: auto; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); margin-bottom: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.frise-panel-close { position: absolute; top: 6px; right: 6px; }
+.frise-panel-kicker { margin: 0; padding-right: 36px; font-size: 0.75rem; color: var(--ink-2); }
 .frise-panel-title { margin: 0; font: 600 1.0625rem var(--font-ui); overflow-wrap: anywhere; }
-.frise-panel-meta { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
 .frise-panel-field { display: flex; flex-direction: column; gap: 4px; }
 .frise-panel-label { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); }
 .frise-panel-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Plan et séquencier en frise : toute la largeur, la frise prend la hauteur qui reste. */
+.sequencer:has(> .sq-inner.is-frise) { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+.sq-inner.is-frise { max-width: none; width: 100%; flex: 1; min-height: 0; }
+.frise-board.is-plan { flex: 1; min-height: 0; }
 @media (pointer: coarse) {
-  .frise-card { min-height: 88px; }
-  .frise-panel-actions .ghost-button { min-height: 44px; }
+  .frise-card, .frise-end { height: 88px; }
+  .frise-lane.is-scenes .frise-lane-track { min-height: 104px; }
+  .frise-panel-actions .ghost-button, .frise-lane-group-title button { min-height: 44px; }
+  .frise-splitter { height: 24px; }
 }
 @media (max-width: 720px) {
-  .frise { padding: 12px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
-  .frise-head h1 { font-size: 1.375rem; }
-  .frise-body.has-panel { flex-direction: column; }
-  .frise-panel { width: auto; max-width: none; max-height: 55%; margin-bottom: calc(8px + var(--keyboard-h, 0px)); }
   .frise-lane-head { width: 132px; }
+  .frise-panel { width: auto; max-width: none; }
 }
-@media (prefers-reduced-motion: reduce) { .frise-card { transition: none; } }

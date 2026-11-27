@@ -14,6 +14,7 @@ import { useBeatText } from "./useBeatText";
 import { narratorColors } from "../pov";
 import { plotColors } from "../plotColors";
 import { usePhone } from "./usePhone";
+import { useBoard } from "./Frise";
 
 interface Props {
   /** Scène en cours (carte, ou `@<index>` pour une scène de scénario sans carte). */
@@ -249,11 +250,15 @@ export function StoryRibbon({ currentId, onGo }: Props) {
             </button>
           </>
         )}
-        {/* Le ruban en grand : la frise, une vue à part (#173). */}
-        {" · "}
-        <button type="button" className="ribbon-toggle" onClick={() => useCosmos.getState().setView("frise")}>
-          {t.frise.ribbonOpen}
-        </button>
+        {/* Le ruban en grand (#173) : la frise au-dessus du texte, cartes à la longueur des scènes, pistes et courbes. */}
+        {!phone && (
+          <>
+            {" · "}
+            <button type="button" className="ribbon-toggle" onClick={() => useBoard.getState().setOpen(true)}>
+              {t.frise.expand}
+            </button>
+          </>
+        )}
       </p>
       {/* Ce que disent les traits du ruban (#163) : seulement ceux qu'il montre. */}
       {keyOpen && marksKinds.length > 0 && (

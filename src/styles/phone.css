@@ -89,7 +89,7 @@
   .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-moves { grid-area: moves; }
   .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-go { grid-area: go; }
 
-  /* Plan : une seule présentation sur téléphone (la liste). La frise garde ses lectures. */
+  /* Plan : une seule présentation sur téléphone (la liste) : ni fiches ni frise. */
   .sequencer .sq-modes { display: none; }
 
   /* Manuscrit : pas de page de livre, le texte prend toute la largeur, plus gros (la mise en page par page ne compte pas ici). */

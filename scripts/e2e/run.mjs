@@ -1169,7 +1169,7 @@ const scenarios = [
     },
   },
   {
-    name: "frise (#173) : une vue, cartes à la longueur, déplacer au clavier et au volet, annuler, pistes",
+    name: "frise (#173) : présentation du Plan, déplacer au clavier et au volet, annuler ; ruban agrandi du Manuscrit",
     async run(h) {
       const { page } = h;
       await h.create("Frise");
@@ -1179,11 +1179,14 @@ const scenarios = [
         await page.getByPlaceholder("Nouvelle scène…").press("Enter");
         await h.wait(150);
       }
-      await h.view(5);
+      // Plus de vue Frise dans la barre du haut : c'est une présentation du Plan.
+      assert((await page.locator(".topbar").getByRole("button", { name: "Frise", exact: true }).count()) === 0, "la frise est encore une vue");
+      await page.locator(".sq-modes").getByRole("button", { name: "Frise", exact: true }).click();
       const cards = page.locator(".frise-card");
       await until(async () => (await cards.count()) === 3, "la frise ne montre pas les trois scènes");
       const order = async () => (await cards.locator(".frise-card-title").allTextContents()).join(",");
       assert((await order()) === "Alpha,Bravo,Charlie", "la frise ne suit pas l'ordre du plan");
+      assert((await page.locator(".frise-ruler .frise-tick.is-major").count()) > 0, "la règle n'a pas de repère");
       // Clavier : Alt + ← déplace la carte choisie, le focus la suit.
       await cards.nth(2).focus();
       await page.keyboard.press("Alt+ArrowLeft");
@@ -1194,17 +1197,33 @@ const scenarios = [
       await until(() => page.getByRole("complementary", { name: "La scène choisie" }).isVisible(), "le volet de la scène ne s'ouvre pas");
       await page.getByRole("button", { name: "Plus tard →" }).click();
       await until(async () => (await order()) === "Alpha,Bravo,Charlie", "« Plus tard » n'a pas déplacé la scène");
-      // Le Plan suit, et Annuler défait le dernier déplacement.
-      await page.locator(".frise-head h1").click();
+      // Annuler défait le dernier déplacement.
+      await page.locator(".sq-head h1").click();
       await page.keyboard.press("Control+z");
       await until(async () => (await order()) === "Alpha,Charlie,Bravo", "Annuler n'a pas remis la scène");
-      // Pistes : sans personnage, une phrase le dit ; la chronologie du Plan n'existe plus.
-      await page.getByRole("button", { name: "Personnages", exact: true }).click();
-      await until(() => page.getByText("Crée des cartes Personnage").isVisible(), "la piste des personnages vide n'est pas expliquée");
-      await h.view(2);
-      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 0, "le Plan garde la chronologie");
+      // La liste suit.
+      await page.locator(".sq-modes").getByRole("button", { name: "Liste", exact: true }).click();
       const rows = await page.locator(".sequencer .sq-scene .bible-title").evaluateAll((els) => els.map((el) => el.value).join(","));
       assert(rows === "Alpha,Charlie,Bravo", `le Plan ne suit pas la frise (${rows})`);
+
+      // Manuscrit : « Agrandir le ruban » (menu ⋯) pose la frise au-dessus du texte.
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions", exact: true }).click();
+      await page.getByRole("menuitem", { name: "Agrandir le ruban" }).click();
+      const board = page.locator(".frise-board.is-ribbon");
+      await until(() => board.isVisible(), "le ruban agrandi n'apparaît pas");
+      // Toucher une carte mène à la scène dans le texte ; le volet de gauche tient sa fiche.
+      await board.getByRole("button", { name: /^Scène 3 : Bravo/ }).click();
+      await until(async () => (await page.locator(".ms-title").inputValue()) === "Bravo", "la carte du ruban ne mène pas à la scène");
+      await until(() => page.locator(".sp-scenes .frise-panel-title").filter({ hasText: "Bravo" }).isVisible(), "le volet de gauche ne montre pas la fiche de la scène");
+      // Le séparateur se règle au clavier.
+      const splitter = page.getByRole("separator", { name: /Hauteur du ruban/ });
+      const before = Number(await splitter.getAttribute("aria-valuenow"));
+      await splitter.focus();
+      await page.keyboard.press("ArrowDown");
+      await until(async () => Number(await splitter.getAttribute("aria-valuenow")) > before, "le séparateur ne répond pas aux flèches");
+      await board.getByRole("button", { name: "Réduire le ruban" }).click();
+      await until(async () => (await board.count()) === 0, "le ruban agrandi ne se referme pas");
     },
   },
   {
@@ -3578,7 +3597,7 @@ const scenarios = [
       await page.keyboard.press("Escape");
       // #56 : les mêmes vues, dans le même ordre, avec Cmd/Ctrl + 1 à 5.
       const order = await page.locator(".topbar .views button").allTextContents();
-      assert(order.join("|") === "Canevas|Plan|Bible|Manuscrit|Frise", `ordre des vues : ${order.join(", ")}`);
+      assert(order.join("|") === "Canevas|Plan|Bible|Manuscrit", `ordre des vues : ${order.join(", ")}`);
       // #54 : au-dessus de la page, ni statut ni point de vue ; ils sont dans l'onglet « Scène ».
       await h.view(4);
       await page.locator(".ms-meta").waitFor();
@@ -3634,7 +3653,7 @@ const scenarios = [
       // Sections du livre (Plan) : une première scène ; ni chronologie ni carte des choix à part (lot 11).
       await h.view(2);
       await until(() => page.getByRole("heading", { name: "Sections du livre" }).isVisible(), "le Plan d'un roman interactif ne s'appelle pas « Sections du livre »");
-      assert((await page.locator(".topbar").getByRole("button", { name: "Frise", exact: true }).count()) === 0, "la frise est proposée dans un roman interactif");
+      assert((await page.locator(".sq-modes").getByRole("button", { name: "Frise", exact: true }).count()) === 0, "la frise est proposée dans un roman interactif");
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "la carte des choix est encore une présentation du Plan");
       await page.getByPlaceholder("Nouvelle scène…").fill("La cour");
       await page.getByPlaceholder("Nouvelle scène…").press("Enter");
@@ -3747,7 +3766,7 @@ const scenarios = [
       await h.canvas();
       await h.view(2);
       await h.wait(300);
-      assert((await page.locator(".topbar").getByRole("button", { name: "Frise", exact: true }).count()) === 1, "un roman ordinaire n'a pas la frise");
+      assert((await page.locator(".sq-modes").getByRole("button", { name: "Frise", exact: true }).count()) === 1, "un roman ordinaire n'a pas la frise");
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "un roman ordinaire montre la carte des choix");
       await h.view(4);
       await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");

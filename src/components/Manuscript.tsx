@@ -53,6 +53,7 @@ import type { SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
+import { RibbonBoard, SceneSheet, useBoard } from "./Frise";
 import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
@@ -226,6 +227,9 @@ export function Manuscript() {
   const bookApi = useRef<BookApi | null>(null);
   /** « Insérer une image… » (#87) : au curseur du livre. */
   const interactive = useInteractive();
+  // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone ni dans un roman interactif.
+  const boardOpen = useBoard((s) => s.open);
+  const board = boardOpen && !focusMode && !phone && !interactive;
   const sections = useCosmos((s) => (interactive ? projectSections(s) : null));
   const insertImage = () => {
     const ed = bookApi.current?.editor();
@@ -704,7 +708,7 @@ export function Manuscript() {
         : sceneWords;
 
   return (
-    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${board ? " has-board" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       style={focusMode ? { ["--focus-col" as string]: FOCUS_COLUMN_EM[writing.column] } : undefined}
     >
@@ -712,6 +716,14 @@ export function Manuscript() {
       {focusMode && <FocusCounter text={words(sceneWords)} words={stats.words} num={num} />}
       <LanguageToolStatus status={lt.status} />
       <nav className="sp-scenes ms-scenes" data-native-reorder aria-label={m.scenesAria}>
+        {/* Ruban agrandi (#173) : la frise montre déjà toutes les scènes ; le volet tient la fiche de la scène en cours. */}
+        {board ? (
+          <>
+            <h2 className="sp-box-title">{t.frise.sheetTitle}</h2>
+            <SceneSheet id={current} />
+          </>
+        ) : (
+          <>
         <h2 className="sp-box-title">{m.scenesTitle}</h2>
         <p className="ms-total">{words(stats.words)}</p>
         <p className="ms-drag-hint">{m.sceneHint}</p>
@@ -953,12 +965,19 @@ export function Manuscript() {
           </select>
         </label>
         <Orphans ids={orphans} manuscript={manuscript} onRestore={restoreScene} />
+          </>
+        )}
       </nav>
 
       {/* Poignées sur les bords : plan à gauche, infos à droite, barre de la scène en haut. */}
       <EdgeHandle side="left" open={panels.scenes} label={m.panelScenes} onClick={() => togglePanel("scenes")} />
       <EdgeHandle side="right" open={panels.side} label={m.panelSide} onClick={() => togglePanel("side")} />
 
+      {board && (
+        <div className="ms-board">
+          <RibbonBoard currentId={current} onGo={go} />
+        </div>
+      )}
       {!panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
@@ -969,7 +988,7 @@ export function Manuscript() {
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             {/* Ruban du récit, en tête de la barre (il reste en vue en défilant) : chaque case du gabarit à la place
                 que ses scènes prennent. */}
-            {!interactive && <StoryRibbon currentId={current} onGo={go} />}
+            {!interactive && !board && <StoryRibbon currentId={current} onGo={go} />}
             <button type="button" className="icon-button" disabled={!prevId} aria-label={m.previous} title={m.previous} onClick={() => prevId && go(prevId)}>
               <span aria-hidden="true">←</span>
             </button>
@@ -1029,6 +1048,7 @@ export function Manuscript() {
                 { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
                 { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
                 { label: useSettings.getState().plotColors ? t.plan.plotColorsOff : t.plan.plotColorsOn, onSelect: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
+                !phone && !interactive && { label: boardOpen ? t.frise.shrink : t.frise.expand, onSelect: () => useBoard.getState().setOpen(!boardOpen) },
                 !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
                 {
                   // La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle.

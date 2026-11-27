@@ -24,8 +24,7 @@ describe("shortcut search", () => {
     const lookup = (group: keyof typeof SHORTCUT_GROUPS, item: string) => SHORTCUT_GROUPS[group].find(([id]) => id === item)![1];
     const views = lookup("everywhere", "views");
     expect(score("Ctrl+2", views)).toBe(0);
-    expect(score("Ctrl+5", views)).toBe(0);
-    expect(score("Ctrl+6", views)).toBe(Infinity);
+    expect(score("Ctrl+5", views)).toBe(Infinity);
     expect(score("Ctrl+Alt+2", lookup("text", "heading"))).toBe(0);
     expect(score("Ctrl+-", lookup("manuscript", "pageZoom"))).toBe(0);
   });

@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../screenplay/parse";
 import { EMPTY_PLAN, type Plan } from "../plan";
-import { MIN_CARD, CARD_GAP, characterIssues, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
+import { MIN_CARD, CARD_GAP, characterIssues, layoutScenes, laneCurve, moveSceneBefore, moveSceneToRowEnd, novelRows, pageToX, rulerMarks, sceneAtX, timecode, rowStarts, rulerTicks, screenplayRows, stepScene } from "../frise";
 
 const script = parse(
   [
@@ -129,5 +129,34 @@ describe("déplacements dans le scénario", () => {
     const emptied = screenplayRows(toFirst, () => 1, "beats", keys);
     const back = moveSceneToRowEnd(toFirst, "s1", emptied[1]);
     expect(screenplayRows(back, () => 1, "beats", keys).map((r) => r.scenes.map((s) => s.id))).toEqual([["s2", "s3"], ["s1"]]);
+  });
+});
+
+describe("règle de montage", () => {
+  const scenes = [
+    { id: "a", title: "", size: 10 },
+    { id: "b", title: "", size: 1 },
+  ];
+  const { slots } = layoutScenes(scenes, 16);
+  it("une page tombe à sa place dans sa carte, même élargie", () => {
+    expect(pageToX(scenes, slots, 0)).toBe(0);
+    expect(pageToX(scenes, slots, 5)).toBe(80);
+    expect(pageToX(scenes, slots, 10.5)).toBe(160 + CARD_GAP + MIN_CARD / 2);
+    expect(pageToX(scenes, slots, 99)).toBe(160 + CARD_GAP + MIN_CARD);
+  });
+  it("la scène sous le pointeur", () => {
+    expect(sceneAtX(scenes, slots, 10)).toBe("a");
+    expect(sceneAtX(scenes, slots, 163)).toBe("b");
+    expect(sceneAtX(scenes, slots, 9999)).toBe("b");
+  });
+  it("grandes graduations espacées, petites entre elles", () => {
+    const marks = rulerMarks(20, 16);
+    expect(marks.filter((m) => m.major).map((m) => m.page)).toEqual([0, 5, 10, 15, 20]);
+    expect(marks.length).toBe(21);
+  });
+  it("code temporel", () => {
+    expect(timecode(0)).toBe("0:00");
+    expect(timecode(12)).toBe("12:00");
+    expect(timecode(65.5)).toBe("1:05:30");
   });
 });

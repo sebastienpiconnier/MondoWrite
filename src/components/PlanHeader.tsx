@@ -1,12 +1,12 @@
 // En-tête commun du Plan (roman) et du séquencier (scénario), #55 : une seule mise en page, lue avec le vocabulaire
-// du projet. Première ligne : titre de la vue, présentation (Liste, Fiches ; la chronologie est devenue la Frise, #173), actions, total à droite ;
+// du projet. Première ligne : titre de la vue, présentation (Liste, Fiches, Frise : #173), actions, total à droite ;
 // seconde ligne : le gabarit et ce qu'il raconte. Les deux vues ne diffèrent que par ce qu'elles y mettent.
 
 import type { ReactNode } from "react";
 import { useT } from "../i18n";
 import { useSettings, type SequencerMode } from "../settings";
 
-const MODES: SequencerMode[] = ["outline", "cards"];
+const MODES: SequencerMode[] = ["outline", "cards", "timeline"];
 
 interface Props {
   title: string;
@@ -20,6 +20,8 @@ interface Props {
   template?: ReactNode;
   /** Ce que raconte le gabarit choisi. */
   about?: string;
+  /** La frise est proposée (pas dans un roman interactif, #173). */
+  timeline?: boolean;
 }
 
 /** Bouton « Ranger » d'une scène (#55) : chapitre et case s'ouvrent sous la scène, le reste du temps ils attendent. */
@@ -33,7 +35,7 @@ export function ArrangeToggle({ open, title, onToggle }: { open: boolean; title:
   );
 }
 
-export function PlanHeader({ title, modeAria, actions, total, template, about }: Props) {
+export function PlanHeader({ title, modeAria, actions, total, template, about, timeline = true }: Props) {
   const t = useT();
   const sq = t.screenplay.sequencer;
   const mode = useSettings((s) => s.sequencerMode);
@@ -44,7 +46,7 @@ export function PlanHeader({ title, modeAria, actions, total, template, about }:
     <header className="sq-head">
       <h1>{title}</h1>
       <div className="sq-modes" role="group" aria-label={modeAria}>
-        {MODES.map((m) => (
+        {MODES.filter((m) => timeline || m !== "timeline").map((m) => (
           <button
             key={m}
             type="button"

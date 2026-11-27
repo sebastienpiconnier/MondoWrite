@@ -33,7 +33,7 @@ export type WheelMode = "pan" | "zoom";
 /** Palette des couleurs des intrigues (#157). */
 export type PlotPalette = "standard" | "bold";
 
-export type SequencerMode = "outline" | "cards";
+export type SequencerMode = "outline" | "cards" | "timeline";
 /** Aides qui s'effacent une fois apprises (#59) : consigne du canevas, touches du scénario (voir learn.ts). */
 export const LEARNED_HINTS = ["canvasHint", "screenplayKeys"] as const;
 export type LearnedHint = (typeof LEARNED_HINTS)[number];
@@ -332,7 +332,7 @@ export const useSettings = create<SettingsState>((set) => ({
   setThemePref: (themePref) => set({ themePref, theme: resolve(themePref) }),
   palette: isPalette(saved.palette) ? saved.palette : DEFAULT_PALETTE,
   setPalette: (palette) => set({ palette }),
-  sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
+  sequencerMode: saved.sequencerMode === "cards" || saved.sequencerMode === "timeline" ? saved.sequencerMode : "outline",
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   ribbonPov: saved.ribbonPov === true,
   setRibbonPov: (ribbonPov) => set({ ribbonPov }),

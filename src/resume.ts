@@ -7,7 +7,7 @@
 
 import type { View } from "./projectState";
 
-export const VIEWS: readonly View[] = ["toile", "plan", "bible", "manuscrit", "frise", "carnet"];
+export const VIEWS: readonly View[] = ["toile", "plan", "bible", "manuscrit", "carnet"];
 
 export interface Spot {
   view: View;
