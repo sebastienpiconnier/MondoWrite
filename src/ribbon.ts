@@ -164,3 +164,23 @@ export function fortuneCurve(scenes: readonly { id: string; start: number; lengt
   const top = Math.max(1, ...raw.map((p) => Math.abs(p.y)));
   return raw.map((p) => ({ ...p, y: p.y / top }));
 }
+
+/**
+ * Réponses « la scène finit mieux / pire » qui comptent pour la courbe du héros (#171). Une scène racontée par un
+ * personnage qui n'est pas principal parle de lui, pas du héros : sa réponse n'entre pas dans cette courbe (elle
+ * nourrira la sienne). Sans point de vue, ou sans aucun personnage principal coché, rien n'est écarté.
+ */
+export function heroIssues(cards: readonly { id: string; type: string; fiche?: Record<string, string> }[]): Map<string, string> {
+  const principals = new Set(cards.filter((c) => c.type === "personnage" && c.fiche?.principal === "oui").map((c) => c.id));
+  const people = new Set(cards.filter((c) => c.type === "personnage").map((c) => c.id));
+  const out = new Map<string, string>();
+  for (const c of cards) {
+    const issue = c.fiche?.issue;
+    if (c.type !== "scene" || !issue) continue;
+    const pov = c.fiche?.pov;
+    const narrated = pov && people.has(pov);
+    if (narrated && principals.size > 0 && !principals.has(pov)) continue;
+    out.set(c.id, issue);
+  }
+  return out;
+}

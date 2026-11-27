@@ -492,6 +492,11 @@ input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); ou
 .ms-scene-props { gap: 8px; }
 .ms-scene-props .ms-kind { display: block; align-self: stretch; margin: 0; }
 .ms-scene-props .ms-kind select { width: 100%; }
+/* « Pour X, la scène finit » (#171) : libellé au-dessus, liste sur toute la largeur du volet. */
+.scene-issue { display: flex; flex-direction: column; gap: 4px; align-self: stretch; font-size: 0.8125rem; color: var(--ink-2); }
+.scene-issue select { width: 100%; min-height: 36px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.8125rem; }
+@media (pointer: coarse) { .scene-issue select { min-height: 44px; } }
+.sp-scene-props { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 10px; }
 /* Lecture à voix haute sans lecture en cours : un simple repère pour le panneau des voix, sans place dans la barre. */
 .reader.is-anchor { display: inline-block; width: 0; height: 36px; margin: 0 -4px; overflow: visible; }
 .ms-hint { margin: 4px 0 0; text-align: center; font-size: 0.75rem; color: var(--ink-2); }

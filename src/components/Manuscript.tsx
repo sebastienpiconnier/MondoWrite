@@ -27,6 +27,7 @@ import { SceneSetupsBox } from "./SceneSetups";
 import { SceneLinks } from "./LinkedCards";
 import { SideParts, type SidePart } from "./SideParts";
 import { PovPicker } from "./PovPicker";
+import { SceneIssue } from "./SceneIssue";
 import { narratorCounts } from "../pov";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
 import type { BookHandlers } from "./bookExtensions";
@@ -1113,6 +1114,8 @@ export function Manuscript() {
               <PovPicker card={card} />
             </span>
           )}
+          {/* « Pour X, la scène finit » (#171), rempli en écrivant ; pas dans un roman interactif. */}
+          {!pageKind && !interactive && <SceneIssue card={card} />}
         </section>
           ) }];
           if (!pageKind) parts.push({ key: "setups", title: P.setups, node: <SceneSetupsBox id={card.id} /> });

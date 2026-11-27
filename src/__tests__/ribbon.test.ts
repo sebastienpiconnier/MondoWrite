@@ -1,7 +1,7 @@
 // Ruban du récit : longueur réelle de chaque case, repères attendus, cases loin de leur place.
 
 import { describe, expect, it } from "vitest";
-import { buildRibbon, novelGroups, screenplayGroups } from "../ribbon";
+import { buildRibbon, heroIssues, novelGroups, screenplayGroups } from "../ribbon";
 import type { ScreenplayElement } from "../screenplay/model";
 
 describe("ruban", () => {
@@ -108,5 +108,23 @@ describe("jalons d'une structure de l'auteur (actes et séquences)", () => {
       { key: "u2", at: 0, level: 2, actual: true },
       { key: "u3", at: 0.25, level: 2, actual: true },
     ]);
+  });
+});
+
+describe("courbe du héros (#171)", () => {
+  const card = (id: string, type: string, fiche?: Record<string, string>) => ({ id, type, fiche });
+  it("écarte la réponse d'une scène racontée par un personnage qui n'est pas principal", () => {
+    const cards = [
+      card("ines", "personnage", { principal: "oui" }),
+      card("yann", "personnage"),
+      card("s1", "scene", { issue: "mieux" }),
+      card("s2", "scene", { issue: "pire", pov: "yann" }),
+      card("s3", "scene", { issue: "pareil", pov: "ines" }),
+    ];
+    expect([...heroIssues(cards)]).toEqual([["s1", "mieux"], ["s3", "pareil"]]);
+  });
+  it("garde tout quand aucun personnage n'est principal, ou quand le narrateur a disparu", () => {
+    expect(heroIssues([card("yann", "personnage"), card("s2", "scene", { issue: "pire", pov: "yann" })]).get("s2")).toBe("pire");
+    expect(heroIssues([card("ines", "personnage", { principal: "oui" }), card("s2", "scene", { issue: "pire", pov: "gone" })]).get("s2")).toBe("pire");
   });
 });

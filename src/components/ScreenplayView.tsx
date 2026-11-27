@@ -7,7 +7,9 @@ import { panelAfterSwipe } from "../touchGestures";
 import { useStoryFindings } from "./useStoryFindings";
 import { useStableEditor } from "./useStableEditor";
 import { usePageSpell } from "./usePageSpell";
-import { StatusDot } from "./SceneStatusPicker";
+import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
+import { PovPicker } from "./PovPicker";
+import { SceneIssue } from "./SceneIssue";
 import { EdgeHandle } from "./EdgeHandle";
 import { StatsBox } from "./StatsBox";
 import { Chutier } from "./Chutier";
@@ -2208,6 +2210,14 @@ export function ScreenplayView() {
               <div className="is-slugline sp-box-title">{scene.text || sp.untitledScene}</div>
               {card ? (
                 <>
+                  {/* Statut, point de vue et « Pour X, la scène finit » (#171), remplis en écrivant. */}
+                  <div className="sp-scene-props">
+                    <span className="scene-pills">
+                      <SceneStatusPicker card={card} />
+                      <PovPicker card={card} />
+                    </span>
+                    <SceneIssue card={card} />
+                  </div>
                   {card.html && (
                     // HTML produit par TipTap ou nettoyé au chargement (voir sanitizeHtml).
                     <div className="sp-card-body" dangerouslySetInnerHTML={{ __html: card.html }} />

@@ -13,6 +13,7 @@ import { useEffect, useId, useState } from "react";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { useInteractive } from "../interactive/useInteractive";
+import { useIssueLabel } from "./SceneIssue";
 import { fmt, useT } from "../i18n";
 import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isCardRefField, isChoiceField, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
@@ -32,6 +33,8 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   // Roman interactif : pas de courbe du récit (« Pour le héros, la scène finit… » se lit sur un seul chemin), sauf
   // si l'auteur l'a déjà remplie.
   const interactive = useInteractive();
+  // « Pour Sarah, la scène finit » quand la scène a un point de vue (#171).
+  const issueLabel = useIssueLabel(card);
   const fields = sheetFields(card.type).filter((key) => !band.has(key) && !(interactive && key === "issue" && !card.fiche?.issue));
   const setFiche = useCosmos((s) => s.setFiche);
   // Épisode : le personnage pivot se choisit parmi les cartes Personnage (la fiche garde son identifiant).
@@ -75,7 +78,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
     const commit = (value: string) => setFiche(card.id, key, value);
     return (
       <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) || isChoiceField(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}${card.ia?.includes(key) ? " is-ia" : ""}`}>
-        <label htmlFor={props.id}>{labels[key]}</label>
+        <label htmlFor={props.id}>{key === "issue" ? issueLabel : labels[key]}</label>
         {isCardRefField(key) ? (
           <select id={props.id} value={props.value} onChange={props.onChange}>
             <option value="">{all.fiche.pivotNone}</option>

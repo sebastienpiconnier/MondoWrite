@@ -3170,6 +3170,7 @@ export const en: Messages = {
       etat: { ouverte: "Open", decidee: "Decided", abandonnee: "Dropped" },
       repere: { milieu: "Midseason", final: "Season finale" },      issue: { mieux: "Better", pire: "Worse", pareil: "Neither better nor worse" },
     },
+    issueFor: "For {name}, the scene ends",
     valueNone: "Not set",
     typeLabels: {
       scene: { but: "Scene goal", tournant: "Turn" },
@@ -3331,7 +3332,7 @@ export const en: Messages = {
     done: "Done",
     parts: {
       scene: "Scene",
-      props: "Type, status and point of view",
+      props: "Type, status, point of view, scene ending",
       synopsis: "Synopsis",
       setups: "Setups",
       links: "Characters, plots and place",

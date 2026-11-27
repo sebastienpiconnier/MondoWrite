@@ -3226,6 +3226,7 @@ export const fr = {
       repere: { milieu: "Mi-saison", final: "Fin de saison" },
       issue: { mieux: "Mieux", pire: "Moins bien", pareil: "Ni mieux ni moins bien" },
     },
+    issueFor: "Pour {name}, la scène finit",
     valueNone: "Non précisé",
     // Libellés propres à un type, quand la clé est partagée (« but » d'un groupe ou d'une scène).
     typeLabels: {
@@ -3392,7 +3393,7 @@ export const fr = {
     done: "Terminé",
     parts: {
       scene: "Scène",
-      props: "Type, statut et point de vue",
+      props: "Type, statut, point de vue, fin de scène",
       synopsis: "Synopsis",
       setups: "Préparations",
       links: "Personnages, intrigues et lieu",

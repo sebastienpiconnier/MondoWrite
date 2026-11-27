@@ -9,7 +9,7 @@ import { screenplaySceneTexts, timeline } from "../timeline";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useRibbon } from "./useRibbon";
-import { fortuneCurve } from "../ribbon";
+import { fortuneCurve, heroIssues } from "../ribbon";
 import { useBeatText } from "./useBeatText";
 import { narratorColors } from "../pov";
 import { plotColors } from "../plotColors";
@@ -84,7 +84,8 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   useEffect(() => () => window.clearTimeout(peekTimer.current), []);
   const curve = useMemo(() => {
     if (!ribbon) return null;
-    const fiche = new Map(nodes.map((n) => [n.id, n.data.fiche?.issue]));
+    // Courbe du héros (#171) : les scènes racontées par un autre personnage n'y entrent pas.
+    const fiche = heroIssues(nodes.map((n) => n.data));
     return fortuneCurve(
       ribbon.segments.flatMap((seg) => seg.scenes),
       (id) => fiche.get(id),

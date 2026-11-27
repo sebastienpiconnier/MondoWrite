@@ -1125,6 +1125,28 @@ const scenarios = [
     },
   },
   {
+    name: "fin de scène (#171) : « Pour X, la scène finit » dans l'onglet Scène, au point de vue de la scène",
+    async run(h) {
+      const { page } = h;
+      await h.create("Fin de scène");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le réveil");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const hero = page.getByLabel("Pour le héros, la scène finit");
+      await hero.waitFor();
+      await hero.selectOption("pire");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("cartes/") && v.includes("type: scene") && v.includes('"issue":"pire"')), "la fin de scène n'est pas enregistrée");
+      const pill = page.getByRole("button", { name: /^Point de vue de la scène « Le réveil »/ });
+      await pill.click();
+      await page.keyboard.type("Sarah");
+      await until(() => page.getByRole("option", { name: "Créer « Sarah »" }).isVisible(), "pas d'option pour créer le personnage");
+      await page.keyboard.press("Enter");
+      const sarah = page.getByLabel("Pour Sarah, la scène finit");
+      await until(() => sarah.isVisible(), "la question n'est pas posée au personnage du point de vue");
+      assert((await sarah.inputValue()) === "pire", "la réponse a changé avec le point de vue");
+    },
+  },
+  {
     name: "point de vue (1.13.0) : narrateur créé depuis le Manuscrit, annulé, rétabli, vu dans la Bible et sur le canevas",
     async run(h) {
       const { page } = h;
