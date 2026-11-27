@@ -2201,6 +2201,10 @@ export const ca = {
     },
   },
   screenplay: {
+    notesShow: "Mostra les notes",
+    notesHide: "Amaga les notes",
+    notesImportedTitle: "Guió importat:",
+    notesImported: ["1 sinopsi de més convertida en nota, al seu lloc a l’escena. La primera línia «=» de cada escena continua sent la seva sinopsi.", "{n} sinopsis de més convertides en notes, al seu lloc a les escenes. La primera línia «=» de cada escena continua sent la seva sinopsi."],
     editorAria: "Text del guió",
     barAria: "Tipus d’element",
     elements: {
@@ -3554,6 +3558,7 @@ export const ca = {
         pareil: "Ni millor ni pitjor",
       },
     },
+    issueFor: "Per a {name}, l’escena acaba",
     valueNone: "Sense definir",
     typeLabels: {
       scene: {

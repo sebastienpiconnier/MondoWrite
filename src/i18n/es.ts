@@ -2197,6 +2197,10 @@ export const es = {
     },
   },
   screenplay: {
+    notesShow: "Mostrar las notas",
+    notesHide: "Ocultar las notas",
+    notesImportedTitle: "Guion importado:",
+    notesImported: ["1 sinopsis de más convertida en nota, en su lugar en la escena. La primera línea «=» de cada escena sigue siendo su sinopsis.", "{n} sinopsis de más convertidas en notas, en su lugar en las escenas. La primera línea «=» de cada escena sigue siendo su sinopsis."],
     editorAria: "Texto del guion",
     barAria: "Tipo de elemento",
     elements: {
@@ -3528,6 +3532,7 @@ export const es = {
         pareil: "Ni mejor ni peor",
       },
     },
+    issueFor: "Para {name}, la escena termina",
     valueNone: "Sin precisar",
     typeLabels: {
       scene: {
