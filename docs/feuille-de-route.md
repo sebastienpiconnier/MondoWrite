@@ -27,12 +27,14 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
 1. Lot 18 · Retours de la 1.48 / Feedback on 1.48 : la 1.48.1 (#154 partie A, #155, #156, #160, #153) et la 1.49
    (#159, #157, #163, et la PR #133 de Camille) sont faites ; à évaluer ensuite : #154 partie B (structures en couches
    séparées), #158, #161, #162
-2. Lot 6 · Import et narration / Import and narration : #28 finitions de
+2. Lot 20 · Frise et courbes / Timeline and arcs : #173 (frise, courbes des personnages, en cours), puis #176
+   (préparations sur la frise ; parties 2 et 3 à décider)
+3. Lot 6 · Import et narration / Import and narration : #28 finitions de
    l'import Scrivener
-3. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
-4. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
-5. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`),
+4. Lot 7 · Mobile sur appareil / Mobile on device : #32 (iPad réel, Android)
+5. Lot 12 · Livre broché / Paperback : #78 couverture complète pour KDP (`docs/plan-couverture-kdp.md`)
+6. Lot 13 · Roman interactif / Interactive novel : #84, livré en expérimental dans la 1.40.0 (`docs/plan-roman-interactif.md`),
    import de la logique de Twine (#96) dans la 1.41.0
-6. Lot 16 · Collaboration / Collaboration : #128 identité, #130 mode Relecteur, #131 projet partagé, #135 changements des coauteurs et #132 services de
+7. Lot 16 · Collaboration / Collaboration : #128 identité, #130 mode Relecteur, #131 projet partagé, #135 changements des coauteurs et #132 services de
    synchronisation ensemble, puis #129 iPhone et iPad (`docs/plan-collaboration.md`)
-7. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
+8. Lot 8 · Grand chantier / Major project : #19 univers partagé (en dernier, après une étude)
