@@ -443,10 +443,31 @@ await step("remplacer", async () => {
   await shot("remplacer", { el: "dialog[open]" });
   await closeDialog();
 });
+// Fins de scène (#171, #173) : le héros, puis le Loup « pour un autre personnage », pour l'onglet Courbes.
+await step("fins de scène", async () => {
+  const prev = page.locator(".ms-meta button.icon-button").nth(0);
+  for (let i = 0; i < 8 && (await prev.isEnabled()); i++) { await prev.click(); await wait(300); }
+  const hero = ["mieux", "pire", "pire", "pire", "pareil", "beaucoupPire"];
+  const wolf = [null, "mieux", "mieux", "beaucoupMieux", "mieux", "beaucoupMieux"];
+  for (let i = 0; i < hero.length; i++) {
+    await page.locator(".sp-side .scene-issue:not(.is-other) select").first().selectOption(hero[i]);
+    await wait(200);
+    if (wolf[i]) {
+      await page.locator(".sp-side select.scene-issue-add").first().selectOption({ label: T("Le Loup", "The Wolf", "El Lobo") });
+      await wait(300);
+      await page.locator(".sp-side .scene-issue.is-other select").first().selectOption(wolf[i]);
+      await wait(200);
+    }
+    if (i < hero.length - 1) { await page.locator(".ms-meta button.icon-button").nth(1).click(); await wait(400); }
+  }
+});
 await step("statistiques du roman", async () => {
   await moreItem(".ms-meta", T("Statistiques", "Statistics", "Estadísticas"));
   await wait(600);
   await shot("stats-personnages", { el: "dialog[open]" });
+  await page.locator(".stats-tabs").getByRole("button", { name: T("Courbes", "Arcs", "Curvas"), exact: true }).click();
+  await wait(600);
+  await shot("stats-courbes", { el: "dialog[open]" });
   await closeDialog();
   await wait(300);
 });

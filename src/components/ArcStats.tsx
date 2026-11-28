@@ -54,7 +54,7 @@ function ArcCard({ arc, hue, onOpen, onGo }: { arc: CharacterArc; hue?: number; 
   // Dans les phrases de la lecture, la courbe du récit parle du héros.
   const name = isStory ? a.storyName : titles.get(arc.id) || a.untitledCharacter;
   const heading = isStory ? a.storyTitle : name;
-  const signed = (n: number) => new Intl.NumberFormat(lang, { signDisplay: "exceptZero" }).format(n);
+  const signed = (n: number) => new Intl.NumberFormat(lang, { signDisplay: "exceptZero" }).format(n).replace("-", "\u2212");
   const sceneTitle = (rank: number) => titles.get(arc.points[rank]?.id ?? "") || a.untitledScene;
   const sceneButton = (rank: number) => (
     <button type="button" className="link-button" onClick={() => onGo(arc.points[rank].id)}>
