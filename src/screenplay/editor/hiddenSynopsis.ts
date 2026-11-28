@@ -76,16 +76,36 @@ export function afterHiddenSynopses(doc: PmNode, pos: number): number {
   return at;
 }
 
-/** Sélection sur un synopsis caché : on la pose sur le texte voisin, dans le sens où l'on allait. */
-function moveOff(state: EditorState, oldHead: number): TextSelection | null {
+/** Note du scénario (« [[…]] » sur sa ligne), cachée par le réglage « Afficher les notes » (#169). */
+const isNote = (doc: PmNode, index: number) => {
+  const node = doc.maybeChild(index);
+  return !!node && node.type.name === "preserved" && node.attrs.kind === "note";
+};
+
+/** Ce nœud de premier niveau est-il caché : synopsis d'une scène, ou note quand les notes sont cachées ? */
+const hiddenAt = (doc: PmNode, index: number, notes: boolean) => isSceneSynopsis(doc, index) || (notes && isNote(doc, index));
+
+/** Position juste après les nœuds cachés qui suivent l'élément de premier niveau finissant à `pos`. */
+function afterHidden(doc: PmNode, pos: number, notes: boolean): number {
+  let index = doc.resolve(pos).index(0);
+  let at = pos;
+  while (index < doc.childCount && hiddenAt(doc, index, notes)) {
+    at += doc.child(index).nodeSize;
+    index++;
+  }
+  return at;
+}
+
+/** Sélection sur un synopsis ou une note cachés : on la pose sur le texte voisin, dans le sens où l'on allait. */
+function moveOff(state: EditorState, oldHead: number, notes: boolean): TextSelection | null {
   const sel = state.selection;
   if (!(sel instanceof NodeSelection)) return null;
   const doc = state.doc;
   const index = doc.resolve(sel.from).index(0);
-  if (!isSceneSynopsis(doc, index)) return null;
+  if (!hiddenAt(doc, index, notes)) return null;
   const forward = sel.from >= oldHead;
   if (forward) {
-    const after = afterHiddenSynopses(doc, sel.from);
+    const after = afterHidden(doc, sel.from, notes);
     const found = TextSelection.findFrom(doc.resolve(Math.min(after, doc.content.size)), 1, true);
     if (found instanceof TextSelection) return found;
   }
@@ -97,31 +117,39 @@ function moveOff(state: EditorState, oldHead: number): TextSelection | null {
  * Retour arrière au début de l'élément qui suit un synopsis caché, ou Suppr au bout de l'en-tête qui le précède :
  * ProseMirror effacerait le nœud voisin (un atome) sans qu'on le voie. On saute par-dessus à la place.
  */
-function jumpOver(state: EditorState, dir: -1 | 1): TextSelection | null {
+function jumpOver(state: EditorState, dir: -1 | 1, notes: boolean): TextSelection | null {
   const sel = state.selection;
   if (!sel.empty || sel.$from.depth !== 1) return null;
   const $from = sel.$from;
   const doc = state.doc;
   const index = $from.index(0);
   if (dir < 0) {
-    if ($from.parentOffset !== 0 || index === 0 || !isSceneSynopsis(doc, index - 1)) return null;
+    if ($from.parentOffset !== 0 || index === 0 || !hiddenAt(doc, index - 1, notes)) return null;
     const found = TextSelection.findFrom(doc.resolve($from.before(1)), -1, true);
     return found instanceof TextSelection ? found : null;
   }
-  if ($from.parentOffset !== $from.parent.content.size || !isSceneSynopsis(doc, index + 1)) return null;
-  const after = afterHiddenSynopses(doc, $from.after(1));
+  if ($from.parentOffset !== $from.parent.content.size || !hiddenAt(doc, index + 1, notes)) return null;
+  const after = afterHidden(doc, $from.after(1), notes);
   const found = after < doc.content.size ? TextSelection.findFrom(doc.resolve(after), 1, true) : null;
   // Rien après le synopsis : Suppr ne fait rien plutôt que de l'effacer.
   return found instanceof TextSelection ? found : TextSelection.create(doc, $from.pos);
 }
 
-export const HiddenSynopsis = Extension.create({
+export interface HiddenSynopsisOptions {
+  /** Notes cachées (réglage « Afficher les notes » décoché, #169) : relu à chaque geste. */
+  notesHidden: () => boolean;
+}
+
+export const HiddenSynopsis = Extension.create<HiddenSynopsisOptions>({
   name: "hiddenSynopsis",
+  addOptions() {
+    return { notesHidden: () => false };
+  },
   // Avant le clavier de base (Retour arrière, Suppr) et celui du scénario.
   priority: 1000,
   addKeyboardShortcuts() {
     const run = (dir: -1 | 1) => () => {
-      const next = jumpOver(this.editor.state, dir);
+      const next = jumpOver(this.editor.state, dir, this.options.notesHidden());
       if (!next) return false;
       this.editor.view.dispatch(this.editor.state.tr.setSelection(next));
       return true;
@@ -129,12 +157,13 @@ export const HiddenSynopsis = Extension.create({
     return { Backspace: run(-1), Delete: run(1), "Mod-Backspace": run(-1), "Mod-Delete": run(1) };
   },
   addProseMirrorPlugins() {
+    const notesHidden = this.options.notesHidden;
     return [
       new Plugin({
         key,
         appendTransaction(trs, oldState, newState) {
           if (!trs.some((tr) => tr.selectionSet || tr.docChanged)) return null;
-          const next = moveOff(newState, oldState.selection.head);
+          const next = moveOff(newState, oldState.selection.head, notesHidden());
           return next ? newState.tr.setSelection(next) : null;
         },
       }),

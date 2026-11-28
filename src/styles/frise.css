@@ -1,0 +1,173 @@
+/* ---------- La frise (#173) : le récit sur une ligne de montage. Ruban agrandi du Manuscrit et du Scénario,
+   et troisième présentation du Plan et du séquencier ---------- */
+.frise-board { display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%; }
+.frise-tools { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.frise-tools-title { font: 600 0.8125rem var(--font-ui); color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.frise-total { color: var(--ink-2); font-size: 0.8125rem; }
+.frise-shrink { margin-left: auto; }
+.frise-zoom { display: flex; gap: 4px; }
+.frise-zoom .icon-button { font-size: 1.125rem; }
+.frise-body { flex: 1; min-height: 0; display: flex; gap: 16px; }
+.frise-scroll { flex: 1; min-width: 0; overflow: auto; overscroll-behavior: contain; }
+.frise-board.is-plan .frise-scroll { padding-bottom: calc(max(24px, env(safe-area-inset-bottom)) + var(--keyboard-h, 0px)); }
+.frise-hint { margin: 10px; }
+
+/* Les pistes : la tête de chaque piste figée à gauche, au-dessus des cartes, jalons et tête de lecture qui défilent
+   dessous ; une ligne commune où chaque scène a sa place. */
+.frise-lanes { width: max-content; min-width: 100%; }
+.frise-lane { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); }
+.frise-lane-head { position: sticky; left: 0; z-index: 6; flex: none; display: flex; align-items: center; gap: 8px; width: 200px; padding: 0 10px; background: var(--ground); border-right: 1px solid var(--line); font-size: 0.8125rem; font-weight: 500; }
+.frise-lane-track { position: relative; flex: none; min-height: 44px; margin: 0 10px; }
+
+/* La règle et la ligne des scènes, collées en haut ensemble : quand on fait défiler les pistes vers le bas, elles
+   passent dessous (fond opaque, au-dessus des têtes de piste et des titres de groupe). */
+.frise-pin { position: sticky; top: 0; z-index: 8; background: var(--ground); box-shadow: var(--shadow-card); clip-path: inset(0 0 -16px 0); }
+.frise-lane.is-ruler { background: var(--ground); }
+.frise-lane.is-ruler .frise-lane-head { color: var(--ink-2); font-weight: 400; font-size: 0.75rem; }
+.frise-ruler { min-height: 56px; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.frise-tick { position: absolute; bottom: 0; height: 6px; border-left: 1px solid var(--line-2); pointer-events: none; }
+.frise-tick.is-major { height: 24px; padding: 4px 0 0 3px; font: 0.6875rem var(--font-ui); color: var(--ink-2); font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
+.frise-bound-label { position: absolute; top: 4px; font: 600 0.75rem var(--font-ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; border-left: 3px solid var(--accent); }
+.frise-bound-label.is-over { background: var(--accent-soft); }
+.frise-bound { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--line-2); pointer-events: none; }
+/* Tête de lecture : la scène en cours (ruban) ou choisie (Plan), sur toutes les pistes. */
+.frise-playhead { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); pointer-events: none; z-index: 1; }
+.frise-playhead.is-head::before { content: ""; position: absolute; top: 0; left: -7px; border: 6px solid transparent; border-top: 8px solid var(--accent); }
+
+/* Une scène : sa largeur suit sa longueur (posée en ligne), jamais moins de 112 px. */
+.frise-lane.is-scenes .frise-lane-track { min-height: 92px; }
+.frise-card {
+  position: absolute; top: 8px; display: flex; flex-direction: column; gap: 4px; height: 76px; padding: 8px 10px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 0.8125rem; text-align: left; cursor: pointer; overflow: hidden; z-index: 2;
+}
+.frise-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (any-hover: hover) {
+  .frise-card:hover { border-color: var(--line-2); background: var(--hover); }
+  .frise-card.has-plot:hover { background-color: transparent; box-shadow: inset 0 0 0 2px var(--plot-fg); }
+}
+.frise-card.is-selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+/* Le raccourci `background` plus haut efface l'image : la bande des intrigues est reposée ici. */
+.frise-card.has-plot { border-color: transparent; background-image: var(--plot-bg); background-color: transparent; }
+.frise-card.has-plot.is-selected { box-shadow: inset 0 0 0 3px var(--plot-fg), inset 0 0 0 5px var(--plot-fg-swap); }
+.frise-card.is-over { box-shadow: inset 4px 0 0 var(--accent); }
+.frise-card.has-plot.is-over { box-shadow: inset 4px 0 0 var(--plot-fg); }
+.frise-card-top { display: flex; align-items: center; gap: 6px; }
+.frise-num { font-weight: 700; color: var(--ink-2); }
+.frise-card-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; overflow-wrap: anywhere; font-weight: 500; }
+.frise-card-len { margin-top: auto; font-size: 0.75rem; color: var(--ink-2); white-space: nowrap; }
+/* Une partie encore vide : là où l'on dépose une scène pendant un glisser. */
+.frise-end { position: absolute; top: 8px; display: grid; place-items: center; height: 76px; padding: 0 10px; border: 1px dashed var(--line-2); border-radius: 10px; color: var(--ink-2); font-size: 0.8125rem; }
+.frise-end.is-over { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+
+/* Cases des pistes et courbes. */
+.frise-cell { position: absolute; top: 0; min-width: 0; height: 100%; }
+.frise-lane.has-curve .frise-lane-track, .frise-lane.is-curve .frise-lane-track { min-height: 48px; }
+.frise-curve { position: absolute; top: 4px; left: 0; pointer-events: none; overflow: visible; }
+.frise-curve-zero { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; }
+.frise-curve-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.frise-curve-dot { fill: var(--accent); }
+.frise-lane-group-title { position: sticky; left: 0; display: inline-block; margin: 0; }
+.frise-lane-group-title button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 8px 10px 4px; border: 0; background: none; font: 600 0.6875rem var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); cursor: pointer; }
+.frise-group-count { font-weight: 400; letter-spacing: 0; }
+
+/* Ruban agrandi : la frise au-dessus du texte, puis le séparateur à tirer. */
+.frise-ribbon { flex: none; display: flex; flex-direction: column; min-height: 0; }
+.frise-ribbon-box { display: flex; flex-direction: column; padding: 8px 12px 0; overflow: hidden; background: var(--ground); }
+.frise-ribbon-box > .frise-board { flex: 1 1 auto; height: auto; min-height: 0; }
+.frise-splitter { flex: none; display: grid; place-items: center; height: 12px; cursor: row-resize; touch-action: none; border-bottom: 1px solid var(--line); background: var(--ground); }
+.frise-splitter:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.frise-splitter-grip { width: 44px; height: 4px; border-radius: 2px; background: var(--line-2); }
+@media (any-hover: hover) { .frise-splitter:hover .frise-splitter-grip { background: var(--ink-2); } }
+/* Ruban agrandi : une rangée de toute la largeur au-dessus du texte, qui garde toute la largeur et reste centré. Les
+   volets, rouverts à la main, passent par-dessus sur toute la hauteur (ruban compris) sans rien décaler. */
+.manuscript.has-board, .manuscript.has-board.hide-scenes, .manuscript.has-board.hide-side, .manuscript.has-board.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "board" "main"; }
+.screenplay.has-board, .screenplay.has-board.hide-scenes, .screenplay.has-board.hide-side, .screenplay.has-board.hide-scenes.hide-side { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "board" "center"; }
+.ms-board, .sp-board { grid-area: board; min-width: 0; }
+.manuscript.has-board > .ms-scenes, .manuscript.has-board > .sp-side, .screenplay.has-board > .sp-scenes, .screenplay.has-board > .sp-side {
+  position: absolute; grid-row: 1 / -1; grid-column: 1 / -1; top: 0; bottom: 0; z-index: 12; width: min(var(--board-panel-w), 85vw); background: var(--ground);
+}
+.has-board { --board-panel-w: 300px; }
+.manuscript.has-board > .ms-scenes, .screenplay.has-board > .sp-scenes { left: 0; box-shadow: var(--shadow-pop); clip-path: inset(0 -32px 0 0); }
+.manuscript.has-board > .sp-side, .screenplay.has-board > .sp-side { right: 0; box-shadow: var(--shadow-pop); clip-path: inset(0 0 0 -32px); }
+.has-board > .edge-handle.is-left, .has-board > .edge-handle.is-right { z-index: 13; }
+.has-board:not(.hide-scenes) > .edge-handle.is-left { left: calc(min(var(--board-panel-w), 85vw) - 1px); }
+.has-board:not(.hide-side) > .edge-handle.is-right { right: calc(min(var(--board-panel-w), 85vw) - 1px); }
+
+/* Fiche de la scène (volet de la frise du Plan). */
+.frise-sheet { display: flex; flex-direction: column; gap: 10px; }
+.frise-panel { position: relative; flex: none; width: 320px; max-width: 40%; align-self: stretch; overflow: auto; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); margin-bottom: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.frise-panel-close { position: absolute; top: 6px; right: 6px; }
+.frise-panel-kicker { margin: 0; padding-right: 36px; font-size: 0.75rem; color: var(--ink-2); }
+.frise-panel-title { margin: 0; font: 600 1.0625rem var(--font-ui); overflow-wrap: anywhere; }
+.frise-panel-field { display: flex; flex-direction: column; gap: 4px; }
+.frise-panel-label { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); }
+.frise-panel-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Plan et séquencier en frise : toute la largeur, la frise prend la hauteur qui reste. */
+.sequencer:has(> .sq-inner.is-frise) { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+.sq-inner.is-frise { max-width: none; width: 100%; flex: 1; min-height: 0; }
+.frise-board.is-plan { flex: 1; min-height: 0; }
+@media (pointer: coarse) {
+  .frise-card, .frise-end { height: 88px; }
+  .frise-lane.is-scenes .frise-lane-track { min-height: 104px; }
+  .frise-panel-actions .ghost-button, .frise-lane-group-title button { min-height: 44px; }
+  .frise-splitter { height: 24px; }
+}
+@media (max-width: 720px) {
+  .frise-lane-head { width: 132px; }
+  .frise-panel { width: auto; max-width: none; }
+}
+
+/* ---------- Ruban agrandi : au plus près du petit ruban (jalons, traits d'intrigue, courbe étalée) ---------- */
+.frise-board.is-ribbon { gap: 4px; }
+.frise-board.is-ribbon .frise-tools { gap: 4px 10px; }
+.frise-board.is-ribbon .frise-zoom .icon-button { min-width: 32px; min-height: 32px; }
+.frise-total.is-peek { color: var(--ink); font-weight: 600; }
+/* Tête de lecture du ruban agrandi : elle suit le texte qui défile et passe devant les cartes (pas devant les têtes de piste). */
+.frise-board.is-ribbon .frise-playhead { z-index: 4; }
+.frise-board.is-ribbon .frise-lane-head { width: 150px; font-size: 0.75rem; }
+.frise-board.is-ribbon .frise-lane { border-bottom: 0; }
+.frise-board.is-ribbon .frise-ruler { min-height: 30px; }
+.frise-board.is-ribbon .frise-tick.is-major { height: 18px; padding-top: 2px; }
+/* Jalon : un trait coiffé d'un triangle, comme le petit ruban ; son nom passe dans la barre au survol ou au toucher. */
+.frise-jalon { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; padding: 0; border: 0; border-radius: 1px; background: var(--accent-ink); cursor: help; z-index: 3; }
+.frise-jalon::before { content: ""; position: absolute; top: 0; left: -4px; border: 5px solid transparent; border-top-color: var(--accent-ink); border-bottom: 0; }
+.frise-jalon::after { content: ""; position: absolute; top: 0; bottom: 0; left: -8px; right: -8px; }
+.frise-jalon:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.frise-jalon.is-peeked, .frise-jalon.is-over { box-shadow: 0 0 0 2px var(--accent-soft); }
+@media (pointer: coarse) { .frise-jalon::after { left: -14px; right: -14px; } }
+/* Cartes plus basses ; étroites, elles ne gardent que leur numéro (le titre est dans l'infobulle et le nom lu). */
+.frise-board.is-ribbon .frise-lane.is-scenes .frise-lane-track { min-height: 58px; }
+.frise-board.is-ribbon .frise-card { top: 4px; height: 50px; padding: 5px 8px; gap: 2px; }
+.frise-board.is-ribbon .frise-card-len { display: none; }
+.frise-board.is-ribbon .frise-card-title { -webkit-line-clamp: 1; }
+.frise-board.is-ribbon .frise-end { top: 4px; height: 50px; }
+.frise-card.is-narrow { padding: 5px 3px; align-items: center; }
+.frise-card.is-narrow .frise-card-title, .frise-card.is-narrow .frise-card-len, .frise-card.is-narrow .status-dot { display: none; }
+.frise-card.is-tiny { padding: 0; }
+.frise-card.is-tiny .frise-card-top { display: none; }
+.frise-board.is-fit .frise-card { border-radius: 4px; }
+/* Courbes : la courbe du récit à l'accent, celles des personnages à leur couleur ; leurs noms servent de légende. */
+.frise-board.is-ribbon .frise-lane.is-curve .frise-lane-track { min-height: 68px; }
+.frise-curve.is-set { top: 2px; }
+.frise-curve.is-set .frise-curve-line { stroke: var(--curve); }
+.frise-curve.is-set .frise-curve-dot { fill: var(--curve); }
+.frise-curve-key { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
+.frise-curve-name { display: flex; align-items: center; gap: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frise-curve-name::before { content: ""; flex: none; width: 14px; height: 0; border-top: 2px solid var(--curve); }
+/* Intrigues : une ligne fine par intrigue, un trait de sa couleur sous chaque scène reliée (plus pâle si elle la nomme). */
+.frise-lane.is-plot .frise-lane-track { min-height: 22px; }
+.frise-lane.is-plot .frise-lane-track::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 6px; border-radius: 3px; background: var(--line); }
+.frise-plot-name { display: block; max-width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--ink-2); font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+@media (any-hover: hover) { .frise-plot-name:hover { color: var(--ink); text-decoration: underline; } }
+.frise-plot-cell { position: absolute; top: 0; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; }
+.frise-plot-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.frise-plot-mark { position: absolute; left: 0; top: 8px; height: 6px; border-radius: 1px; }
+.frise-plot-cell.is-linked .frise-plot-mark { background: var(--lane); }
+.frise-plot-cell.is-cited .frise-plot-mark { background: var(--lane); opacity: 0.45; }
+@media (any-hover: hover) { .frise-plot-cell.is-none:hover .frise-plot-mark { background: var(--lane); opacity: 0.25; } }
+@media (pointer: coarse) { .frise-lane.is-plot .frise-lane-track, .frise-plot-cell { min-height: 32px; height: 32px; } .frise-lane.is-plot .frise-lane-track::before, .frise-plot-mark { top: 13px; } }
+/* Groupes de pistes du ruban (courbe, intrigues, personnages) : un titre qui replie, collé à gauche. */
+.frise-lane-group-title.is-ribbon { display: block; width: fit-content; z-index: 6; }
+.frise-lane-group-title.is-ribbon button { min-height: 28px; padding: 4px 10px 2px; }
+@media (pointer: coarse) { .frise-lane-group-title.is-ribbon button { min-height: 44px; } }

@@ -89,8 +89,8 @@
   .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-moves { grid-area: moves; }
   .sq-list:not(.is-cards) .sq-scene:has(> .sq-go) > .sq-go { grid-area: go; }
 
-  /* Plan : pas de chronologie sur téléphone (le tableau déborde de l'écran). */
-  .plan-timeline-tab, .sq-modes { display: none; }
+  /* Plan : une seule présentation sur téléphone (la liste) : ni fiches ni frise. */
+  .sequencer .sq-modes { display: none; }
 
   /* Manuscrit : pas de page de livre, le texte prend toute la largeur, plus gros (la mise en page par page ne compte pas ici). */
   .ms-main { padding: 12px max(4px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom) + var(--keyboard-h, 0px)) max(4px, env(safe-area-inset-left)); }

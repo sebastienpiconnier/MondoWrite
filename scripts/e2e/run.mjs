@@ -1125,6 +1125,182 @@ const scenarios = [
     },
   },
   {
+    name: "étiquettes (#170) : relier un thème créé à la volée depuis l'onglet Scène",
+    async run(h) {
+      const { page } = h;
+      await h.create("Étiquettes");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le réveil");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      await page.getByRole("button", { name: "Ajouter : Thèmes et idées" }).click();
+      await page.keyboard.type("Flashback");
+      await until(() => page.getByRole("option", { name: /Flashback/ }).isVisible(), "pas d'option pour créer l'étiquette");
+      await page.keyboard.press("Enter");
+      await until(() => page.locator(".scene-links .link-pill", { hasText: "Flashback" }).isVisible(), "l'étiquette n'est pas reliée à la scène");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("cartes/") && v.includes("type: theme") && v.includes('title: "Flashback"')), "le thème n'a pas été créé");
+    },
+  },
+  {
+    name: "fin de scène (#171) : « Pour X, la scène finit » dans l'onglet Scène, au point de vue de la scène",
+    async run(h) {
+      const { page } = h;
+      await h.create("Fin de scène");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le réveil");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const hero = page.getByLabel("Pour le héros, la scène finit");
+      await hero.waitFor();
+      await hero.selectOption("pire");
+      await h.saved((f) => Object.entries(f).some(([k, v]) => k.startsWith("cartes/") && v.includes("type: scene") && v.includes('"issue":"pire"')), "la fin de scène n'est pas enregistrée");
+      const pill = page.getByRole("button", { name: /^Point de vue de la scène « Le réveil »/ });
+      await pill.click();
+      await page.keyboard.type("Sarah");
+      await until(() => page.getByRole("option", { name: "Créer « Sarah »" }).isVisible(), "pas d'option pour créer le personnage");
+      await page.keyboard.press("Enter");
+      const sarah = page.getByLabel("Pour Sarah, la scène finit");
+      await until(() => sarah.isVisible(), "la question n'est pas posée au personnage du point de vue");
+      assert((await sarah.inputValue()) === "pire", "la réponse a changé avec le point de vue");
+      // « Beaucoup mieux » est dans la liste ; « Pour un autre personnage… » : Marc, relié à la scène, a sa propre réponse.
+      assert((await sarah.locator("option", { hasText: "Beaucoup mieux" }).count()) === 1, "pas de « Beaucoup mieux »");
+      await page.getByRole("button", { name: "Ajouter : Personnages" }).click();
+      await page.getByRole("combobox", { name: "Ajouter : Personnages" }).fill("Marc");
+      await page.keyboard.press("Enter");
+      await until(() => page.locator(".scene-links .link-pill", { hasText: "Marc" }).count(), "Marc n'est pas relié à la scène");
+      const other = page.getByLabel("Pour un autre personnage…");
+      await other.selectOption({ label: "Marc" });
+      const marc = page.getByLabel("Pour Marc, la scène finit");
+      await until(() => marc.isVisible(), "pas de ligne pour Marc");
+      await until(() => page.evaluate(() => document.activeElement?.id?.length > 0 && document.activeElement?.tagName === "SELECT"), "la liste de Marc n'a pas le focus");
+      await marc.selectOption("beaucoupMieux");
+      await h.saved((f) => Object.values(f).some((v) => v.includes("type: scene") && /"issues":"[A-Za-z0-9_-]+=beaucoupMieux"/.test(v)), "la réponse pour Marc n'est pas enregistrée");
+      assert((await other.locator("option", { hasText: "Sarah" }).count()) === 0, "le narrateur est proposé comme autre personnage");
+      // Carte Scène agrandie : la même question en tête, une seule fois (pas répétée dans la fiche).
+      await h.view(1);
+      await page.locator(".react-flow__node-card .card.type-scene .card-handle").first().dblclick();
+      const inCard = page.locator("dialog[open]").getByLabel("Pour Sarah, la scène finit");
+      await until(() => inCard.isVisible(), "la fin de scène n'est pas dans la carte agrandie");
+      assert((await inCard.count()) === 1, "la question est posée deux fois dans la carte agrandie");
+      // Statistiques › Courbes : la courbe de Sarah, en score cumulé (une seule scène notée : trop peu pour la lire).
+      await page.keyboard.press("Escape");
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions", exact: true }).click();
+      await page.getByRole("menuitem", { name: /Statistiques/ }).click();
+      await page.getByRole("button", { name: "Courbes", exact: true }).click();
+      // La courbe du récit d'abord (la scène n'a pas de narrateur principal, aucun n'étant coché), puis celle de Sarah.
+      await until(() => page.locator(".arc-card.is-story", { hasText: "Courbe du récit" }).isVisible(), "pas de courbe du récit dans Statistiques › Courbes");
+      const arc = page.locator(".arc-card:not(.is-story)");
+      await until(() => arc.first().isVisible(), "pas de courbe dans Statistiques › Courbes");
+      assert((await arc.first().textContent())?.includes("Sarah"), "la courbe n'est pas celle du personnage du point de vue");
+      assert((await arc.first().textContent())?.includes("Une seule scène notée"), "l'analyse ne dit pas qu'il y a trop peu de scènes");
+      assert((await arc.first().locator(".arc-chart circle.is-down").count()) === 1, "la scène « moins bien » n'est pas sur la courbe");
+      assert((await page.locator(".arc-card", { hasText: "Marc" }).count()) === 1, "Marc n'a pas sa courbe");
+      assert((await page.locator(".arc-card", { hasText: "Marc" }).locator("circle.is-up").getAttribute("r")) === "5.5", "« beaucoup mieux » n'a pas son gros point");
+    },
+  },
+  {
+    name: "frise (#173) : présentation du Plan, déplacer au clavier et au volet, annuler ; ruban agrandi du Manuscrit",
+    async run(h) {
+      const { page } = h;
+      await h.create("Frise");
+      await h.view(2);
+      for (const title of ["Alpha", "Bravo", "Charlie"]) {
+        await page.getByPlaceholder("Nouvelle scène…").fill(title);
+        await page.getByPlaceholder("Nouvelle scène…").press("Enter");
+        await h.wait(150);
+      }
+      // Plus de vue Frise dans la barre du haut : c'est une présentation du Plan.
+      assert((await page.locator(".topbar").getByRole("button", { name: "Frise", exact: true }).count()) === 0, "la frise est encore une vue");
+      await page.locator(".sq-modes").getByRole("button", { name: "Frise", exact: true }).click();
+      const cards = page.locator(".frise-card");
+      await until(async () => (await cards.count()) === 3, "la frise ne montre pas les trois scènes");
+      const order = async () => (await cards.locator(".frise-card-title").allTextContents()).join(",");
+      assert((await order()) === "Alpha,Bravo,Charlie", "la frise ne suit pas l'ordre du plan");
+      assert((await page.locator(".frise-ruler .frise-tick.is-major").count()) > 0, "la règle n'a pas de repère");
+      assert((await page.locator(".frise-lane.is-curve").count()) === 0, "la courbe du récit est encore dans la frise du Plan");
+      // Zoom : même des scènes vides (à leur largeur minimale) s'élargissent ; la tête des pistes reste devant les cartes.
+      const firstWidth = () => cards.first().evaluate((el) => el.getBoundingClientRect().width);
+      const w0 = await firstWidth();
+      await page.getByRole("button", { name: "Élargir la frise" }).click();
+      await until(async () => (await firstWidth()) > w0, "« Élargir la frise » ne change rien");
+      await page.getByRole("button", { name: "Resserrer la frise" }).click();
+      await until(async () => Math.abs((await firstWidth()) - w0) < 1, "« Resserrer la frise » ne revient pas");
+      const covered = await page.locator(".frise-lane.is-scenes .frise-lane-head").evaluate((head) => {
+        const r = head.getBoundingClientRect();
+        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!top && !head.contains(top);
+      });
+      assert(!covered, "une carte passe par-dessus la tête de la piste des scènes");
+      // Clavier : Alt + ← déplace la carte choisie, le focus la suit.
+      await cards.nth(2).focus();
+      await page.keyboard.press("Alt+ArrowLeft");
+      await until(async () => (await order()) === "Alpha,Charlie,Bravo", "Alt + ← n'a pas déplacé la scène");
+      await until(() => page.evaluate(() => document.activeElement?.textContent?.includes("Charlie")), "le focus n'a pas suivi la scène");
+      // Volet : « Plus tard » au doigt comme à la souris.
+      await page.getByRole("button", { name: /^Scène 2 : Charlie/ }).click();
+      await until(() => page.getByRole("complementary", { name: "La scène choisie" }).isVisible(), "le volet de la scène ne s'ouvre pas");
+      await page.getByRole("button", { name: "Plus tard →" }).click();
+      await until(async () => (await order()) === "Alpha,Bravo,Charlie", "« Plus tard » n'a pas déplacé la scène");
+      // Annuler défait le dernier déplacement.
+      await page.locator(".sq-head h1").click();
+      await page.keyboard.press("Control+z");
+      await until(async () => (await order()) === "Alpha,Charlie,Bravo", "Annuler n'a pas remis la scène");
+      // La liste suit.
+      await page.locator(".sq-modes").getByRole("button", { name: "Liste", exact: true }).click();
+      const rows = await page.locator(".sequencer .sq-scene .bible-title").evaluateAll((els) => els.map((el) => el.value).join(","));
+      assert(rows === "Alpha,Charlie,Bravo", `le Plan ne suit pas la frise (${rows})`);
+
+      // Manuscrit : « Agrandir le ruban » (menu ⋯) pose la frise au-dessus du texte.
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions", exact: true }).click();
+      await page.getByRole("menuitem", { name: "Agrandir le ruban" }).click();
+      const board = page.locator(".frise-board.is-ribbon");
+      await until(() => board.isVisible(), "le ruban agrandi n'apparaît pas");
+      // Les volets se ferment pour lui laisser la place ; toucher une carte mène à la scène dans le texte. Rouverts à
+      // la main, les volets d'origine passent par-dessus le texte sans le décaler.
+      await until(() => page.locator(".manuscript.hide-scenes.hide-side").isVisible(), "les volets ne se ferment pas avec le ruban agrandi");
+      await board.getByRole("button", { name: /^Scène 3 : Bravo/ }).click();
+      await until(async () => (await page.locator(".ms-title").inputValue()) === "Bravo", "la carte du ruban ne mène pas à la scène");
+      const mainBox = () => page.locator(".ms-main").evaluate((el) => { const r = el.getBoundingClientRect(); return `${Math.round(r.left)},${Math.round(r.width)}`; });
+      const placeBefore = await mainBox();
+      await page.locator(".edge-handle.is-right").click();
+      await until(() => page.locator(".manuscript:not(.hide-side) > .sp-side").isVisible(), "le volet de droite ne s'ouvre pas");
+      assert((await mainBox()) === placeBefore, "le volet de droite décale le texte");
+      await page.locator(".edge-handle.is-right").click();
+      await page.locator(".edge-handle.is-left").click();
+      await until(() => page.locator(".manuscript:not(.hide-scenes) .ms-scenes .ms-total").isVisible(), "le volet de gauche d'origine ne s'ouvre pas");
+      assert((await mainBox()) === placeBefore, "le volet de gauche décale le texte");
+      await page.locator(".edge-handle.is-left").click();
+      // La tête de lecture suit le texte : en bas du livre, elle est sur la dernière scène.
+      await page.locator(".ms-main").evaluate((el) => el.scrollTo(0, el.scrollHeight));
+      await until(() => board.locator(".frise-card.is-selected").filter({ hasText: "Bravo" }).count().then((n) => n === 1), "le ruban ne suit pas le défilement du texte");
+      // Le séparateur se règle au clavier.
+      const splitter = page.getByRole("separator", { name: /Hauteur du ruban/ });
+      const before = Number(await splitter.getAttribute("aria-valuenow"));
+      await splitter.focus();
+      await page.keyboard.press("ArrowDown");
+      await until(async () => Number(await splitter.getAttribute("aria-valuenow")) > before, "le séparateur ne répond pas aux flèches");
+      // « − » jusqu'au bout : la ligne ne fait que se resserrer, passe par « Toute la largeur » et finit plus étroite
+      // que l'écran, sans que les cartes perdent leur hauteur.
+      const lineWidth = () => board.locator(".frise-lane.is-scenes .frise-lane-track").evaluate((el) => el.getBoundingClientRect().width);
+      const cardHeight = () => board.locator(".frise-card").first().evaluate((el) => el.getBoundingClientRect().height);
+      const tall = await cardHeight();
+      const zoomOut = board.getByRole("button", { name: /Resserrer la frise|Toute la largeur/ });
+      let last = await lineWidth();
+      while (await zoomOut.isEnabled()) {
+        await zoomOut.click();
+        await h.wait(100);
+        const now = await lineWidth();
+        assert(now <= last + 1, `« − » a élargi la ligne (${last} → ${now})`);
+        last = now;
+      }
+      await until(() => board.locator(".frise-scroll").evaluate((el) => el.scrollWidth <= el.clientWidth + 1), "le zoom le plus petit ne tient pas dans la largeur");
+      assert(Math.abs((await cardHeight()) - tall) < 1, "le zoom a changé la hauteur des cartes");
+      await board.getByRole("button", { name: "Réduire le ruban" }).click();
+      await until(async () => (await board.count()) === 0, "le ruban agrandi ne se referme pas");
+      await until(() => page.locator(".manuscript:not(.hide-scenes)").isVisible(), "les volets d'avant ne reviennent pas");
+    },
+  },
+  {
     name: "point de vue (1.13.0) : narrateur créé depuis le Manuscrit, annulé, rétabli, vu dans la Bible et sur le canevas",
     async run(h) {
       const { page } = h;
@@ -2084,6 +2260,30 @@ const scenarios = [
     },
   },
   {
+    name: "import Fountain (#169) : synopsis en trop changés en notes, « Cacher les notes »",
+    async run(h) {
+      const { page } = h;
+      await h.home();
+      const chooser = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Importer…" }).click();
+      const source = "INT. PHARE - NUIT\n\n= Inès monte à la lanterne.\n\n= Elle trouve le cahier.\n\nLa lampe est froide.\n\n= Le cahier parle d'elle.\n\nElle lit à voix haute.";
+      await (await chooser).setFiles({ name: "Le Phare.fountain", mimeType: "text/plain", buffer: Buffer.from(source) });
+      await page.locator(".views").waitFor();
+      await h.closeTour();
+      await until(() => page.getByRole("status").filter({ hasText: "2 synopsis en trop changés en notes" }).count(), "le message de l'import ne dit pas les notes");
+      await h.saved((f) => /= Inès monte à la lanterne\.\s+\[\[Elle trouve le cahier\.\]\]\s+La lampe est froide\.\s+\[\[Le cahier parle d'elle\.\]\]/.test(f["scenario.fountain"] ?? ""), "les synopsis en trop ne sont pas devenus des notes à leur place");
+      await h.view(4);
+      const notes = page.locator('.sp-editor .sp-preserved[data-preserved="note"]');
+      await until(async () => (await notes.count()) === 2 && (await notes.first().isVisible()), "les notes ne sont pas montrées dans la feuille");
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Cacher les notes" }).click();
+      await until(async () => !(await notes.first().isVisible()), "les notes restent visibles");
+      await page.locator(".sp-bar").getByRole("button", { name: "Plus d’actions" }).click();
+      await page.getByRole("menuitem", { name: "Afficher les notes" }).click();
+      await until(() => notes.first().isVisible(), "les notes ne reviennent pas");
+    },
+  },
+  {
     name: "séquencier : relâcher un glisser natif sur la scène qui défile sous le pointeur",
     async run(h) {
       const { page } = h;
@@ -2505,6 +2705,53 @@ const scenarios = [
       await until(async () => (await results.first().innerText()).includes("enveloppe"), "la troisième recherche ne trouve pas l'enveloppe");
       await field.press("Enter");
       await until(() => page.evaluate(() => getSelection()?.toString().startsWith("Inès trouva une enveloppe")), "le passage n'est pas sélectionné dans le manuscrit");
+    },
+  },
+  {
+    name: "IA : trouver les personnages du texte (#172), proposition citée, fiche créée et reliée, Ctrl+Z",
+    async run(h) {
+      const { page } = h;
+      await page.addInitScript(() => localStorage.setItem("cosmos:reglages", JSON.stringify({ ai: { provider: "anthropic", keys: { anthropic: "sk-test" }, models: {}, urls: {} } })));
+      let asked = null;
+      await page.route("https://api.anthropic.com/**", async (route) => {
+        asked = JSON.parse(route.request().postData() ?? "{}");
+        const { excerpts } = JSON.parse(asked.messages[0].content);
+        if (!excerpts.includes("Inès Morvan")) throw new Error("texte absent de la requête");
+        const characters = [
+          { name: "Inès Morvan", variants: ["Inès", "Ninou"], scenes: [{ ref: "s1", speaks: true }], quote: "Inès Morvan pousse la porte du phare", facts: [{ field: "age", value: "34 ans", quote: "Elle a trente-quatre ans" }] },
+          // Personnage inventé : écarté par la relecture.
+          { name: "Paul", quote: "Paul arrive au phare en bateau" },
+        ];
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ characters }) }] }) });
+      });
+      await h.create("Personnages");
+      await h.view(4);
+      await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
+      await page.getByPlaceholder("Titre de la première scène…").press("Enter");
+      const editor = page.locator(".ProseMirror[contenteditable=true]").first();
+      await editor.waitFor();
+      await editor.click();
+      await page.keyboard.type("Inès Morvan pousse la porte du phare. Elle a trente-quatre ans.");
+      await h.wait(400);
+      await page.getByRole("button", { name: "IA", exact: true }).click();
+      await page.getByRole("button", { name: "Trouver les personnages du texte…" }).click();
+      await page.getByRole("button", { name: "Lancer la lecture" }).click();
+      const row = page.locator(".cast-item", { hasText: "Nouveau personnage" });
+      await until(() => row.isVisible(), "le personnage proposé n'apparaît pas");
+      assert((await page.locator(".cast-item").count()) === 1, "le personnage inventé est proposé");
+      await until(() => page.getByText(/Propositions écartées.*1/).isVisible(), "le personnage inventé n'est pas signalé comme écarté");
+      assert(!(await page.getByRole("checkbox", { name: "Ajouter « Ninou » aux surnoms" }).count()), "un nom absent du texte est proposé");
+      assert(await page.getByRole("checkbox", { name: "Relier à la scène « Le phare »" }).isChecked(), "la scène où il parle n'est pas cochée");
+      await row.getByRole("button", { name: "Créer la fiche" }).click();
+      await until(() => page.getByText("Ajouté à la Bible : Inès Morvan").isVisible(), "la fiche n'est pas annoncée");
+      await page.getByRole("button", { name: "Fermer" }).click();
+      await h.view(1);
+      await until(async () => (await h.cardList()).some((c) => c.type === "personnage" && c.title === "Inès Morvan"), "la fiche n'est pas créée");
+      await until(async () => (await h.edges().count()) === 1, "la fiche n'est pas reliée à la scène");
+      await h.saved((f) => Object.values(f).some((v) => v.includes('title: "Inès Morvan"') && v.includes('"age":"34 ans"') && !v.includes("surnoms")), "la fiche n'est pas enregistrée avec ses faits (sans le prénom en surnom)");
+      await h.pane();
+      await page.keyboard.press("Control+z");
+      await until(async () => !(await h.cardList()).some((c) => c.type === "personnage") && (await h.edges().count()) === 0, "Ctrl+Z ne retire pas tout en une fois");
     },
   },
   {
@@ -3422,14 +3669,14 @@ const scenarios = [
       await page.getByRole("menuitem", { name: /^Commandes…/ }).click();
       await page.getByRole("searchbox", { name: "Commande à lancer" }).waitFor();
       await page.keyboard.press("Escape");
-      // #56 : les mêmes vues, dans le même ordre, avec Cmd/Ctrl + 1 à 4.
+      // #56 : les mêmes vues, dans le même ordre, avec Cmd/Ctrl + 1 à 5.
       const order = await page.locator(".topbar .views button").allTextContents();
       assert(order.join("|") === "Canevas|Plan|Bible|Manuscrit", `ordre des vues : ${order.join(", ")}`);
       // #54 : au-dessus de la page, ni statut ni point de vue ; ils sont dans l'onglet « Scène ».
       await h.view(4);
       await page.locator(".ms-meta").waitFor();
       assert((await page.locator(".ms-meta .status-picker, .ms-meta select").count()) === 0, "statut, point de vue ou type de page encore au-dessus de la page");
-      await until(() => page.locator(".ms-scene-props select").isVisible(), "le type de page n'est pas dans l'onglet Scène");
+      await until(() => page.locator(".ms-scene-props .ms-kind select").isVisible(), "le type de page n'est pas dans l'onglet Scène");
       await page.locator(".ms-meta .more-button").click();
       await page.getByRole("menuitem", { name: /^Mode focus/ }).click();
       await until(() => page.locator(".manuscript.is-focus").count(), "Mode focus du menu ⋯ sans effet");
@@ -3480,7 +3727,7 @@ const scenarios = [
       // Sections du livre (Plan) : une première scène ; ni chronologie ni carte des choix à part (lot 11).
       await h.view(2);
       await until(() => page.getByRole("heading", { name: "Sections du livre" }).isVisible(), "le Plan d'un roman interactif ne s'appelle pas « Sections du livre »");
-      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 0, "la chronologie est proposée dans un roman interactif");
+      assert((await page.locator(".sq-modes").getByRole("button", { name: "Frise", exact: true }).count()) === 0, "la frise est proposée dans un roman interactif");
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "la carte des choix est encore une présentation du Plan");
       await page.getByPlaceholder("Nouvelle scène…").fill("La cour");
       await page.getByPlaceholder("Nouvelle scène…").press("Enter");
@@ -3593,7 +3840,7 @@ const scenarios = [
       await h.canvas();
       await h.view(2);
       await h.wait(300);
-      assert((await page.getByRole("button", { name: "Chronologie" }).count()) === 1, "un roman ordinaire n'a plus la chronologie");
+      assert((await page.locator(".sq-modes").getByRole("button", { name: "Frise", exact: true }).count()) === 1, "un roman ordinaire n'a pas la frise");
       assert((await page.getByRole("button", { name: "Carte des choix" }).count()) === 0, "un roman ordinaire montre la carte des choix");
       await h.view(4);
       await page.getByPlaceholder("Titre de la première scène…").fill("Le phare");
@@ -3917,10 +4164,31 @@ try {
     await context.route(/^(?!https?:\/\/(127\.0\.0\.1|localhost)[:/])/, (r) => r.abort());
     const page = await context.newPage();
     page.setDefaultTimeout(10_000);
+    // E2E_THROTTLE=6 : processeur ralenti, comme pendant la suite complète sur une machine chargée (les boucles
+    // de rendus ne s'y montrent souvent qu'à ce moment-là).
+    if (process.env.E2E_THROTTLE) {
+      const cdp = await context.newCDPSession(page);
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.E2E_THROTTLE) });
+    }
     const errors = [];
+    // E2E_TRACE=1 : la pile JavaScript des deux premiers « Maximum update depth », pour trouver le setState en cause.
+    if (process.env.E2E_TRACE) {
+      await page.addInitScript(() => {
+        const error = console.error;
+        let shown = 0;
+        console.error = (...args) => {
+          if (shown < 2 && /Maximum update/.test(String(args[0]))) {
+            shown++;
+            error.call(console, `STACK ${new Error().stack}`);
+          }
+          error.apply(console, args);
+        };
+      });
+    }
     page.on("pageerror", (e) => errors.push(`erreur de la page : ${e.message}`));
     page.on("console", (m) => {
       const text = m.text();
+      if (process.env.E2E_TRACE && text.startsWith("STACK")) console.log(text.slice(0, 5000));
       if (NOISE.some((r) => r.test(text))) return;
       if (m.type() === "error" || (m.type() === "warning" && REACT_ERRORS.some((r) => r.test(text)))) errors.push(`console.${m.type()} : ${text.split("\n")[0].slice(0, 300)}`);
     });

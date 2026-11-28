@@ -398,10 +398,13 @@ await step("plan", async () => {
   await page.getByRole("button", { name: T("Fiches", "Index cards", "Fichas"), exact: true }).click();
   await wait(800);
   await shot("plan-fiches");
-  await page.getByRole("button", { name: T("Chronologie", "Timeline", "Cronología"), exact: true }).click();
+  // La frise (#173) : troisième présentation, une scène choisie pour montrer son volet.
+  await page.locator(".sq-modes").getByRole("button", { name: T("Frise", "Timeline", "Línea de tiempo"), exact: true }).click();
+  await wait(600);
+  await page.locator(".frise-card").nth(2).click();
   await wait(800);
-  await shot("plan-chronologie");
-  await page.getByRole("button", { name: T("Liste", "List", "Lista"), exact: true }).click();
+  await shot("frise");
+  await page.locator(".sq-modes").getByRole("button", { name: T("Liste", "List", "Lista"), exact: true }).click();
 });
 await view(T("Manuscrit", "Manuscript", "Manuscrito"));
 await shot("manuscrit");
@@ -410,6 +413,14 @@ await step("ruban", async () => {
   await wait(500);
   await shot("ruban", { clip: await union([".ms-meta"], 12) });
   await page.getByRole("button", { name: T("Masquer les intrigues", "Hide plotlines", "Ocultar las tramas") }).click();
+});
+// Le ruban agrandi (#173) : la frise au-dessus du texte, la fiche de la scène à gauche.
+await step("ruban-agrandi", async () => {
+  await page.getByRole("button", { name: T("Agrandir le ruban", "Expand the ribbon", "Ampliar la cinta") }).click();
+  await wait(900);
+  await shot("ruban-agrandi");
+  await page.getByRole("button", { name: T("Réduire le ruban", "Shrink the ribbon", "Reducir la cinta") }).click();
+  await wait(400);
 });
 await shot("manuscrit-colonne", { clip: { x: 0, y: 64, width: 360, height: 836 } });
 await shot("manuscrit-stats", { clip: { x: 1080, y: 64, width: 360, height: 836 } });

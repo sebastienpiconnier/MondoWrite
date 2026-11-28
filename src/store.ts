@@ -1,6 +1,7 @@
 // État global de MondoWrite (Zustand).
 // Les nœuds React Flow portent directement les CardData : la toile EST le modèle.
 
+import { addNicknames, CAST_FIELDS, type CastField } from "./ai/cast";
 import { interactiveMeta } from "./interactive";
 import { deliverTextImage, forgetTextImage } from "./textImageState";
 import { manuscriptImages } from "./sceneImages";
@@ -56,7 +57,7 @@ import { mapTexts, relabelMentions, removeMentions, renameMentions } from "./men
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
 import { interviewKey, isParked, placeAnswer } from "./assistant";
-import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
+import { ISSUES_FOR, addQuestion, removeQuestion, setFicheField, withIssueFor, type BreakdownField, type SheetField } from "./character";
 import { addEntries, breakdownEntries } from "./ai/structure";
 import { EMPTY_PLAN, beatLevel, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate, type ScriptBeats } from "./plan";
 import { applyCustom, beatOf, customOf, moveToSection, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
@@ -237,6 +238,8 @@ export interface CosmosState {
   dropQuestion: (id: string, question: string) => void;
   /** Change un champ de la fiche d'un personnage (vide : retiré). */
   setFiche: (id: string, field: SheetField, value: string) => void;
+  /** « Pour X, la scène finit » d'une scène pour un personnage qui ne la raconte pas (`fiche.issues`) ; vide : retirée. */
+  setIssueFor: (sceneId: string, characterId: string, value: string) => void;
   /**
    * Versions d'une scène (1.13.0, versions.ts) : texte du moment (manuscrit d'un roman ; synopsis et corps Fountain
    * d'un scénario), null si la scène n'a rien à garder.
@@ -337,8 +340,8 @@ export interface CosmosState {
   focusFrame: string | null;
   clearFocusFrame: () => void;
   /** Fenêtre ouverte par-dessus l'app : raccourcis clavier ou « À propos ». */
-  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | null;
-  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | null) => void;
+  dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | "cast" | null;
+  setDialog: (dialog: "shortcuts" | "about" | "trash" | "document" | "photos" | "card" | "replace" | "paperback" | "stats" | "scriptPdf" | "bibleExport" | "goto" | "profile" | "vrac" | "versions" | "backups" | "commands" | "synonyms" | "names" | "revisions" | "play" | "webPage" | "synopsis" | "cast" | null) => void;
   /** Fenêtre « Rechercher et remplacer » : texte de départ, scène en cours, carte à renommer. */
   replaceInit: ReplaceInit | null;
   openReplace: (init?: Partial<ReplaceInit>) => void;
@@ -705,6 +708,12 @@ export interface CosmosState {
   linkCards: (source: string, target: string, label: string) => void;
   /** Crée une carte de ce type et la relie à `id`, en une étape (fiche de scène reliée, #137). Rend son identifiant. */
   addLinkedCard: (id: string, type: CardType, title: string) => string;
+  /**
+   * « Trouver les personnages » (#172) : un personnage accepté, en une étape. Fiche existante (`cardId`) ou créée
+   * (`title`) ; faits posés seulement dans un champ vide, surnoms ajoutés sans doublon, fils tirés vers les scènes
+   * qui n'en ont pas encore (jamais retiré ni remplacé). Rend l'identifiant de la fiche, ou null.
+   */
+  acceptCast: (input: { cardId?: string; title?: string; fiche: Partial<Record<CastField, string>>; nicknames: string[]; scenes: string[] }) => string | null;
   updateCard: (id: string, patch: Partial<Omit<CardData, "id">>) => void;
   /** Élargit ou rétrécit une carte (clavier) ; la hauteur suit le contenu. */
   resizeCard: (id: string, delta: number) => void;
@@ -807,6 +816,9 @@ export interface CosmosState {
   dismissScrivenerReport: () => void;
   /** Ce que l'import d'une histoire Twee ou Ink a converti et gardé (#96), affiché après l'import. État d'affichage. */
   storyReport: StoryReport | null;
+  /** Import d'un scénario (#169) : synopsis en trop changés en notes (état d'affichage, jamais enregistré). */
+  notesReport: number;
+  dismissNotesReport: () => void;
   dismissStoryReport: () => void;
   setRetroInvite: (on: boolean) => void;
 }
@@ -1360,6 +1372,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       retroInvite: false,
       scrivenerReport: null,
       storyReport: null,
+      notesReport: 0,
       screen: "project",
       view: firstView(),
       focusId: null,
@@ -1607,7 +1620,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
   /** Message de l'accueil après un import manqué : projet Scrivener illisible, trop ancien, ou rien de lisible. */
   const noticeFor = (err: unknown): "scrivener" | "scrivenerOld" | "empty" =>
     err instanceof Error && err.message === "scrivener-unreadable" ? "scrivener" : err instanceof Error && err.message === "scrivener-old" ? "scrivenerOld" : "empty";
-  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null, versions: [string, string, string][] = [], story: StoryReport | null = null) => {
+  const finishImport = async (project: Project, medias: [string, Uint8Array][], report: ScrivenerReport | null, versions: [string, string, string][] = [], story: StoryReport | null = null, notes = 0) => {
     if (!(await storage.create(project.meta.title))) return;
     // Jamais d'import par-dessus un projet existant : l'auteur choisit un dossier vide.
     if (await storage.readAll().catch(() => null)) {
@@ -1640,6 +1653,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
       retroInvite: true,
       scrivenerReport: report,
       storyReport: story,
+      notesReport: notes,
       screen: "project",
       view: "manuscrit",
       focusId: null,
@@ -1728,6 +1742,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Retouché par l'auteur : le champ n'est plus « proposé par l'IA » (mode Atelier).
       const ia = withoutIaField(card.ia, field);
       set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ...(ia !== card.ia ? { ia } : {}) } } : n)) });
+      touch();
+    },
+    setIssueFor: (sceneId, characterId, value) => {
+      const card = get().nodes.find((n) => n.id === sceneId)?.data;
+      if (!card || card.type !== "scene") return;
+      const fiche = withIssueFor(card.fiche, characterId, value);
+      if ((fiche?.[ISSUES_FOR] ?? "") === (card.fiche?.[ISSUES_FOR] ?? "")) return;
+      record(`card:${sceneId}:issues`);
+      set({ nodes: get().nodes.map((n) => (n.id === sceneId ? { ...n, data: { ...n.data, fiche } } : n)) });
       touch();
     },
     sceneVersionText: (cardId) => {
@@ -3294,6 +3317,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         retroInvite: false,
         scrivenerReport: null,
         storyReport: null,
+        notesReport: 0,
         screen: "project",
         view: firstView(),
         focusId: null,
@@ -3401,7 +3425,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         set({ scrivenerChoice: { source: outcome.scrivener, folders: scrivenerFolders(outcome.scrivener.binder) } });
         return;
       }
-      await finishImport(outcome.project, outcome.medias, null, [], outcome.story ?? null);
+      await finishImport(outcome.project, outcome.medias, null, [], outcome.story ?? null, outcome.notes ?? 0);
     },
 
     tryExample: async () => {
@@ -3771,6 +3795,27 @@ export const useCosmos = create<CosmosState>((set, get) => {
       get().linkCards(id, created, "");
       return created;
     },
+    acceptCast: ({ cardId, title, fiche, nicknames, scenes }) => {
+      const isCharacter = (id: string) => get().nodes.some((n) => n.id === id && n.data.type === "personnage");
+      let id = cardId && isCharacter(cardId) ? cardId : null;
+      if (!id) {
+        const name = title?.trim().slice(0, 300);
+        if (cardId || !name) return null;
+        id = get().addTitledCard("personnage", name);
+      }
+      const card = () => get().nodes.find((n) => n.id === id)!.data;
+      for (const field of CAST_FIELDS) {
+        const value = fiche[field]?.trim();
+        if (value && !card().fiche?.[field]?.trim()) get().setFiche(id, field, value);
+      }
+      if (nicknames.length > 0) {
+        const before = card().fiche?.surnoms ?? "";
+        const after = addNicknames(before, nicknames, card().title);
+        if (after !== before) get().setFiche(id, "surnoms", after);
+      }
+      for (const scene of scenes) if (get().nodes.some((n) => n.id === scene && n.data.type === "scene")) get().linkCards(scene, id, "");
+      return id;
+    },
     linkCards: (source, target, label) => {
       const linked = get().edges.some(
         (e) => (e.source === source && e.target === target) || (e.source === target && e.target === source),
@@ -4068,6 +4113,7 @@ export const useCosmos = create<CosmosState>((set, get) => {
         retroInvite: false,
         scrivenerReport: null,
         storyReport: null,
+        notesReport: 0,
         loaded: true,
         screen: "project",
         view: firstView(),
@@ -4335,6 +4381,8 @@ export const useCosmos = create<CosmosState>((set, get) => {
     dismissScrivenerReport: () => set({ scrivenerReport: null }),
     storyReport: null,
     dismissStoryReport: () => set({ storyReport: null }),
+    notesReport: 0,
+    dismissNotesReport: () => set({ notesReport: 0 }),
     cancelScrivenerImport: () => set({ scrivenerChoice: null }),
     confirmScrivenerImport: async (exclude) => {
       const choice = get().scrivenerChoice;

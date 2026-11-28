@@ -1,20 +1,15 @@
 // En-tête commun du Plan (roman) et du séquencier (scénario), #55 : une seule mise en page, lue avec le vocabulaire
-// du projet. Première ligne : titre de la vue, présentation (Liste, Fiches, Chronologie), actions, total à droite ;
+// du projet. Première ligne : titre de la vue, présentation (Liste, Fiches, Frise : #173), actions, total à droite ;
 // seconde ligne : le gabarit et ce qu'il raconte. Les deux vues ne diffèrent que par ce qu'elles y mettent.
 
 import type { ReactNode } from "react";
 import { useT } from "../i18n";
 import { useSettings, type SequencerMode } from "../settings";
 
-const MODES: SequencerMode[] = ["outline", "cards"];
+const MODES: SequencerMode[] = ["outline", "cards", "timeline"];
 
 interface Props {
   title: string;
-  /** Chronologie affichée (état de la vue). */
-  timeline: boolean;
-  onTimeline: (on: boolean) => void;
-  /** Pas de chronologie (roman interactif : l'ordre du livre n'y est pas celui de la lecture). */
-  noTimeline?: boolean;
   /** Libellé du groupe des présentations. */
   modeAria: string;
   /** Boutons d'action après les présentations (Organiser le canevas, Nouvel épisode…). */
@@ -25,6 +20,8 @@ interface Props {
   template?: ReactNode;
   /** Ce que raconte le gabarit choisi. */
   about?: string;
+  /** La frise est proposée (pas dans un roman interactif, #173). */
+  timeline?: boolean;
 }
 
 /** Bouton « Ranger » d'une scène (#55) : chapitre et case s'ouvrent sous la scène, le reste du temps ils attendent. */
@@ -38,7 +35,7 @@ export function ArrangeToggle({ open, title, onToggle }: { open: boolean; title:
   );
 }
 
-export function PlanHeader({ title, timeline, onTimeline, noTimeline = false, modeAria, actions, total, template, about }: Props) {
+export function PlanHeader({ title, modeAria, actions, total, template, about, timeline = true }: Props) {
   const t = useT();
   const sq = t.screenplay.sequencer;
   const mode = useSettings((s) => s.sequencerMode);
@@ -49,30 +46,16 @@ export function PlanHeader({ title, timeline, onTimeline, noTimeline = false, mo
     <header className="sq-head">
       <h1>{title}</h1>
       <div className="sq-modes" role="group" aria-label={modeAria}>
-        {MODES.map((m) => (
+        {MODES.filter((m) => timeline || m !== "timeline").map((m) => (
           <button
             key={m}
             type="button"
-            aria-pressed={!timeline && mode === m}
-            onClick={() => {
-              setMode(m);
-              onTimeline(false);
-            }}
+            aria-pressed={mode === m}
+            onClick={() => setMode(m)}
           >
             {sq[m]}
           </button>
         ))}
-        {/* La chronologie suit l'ordre du livre : pas dans un roman interactif. */}
-        {!noTimeline && (
-        <button
-          type="button"
-          className="plan-timeline-tab"
-          aria-pressed={timeline}
-          onClick={() => onTimeline(true)}
-        >
-          {t.plan.timeline}
-        </button>
-        )}
       </div>
       {actions}
       {/* Couleur des scènes par leur intrigue principale (#143), réglage de l'appareil, coupé par défaut. */}

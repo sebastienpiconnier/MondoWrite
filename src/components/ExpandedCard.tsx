@@ -20,6 +20,11 @@ import { PovPicker } from "./PovPicker";
 import { MoreMenu, useKeyHint } from "./MoreMenu";
 import { CardScenes, SceneLinks } from "./LinkedCards";
 import { ScenePlace } from "./ScenePlace";
+import { SceneIssue } from "./SceneIssue";
+import { useInteractive } from "../interactive/useInteractive";
+
+/** Champ déjà montré en tête de la carte agrandie (constante : même tableau à chaque rendu). */
+const ISSUE_ONLY = ["issue"] as const;
 
 export function ExpandedCard({ card }: { card: CardData }) {
   const t = useT();
@@ -30,6 +35,9 @@ export function ExpandedCard({ card }: { card: CardData }) {
   // Redessine quand le texte de la scène grandit (par paliers) : « Proposer un synopsis » paraît dès qu'il a assez de mots.
   useCosmos((s) => (novelScene ? Math.min(20, Math.floor((s.manuscript[card.id]?.length ?? 0) / 40)) : 0));
   const imageUrl = useMediaUrl(card.image);
+  // « Pour X, la scène finit » (#171) en tête, comme dans l'onglet Scène ; roman interactif : seulement s'il est déjà rempli.
+  const interactive = useInteractive();
+  const showIssue = card.type === "scene" && !card.page && (!interactive || !!card.fiche?.issue);
   const key = useKeyHint();
   // Carte toute neuve (téléphone : elle s'ouvre en grand dès sa création) : on écrit tout de suite son titre. Après
   // l'ouverture de la fenêtre native, qui donne sinon le focus à son premier bouton (la croix).
@@ -68,6 +76,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
           />
         </div>
       )}
+      {showIssue && <SceneIssue card={card} inline />}
       <h2 id="app-dialog-title" className="sr-only">
         {t.card.expandedTitle}
       </h2>
@@ -120,7 +129,7 @@ export function ExpandedCard({ card }: { card: CardData }) {
       ) : novelScene ? (
         <>
           {/* Scène d'un roman : son synopsis (sa note de plan), puis son texte, qu'on écrit ici. */}
-          <CardSheet card={card} />
+          <CardSheet card={card} omit={showIssue ? ISSUE_ONLY : undefined} />
           {/* Mode Atelier : synopsis vide et texte écrit, « Proposer un synopsis » (comme dans le Manuscrit). */}
           {!card.page && <SynopsisSuggest sceneId={card.id} title={card.title} text={novelSceneText(card.id)} synopsis={card.fiche?.synopsis ?? ""} />}
           <section className="expanded-draft" aria-label={t.draft.heading}>

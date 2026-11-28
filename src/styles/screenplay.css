@@ -188,6 +188,8 @@
 }
 .sp-preserved::before { display: block; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .sp-preserved[data-preserved="note"]::before { content: var(--sp-label-note); }
+/* « Afficher les notes » décoché (#169) : les notes se cachent, le curseur les saute (hiddenSynopsis.ts). */
+.screenplay.hide-notes .sp-preserved[data-preserved="note"] { display: none; }
 .sp-preserved[data-preserved="boneyard"]::before { content: var(--sp-label-boneyard); }
 .sp-preserved[data-preserved="section"]::before { content: var(--sp-label-section); }
 /* Série et gabarit : le libellé dit ce qu'est la section. Les épisodes se numérotent dans leur saison (vue

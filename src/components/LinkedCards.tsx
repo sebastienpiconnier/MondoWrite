@@ -42,31 +42,32 @@ function typesOf(nodes: CosmosState["nodes"]): Map<string, CardType> {
   return map;
 }
 
-function linksKey(s: CosmosState, id: string, type: CardType): string {
+function linksKey(s: CosmosState, id: string, types: readonly CardType[]): string {
   const typeOf = typesOf(s.nodes);
   const out: string[] = [];
   for (const e of s.edges) {
     const other = e.source === id ? e.target : e.target === id ? e.source : null;
-    if (other && typeOf.get(other) === type) out.push(`${e.id}>${other}`);
+    const type = other ? typeOf.get(other) : undefined;
+    if (other && type && types.includes(type)) out.push(`${e.id}>${other}`);
   }
   return out.join(",");
 }
 
-function useLinks(id: string, type: CardType) {
-  const key = useCosmos((s) => linksKey(s, id, type));
+function useLinks(id: string, types: readonly CardType[]) {
+  const key = useCosmos((s) => linksKey(s, id, types));
   return useMemo(() => (key ? key.split(",").map((pair) => { const [edge, card] = pair.split(">"); return { edge, card }; }) : []), [key]);
 }
 
 /** Titres des cartes de ce type, en une chaîne stable (« id\ttitre\n… »). */
-function titlesKey(s: CosmosState, type: CardType): string {
+function titlesKey(s: CosmosState, types: readonly CardType[]): string {
   return s.nodes
-    .filter((n) => n.data.type === type && !n.data.page)
+    .filter((n) => types.includes(n.data.type) && !n.data.page)
     .map((n) => `${n.id}\t${n.data.title.trim()}`)
     .join("\n");
 }
 
-function useTitles(type: CardType): Map<string, string> {
-  const key = useCosmos((s) => titlesKey(s, type));
+function useTitles(types: readonly CardType[]): Map<string, string> {
+  const key = useCosmos((s) => titlesKey(s, types));
   return useMemo(() => new Map(key ? key.split("\n").map((l) => l.split("\t") as [string, string]) : []), [key]);
 }
 
@@ -77,10 +78,22 @@ export interface Speaker {
   lines: number;
 }
 
-function LinkRow({ id, type, label, ordered, onOpen, canCreate = true, speakers }: { id: string; type: CardType; label: string; ordered?: string[]; onOpen: (card: string) => void; canCreate?: boolean; speakers?: Speaker[] }) {
+// `also` : d'autres types montrés et proposés dans la même rangée (#170 : thèmes et idées) ; `type` est celui des
+// cartes créées depuis la rangée. Les tableaux sont constants (hors du rendu) pour que les sélecteurs restent stables.
+const NO_TYPES: readonly CardType[] = [];
+const rowTypes = new Map<string, readonly CardType[]>();
+const typesFor = (type: CardType, also: readonly CardType[]) => {
+  const key = [type, ...also].join(",");
+  let list = rowTypes.get(key);
+  if (!list) rowTypes.set(key, (list = [type, ...also]));
+  return list;
+};
+
+function LinkRow({ id, type, also = NO_TYPES, label, ordered, onOpen, canCreate = true, speakers }: { id: string; type: CardType; also?: readonly CardType[]; label: string; ordered?: string[]; onOpen: (card: string) => void; canCreate?: boolean; speakers?: Speaker[] }) {
   const t = useT().sceneLinks;
-  const links = useLinks(id, type);
-  const titles = useTitles(type);
+  const types = typesFor(type, also);
+  const links = useLinks(id, types);
+  const titles = useTitles(types);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -280,13 +293,16 @@ export function SceneLinks({ id, speakers: given, compact }: { id: string; speak
     const scene = listScenes(screenplay.elements).find((sc) => sc.cardId === id);
     return scene ? sceneCharacters(screenplay.elements, scene).map((c) => ({ name: c.name, lines: c.lines })) : undefined;
   }, [given, screenplay, id]);
+  const t = useT().sceneLinks;
   const st = useCosmos.getState;
   const open = (card: string) => st().openInBible(card);
   return (
-    <section className={`sp-box scene-links${compact ? " is-compact" : ""}`} aria-label={useT().sceneLinks.title}>
+    <section className={`sp-box scene-links${compact ? " is-compact" : ""}`} aria-label={t.title}>
       <LinkRow id={id} type="personnage" label={types.personnage.section} onOpen={open} speakers={speakers} />
       <LinkRow id={id} type="intrigue" label={types.intrigue.section} onOpen={open} />
       <LinkRow id={id} type="lieu" label={types.lieu.section} onOpen={open} />
+      {/* Étiquettes (#170) : thèmes et idées reliés ; un nom nouveau crée un Thème. */}
+      <LinkRow id={id} type="theme" also={TAG_TYPES} label={t.tags} onOpen={open} />
     </section>
   );
 }
@@ -305,21 +321,25 @@ function useStoryOrder(): string[] {
   return useMemo(() => (key ? key.split(",") : []), [key]);
 }
 
-/** Les scènes d'une carte (Intrigue, Personnage, Lieu, Objet, Thème…), dans l'ordre du récit. */
+const SCENE_ONLY: readonly CardType[] = ["scene"];
+const TAG_TYPES: readonly CardType[] = ["idee"];
+
+/** Les scènes d'une carte (Intrigue, Personnage, Lieu, Objet, Thème, Idée…), dans l'ordre du récit. */
 export function CardScenes({ id, type }: { id: string; type: CardType }) {
   const t = useT();
   const { types } = useVocab();
   const interactive = useInteractive();
   const order = useStoryOrder();
-  const count = useLinks(id, "scene").length;
-  if (type === "scene" || type === "idee" || type === "question" || type === "image" || type === "lien" || type === "document") return null;
+  const count = useLinks(id, SCENE_ONLY).length;
+  // Une Idée reliée à des scènes sert d'étiquette (#170) : elle montre ses scènes comme un Thème.
+  if (type === "scene" || type === "question" || type === "image" || type === "lien" || type === "document") return null;
   return (
     <section className="sp-box card-scenes">
       <LinkRow id={id} type="scene" label={types.scene.section} ordered={order} canCreate={false} onOpen={(scene) => { useCosmos.getState().setDialog(null); useCosmos.getState().openInManuscript(scene); }} />
       {count > 0 && (
         <p className="sp-detail card-scenes-foot">
           {count === 1 ? t.sceneLinks.appearsOne : fmt(t.sceneLinks.appearsMany, { n: count })}
-          {canFollow(type) && !interactive && (
+          {(canFollow(type) || type === "idee") && !interactive && (
             <>
               {" · "}
               <button type="button" className="link-button" onClick={() => { useCosmos.getState().setDialog(null); useCosmos.getState().readThread(id); }}>

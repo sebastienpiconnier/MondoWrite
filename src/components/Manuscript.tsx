@@ -27,6 +27,7 @@ import { SceneSetupsBox } from "./SceneSetups";
 import { SceneLinks } from "./LinkedCards";
 import { SideParts, type SidePart } from "./SideParts";
 import { PovPicker } from "./PovPicker";
+import { SceneIssue } from "./SceneIssue";
 import { narratorCounts } from "../pov";
 import { BookEditor, PAGE, type BookApi } from "./BookEditor";
 import type { BookHandlers } from "./bookExtensions";
@@ -52,15 +53,16 @@ import type { SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
+import { RibbonBoard, useBoard } from "./Frise";
+import { useTextPlayhead } from "./useTextPlayhead";
 import { startReading } from "./useReader";
 import { proseUtterances, type ReadNode } from "../reading";
 import { sceneAt, sceneGroups } from "../bookDoc";
 import { LanguageToolStatus, useLanguageTool } from "./LanguageToolBubble";
-import { typeColor } from "../types";
 import { flushSync } from "react-dom";
 import { chapterDropTarget, chapterNumbers, chapterOf, groupByChapter, type Chapter } from "../plan";
 import { PAGE_KINDS, bookOrder, isPageKind, type PageKind } from "../book";
-import { citedCards, countWords, orphanTexts } from "../manuscript";
+import { countWords, orphanTexts } from "../manuscript";
 import { Chutier } from "./Chutier";
 import { FocusBar, FocusButton, FocusCounter, useFocusChrome } from "./FocusBar";
 import { FOCUS_COLUMN_EM } from "../focusText";
@@ -112,8 +114,8 @@ export function Manuscript() {
   const t = useT();
   const m = t.manuscript;
   // Volets escamotables (plan à gauche, infos à droite) : on garde le choix d'une fois sur l'autre.
-  const [panels, setPanels] = useState(readPanels);
-  const togglePanel = (key: keyof Panels) =>
+  const [savedPanels, setPanels] = useState(readPanels);
+  const toggleSaved = (key: keyof Panels) =>
     setPanels((p) => {
       const next = { ...p, [key]: !p[key] };
       try {
@@ -225,6 +227,33 @@ export function Manuscript() {
   const bookApi = useRef<BookApi | null>(null);
   /** « Insérer une image… » (#87) : au curseur du livre. */
   const interactive = useInteractive();
+  // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone ni dans un roman interactif.
+  const boardOpen = useBoard((s) => s.open);
+  const board = boardOpen && !focusMode && !phone && !interactive;
+  // Ruban agrandi : les volets se ferment pour lui laisser la place ; rouverts à la main, ils passent par-dessus le
+  // texte sur toute la hauteur (frise.css) sans le décaler, et les volets d'avant reviennent quand on le réduit.
+  const [boardPanels, setBoardPanels] = useState({ scenes: false, side: false });
+  useEffect(() => {
+    if (board) setBoardPanels({ scenes: false, side: false });
+  }, [board]);
+  const panels: Panels = board ? { ...savedPanels, ...boardPanels } : savedPanels;
+  // Sa tête de lecture suit le livre qu'on fait défiler : la scène passée sous la ligne de lecture, et sa part déjà lue.
+  const manuscriptText = useCosmos((s) => s.manuscript);
+  const playhead = useTextPlayhead(
+    board,
+    () => {
+      const dom = bookApi.current?.editor()?.view.dom;
+      const box = dom?.closest<HTMLElement>(".ms-main");
+      if (!dom || !box) return null;
+      const tops = [...dom.querySelectorAll<HTMLElement>("[data-scene-id]")].map((el) => ({ id: el.dataset.sceneId ?? "", top: el.getBoundingClientRect().top })).filter((x) => x.id);
+      return { box, tops, end: dom.getBoundingClientRect().bottom };
+    },
+    manuscriptText,
+  );
+  const togglePanel = (key: keyof Panels) => {
+    if (board && key !== "meta") setBoardPanels((b) => ({ ...b, [key]: !b[key] }));
+    else toggleSaved(key);
+  };
   const sections = useCosmos((s) => (interactive ? projectSections(s) : null));
   const insertImage = () => {
     const ed = bookApi.current?.editor();
@@ -686,7 +715,6 @@ export function Manuscript() {
   const prevId = order.slice(0, Math.max(at, 0)).reverse().find(inView) ?? null;
   const nextId = order.slice(at + 1).find(inView) ?? null;
   const title = card.title.trim() || m.untitled;
-  const detected = citedCards(manuscript[current], cards);
   const chapter = chapterOf(plan, current);
   // La scène ouvre son chapitre : le titre du chapitre s'affiche au-dessus, comme dans un livre.
   const opensChapter = !pageKind && !!chapter && (at === 0 || chapterOf(plan, order[at - 1])?.id !== chapter.id);
@@ -703,7 +731,7 @@ export function Manuscript() {
         : sceneWords;
 
   return (
-    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
+    <div className={`manuscript${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${panels.meta ? "" : " hide-meta"}${focusMode ? " is-focus" : ""}${board ? " has-board" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       style={focusMode ? { ["--focus-col" as string]: FOCUS_COLUMN_EM[writing.column] } : undefined}
     >
@@ -958,6 +986,11 @@ export function Manuscript() {
       <EdgeHandle side="left" open={panels.scenes} label={m.panelScenes} onClick={() => togglePanel("scenes")} />
       <EdgeHandle side="right" open={panels.side} label={m.panelSide} onClick={() => togglePanel("side")} />
 
+      {board && (
+        <div className="ms-board">
+          <RibbonBoard currentId={playhead?.id ?? current} progress={playhead?.frac ?? 0} onGo={go} />
+        </div>
+      )}
       {!panels.meta && <EdgeHandle side="top" open={panels.meta} label={m.panelMeta} onClick={() => togglePanel("meta")} />}
       <div className="ms-main" ref={mainRef}>
         <div className="ms-sheet">
@@ -968,7 +1001,8 @@ export function Manuscript() {
           <div className="ms-meta" role="toolbar" aria-label={b.toolbar}>
             {/* Ruban du récit, en tête de la barre (il reste en vue en défilant) : chaque case du gabarit à la place
                 que ses scènes prennent. */}
-            {!interactive && <StoryRibbon currentId={current} onGo={go} />}
+            {/* Pas de ruban sur téléphone : la place va au texte. */}
+            {!interactive && !board && !phone && <StoryRibbon currentId={current} onGo={go} />}
             <button type="button" className="icon-button" disabled={!prevId} aria-label={m.previous} title={m.previous} onClick={() => prevId && go(prevId)}>
               <span aria-hidden="true">←</span>
             </button>
@@ -1028,6 +1062,7 @@ export function Manuscript() {
                 { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
                 { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
                 { label: useSettings.getState().plotColors ? t.plan.plotColorsOff : t.plan.plotColorsOn, onSelect: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
+                !phone && !interactive && { label: boardOpen ? t.frise.shrink : t.frise.expand, onSelect: () => useBoard.getState().setOpen(!boardOpen) },
                 !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
                 {
                   // La carte part à la corbeille ; son texte reste dans manuscrit/ et revient avec elle.
@@ -1113,30 +1148,14 @@ export function Manuscript() {
               <PovPicker card={card} />
             </span>
           )}
+          {/* « Pour X, la scène finit » (#171), rempli en écrivant ; pas dans un roman interactif. */}
+          {!pageKind && !interactive && <SceneIssue card={card} />}
         </section>
           ) }];
           if (!pageKind) parts.push({ key: "setups", title: P.setups, node: <SceneSetupsBox id={card.id} /> });
           // Personnages, intrigues, lieu de la scène, reliés sans tirer de fil (#137).
           if (!pageKind) parts.push({ key: "links", title: P.links, node: <SceneLinks id={card.id} /> });
-          parts.push({ key: "cited", title: P.cited, node: (
-        <section className="sp-box">
-          <h2 className="sp-box-title">{m.cited}</h2>
-          {detected.length === 0 ? (
-            <p className="sp-empty">{m.nothingDetected}</p>
-          ) : (
-            <ul className="ms-chips">
-              {detected.map((c) => (
-                <li key={c.id}>
-                  <button type="button" className="chip" title={fmt(t.bible.openSheet, { title: c.title })} onClick={() => useCosmos.getState().openInBible(c.id)}>
-                    <span className="card-dot" style={{ background: typeColor(c.type) }} />
-                    {c.title}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-          ) });
+          // « Cités dans le texte » retiré : les rubriques reliées (#137) disent déjà qui et quoi.
           parts.push({ key: "synopsis", title: P.synopsis, node: (
         <section className="sp-box">
           <h2 className="sp-box-title">{m.synopsis}</h2>

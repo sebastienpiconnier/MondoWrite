@@ -33,7 +33,7 @@ export type WheelMode = "pan" | "zoom";
 /** Palette des couleurs des intrigues (#157). */
 export type PlotPalette = "standard" | "bold";
 
-export type SequencerMode = "outline" | "cards";
+export type SequencerMode = "outline" | "cards" | "timeline";
 /** Aides qui s'effacent une fois apprises (#59) : consigne du canevas, touches du scénario (voir learn.ts). */
 export const LEARNED_HINTS = ["canvasHint", "screenplayKeys"] as const;
 export type LearnedHint = (typeof LEARNED_HINTS)[number];
@@ -89,6 +89,8 @@ export interface WritingSettings {
   typewriter: boolean;
   /** Scénario : synopsis de chaque scène montré sous son en-tête (#147), hors pages ; non par défaut. */
   showSynopsis: boolean;
+  /** Scénario : notes [[…]] montrées dans la feuille (#169) ; oui par défaut. */
+  showNotes: boolean;
   /** Ce qui reste en pleine encre ; le reste s'estompe. */
   highlight: FocusHighlight;
   /** Typographie automatique à la frappe : selon la langue de l'interface, celle d'une langue de typoRules.ts, ou aucune. */
@@ -164,6 +166,7 @@ function readWriting(raw: unknown): WritingSettings {
   return {
     typewriter: w.typewriter === true,
     showSynopsis: w.showSynopsis === true,
+    showNotes: w.showNotes !== false,
     highlight: isFocusHighlight(w.highlight) ? w.highlight : "off",
     typography: isTypographySetting(w.typography) ? w.typography : "auto",
     zoom: readZoom(w.zoom),
@@ -329,7 +332,7 @@ export const useSettings = create<SettingsState>((set) => ({
   setThemePref: (themePref) => set({ themePref, theme: resolve(themePref) }),
   palette: isPalette(saved.palette) ? saved.palette : DEFAULT_PALETTE,
   setPalette: (palette) => set({ palette }),
-  sequencerMode: saved.sequencerMode === "cards" ? "cards" : "outline",
+  sequencerMode: saved.sequencerMode === "cards" || saved.sequencerMode === "timeline" ? saved.sequencerMode : "outline",
   setSequencerMode: (sequencerMode) => set({ sequencerMode }),
   ribbonPov: saved.ribbonPov === true,
   setRibbonPov: (ribbonPov) => set({ ribbonPov }),

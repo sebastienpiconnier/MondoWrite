@@ -206,6 +206,19 @@ export function AiMenu() {
             {all.vrac.menu}
           </button>
           <p className="settings-hint">{all.vrac.menuHint}</p>
+          {/* Trouver les personnages du texte (#172) : sa propre fenêtre, propositions à accepter une par une. */}
+          <button
+            type="button"
+            className="ghost-button"
+            disabled={busy}
+            onClick={() => {
+              setOpen(false);
+              useCosmos.getState().setDialog("cast");
+            }}
+          >
+            {all.cast.menu}
+          </button>
+          <p className="settings-hint">{all.cast.menuHint}</p>
           {/* Relecture par l'IA (1.9.0) : tout le récit, des questions dans l'onglet « Vérifier ». */}
           <AiReviewActions disabled={busy} onStart={() => setOpen(false)} />
           {/* Après avoir typé les idées : tout ranger en cadres sur le canevas (sans IA, annulable). */}

@@ -169,9 +169,17 @@ export function BookEditor({
     const pageAt = (pos: number) => 1 + breaks.filter((b) => b <= pos).length;
     return { first: pageAt(g.markerPos), last: Math.max(pageAt(g.markerPos), pageAt(g.end - 1)) };
   };
+  // Pages de la scène en cours, envoyées seulement quand elles changent : la mise en pages se refait à chaque
+  // transaction, et un objet neuf à chaque mesure redessinait la vue, qui relançait une mesure (boucle de rendus).
+  const lastPlace = useRef<string | null>(null);
   const reportPlace = () => {
     const ed = editorRef.current;
-    if (ed && !ed.isDestroyed) onPlaceRef.current(placeOf(ed));
+    if (!ed || ed.isDestroyed) return;
+    const place = placeOf(ed);
+    const key = place ? `${place.first}-${place.last}` : "";
+    if (key === lastPlace.current) return;
+    lastPlace.current = key;
+    onPlaceRef.current(place);
   };
 
   const editor = useStableEditor({

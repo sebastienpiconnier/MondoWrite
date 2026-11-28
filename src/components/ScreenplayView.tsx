@@ -7,7 +7,9 @@ import { panelAfterSwipe } from "../touchGestures";
 import { useStoryFindings } from "./useStoryFindings";
 import { useStableEditor } from "./useStableEditor";
 import { usePageSpell } from "./usePageSpell";
-import { StatusDot } from "./SceneStatusPicker";
+import { SceneStatusPicker, StatusDot } from "./SceneStatusPicker";
+import { PovPicker } from "./PovPicker";
+import { SceneIssue } from "./SceneIssue";
 import { EdgeHandle } from "./EdgeHandle";
 import { StatsBox } from "./StatsBox";
 import { Chutier } from "./Chutier";
@@ -46,6 +48,7 @@ import { elementFor, type SceneRef } from "../ai/review";
 import { useCommand } from "../commands";
 import { ReaderBar, useReaderItems } from "./ReaderBar";
 import { StoryRibbon } from "./StoryRibbon";
+import { RibbonBoard, useBoard } from "./Frise";
 import { startReading } from "./useReader";
 import { screenplayUtterances, type ReadNode } from "../reading";
 import { PRESERVED } from "../screenplay/editor/nodes";
@@ -107,6 +110,7 @@ import { ScreenplayAtelier, ScreenplayDirections, screenplaySceneText } from "./
 import { findInText, nthMatch } from "../search";
 import { centerSelection } from "./centerSelection";
 import { LanguageTool } from "../languagetool/extension";
+import { useTextPlayhead } from "./useTextPlayhead";
 import { LanguageToolBubble, LanguageToolLive, LanguageToolStatus, useLanguageTool, type LtScope } from "./LanguageToolBubble";
 import {
   currentElement,
@@ -205,7 +209,7 @@ export function ScreenplayView() {
   const writing = useSettings((s) => s.writing);
   const chutier = useCosmos((s) => s.chutier);
   // Volets escamotables (scènes à gauche, infos à droite), correcteur à la demande, message en bas de page.
-  const [panels, togglePanel] = usePanels();
+  const [savedPanels, toggleSaved] = usePanels();
   // Présentation › volets (barre des menus du Mac, 1.11.1).
   useCommand("toggle-scenes", () => togglePanel("scenes"));
   useCommand("toggle-side", () => togglePanel("side"));
@@ -373,6 +377,8 @@ export function ScreenplayView() {
         continued: { resumes: () => useCosmos.getState().scriptPdf.resumes, contd: () => getT().screenplay.contd },
         // Passe de révision ouverte : ce qui est tapé reçoit sa marque (#18).
         revision: () => useCosmos.getState().revisions.current,
+        // « Afficher les notes » décoché (#169) : le curseur saute les notes cachées.
+        notesHidden: () => !useSettings.getState().writing.showNotes,
         // Mode focus : Échap le quitte, comme dans le manuscrit. Sinon il rend la main à la barre d'éléments.
         onEscape: () => {
           if (useCosmos.getState().focusMode) return setFocusMode(false);
@@ -606,6 +612,44 @@ export function ScreenplayView() {
   // Scène en cours pour le ruban : la dernière dont l'en-tête est avant le curseur.
   const ribbonScene = scenes.filter((s) => s.index <= current.index).pop();
   const ribbonCurrent = ribbonScene ? (ribbonScene.cardId ?? `@${ribbonScene.index}`) : null;
+  const goToRibbon = (id: string) => {
+    const s = scenes.find((x) => (x.cardId ?? `@${x.index}`) === id);
+    if (s) goTo(s.index);
+  };
+  // Ruban agrandi (#173) : réglage de l'appareil, jamais en mode focus ni sur téléphone.
+  const boardOpen = useBoard((s) => s.open);
+  const board = boardOpen && !focusMode && !phone;
+  // Sa tête de lecture suit le texte qu'on fait défiler : la scène dont l'en-tête est passé sous la ligne de lecture,
+  // et la part de la scène déjà passée.
+  const playhead = useTextPlayhead(
+    board,
+    () => {
+      if (!editor || editor.isDestroyed) return null;
+      const box = editor.view.dom.closest<HTMLElement>(".sp-scroll");
+      if (!box) return null;
+      const ids = new Map(scenes.map((x) => [x.index, x.cardId ?? `@${x.index}`]));
+      const tops: { id: string; top: number }[] = [];
+      editor.state.doc.forEach((_node, offset, i) => {
+        const id = ids.get(i);
+        if (id === undefined) return;
+        const dom = editor.view.nodeDOM(offset);
+        if (dom instanceof HTMLElement) tops.push({ id, top: dom.getBoundingClientRect().top });
+      });
+      return { box, tops, end: editor.view.dom.getBoundingClientRect().bottom };
+    },
+    scenes,
+  );
+  const boardCurrent = playhead?.id ?? ribbonCurrent;
+  // Ruban agrandi : les volets se ferment pour lui laisser toute la largeur ; ceux d'avant reviennent en le réduisant.
+  const [boardPanels, setBoardPanels] = useState({ scenes: false, side: false });
+  useEffect(() => {
+    if (board) setBoardPanels({ scenes: false, side: false });
+  }, [board]);
+  const panels = board ? boardPanels : savedPanels;
+  const togglePanel = (key: keyof typeof savedPanels) => {
+    if (board) setBoardPanels((b) => ({ ...b, [key]: !b[key] }));
+    else toggleSaved(key);
+  };
   const sceneCards = useMemo<SceneCard[]>(
     () => nodes.filter((n) => n.data.type === "scene").map((n) => ({ id: n.id, title: n.data.title })),
     [nodes],
@@ -1145,18 +1189,23 @@ export function ScreenplayView() {
   // Lire le récit fil par fil (#117) : seulement les scènes d'une carte, l'écart entre elles en pages.
   const threadFilter = useCosmos((s) => s.threadFilter);
   // Cartes qu'on peut suivre depuis le volet des scènes (lot 17), par type, sauf les personnages (filtre à part).
+  // Une Idée n'y est que reliée à une scène : elle sert alors d'étiquette (« flashback », #170).
+  const edgesForFilter = useCosmos((s) => s.edges);
   const filterGroups = useMemo(
-    () =>
-      THREAD_TYPES.filter((type) => type !== "personnage")
+    () => {
+      const sceneIds = new Set(nodes.filter((n) => n.data.type === "scene").map((n) => n.id));
+      const tagged = new Set(edgesForFilter.flatMap((e) => (sceneIds.has(e.source) ? [e.target] : sceneIds.has(e.target) ? [e.source] : [])));
+      return [...THREAD_TYPES.filter((type) => type !== "personnage"), "idee" as const]
         .map((type) => ({
           type,
           cards: nodes
-            .filter((n) => n.data.type === type && n.data.title.trim())
+            .filter((n) => n.data.type === type && n.data.title.trim() && (type !== "idee" || tagged.has(n.id)))
             .map((n) => ({ id: n.id, title: n.data.title.trim() }))
             .sort((a, b) => a.title.localeCompare(b.title, lang)),
         }))
-        .filter((g) => g.cards.length > 0),
-    [nodes, lang],
+        .filter((g) => g.cards.length > 0);
+    },
+    [nodes, lang, edgesForFilter],
   );
   const edges = useCosmos((s) => s.edges);
   const eighths = useSceneEighths();
@@ -1359,6 +1408,11 @@ export function ScreenplayView() {
     const at0 = target.startsWith(SCENE_AT) && at < 0 && elements.length > 0 ? 0 : at;
     const index = at0 >= 0 ? (at0 < elements.length ? at0 : -1) : elements.findIndex((el) => el.type === "sceneHeading" && el.cardId === target);
     if (index < 0) return;
+    // « Aller à » une note alors que les notes sont cachées (#169) : on les montre, sinon on n'y arriverait pas.
+    if (elements[index]?.type === "note" && !useSettings.getState().writing.showNotes) {
+      const st = useSettings.getState();
+      st.setWriting({ ...st.writing, showNotes: true });
+    }
     // Arrivée depuis la recherche (#85) : le mot sélectionné dans l'élément de la scène qui le contient.
     const selectNeedle = () => {
       if (!needle || editor.isDestroyed) return false;
@@ -1571,7 +1625,7 @@ export function ScreenplayView() {
   return (
     <div
       data-char-filter={charFilter ? "" : undefined}
-      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${writing.showSynopsis && !focusMode ? " show-synopsis" : ""}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
+      className={`screenplay${panels.scenes ? "" : " hide-scenes"}${panels.side ? "" : " hide-side"}${focusMode ? " is-focus" : ""}${board ? " has-board" : ""}${writing.showSynopsis && !focusMode ? " show-synopsis" : ""}${writing.showNotes ? "" : " hide-notes"}${focusMode && writing.typewriter ? " is-typewriter" : ""}${chrome.quiet ? " is-quiet" : ""}${chrome.typing ? " is-typing" : ""}${chrome.pointerOff ? " is-pointer-off" : ""}`}
       ref={rootRef}
       // Largeur de la colonne du mode focus, comme dans le Manuscrit : la taille du texte ne change pas, la colonne
       // s'élargit (réglage de l'appareil, en caractères).
@@ -1875,6 +1929,11 @@ export function ScreenplayView() {
         )}
       </nav>
 
+      {board && (
+        <div className="sp-board">
+          <RibbonBoard currentId={boardCurrent} progress={playhead?.frac ?? 0} onGo={goToRibbon} beforeMove={emit} />
+        </div>
+      )}
       <div className="sp-center">
         <div className={`sp-bar${toolsOpen ? " is-open" : ""}`} role="toolbar" aria-label={sp.barAria} ref={barRef}>
           {/* Téléphone seulement (CSS) : le type de l'élément en cours ouvre ou ferme le volet, sans quitter le texte. */}
@@ -1969,8 +2028,10 @@ export function ScreenplayView() {
               { label: t.goto.button, title: t.goto.buttonHint, hint: key("Mod", "G"), onSelect: () => useCosmos.getState().setDialog("goto") },
               // Synopsis (#147) : sous chaque en-tête (hors pages), ou lu seul dans sa fenêtre.
               { label: writing.showSynopsis ? t.synopsisView.hide : t.synopsisView.show, onSelect: () => { const st = useSettings.getState(); st.setWriting({ ...st.writing, showSynopsis: !st.writing.showSynopsis }); } },
+              { label: writing.showNotes ? t.screenplay.notesHide : t.screenplay.notesShow, onSelect: () => { const st = useSettings.getState(); st.setWriting({ ...st.writing, showNotes: !st.writing.showNotes }); } },
               { label: t.synopsisView.menu, onSelect: () => useCosmos.getState().setDialog("synopsis") },
               { label: useSettings.getState().plotColors ? t.plan.plotColorsOff : t.plan.plotColorsOn, onSelect: () => useSettings.getState().setPlotColors(!useSettings.getState().plotColors) },
+              !phone && { label: boardOpen ? t.frise.shrink : t.frise.expand, onSelect: () => useBoard.getState().setOpen(!boardOpen) },
               { label: openFindings > 0 ? fmt(t.review.buttonCount, { n: openFindings }) : t.review.button, title: t.review.buttonHint, onSelect: openReview },
               !phone && { label: t.projectStats.button, title: t.projectStats.buttonHint, onSelect: () => useCosmos.getState().setDialog("stats") },
               // Pages verrouillées (#46) : la scène laisse « OMIS » à sa place ; en rouge, en dernier (elle part à la corbeille).
@@ -2000,15 +2061,7 @@ export function ScreenplayView() {
         </div>
 
         {/* Ruban du récit : chaque case du gabarit à la place que ses scènes prennent (caché en mode focus). */}
-        {!focusMode && (
-          <StoryRibbon
-            currentId={ribbonCurrent}
-            onGo={(id) => {
-              const s = scenes.find((x) => (x.cardId ?? `@${x.index}`) === id);
-              if (s) goTo(s.index);
-            }}
-          />
-        )}
+        {!focusMode && !board && !phone && <StoryRibbon currentId={ribbonCurrent} onGo={goToRibbon} />}
         <div className="sp-scroll">
           {!focusMode && !charFilter && <TitlePage paper={paper} onChange={setTitleField} />}
           <div
@@ -2200,6 +2253,14 @@ export function ScreenplayView() {
               <div className="is-slugline sp-box-title">{scene.text || sp.untitledScene}</div>
               {card ? (
                 <>
+                  {/* Statut, point de vue et « Pour X, la scène finit » (#171), remplis en écrivant. */}
+                  <div className="sp-scene-props">
+                    <span className="scene-pills">
+                      <SceneStatusPicker card={card} />
+                      <PovPicker card={card} />
+                    </span>
+                    <SceneIssue card={card} />
+                  </div>
                   {card.html && (
                     // HTML produit par TipTap ou nettoyé au chargement (voir sanitizeHtml).
                     <div className="sp-card-body" dangerouslySetInnerHTML={{ __html: card.html }} />

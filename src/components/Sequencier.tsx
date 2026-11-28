@@ -31,7 +31,6 @@ import { matchesCharacter } from "../screenplay/editor/autocomplete";
 import { plainText } from "../search";
 import { minutesFor, usePagination } from "./usePagination";
 import { SynopsisField } from "./SynopsisField";
-import { Timeline } from "./Timeline";
 import { describeCount, holdersOf, moveStructurePart, moveStructurePartTo, partLabel, renameStructure, replacedParts, structureOf, type StructurePart } from "../screenplay/structure";
 import { REVEAL_SCENE } from "./revealRow";
 import { kindRanks, rankLabel, type KindRank } from "../screenplay/structureCases";
@@ -39,6 +38,7 @@ import { foldedPartsNow, toggleFoldedPart, useFoldedParts } from "../structureFo
 import { SCREENPLAY_TEMPLATES, applyTemplate, beatOf, currentTemplate, customOf, isScreenplayTemplate, moveToSection, screenplayPlan, sectionLabel } from "../screenplay/template";
 import { TemplatePicker } from "./TemplatePicker";
 import { ArrangeToggle, PlanHeader } from "./PlanHeader";
+import { FriseBoard } from "./Frise";
 import { useBeatText } from "./useBeatText";
 import { BeatQuestion } from "./StructureTools";
 import { StoryCircle } from "./StoryCircle";
@@ -79,8 +79,6 @@ export function Sequencier() {
   };
   const [over, setOver] = useState<number | null>(null);
   const [announce, setAnnounce] = useState("");
-  // Chronologie : même tableau que dans le Plan d'un roman (une colonne par scène, une ligne par intrigue, personnage ou lieu).
-  const [timeline, setTimeline] = useState(false);
   // La scène dont « Ranger » est ouvert (rang de son en-tête) : un affichage, une seule à la fois (#55).
   const [arranging, setArranging] = useState<number | null>(null);
   // Titres tapés dans « Nouvelle scène… » de chaque case (comme le Plan d'un roman), par rang de la section.
@@ -319,16 +317,15 @@ export function Sequencier() {
     }
   }
   const cards = !phoneSq() && mode === "cards";
-  const sceneCards = useMemo(() => list.filter((b) => b.kind === "scene" && b.cardId).map((b) => b.cardId as string), [list]);
+  // Frise (#173) : la troisième présentation, jamais au téléphone.
+  const asFrise = !phoneSq() && mode === "timeline";
 
   return (
     <div className="sequencer" data-native-reorder>
-      <div className={`sq-inner${cards || timeline ? " is-cards" : ""}`}>
+      <div className={`sq-inner${cards ? " is-cards" : ""}${asFrise ? " is-frise" : ""}`}>
         {/* Même en-tête que le Plan d'un roman (#55) : seuls le vocabulaire et les actions changent. */}
         <PlanHeader
           title={sq.title}
-          timeline={timeline}
-          onTimeline={setTimeline}
           modeAria={sq.modeAria}
           actions={
             <>
@@ -360,8 +357,8 @@ export function Sequencier() {
           template={!inSeries && <TemplatePicker value={template} options={SCREENPLAY_TEMPLATES} allowNone custom={template === "perso" ? customOf(screenplay.elements, scriptBeats) : undefined} onBuiltin={(key) => setTemplate(key ?? "")} replaceWarning={replaceWarning(screenplay.elements)} />}
           about={template && !inSeries ? t.plan.templateAbout[template] : undefined}
         />
-        {timeline ? (
-          <Timeline order={sceneCards} />
+        {asFrise ? (
+          <FriseBoard mode="plan" />
         ) : (
           <>
         {scenes === 0 ? <p className="sp-empty">{sq.empty}</p> : inSeries ? <p className="sp-empty">{ts.hint}</p> : scenes > 1 && <p className="sp-empty">{sq.hint}</p>}

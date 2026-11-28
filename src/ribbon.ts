@@ -6,6 +6,7 @@ import { BEAT_TARGETS, PLAN_TEMPLATES, arrange, hasSubBeats, templateBeats, type
 import { blocks } from "./screenplay/sequence";
 import { beatOf, screenplayPlan } from "./screenplay/template";
 import type { ScreenplayElement } from "./screenplay/model";
+import { issueStep } from "./character";
 
 export interface RibbonScene {
   /** Carte de la scène (roman, scénario), ou `@<index>` pour une scène de scénario sans carte. */
@@ -146,7 +147,7 @@ export interface CurvePoint {
 
 /**
  * Courbe du récit (formes de récit de Vonnegut) : chaque scène qui finit « mieux » pour le héros fait monter
- * la courbe d'un cran, « moins bien » la fait descendre ; sans réponse, elle reste à plat. Mise à l'échelle
+ * la courbe d'un cran (deux pour « beaucoup mieux »), « moins bien » la fait descendre d'autant ; sans réponse, elle reste à plat. Mise à l'échelle
  * pour tenir entre −1 et 1. Null tant que moins de deux scènes ont répondu.
  */
 export function fortuneCurve(scenes: readonly { id: string; start: number; length: number }[], issueOf: (id: string) => string | undefined): CurvePoint[] | null {
@@ -154,13 +155,33 @@ export function fortuneCurve(scenes: readonly { id: string; start: number; lengt
   let answered = 0;
   const raw = scenes.map((s) => {
     const issue = issueOf(s.id);
-    if (issue === "mieux") level++;
-    else if (issue === "pire") level--;
-    const set = issue === "mieux" || issue === "pire" || issue === "pareil";
+    const step = issueStep(issue);
+    if (step !== null) level += step;
+    const set = step !== null;
     if (set) answered++;
     return { id: s.id, x: s.start + s.length / 2, y: level, set };
   });
   if (answered < 2) return null;
   const top = Math.max(1, ...raw.map((p) => Math.abs(p.y)));
   return raw.map((p) => ({ ...p, y: p.y / top }));
+}
+
+/**
+ * Réponses « la scène finit mieux / pire » qui comptent pour la courbe du héros (#171). Une scène racontée par un
+ * personnage qui n'est pas principal parle de lui, pas du héros : sa réponse n'entre pas dans cette courbe (elle
+ * nourrira la sienne). Sans point de vue, ou sans aucun personnage principal coché, rien n'est écarté.
+ */
+export function heroIssues(cards: readonly { id: string; type: string; fiche?: Record<string, string> }[]): Map<string, string> {
+  const principals = new Set(cards.filter((c) => c.type === "personnage" && c.fiche?.principal === "oui").map((c) => c.id));
+  const people = new Set(cards.filter((c) => c.type === "personnage").map((c) => c.id));
+  const out = new Map<string, string>();
+  for (const c of cards) {
+    const issue = c.fiche?.issue;
+    if (c.type !== "scene" || !issue) continue;
+    const pov = c.fiche?.pov;
+    const narrated = pov && people.has(pov);
+    if (narrated && principals.size > 0 && !principals.has(pov)) continue;
+    out.set(c.id, issue);
+  }
+  return out;
 }

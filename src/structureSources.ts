@@ -8,7 +8,8 @@ import { arrange, templateBeats, type Plan, type PlanTemplate } from "./plan";
 import { bookOrder, storyScenes } from "./book";
 import { plainText } from "./search";
 import { headingOf, sceneBody, sceneText } from "./screenplay/sceneText";
-import { listScenes, sceneSynopsis } from "./screenplay/scenes";
+import { listScenes, sceneCharacters, sceneSynopsis } from "./screenplay/scenes";
+import type { CastScene } from "./ai/cast";
 import { screenplayPlan } from "./screenplay/template";
 import { htmlParagraphs, screenplayParagraphs, wireCardOf, type BeatRow, type BreakdownScene, type RetroScene, type WireCard } from "./ai/structure";
 
@@ -48,6 +49,27 @@ export function storyParagraphs(s: ProjectSource, lang: string): RetroScene[] {
     return listScenes(elements).map((scene) => ({ id: scene.cardId ?? `#${scene.number}`, heading: scene.text, paragraphs: screenplayParagraphs(elements.slice(scene.index, scene.end), lang) }));
   }
   return bookOrder(s.nodes, s.plan).flatMap((id) => (s.manuscript[id] ? [{ id, paragraphs: htmlParagraphs(s.manuscript[id]) }] : []));
+}
+
+/**
+ * Scènes du récit pour « Trouver les personnages » (#172) : titre (carte, sinon en-tête), paragraphes, et dans un
+ * scénario ceux qui parlent. Les pages du livre (titre, dédicace…) n'en sont pas.
+ */
+export function castScenes(s: ProjectSource, lang: string): CastScene[] {
+  const cards = new Map(s.nodes.map((n) => [n.id, n.data]));
+  if (s.kind === "scenario") {
+    if (!s.screenplay) return [];
+    const elements = s.screenplay.elements;
+    return listScenes(elements).map((scene) => ({
+      id: scene.cardId ?? `#${scene.number}`,
+      title: (scene.cardId && cards.get(scene.cardId)?.title.trim()) || scene.text,
+      paragraphs: screenplayParagraphs(elements.slice(scene.index + 1, scene.end), lang),
+      speakers: sceneCharacters(elements, scene).map((c) => c.name),
+    }));
+  }
+  return storyParagraphs(s, lang)
+    .filter((scene) => !cards.get(scene.id)?.page)
+    .map((scene) => ({ id: scene.id, title: cards.get(scene.id)?.title.trim() ?? "", paragraphs: scene.paragraphs }));
 }
 
 /** Scènes du scénario à dépouiller (celles qui ont une carte : leur fiche reçoit le dépouillement), dans l'ordre. */

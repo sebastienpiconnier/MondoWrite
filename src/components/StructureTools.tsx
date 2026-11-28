@@ -497,7 +497,8 @@ export function BreakdownStats() {
 
 /** Invitation à la rétro-bible après l'import d'un manuscrit : « Ouvrir la Bible » ou « Fermer ». */
 export function RetroInvite() {
-  const s = useT().structure;
+  const t = useT();
+  const s = t.structure;
   const on = useCosmos((st) => st.retroInvite);
   const { config } = useAi();
   // Rétro-bible refusée par le service choisi (petit modèle d'Apple) : pas d'invitation qui ne mènerait à rien.
@@ -517,6 +518,18 @@ export function RetroInvite() {
             }}
           >
             {s.retroInviteOpen}
+          </button>
+        )}
+        {config && (
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              close();
+              useCosmos.getState().setDialog("cast");
+            }}
+          >
+            {t.cast.invite}
           </button>
         )}
         <button type="button" className="ghost-button" onClick={close}>

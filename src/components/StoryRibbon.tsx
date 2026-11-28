@@ -9,11 +9,12 @@ import { screenplaySceneTexts, timeline } from "../timeline";
 import { fmt } from "../i18n";
 import { useVocab } from "../vocab";
 import { useRibbon } from "./useRibbon";
-import { fortuneCurve } from "../ribbon";
+import { fortuneCurve, heroIssues } from "../ribbon";
 import { useBeatText } from "./useBeatText";
 import { narratorColors } from "../pov";
 import { plotColors } from "../plotColors";
 import { usePhone } from "./usePhone";
+import { useBoard } from "./Frise";
 
 interface Props {
   /** Scène en cours (carte, ou `@<index>` pour une scène de scénario sans carte). */
@@ -84,7 +85,8 @@ export function StoryRibbon({ currentId, onGo }: Props) {
   useEffect(() => () => window.clearTimeout(peekTimer.current), []);
   const curve = useMemo(() => {
     if (!ribbon) return null;
-    const fiche = new Map(nodes.map((n) => [n.id, n.data.fiche?.issue]));
+    // Courbe du héros (#171) : les scènes racontées par un autre personnage n'y entrent pas.
+    const fiche = heroIssues(nodes.map((n) => n.data));
     return fortuneCurve(
       ribbon.segments.flatMap((seg) => seg.scenes),
       (id) => fiche.get(id),
@@ -245,6 +247,15 @@ export function StoryRibbon({ currentId, onGo }: Props) {
             {" · "}
             <button type="button" className="ribbon-toggle" aria-expanded={keyOpen} aria-controls={keyId} onClick={() => setKeyOpen(!keyOpen)}>
               {r.keyToggle}
+            </button>
+          </>
+        )}
+        {/* Le ruban en grand (#173) : la frise au-dessus du texte, cartes à la longueur des scènes, pistes et courbes. */}
+        {!phone && (
+          <>
+            {" · "}
+            <button type="button" className="ribbon-toggle" onClick={() => useBoard.getState().setOpen(true)}>
+              {t.frise.expand}
             </button>
           </>
         )}

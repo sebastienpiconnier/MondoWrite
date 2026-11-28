@@ -46,6 +46,8 @@ export interface ScreenplayEditorOptions {
   continued?: ContinuedOptions;
   /** Passe de révision ouverte (#18) : numéro, ou null. Relu à chaque transaction. */
   revision?: () => number | null;
+  /** Notes cachées (#169, réglage « Afficher les notes » décoché) : le curseur les saute. Relu à chaque geste. */
+  notesHidden?: () => boolean;
 }
 
 export function screenplayExtensions(options: ScreenplayEditorOptions): Extensions {
@@ -58,7 +60,7 @@ export function screenplayExtensions(options: ScreenplayEditorOptions): Extensio
     Dialogue,
     Transition,
     Preserved,
-    HiddenSynopsis,
+    HiddenSynopsis.configure({ notesHidden: options.notesHidden ?? (() => false) }),
     // De StarterKit on ne garde que le texte, l'historique et le curseur entre deux blocs non éditables.
     StarterKit.configure({
       document: false,

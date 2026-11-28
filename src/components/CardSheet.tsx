@@ -5,7 +5,7 @@
 // Comme dans la Bible du fork de NEO, seuls les champs remplis restent sous les yeux ; les autres attendent
 // derrière « Ajouter si utile », une pastille par champ (Bible v2), ou tous d'un coup par « Afficher les champs vides ». Les valeurs vivent dans la carte (frontmatter `fiche`), jamais recopiées ailleurs.
 
-import { plotColors } from "../plotColors";
+import { characterColors, plotColors } from "../plotColors";
 import { PLOT_COLORS } from "../character";
 import { BufferedInput, BufferedTextarea } from "./BufferedField";
 import { IaFieldNote } from "./Atelier";
@@ -13,12 +13,13 @@ import { useEffect, useId, useState } from "react";
 import { useSettings } from "../settings";
 import { useCosmos } from "../store";
 import { useInteractive } from "../interactive/useInteractive";
+import { useIssueLabel } from "./SceneIssue";
 import { fmt, useT } from "../i18n";
 import { CHOICE_FIELDS, SHORT_FIELDS, WIDE_FIELDS, bandFields, isCardRefField, isChoiceField, sheetFields, type SheetField } from "../character";
 import type { CardData } from "../types";
 import { openNamesForCard } from "../namesState";
 
-export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boolean }) {
+export function CardSheet({ card, startOpen, omit }: { card: CardData; startOpen?: boolean; /** Champs montrés ailleurs dans la même fenêtre. */ omit?: readonly string[] }) {
   const all = useT();
   const t = all.character;
   const typeLabels = all.fiche.typeLabels as Partial<Record<string, Record<string, string>>>;
@@ -32,7 +33,9 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
   // Roman interactif : pas de courbe du récit (« Pour le héros, la scène finit… » se lit sur un seul chemin), sauf
   // si l'auteur l'a déjà remplie.
   const interactive = useInteractive();
-  const fields = sheetFields(card.type).filter((key) => !band.has(key) && !(interactive && key === "issue" && !card.fiche?.issue));
+  // « Pour Sarah, la scène finit » quand la scène a un point de vue (#171).
+  const issueLabel = useIssueLabel(card);
+  const fields = sheetFields(card.type).filter((key) => !band.has(key) && !omit?.includes(key) && !(interactive && key === "issue" && !card.fiche?.issue));
   const setFiche = useCosmos((s) => s.setFiche);
   // Épisode : le personnage pivot se choisit parmi les cartes Personnage (la fiche garde son identifiant).
   const nodes = useCosmos((s) => (card.type === "episode" ? s.nodes : null));
@@ -75,7 +78,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
     const commit = (value: string) => setFiche(card.id, key, value);
     return (
       <div key={key} className={`sheet-field${SHORT_FIELDS.has(key) || isChoiceField(key) ? " is-short" : ""}${WIDE_FIELDS.has(key) || shown.length === 1 ? " is-wide" : ""}${card.ia?.includes(key) ? " is-ia" : ""}`}>
-        <label htmlFor={props.id}>{labels[key]}</label>
+        <label htmlFor={props.id}>{key === "issue" ? issueLabel : labels[key]}</label>
         {isCardRefField(key) ? (
           <select id={props.id} value={props.value} onChange={props.onChange}>
             <option value="">{all.fiche.pivotNone}</option>
@@ -108,7 +111,7 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
 
   return (
     <>
-    {card.type === "intrigue" && <PlotColorPicker card={card} />}
+    {(card.type === "intrigue" || card.type === "personnage") && <PlotColorPicker card={card} />}
     <section className="sheet" aria-label={title}>
       <button type="button" className="sheet-toggle" aria-expanded={open} aria-controls={`${id}-fields`} onClick={() => setOpen(!open)}>
         <span>{title}</span>
@@ -159,10 +162,16 @@ export function CardSheet({ card, startOpen }: { card: CardData; startOpen?: boo
 /**
  * Couleur d'une intrigue (#143) : huit pastilles de la palette des points de vue, et « Auto ». Elle colore les
  * scènes reliées (Plan, séquencier, listes des scènes, canevas) quand « Couleurs des intrigues » est allumé.
+ * Couleur d'un personnage (#173) : ses traits dans le ruban agrandi.
  */
 export function PlotColorPicker({ card }: { card: CardData }) {
   const t = useT().plan;
-  const auto = useCosmos((s) => plotColors(s.nodes, s.edges).plots.get(s.nodes.find((n) => n.data === card)?.id ?? ""));
+  const person = card.type === "personnage";
+  const auto = useCosmos((s) => {
+    const id = s.nodes.find((n) => n.data === card)?.id ?? "";
+    return person ? characterColors(s.nodes).get(id) : plotColors(s.nodes, s.edges).plots.get(id);
+  });
+  const label = person ? t.characterColor : t.plotColor;
   const id = useCosmos((s) => s.nodes.find((n) => n.data === card)?.id);
   const chosen = card.fiche?.couleur ?? "";
   const set = (v: string) => id && useCosmos.getState().setFiche(id, "couleur", v);
@@ -170,8 +179,8 @@ export function PlotColorPicker({ card }: { card: CardData }) {
   const bold = useSettings((s) => s.plotPalette === "bold");
   const nameOf = (c: string) => (bold ? t.plotBoldNames[Number(c) - 1] : fmt(t.plotColorN, { n: c }));
   return (
-    <div className={`plot-color${bold ? " is-named" : ""}`} role="radiogroup" aria-label={t.plotColor}>
-      <span className="plot-color-label">{t.plotColor}</span>
+    <div className={`plot-color${bold ? " is-named" : ""}`} role="radiogroup" aria-label={label}>
+      <span className="plot-color-label">{label}</span>
       {PLOT_COLORS.map((c) => (
         <button
           key={c}
