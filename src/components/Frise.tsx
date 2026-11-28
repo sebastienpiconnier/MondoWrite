@@ -1,6 +1,6 @@
 // La frise (#173) : le récit sur une ligne de montage. Chaque carte est une scène, sa largeur suit sa longueur
-// (pages d'un scénario, mots d'un roman ramenés en pages) ; dessous, la courbe du récit, puis une piste par intrigue,
-// thème, personnage (avec sa courbe) et lieu ou décor. Deux places :
+// (pages d'un scénario, mots d'un roman ramenés en pages) ; dessous, une piste par intrigue, thème, personnage et lieu
+// ou décor (le ruban agrandi a aussi la courbe du récit ; au Plan, elle est dans Statistiques › Courbes). Deux places :
 // - le ruban agrandi du Manuscrit et du Scénario (`mode="ribbon"`), au-dessus du texte, hauteur réglée par un
 //   séparateur : toucher une carte ou la règle mène à la scène dans le texte ;
 // - la troisième présentation du Plan et du séquencier (`mode="plan"`), avec le volet de la scène choisie.
@@ -276,7 +276,8 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
   const order = useMemo(() => all.map((s) => s.id).filter((id) => !id.startsWith(SCENE_AT)), [all]);
   const texts = useMemo(() => (kind === "scenario" && screenplay ? screenplaySceneTexts(screenplay.elements) : manuscript), [kind, screenplay, manuscript]);
   const groups = useMemo(() => timeline(cards, edges, texts, order, lang).filter((g) => (ribbon ? g.type === "intrigue" || g.type === "personnage" : LANE_TYPES.includes(g.type)) && g.rows.length > 0), [cards, edges, texts, order, lang, ribbon]);
-  const storyCurve = useMemo(() => laneCurve(all, slots, heroIssues(cards)), [all, slots, cards]);
+  // Courbe du récit : seulement dans le ruban agrandi (au Plan et au séquencier, elle est dans Statistiques › Courbes).
+  const storyCurve = useMemo(() => (ribbon ? laneCurve(all, slots, heroIssues(cards)) : null), [ribbon, all, slots, cards]);
   // Ruban agrandi : une couleur par intrigue et par personnage (choisie dans sa fiche, sinon attribuée).
   const plotHues = useMemo(() => plotColors(nodes, edges).plots, [nodes, edges]);
   const charHues = useMemo(() => characterColors(nodes), [nodes]);
@@ -662,17 +663,7 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
                   {ribbonChars.length > 0 && groupHead("r:chars", f.lanes.characters, ribbonChars.length)}
                   {!folded.includes("r:chars") && ribbonChars.map((row) => markLane(row, charHues.get(row.card.id), "var(--type-personnage)"))}
                 </>
-              ) : (
-                storyCurve && (
-                  <div className="frise-lane is-curve">
-                    <div className="frise-lane-head">{f.lanes.story}</div>
-                    <div className="frise-lane-track" style={trackStyle}>
-                      {decor}
-                      <Curve points={storyCurve} width={width} label={f.lanes.story} />
-                    </div>
-                  </div>
-                )
-              )}
+              ) : null}
               {groups.length === 0 && !ribbon && <p className="sp-empty frise-hint">{f.lanes.noCards}</p>}
               {!ribbon &&
                 groups.map((g) => {
@@ -761,24 +752,6 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
         {announce}
       </div>
     </div>
-  );
-}
-
-/** Courbe « mieux / pire » posée dans une piste : milieu de chaque scène, de −1 (en bas) à 1 (en haut). */
-function Curve({ points, width, label }: { points: CurvePoint[]; width: number; label: string }) {
-  const h = 40;
-  const y = (v: number) => h / 2 - v * (h / 2 - 5);
-  const d = points.map((pt, i) => `${i === 0 ? "M" : "L"}${pt.x.toFixed(1)} ${y(pt.y).toFixed(1)}`).join(" ");
-  return (
-    <svg className="frise-curve" width={width} height={h} viewBox={`0 0 ${width} ${h}`} role="img" aria-label={label}>
-      <line x1={0} x2={width} y1={h / 2} y2={h / 2} className="frise-curve-zero" />
-      <path d={d} className="frise-curve-line" />
-      {points
-        .filter((pt) => pt.set)
-        .map((pt) => (
-          <circle key={pt.id} cx={pt.x} cy={y(pt.y)} r={3} className="frise-curve-dot" />
-        ))}
-    </svg>
   );
 }
 

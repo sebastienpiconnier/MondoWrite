@@ -5,6 +5,7 @@
 // jamais un jugement sur l'histoire (fonctions pures, testées).
 
 import { characterIssues } from "./frise";
+import { heroIssues } from "./ribbon";
 import { isArcType, issueStep, type ArcType } from "./character";
 
 export interface ArcPoint {
@@ -164,6 +165,16 @@ export function characterArcs(cards: readonly { id: string; type: string; fiche?
   }
   out.sort((a, b) => Number(b.principal) - Number(a.principal) || b.arc.summary.answered - a.arc.summary.answered);
   return out.map((x) => x.arc);
+}
+
+/**
+ * Courbe du récit (celle du héros, `heroIssues` : scènes sans point de vue ou racontées par un personnage principal),
+ * en score cumulé comme celles des personnages. Identifiant vide ; null si aucune scène n'est notée.
+ */
+export function storyArc(cards: readonly { id: string; type: string; fiche?: Record<string, string> }[], order: readonly string[]): CharacterArc | null {
+  const points = cumulativeArc(order, heroIssues(cards));
+  const summary = arcSummary(points);
+  return summary ? { id: "", points, summary, notes: arcNotes(summary) } : null;
 }
 
 /** Graduations entières de l'axe vertical : de `lo` à `hi` (zéro compris), au plus `max` repères. */

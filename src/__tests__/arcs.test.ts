@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arcNotes, arcSummary, arcTicks, characterArcs, cumulativeArc } from "../arcs";
+import { arcNotes, arcSummary, arcTicks, characterArcs, cumulativeArc, storyArc } from "../arcs";
 import { ISSUES_FOR, issuesFor, readFiche, withIssueFor } from "../character";
 import { fortuneCurve } from "../ribbon";
 
@@ -107,6 +107,20 @@ describe("courbe cumulée d'un personnage", () => {
     expect(withIssueFor({ [ISSUES_FOR]: "cd34=mieux" }, "cd34", "")).toBeUndefined();
     expect(readFiche({ issue: "beaucoupMieux", issues: "ab12=pire;x=nope" }, "scene")).toEqual({ issue: "beaucoupMieux", issues: "ab12=pire" });
     expect(readFiche({ issues: "ab12=pire" }, "personnage")).toBeUndefined();
+  });
+
+  it("courbe du récit : réponses du héros (sans point de vue ou narrateur principal), en score cumulé", () => {
+    const cards: { id: string; type: string; fiche?: Record<string, string> }[] = [
+      { id: "h", type: "personnage", fiche: { principal: "oui" } },
+      { id: "m", type: "personnage" },
+      { id: "s1", type: "scene", fiche: { issue: "beaucoupMieux" } },
+      { id: "s2", type: "scene", fiche: { issue: "pire", pov: "m" } },
+      { id: "s3", type: "scene", fiche: { issue: "pire", pov: "h" } },
+    ];
+    const arc = storyArc(cards, ["s1", "s2", "s3"])!;
+    expect(arc.id).toBe("");
+    expect(arc.points.map((p) => p.score)).toEqual([2, 2, 1]);
+    expect(storyArc([{ id: "s", type: "scene" }], ["s"])).toBeNull();
   });
 
   it("graduations entières, zéro compris", () => {

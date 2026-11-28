@@ -1186,11 +1186,13 @@ const scenarios = [
       await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions", exact: true }).click();
       await page.getByRole("menuitem", { name: /Statistiques/ }).click();
       await page.getByRole("button", { name: "Courbes", exact: true }).click();
-      const arc = page.locator(".arc-card");
+      // La courbe du récit d'abord (la scène n'a pas de narrateur principal, aucun n'étant coché), puis celle de Sarah.
+      await until(() => page.locator(".arc-card.is-story", { hasText: "Courbe du récit" }).isVisible(), "pas de courbe du récit dans Statistiques › Courbes");
+      const arc = page.locator(".arc-card:not(.is-story)");
       await until(() => arc.first().isVisible(), "pas de courbe dans Statistiques › Courbes");
       assert((await arc.first().textContent())?.includes("Sarah"), "la courbe n'est pas celle du personnage du point de vue");
       assert((await arc.first().textContent())?.includes("Une seule scène notée"), "l'analyse ne dit pas qu'il y a trop peu de scènes");
-      assert((await page.locator(".arc-chart circle.is-down").count()) === 1, "la scène « moins bien » n'est pas sur la courbe");
+      assert((await arc.first().locator(".arc-chart circle.is-down").count()) === 1, "la scène « moins bien » n'est pas sur la courbe");
       assert((await page.locator(".arc-card", { hasText: "Marc" }).count()) === 1, "Marc n'a pas sa courbe");
       assert((await page.locator(".arc-card", { hasText: "Marc" }).locator("circle.is-up").getAttribute("r")) === "5.5", "« beaucoup mieux » n'a pas son gros point");
     },
@@ -1214,6 +1216,7 @@ const scenarios = [
       const order = async () => (await cards.locator(".frise-card-title").allTextContents()).join(",");
       assert((await order()) === "Alpha,Bravo,Charlie", "la frise ne suit pas l'ordre du plan");
       assert((await page.locator(".frise-ruler .frise-tick.is-major").count()) > 0, "la règle n'a pas de repère");
+      assert((await page.locator(".frise-lane.is-curve").count()) === 0, "la courbe du récit est encore dans la frise du Plan");
       // Zoom : même des scènes vides (à leur largeur minimale) s'élargissent ; la tête des pistes reste devant les cartes.
       const firstWidth = () => cards.first().evaluate((el) => el.getBoundingClientRect().width);
       const w0 = await firstWidth();

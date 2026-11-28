@@ -2491,6 +2491,9 @@ export const fr = {
     source: "Un personnage a sa courbe dès qu’une scène qu’il raconte (point de vue) est notée, ou qu’une scène est notée pour lui (« Pour un autre personnage… », dans l’onglet Scène) ; un personnage principal compte aussi les scènes sans point de vue.",
     caveat: "Le score compte des scènes, et ne pèse que ce que tu indiques : « beaucoup mieux » vaut deux crans, une victoire « mieux » un seul. Il dit comment finissent les scènes, pas qui le personnage devient : l’arc intérieur se lit dans sa fiche (Au début, À la fin). Deux courbes se comparent par leur forme, pas par leur hauteur.",
     empty: "Aucune scène n’est encore notée. Dans l’onglet Scène, réponds à « Pour …, la scène finit » : de beaucoup mieux à beaucoup moins bien.",
+    storyTitle: "Courbe du récit",
+    storyName: "le héros",
+    storySource: "Celle du ruban, en score cumulé : la réponse « Pour le héros, la scène finit » des scènes sans point de vue, et celle des scènes racontées par un personnage principal.",
     legend: "Point plein : la scène finit mieux ; point creux : moins bien ; point gris : pareil ; gros point : beaucoup. Une scène non notée laisse la courbe à plat.",
     chartAria: "{name} : {end}",
     axis: "Scènes du récit",
@@ -3259,7 +3262,7 @@ export const fr = {
     issueFor: "Pour {name}, la scène finit",
     // Réponses pour d'autres personnages que le narrateur (courbes des Statistiques).
     issueOther: "Pour un autre personnage…",
-    issueOtherHint: "Ajoute comment la scène finit pour un personnage qui ne la raconte pas : sa courbe en tient compte (Statistiques › Courbes).",
+    issueOtherHint: "Ajoute comment la scène finit pour un personnage qui ne la raconte pas : sa courbe en tient compte (Statistiques › Courbes).",
     issueRemove: "Retirer la réponse pour {name}",
     issueUntitled: "Personnage sans nom",
     valueNone: "Non précisé",

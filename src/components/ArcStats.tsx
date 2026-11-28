@@ -1,5 +1,5 @@
-// Statistiques › Courbes : l'évolution de chaque personnage en score cumulé (arcs.ts), une courbe par personnage
-// sur la ligne du récit, puis sa lecture en constats et en questions. Rien n'est saisi ni enregistré ici : les
+// Statistiques › Courbes : la courbe du récit (celle du héros, aussi dans le ruban), puis l'évolution de chaque
+// personnage, en score cumulé (arcs.ts), une courbe sur la ligne du récit, puis sa lecture en constats et en questions. Rien n'est saisi ni enregistré ici : les
 // réponses « Pour X, la scène finit » se donnent dans l'onglet Scène. Un nom mène à la fiche, une scène au texte.
 
 import { useMemo, type CSSProperties, type ReactNode } from "react";
@@ -8,7 +8,7 @@ import { useCosmos } from "../store";
 import { useSettings } from "../settings";
 import { useVocab } from "../vocab";
 import { junctionOrder } from "../projectJunctions";
-import { arcTicks, characterArcs, type ArcNote, type CharacterArc } from "../arcs";
+import { arcTicks, characterArcs, storyArc, type ArcNote, type CharacterArc } from "../arcs";
 import { characterColors } from "../plotColors";
 
 /** Géométrie du dessin (unités du viewBox ; le dessin suit la largeur de la fenêtre). */
@@ -25,14 +25,16 @@ export function ArcStats({ onOpen, onGo }: { onOpen: (id: string) => void; onGo:
   const screenplay = useCosmos((s) => s.screenplay);
   const order = useMemo(() => junctionOrder(kind, nodes, plan, screenplay), [kind, nodes, plan, screenplay]);
   const arcs = useMemo(() => characterArcs(nodes.map((n) => n.data), order), [nodes, order]);
+  const story = useMemo(() => storyArc(nodes.map((n) => n.data), order), [nodes, order]);
   const hues = useMemo(() => characterColors(nodes), [nodes]);
 
-  if (arcs.length === 0) return <p className="muted">{a.empty}</p>;
+  if (arcs.length === 0 && !story) return <p className="muted">{a.empty}</p>;
   return (
     <div className="arc-stats">
       <p className="muted arc-stats-note">{a.intro}</p>
       <p className="muted arc-stats-note">{a.source}</p>
       <p className="muted arc-stats-note">{a.legend}</p>
+      {story && <ArcCard arc={story} onOpen={onOpen} onGo={onGo} />}
       {arcs.map((arc) => (
         <ArcCard key={arc.id} arc={arc} hue={hues.get(arc.id) ?? 1} onOpen={onOpen} onGo={onGo} />
       ))}
@@ -41,13 +43,17 @@ export function ArcStats({ onOpen, onGo }: { onOpen: (id: string) => void; onGo:
   );
 }
 
-function ArcCard({ arc, hue, onOpen, onGo }: { arc: CharacterArc; hue: number; onOpen: (id: string) => void; onGo: (id: string) => void }) {
+/** Une courbe et sa lecture. Sans identifiant, c'est la courbe du récit (celle du héros), à la couleur d'accent. */
+function ArcCard({ arc, hue, onOpen, onGo }: { arc: CharacterArc; hue?: number; onOpen: (id: string) => void; onGo: (id: string) => void }) {
   const { t } = useVocab();
   const a = t.arcStats;
   const lang = useSettings((s) => s.lang);
   const nodes = useCosmos((s) => s.nodes);
   const titles = useMemo(() => new Map(nodes.map((n) => [n.data.id, n.data.title.trim()])), [nodes]);
-  const name = titles.get(arc.id) || a.untitledCharacter;
+  const isStory = !arc.id;
+  // Dans les phrases de la lecture, la courbe du récit parle du héros.
+  const name = isStory ? a.storyName : titles.get(arc.id) || a.untitledCharacter;
+  const heading = isStory ? a.storyTitle : name;
   const signed = (n: number) => new Intl.NumberFormat(lang, { signDisplay: "exceptZero" }).format(n);
   const sceneTitle = (rank: number) => titles.get(arc.points[rank]?.id ?? "") || a.untitledScene;
   const sceneButton = (rank: number) => (
@@ -58,14 +64,23 @@ function ArcCard({ arc, hue, onOpen, onGo }: { arc: CharacterArc; hue: number; o
   const s = arc.summary;
   const endText = fmt(a.end, { final: signed(s.final), n: s.answered, up: s.up, same: s.same, down: s.down });
   return (
-    <section className="arc-card" style={{ "--curve": `var(--plot-${hue})` } as CSSProperties} aria-label={fmt(t.frise.lanes.curveOf, { name })}>
+    <section
+      className={`arc-card${isStory ? " is-story" : ""}`}
+      style={{ "--curve": isStory ? "var(--accent)" : `var(--plot-${hue ?? 1})` } as CSSProperties}
+      aria-label={isStory ? a.storyTitle : fmt(t.frise.lanes.curveOf, { name })}
+    >
       <h3 className="arc-card-title">
         <span className="card-dot" aria-hidden="true" />
-        <button type="button" className="link-button" onClick={() => onOpen(arc.id)}>
-          {name}
-        </button>
+        {isStory ? (
+          heading
+        ) : (
+          <button type="button" className="link-button" onClick={() => onOpen(arc.id)}>
+            {name}
+          </button>
+        )}
       </h3>
-      <ArcChart arc={arc} label={fmt(a.chartAria, { name, end: endText })} sceneTitle={sceneTitle} signed={signed} />
+      {isStory && <p className="muted arc-stats-note">{a.storySource}</p>}
+      <ArcChart arc={arc} label={fmt(a.chartAria, { name: heading, end: endText })} sceneTitle={sceneTitle} signed={signed} />
       <ul className="arc-notes">
         {arc.notes.map((note, i) => (
           <li key={i} className={isQuestion(note) ? "is-question" : undefined}>
