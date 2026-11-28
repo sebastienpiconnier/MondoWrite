@@ -15,7 +15,7 @@ Règles :
 - on ne cite pas le logiciel qui a inspiré une idée ; un nom de logiciel n'apparaît que pour la compatibilité
   (import Scrivener, fichiers Final Draft, Fountain) ou pour du code repris (licence, `THIRD-PARTY-NOTICES.md`).
 
-Dernière mise à jour : 25 novembre 2026 (lot 18, 1.48.1 faite).
+Dernière mise à jour : 28 novembre 2026 (lot 20, 1.50.0 faite).
 
 ## Ordre / Order
 
@@ -27,7 +27,8 @@ batches (GitHub milestones), easiest first, by theme. Batches 1 (writing: #23, #
 1. Lot 18 · Retours de la 1.48 / Feedback on 1.48 : la 1.48.1 (#154 partie A, #155, #156, #160, #153) et la 1.49
    (#159, #157, #163, et la PR #133 de Camille) sont faites ; à évaluer ensuite : #154 partie B (structures en couches
    séparées), #158, #161, #162
-2. Lot 20 · Frise et courbes / Timeline and arcs : #173 (frise, courbes des personnages, en cours), puis #176
+2. Lot 20 · Frise et courbes / Timeline and arcs : la 1.50.0 (#169, #170, #171, #172, #173) est faite ; reste #176
+   (préparations et paiements sur la frise / setups and payoffs on the timeline)
    (préparations sur la frise ; parties 2 et 3 à décider)
 3. Lot 6 · Import et narration / Import and narration : #28 finitions de
    l'import Scrivener
