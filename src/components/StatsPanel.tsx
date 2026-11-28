@@ -12,6 +12,7 @@ import { useVocab } from "../vocab";
 import { CharacterStats } from "./CharacterStats";
 import { PlaceStats } from "./PlaceStats";
 import { ThreadStats } from "./ThreadStats";
+import { ArcStats } from "./ArcStats";
 import { useInteractive } from "../interactive/useInteractive";
 import { BreakdownStats } from "./StructureTools";
 import { useProjectStats } from "./useProjectStats";
@@ -22,7 +23,7 @@ import { iaPercent, iaShareOfManuscript, iaShareOfScreenplay } from "../atelier"
 import { IaImageStats } from "./ImageGen";
 import { csvSeparator } from "../typoRules";
 
-type Tab = "characters" | "places" | "crossings" | "threads" | "setting" | "breakdown";
+type Tab = "characters" | "places" | "crossings" | "threads" | "arcs" | "setting" | "breakdown";
 
 /** Au-delà, la matrice devient illisible : les plus présents seulement. */
 const MATRIX_MAX = 12;
@@ -49,6 +50,10 @@ export function StatsPanel() {
     useCosmos.getState().setView("manuscrit");
   };
   const interactive = useInteractive();
+  const goToScene = (id: string) => {
+    close();
+    useCosmos.getState().openInManuscript(id);
+  };
   const readThread = (id: string) => {
     close();
     useCosmos.getState().readThread(id);
@@ -58,7 +63,8 @@ export function StatsPanel() {
     ["places", types.lieu.section],
     ["crossings", s.tabCrossings],
     // Poids de chaque intrigue et de chaque thème (#118), pas dans un roman interactif (pas d'ordre de lecture).
-    ...(interactive ? [] : ([["threads", s.tabThreads]] as [Tab, string][])),
+    // Courbes des personnages en score cumulé : elles suivent l'ordre du récit, donc pas dans un roman interactif.
+    ...(interactive ? [] : ([["threads", s.tabThreads], ["arcs", s.tabArcs]] as [Tab, string][])),
     ...(script ? ([["setting", s.tabSetting], ["breakdown", t.structure.breakdownTitle]] as [Tab, string][]) : []),
   ];
 
@@ -71,7 +77,7 @@ export function StatsPanel() {
         </svg>
       </button>
       <h2 id="app-dialog-title">{s.title}</h2>
-      {script && parts.length > 0 && (
+      {script && parts.length > 0 && tab !== "arcs" && (
         <label className="stats-part">
           <span>{s.part}</span>
           <select value={shownPart ?? ""} onChange={(e) => setPart(e.target.value || null)}>
@@ -95,6 +101,7 @@ export function StatsPanel() {
       {tab === "places" && <PlaceStats rows={places} kind={script ? "script" : "text"} onOpen={openCard} />}
       {tab === "crossings" && <Crossings cast={cast} script={script} onOpen={openCard} />}
       {tab === "threads" && !interactive && <ThreadStats onOpen={openCard} onRead={readThread} />}
+      {tab === "arcs" && !interactive && <ArcStats onOpen={openCard} onGo={goToScene} />}
       {tab === "setting" && summary && <Setting summary={summary} />}
       {/* Dépouillement (1.9.0) : tout le scénario par l'IA, à cocher, puis la liste par catégorie avec les scènes. */}
       {tab === "breakdown" && script && <BreakdownStats />}

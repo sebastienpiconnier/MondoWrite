@@ -34,7 +34,6 @@ import {
   FRISE_ZOOMS,
   ribbonLevels,
   zoomLine,
-  characterIssues,
   friseTotal,
   layoutScenes,
   laneCurve,
@@ -281,18 +280,8 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
   // Ruban agrandi : une couleur par intrigue et par personnage (choisie dans sa fiche, sinon attribuée).
   const plotHues = useMemo(() => plotColors(nodes, edges).plots, [nodes, edges]);
   const charHues = useMemo(() => characterColors(nodes), [nodes]);
-  // Ruban agrandi : la courbe du récit, et celle des deux premiers personnages principaux qui racontent des scènes.
-  const curveSet = useMemo(() => {
-    if (!ribbon) return [];
-    const out: { id: string; label: string; color: string; points: CurvePoint[] }[] = [];
-    if (storyCurve) out.push({ id: "", label: f.lanes.story, color: "var(--accent)", points: storyCurve });
-    for (const c of cards.filter((x) => x.type === "personnage" && x.fiche?.principal === "oui")) {
-      if (out.length >= 3) break;
-      const points = laneCurve(all, slots, characterIssues(cards, c.id, false));
-      if (points) out.push({ id: c.id, label: c.title.trim() || p.untitled, color: `var(--plot-${charHues.get(c.id) ?? 1})`, points });
-    }
-    return out;
-  }, [ribbon, storyCurve, cards, all, slots, charHues, f.lanes.story, p.untitled]);
+  // Ruban agrandi : la courbe du récit seule. Celles des personnages sont dans Statistiques › Courbes, en score cumulé.
+  const curveSet = useMemo(() => (ribbon && storyCurve ? [{ id: "", label: f.lanes.story, color: "var(--accent)", points: storyCurve }] : []), [ribbon, storyCurve, f.lanes.story]);
   // Ruban agrandi : intrigues, puis personnages (les principaux d'abord, ceux qui ont au moins une scène).
   const ribbonPlots = useMemo(() => groups.find((g) => g.type === "intrigue")?.rows ?? [], [groups]);
   const ribbonChars = useMemo(() => {
@@ -700,10 +689,9 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
                       </h3>
                       {!closed &&
                         g.rows.map((row) => {
-                          const curve = g.type === "personnage" ? laneCurve(all, slots, characterIssues(cards, row.card.id, row.card.fiche?.principal === "oui")) : null;
                           const label = row.card.title.trim() || p.untitled;
                           return (
-                            <div key={row.card.id} className={`frise-lane${curve ? " has-curve" : ""}`}>
+                            <div key={row.card.id} className="frise-lane">
                               <div className="frise-lane-head">
                                 <button type="button" className="tl-card" title={fmt(p.show, { title: label })} onClick={() => revealCard(row.card.id)}>
                                   <span className="card-dot" style={{ background: typeColor(g.type) }} />
@@ -718,7 +706,6 @@ export function FriseBoard({ mode, currentId = null, progress = 0, onGo, beforeM
                               </div>
                               <div className="frise-lane-track" style={trackStyle}>
                                 {decor}
-                                {curve && <Curve points={curve} width={width} label={fmt(f.lanes.curveOf, { name: label })} />}
                                 {row.cells.map((cell, i) => {
                                   const slot = slots.get(order[i]);
                                   if (!slot) return null;
@@ -795,8 +782,8 @@ function Curve({ points, width, label }: { points: CurvePoint[]; width: number; 
   );
 }
 
-/** Ruban agrandi : la courbe du récit et celles des personnages principaux, sur une même échelle étalée à l'étendue
- * qu'elles atteignent vraiment (la progression se voit même si le récit ne descend jamais sous zéro). */
+/** Ruban agrandi : la courbe du récit, étalée à l'étendue qu'elle atteint vraiment (la progression se voit même si le
+ * récit ne descend jamais sous zéro). */
 function CurveSet({ curves, width }: { curves: { id: string; label: string; color: string; points: CurvePoint[] }[]; width: number }) {
   const h = 64;
   const { scale, zero } = spreadCurves(curves.map((c) => c.points));
@@ -805,7 +792,7 @@ function CurveSet({ curves, width }: { curves: { id: string; label: string; colo
     <svg className="frise-curve is-set" width={width} height={h} viewBox={`0 0 ${width} ${h}`} role="img" aria-label={curves.map((c) => c.label).join(", ")}>
       {zero !== null && <line x1={0} x2={width} y1={h - 6 - zero * (h - 12)} y2={h - 6 - zero * (h - 12)} className="frise-curve-zero" />}
       {curves.map((c, i) => (
-        <g key={c.id || "story"} style={{ "--curve": c.color } as CSSProperties} className={i === 0 && !c.id ? "is-story" : "is-character"}>
+        <g key={c.id || "story"} style={{ "--curve": c.color } as CSSProperties} className="is-story">
           <path d={c.points.map((pt, k) => `${k === 0 ? "M" : "L"}${pt.x.toFixed(1)} ${y(pt.y).toFixed(1)}`).join(" ")} className="frise-curve-line" />
           {c.points
             .filter((pt) => pt.set)

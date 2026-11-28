@@ -1166,6 +1166,17 @@ const scenarios = [
       const inCard = page.locator("dialog[open]").getByLabel("Pour Sarah, la scène finit");
       await until(() => inCard.isVisible(), "la fin de scène n'est pas dans la carte agrandie");
       assert((await inCard.count()) === 1, "la question est posée deux fois dans la carte agrandie");
+      // Statistiques › Courbes : la courbe de Sarah, en score cumulé (une seule scène notée : trop peu pour la lire).
+      await page.keyboard.press("Escape");
+      await h.view(4);
+      await page.locator(".ms-meta").getByRole("button", { name: "Plus d’actions", exact: true }).click();
+      await page.getByRole("menuitem", { name: /Statistiques/ }).click();
+      await page.getByRole("button", { name: "Courbes", exact: true }).click();
+      const arc = page.locator(".arc-card");
+      await until(() => arc.first().isVisible(), "pas de courbe dans Statistiques › Courbes");
+      assert((await arc.first().textContent())?.includes("Sarah"), "la courbe n'est pas celle du personnage du point de vue");
+      assert((await arc.first().textContent())?.includes("Une seule scène notée"), "l'analyse ne dit pas qu'il y a trop peu de scènes");
+      assert((await page.locator(".arc-chart circle.is-down").count()) === 1, "la scène « moins bien » n'est pas sur la courbe");
     },
   },
   {

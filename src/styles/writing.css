@@ -1791,6 +1791,23 @@ button.comment-quote { cursor: pointer; min-height: 32px; }
 /* Statistiques › Intrigues et thèmes (#118). */
 .thread-stats-note { margin: 0 0 10px; font-size: 0.875rem; }
 .thread-stats td .link-button { white-space: nowrap; }
+/* Statistiques › Courbes : une courbe par personnage, en score cumulé, puis sa lecture. */
+.arc-stats-note { margin: 0 0 10px; font-size: 0.875rem; }
+.arc-card { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.arc-card .arc-card-title { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 600 1rem var(--font-ui); letter-spacing: normal; text-transform: none; color: var(--ink); }
+.arc-card-title .card-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--curve); flex: none; }
+.arc-chart { display: block; width: 100%; height: auto; max-height: 220px; overflow: visible; }
+.arc-grid { stroke: var(--line); stroke-width: 1; }
+.arc-zero { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 4 3; }
+.arc-tick, .arc-axis { fill: var(--ink-2); font-size: 11px; }
+.arc-line { fill: none; stroke: var(--curve); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.arc-dot { fill: var(--curve); stroke: var(--surface); stroke-width: 1.5; }
+.arc-dot.is-down { fill: var(--surface); stroke: var(--curve); stroke-width: 2; }
+.arc-dot.is-same { fill: var(--ink-2); }
+.arc-notes { margin: 8px 0 0; padding-left: 1.2em; font-size: 0.9375rem; }
+.arc-notes li { margin: 2px 0; }
+.arc-notes li.is-question { color: var(--ink-2); font-style: italic; }
+.arc-notes .link-button { font: inherit; }
 
 /* Préparer et payer (#119) : onglet « Scène » du Manuscrit et du Scénario. */
 .scene-setups-row + .scene-setups-row { margin-top: 8px; }

@@ -152,7 +152,6 @@
 .frise-curve.is-set { top: 2px; }
 .frise-curve.is-set .frise-curve-line { stroke: var(--curve); }
 .frise-curve.is-set .frise-curve-dot { fill: var(--curve); }
-.frise-curve.is-set .is-character .frise-curve-line { stroke-width: 1.5; stroke-dasharray: 5 3; }
 .frise-curve-key { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
 .frise-curve-name { display: flex; align-items: center; gap: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .frise-curve-name::before { content: ""; flex: none; width: 14px; height: 0; border-top: 2px solid var(--curve); }

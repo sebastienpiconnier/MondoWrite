@@ -2486,6 +2486,34 @@ export const fr = {
   // Carte des relations (rubrique Personnages de la Bible).
   // Bible › Lieux › Statistiques (Décors dans un scénario) : relus dans le texte, rien n'est enregistré.
   // Statistiques › Intrigues et thèmes (#118) : la part du récit reliée à chaque fil.
+  arcStats: {
+    intro: "On part de 0. Chaque scène notée « Pour X, la scène finit » ajoute +1 (mieux), 0 (pareil) ou −1 (moins bien) au score de la précédente : la courbe montre où en est le personnage à chaque scène du récit.",
+    source: "Un personnage a sa courbe dès qu’une scène qu’il raconte (point de vue) est notée ; un personnage principal compte aussi les scènes sans point de vue.",
+    caveat: "Le score compte des scènes, pas leur poids : une petite victoire vaut une grande. Il dit comment finissent les scènes, pas qui le personnage devient : l’arc intérieur se lit dans sa fiche (Au début, À la fin). Deux courbes se comparent par leur forme, pas par leur hauteur.",
+    empty: "Aucune scène n’est encore notée. Dans l’onglet Scène, réponds à « Pour …, la scène finit » : mieux, pareil ou moins bien.",
+    legend: "Point plein : la scène finit mieux ; point creux : moins bien ; point gris : pareil. Une scène non notée laisse la courbe à plat.",
+    chartAria: "{name} : {end}",
+    axis: "Scènes du récit",
+    dot: "Scène {n}, {title} : {score}",
+    untitledScene: "Scène sans titre",
+    untitledCharacter: "Personnage sans nom",
+    sceneButton: "scène {n} ({title})",
+    fewOne: "Une seule scène notée : trop peu pour lire une courbe.",
+    fewMany: "Seulement {n} scènes notées : trop peu pour lire une courbe.",
+    end: "Finit à {final} après {n} scènes notées ({up} mieux, {same} pareil, {down} moins bien).",
+    peak: "Plus haut : {score}, à la {scene}.",
+    trough: "Plus bas : {score}, à la {scene}.",
+    rise: "Plus longue montée : {n} scènes de suite (scènes {from} à {to}).",
+    fall: "Plus longue descente : {n} scènes de suite (scènes {from} à {to}).",
+    neverDown: "Aucune scène ne finit moins bien pour {name} : rien ne lui coûte ?",
+    neverUp: "Aucune scène ne finit mieux pour {name} : rien ne lui réussit ?",
+    lowAtEnd: "Le point le plus bas ({score}) est atteint à la dernière scène notée : est-ce la fin voulue ?",
+    declared: {
+      positif: "La fiche annonce un arc positif, mais la courbe finit sous son départ ({final}) : est-ce voulu ?",
+      negatif: "La fiche annonce un arc négatif, mais la courbe finit au-dessus de son départ ({final}) : est-ce voulu ?",
+      plat: "La fiche annonce un arc plat, mais la courbe s’éloigne de son départ ({final}) : est-ce voulu ?",
+    },
+  },
   threadStats: {
     name: "Intrigue ou thème",
     type: "Type",
@@ -2616,6 +2644,7 @@ export const fr = {
     tabsAria: "Que compter",
     tabCharacters: "Personnages",
     tabCrossings: "Qui croise qui",
+    tabArcs: "Courbes",
     tabThreads: "Intrigues et thèmes",
     tabSetting: "Int./Ext. et Jour/Nuit",
     crossIntroScript: "Scènes partagées par deux personnages (ils y parlent ou y sont nommés).",
