@@ -1160,6 +1160,20 @@ const scenarios = [
       const sarah = page.getByLabel("Pour Sarah, la scène finit");
       await until(() => sarah.isVisible(), "la question n'est pas posée au personnage du point de vue");
       assert((await sarah.inputValue()) === "pire", "la réponse a changé avec le point de vue");
+      // « Beaucoup mieux » est dans la liste ; « Pour un autre personnage… » : Marc, relié à la scène, a sa propre réponse.
+      assert((await sarah.locator("option", { hasText: "Beaucoup mieux" }).count()) === 1, "pas de « Beaucoup mieux »");
+      await page.getByRole("button", { name: "Ajouter : Personnages" }).click();
+      await page.getByRole("combobox", { name: "Ajouter : Personnages" }).fill("Marc");
+      await page.keyboard.press("Enter");
+      await until(() => page.locator(".scene-links .link-pill", { hasText: "Marc" }).count(), "Marc n'est pas relié à la scène");
+      const other = page.getByLabel("Pour un autre personnage…");
+      await other.selectOption({ label: "Marc" });
+      const marc = page.getByLabel("Pour Marc, la scène finit");
+      await until(() => marc.isVisible(), "pas de ligne pour Marc");
+      await until(() => page.evaluate(() => document.activeElement?.id?.length > 0 && document.activeElement?.tagName === "SELECT"), "la liste de Marc n'a pas le focus");
+      await marc.selectOption("beaucoupMieux");
+      await h.saved((f) => Object.values(f).some((v) => v.includes("type: scene") && /"issues":"[A-Za-z0-9_-]+=beaucoupMieux"/.test(v)), "la réponse pour Marc n'est pas enregistrée");
+      assert((await other.locator("option", { hasText: "Sarah" }).count()) === 0, "le narrateur est proposé comme autre personnage");
       // Carte Scène agrandie : la même question en tête, une seule fois (pas répétée dans la fiche).
       await h.view(1);
       await page.locator(".react-flow__node-card .card.type-scene .card-handle").first().dblclick();
@@ -1177,6 +1191,8 @@ const scenarios = [
       assert((await arc.first().textContent())?.includes("Sarah"), "la courbe n'est pas celle du personnage du point de vue");
       assert((await arc.first().textContent())?.includes("Une seule scène notée"), "l'analyse ne dit pas qu'il y a trop peu de scènes");
       assert((await page.locator(".arc-chart circle.is-down").count()) === 1, "la scène « moins bien » n'est pas sur la courbe");
+      assert((await page.locator(".arc-card", { hasText: "Marc" }).count()) === 1, "Marc n'a pas sa courbe");
+      assert((await page.locator(".arc-card", { hasText: "Marc" }).locator("circle.is-up").getAttribute("r")) === "5.5", "« beaucoup mieux » n'a pas son gros point");
     },
   },
   {

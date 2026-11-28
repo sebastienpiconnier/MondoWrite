@@ -1,11 +1,11 @@
 // Statistiques › Courbes : l'évolution de chaque personnage en score cumulé. On part de 0 avant la première scène ;
-// chaque scène notée « Pour X, la scène finit » ajoute +1 (mieux), 0 (pareil) ou −1 (moins bien) au score de la
-// précédente. Une scène qui n'en dit rien laisse le score où il est. Rien n'est enregistré : tout se relit dans les
-// fiches des scènes (`fiche.issue`, `fiche.pov`). Les phrases de l'analyse sont des constats et des questions,
+// chaque scène notée « Pour X, la scène finit » ajoute +2 (beaucoup mieux), +1 (mieux), 0 (pareil), −1 (moins bien)
+// ou −2 (beaucoup moins bien) au score de la précédente. Une scène qui n'en dit rien laisse le score où il est. Rien n'est enregistré : tout se relit dans les
+// fiches des scènes (`fiche.issue`, `fiche.pov`, `fiche.issues`). Les phrases de l'analyse sont des constats et des questions,
 // jamais un jugement sur l'histoire (fonctions pures, testées).
 
 import { characterIssues } from "./frise";
-import { isArcType, type ArcType } from "./character";
+import { isArcType, issueStep, type ArcType } from "./character";
 
 export interface ArcPoint {
   id: string;
@@ -13,18 +13,15 @@ export interface ArcPoint {
   rank: number;
   /** Score atteint à la fin de la scène. */
   score: number;
-  /** Ce que la scène a ajouté : +1, 0, −1, ou null si elle n'est pas notée pour ce personnage. */
-  step: 1 | 0 | -1 | null;
+  /** Ce que la scène a ajouté : de +2 à −2, ou null si elle n'est pas notée pour ce personnage. */
+  step: number | null;
 }
-
-const STEP: Record<string, 1 | 0 | -1> = { mieux: 1, pareil: 0, pire: -1 };
 
 /** Score cumulé scène après scène, dans l'ordre du récit. */
 export function cumulativeArc(order: readonly string[], issues: ReadonlyMap<string, string>): ArcPoint[] {
   let score = 0;
   return order.map((id, rank) => {
-    const issue = issues.get(id);
-    const step = issue !== undefined && issue in STEP ? STEP[issue] : null;
+    const step = issueStep(issues.get(id));
     if (step !== null) score += step;
     return { id, rank, score, step };
   });
@@ -56,14 +53,14 @@ export interface ArcSummary {
   last: number;
 }
 
-/** Plus longue suite de scènes notées dans le sens `want`. */
+/** Plus longue suite de scènes notées dans le sens `want` (« beaucoup mieux » compte comme une montée). */
 function longestRun(points: readonly ArcPoint[], want: 1 | -1): ArcRun | null {
   let best: ArcRun | null = null;
   let from = -1;
   let length = 0;
   for (const p of points) {
     if (p.step === null) continue;
-    if (p.step !== want) {
+    if (Math.sign(p.step) !== want) {
       length = 0;
       continue;
     }
@@ -86,9 +83,9 @@ export function arcSummary(points: readonly ArcPoint[]): ArcSummary | null {
   }
   return {
     answered: noted.length,
-    up: noted.filter((p) => p.step === 1).length,
+    up: noted.filter((p) => (p.step ?? 0) > 0).length,
     same: noted.filter((p) => p.step === 0).length,
-    down: noted.filter((p) => p.step === -1).length,
+    down: noted.filter((p) => (p.step ?? 0) < 0).length,
     final: points[points.length - 1]?.score ?? 0,
     peak,
     trough,
@@ -151,8 +148,8 @@ export interface CharacterArc {
 }
 
 /**
- * Courbe de chaque personnage qui a au moins une scène notée : les scènes qu'il raconte (`fiche.pov`) et, pour un
- * personnage principal, aussi les scènes sans point de vue (celles du héros). Les principaux d'abord, puis les plus
+ * Courbe de chaque personnage qui a au moins une scène notée : les scènes qu'il raconte (`fiche.pov`), celles où
+ * l'auteur a répondu pour lui (`fiche.issues`) et, pour un personnage principal, aussi les scènes sans point de vue. Les principaux d'abord, puis les plus
  * notés.
  */
 export function characterArcs(cards: readonly { id: string; type: string; fiche?: Record<string, string> }[], order: readonly string[]): CharacterArc[] {

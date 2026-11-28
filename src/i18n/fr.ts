@@ -2487,11 +2487,11 @@ export const fr = {
   // Bible › Lieux › Statistiques (Décors dans un scénario) : relus dans le texte, rien n'est enregistré.
   // Statistiques › Intrigues et thèmes (#118) : la part du récit reliée à chaque fil.
   arcStats: {
-    intro: "On part de 0. Chaque scène notée « Pour X, la scène finit » ajoute +1 (mieux), 0 (pareil) ou −1 (moins bien) au score de la précédente : la courbe montre où en est le personnage à chaque scène du récit.",
-    source: "Un personnage a sa courbe dès qu’une scène qu’il raconte (point de vue) est notée ; un personnage principal compte aussi les scènes sans point de vue.",
-    caveat: "Le score compte des scènes, pas leur poids : une petite victoire vaut une grande. Il dit comment finissent les scènes, pas qui le personnage devient : l’arc intérieur se lit dans sa fiche (Au début, À la fin). Deux courbes se comparent par leur forme, pas par leur hauteur.",
-    empty: "Aucune scène n’est encore notée. Dans l’onglet Scène, réponds à « Pour …, la scène finit » : mieux, pareil ou moins bien.",
-    legend: "Point plein : la scène finit mieux ; point creux : moins bien ; point gris : pareil. Une scène non notée laisse la courbe à plat.",
+    intro: "On part de 0. Chaque scène notée « Pour X, la scène finit » ajoute +2 (beaucoup mieux), +1 (mieux), 0 (pareil), −1 (moins bien) ou −2 (beaucoup moins bien) au score de la précédente : la courbe montre où en est le personnage à chaque scène du récit.",
+    source: "Un personnage a sa courbe dès qu’une scène qu’il raconte (point de vue) est notée, ou qu’une scène est notée pour lui (« Pour un autre personnage… », dans l’onglet Scène) ; un personnage principal compte aussi les scènes sans point de vue.",
+    caveat: "Le score compte des scènes, et ne pèse que ce que tu indiques : « beaucoup mieux » vaut deux crans, une victoire « mieux » un seul. Il dit comment finissent les scènes, pas qui le personnage devient : l’arc intérieur se lit dans sa fiche (Au début, À la fin). Deux courbes se comparent par leur forme, pas par leur hauteur.",
+    empty: "Aucune scène n’est encore notée. Dans l’onglet Scène, réponds à « Pour …, la scène finit » : de beaucoup mieux à beaucoup moins bien.",
+    legend: "Point plein : la scène finit mieux ; point creux : moins bien ; point gris : pareil ; gros point : beaucoup. Une scène non notée laisse la courbe à plat.",
     chartAria: "{name} : {end}",
     axis: "Scènes du récit",
     dot: "Scène {n}, {title} : {score}",
@@ -3254,9 +3254,14 @@ export const fr = {
       certitude: { etabli: "Établi", provisoire: "Provisoire", explorer: "À explorer" },
       etat: { ouverte: "Ouverte", decidee: "Décidée", abandonnee: "Abandonnée" },
       repere: { milieu: "Mi-saison", final: "Fin de saison" },
-      issue: { mieux: "Mieux", pire: "Moins bien", pareil: "Ni mieux ni moins bien" },
+      issue: { beaucoupMieux: "Beaucoup mieux", mieux: "Mieux", pareil: "Ni mieux ni moins bien", pire: "Moins bien", beaucoupPire: "Beaucoup moins bien" },
     },
     issueFor: "Pour {name}, la scène finit",
+    // Réponses pour d'autres personnages que le narrateur (courbes des Statistiques).
+    issueOther: "Pour un autre personnage…",
+    issueOtherHint: "Ajoute comment la scène finit pour un personnage qui ne la raconte pas : sa courbe en tient compte (Statistiques › Courbes).",
+    issueRemove: "Retirer la réponse pour {name}",
+    issueUntitled: "Personnage sans nom",
     valueNone: "Non précisé",
     // Libellés propres à un type, quand la clé est partagée (« but » d'un groupe ou d'une scène).
     typeLabels: {

@@ -821,7 +821,7 @@ impl Server {
       },
       {
         "name": "set_scene_fields",
-        "description": "Remplit la fiche d'une scène : statut (à écrire, brouillon, à revoir, révisée, finie), point de vue (nom d'un personnage), ce qu'il veut (but), obstacle, tournant, changement, issue (mieux, pire, pareil), synopsis, dépouillement (accessoires, costumes, figurants, véhicules, effets). Clés ou libellés ; une valeur vide efface le champ. Textes marqués « IA ». / Sets a scene's sheet fields (status, POV, goal, obstacle…).",
+        "description": "Remplit la fiche d'une scène : statut (à écrire, brouillon, à revoir, révisée, finie), point de vue (nom d'un personnage), ce qu'il veut (but), obstacle, tournant, changement, issue (beaucoupMieux, mieux, pareil, pire, beaucoupPire), synopsis, dépouillement (accessoires, costumes, figurants, véhicules, effets). Clés ou libellés ; une valeur vide efface le champ. Textes marqués « IA ». / Sets a scene's sheet fields (status, POV, goal, obstacle…).",
         "inputSchema": { "type": "object", "properties": {
           "project": project,
           "scene": { "type": "string", "description": "Numéro, identifiant ou titre." },

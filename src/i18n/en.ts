@@ -2231,11 +2231,11 @@ export const en: Messages = {
 
   // Relationship map (Characters section of the Bible).
   arcStats: {
-    intro: "It starts at 0. Each scene marked “For X, the scene ends” adds +1 (better), 0 (the same) or −1 (worse) to the score of the one before: the curve shows where the character stands at every scene of the story.",
-    source: "A character gets a curve as soon as a scene they narrate (point of view) is marked; a main character also counts the scenes with no point of view.",
-    caveat: "The score counts scenes, not their weight: a small win is worth a big one. It tells how scenes end, not who the character becomes: the inner arc is in their sheet (At the start, At the end). Compare two curves by their shape, not their height.",
-    empty: "No scene is marked yet. In the Scene tab, answer “For …, the scene ends”: better, the same or worse.",
-    legend: "Solid dot: the scene ends better; hollow dot: worse; grey dot: the same. A scene that isn’t marked leaves the curve flat.",
+    intro: "It starts at 0. Each scene marked “For X, the scene ends” adds +2 (much better), +1 (better), 0 (the same), −1 (worse) or −2 (much worse) to the score of the one before: the curve shows where the character stands at every scene of the story.",
+    source: "A character gets a curve as soon as a scene they narrate (point of view) is marked, or a scene is marked for them (“For another character…”, in the Scene tab); a main character also counts the scenes with no point of view.",
+    caveat: "The score counts scenes, and only weighs what you tell it: “much better” is two steps, a “better” win just one. It tells how scenes end, not who the character becomes: the inner arc is in their sheet (At the start, At the end). Compare two curves by their shape, not their height.",
+    empty: "No scene is marked yet. In the Scene tab, answer “For …, the scene ends”: from much better to much worse.",
+    legend: "Solid dot: the scene ends better; hollow dot: worse; grey dot: the same; large dot: much. A scene that isn’t marked leaves the curve flat.",
     chartAria: "{name}: {end}",
     axis: "Scenes of the story",
     dot: "Scene {n}, {title}: {score}",
@@ -3198,9 +3198,13 @@ export const en: Messages = {
     values: {
       certitude: { etabli: "Settled", provisoire: "Tentative", explorer: "To explore" },
       etat: { ouverte: "Open", decidee: "Decided", abandonnee: "Dropped" },
-      repere: { milieu: "Midseason", final: "Season finale" },      issue: { mieux: "Better", pire: "Worse", pareil: "Neither better nor worse" },
+      repere: { milieu: "Midseason", final: "Season finale" },      issue: { beaucoupMieux: "Much better", mieux: "Better", pareil: "Neither better nor worse", pire: "Worse", beaucoupPire: "Much worse" },
     },
     issueFor: "For {name}, the scene ends",
+    issueOther: "For another character…",
+    issueOtherHint: "Add how the scene ends for a character who doesn’t narrate it: their curve takes it into account (Statistics › Arcs).",
+    issueRemove: "Remove the answer for {name}",
+    issueUntitled: "Unnamed character",
     valueNone: "Not set",
     typeLabels: {
       scene: { but: "Scene goal", tournant: "Turn" },

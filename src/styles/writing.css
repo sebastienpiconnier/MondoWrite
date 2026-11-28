@@ -485,6 +485,17 @@ input.plan-section-number[aria-invalid="true"] { border-color: var(--danger); ou
 /* Carte Scène agrandie : libellé et liste sur une ligne, sous le statut et le point de vue. */
 .scene-issue.is-inline { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 4px; font-size: 0.875rem; }
 .scene-issue.is-inline select { width: auto; min-width: 10em; }
+/* Réponses pour d'autres personnages que le narrateur (#173) : une ligne par personnage, puis la liste qui en ajoute un. */
+.scene-issues { display: flex; flex-direction: column; gap: 8px; align-self: stretch; }
+.scene-issues.is-inline { margin: 8px 0 4px; }
+.scene-issues.is-inline > .scene-issue.is-inline { margin: 0; }
+.scene-issue-row { display: flex; align-items: center; gap: 4px; }
+.scene-issue-row select { flex: 1 1 auto; }
+.scene-issue.is-inline .scene-issue-row select { flex: 0 1 auto; }
+.scene-issue-remove { flex: none; width: 32px; height: 32px; color: var(--ink-2); }
+@media (pointer: coarse) { .scene-issue-remove { width: 44px; height: 44px; } }
+.scene-issue-add { align-self: flex-start; max-width: 100%; min-height: 36px; padding: 0 8px; border: 1px dashed var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink-2); font: inherit; font-size: 0.8125rem; }
+@media (pointer: coarse) { .scene-issue-add { min-height: 44px; } }
 .sp-scene-props { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 10px; }
 /* Lecture à voix haute sans lecture en cours : un simple repère pour le panneau des voix, sans place dans la barre. */
 .reader.is-anchor { display: inline-block; width: 0; height: 36px; margin: 0 -4px; overflow: visible; }

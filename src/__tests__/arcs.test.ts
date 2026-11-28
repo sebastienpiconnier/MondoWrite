@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { arcNotes, arcSummary, arcTicks, characterArcs, cumulativeArc } from "../arcs";
+import { ISSUES_FOR, issuesFor, readFiche, withIssueFor } from "../character";
+import { fortuneCurve } from "../ribbon";
 
 const issues = (pairs: [string, string][]) => new Map(pairs);
 
@@ -62,6 +64,49 @@ describe("courbe cumulée d'un personnage", () => {
     expect(arcs.map((a) => a.id)).toEqual(["h", "m"]);
     expect(arcs[0].summary.final).toBe(2);
     expect(arcs[1].summary.final).toBe(-1);
+  });
+
+  it("« beaucoup mieux » et « beaucoup moins bien » comptent deux crans, et pour le sens des suites", () => {
+    const points = cumulativeArc(["a", "b", "c", "d"], issues([["a", "beaucoupMieux"], ["b", "mieux"], ["c", "beaucoupPire"], ["d", "pire"]]));
+    expect(points.map((p) => p.step)).toEqual([2, 1, -2, -1]);
+    expect(points.map((p) => p.score)).toEqual([2, 3, 1, 0]);
+    const s = arcSummary(points)!;
+    expect([s.up, s.same, s.down]).toEqual([2, 0, 2]);
+    expect(s.rise?.length).toBe(2);
+    expect(s.fall?.length).toBe(2);
+    // La courbe du récit (ruban, frise) aussi.
+    const curve = fortuneCurve(
+      ["a", "b"].map((id, i) => ({ id, start: i, length: 1 })),
+      (id) => ({ a: "beaucoupMieux", b: "pire" })[id],
+    )!;
+    expect(curve.map((p) => p.y)).toEqual([1, 0.5]);
+  });
+
+  it("une scène notée pour un personnage qui ne la raconte pas entre dans sa courbe", () => {
+    const cards: { id: string; type: string; fiche?: Record<string, string> }[] = [
+      { id: "h", type: "personnage", fiche: { principal: "oui" } },
+      { id: "m", type: "personnage" },
+      // Sans point de vue : celle du héros, mais une réponse pour lui l'emporte.
+      { id: "s1", type: "scene", fiche: { issue: "mieux", issues: "m=pire;h=beaucoupPire" } },
+      // Racontée par m : sa réponse principale l'emporte sur une ancienne réponse « pour m ».
+      { id: "s2", type: "scene", fiche: { issue: "mieux", pov: "m", issues: "m=pire;h=pareil" } },
+    ];
+    const arcs = new Map(characterArcs(cards, ["s1", "s2"]).map((a) => [a.id, a.summary.final]));
+    expect(arcs.get("h")).toBe(-2);
+    expect(arcs.get("m")).toBe(0);
+  });
+
+  it("réponses par personnage : lues, écrites, gardées sur disque seulement pour une scène", () => {
+    expect([...issuesFor("ab12=mieux;bad id=pire;cd34=inconnu;ef56=beaucoupPire")]).toEqual([["ab12", "mieux"], ["ef56", "beaucoupPire"]]);
+    let fiche = withIssueFor({ issue: "mieux" }, "ab12", "pire");
+    expect(fiche?.[ISSUES_FOR]).toBe("ab12=pire");
+    fiche = withIssueFor(fiche, "cd34", "beaucoupMieux");
+    expect(fiche?.[ISSUES_FOR]).toBe("ab12=pire;cd34=beaucoupMieux");
+    fiche = withIssueFor(fiche, "ab12", "");
+    expect(fiche?.[ISSUES_FOR]).toBe("cd34=beaucoupMieux");
+    expect(withIssueFor({ [ISSUES_FOR]: "cd34=mieux" }, "cd34", "")).toBeUndefined();
+    expect(readFiche({ issue: "beaucoupMieux", issues: "ab12=pire;x=nope" }, "scene")).toEqual({ issue: "beaucoupMieux", issues: "ab12=pire" });
+    expect(readFiche({ issues: "ab12=pire" }, "personnage")).toBeUndefined();
   });
 
   it("graduations entières, zéro compris", () => {

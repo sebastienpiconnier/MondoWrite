@@ -3526,9 +3526,11 @@ export const es = {
         final: "Final de temporada",
       },
       issue: {
+        beaucoupMieux: "Mucho mejor",
         mieux: "Mejor",
-        pire: "Peor",
         pareil: "Ni mejor ni peor",
+        pire: "Peor",
+        beaucoupPire: "Mucho peor",
       },
     },
     issueFor: "Para {name}, la escena termina",

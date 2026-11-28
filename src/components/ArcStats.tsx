@@ -151,7 +151,7 @@ function ArcChart({ arc, label, sceneTitle, signed }: { arc: CharacterArc; label
       {points
         .filter((p) => p.step !== null)
         .map((p) => (
-          <circle key={p.id} cx={x(p.rank)} cy={y(p.score)} r={3.5} className={`arc-dot is-${p.step === 1 ? "up" : p.step === -1 ? "down" : "same"}`}>
+          <circle key={p.id} cx={x(p.rank)} cy={y(p.score)} r={Math.abs(p.step ?? 0) > 1 ? 5.5 : 3.5} className={`arc-dot is-${(p.step ?? 0) > 0 ? "up" : (p.step ?? 0) < 0 ? "down" : "same"}`}>
             <title>{fmt(a.dot, { n: p.rank + 1, title: sceneTitle(p.rank), score: signed(p.score) })}</title>
           </circle>
         ))}

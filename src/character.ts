@@ -7,6 +7,7 @@
 // Les clés de la fiche sont écrites dans le fichier : ne jamais les renommer ni les traduire.
 
 import type { CardData, CardType, Link } from "./types";
+import { isCardId } from "./mentions";
 
 /** Caractéristiques standard, dans l'ordre de la fiche. Libellés : `t.character.fields`. */
 export const CHARACTER_FIELDS = [
@@ -203,11 +204,49 @@ export const CHOICE_FIELDS = {
   certitude: ["etabli", "provisoire", "explorer"],
   etat: ["ouverte", "decidee", "abandonnee"],
   repere: ["milieu", "final"],
-  // Scène : finit-elle mieux ou moins bien pour le héros ? Dessine la courbe du récit (ruban).
-  issue: ["mieux", "pire", "pareil"],
+  // Scène : finit-elle mieux ou moins bien pour le héros ? Dessine la courbe du récit (ruban) et celles des
+  // personnages (Statistiques). Dans l'ordre du menu, du plus haut au plus bas (« beaucoup » depuis novembre 2026 ;
+  // une version d'avant garde ces deux valeurs telles quelles, comme un champ inconnu).
+  issue: ["beaucoupMieux", "mieux", "pareil", "pire", "beaucoupPire"],
 } as const satisfies Partial<Record<SheetField, readonly string[]>>;
 export type ChoiceField = keyof typeof CHOICE_FIELDS;
 export const isChoiceField = (key: string): key is ChoiceField => key in CHOICE_FIELDS;
+export type IssueValue = (typeof CHOICE_FIELDS.issue)[number];
+export const isIssueValue = (v: unknown): v is IssueValue => typeof v === "string" && (CHOICE_FIELDS.issue as readonly string[]).includes(v);
+
+/** Ce qu'une réponse « la scène finit » ajoute à une courbe : de +2 (beaucoup mieux) à −2 (beaucoup moins bien). */
+const ISSUE_STEP: Readonly<Record<IssueValue, number>> = { beaucoupMieux: 2, mieux: 1, pareil: 0, pire: -1, beaucoupPire: -2 };
+export const issueStep = (value: string | undefined): number | null => (isIssueValue(value) ? ISSUE_STEP[value] : null);
+
+/**
+ * Réponses d'une scène pour d'autres personnages que son narrateur (« Pour Marc, la scène finit… ») : clé `issues` de la
+ * fiche d'une scène, écrite « <id>=<valeur>;<id>=<valeur> » (une version d'avant la garde comme un champ inconnu). Hors
+ * de `SHEET_FIELDS` : ni exportée, ni montrée par `CardSheet`, ni envoyée à l'IA ; seulement lue par les courbes.
+ */
+export const ISSUES_FOR = "issues";
+
+/** Réponses par personnage, lues dans `fiche.issues` : identifiants valides et valeurs connues seulement. */
+export function issuesFor(text: string | undefined): Map<string, IssueValue> {
+  const out = new Map<string, IssueValue>();
+  for (const part of (text ?? "").split(";")) {
+    const [id, value] = part.split("=").map((x) => x.trim());
+    if (isCardId(id) && id.length <= 64 && isIssueValue(value)) out.set(id, value);
+  }
+  return out;
+}
+
+const writeIssuesFor = (map: ReadonlyMap<string, string>) => [...map].map(([id, v]) => `${id}=${v}`).join(";");
+
+/** Fiche après avoir posé (ou retiré, valeur vide) la réponse d'un personnage. undefined quand plus rien n'est rempli. */
+export function withIssueFor(fiche: Record<string, string> | undefined, characterId: string, value: string): Record<string, string> | undefined {
+  const map = issuesFor(fiche?.[ISSUES_FOR]);
+  if (isIssueValue(value)) map.set(characterId, value);
+  else map.delete(characterId);
+  const next = { ...(fiche ?? {}) };
+  if (map.size > 0) next[ISSUES_FOR] = writeIssuesFor(map);
+  else delete next[ISSUES_FOR];
+  return Object.keys(next).length > 0 ? next : undefined;
+}
 
 export const sheetFields = (type: CardType): readonly SheetField[] => {
   const own = (SHEET_FIELDS[type] ?? []) as readonly SheetField[];
@@ -251,6 +290,10 @@ export function readFiche(raw: unknown, type: CardType = "personnage"): Record<s
     if (key === "couleur" && !(PLOT_COLORS as readonly string[]).includes(value)) continue;
     if (isChoiceField(key) && !(CHOICE_FIELDS[key] as readonly string[]).includes(value)) continue;
     out[key] = value.slice(0, MAX_VALUE);
+  }
+  if (type === "scene") {
+    const others = issuesFor(String((raw as Record<string, unknown>)[ISSUES_FOR] ?? ""));
+    if (others.size > 0) out[ISSUES_FOR] = writeIssuesFor(others);
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }

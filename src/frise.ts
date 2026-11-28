@@ -9,6 +9,7 @@ import { beatOf } from "./screenplay/template";
 import { seriesMark } from "./screenplay/series";
 import type { ScreenplayElement } from "./screenplay/model";
 import { fortuneCurve, type CurvePoint } from "./ribbon";
+import { ISSUES_FOR, issuesFor } from "./character";
 
 /** Une scène de la frise. `id` : sa carte, ou `@<index>` pour une scène de scénario sans carte. */
 export interface FriseScene {
@@ -224,17 +225,19 @@ export function rowStarts(rows: readonly FriseRow[], slots: ReadonlyMap<string, 
 }
 
 /**
- * Réponses « la scène finit mieux / pire » qui font la courbe d'un personnage (#150, premier pas) : les scènes qu'il
- * raconte (`fiche.pov`) ; pour un personnage principal, aussi les scènes sans point de vue (celles du héros).
+ * Réponses « la scène finit mieux / pire » qui font la courbe d'un personnage (#150) : les scènes qu'il raconte
+ * (`fiche.pov`, réponse principale) ; celles où l'auteur a répondu pour lui en particulier (`fiche.issues`) ; pour un
+ * personnage principal, aussi les scènes sans point de vue (celles du héros), sauf s'il y a une réponse pour lui.
  */
 export function characterIssues(cards: readonly { id: string; type: string; fiche?: Record<string, string> }[], characterId: string, principal: boolean): Map<string, string> {
   const people = new Set(cards.filter((c) => c.type === "personnage").map((c) => c.id));
   const out = new Map<string, string>();
   for (const c of cards) {
+    if (c.type !== "scene") continue;
     const issue = c.fiche?.issue;
-    if (c.type !== "scene" || !issue) continue;
     const pov = c.fiche?.pov && people.has(c.fiche.pov) ? c.fiche.pov : "";
-    if (pov === characterId || (principal && !pov)) out.set(c.id, issue);
+    const own = pov === characterId ? issue : (issuesFor(c.fiche?.[ISSUES_FOR]).get(characterId) ?? (principal && !pov ? issue : undefined));
+    if (own) out.set(c.id, own);
   }
   return out;
 }

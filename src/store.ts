@@ -57,7 +57,7 @@ import { mapTexts, relabelMentions, removeMentions, renameMentions } from "./men
 import { countWords, isBlank, type Manuscript } from "./manuscript";
 import { dayKey, readGoals, recordProgress, type Goals, type Progress } from "./stats";
 import { interviewKey, isParked, placeAnswer } from "./assistant";
-import { addQuestion, removeQuestion, setFicheField, type BreakdownField, type SheetField } from "./character";
+import { ISSUES_FOR, addQuestion, removeQuestion, setFicheField, withIssueFor, type BreakdownField, type SheetField } from "./character";
 import { addEntries, breakdownEntries } from "./ai/structure";
 import { EMPTY_PLAN, beatLevel, beatText, templateBeats, withKeys, withScriptBeats, isCustomBeat, type CustomTemplate, arrange, assignChapter, chapterOf, moveChapter, placeScene, planOrder, removeChapter, renameChapter, setTemplate, startChapter, stepScene, moveSceneTo, stepSceneInBook, type Plan, type PlanTemplate, type ScriptBeats } from "./plan";
 import { applyCustom, beatOf, customOf, moveToSection, placeSceneInBeat, screenplayPlan } from "./screenplay/template";
@@ -238,6 +238,8 @@ export interface CosmosState {
   dropQuestion: (id: string, question: string) => void;
   /** Change un champ de la fiche d'un personnage (vide : retiré). */
   setFiche: (id: string, field: SheetField, value: string) => void;
+  /** « Pour X, la scène finit » d'une scène pour un personnage qui ne la raconte pas (`fiche.issues`) ; vide : retirée. */
+  setIssueFor: (sceneId: string, characterId: string, value: string) => void;
   /**
    * Versions d'une scène (1.13.0, versions.ts) : texte du moment (manuscrit d'un roman ; synopsis et corps Fountain
    * d'un scénario), null si la scène n'a rien à garder.
@@ -1740,6 +1742,15 @@ export const useCosmos = create<CosmosState>((set, get) => {
       // Retouché par l'auteur : le champ n'est plus « proposé par l'IA » (mode Atelier).
       const ia = withoutIaField(card.ia, field);
       set({ nodes: get().nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fiche, ...(ia !== card.ia ? { ia } : {}) } } : n)) });
+      touch();
+    },
+    setIssueFor: (sceneId, characterId, value) => {
+      const card = get().nodes.find((n) => n.id === sceneId)?.data;
+      if (!card || card.type !== "scene") return;
+      const fiche = withIssueFor(card.fiche, characterId, value);
+      if ((fiche?.[ISSUES_FOR] ?? "") === (card.fiche?.[ISSUES_FOR] ?? "")) return;
+      record(`card:${sceneId}:issues`);
+      set({ nodes: get().nodes.map((n) => (n.id === sceneId ? { ...n, data: { ...n.data, fiche } } : n)) });
       touch();
     },
     sceneVersionText: (cardId) => {
